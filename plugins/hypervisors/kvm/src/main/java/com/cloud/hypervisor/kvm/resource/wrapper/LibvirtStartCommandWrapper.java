@@ -19,6 +19,13 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.net.URISyntaxException;
+
+import org.apache.log4j.Logger;
+import org.libvirt.Connect;
+import org.libvirt.DomainInfo.DomainState;
+import org.libvirt.LibvirtException;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
@@ -35,13 +42,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.vm.VirtualMachine;
-import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-import org.libvirt.DomainInfo.DomainState;
-import org.libvirt.LibvirtException;
-
-import java.net.URISyntaxException;
-import java.util.List;
 
 @ResourceWrapper(handles =  StartCommand.class)
 public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
@@ -86,32 +86,12 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification);
             performAgentStartHook(vmName, libvirtComputingResource);
 
-            for (final NicTO nic : nics) {
-                if (nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
-                    if (vmSpec.getType() != VirtualMachine.Type.User) {
-                        libvirtComputingResource.configureDefaultNetworkRulesForSystemVm(conn, vmName);
-                        break;
-                    } else {
-                        final List<String> nicSecIps = nic.getNicSecIps();
-                        String secIpsStr;
-                        final StringBuilder sb = new StringBuilder();
-                        if (nicSecIps != null) {
-                            for (final String ip : nicSecIps) {
-                                sb.append(ip).append(";");
-                            }
-                            secIpsStr = sb.toString();
-                        } else {
-                            secIpsStr = "0;";
-                        }
-                        libvirtComputingResource.defaultNetworkRules(conn, vmName, nic, vmSpec.getId(), secIpsStr);
-                    }
-                }
-            }
+            libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
             // pass cmdline info to system vms
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 String controlIp = null;
-                for (final NicTO nic : nics) {
+                for (final NicTO nic : vmSpec.getNics()) {
                     if (nic.getType() == TrafficType.Control) {
                         controlIp = nic.getIp();
                         break;

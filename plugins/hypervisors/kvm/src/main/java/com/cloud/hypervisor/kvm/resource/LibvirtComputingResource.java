@@ -103,9 +103,11 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -140,11 +142,13 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
+import com.cloud.hypervisor.kvm.storage.IscsiStorageCleanupMonitor;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.hypervisor.kvm.storage.KVMStorageProcessor;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.RequestWrapper;
@@ -498,6 +502,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _ovsPvlanVmPath;
     }
 
+    public String getDirectDownloadTemporaryDownloadPath() {
+        return directDownloadTemporaryDownloadPath;
+    }
+
     public String getResizeVolumePath() {
         return _resizeVolumePath;
     }
@@ -550,6 +558,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
+    protected String directDownloadTemporaryDownloadPath;
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
@@ -595,6 +604,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final IOException ex) {
             throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
         }
+    }
+
+    private String getDefaultDirectDownloadTemporaryPath() {
+        return "/var/lib/libvirt/images";
     }
 
     protected String getDefaultNetworkScriptsDir() {
@@ -674,6 +687,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (dpdkOvsPath != null && !dpdkOvsPath.endsWith("/")) {
                 dpdkOvsPath += "/";
             }
+        }
+
+        directDownloadTemporaryDownloadPath = (String) params.get("direct.download.temporary.download.location");
+        if (org.apache.commons.lang.StringUtils.isBlank(directDownloadTemporaryDownloadPath)) {
+            directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
         }
 
         params.put("domr.scripts.dir", domrScriptsDir);
@@ -1119,6 +1137,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final KVMStorageProcessor storageProcessor = new KVMStorageProcessor(_storagePoolMgr, this);
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
+
+        IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
+        final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
+        cleanupMonitor.start();
+
+        return true;
+    }
+
+    public boolean configureHostParams(final Map<String, String> params) {
+        final File file = PropertiesUtil.findConfigFile("agent.properties");
+        if (file == null) {
+            s_logger.error("Unable to find the file agent.properties");
+            return false;
+        }
+        // Save configurations in agent.properties
+        PropertiesStorage storage = new PropertiesStorage();
+        storage.configure("Storage", new HashMap<String, Object>());
+        if (params.get("router.aggregation.command.each.timeout") != null) {
+            String value = (String)params.get("router.aggregation.command.each.timeout");
+            Long longValue = NumbersUtil.parseLong(value, 600);
+            storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
+        }
 
         return true;
     }
@@ -1837,17 +1877,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         try {
             conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
+            Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
+            Integer devNum = macAddressToNicNumPair.second();
+
             final IpAddressTO[] ips = cmd.getIpAddresses();
-            Integer devNum = 0;
-            final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
-            final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
-
-            for (final InterfaceDef pluggedNic : pluggedNics) {
-                final String pluggedVlan = pluggedNic.getBrName();
-                macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
-                devNum++;
-            }
-
             for (final IpAddressTO ip : ips) {
                 ip.setNicDevId(macAddressToNicNum.get(ip.getVifMacAddress()));
             }
@@ -1864,35 +1898,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         Connect conn;
         try {
-            conn = LibvirtConnection.getConnectionByVmName(routerName);
-            final List<InterfaceDef> nics = getInterfaces(conn, routerName);
-            final Map<String, Integer> broadcastUriAllocatedToVM = new HashMap<String, Integer>();
-            Integer nicPos = 0;
-            for (final InterfaceDef nic : nics) {
-                if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
-                    broadcastUriAllocatedToVM.put("LinkLocal", nicPos);
-                } else {
-                    if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) ||
-                            nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
-                        broadcastUriAllocatedToVM.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), nicPos);
-                    } else {
-                        final String broadcastUri = getBroadcastUriFromBridge(nic.getBrName());
-                        broadcastUriAllocatedToVM.put(broadcastUri, nicPos);
-                    }
-                }
-                nicPos++;
-            }
+            conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
+            Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
+            Integer devNum = macAddressToNicNumPair.second();
+
             final IpAddressTO[] ips = cmd.getIpAddresses();
             int nicNum = 0;
             for (final IpAddressTO ip : ips) {
                 boolean newNic = false;
-                if (!broadcastUriAllocatedToVM.containsKey(ip.getBroadcastUri())) {
+                if (!macAddressToNicNum.containsKey(ip.getVifMacAddress())) {
                     /* plug a vif into router */
                     VifHotPlug(conn, routerName, ip.getBroadcastUri(), ip.getVifMacAddress());
-                    broadcastUriAllocatedToVM.put(ip.getBroadcastUri(), nicPos++);
+                    macAddressToNicNum.put(ip.getVifMacAddress(), devNum++);
                     newNic = true;
                 }
-                nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
+                nicNum = macAddressToNicNum.get(ip.getVifMacAddress());
                 networkUsage(routerIp, "addVif", "eth" + nicNum);
 
                 ip.setNicDevId(nicNum);
@@ -1914,39 +1935,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String lastIp = cmd.getAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP);
         Connect conn;
-
-
-        try{
-            conn = LibvirtConnection.getConnectionByVmName(routerName);
-            final List<InterfaceDef> nics = getInterfaces(conn, routerName);
-            final Map<String, Integer> broadcastUriAllocatedToVM = new HashMap<String, Integer>();
-
-            Integer nicPos = 0;
-            for (final InterfaceDef nic : nics) {
-                if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
-                    broadcastUriAllocatedToVM.put("LinkLocal", nicPos);
-                } else {
-                    if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) ||
-                            nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
-                        broadcastUriAllocatedToVM.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), nicPos);
-                    } else {
-                        final String broadcastUri = getBroadcastUriFromBridge(nic.getBrName());
-                        broadcastUriAllocatedToVM.put(broadcastUri, nicPos);
-                    }
-                }
-                nicPos++;
-            }
+        try {
+            conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
+            Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
+            Integer devNum = macAddressToNicNumPair.second();
 
             final IpAddressTO[] ips = cmd.getIpAddresses();
             int nicNum = 0;
             for (final IpAddressTO ip : ips) {
-
-                if (!broadcastUriAllocatedToVM.containsKey(ip.getBroadcastUri())) {
+                if (!macAddressToNicNum.containsKey(ip.getVifMacAddress())) {
                     /* plug a vif into router */
                     VifHotPlug(conn, routerName, ip.getBroadcastUri(), ip.getVifMacAddress());
-                    broadcastUriAllocatedToVM.put(ip.getBroadcastUri(), nicPos++);
+                    macAddressToNicNum.put(ip.getVifMacAddress(), devNum++);
                 }
-                nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
+                nicNum = macAddressToNicNum.get(ip.getVifMacAddress());
 
                 if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
                     // in isolated network eth2 is the default public interface. We don't want to delete it.
@@ -1966,6 +1969,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return new ExecutionResult(true, null);
+    }
+
+
+    private Pair<Map<String, Integer>, Integer> getMacAddressToNicNumPair(Connect conn, String routerName) {
+        Integer devNum = 0;
+        final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
+        final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
+        for (final InterfaceDef pluggedNic : pluggedNics) {
+            final String pluggedVlan = pluggedNic.getBrName();
+            macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
+            devNum++;
+        }
+        return new Pair<Map<String, Integer>, Integer>(macAddressToNicNum, devNum);
     }
 
     protected PowerState convertToPowerState(final DomainState ps) {
@@ -2388,18 +2404,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (dataStore instanceof NfsTO) {
                     NfsTO nfsStore = (NfsTO)data.getDataStore();
                     dataStoreUrl = nfsStore.getUrl();
-                } else if (dataStore instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) dataStore).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                    physicalDisk = getPhysicalDiskFromNfsStore(dataStoreUrl, data);
+                } else if (dataStore instanceof PrimaryDataStoreTO) {
                     //In order to support directly downloaded ISOs
-                    String psHost = ((PrimaryDataStoreTO) dataStore).getHost();
-                    String psPath = ((PrimaryDataStoreTO) dataStore).getPath();
-                    dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+                    PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStore;
+                    if (primaryDataStoreTO.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                        String psHost = primaryDataStoreTO.getHost();
+                        String psPath = primaryDataStoreTO.getPath();
+                        dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+                        physicalDisk = getPhysicalDiskFromNfsStore(dataStoreUrl, data);
+                    } else if (primaryDataStoreTO.getPoolType().equals(StoragePoolType.SharedMountPoint) ||
+                            primaryDataStoreTO.getPoolType().equals(StoragePoolType.Filesystem)) {
+                        physicalDisk = getPhysicalDiskPrimaryStore(primaryDataStoreTO, data);
+                    }
                 }
-                final String volPath = dataStoreUrl + File.separator + data.getPath();
-                final int index = volPath.lastIndexOf("/");
-                final String volDir = volPath.substring(0, index);
-                final String volName = volPath.substring(index + 1);
-                final KVMStoragePool secondaryStorage = _storagePoolMgr.getStoragePoolByURI(volDir);
-                physicalDisk = secondaryStorage.getPhysicalDisk(volName);
             } else if (volume.getType() != Volume.Type.ISO) {
                 final PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
                 physicalDisk = _storagePoolMgr.getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
@@ -2538,6 +2556,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
+    }
+
+    private KVMPhysicalDisk getPhysicalDiskPrimaryStore(PrimaryDataStoreTO primaryDataStoreTO, DataTO data) {
+        KVMStoragePool storagePool = _storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+        return storagePool.getPhysicalDisk(data.getPath());
+    }
+
+    private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
+        final String volPath = dataStoreUrl + File.separator + data.getPath();
+        final int index = volPath.lastIndexOf("/");
+        final String volDir = volPath.substring(0, index);
+        final String volName = volPath.substring(index + 1);
+        final KVMStoragePool storage = _storagePoolMgr.getStoragePoolByURI(volDir);
+        return storage.getPhysicalDisk(volName);
     }
 
     private void setBurstProperties(final VolumeObjectTO volumeObjectTO, final DiskDef disk ) {
@@ -3032,7 +3064,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return vmStates;
     }
 
-    public String rebootVM(final Connect conn, final String vmName) {
+    public String rebootVM(final Connect conn, final String vmName) throws LibvirtException{
         Domain dm = null;
         String msg = null;
         try {
@@ -3049,7 +3081,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         final int vnetId = Integer.parseInt(nic.getBrName().replaceFirst("cloudVirBr", ""));
                         final String pifName = getPif(_guestBridgeName);
                         final String newBrName = "br" + pifName + "-" + vnetId;
-                        vmDef = vmDef.replaceAll("'" + nic.getBrName() + "'", "'" + newBrName + "'");
+                        vmDef = vmDef.replace("'" + nic.getBrName() + "'", "'" + newBrName + "'");
                         s_logger.debug("VM bridge name is changed from " + nic.getBrName() + " to " + newBrName);
                     } catch (final NumberFormatException e) {
                         continue;
@@ -3613,7 +3645,117 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public boolean defaultNetworkRules(final Connect conn, final String vmName, final NicTO nic, final Long vmId, final String secIpStr) {
+    /**
+     * Function to destroy the security group rules applied to the nic's
+     * @param conn
+     * @param vmName
+     * @param nic
+     * @return
+     *      true   : If success
+     *      false  : If failure
+     */
+    public boolean destroyNetworkRulesForNic(final Connect conn, final String vmName, final NicTO nic) {
+        if (!_canBridgeFirewall) {
+            return false;
+        }
+        final List<String> nicSecIps = nic.getNicSecIps();
+        String secIpsStr;
+        final StringBuilder sb = new StringBuilder();
+        if (nicSecIps != null) {
+            for (final String ip : nicSecIps) {
+                sb.append(ip).append(SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR);
+            }
+            secIpsStr = sb.toString();
+        } else {
+            secIpsStr = "0" + SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR;
+        }
+        final List<InterfaceDef> intfs = getInterfaces(conn, vmName);
+        if (intfs.size() == 0 || intfs.size() < nic.getDeviceId()) {
+            return false;
+        }
+
+        final InterfaceDef intf = intfs.get(nic.getDeviceId());
+        final String brname = intf.getBrName();
+        final String vif = intf.getDevName();
+
+        final Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+        cmd.add("destroy_network_rules_for_vm");
+        cmd.add("--vmname", vmName);
+        if (nic.getIp() != null) {
+            cmd.add("--vmip", nic.getIp());
+        }
+        cmd.add("--vmmac", nic.getMac());
+        cmd.add("--vif", vif);
+        cmd.add("--nicsecips", secIpsStr);
+
+        final String result = cmd.execute();
+        if (result != null) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Function to apply default network rules for a VM
+     * @param conn
+     * @param vm
+     * @param checkBeforeApply
+     * @return
+     */
+    public boolean applyDefaultNetworkRules(final Connect conn, final VirtualMachineTO vm, final boolean checkBeforeApply) {
+        NicTO[] nicTOs = new NicTO[] {};
+        if (vm != null && vm.getNics() != null) {
+            s_logger.debug("Checking default network rules for vm " + vm.getName());
+            nicTOs = vm.getNics();
+        }
+        for (NicTO nic : nicTOs) {
+            if (vm.getType() != VirtualMachine.Type.User) {
+                nic.setPxeDisable(true);
+            }
+        }
+        boolean isFirstNic = true;
+        for (final NicTO nic : nicTOs) {
+            if (nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
+                if (vm.getType() != VirtualMachine.Type.User) {
+                    configureDefaultNetworkRulesForSystemVm(conn, vm.getName());
+                    break;
+                }
+                if (!applyDefaultNetworkRulesOnNic(conn, vm.getName(), vm.getId(), nic, isFirstNic, checkBeforeApply)) {
+                    s_logger.error("Unable to apply default network rule for nic " + nic.getName() + " for VM " + vm.getName());
+                    return false;
+                }
+                isFirstNic = false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Function to apply default network rules for a NIC
+     * @param conn
+     * @param vmName
+     * @param vmId
+     * @param nic
+     * @param isFirstNic
+     * @param checkBeforeApply
+     * @return
+     */
+    public boolean applyDefaultNetworkRulesOnNic(final Connect conn, final String vmName, final Long vmId, final NicTO nic, boolean isFirstNic, boolean checkBeforeApply) {
+        final List<String> nicSecIps = nic.getNicSecIps();
+        String secIpsStr;
+        final StringBuilder sb = new StringBuilder();
+        if (nicSecIps != null) {
+            for (final String ip : nicSecIps) {
+                sb.append(ip).append(SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR);
+            }
+            secIpsStr = sb.toString();
+        } else {
+            secIpsStr = "0" + SecurityGroupRulesCmd.RULE_COMMAND_SEPARATOR;
+        }
+        return defaultNetworkRules(conn, vmName, nic, vmId, secIpsStr, isFirstNic, checkBeforeApply);
+    }
+
+    public boolean defaultNetworkRules(final Connect conn, final String vmName, final NicTO nic, final Long vmId, final String secIpStr, final boolean isFirstNic, final boolean checkBeforeApply) {
         if (!_canBridgeFirewall) {
             return false;
         }
@@ -3641,6 +3783,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add("--vif", vif);
         cmd.add("--brname", brname);
         cmd.add("--nicsecips", secIpStr);
+        if (isFirstNic) {
+            cmd.add("--isFirstNic");
+        }
+        if (checkBeforeApply) {
+            cmd.add("--check");
+        }
         final String result = cmd.execute();
         if (result != null) {
             return false;
@@ -3730,7 +3878,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public boolean configureNetworkRulesVMSecondaryIP(final Connect conn, final String vmName, final String secIp, final String action) {
+    public boolean configureNetworkRulesVMSecondaryIP(final Connect conn, final String vmName, final String vmMac, final String secIp, final String action) {
 
         if (!_canBridgeFirewall) {
             return false;
@@ -3739,6 +3887,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
         cmd.add("network_rules_vmSecondaryIp");
         cmd.add("--vmname", vmName);
+        cmd.add("--vmmac", vmMac);
         cmd.add("--nicsecips", secIp);
         cmd.add("--action=" + action);
 

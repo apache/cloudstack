@@ -47,6 +47,8 @@ public class VRScripts {
 
     // New scripts for use with chef
     public static final String UPDATE_CONFIG = "update_config.py";
+    public static final String CONFIGURE = "configure.py";
+
 
     // Script still in use - mostly by HyperV
     public static final String S2SVPN_CHECK = "checkbatchs2svpn.sh";
@@ -66,6 +68,7 @@ public class VRScripts {
     public static final String VPC_STATIC_ROUTE = "vpc_staticroute.sh";
     public static final String VPN_L2TP = "vpn_l2tp.sh";
     public static final String UPDATE_HOST_PASSWD = "update_host_passwd.sh";
+    public static final String ROUTER_MONITOR_RESULTS = "getRouterMonitorResults.sh";
 
     public static final String VR_CFG = "vr_cfg.sh";
 

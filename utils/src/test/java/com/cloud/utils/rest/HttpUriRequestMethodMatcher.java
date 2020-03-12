@@ -20,7 +20,7 @@
 package com.cloud.utils.rest;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
 import org.apache.http.client.methods.HttpUriRequest;
 import org.hamcrest.FeatureMatcher;
@@ -40,5 +40,4 @@ public class HttpUriRequestMethodMatcher extends FeatureMatcher<HttpUriRequest, 
     protected String featureValueOf(final HttpUriRequest actual) {
         return actual.getMethod();
     }
-
 }

@@ -155,7 +155,7 @@ class TestAccounts(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -169,7 +169,7 @@ class TestAccounts(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created accounts, domains etc
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -280,11 +280,12 @@ class TestAccounts(cloudstackTestCase):
         ts = str(time.time())
         network_domain = 'mycloud.com'
 
-        account = Account.create(self.apiclient, self.services['account'])
-        self.cleanup.append(account)
-
+        # role will be in cleanup list first so it won't be deleted before the account it is on.
         role = Role.create(self.apiclient, self.services['role'])
         self.cleanup.append(role)
+
+        account = Account.create(self.apiclient, self.services['account'])
+        self.cleanup.append(account)
 
         account.update(self.apiclient, newname=account.name + ts)
         account.update(self.apiclient, roleid=role.id)
@@ -353,7 +354,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -367,7 +368,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created instance, users etc
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -494,28 +495,27 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
         cls.services = Services().services
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
         # Create an account, domain etc
         cls.domain = Domain.create(
             cls.api_client,
             cls.services["domain"],
         )
+        cls._cleanup.append(cls.domain)
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
             admin=True,
             domainid=cls.domain.id
         )
-        cls._cleanup = [
-            cls.account,
-            cls.domain
-        ]
+        cls._cleanup.append(cls.account)
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -529,7 +529,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created accounts
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -601,20 +601,25 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
         ).getClsTestClient().getApiClient()
         cls.services = Services().services
 
+        cls._cleanup = []
+
         # Create Domains, accounts etc
         cls.domain_1 = Domain.create(
             cls.api_client,
             cls.services["domain"]
         )
+        cls._cleanup.append(cls.domain_1)
         cls.domain_2 = Domain.create(
             cls.api_client,
             cls.services["domain"]
         )
+        cls._cleanup.append(cls.domain_2)
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"],
             domainid=cls.domain_1.id
         )
+        cls._cleanup.append(cls.service_offering)
         # Create account for doamin_1
         cls.account_1 = Account.create(
             cls.api_client,
@@ -622,6 +627,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
             admin=True,
             domainid=cls.domain_1.id
         )
+        cls._cleanup.append(cls.account_1)
 
         # Create an account for domain_2
         cls.account_2 = Account.create(
@@ -630,21 +636,15 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
             admin=True,
             domainid=cls.domain_2.id
         )
+        cls._cleanup.append(cls.account_2)
 
-        cls._cleanup = [
-            cls.account_1,
-            cls.account_2,
-            cls.service_offering,
-            cls.domain_1,
-            cls.domain_2,
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -658,7 +658,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created domains, accounts
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -725,21 +725,26 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
         ).getClsTestClient().getApiClient()
         cls.services = Services().services
 
+        cls._cleanup = []
+
         # Create domain, service offerings etc
         cls.domain_1 = Domain.create(
             cls.api_client,
             cls.services["domain"]
         )
+        cls._cleanup.append(cls.domain_1)
         cls.domain_2 = Domain.create(
             cls.api_client,
             cls.services["domain"],
             parentdomainid=cls.domain_1.id
         )
+        cls._cleanup.append(cls.domain_2)
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"],
             domainid=cls.domain_1.id
         )
+        cls._cleanup.append(cls.service_offering)
         # Create account for doamin_1
         cls.account_1 = Account.create(
             cls.api_client,
@@ -747,7 +752,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
             admin=True,
             domainid=cls.domain_1.id
         )
-
+        cls._cleanup.append(cls.account_1)
         # Create an account for domain_2
         cls.account_2 = Account.create(
             cls.api_client,
@@ -755,14 +760,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
             admin=True,
             domainid=cls.domain_2.id
         )
-
-        cls._cleanup = [
-            cls.account_2,
-            cls.domain_2,
-            cls.service_offering,
-            cls.account_1,
-            cls.domain_1,
-        ]
+        cls._cleanup.append(cls.account_2)
 
         return
 
@@ -770,7 +768,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -784,7 +782,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -852,16 +850,20 @@ class TestTemplateHierarchy(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
+        cls._cleanup = []
+
         # Create domains, accounts and template
         cls.domain_1 = Domain.create(
             cls.api_client,
             cls.services["domain"]
         )
+        cls._cleanup.append(cls.domain_1)
         cls.domain_2 = Domain.create(
             cls.api_client,
             cls.services["domain"],
             parentdomainid=cls.domain_1.id
         )
+        cls._cleanup.append(cls.domain_2)
 
         # Create account for doamin_1
         cls.account_1 = Account.create(
@@ -870,6 +872,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
             admin=True,
             domainid=cls.domain_1.id
         )
+        cls._cleanup.append(cls.account_1)
 
         # Create an account for domain_2
         cls.account_2 = Account.create(
@@ -878,13 +881,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
             admin=True,
             domainid=cls.domain_2.id
         )
-
-        cls._cleanup = [
-            cls.account_2,
-            cls.domain_2,
-            cls.account_1,
-            cls.domain_1,
-        ]
+        cls._cleanup.append(cls.account_2)
 
         builtin_info = get_builtin_template_info(cls.api_client, cls.zone.id)
         cls.services["template"]["url"] = builtin_info[0]
@@ -900,6 +897,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
             domainid=cls.domain_1.id,
             hypervisor=cls.hypervisor
         )
+        cls._cleanup.append(cls.template)
 
         # Wait for template to download
         cls.template.download(cls.api_client)
@@ -912,7 +910,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -926,7 +924,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1005,11 +1003,14 @@ class TestAddVmToSubDomain(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
+
         cls.sub_domain = Domain.create(
             cls.api_client,
             cls.services["domain"],
             parentdomainid=cls.domain.id
         )
+        cls._cleanup.append(cls.sub_domain)
 
         # Create account for doamin_1
         cls.account_1 = Account.create(
@@ -1018,6 +1019,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account_1)
 
         # Create an account for domain_2
         cls.account_2 = Account.create(
@@ -1026,19 +1028,15 @@ class TestAddVmToSubDomain(cloudstackTestCase):
             admin=True,
             domainid=cls.sub_domain.id
         )
+        cls._cleanup.append(cls.account_2)
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.service_offering)
 
-        cls._cleanup = [
-            cls.account_2,
-            cls.account_1,
-            cls.sub_domain,
-            cls.service_offering
-        ]
         cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
@@ -1068,7 +1066,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1082,7 +1080,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created resources
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1164,7 +1162,7 @@ class TestUserDetails(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1178,7 +1176,7 @@ class TestUserDetails(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1463,7 +1461,7 @@ class TestUserLogin(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1477,7 +1475,7 @@ class TestUserLogin(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1558,7 +1556,7 @@ class TestUserLogin(cloudstackTestCase):
             self.services["domain"],
             parentdomainid=self.domain.id
         )
-
+        self.cleanup.append(domain)
         self.debug("Domain: %s is created successfully." % domain.name)
 
         self.debug("Validating the created domain")
@@ -1574,11 +1572,8 @@ class TestUserLogin(cloudstackTestCase):
             self.services["domain"],
             parentdomainid=domain.id
         )
-
-        self.debug("Sub-Domain: %s is created successfully." % subDomain.name)
-
         self.cleanup.append(subDomain)
-        self.cleanup.append(domain)
+        self.debug("Sub-Domain: %s is created successfully." % subDomain.name)
 
         self.debug("Validating the created sub-domain")
         list_sub_domain = Domain.list(self.api_client, id=subDomain.id)
@@ -1631,6 +1626,7 @@ class TestUserLogin(cloudstackTestCase):
             self.services["domain"],
             parentdomainid=self.domain.id
         )
+        self.cleanup.append(domain)
         self.debug("Domain: %s is created succesfully." % domain.name)
         self.debug(
             "Checking if the created domain is listed in list domains API")
@@ -1690,40 +1686,39 @@ class TestUserAPIKeys(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
         # Create an account, domain etc
         cls.domain = Domain.create(
             cls.api_client,
             cls.services["domain"],
         )
+        cls._cleanup.append(cls.domain)
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
             admin=False,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.domain_2 = Domain.create(
             cls.api_client,
             cls.services["domain"],
         )
+        cls._cleanup.append(cls.domain_2)
         cls.account_2 = Account.create(
             cls.api_client,
             cls.services["account"],
             admin=False,
             domainid=cls.domain_2.id
         )
-        cls._cleanup = [
-            cls.account,
-            cls.domain,
-            cls.account_2,
-            cls.domain_2
-        ]
+        cls._cleanup.append(cls.account_2)
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1737,7 +1732,7 @@ class TestUserAPIKeys(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1875,7 +1870,7 @@ class TestDomainForceRemove(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
 
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1890,7 +1885,7 @@ class TestDomainForceRemove(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created resources
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2043,8 +2038,10 @@ class TestDomainForceRemove(cloudstackTestCase):
                 "Length of response from listLbRules should not be 0"
             )
         except Exception as e:
-            self.clenaup.append(self.account_1)
+            self.cleanup.append(self.domain)
+            self.cleanup.append(self.account_1)
             self.cleanup.append(self.account_2)
+            self.cleanup.append(self.service_offering)
             self.fail(e)
 
         self.debug("Deleting domain with force option")
@@ -2102,6 +2099,8 @@ class TestDomainForceRemove(cloudstackTestCase):
             self.services["domain"],
             parentdomainid=self.domain.id
         )
+        # in this test delete domain *should* fail so we need to housekeep:
+        self.cleanup.append(domain)
         self.debug("Domain: %s is created successfully." % domain.name)
         self.debug(
             "Checking if the created domain is listed in list domains API")
@@ -2250,7 +2249,7 @@ class TestMoveUser(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
 
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -2287,7 +2286,7 @@ class TestMoveUser(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created resources
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2337,7 +2336,6 @@ class TestMoveUser(cloudstackTestCase):
         else:
             self.fail("It should not be allowed to move users across accounts in different domains, failing")
 
-        account_different_domain.delete(self.api_client)
         return
 
     @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")

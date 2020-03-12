@@ -93,4 +93,13 @@ public class VMTemplateZoneDaoImpl extends GenericDaoBase<VMTemplateZoneVO, Long
         txn.commit();
     }
 
+    @Override
+    public void deleteByZoneId(long zoneId) {
+        SearchCriteria<VMTemplateZoneVO> sc = ZoneSearch.create();
+        sc.setParameters("zone_id", zoneId);
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        remove(sc);
+        txn.commit();
+    }
 }

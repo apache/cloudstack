@@ -264,13 +264,13 @@ public class TemplateServiceImpl implements TemplateService {
             List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
             for (VMTemplateVO rtngTmplt : rtngTmplts) {
-                if (rtngTmplt.getHypervisorType() == hostHyper) {
+                if (rtngTmplt.getHypervisorType() == hostHyper && !rtngTmplt.isDirectDownload()) {
                     toBeDownloaded.add(rtngTmplt);
                 }
             }
 
             for (VMTemplateVO builtinTmplt : defaultBuiltin) {
-                if (builtinTmplt.getHypervisorType() == hostHyper) {
+                if (builtinTmplt.getHypervisorType() == hostHyper && !builtinTmplt.isDirectDownload()) {
                     toBeDownloaded.add(builtinTmplt);
                 }
             }
@@ -1052,6 +1052,10 @@ public class TemplateServiceImpl implements TemplateService {
         DataObject templateOnStore = destStore.create(tmplForCopy);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
 
+        if (templateOnStore instanceof TemplateObject) {
+            ((TemplateObject)templateOnStore).getImage().setChecksum(null);
+        } // else we don't know what to do.
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Invoke datastore driver createAsync to create template on destination store");
         }
@@ -1197,6 +1201,9 @@ public class TemplateServiceImpl implements TemplateService {
         for (VMTemplateVO tmplt : rtngTmplts) {
             TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
             if (tmpltStore == null) {
+                if (_vmTemplateStoreDao.isTemplateMarkedForDirectDownload(tmplt.getId())) {
+                    continue;
+                }
                 tmpltStore =
                         new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null,
                                 TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + '/', tmplt.getUrl());

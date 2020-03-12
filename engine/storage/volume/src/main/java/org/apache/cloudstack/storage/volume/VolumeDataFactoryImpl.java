@@ -23,6 +23,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -42,6 +44,8 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
     VolumeDataStoreDao volumeStoreDao;
     @Inject
     DataStoreManager storeMgr;
+    @Inject
+    VMTemplateDao templateDao;
 
     @Override
     public VolumeInfo getVolume(long volumeId, DataStore store) {
@@ -89,6 +93,12 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
         } else {
             DataStore store = storeMgr.getDataStore(volumeVO.getPoolId(), DataStoreRole.Primary);
             vol = VolumeObject.getVolumeObject(store, volumeVO);
+        }
+        if (vol.getTemplateId() != null) {
+            VMTemplateVO template = templateDao.findById(vol.getTemplateId());
+            if (template != null) {
+                vol.setDirectDownload(template.isDirectDownload());
+            }
         }
         return vol;
     }

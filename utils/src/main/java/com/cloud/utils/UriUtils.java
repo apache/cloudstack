@@ -624,4 +624,15 @@ public class UriUtils {
         }
         return !Collections.disjoint(vlans1, vlans2);
     }
+
+    public static List<Integer> expandPvlanUri(String pvlanRange) {
+        final List<Integer> expandedVlans = new ArrayList<>();
+        if (Strings.isNullOrEmpty(pvlanRange)) {
+            return expandedVlans;
+        }
+        String[] parts = pvlanRange.split("-i");
+        expandedVlans.add(Integer.parseInt(parts[0]));
+        expandedVlans.add(Integer.parseInt(parts[1]));
+        return expandedVlans;
+    }
 }

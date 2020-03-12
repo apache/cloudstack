@@ -22,14 +22,15 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface VMTemplateZoneDao extends GenericDao<VMTemplateZoneVO, Long> {
-    public List<VMTemplateZoneVO> listByZoneId(long id);
+    List<VMTemplateZoneVO> listByZoneId(long id);
 
-    public List<VMTemplateZoneVO> listByTemplateId(long templateId);
+    List<VMTemplateZoneVO> listByTemplateId(long templateId);
 
-    public VMTemplateZoneVO findByZoneTemplate(long zoneId, long templateId);
+    VMTemplateZoneVO findByZoneTemplate(long zoneId, long templateId);
 
-    public List<VMTemplateZoneVO> listByZoneTemplate(Long zoneId, long templateId);
+    List<VMTemplateZoneVO> listByZoneTemplate(Long zoneId, long templateId);
 
-    public void deletePrimaryRecordsForTemplate(long templateId);
+    void deletePrimaryRecordsForTemplate(long templateId);
 
+    void deleteByZoneId(long zoneId);
 }

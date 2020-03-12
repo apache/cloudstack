@@ -125,7 +125,7 @@ public class ListClustersCmd extends BaseListCmd {
         return s_name;
     }
 
-    protected List<ClusterResponse> getClusterResponses() {
+    protected Pair<List<ClusterResponse>, Integer> getClusterResponses() {
         Pair<List<? extends Cluster>, Integer> result = _mgr.searchForClusters(this);
         List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
         for (Cluster cluster : result.first()) {
@@ -133,14 +133,14 @@ public class ListClustersCmd extends BaseListCmd {
             clusterResponse.setObjectName("cluster");
             clusterResponses.add(clusterResponse);
         }
-        return clusterResponses;
+        return new Pair<List<ClusterResponse>, Integer>(clusterResponses, result.second());
     }
 
     @Override
     public void execute() {
-        List<ClusterResponse> clusterResponses = getClusterResponses();
+        Pair<List<ClusterResponse>, Integer> clusterResponses = getClusterResponses();
         ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
-        response.setResponses(clusterResponses, clusterResponses.size());
+        response.setResponses(clusterResponses.first(), clusterResponses.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

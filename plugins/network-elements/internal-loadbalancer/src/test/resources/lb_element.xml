@@ -20,10 +20,10 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd">
 
-     <context:annotation-config />
+  <context:annotation-config />
 
-    <!-- @DB support -->
-      
+  <!-- @DB support -->
+
   <bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />
 
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
@@ -37,10 +37,10 @@
     </property>
   </bean>
 
-    <bean id="InternalLoadBalancerElementService" class="org.apache.cloudstack.network.element.InternalLoadBalancerElement">
-        <property name="name" value="InternalLoadBalancerElementService"/>
-    </bean>
-  
-    <bean class="org.apache.cloudstack.internallbelement.ElementChildTestConfiguration" />
-    
+  <bean id="InternalLoadBalancerElementService" class="org.apache.cloudstack.network.element.InternalLoadBalancerElement">
+    <property name="name" value="InternalLoadBalancerElementService"/>
+  </bean>
+
+  <bean class="org.apache.cloudstack.internallbelement.ElementChildTestConfiguration" />
+
 </beans>

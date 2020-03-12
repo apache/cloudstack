@@ -361,6 +361,7 @@
                 args.context.item.state != 'Destroyed' &&
                 args.context.item.name != 'default') {
                 allowedActions.push('remove');
+                allowedActions.push('edit');
             }
 
             return allowedActions;
@@ -4503,6 +4504,14 @@
                         var data = {};
                         listViewDataProvider(args, data);
 
+                        if (args.context != null) {
+                            if ("securityGroups" in args.context) {
+                                $.extend(data, {
+                                    id: args.context.securityGroups[0].id
+                                });
+                            }
+                        }
+
                         $.ajax({
                             url: createURL('listSecurityGroups'),
                             data: data,
@@ -4523,7 +4532,11 @@
                                 title: 'label.details',
                                 fields: [{
                                     name: {
-                                        label: 'label.name'
+                                        label: 'label.name',
+                                        isEditable: true,
+                                        validation: {
+                                            required: true
+                                        }
                                     }
                                 }, {
                                     id: {
@@ -5075,6 +5088,30 @@
                         },
 
                         actions: {
+                            edit: {
+                                label: 'label.edit',
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.securityGroups[0].id
+                                    };
+                                    if (args.data.name != args.context.securityGroups[0].name) {
+                                        $.extend(data, {
+                                            name: args.data.name
+                                        });
+                                    };
+                                    $.ajax({
+                                        url: createURL('updateSecurityGroup'),
+                                        data: data,
+                                        success: function(json) {
+                                            var item = json.updatesecuritygroupresponse.securitygroup;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            },
+
                             remove: {
                                 label: 'label.action.delete.security.group',
                                 messages: {
@@ -5789,6 +5826,66 @@
                         },
                         ipsecpsk: {
                             label: 'label.IPsec.preshared.key'
+                        }
+                    },
+
+                    advSearchFields: {
+                        keyword: {
+                            label: 'label.name'
+                        },
+                        domainid: {
+                            label: 'label.domain',
+                            select: function(args) {
+                                if (isAdmin() || isDomainAdmin()) {
+                                    $.ajax({
+                                        url: createURL('listDomains'),
+                                        data: {
+                                            listAll: true,
+                                            details: 'min'
+                                        },
+                                        success: function(json) {
+                                            var array1 = [{
+                                                id: '',
+                                                description: ''
+                                            }];
+                                            var domains = json.listdomainsresponse.domain;
+                                            if (domains != null && domains.length > 0) {
+                                                for (var i = 0; i < domains.length; i++) {
+                                                    array1.push({
+                                                        id: domains[i].id,
+                                                        description: domains[i].path
+                                                    });
+                                                }
+                                            }
+                                            array1.sort(function(a, b) {
+                                                return a.description.localeCompare(b.description);
+                                            });
+                                            args.response.success({
+                                                data: array1
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    args.response.success({
+                                        data: null
+                                    });
+                                }
+                            },
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
+                        },
+                        account: {
+                            label: 'Account',
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
                         }
                     },
 

@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.user;
 
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,9 +40,12 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
@@ -54,10 +57,12 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 
+@RunWith(MockitoJUnitRunner.class)
 public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplTestBase {
 
     private static final Long ACCOUNT_ID = 1l;
@@ -65,7 +70,12 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
 
     @Spy
     @InjectMocks
-    UserVmManagerImpl _vmMgr;
+    private UserVmManagerImpl _vmMgr;
+
+    @Mock
+    private UserVmManager userVmManager;
+
+
     Map<String, Object> oldFields = new HashMap<>();
     UserVmVO vm = mock(UserVmVO.class);
 
@@ -112,34 +122,35 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         DomainVO domain = new DomainVO();
         VirtualMachineEntity vmEntity = mock(VirtualMachineEntity.class);
 
-        when(_orchSrvc.getVirtualMachine(anyString())).thenReturn(vmEntity);
-        when(vmEntity.destroy(anyString(), anyBoolean())).thenReturn(true);
+        when(_orchSrvc.getVirtualMachine(nullable(String.class))).thenReturn(vmEntity);
+        when(vmEntity.destroy(nullable(String.class), nullable(Boolean.class))).thenReturn(true);
 
-        Mockito.doReturn(vm).when(_vmDao).findById(anyLong());
+        Mockito.lenient().doReturn(vm).when(_vmDao).findById(nullable(Long.class));
 
         VolumeVO vol = new VolumeVO(VOLUME_UUID, 1l, 1l, 1l, 1l, 1l, "folder", "path", null, 50, Type.ROOT);
         vol.setDisplayVolume(true);
         List<VolumeVO> volumes = new ArrayList<>();
         volumes.add(vol);
 
-        when(securityChecker.checkAccess(any(Account.class), any(ControlledEntity.class), any(AccessType.class), anyString())).thenReturn(true);
+        lenient().when(securityChecker.checkAccess(Mockito.eq(account), nullable(ControlledEntity.class), nullable(AccessType.class), nullable(String.class))).thenReturn(true);
 
-        when(_userVmDao.findById(anyLong())).thenReturn(vm);
-        when(_userVmDao.listByAccountId(ACCOUNT_ID)).thenReturn(Arrays.asList(vm));
-        when(_userVmDao.findByUuid(any(String.class))).thenReturn(vm);
 
-        when(_volumeDao.findByInstance(anyLong())).thenReturn(volumes);
+        when(_userVmDao.findById(nullable(Long.class))).thenReturn(vm);
+        lenient().when(_userVmDao.listByAccountId(ACCOUNT_ID)).thenReturn(Arrays.asList(vm));
+        lenient().when(_userVmDao.findByUuid(nullable(String.class))).thenReturn(vm);
+
+        when(_volumeDao.findByInstance(nullable(Long.class))).thenReturn(volumes);
 
         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
-        when(offering.getCpu()).thenReturn(500);
-        when(offering.getId()).thenReturn(1l);
+        lenient().when(offering.getCpu()).thenReturn(500);
+        lenient().when(offering.getId()).thenReturn(1l);
         when(offering.getCpu()).thenReturn(500);
         when(offering.getRamSize()).thenReturn(500);
-        when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(offering);
+        when(_serviceOfferingDao.findByIdIncludingRemoved(nullable(Long.class), nullable(Long.class))).thenReturn(offering);
 
-        when(_domainMgr.getDomain(anyLong())).thenReturn(domain);
+        lenient().when(_domainMgr.getDomain(nullable(Long.class))).thenReturn(domain);
 
-        Mockito.doReturn(true).when(_vmMgr).expunge(any(UserVmVO.class), anyLong(), any(Account.class));
+        Mockito.lenient().doReturn(true).when(_vmMgr).expunge(any(UserVmVO.class), anyLong(), any(Account.class));
 
     }
 
@@ -169,16 +180,18 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     protected List<UsageEventVO> deleteUserAccountRootVolumeUsageEvents(boolean vmDestroyedPrior) throws AgentUnavailableException, ConcurrentOperationException, CloudException {
 
         when(vm.getState()).thenReturn(vmDestroyedPrior ? VirtualMachine.State.Destroyed : VirtualMachine.State.Running);
-        when(vm.getRemoved()).thenReturn(vmDestroyedPrior ? new Date() : null);
+        lenient().when(vm.getRemoved()).thenReturn(vmDestroyedPrior ? new Date() : null);
+        Mockito.doNothing().when(accountManagerImpl).checkAccess(nullable(Account.class), Mockito.isNull(), nullable(Boolean.class), nullable(Account.class));
         accountManagerImpl.deleteUserAccount(ACCOUNT_ID);
 
         return _usageEventDao.listAll();
     }
 
     @Test
-    // If the VM is alerady destroyed, no events should get emitted
+    // If the VM is already destroyed, no events should get emitted
     public void destroyedVMRootVolumeUsageEvent()
             throws SecurityException, IllegalArgumentException, ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
+        Mockito.lenient().doReturn(vm).when(_vmMgr).destroyVm(nullable(Long.class), nullable(Boolean.class));
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(true);
         Assert.assertEquals(0, emittedEvents.size());
     }
@@ -188,8 +201,8 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     // volume.
     public void runningVMRootVolumeUsageEvent()
             throws SecurityException, IllegalArgumentException, ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
+        Mockito.lenient().when(_vmMgr.destroyVm(nullable(Long.class), nullable(Boolean.class))).thenReturn(vm);
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(false);
-        Assert.assertEquals(1, emittedEvents.size());
         UsageEventVO event = emittedEvents.get(0);
         Assert.assertEquals(EventTypes.EVENT_VOLUME_DELETE, event.getType());
         Assert.assertEquals(VOLUME_UUID, event.getResourceName());

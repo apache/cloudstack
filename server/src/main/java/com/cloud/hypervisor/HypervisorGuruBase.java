@@ -22,7 +22,10 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -77,6 +80,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    private NetworkDetailsDao networkDetailsDao;
 
     @Override
     public NicTO toNicTO(NicProfile profile) {
@@ -182,6 +187,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
                     details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
                     details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
                 }
+                NetworkDetailVO pvlantypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
+                if (pvlantypeDetail != null) {
+                    details.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlantypeDetail.getValue());
+                }
                 nicTo.setDetails(details);
             }
             nics[i++] = nicTo;
@@ -260,6 +269,17 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
+                                                         String vmInternalName, Backup backup) throws Exception {
+        return null;
+    }
+
+    @Override
+    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo,
+                                                        VirtualMachine vm, long poolId, Backup backup) throws Exception {
+        return false;
+    }
+
     public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
         return null;
     }

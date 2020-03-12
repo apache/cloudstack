@@ -2455,7 +2455,7 @@
                                                  */
                                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
-                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     data: data2,
                                                         async: false,
                                                     success: function (json) {
@@ -3039,7 +3039,7 @@
 
                                                 // Get project routers
                                                 $.ajax({
-                                                    url: createURL("listInternalLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listInternalLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     success: function (json) {
                                                         var items = json.listinternallbvmsresponse.internalloadbalancervm ?
                                                         json.listinternallbvmsresponse.internalloadbalancervm:[];
@@ -3592,7 +3592,7 @@
                                                  */
                                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
-                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     dataType: 'json',
                                                     data: data2,
                                                         async: false,
@@ -6571,7 +6571,7 @@
 
                                                 // Get project routers
                                                 $.ajax({
-                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     data: data2,
                                                     success: function (json) {
                                                         var items = json.listroutersresponse.router ?
@@ -9468,7 +9468,7 @@
                                         url: createURL('listSystemVms'),
                                         data: data,
                                         success: function (json) {
-                                            var systemvmObjs = json.listsystemvmsresponse.systemvm;
+                                            var systemvmObjs = json.listsystemvmsresponse.systemvm || [];
                                             $(systemvmObjs).each(function(idx, item) {
                                                 var controlIp = item.linklocalip;
                                                 if (item.hypervisor == "VMware") {
@@ -9477,32 +9477,9 @@
                                                 item.controlip = controlIp;
                                             });
 
-                                            if (systemvmObjs != undefined) {
-                                                $.ajax({
-                                                    url: createURL('listHosts'),
-                                                    data: {
-                                                        details: 'min'
-                                                    },
-                                                    success: function (json) {
-                                                        var hostObjs = json.listhostsresponse.host;
-                                                        for (var i = 0; i < systemvmObjs.length; i++) {
-                                                            for (var k = 0; k < hostObjs.length; k++) {
-                                                                if (hostObjs[k].name == systemvmObjs[i].name) {
-                                                                    systemvmObjs[i].agentstate = hostObjs[k].state;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                        args.response.success({
-                                                            data: systemvmObjs
-                                                        });
-                                                    }
-                                                });
-                                            } else {
-                                                args.response.success({
-                                                    data:[]
-                                                });
-                                            }
+                                            args.response.success({
+                                                data: systemvmObjs
+                                            });
                                         }
                                     });
                                 },
@@ -9577,7 +9554,7 @@
                                                              */
                                                             if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                             $.ajax({
-                                                                    url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
+                                                                    url: createURL("listRouters&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
                                                                 async: false,
                                                                 success: function (json) {
                                                                     var items = json.listroutersresponse.router ? json.listroutersresponse.router:[];
@@ -9886,6 +9863,7 @@
                         listView: {
                             id: 'routers',
                             label: 'label.virtual.appliances',
+                            horizontalOverflow: true,
                             fields: {
                                 name: {
                                     label: 'label.name'
@@ -9914,13 +9892,31 @@
                                     indicator: {
                                         'Running': 'on',
                                         'Stopped': 'off',
-                                        'Error': 'off'
+                                        'Error': 'off',
+                                        'Alert': 'warning'
+                                    }
+                                },
+                                healthchecksfailed: {
+                                    converter: function (str) {
+                                        if (str) return 'Failed'
+                                        return 'Passed';
+                                    },
+                                    label: 'label.health.check',
+                                    indicator: {
+                                        false: 'on',
+                                        true: 'warning'
                                     }
                                 },
                                 requiresupgrade: {
                                     label: 'label.requires.upgrade',
                                     converter: cloudStack.converters.toBooleanText
                                 }
+                            },
+                            preFilter: function () {
+                                if (!g_routerHealthChecksEnabled) {
+                                    return ['healthchecksfailed']
+                                }
+                                return []
                             },
                             dataProvider: function (args) {
                                 var array1 =[];
@@ -9982,44 +9978,47 @@
                                             routers.push(item);
                                         });
 
-                                /*
-                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
-                                 * because in project view, all API calls are appended with projectid=[projectID].
-                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
-                                 */
-                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
-                                    /*
-                                     * account parameter(account+domainid) and project parameter(projectid) are not allowed to be passed together to listXXXXXXX API.
-                                     * So, remove account parameter(account+domainid) from data2
-                                     */
-                                    if ("account" in data2) {
-                                        delete data2.account;
-                                    }
-                                    if ("domainid" in data2) {
-                                        delete data2.domainid;
-                                    }
-
-                                    $.ajax({
-                                            url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                                            data: data2,
-                                        async: false,
-                                            success: function (json) {
-                                                var items = json.listroutersresponse.router ?
-                                                json.listroutersresponse.router:[];
-
-                                                $(items).map(function (index, item) {
-                                                    routers.push(item);
-                                                });
-                                        }
-                                    });
-                                }
-
-                                                args.response.success({
-                                                    actionFilter: routerActionfilter,
-                                                    data: $(routers).map(mapRouterType)
-                                                });
+                                        /*
+                                         * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                         * because in project view, all API calls are appended with projectid=[projectID].
+                                         * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                         */
+                                        if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
+                                            /*
+                                             * account parameter(account+domainid) and project parameter(projectid) are not allowed to be passed together to listXXXXXXX API.
+                                             * So, remove account parameter(account+domainid) from data2
+                                             */
+                                            if ("account" in data2) {
+                                                delete data2.account;
                                             }
+                                            if ("domainid" in data2) {
+                                                delete data2.domainid;
+                                            }
+
+                                            $.ajax({
+                                                url: createURL("listRouters&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                data: data2,
+                                                async: false,
+                                                success: function (json) {
+                                                    var items = json.listroutersresponse.router ?
+                                                    json.listroutersresponse.router:[];
+
+                                                    var items = json.listroutersresponse.router ?
+                                                    json.listroutersresponse.router:[];
+
+                                                    $(items).map(function (index, item) {
+                                                        routers.push(item);
+                                                    });
+                                                }
+                                            });
+                                        }
+
+                                        args.response.success({
+                                            actionFilter: routerActionfilter,
+                                            data: $(routers).map(mapRouterType)
                                         });
+                                    }
+                                });
                             },
                             detailView: {
                                 name: 'label.virtual.appliance.details',
@@ -10542,6 +10541,56 @@
                                                 height: 640
                                             }
                                         }
+                                    },
+
+                                    healthChecks: {
+                                        label: 'label.action.router.health.checks',
+                                        createForm: {
+                                            title: 'label.action.router.health.checks',
+                                            desc: 'message.action.router.health.checks',
+                                            fields: {
+                                                performfreshchecks: {
+                                                    label: 'label.perform.fresh.checks',
+                                                    isBoolean: true
+                                                }
+                                            }
+                                        },
+                                        action: function (args) {
+                                            if (!g_routerHealthChecksEnabled) {
+                                                cloudStack.dialog.notice({
+                                                    message: 'Router health checks are disabled. Please enable router.health.checks.enabled to execute this action'
+                                                })
+                                                args.response.success()
+                                                return
+                                            }
+                                            var data = {
+                                                'routerid': args.context.routers[0].id,
+                                                'performfreshchecks': (args.data.performfreshchecks === 'on')
+                                            };
+                                            $.ajax({
+                                                url: createURL('getRouterHealthCheckResults'),
+                                                dataType: 'json',
+                                                data: data,
+                                                async: true,
+                                                success: function (json) {
+                                                    var healthChecks = json.getrouterhealthcheckresultsresponse.routerhealthchecks.healthchecks
+                                                    var numChecks = healthChecks.length
+                                                    var failedChecks = 0
+                                                    $.each(healthChecks, function(idx, check) {
+                                                        if (!check.success) failedChecks = failedChecks + 1
+                                                    })
+                                                    cloudStack.dialog.notice({
+                                                        message: 'Found ' + numChecks + ' checks for router, with ' + failedChecks + ' failing checks. Please visit router > Health Checks tab to see details'
+                                                    })
+                                                    args.response.success();
+                                                }
+                                            });
+                                        },
+                                        messages: {
+                                            notification: function(args) {
+                                                return 'label.action.router.health.checks'
+                                            }
+                                        }
                                     }
                                 },
                                 tabs: {
@@ -10730,6 +10779,78 @@
                                                     });
                                                 }
                                             });
+                                        }
+                                    },
+                                    healthCheckResults: {
+                                        title: 'label.router.health.checks',
+                                        listView: {
+                                            id: 'routerHealthCheckResults',
+                                            label: 'label.router.health.checks',
+                                            hideToolbar: true,
+                                            fields: {
+                                                checkname: {
+                                                    label: 'label.router.health.check.name'
+                                                },
+                                                checktype: {
+                                                    label: 'label.router.health.check.type'
+                                                },
+                                                success: {
+                                                    label: 'label.router.health.check.success',
+                                                    converter: function (args) {
+                                                        if (args) {
+                                                            return _l('True');
+                                                        } else {
+                                                            return _l('False');
+                                                        }
+                                                    },
+                                                    indicator: {
+                                                        true: 'on',
+                                                        false: 'off'
+                                                    }
+                                                },
+                                                lastupdated: {
+                                                    label: 'label.router.health.check.last.updated'
+                                                }
+                                            },
+                                            actions: {
+                                                details: {
+                                                    label: 'label.router.health.check.details',
+                                                    action: {
+                                                        custom: function (args) {
+                                                            cloudStack.dialog.notice({
+                                                                message: args.context.routerHealthCheckResults[0].details
+                                                            })
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            dataProvider: function(args) {
+                                                if (!g_routerHealthChecksEnabled) {
+                                                    cloudStack.dialog.notice({
+                                                        message: 'Router health checks are disabled. Please enable router.health.checks.enabled to get data'
+                                                    })
+                                                    args.response.success({})
+                                                    return
+                                                }
+                                                if (args.page > 1) {
+                                                    // Only one page is supported as it's not list command.
+                                                    args.response.success({});
+                                                    return
+                                                }
+
+                                                $.ajax({
+                                                    url: createURL('getRouterHealthCheckResults'),
+                                                    data: {
+                                                        'routerid': args.context.routers[0].id
+                                                    },
+                                                    success: function (json) {
+                                                        var hcData = json.getrouterhealthcheckresultsresponse.routerhealthchecks.healthchecks
+                                                        args.response.success({
+                                                            data: hcData
+                                                        });
+                                                    }
+                                                });
+                                            }
                                         }
                                     }
                                 }
@@ -22273,6 +22394,7 @@
                 allowedActions.push("migrate");
                 allowedActions.push("diagnostics");
                 allowedActions.push("retrieveDiagnostics");
+                allowedActions.push("healthChecks");
             }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");

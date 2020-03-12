@@ -17,15 +17,16 @@
 
 package org.apache.cloudstack.networkoffering;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
-
-import com.cloud.network.dao.LoadBalancerVMMapDao;
-import junit.framework.TestCase;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -35,7 +36,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -48,6 +48,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -59,6 +60,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDetailsDao;
+
+import junit.framework.TestCase;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/createNetworkOffering.xml")
@@ -103,11 +106,11 @@ public class CreateNetworkOfferingTest extends TestCase {
         ComponentContext.initComponentsLifeCycle();
 
         ConfigurationVO configVO = new ConfigurationVO("200", "200", "200", "200", "200", "200");
-        Mockito.when(configDao.findByName(Matchers.anyString())).thenReturn(configVO);
+        Mockito.when(configDao.findByName(anyString())).thenReturn(configVO);
 
-        Mockito.when(offDao.persist(Matchers.any(NetworkOfferingVO.class))).thenReturn(new NetworkOfferingVO());
-        Mockito.when(offDao.persist(Matchers.any(NetworkOfferingVO.class), Matchers.anyMap())).thenReturn(new NetworkOfferingVO());
-        Mockito.when(mapDao.persist(Matchers.any(NetworkOfferingServiceMapVO.class))).thenReturn(new NetworkOfferingServiceMapVO());
+        Mockito.when(offDao.persist(any(NetworkOfferingVO.class))).thenReturn(new NetworkOfferingVO());
+        Mockito.when(offDao.persist(any(NetworkOfferingVO.class), nullable(Map.class))).thenReturn(new NetworkOfferingVO());
+        Mockito.when(mapDao.persist(any(NetworkOfferingServiceMapVO.class))).thenReturn(new NetworkOfferingServiceMapVO());
         Mockito.when(accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
 

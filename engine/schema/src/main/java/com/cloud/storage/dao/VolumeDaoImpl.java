@@ -191,6 +191,16 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> findIncludingRemovedByInstanceAndType(long id, Type vType) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instanceId", id);
+        if (vType != null) {
+            sc.setParameters("vType", vType.toString());
+        }
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
     public List<VolumeVO> findByInstanceIdDestroyed(long vmId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", vmId);
@@ -596,6 +606,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + ORDER_ZONE_WIDE_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT, e);
         }
+    }
+
+    @Override
+    public List<VolumeVO> findIncludingRemovedByZone(long zoneId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("dcId", zoneId);
+        return searchIncludingRemoved(sc, null, null, false);
     }
 
     @Override

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.internallbvmmgr;
 
+import static org.mockito.ArgumentMatchers.nullable;
+
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -124,14 +126,13 @@ public class InternalLBVMManagerTest extends TestCase {
         List<ServiceOfferingVO> list = new ArrayList<ServiceOfferingVO>();
         list.add(off);
         list.add(off);
-        Mockito.when(_svcOffDao.createSystemServiceOfferings(Matchers.anyString(), Matchers.anyString(), Matchers.anyInt(), Matchers.anyInt(), Matchers.anyInt(),
-                Matchers.anyInt(), Matchers.anyInt(), Matchers.anyBoolean(), Matchers.anyString(), Matchers.any(ProvisioningType.class), Matchers.anyBoolean(),
-                Matchers.anyString(), Matchers.anyBoolean(), Matchers.any(VirtualMachine.Type.class), Matchers.anyBoolean())).thenReturn(list);
+        Mockito.when(_svcOffDao.createSystemServiceOfferings(nullable(String.class), nullable(String.class), nullable(Integer.class), nullable(Integer.class), nullable(Integer.class),
+                nullable(Integer.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(ProvisioningType.class), nullable(Boolean.class),
+                nullable(String.class), nullable(Boolean.class), nullable(VirtualMachine.Type.class), nullable(Boolean.class))).thenReturn(list);
 
         ComponentContext.initComponentsLifeCycle();
 
-        vm =
-                new DomainRouterVO(1L, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, 1, false, null, false, false,
+        vm = new DomainRouterVO(1L, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, 1, false, null, false, false,
                         VirtualMachine.Type.InternalLoadBalancerVm, null);
         vm.setRole(Role.INTERNAL_LB_VM);
         vm = setId(vm, 1);
@@ -154,7 +155,7 @@ public class InternalLBVMManagerTest extends TestCase {
         answers[0] = answer;
 
         try {
-            Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenReturn(answers);
+            Mockito.when(_agentMgr.send(nullable(Long.class), nullable(Commands.class))).thenReturn(answers);
         } catch (final AgentUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

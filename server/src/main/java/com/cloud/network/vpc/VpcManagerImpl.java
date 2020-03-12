@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
+import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -1697,16 +1698,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return success;
     }
 
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_RESTART, eventDescription = "restarting vpc")
-    public boolean restartVpc(final long vpcId, final boolean cleanUp, final boolean makeRedundant) throws ConcurrentOperationException, ResourceUnavailableException,
+    public boolean restartVpc(final RestartVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
-
-        final Account callerAccount = CallContext.current().getCallingAccount();
+        final long vpcId = cmd.getId();
+        final boolean cleanUp = cmd.getCleanup();
+        final boolean makeRedundant = cmd.getMakeredundant();
         final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-        final ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
+        return restartVpc(vpcId, cleanUp, makeRedundant, callerUser);
+    }
 
-        // Verify input parameters
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_RESTART, eventDescription = "restarting vpc")
+    public boolean restartVpc(Long vpcId, boolean cleanUp, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
             final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC by id specified");
@@ -1714,6 +1720,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
+        Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
+        final ReservationContext context = new ReservationContextImpl(null, null, user, callerAccount);
         _accountMgr.checkAccess(callerAccount, null, false, vpc);
 
         s_logger.debug("Restarting VPC " + vpc);
@@ -1797,7 +1805,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating VPC private gateway", create = true)
     public PrivateGateway createVpcPrivateGateway(final long vpcId, Long physicalNetworkId, final String broadcastUri, final String ipAddress, final String gateway,
-            final String netmask, final long gatewayOwnerId, final Long networkOfferingId, final Boolean isSourceNat, final Long aclId) throws ResourceAllocationException,
+            final String netmask, final long gatewayOwnerId, final Long networkOfferingId, final Boolean isSourceNat, final Long aclId, final Boolean bypassVlanOverlapCheck) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
 
         // Validate parameters
@@ -1838,7 +1846,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     Network privateNtwk = null;
                     if (BroadcastDomainType.getSchemeValue(BroadcastDomainType.fromString(broadcastUri)) == BroadcastDomainType.Lswitch) {
                         final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-                        privateNtwk = _ntwkDao.getPrivateNetwork(broadcastUri, cidr, gatewayOwnerId, dcId, networkOfferingId);
+                        privateNtwk = _ntwkDao.getPrivateNetwork(broadcastUri, cidr, gatewayOwnerId, dcId, networkOfferingId, vpcId);
                         // if the dcid is different we get no network so next we
                         // try to create it
                     }
@@ -1846,7 +1854,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         s_logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri);
                         final String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
                         privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, broadcastUri, ipAddress, null, gateway, netmask,
-                                gatewayOwnerId, vpcId, isSourceNat, networkOfferingId);
+                                gatewayOwnerId, vpcId, isSourceNat, networkOfferingId, bypassVlanOverlapCheck);
                     } else { // create the nic/ip as createPrivateNetwork
                         // doesn''t do that work for us now
                         s_logger.info("found and using existing network for vpc " + vpc + ": " + broadcastUri);
@@ -2561,7 +2569,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Create network
         final Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, false, networkDomain, owner, domainId, pNtwk, zoneId, aclType,
-                                                                 subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null, externalId);
+                                                                 subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null, null, externalId);
 
         if (guestNetwork != null) {
             guestNetwork.setNetworkACLId(aclId);

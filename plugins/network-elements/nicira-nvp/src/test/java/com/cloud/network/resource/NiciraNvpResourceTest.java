@@ -21,9 +21,9 @@ package com.cloud.network.resource;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
@@ -465,8 +465,8 @@ public class NiciraNvpResourceTest {
         assertTrue(a.getResult());
         verify(nvpApi, atLeast(2)).createLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<NatRule>() {
             @Override
-            public boolean matches(final Object argument) {
-                final NatRule rule = (NatRule) argument;
+            public boolean matches(final NatRule argument) {
+                final NatRule rule = argument;
                 if (rule.getType().equals("DestinationNatRule") && ((DestinationNatRule) rule).getToDestinationIpAddress().equals("10.10.10.10")) {
                     return true;
                 }
@@ -508,8 +508,8 @@ public class NiciraNvpResourceTest {
         assertTrue(a.getResult());
         verify(nvpApi, never()).createLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<NatRule>() {
             @Override
-            public boolean matches(final Object argument) {
-                final NatRule rule = (NatRule) argument;
+            public boolean matches(final NatRule argument) {
+                final NatRule rule = argument;
                 if (rule.getType().equals("DestinationNatRule") && ((DestinationNatRule) rule).getToDestinationIpAddress().equals("10.10.10.10")) {
                     return true;
                 }
@@ -553,8 +553,7 @@ public class NiciraNvpResourceTest {
         assertTrue(a.getResult());
         verify(nvpApi, atLeast(2)).deleteLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<UUID>() {
             @Override
-            public boolean matches(final Object argument) {
-                final UUID uuid = (UUID) argument;
+            public boolean matches(final UUID uuid) {
                 if (rule0Uuid.equals(uuid) || rule1Uuid.equals(uuid)) {
                     return true;
                 }
@@ -626,8 +625,7 @@ public class NiciraNvpResourceTest {
         assertTrue(a.getResult());
         verify(nvpApi, atLeast(2)).createLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<NatRule>() {
             @Override
-            public boolean matches(final Object argument) {
-                final NatRule rule = (NatRule) argument;
+            public boolean matches(final NatRule rule) {
                 if (rule.getType().equals("DestinationNatRule") && ((DestinationNatRule) rule).getToDestinationIpAddress().equals("10.10.10.10")) {
                     return true;
                 }
@@ -669,8 +667,7 @@ public class NiciraNvpResourceTest {
         assertTrue(a.getResult());
         verify(nvpApi, never()).createLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<NatRule>() {
             @Override
-            public boolean matches(final Object argument) {
-                final NatRule rule = (NatRule) argument;
+            public boolean matches(final NatRule rule) {
                 if (rule.getType().equals("DestinationNatRule") && ((DestinationNatRule) rule).getToDestinationIpAddress().equals("10.10.10.10")) {
                     return true;
                 }
@@ -714,8 +711,7 @@ public class NiciraNvpResourceTest {
         assertTrue(a.getResult());
         verify(nvpApi, atLeast(2)).deleteLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<UUID>() {
             @Override
-            public boolean matches(final Object argument) {
-                final UUID uuid = (UUID) argument;
+            public boolean matches(final UUID uuid) {
                 if (rule0Uuid.equals(uuid) || rule1Uuid.equals(uuid)) {
                     return true;
                 }

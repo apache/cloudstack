@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -39,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -122,6 +125,7 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenter;
@@ -163,6 +167,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.NetworkOffering;
@@ -191,6 +196,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
@@ -302,6 +308,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
+    private ResourceLimitService _resourceLimitMgr;
+    @Inject
     private VMSnapshotManager _vmSnapshotMgr;
     @Inject
     private ClusterDetailsDao _clusterDetailsDao;
@@ -325,6 +333,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private StorageManager storageMgr;
     @Inject
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
+    @Inject
+    private NetworkDetailsDao networkDetailsDao;
+    @Inject
+    private SecurityGroupManager _securityGroupManager;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -970,6 +982,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
 
+        // check resource count if ResoureCountRunningVMsonly.value() = true
+        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+        if (VirtualMachine.Type.User.equals(vm.type) && ResoureCountRunningVMsonly.value()) {
+            resourceCountIncrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        }
+
         boolean canRetry = true;
         ExcludeList avoids = null;
         try {
@@ -1045,7 +1063,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
                 final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
                 DeployDestination dest = null;
                 try {
@@ -1272,6 +1289,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         } finally {
             if (startedVm == null) {
+                if (VirtualMachine.Type.User.equals(vm.type) && ResoureCountRunningVMsonly.value()) {
+                    resourceCountDecrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                }
                 if (canRetry) {
                     try {
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
@@ -1817,7 +1837,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _workDao.update(work.getId(), work);
             }
 
-            if (!stateTransitTo(vm, Event.OperationSucceeded, null)) {
+            boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
+            if (result) {
+                if (VirtualMachine.Type.User.equals(vm.type) && ResoureCountRunningVMsonly.value()) {
+                    //update resource count if stop successfully
+                    ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                    resourceCountDecrement(vm.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                }
+            } else {
                 throw new CloudRuntimeException("unable to stop " + vm);
             }
         } catch (final NoTransitionException e) {
@@ -2367,6 +2394,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _networkMgr.rollbackNicForMigration(vmSrc, profile);
             s_logger.info("Migration cancelled because " + e1.getMessage());
             throw new ConcurrentOperationException("Migration cancelled because " + e1.getMessage());
+        } catch (final CloudRuntimeException e2) {
+            _networkMgr.rollbackNicForMigration(vmSrc, profile);
+            s_logger.info("Migration cancelled because " + e2.getMessage());
+            work.setStep(Step.Done);
+            _workDao.update(work.getId(), work);
+            try {
+                stateTransitTo(vm, Event.OperationFailed, srcHostId);
+            } catch (final NoTransitionException e3) {
+                s_logger.warn(e3.getMessage());
+            }
+            throw new CloudRuntimeException("Migration cancelled because " + e2.getMessage());
         }
 
         boolean migrated = false;
@@ -3106,11 +3144,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
 
             final Commands cmds = new Commands(Command.OnError.Stop);
-            cmds.addCommand(new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType())));
+            RebootCommand rebootCmd = new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType()));
+            rebootCmd.setVirtualMachine(getVmTO(vm.getId()));
+            cmds.addCommand(rebootCmd);
             _agentMgr.send(host.getId(), cmds);
 
             final Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
             if (rebootAnswer != null && rebootAnswer.getResult()) {
+                if (dc.isSecurityGroupEnabled() && vm.getType() == VirtualMachine.Type.User) {
+                    List<Long> affectedVms = new ArrayList<Long>();
+                    affectedVms.add(vm.getId());
+                    _securityGroupManager.scheduleRulesetUpdateToHosts(affectedVms, true, null);
+                }
                 return;
             }
             s_logger.info("Unable to reboot VM " + vm + " on " + dest.getHost() + " due to " + (rebootAnswer == null ? " no reboot answer" : rebootAnswer.getDetails()));
@@ -3118,6 +3163,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.warn("Unable to send the reboot command to host " + dest.getHost() + " for the vm " + vm + " due to operation timeout", e);
             throw new CloudRuntimeException("Failed to reboot the vm on host " + dest.getHost());
         }
+    }
+
+    protected VirtualMachineTO getVmTO(Long vmId) {
+        final VMInstanceVO vm = _vmDao.findById(vmId);
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        final List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
+        Collections.sort(nics, new Comparator<NicVO>() {
+            @Override
+            public int compare(NicVO nic1, NicVO nic2) {
+                Long nicId1 = Long.valueOf(nic1.getDeviceId());
+                Long nicId2 = Long.valueOf(nic2.getDeviceId());
+                return nicId1.compareTo(nicId2);
+            }
+        });
+        for (final NicVO nic : nics) {
+            final Network network = _networkModel.getNetwork(nic.getNetworkId());
+            final NicProfile nicProfile =
+                    new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                            _networkModel.getNetworkTag(profile.getHypervisorType(), network));
+            profile.addNic(nicProfile);
+        }
+        final VirtualMachineTO to = toVmTO(profile);
+        return to;
     }
 
     public Command cleanup(final VirtualMachine vm, Map<String, DpdkTO> dpdkInterfaceMapping) {
@@ -3636,7 +3704,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         //3) Remove the nic
         _networkMgr.removeNic(vmProfile, nic);
-        _nicsDao.expunge(nic.getId());
+        _nicsDao.remove(nic.getId());
         return true;
     }
 
@@ -4029,6 +4097,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO router = _vmDao.findById(vm.getId());
         if (router.getState() == State.Running) {
             try {
+                NetworkDetailVO pvlanTypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
+                if (pvlanTypeDetail != null) {
+                    Map<NetworkOffering.Detail, String> nicDetails = nic.getDetails() == null ? new HashMap<>() : nic.getDetails();
+                    s_logger.debug("Found PVLAN type: " + pvlanTypeDetail.getValue() + " on network details, adding it as part of the PlugNicCommand");
+                    nicDetails.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlanTypeDetail.getValue());
+                    nic.setDetails(nicDetails);
+                }
                 final PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType(), vm.getDetails());
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 cmds.addCommand("plugnic", plugNicCmd);
@@ -4207,7 +4282,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
             VmOpLockStateRetry,
-            VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp};
+            VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp,
+            ResoureCountRunningVMsonly };
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
@@ -5327,4 +5403,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         return workJob;
     }
+
+    protected void resourceCountIncrement (long accountId, Long cpu, Long memory) {
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.cpu, cpu);
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.memory, memory);
+    }
+
+    protected void resourceCountDecrement (long accountId, Long cpu, Long memory) {
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.user_vm);
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.cpu, cpu);
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.memory, memory);
+    }
+
 }

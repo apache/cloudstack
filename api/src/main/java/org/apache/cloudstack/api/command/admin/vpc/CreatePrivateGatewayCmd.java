@@ -92,6 +92,9 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = false, description = "the ID of the network ACL")
     private Long aclId;
 
+    @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description="when true bypasses VLAN id/range overlap check during private gateway creation")
+    private Boolean bypassVlanOverlapCheck;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -135,6 +138,13 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         return aclId;
     }
 
+    public Boolean getBypassVlanOverlapCheck() {
+        if (bypassVlanOverlapCheck != null) {
+            return bypassVlanOverlapCheck;
+        }
+        return false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -149,7 +159,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         try {
             result =
                 _vpcService.createVpcPrivateGateway(getVpcId(), getPhysicalNetworkId(), getBroadcastUri(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId(),
-                    getNetworkOfferingId(), getIsSourceNat(), getAclId());
+                    getNetworkOfferingId(), getIsSourceNat(), getAclId(), getBypassVlanOverlapCheck());
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
             s_logger.trace(ex);

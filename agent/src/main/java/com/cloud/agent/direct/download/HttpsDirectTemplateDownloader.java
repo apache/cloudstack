@@ -19,6 +19,7 @@
 
 package com.cloud.agent.direct.download;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.commons.io.IOUtils;
@@ -37,10 +38,10 @@ import org.apache.http.ssl.SSLContexts;
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.FileOutputStream;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -53,8 +54,9 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
     private CloseableHttpClient httpsClient;
     private HttpUriRequest req;
 
-    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers) {
-        super(url, templateId, destPoolPath, checksum, headers);
+    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers,
+                                         Integer connectTimeout, Integer soTimeout, Integer connectionRequestTimeout, String temporaryDownloadPath) {
+        super(url, templateId, destPoolPath, checksum, headers, connectTimeout, soTimeout, temporaryDownloadPath);
         SSLContext sslcontext = null;
         try {
             sslcontext = getSSLContext();
@@ -63,9 +65,9 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
         }
         SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
         RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(5000)
-                .setConnectionRequestTimeout(5000)
-                .setSocketTimeout(5000).build();
+                .setConnectTimeout(connectTimeout == null ? 5000 : connectTimeout)
+                .setConnectionRequestTimeout(connectionRequestTimeout == null ? 5000 : connectionRequestTimeout)
+                .setSocketTimeout(soTimeout == null ? 5000 : soTimeout).build();
         httpsClient = HttpClients.custom().setSSLSocketFactory(factory).setDefaultRequestConfig(config).build();
         createUriRequest(url, headers);
     }
@@ -96,7 +98,7 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
     }
 
     @Override
-    public boolean downloadTemplate() {
+    public Pair<Boolean, String> downloadTemplate() {
         CloseableHttpResponse response;
         try {
             response = httpsClient.execute(req);
@@ -109,7 +111,7 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
     /**
      * Consume response and persist it on getDownloadedFilePath() file
      */
-    protected boolean consumeResponse(CloseableHttpResponse response) {
+    protected Pair<Boolean, String> consumeResponse(CloseableHttpResponse response) {
         s_logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         if (response.getStatusLine().getStatusCode() != 200) {
             throw new CloudRuntimeException("Error on HTTPS response");
@@ -121,9 +123,9 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
             IOUtils.copy(in, out);
         } catch (Exception e) {
             s_logger.error("Error parsing response for template " + getTemplateId() + " due to: " + e.getMessage());
-            return false;
+            return new Pair<>(false, null);
         }
-        return true;
+        return new Pair<>(true, getDownloadedFilePath());
     }
 
 }

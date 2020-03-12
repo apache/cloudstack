@@ -24,30 +24,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import junit.framework.TestCase;
-import net.juniper.contrail.api.ApiConnector;
-import net.juniper.contrail.api.ApiConnectorFactory;
-import net.juniper.contrail.api.ApiConnectorMock;
-import net.juniper.contrail.api.types.InstanceIp;
-import net.juniper.contrail.api.types.NetworkIpam;
-import net.juniper.contrail.api.types.Project;
-import net.juniper.contrail.api.types.SubnetType;
-import net.juniper.contrail.api.types.VirtualMachine;
-import net.juniper.contrail.api.types.VirtualMachineInterface;
-import net.juniper.contrail.api.types.VirtualNetwork;
-import net.juniper.contrail.api.types.VnSubnetsType;
-
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
@@ -58,6 +34,16 @@ import org.apache.cloudstack.api.command.user.project.CreateProjectCmd;
 import org.apache.cloudstack.api.command.user.project.DeleteProjectCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.dc.DataCenter;
@@ -83,6 +69,19 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.VirtualMachineManager;
+
+import junit.framework.TestCase;
+import net.juniper.contrail.api.ApiConnector;
+import net.juniper.contrail.api.ApiConnectorFactory;
+import net.juniper.contrail.api.ApiConnectorMock;
+import net.juniper.contrail.api.types.InstanceIp;
+import net.juniper.contrail.api.types.NetworkIpam;
+import net.juniper.contrail.api.types.Project;
+import net.juniper.contrail.api.types.SubnetType;
+import net.juniper.contrail.api.types.VirtualMachine;
+import net.juniper.contrail.api.types.VirtualMachineInterface;
+import net.juniper.contrail.api.types.VirtualNetwork;
+import net.juniper.contrail.api.types.VnSubnetsType;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/providerContext.xml")

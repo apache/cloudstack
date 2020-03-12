@@ -29,7 +29,7 @@ public interface Project extends PartOf, Identity, InternalIdentity {
     }
 
     public enum ListProjectResourcesCriteria {
-        ListProjectResourcesOnly, SkipProjectResources
+        ListProjectResourcesOnly, SkipProjectResources, ListAllIncludingProjectResources
     }
 
     String getDisplayText();

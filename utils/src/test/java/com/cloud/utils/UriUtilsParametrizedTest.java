@@ -23,16 +23,15 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Set;
 
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.IsInstanceOf;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.mockito.internal.matchers.InstanceOf;
 
 import com.google.common.collect.ImmutableSet;
-
-import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 
 @RunWith(Parameterized.class)
 public class UriUtilsParametrizedTest {
@@ -79,7 +78,7 @@ public class UriUtilsParametrizedTest {
             consumer.execute();
             Assert.fail("Expected " + exceptionClass.getName());
         } catch(Exception e) {
-            Assert.assertThat(e, new InstanceOf(exceptionClass));
+            Assert.assertThat(e, new IsInstanceOf(exceptionClass));
         }
     }
 

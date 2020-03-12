@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import com.cloud.user.AccountService;
-import com.cloud.user.AccountVO;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
 
-import junit.framework.TestCase;
+import java.lang.reflect.Field;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -27,13 +29,17 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.quota.QuotaService;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
+import com.cloud.user.AccountService;
+import com.cloud.user.AccountVO;
+
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaCreditsCmdTest extends TestCase {
@@ -44,9 +50,16 @@ public class QuotaCreditsCmdTest extends TestCase {
     @Mock
     AccountService accountService;
 
+    private QuotaCreditsCmd cmd;
+
+    @Override
+    @Before
+    public void setUp() {
+        cmd = new QuotaCreditsCmd();
+    }
+
     @Test
     public void testQuotaCreditsCmd() throws NoSuchFieldException, IllegalAccessException {
-        QuotaCreditsCmd cmd = new QuotaCreditsCmd();
         cmd.setAccountName("admin");
         cmd.setMinBalance(200.0);
 
@@ -64,8 +77,10 @@ public class QuotaCreditsCmdTest extends TestCase {
 
         AccountVO acc = new AccountVO();
         acc.setId(2L);
-        Mockito.when(accountService.getActiveAccountByName(Mockito.anyString(), Mockito.anyLong())).thenReturn(acc);
-        Mockito.when(responseBuilder.addQuotaCredits(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyDouble(), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(new QuotaCreditsResponse());
+
+        Mockito.when(accountService.getActiveAccountByName(nullable(String.class), nullable(Long.class))).thenReturn(acc);
+
+        Mockito.when(responseBuilder.addQuotaCredits(nullable(Long.class), nullable(Long.class), nullable(Double.class), nullable(Long.class), nullable(Boolean.class))).thenReturn(new QuotaCreditsResponse());
 
         // No value provided test
         try {
@@ -77,11 +92,9 @@ public class QuotaCreditsCmdTest extends TestCase {
         // With value provided test
         cmd.setValue(11.80);
         cmd.execute();
-        Mockito.verify(quotaService, Mockito.times(0)).setLockAccount(Mockito.anyLong(), Mockito.anyBoolean());
-        Mockito.verify(quotaService, Mockito.times(1)).setMinBalance(Mockito.anyLong(), Mockito.anyDouble());
-        Mockito.verify(responseBuilder, Mockito.times(1)).addQuotaCredits(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyDouble(), Mockito.anyLong(), Mockito.anyBoolean());
-
-
+        Mockito.verify(quotaService, Mockito.times(0)).setLockAccount(anyLong(), anyBoolean());
+        Mockito.verify(quotaService, Mockito.times(1)).setMinBalance(anyLong(), anyDouble());
+        Mockito.verify(responseBuilder, Mockito.times(1)).addQuotaCredits(nullable(Long.class), nullable(Long.class), nullable(Double.class), nullable(Long.class), nullable(Boolean.class));
     }
 
 }

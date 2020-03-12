@@ -69,5 +69,11 @@
             <groupId>wsdl4j</groupId>
             <artifactId>wsdl4j</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.sun.xml.ws</groupId>
+            <artifactId>jaxws-ri</artifactId>
+            <version>${cs.jaxws.version}</version>
+            <type>pom</type>
+        </dependency>
     </dependencies>
 </project>
