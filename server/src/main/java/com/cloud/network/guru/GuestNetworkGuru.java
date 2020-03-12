@@ -121,14 +121,6 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                     "If true, when account has dedicated guest vlan range(s), once the vlans dedicated to the account have been consumed vlans will be allocated from the system pool",
                     false, ConfigKey.Scope.Account);
 
-    static final ConfigKey<String> VrouterRedundantTiersPlacement = new ConfigKey<String>(
-            "Advanced",
-            String.class,
-            "vrouter.redundant.tiers.placement",
-            "random",
-            "Set placement of vrouter ips in redundant mode in vpc tiers, this can be 3 value: `first` to use first ips in tiers, `last` to use last ips in tiers and `random` to take random ips in tiers.",
-            true, ConfigKey.Scope.Account);
-
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
     // Currently set to anything except STT for the Nicira integration.
@@ -378,7 +370,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 if (isGateway) {
                     guestIp = network.getGateway();
                 } else if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
-                    guestIp = this.acquireGuestIpAddressForVrouterRedundant(network, nic.getRequestedIPv4());
+                    guestIp = _ipAddrMgr.acquireGuestIpAddressByPlacement(network, nic.getRequestedIPv4());
                 } else {
                     guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIPv4());
                 }
@@ -409,15 +401,6 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         }
 
         return nic;
-    }
-
-    public String acquireGuestIpAddressForVrouterRedundant(Network network, String requestedIp) {
-        return _ipAddrMgr.acquireGuestIpAddressByPlacement(ipPlacementFromConfig(network), network, requestedIp);
-    }
-
-    public static IpPlacement ipPlacementFromConfig(Network network) {
-        String placementConfig = VrouterRedundantTiersPlacement.valueIn(network.getAccountId());
-        return IpPlacement.fromString(placementConfig);
     }
 
     @Override
@@ -481,6 +464,6 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{UseSystemGuestVlans, VrouterRedundantTiersPlacement};
+        return new ConfigKey<?>[]{UseSystemGuestVlans};
     }
 }

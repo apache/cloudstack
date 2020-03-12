@@ -1887,10 +1887,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @Override
-    public String acquireGuestIpAddressByPlacement(IpPlacement ipPlacement, Network network, String requestedIp) {
+    public String acquireGuestIpAddressByPlacement(Network network, String requestedIp) {
         if (requestedIp != null) {
             return this.acquireGuestIpAddress(network, requestedIp);
         }
+        String placementConfig = VrouterRedundantTiersPlacement.valueIn(network.getAccountId());
+        IpPlacement ipPlacement = IpPlacement.fromString(placementConfig);
         switch (ipPlacement) {
             case Last:
                 return this.acquireLastGuestIpAddress(network);
@@ -2191,7 +2193,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness};
+        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness, VrouterRedundantTiersPlacement};
     }
 
     /**

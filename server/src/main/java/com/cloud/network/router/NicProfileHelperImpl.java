@@ -135,9 +135,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
     }
 
     public String acquireGuestIpAddressForVrouterRedundant(Network network) {
-        return _ipAddrMgr.acquireGuestIpAddressByPlacement(
-                GuestNetworkGuru.ipPlacementFromConfig(network), network, null
-        );
+        return _ipAddrMgr.acquireGuestIpAddressByPlacement(network, null);
     }
 
 }
