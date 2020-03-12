@@ -392,13 +392,23 @@ public class RouterDeploymentDefinition {
 
     protected void findAccountServiceOfferingId(long accountId) {
         String accountRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.valueIn(accountId);
+        String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
         if (accountRouterOffering != null) {
-            ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(accountRouterOffering);
-            if (serviceOffering != null && serviceOffering.isSystemUse()) {
-                boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
-                if (isLocalStorage == serviceOffering.isUseLocalStorage()) {
-                    serviceOfferingId = serviceOffering.getId();
-                }
+            verifyServiceOfferingByUuid(accountRouterOffering);
+        }
+        if (serviceOfferingId == null && globalRouterOffering != accountRouterOffering) {
+            verifyServiceOfferingByUuid(globalRouterOffering);
+        }
+    }
+
+    private void verifyServiceOfferingByUuid(String offeringUuid) {
+        logger.debug("Verifying router service offering with uuid : " + offeringUuid);
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(offeringUuid);
+        if (serviceOffering != null && serviceOffering.isSystemUse()) {
+            boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
+            if (isLocalStorage == serviceOffering.isUseLocalStorage()) {
+                logger.debug("service offering " + serviceOffering.getId() + " will be used on virtual router");
+                serviceOfferingId = serviceOffering.getId();
             }
         }
     }
