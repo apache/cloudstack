@@ -22,6 +22,8 @@ import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.time.LocalDateTime; // java.util.date is now considered Legacy
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -208,6 +210,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     "false",
                     "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.",
                     true);
+    protected final ConfigKey<Boolean> AlertOnHostTransitions = new ConfigKey<Boolean>("Advanced", Boolean.class, "alert.on.host.transition", "false", "Alert when host Status changes.",true);
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -812,7 +815,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("The next status of agent " + hostId + "is " + nextStatus + ", current status is " + currentStatus);
+                    s_logger.debug("The next status of agent " + hostId + " is " + nextStatus + ", current status is " + currentStatus);
                 }
             }
             caService.purgeHostCertificate(host);
@@ -1432,6 +1435,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public boolean agentStatusTransitTo(final HostVO host, final Status.Event e, final long msId) {
+        boolean didTransit = false;
         try {
             _agentStatusLock.lock();
             if (status_logger.isDebugEnabled()) {
@@ -1445,7 +1449,20 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             host.setManagementServerId(msId);
             try {
-                return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+                final Status hostStatus = host.getStatus();
+                final Status nextStatus = hostStatus.getNextStatus(e);
+
+                didTransit = _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+                if (status_logger.isDebugEnabled()) {
+                    status_logger.debug("agentStatusTransitTo: old status - " + hostStatus + ", event - " + e + ", new status - " + nextStatus);
+                }
+                if (AlertOnHostTransitions.value() && hostStatus.getTransitionAlertFlag(e)) {
+                    final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd H:m:s,SSS");
+                    final String hostShortDesc = host.getName() + " (id:" + host.getId() + ")";
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), host.getName() + " transit from " + hostStatus + " to " + nextStatus,
+                        (dateFormatter.format(LocalDateTime.now())) + "\r\nTransit agent status with event " + e + " for host " + hostShortDesc + " from " + hostStatus + " to " + nextStatus);
+                }
+
             } catch (final NoTransitionException e1) {
                 status_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", name=" + host.getName() +
                                 ", mangement server id is " + msId);
@@ -1455,6 +1472,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         } finally {
             _agentStatusLock.unlock();
         }
+
+        return didTransit;
     }
 
     public boolean disconnectAgent(final HostVO host, final Status.Event e, final long msId) {
@@ -1731,7 +1750,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize, DirectAgentPoolSize,
-                        DirectAgentThreadCap };
+                        DirectAgentThreadCap, AlertOnHostTransitions };
     }
 
     protected class SetHostParamsListener implements Listener {
