@@ -822,6 +822,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (!result) {
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
+        userVm.setPassword(password);
         return userVm;
     }
 
@@ -6503,6 +6504,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (!result) {
                     throw new CloudRuntimeException("VM reset is completed but failed to reset password for the virtual machine ");
                 }
+                vm.setPassword(password);
             }
 
             if (needRestart) {
