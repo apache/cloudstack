@@ -258,6 +258,100 @@
         return allowedActions;
     };
 
+    var rollingMaintenanceAction = function(args) {
+        var isCluster = args.entity === 'clusters';
+        var isZone = args.entity === 'zones';
+        var isPod = args.entity === 'pods';
+        var isHost = args.entity === 'hosts';
+        var action = {
+            messages: {
+                notification: function(args) {
+                    return 'label.start.rolling.maintenance';
+                }
+            },
+            label: 'label.start.rolling.maintenance',
+            addRow: 'false',
+            createForm: {
+                title: 'label.start.rolling.maintenance',
+                fields: {
+                    timeout: {
+                        label: 'label.timeout',
+                    },
+                    force: {
+                        isBoolean: true,
+                        label: 'label.start.rolling.maintenance.force'
+                    },
+                    payload: {
+                        label: 'label.start.rolling.maintenance.payload'
+                    }
+                }
+            },
+            action: function(args) {
+                var selectedIds;
+                if (isCluster) {
+                    selectedIds = args.context.clusters.map(x => x.id);
+                } else if (isZone) {
+                    selectedIds = args.context.physicalResources.map(x => x.id);
+                } else if (isPod) {
+                    selectedIds = args.context.pods.map(x => x.id);
+                } else if (isHost) {
+                    selectedIds = args.context.hosts.map(x => x.id);
+                }
+                var ids = selectedIds.join(',');
+                var data = {
+                    force: args.data.force,
+                    timeout: args.data.timeout,
+                    payload: args.data.payload
+                };
+                if (isCluster) {
+                    $.extend(data, {
+                        clusterids : ids
+                    });
+                } else if (isZone) {
+                    $.extend(data, {
+                        zoneids : ids
+                    });
+                } else if (isPod) {
+                    $.extend(data, {
+                        podids : ids
+                    });
+                } else if (isHost) {
+                    $.extend(data, {
+                        hostids : ids
+                    });
+                }
+
+                $.ajax({
+                    url: createURL("startRollingMaintenance"),
+                    dataType: "json",
+                    data: data,
+                    async: true,
+                    success: function (json) {
+                        var item = json.startrollingmaintenanceresponse;
+                        var jid = item.jobid;
+                        args.response.success({
+                            _custom: {
+                                jobId: jid
+                            }
+                        });
+                    }
+                });
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+
+        if (args && args.listView) {
+            $.extend(action, {
+                isHeader: true,
+                isMultiSelectAction: true
+            });
+        }
+
+        return action;
+    };
+
     cloudStack.sections.system = {
         title: 'label.menu.infrastructure',
         id: 'system',
@@ -7666,6 +7760,7 @@
                         zones: {
                             id: 'physicalResources',
                             label: 'label.menu.physical.resources',
+                            multiSelect: true,
                             fields: {
                                 name: {
                                     label: 'label.zone'
@@ -7755,12 +7850,65 @@
                                             return 'label.metrics';
                                         }
                                     }
-                                }
+                                },
+                                startRollingMaintenance: rollingMaintenanceAction({ listView: true, entity: 'zones' })
                             },
 
                             detailView: {
                                 isMaximized: true,
                                 actions: {
+
+                                    startRollingMaintenance: {
+                                        label: 'label.start.rolling.maintenance',
+                                        textLabel: 'label.start.rolling.maintenance',
+                                        messages: {
+                                            notification: function (args) {
+                                                return 'label.start.rolling.maintenance';
+                                            }
+                                        },
+                                        createForm: {
+                                            title: 'label.start.rolling.maintenance',
+                                            fields: {
+                                                timeout: {
+                                                    label: 'label.timeout',
+                                                },
+                                                force: {
+                                                    isBoolean: true,
+                                                    label: 'label.start.rolling.maintenance.force'
+                                                },
+                                                payload: {
+                                                    label: 'label.start.rolling.maintenance.payload'
+                                                }
+                                            }
+                                        },
+                                        action: function (args) {
+                                            var data = {
+                                                zoneids: args.context.physicalResources[0].id,
+                                                force: args.data.force,
+                                                timeout: args.data.timeout,
+                                                payload: args.data.payload
+                                            };
+                                            $.ajax({
+                                                url: createURL("startRollingMaintenance"),
+                                                dataType: "json",
+                                                data: data,
+                                                async: true,
+                                                success: function (json) {
+                                                    var item = json.rollingmaintenance;
+                                                    args.response.success({
+                                                        actionFilter: zoneActionfilter,
+                                                        data: item
+                                                    });
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: function (args) {
+                                                args.complete();
+                                            }
+                                        }
+                                    },
+
                                     addVmwareDc: {
                                         label: 'label.add.vmware.datacenter',
                                         textLabel: 'label.add.vmware.datacenter',
@@ -13792,6 +13940,7 @@
                 listView: {
                     id: 'pods',
                     section: 'pods',
+                    multiSelect: true,
                     fields: {
                         name: {
                             label: 'label.name'
@@ -14053,7 +14202,8 @@
                                     return 'label.add.pod';
                                 }
                             }
-                        }
+                        },
+                        startRollingMaintenance: rollingMaintenanceAction({ listView: true, entity: 'pods' })
                     },
 
                     detailView: {
@@ -14075,6 +14225,57 @@
                             return hiddenTabs;
                         },
                         actions: {
+                            startRollingMaintenance: {
+                                label: 'label.start.rolling.maintenance',
+                                textLabel: 'label.start.rolling.maintenance',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.start.rolling.maintenance';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.start.rolling.maintenance',
+                                    fields: {
+                                        timeout: {
+                                            label: 'label.timeout',
+                                        },
+                                        force: {
+                                            isBoolean: true,
+                                            label: 'label.start.rolling.maintenance.force'
+                                        },
+                                        payload: {
+                                            label: 'label.start.rolling.maintenance.payload'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    var data = {
+                                        podids: args.context.pods[0].id,
+                                        force: args.data.force,
+                                        timeout: args.data.timeout,
+                                        payload: args.data.payload
+                                    };
+                                    $.ajax({
+                                        url: createURL("startRollingMaintenance"),
+                                        dataType: "json",
+                                        data: data,
+                                        async: true,
+                                        success: function (json) {
+                                            var item = json.rollingmaintenance;
+                                            args.response.success({
+                                                actionFilter: zoneActionfilter,
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: function (args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
+
                             edit: {
                                 label: 'label.edit',
                                 action: function (args) {
@@ -14446,6 +14647,7 @@
                 listView: {
                     id: 'clusters',
                     section: 'clusters',
+                    multiSelect: true,
                     fields: {
                         name: {
                             label: 'label.name'
@@ -15184,7 +15386,8 @@
                                     return 'label.metrics';
                                 }
                             }
-                        }
+                        },
+                        startRollingMaintenance: rollingMaintenanceAction({ listView: true, entity: 'clusters' })
                     },
 
                     detailView: {
@@ -15215,6 +15418,56 @@
 
                         actions: {
 
+                            startRollingMaintenance: {
+                                label: 'label.start.rolling.maintenance',
+                                textLabel: 'label.start.rolling.maintenance',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.start.rolling.maintenance';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.start.rolling.maintenance',
+                                    fields: {
+                                        timeout: {
+                                            label: 'label.timeout',
+                                        },
+                                        force: {
+                                            isBoolean: true,
+                                            label: 'label.start.rolling.maintenance.force'
+                                        },
+                                        payload: {
+                                            label: 'label.start.rolling.maintenance.payload'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    var data = {
+                                        clusterids: args.context.clusters[0].id,
+                                        force: args.data.force,
+                                        timeout: args.data.timeout,
+                                        payload: args.data.payload
+                                    };
+                                    $.ajax({
+                                        url: createURL("startRollingMaintenance"),
+                                        dataType: "json",
+                                        data: data,
+                                        async: true,
+                                        success: function (json) {
+                                            var item = json.rollingmaintenance;
+                                            args.response.success({
+                                                actionFilter: zoneActionfilter,
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: function (args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
                             edit: {
                                 label: 'label.edit',
                                 action: function (args) {
@@ -16002,6 +16255,7 @@
                 listView: {
                     section: 'hosts',
                     id: 'hosts',
+                    multiSelect: true,
                     fields: {
                         name: {
                             label: 'label.name'
@@ -16697,7 +16951,8 @@
                                     return 'label.metrics';
                                 }
                             }
-                        }
+                        },
+                        startRollingMaintenance: rollingMaintenanceAction({ listView: true, entity: 'hosts' })
                     },
                     detailView: {
                         name: "Host details",
@@ -16706,6 +16961,56 @@
                             path: 'instances'
                         },
                         actions: {
+                            startRollingMaintenance: {
+                                label: 'label.start.rolling.maintenance',
+                                textLabel: 'label.start.rolling.maintenance',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.start.rolling.maintenance';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.start.rolling.maintenance',
+                                    fields: {
+                                        timeout: {
+                                            label: 'label.timeout',
+                                        },
+                                        force: {
+                                            isBoolean: true,
+                                            label: 'label.start.rolling.maintenance.force'
+                                        },
+                                        payload: {
+                                            label: 'label.start.rolling.maintenance.payload'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    var data = {
+                                        hostids: args.context.hosts[0].id,
+                                        force: args.data.force,
+                                        timeout: args.data.timeout,
+                                        payload: args.data.payload
+                                    };
+                                    $.ajax({
+                                        url: createURL("startRollingMaintenance"),
+                                        dataType: "json",
+                                        data: data,
+                                        async: true,
+                                        success: function (json) {
+                                            var item = json.rollingmaintenance;
+                                            args.response.success({
+                                                actionFilter: zoneActionfilter,
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: function (args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
                             edit: {
                                 label: 'label.edit',
                                 action: function (args) {
@@ -22173,6 +22478,7 @@
             allowedActions.push("disableHA");
         }
 
+        allowedActions.push("startRollingMaintenance");
         return allowedActions;
     }
 
@@ -22224,6 +22530,7 @@
             //$("#tab_ipallocation, #add_iprange_button, #tab_network_device, #add_network_device_button").hide();
         }
 
+        allowedActions.push("startRollingMaintenance");
         return allowedActions;
     }
 
@@ -22270,6 +22577,7 @@
             allowedActions.push("disableHA");
         }
 
+        allowedActions.push("startRollingMaintenance");
         return allowedActions;
     }
 
@@ -22292,12 +22600,16 @@
 
             if (jsonObj.hypervisor == "KVM") {
                 allowedActions.push("secureKVMHost");
+                allowedActions.push("startRollingMaintenance");
             }
 
         } else if (jsonObj.resourcestate == "ErrorInMaintenance") {
             allowedActions.push("edit");
             allowedActions.push("enableMaintenanceMode");
             allowedActions.push("cancelMaintenanceMode");
+            if (jsonObj.hypervisor == "KVM") {
+                allowedActions.push("startRollingMaintenance");
+            }
         } else if (jsonObj.resourcestate == "PrepareForMaintenance" || jsonObj.resourcestate == 'ErrorInPrepareForMaintenance') {
             allowedActions.push("edit");
             allowedActions.push("cancelMaintenanceMode");

@@ -74,6 +74,7 @@ public class ApiConstants {
     public static final String CLEANUP = "cleanup";
     public static final String MAKEREDUNDANT = "makeredundant";
     public static final String CLUSTER_ID = "clusterid";
+    public static final String CLUSTER_IDS = "clusterids";
     public static final String CLUSTER_NAME = "clustername";
     public static final String CLUSTER_TYPE = "clustertype";
     public static final String CN = "cn";
@@ -173,6 +174,7 @@ public class ApiConstants {
     public static final String HEALTH = "health";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
+    public static final String HOST_IDS = "hostids";
     public static final String HOST_NAME = "hostname";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
@@ -256,6 +258,7 @@ public class ApiConstants {
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
+    public static final String OUTPUT = "output";
     public static final String OVF_PROPERTIES = "ovfproperties";
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
@@ -267,6 +270,7 @@ public class ApiConstants {
     public static final String PASSWORD_ENABLED = "passwordenabled";
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
+    public static final String PAYLOAD = "payload";
     public static final String POD_ID = "podid";
     public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";

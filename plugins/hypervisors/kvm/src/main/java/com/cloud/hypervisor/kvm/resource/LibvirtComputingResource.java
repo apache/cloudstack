@@ -46,6 +46,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -276,6 +279,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _migrateDowntime;
     protected int _migratePauseAfter;
     protected boolean _diskActivityCheckEnabled;
+    protected RollingMaintenanceExecutor rollingMaintenanceExecutor;
     protected long _diskActivityCheckFileSizeMin = 10485760; // 10MB
     protected int _diskActivityCheckTimeoutSeconds = 120; // 120s
     protected long _diskActivityInactiveThresholdMilliseconds = 30000; // 30s
@@ -424,6 +428,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public int getMigrateSpeed() {
         return _migrateSpeed;
+    }
+
+    public RollingMaintenanceExecutor getRollingMaintenanceExecutor() {
+        return rollingMaintenanceExecutor;
     }
 
     public String getPingTestPath() {
@@ -789,6 +797,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (_hypervisorType == HypervisorType.None) {
             _hypervisorType = HypervisorType.KVM;
         }
+
+        String hooksDir = (String)params.get("rolling.maintenance.hooks.dir");
+        value = (String) params.get("rolling.maintenance.service.executor.disabled");
+        rollingMaintenanceExecutor = Boolean.parseBoolean(value) ? new RollingMaintenanceAgentExecutor(hooksDir) :
+                new RollingMaintenanceServiceExecutor(hooksDir);
 
         _hypervisorURI = (String)params.get("hypervisor.uri");
         if (_hypervisorURI == null) {

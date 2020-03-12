@@ -1041,7 +1041,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         for (Long clusterId : clusterList) {
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
 
-            if (clusterVO.getAllocationState() == Grouping.AllocationState.Disabled) {
+            if (clusterVO.getAllocationState() == Grouping.AllocationState.Disabled && !plan.isMigrationPlan()) {
                 s_logger.debug("Cannot deploy in disabled cluster " + clusterId + ", skipping this cluster");
                 avoid.addCluster(clusterVO.getId());
             }
