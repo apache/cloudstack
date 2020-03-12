@@ -57,6 +57,7 @@
         <module>quota</module>
         <module>rest</module>
         <module>security</module>
+        <module>simple-drs</module>
         <module>spring/lifecycle</module>
         <module>spring/module</module>
     </modules>
