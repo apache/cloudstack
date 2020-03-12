@@ -61,10 +61,11 @@ public enum Status {
         PingTimeout(false, "Agent is behind on ping"),
         ShutdownRequested(false, "Shutdown requested by the agent"),
         AgentDisconnected(false, "Agent disconnected"),
+        AgentUnreachable(false, "Host is found to be disconnected by the investigator"),
         HostDown(false, "Host is found to be down by the investigator"),
         Ping(false, "Ping is received from the host"),
         ManagementServerDown(false, "Management Server that the agent is connected is going down"),
-        WaitedTooLong(false, "Waited too long from the agent to reconnect on its own.  Time to do HA"),
+        WaitedTooLong(false, "Waited too long from the agent to reconnect on its own."),
         Remove(true, "Host is removed"),
         Ready(false, "Host is ready for commands"),
         RequestAgentRebalance(false, "Request rebalance for the certain host"),
@@ -135,6 +136,7 @@ public enum Status {
         s_fsm.addTransition(Status.Up, Event.AgentDisconnected, Status.Alert, true);
         s_fsm.addTransition(Status.Up, Event.ShutdownRequested, Status.Disconnected, true);
         s_fsm.addTransition(Status.Up, Event.HostDown, Status.Down, true);
+        s_fsm.addTransition(Status.Up, Event.AgentUnreachable, Status.Disconnected, true);
         s_fsm.addTransition(Status.Up, Event.Ping, Status.Up);
         s_fsm.addTransition(Status.Up, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Up, Event.ManagementServerDown, Status.Disconnected, true);
