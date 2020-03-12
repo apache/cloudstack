@@ -110,6 +110,10 @@
         <module>outofbandmanagement-drivers/ipmitool</module>
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
 
+        <module>simple-drs/providers/drs-host-provider</module>
+        <module>simple-drs/rebalancing-algorithms/balanced</module>
+        <module>simple-drs/rebalancing-algorithms/condensed</module>
+
         <module>storage/image/default</module>
         <module>storage/image/s3</module>
         <module>storage/image/sample</module>
