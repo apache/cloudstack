@@ -407,7 +407,7 @@ public class RouterDeploymentDefinition {
         if (serviceOffering != null && serviceOffering.isSystemUse()) {
             boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
             if (isLocalStorage == serviceOffering.isUseLocalStorage()) {
-                logger.debug("service offering " + serviceOffering.getId() + " will be used on virtual router");
+                logger.debug(String.format("Service offering %s (uuid: %s) will be used on virtual router", serviceOffering.getName(), serviceOffering.getUuid()));
                 serviceOfferingId = serviceOffering.getId();
             }
         }
