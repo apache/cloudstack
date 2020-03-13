@@ -22,7 +22,6 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
-import com.cloud.network.IpPlacement;
 import com.cloud.network.Network.GuestType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;

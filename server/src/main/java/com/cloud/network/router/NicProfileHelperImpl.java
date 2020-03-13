@@ -21,7 +21,6 @@ import java.net.URI;
 
 import javax.inject.Inject;
 
-import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
