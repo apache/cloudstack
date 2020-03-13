@@ -112,6 +112,10 @@ public class ListHostsCmd extends BaseListCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
+    }
+
     public Long getClusterId() {
         return clusterId;
     }
@@ -150,6 +154,10 @@ public class ListHostsCmd extends BaseListCmd {
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+
+    public void setHypervisor(HypervisorType hypervisor) {
+        this.hypervisor = hypervisor.name();
     }
 
     public HypervisorType getHypervisor() {
