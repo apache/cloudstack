@@ -128,13 +128,14 @@
         <cs.cxf.version>3.2.6</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
+        <cs.google-http-client>1.34.2</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
         <cs.guava.version>28.2-jre</cs.guava.version>
         <cs.httpclient.version>4.5.11</cs.httpclient.version>
         <cs.httpcore.version>4.4.13</cs.httpcore.version>
         <cs.influxdb-java.version>2.17</cs.influxdb-java.version>
-        <cs.jackson.version>2.9.10</cs.jackson.version>
+        <cs.jackson.version>2.10.3</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
         <cs.java-ipv6.version>0.17</cs.java-ipv6.version>
         <cs.javassist.version>3.26.0-GA</cs.javassist.version>
@@ -282,6 +283,12 @@
                 <version>${cs.aws.sdk.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${cs.jackson.version}</version>
+                <type>bundle</type>
+            </dependency>
+            <dependency>
                 <groupId>com.globo.globodns</groupId>
                 <artifactId>globodns-client</artifactId>
                 <version>${cs.globodns-client.version}</version>
@@ -295,6 +302,11 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${cs.guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>${cs.google-http-client}</version>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.java-ipv6</groupId>
