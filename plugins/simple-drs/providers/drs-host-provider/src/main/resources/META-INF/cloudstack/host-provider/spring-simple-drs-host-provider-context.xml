@@ -23,7 +23,7 @@
 >
 
     <bean id="hostDRSProvider" class="org.apache.cloudstack.simple.drs.provider.SimpleDRSHostProvider">
-        <property name="name" value="SimpleDRSHostProvider" />
+        <property name="name" value="drsHostProvider" />
     </bean>
 
 </beans>

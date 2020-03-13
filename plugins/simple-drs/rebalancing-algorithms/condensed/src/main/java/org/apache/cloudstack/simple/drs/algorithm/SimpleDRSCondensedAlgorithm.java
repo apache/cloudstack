@@ -16,11 +16,12 @@
 // under the License.
 package org.apache.cloudstack.simple.drs.algorithm;
 
+import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.framework.simple.drs.DRSRebalancingAlgorithm;
 
 import java.util.List;
 
-public class SimpleDRSCondensedAlgorithm implements DRSRebalancingAlgorithm {
+public class SimpleDRSCondensedAlgorithm extends AdapterBase implements DRSRebalancingAlgorithm {
 
     private static final String ALGORITHM_NAME = "condensed";
 

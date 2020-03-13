@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.simple.drs.provider;
 
+import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.framework.simple.drs.DRSProvider;
 
 import java.util.List;
 
-public class SimpleDRSHostProvider implements DRSProvider {
+public class SimpleDRSHostProvider extends AdapterBase implements DRSProvider {
 
-    private static final String PROVIDER_NAME = "host-vm-provider";
+    private static final String PROVIDER_NAME = "host-vm";
 
     @Override
     public String getProviderName() {

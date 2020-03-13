@@ -26,8 +26,9 @@ public interface SimpleDRSManager extends PluggableService, Configurable {
 
     ConfigKey<String> SimpleDRSProvider = new ConfigKey<>("Advanced", String.class,
             "simple.drs.provider",
-            "host",
-            "The simple DRS provider plugin that is used for rebalancing cluster workload on resources", true);
+            "host-vm",
+            "The simple DRS provider plugin that is used for rebalancing cluster workload on " +
+                    "resources. Expected format: resource-workload, such as: host-vm", true);
 
     ConfigKey<String> SimpleDRSRebalancingAlgorithm = new ConfigKey<>("Advanced", String.class,
             "simple.drs.rebalancing.algorithm",

@@ -50,7 +50,6 @@ public class ScheduleDRSCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         List<String> providers = drsManager.listProviderNames();
-        int a = 2;
     }
 
     @Override
