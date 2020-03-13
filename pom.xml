@@ -108,7 +108,7 @@
         <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
         <cs.testng.version>7.1.0</cs.testng.version>
         <cs.wiremock.version>2.11.0</cs.wiremock.version>
-        <cs.xercesImpl.version>2.11.0</cs.xercesImpl.version>
+        <cs.xercesImpl.version>2.12.0</cs.xercesImpl.version>
 
         <!-- Dependencies versions -->
         <cs.amqp-client.version>5.8.0</cs.amqp-client.version>
@@ -117,12 +117,11 @@
         <cs.aws.sdk.version>1.11.717</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis.version>1.4</cs.axis.version>
-        <cs.axis2.version>1.5.6</cs.axis2.version>
         <cs.batik.version>1.12</cs.batik.version>
         <cs.bcprov.version>1.64</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
-        <cs.cxf.version>3.2.0</cs.cxf.version>
+        <cs.cxf.version>3.2.6</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
         <cs.groovy.version>2.4.17</cs.groovy.version>
@@ -131,7 +130,7 @@
         <cs.httpclient.version>4.5.11</cs.httpclient.version>
         <cs.httpcore.version>4.4.13</cs.httpcore.version>
         <cs.influxdb-java.version>2.17</cs.influxdb-java.version>
-        <cs.jackson.version>2.9.2</cs.jackson.version>
+        <cs.jackson.version>2.9.10</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
         <cs.java-ipv6.version>0.17</cs.java-ipv6.version>
         <cs.javassist.version>3.26.0-GA</cs.javassist.version>
@@ -148,7 +147,6 @@
         <cs.jsch.version>0.1.55</cs.jsch.version>
         <cs.json.version>20090211</cs.json.version>
         <cs.jstl.version>1.2</cs.jstl.version>
-        <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
         <cs.kafka-clients.version>0.11.0.3</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
@@ -157,15 +155,14 @@
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.4</cs.opensaml.version>
         <cs.rados-java.version>0.5.0</cs.rados-java.version>
-        <cs.rampart.version>1.5.1</cs.rampart.version>
         <cs.reflections.version>0.9.12</cs.reflections.version>
         <cs.servicemix.version>3.3.3_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
         <cs.tomcat-embed-core.version>8.5.47</cs.tomcat-embed-core.version>
         <cs.trilead.version>1.0.0-build222</cs.trilead.version>
         <cs.vmware.api.version>6.7</cs.vmware.api.version>
+        <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
-        <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.11.1</cs.xstream.version>
         <cs.slf4j.version>1.7.29</cs.slf4j.version>

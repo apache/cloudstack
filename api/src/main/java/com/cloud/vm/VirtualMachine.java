@@ -16,18 +16,21 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.kernel.Partition;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateMachine2.Transition;
 import com.cloud.utils.fsm.StateMachine2.Transition.Impact;
 import com.cloud.utils.fsm.StateObject;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Displayable;
-import org.apache.cloudstack.kernel.Partition;
-
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Map;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine
@@ -318,6 +321,12 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
     long getServiceOfferingId();
 
     Long getDiskOfferingId();
+
+    Long getBackupOfferingId();
+
+    String getBackupExternalId();
+
+    List<Backup.VolumeInfo> getBackupVolumeList();
 
     Type getType();
 

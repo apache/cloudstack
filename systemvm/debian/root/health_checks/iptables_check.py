@@ -36,8 +36,7 @@ def main():
         srcPortText = "--dport " + formatPort(portForward["sourcePortStart"], portForward["sourcePortEnd"], ":")
         dstText = destIp + ":" + formatPort(portForward["destPortStart"], portForward["destPortEnd"], "-")
         for algo in [["PREROUTING", "--to-destination"],
-                     ["OUTPUT", "--to-destination"],
-                     ["POSTROUTING", "--to-source"]]:
+                     ["OUTPUT", "--to-destination"]]:
             entriesExpected.append([algo[0], srcIpText, srcPortText, algo[1] + " " + dstText])
 
         fetchIpTableEntriesCmd = "iptables-save | grep " + destIp

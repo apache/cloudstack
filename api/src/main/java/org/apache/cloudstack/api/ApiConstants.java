@@ -33,6 +33,9 @@ public class ApiConstants {
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";
     public static final String AVAILABLE = "available";
+    public static final String BACKUP_ID = "backupid";
+    public static final String BACKUP_OFFERING_NAME = "backupofferingname";
+    public static final String BACKUP_OFFERING_ID = "backupofferingid";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
@@ -71,6 +74,7 @@ public class ApiConstants {
     public static final String CLEANUP = "cleanup";
     public static final String MAKEREDUNDANT = "makeredundant";
     public static final String CLUSTER_ID = "clusterid";
+    public static final String CLUSTER_IDS = "clusterids";
     public static final String CLUSTER_NAME = "clustername";
     public static final String CLUSTER_TYPE = "clustertype";
     public static final String CN = "cn";
@@ -144,6 +148,7 @@ public class ApiConstants {
     public static final String EXTRA_DHCP_OPTION_NAME = "extradhcpoptionname";
     public static final String EXTRA_DHCP_OPTION_CODE = "extradhcpoptioncode";
     public static final String EXTRA_DHCP_OPTION_VALUE = "extradhcpvalue";
+    public static final String EXTERNAL = "external";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FIRSTNAME = "firstname";
@@ -169,6 +174,7 @@ public class ApiConstants {
     public static final String HEALTH = "health";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
+    public static final String HOST_IDS = "hostids";
     public static final String HOST_NAME = "hostname";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
@@ -221,8 +227,8 @@ public class ApiConstants {
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";
-    public static final String MAX = "max";
     public static final String MAC_ADDRESS = "macaddress";
+    public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";
@@ -252,6 +258,7 @@ public class ApiConstants {
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
+    public static final String OUTPUT = "output";
     public static final String OVF_PROPERTIES = "ovfproperties";
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
@@ -263,6 +270,7 @@ public class ApiConstants {
     public static final String PASSWORD_ENABLED = "passwordenabled";
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
+    public static final String PAYLOAD = "payload";
     public static final String POD_ID = "podid";
     public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";
@@ -366,6 +374,7 @@ public class ApiConstants {
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
+    public static final String VIRTUAL_MACHINE_NAME = "virtualmachinename";
     public static final String VIRTUAL_MACHINE_ID_IP = "vmidipmap";
     public static final String VIRTUAL_MACHINE_COUNT = "virtualmachinecount";
     public static final String USAGE_ID = "usageid";
@@ -385,6 +394,7 @@ public class ApiConstants {
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
+    public static final String VOLUMES = "volumes";
     public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
@@ -531,6 +541,7 @@ public class ApiConstants {
     public static final String REQUIRED = "required";
     public static final String RESTART_REQUIRED = "restartrequired";
     public static final String ALLOW_USER_CREATE_PROJECTS = "allowusercreateprojects";
+    public static final String ALLOW_USER_DRIVEN_BACKUPS = "allowuserdrivenbackups";
     public static final String CONSERVE_MODE = "conservemode";
     public static final String TRAFFIC_TYPE_IMPLEMENTOR = "traffictypeimplementor";
     public static final String KEYWORD = "keyword";
@@ -774,6 +785,24 @@ public class ApiConstants {
     public static final String ROUTER_CHECK_TYPE = "checktype";
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
+    public static final String CACHE_MODE = "cachemode";
+
+    public static final String CONSOLE_END_POINT = "consoleendpoint";
+    public static final String EXTERNAL_LOAD_BALANCER_IP_ADDRESS = "externalloadbalanceripaddress";
+    public static final String DOCKER_REGISTRY_USER_NAME = "dockerregistryusername";
+    public static final String DOCKER_REGISTRY_PASSWORD = "dockerregistrypassword";
+    public static final String DOCKER_REGISTRY_URL = "dockerregistryurl";
+    public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
+    public static final String ISO_NAME = "isoname";
+    public static final String ISO_STATE = "isostate";
+    public static final String SEMANTIC_VERSION = "semanticversion";
+    public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
+    public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
+    public static final String MASTER_NODES = "masternodes";
+    public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
+    public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
+    public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
+    public static final String SUPPORTS_HA = "supportsha";
 
     public static final String BOOT_TYPE ="boottype";
     public static final String BOOT_MODE ="bootmode";
@@ -801,7 +830,7 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp;
+        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp;
     }
 
     public enum DomainDetails {

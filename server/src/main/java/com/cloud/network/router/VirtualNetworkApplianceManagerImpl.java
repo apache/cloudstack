@@ -1531,7 +1531,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         } catch (JsonSyntaxException ex) {
             s_logger.error("Unable to parse the result of health checks due to " + ex.getLocalizedMessage(), ex);
         }
-
         return Collections.emptyList();
     }
 

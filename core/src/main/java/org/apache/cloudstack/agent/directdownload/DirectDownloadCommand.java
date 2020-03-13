@@ -38,6 +38,8 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
     private Integer connectTimeout;
     private Integer soTimeout;
     private Integer connectionRequestTimeout;
+    private Long templateSize;
+    private boolean iso;
 
     protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers, final Integer connectTimeout, final Integer soTimeout, final Integer connectionRequestTimeout) {
         this.url = url;
@@ -92,6 +94,22 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
     public void setConnectionRequestTimeout(Integer connectionRequestTimeout) {
         this.connectionRequestTimeout = connectionRequestTimeout;
+    }
+
+    public Long getTemplateSize() {
+        return templateSize;
+    }
+
+    public void setTemplateSize(Long templateSize) {
+        this.templateSize = templateSize;
+    }
+
+    public boolean isIso() {
+        return iso;
+    }
+
+    public void setIso(boolean iso) {
+        this.iso = iso;
     }
 
     @Override

@@ -86,6 +86,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     VMInstanceVO findVMByInstanceName(String name);
 
+    VMInstanceVO findVMByInstanceNameIncludingRemoved(String name);
+
     VMInstanceVO findVMByHostName(String hostName);
 
     void updateProxyId(long id, Long proxyId, Date time);
@@ -113,6 +115,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listLHByClusterId(long clusterId);  // get all the VMs even starting one on this cluster
 
     List<VMInstanceVO> listVmsMigratingFromHost(Long hostId);
+
+    List<VMInstanceVO> listByZoneWithBackups(Long zoneId, Long backupOfferingId);
 
     public Long countActiveByHostId(long hostId);
 

@@ -46,6 +46,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -277,6 +280,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _migrateDowntime;
     protected int _migratePauseAfter;
     protected boolean _diskActivityCheckEnabled;
+    protected RollingMaintenanceExecutor rollingMaintenanceExecutor;
     protected long _diskActivityCheckFileSizeMin = 10485760; // 10MB
     protected int _diskActivityCheckTimeoutSeconds = 120; // 120s
     protected long _diskActivityInactiveThresholdMilliseconds = 30000; // 30s
@@ -427,6 +431,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _migrateSpeed;
     }
 
+    public RollingMaintenanceExecutor getRollingMaintenanceExecutor() {
+        return rollingMaintenanceExecutor;
+    }
+
     public String getPingTestPath() {
         return _pingTestPath;
     }
@@ -477,6 +485,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getOvsPvlanVmPath() {
         return _ovsPvlanVmPath;
+    }
+
+    public String getDirectDownloadTemporaryDownloadPath() {
+        return directDownloadTemporaryDownloadPath;
     }
 
     public String getResizeVolumePath() {
@@ -530,6 +542,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
+    protected String directDownloadTemporaryDownloadPath;
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
@@ -575,6 +588,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final IOException ex) {
             throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
         }
+    }
+
+    private String getDefaultDirectDownloadTemporaryPath() {
+        return "/var/lib/libvirt/images";
     }
 
     protected String getDefaultNetworkScriptsDir() {
@@ -659,6 +676,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (dpdkOvsPath != null && !dpdkOvsPath.endsWith("/")) {
                 dpdkOvsPath += "/";
             }
+        }
+
+        directDownloadTemporaryDownloadPath = (String) params.get("direct.download.temporary.download.location");
+        if (org.apache.commons.lang.StringUtils.isBlank(directDownloadTemporaryDownloadPath)) {
+            directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
         }
 
         params.put("domr.scripts.dir", domrScriptsDir);
@@ -780,6 +802,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (_hypervisorType == HypervisorType.None) {
             _hypervisorType = HypervisorType.KVM;
         }
+
+        String hooksDir = (String)params.get("rolling.maintenance.hooks.dir");
+        value = (String) params.get("rolling.maintenance.service.executor.disabled");
+        rollingMaintenanceExecutor = Boolean.parseBoolean(value) ? new RollingMaintenanceAgentExecutor(hooksDir) :
+                new RollingMaintenanceServiceExecutor(hooksDir);
 
         _hypervisorURI = (String)params.get("hypervisor.uri");
         if (_hypervisorURI == null) {
@@ -1121,8 +1148,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         storage.configure("Storage", new HashMap<String, Object>());
         if (params.get("router.aggregation.command.each.timeout") != null) {
             String value = (String)params.get("router.aggregation.command.each.timeout");
-            Integer intValue = NumbersUtil.parseInt(value, 600);
-            storage.persist("router.aggregation.command.each.timeout", String.valueOf(intValue));
+            Long longValue = NumbersUtil.parseLong(value, 600);
+            storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
         }
 
         return true;
@@ -2407,18 +2434,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (dataStore instanceof NfsTO) {
                     NfsTO nfsStore = (NfsTO)data.getDataStore();
                     dataStoreUrl = nfsStore.getUrl();
-                } else if (dataStore instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) dataStore).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                    physicalDisk = getPhysicalDiskFromNfsStore(dataStoreUrl, data);
+                } else if (dataStore instanceof PrimaryDataStoreTO) {
                     //In order to support directly downloaded ISOs
-                    String psHost = ((PrimaryDataStoreTO) dataStore).getHost();
-                    String psPath = ((PrimaryDataStoreTO) dataStore).getPath();
-                    dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+                    PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStore;
+                    if (primaryDataStoreTO.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                        String psHost = primaryDataStoreTO.getHost();
+                        String psPath = primaryDataStoreTO.getPath();
+                        dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+                        physicalDisk = getPhysicalDiskFromNfsStore(dataStoreUrl, data);
+                    } else if (primaryDataStoreTO.getPoolType().equals(StoragePoolType.SharedMountPoint) ||
+                            primaryDataStoreTO.getPoolType().equals(StoragePoolType.Filesystem)) {
+                        physicalDisk = getPhysicalDiskPrimaryStore(primaryDataStoreTO, data);
+                    }
                 }
-                final String volPath = dataStoreUrl + File.separator + data.getPath();
-                final int index = volPath.lastIndexOf("/");
-                final String volDir = volPath.substring(0, index);
-                final String volName = volPath.substring(index + 1);
-                final KVMStoragePool secondaryStorage = _storagePoolMgr.getStoragePoolByURI(volDir);
-                physicalDisk = secondaryStorage.getPhysicalDisk(volName);
             } else if (volume.getType() != Volume.Type.ISO) {
                 final PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
                 physicalDisk = _storagePoolMgr.getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
@@ -2565,6 +2594,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
+    }
+
+    private KVMPhysicalDisk getPhysicalDiskPrimaryStore(PrimaryDataStoreTO primaryDataStoreTO, DataTO data) {
+        KVMStoragePool storagePool = _storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+        return storagePool.getPhysicalDisk(data.getPath());
+    }
+
+    private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
+        final String volPath = dataStoreUrl + File.separator + data.getPath();
+        final int index = volPath.lastIndexOf("/");
+        final String volDir = volPath.substring(0, index);
+        final String volName = volPath.substring(index + 1);
+        final KVMStoragePool storage = _storagePoolMgr.getStoragePoolByURI(volDir);
+        return storage.getPhysicalDisk(volName);
     }
 
     private void setBurstProperties(final VolumeObjectTO volumeObjectTO, final DiskDef disk ) {

@@ -97,6 +97,10 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
         return getId();
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     @Override
     public void execute() {
         try {

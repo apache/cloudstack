@@ -76,6 +76,10 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 public class EventTypes {
 
@@ -478,6 +482,17 @@ public class EventTypes {
     public static final String EVENT_VM_SNAPSHOT_OFF_PRIMARY = "VMSNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_VM_SNAPSHOT_REVERT = "VMSNAPSHOT.REVERTTO";
 
+    // Backup and Recovery events
+    public static final String EVENT_VM_BACKUP_IMPORT_OFFERING = "BACKUP.IMPORT.OFFERING";
+    public static final String EVENT_VM_BACKUP_OFFERING_ASSIGN = "BACKUP.OFFERING.ASSIGN";
+    public static final String EVENT_VM_BACKUP_OFFERING_REMOVE = "BACKUP.OFFERING.REMOVE";
+    public static final String EVENT_VM_BACKUP_CREATE = "BACKUP.CREATE";
+    public static final String EVENT_VM_BACKUP_RESTORE = "BACKUP.RESTORE";
+    public static final String EVENT_VM_BACKUP_DELETE = "BACKUP.DELETE";
+    public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "BACKUP.RESTORE.VOLUME.TO.VM";
+    public static final String EVENT_VM_BACKUP_SCHEDULE_CONFIGURE = "BACKUP.SCHEDULE.CONFIGURE";
+    public static final String EVENT_VM_BACKUP_SCHEDULE_DELETE = "BACKUP.SCHEDULE.DELETE";
+
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_DELETE = "PHYSICAL.NVPCONTROLLER.DELETE";
@@ -579,6 +594,13 @@ public class EventTypes {
 
     // Diagnostics Events
     public static final String EVENT_SYSTEM_VM_DIAGNOSTICS = "SYSTEM.VM.DIAGNOSTICS";
+
+    // Rolling Maintenance
+    public static final String EVENT_START_ROLLING_MAINTENANCE = "SYSTEM.ROLLING.MAINTENANCE";
+    public static final String EVENT_HOST_ROLLING_MAINTENANCE = "HOST.ROLLING.MAINTENANCE";
+    public static final String EVENT_CLUSTER_ROLLING_MAINTENANCE = "CLUSTER.ROLLING.MAINTENANCE";
+    public static final String EVENT_POD_ROLLING_MAINTENANCE = "POD.ROLLING.MAINTENANCE";
+    public static final String EVENT_ZONE_ROLLING_MAINTENANCE = "ZONE.ROLLING.MAINTENANCE";
 
     static {
 
@@ -979,6 +1001,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE, VirtualMachineTemplate.class);
         entityEventDetails.put(EVENT_ISO_DIRECT_DOWNLOAD_FAILURE, "Iso");
         entityEventDetails.put(EVENT_SYSTEM_VM_DIAGNOSTICS, VirtualMachine.class);
+
+        entityEventDetails.put(EVENT_ZONE_ROLLING_MAINTENANCE, ZoneResponse.class);
+        entityEventDetails.put(EVENT_POD_ROLLING_MAINTENANCE, PodResponse.class);
+        entityEventDetails.put(EVENT_CLUSTER_ROLLING_MAINTENANCE, ClusterResponse.class);
+        entityEventDetails.put(EVENT_HOST_ROLLING_MAINTENANCE, HostResponse.class);
     }
 
     public static String getEntityForEvent(String eventName) {

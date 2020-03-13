@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,22 +14,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package com.cloud.agent.direct.download;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+package com.cloud.kubernetes.version;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DirectTemplateDownloaderImplTest {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-    private static final Long templateId = 202l;
+/**
+ * KubernetesSupportedVersion describes the properties of supported kubernetes version
+ *
+ */
+public interface KubernetesSupportedVersion extends InternalIdentity, Identity {
 
-    @Test
-    public void testGetDirectDownloadTempPath() {
-        String path = DirectTemplateDownloaderImpl.getDirectDownloadTempPath(templateId);
-        Assert.assertEquals("template/2/202", path);
+    public enum State {
+        Disabled, Enabled
     }
+
+    long getId();
+    String getName();
+    String getSemanticVersion();
+    long getIsoId();
+    Long getZoneId();
+    State getState();
+
+    /**
+     * @return minimum # of cpu.
+     */
+    int getMinimumCpu();
+
+    /**
+     * @return minimum ram size in megabytes
+     */
+    int getMinimumRamSize();
 }

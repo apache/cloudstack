@@ -1098,13 +1098,13 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
-    public void createDisk(String vmdkDatastorePath, int sizeInMb, ManagedObjectReference morDs, int controllerKey) throws Exception {
+    public void createDisk(String vmdkDatastorePath, long sizeInMb, ManagedObjectReference morDs, int controllerKey) throws Exception {
         createDisk(vmdkDatastorePath, VirtualDiskType.THIN, VirtualDiskMode.PERSISTENT, null, sizeInMb, morDs, controllerKey);
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
-    public void createDisk(String vmdkDatastorePath, VirtualDiskType diskType, VirtualDiskMode diskMode, String rdmDeviceName, int sizeInMb,
-            ManagedObjectReference morDs, int controllerKey) throws Exception {
+    public void createDisk(String vmdkDatastorePath, VirtualDiskType diskType, VirtualDiskMode diskMode, String rdmDeviceName, long sizeInMb,
+                           ManagedObjectReference morDs, int controllerKey) throws Exception {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - createDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + vmdkDatastorePath + ", sizeInMb: " + sizeInMb +

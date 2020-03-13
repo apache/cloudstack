@@ -806,7 +806,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     synchronized (this) {
                         s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
                         VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo, searchExcludedFolders);
-                        vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, -1);
+                        vmMo.createDisk(volumeDatastorePath, (long)(volume.getSize() / (1024L * 1024L)), morDatastore, -1);
                         vmMo.detachDisk(volumeDatastorePath, false);
                     }
                 } finally {
@@ -3552,6 +3552,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
+        return null;
+    }
+
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
         return null;
     }
 }

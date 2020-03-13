@@ -189,7 +189,13 @@ known_categories = {
     'Sioc' : 'Sioc',
     'Diagnostics': 'Diagnostics',
     'Management': 'Management',
-    'UnmanagedInstance': 'Virtual Machine'
+    'Backup' : 'Backup and Recovery',
+    'Restore' : 'Backup and Recovery',
+    'UnmanagedInstance': 'Virtual Machine',
+    'KubernetesSupportedVersion': 'Kubernetes Service',
+    'KubernetesCluster': 'Kubernetes Service',
+    'UnmanagedInstance': 'Virtual Machine',
+    'Rolling': 'Rolling Maintenance'
     }
 
 

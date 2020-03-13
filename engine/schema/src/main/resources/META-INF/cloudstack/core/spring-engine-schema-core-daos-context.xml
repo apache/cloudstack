@@ -218,6 +218,7 @@
   <bean id="usageVPNUserDaoImpl" class="com.cloud.usage.dao.UsageVPNUserDaoImpl" />
   <bean id="usageVolumeDaoImpl" class="com.cloud.usage.dao.UsageVolumeDaoImpl" />
   <bean id="usageVmDiskDaoImpl" class="com.cloud.usage.dao.UsageVmDiskDaoImpl" />
+  <bean id="usageBackupDaoImpl" class="com.cloud.usage.dao.UsageBackupDaoImpl" />
   <bean id="userAccountDaoImpl" class="com.cloud.user.dao.UserAccountDaoImpl" />
   <bean id="userAccountJoinDaoImpl" class="com.cloud.api.query.dao.UserAccountJoinDaoImpl" />
   <bean id="userIpv6AddressDaoImpl" class="com.cloud.network.dao.UserIpv6AddressDaoImpl" />
@@ -285,6 +286,9 @@
   <bean id="outOfBandManagementDaoImpl" class="org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDaoImpl" />
   <bean id="GuestOsDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDaoImpl" />
   <bean id="annotationDaoImpl" class="org.apache.cloudstack.annotation.dao.AnnotationDaoImpl" />
+  <bean id="backupOfferingDaoImpl" class="org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl" />
+  <bean id="backupScheduleDaoImpl" class="org.apache.cloudstack.backup.dao.BackupScheduleDaoImpl" />
+  <bean id="backupDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />
   <bean id="templateOVFPropertiesDaoImpl" class="com.cloud.storage.dao.TemplateOVFPropertiesDaoImpl" />

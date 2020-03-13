@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -508,6 +509,8 @@ public class VolumeApiServiceImplTest {
         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
         when(vm.getState()).thenReturn(State.Running);
         when(vm.getDataCenterId()).thenReturn(34L);
+        when(vm.getBackupOfferingId()).thenReturn(null);
+        when(vm.getBackupVolumeList()).thenReturn(Collections.emptyList());
         when(volumeDaoMock.findByInstanceAndType(anyLong(), any(Volume.Type.class))).thenReturn(new ArrayList<>(10));
         when(volumeDataFactoryMock.getVolume(9L)).thenReturn(volumeToAttach);
         when(volumeToAttach.getState()).thenReturn(Volume.State.Uploaded);

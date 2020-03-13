@@ -166,6 +166,7 @@ import org.apache.cloudstack.api.command.admin.resource.CleanVMReservationsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
+import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
@@ -3142,6 +3143,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(GetUploadParamsForIsoCmd.class);
         cmdList.add(ListTemplateOVFProperties.class);
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
+        cmdList.add(StartRollingMaintenanceCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3530,6 +3532,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
 
+        final boolean kubernetesServiceEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.service.enabled"));
+        final boolean kubernetesClusterExperimentalFeaturesEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.cluster.experimental.features.enabled"));
+
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
         final List<ImageStoreVO> imgStores = _imgStoreDao.findRegionImageStores();
@@ -3551,6 +3556,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
         capabilities.put("allowUserExpungeRecoverVolume", allowUserExpungeRecoverVolume);
         capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
+        capabilities.put("kubernetesServiceEnabled", kubernetesServiceEnabled);
+        capabilities.put("kubernetesClusterExperimentalFeaturesEnabled", kubernetesClusterExperimentalFeaturesEnabled);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

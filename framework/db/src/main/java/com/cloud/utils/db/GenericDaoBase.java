@@ -1785,6 +1785,34 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
+    @Override
+    public boolean unremove(ID id) {
+        if (_removed == null) {
+            return false;
+        }
+
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            pstmt = txn.prepareAutoCloseStatement(_removeSql.first());
+            final Attribute[] attrs = _removeSql.second();
+            pstmt.setObject(1, null);
+            for (int i = 0; i < attrs.length - 1; i++) {
+                prepareAttribute(i + 2, pstmt, attrs[i], id);
+            }
+
+            final int result = pstmt.executeUpdate();
+            txn.commit();
+            if (_cache != null) {
+                _cache.remove(id);
+            }
+            return result > 0;
+        } catch (final SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+        }
+    }
+
     @DB()
     protected void setField(final Object entity, final ResultSet rs, ResultSetMetaData meta, final int index) throws SQLException {
         Attribute attr = _allColumns.get(new Pair<String, String>(meta.getTableName(index), meta.getColumnName(index)));
