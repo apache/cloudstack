@@ -45,6 +45,7 @@ import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -367,6 +368,10 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 details.put("url", hostMo.getHostName());
                 details.put("username", username);
                 details.put("password", password);
+                boolean uefiLegacySupported = hostMo.isUefiLegacySupported();
+                if (uefiLegacySupported) {
+                    details.put(Host.HOST_UEFI_ENABLE, "true");
+                }
                 String guid = morHost.getType() + ":" + morHost.getValue() + "@" + url.getHost();
                 details.put("guid", guid);
 
