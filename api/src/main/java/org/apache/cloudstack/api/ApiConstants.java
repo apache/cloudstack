@@ -804,6 +804,27 @@ public class ApiConstants {
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
 
+    public static final String BOOT_TYPE ="boottype";
+    public static final String BOOT_MODE ="bootmode";
+
+    public enum BootType {
+        UEFI, BIOS;
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+    }
+
+    public enum BootMode {
+        LEGACY, SECURE;
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+    }
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

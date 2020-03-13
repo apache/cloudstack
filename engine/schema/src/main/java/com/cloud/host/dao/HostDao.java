@@ -112,5 +112,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listAllHostsUpByZoneAndHypervisor(long zoneId, HypervisorType hypervisorType);
 
+    List<HostVO> listByHostCapability(Host.Type type, Long clusterId, Long podId, long dcId, String hostCapabilty);
+
     List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType);
 }

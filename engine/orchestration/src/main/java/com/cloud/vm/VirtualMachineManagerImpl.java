@@ -1064,6 +1064,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
+                s_logger.info(" Uefi params " + "UefiFlag: " + params.get(VirtualMachineProfile.Param.UefiFlag)
+                        + " Boot Type: " + params.get(VirtualMachineProfile.Param.BootType)
+                        + " Boot Mode: " + params.get(VirtualMachineProfile.Param.BootMode)
+                );
                 DeployDestination dest = null;
                 try {
                     dest = _dpMgr.planDeployment(vmProfile, plan, avoids, planner);
