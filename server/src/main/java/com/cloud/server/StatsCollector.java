@@ -192,6 +192,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final String DISK_WRITE_IOPS_FIELD = "disk_write_iops";
     private static final String DISK_WRITE_KBS_FIELD = "disk_write_kbs";
 
+    private static final int HOURLY_TIME = 60;
+    private static final int DAILY_TIME = HOURLY_TIME * 24;
+    private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
+
     private static final String DEFAULT_DATABASE_NAME = "cloudstack";
     private static final String INFLUXDB_HOST_MEASUREMENT = "host_stats";
     private static final String INFLUXDB_VM_MEASUREMENT = "vm_stats";
@@ -328,11 +332,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     protected void init(Map<String, String> configs) {
         _executor = Executors.newScheduledThreadPool(6, new NamedThreadFactory("StatsCollector"));
 
-        hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), 60000L);
-        hostAndVmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), 60000L);
-        storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), 60000L);
-        volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), 600000L);
-        autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), 60000L);
+        hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+        hostAndVmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+        storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+        volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+        autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
 
         String statsUri = statsOutputUri.value();
         if (StringUtils.isNotBlank(statsUri)) {
@@ -427,8 +431,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         Calendar cal = Calendar.getInstance(usageTimezone);
         cal.setTime(new Date());
         long endDate = 0;
-        int HOURLY_TIME = 60;
-        final int DAILY_TIME = 60 * 24;
         if (_usageAggregationRange == DAILY_TIME) {
             cal.set(Calendar.HOUR_OF_DAY, 0);
             cal.set(Calendar.MINUTE, 0);
@@ -454,9 +456,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
             _usageAggregationRange = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
         }
-        _diskStatsUpdateExecutor.scheduleAtFixedRate(new VmDiskStatsUpdaterTask(), (endDate - System.currentTimeMillis()), (_usageAggregationRange * 60 * 1000),
-                TimeUnit.MILLISECONDS);
 
+        long period = _usageAggregationRange * ONE_MINUTE_IN_MILLISCONDS;
+        _diskStatsUpdateExecutor.scheduleAtFixedRate(new VmDiskStatsUpdaterTask(), (endDate - System.currentTimeMillis()), period, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -1209,7 +1211,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             for (AutoScaleVmGroupPolicyMapVO asVmgPmap : listMap) {
                 AutoScalePolicyVO policyVO = _asPolicyDao.findById(asVmgPmap.getPolicyId());
                 if (policyVO != null) {
-                    Integer quitetime = policyVO.getQuietTime();
+                    int quitetime = policyVO.getQuietTime();
                     Date quitetimeDate = policyVO.getLastQuiteTime();
                     long last_quitetime = 0L;
                     if (quitetimeDate != null) {
@@ -1236,7 +1238,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (counter_param.equals(counter_source.toString()))
                                         break;
                                     counter_count++;
-                                } while (1 == 1);
+                                } while (true);
 
                                 Double sum = avgCounter.get(counter_count);
                                 Double avg = sum / currentVM;
@@ -1525,9 +1527,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             boolean ioReadDifferentFromPrevious = previousVmDiskStats.getCurrentIORead() != currentVmDiskStats.getCurrentIORead();
             boolean ioWriteDifferentFromPrevious = previousVmDiskStats.getCurrentIOWrite() != currentVmDiskStats.getCurrentIOWrite();
             return bytesReadDifferentFromPrevious || bytesWriteDifferentFromPrevious || ioReadDifferentFromPrevious || ioWriteDifferentFromPrevious;
-        }
-        if (currentVmDiskStats == null) {
-            return false;
         }
         return true;
     }
