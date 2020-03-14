@@ -289,6 +289,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _rngPath = "/dev/random";
     protected int _rngRatePeriod = 1000;
     protected int _rngRateBytes = 2048;
+    protected String _agentHooksBasedir = "/etc/cloudstack/agent/hooks";
+
+    protected String _agentHooksLibvirtXmlScript = "libvirt-vm-xml-transformer.groovy";
+    protected String _agentHooksLibvirtXmlMethod = "transform";
+
+    protected String _agentHooksVmOnStartScript = "libvirt-vm-state-change.groovy";
+    protected String _agentHooksVmOnStartMethod = "onStart";
+
+    protected String _agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
+    protected String _agentHooksVmOnStopMethod = "onStop";
+
+
     protected File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
     protected WatchDogAction _watchDogAction = WatchDogAction.NONE;
@@ -389,6 +401,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return cleanupNetworkElementCommand((IpAssocCommand)cmd);
         }
         return new ExecutionResult(true, null);
+    }
+
+    public LibvirtKvmAgentHook getTransformer() throws IOException {
+        return new LibvirtKvmAgentHook(_agentHooksBasedir, _agentHooksLibvirtXmlScript, _agentHooksLibvirtXmlMethod);
+    }
+
+    public LibvirtKvmAgentHook getStartHook() throws IOException {
+        return new LibvirtKvmAgentHook(_agentHooksBasedir, _agentHooksVmOnStartScript, _agentHooksVmOnStartMethod);
+    }
+
+    public LibvirtKvmAgentHook getStopHook() throws IOException {
+        return new LibvirtKvmAgentHook(_agentHooksBasedir, _agentHooksVmOnStopScript, _agentHooksVmOnStopMethod);
     }
 
     public LibvirtUtilitiesHelper getLibvirtUtilitiesHelper() {
@@ -1097,6 +1121,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         value = (String) params.get("vm.migrate.pauseafter");
         _migratePauseAfter = NumbersUtil.parseInt(value, -1);
 
+        configureAgentHooks(params);
+
         value = (String)params.get("vm.migrate.speed");
         _migrateSpeed = NumbersUtil.parseInt(value, -1);
         if (_migrateSpeed == -1) {
@@ -1153,6 +1179,50 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return true;
+    }
+
+    private void configureAgentHooks(final Map<String, Object> params) {
+        String value = (String) params.get("agent.hooks.basedir");
+        if (null != value) {
+            _agentHooksBasedir = value;
+        }
+        s_logger.debug("agent.hooks.basedir is " + _agentHooksBasedir);
+
+        value = (String) params.get("agent.hooks.libvirt_vm_xml_transformer.script");
+        if (null != value) {
+            _agentHooksLibvirtXmlScript = value;
+        }
+        s_logger.debug("agent.hooks.libvirt_vm_xml_transformer.script is " + _agentHooksLibvirtXmlScript);
+
+        value = (String) params.get("agent.hooks.libvirt_vm_xml_transformer.method");
+        if (null != value) {
+            _agentHooksLibvirtXmlMethod = value;
+        }
+        s_logger.debug("agent.hooks.libvirt_vm_xml_transformer.method is " + _agentHooksLibvirtXmlMethod);
+
+        value = (String) params.get("agent.hooks.libvirt_vm_on_start.script");
+        if (null != value) {
+            _agentHooksVmOnStartScript = value;
+        }
+        s_logger.debug("agent.hooks.libvirt_vm_on_start.script is " + _agentHooksVmOnStartScript);
+
+        value = (String) params.get("agent.hooks.libvirt_vm_on_start.method");
+        if (null != value) {
+            _agentHooksVmOnStartMethod = value;
+        }
+        s_logger.debug("agent.hooks.libvirt_vm_on_start.method is " + _agentHooksVmOnStartMethod);
+
+        value = (String) params.get("agent.hooks.libvirt_vm_on_stop.script");
+        if (null != value) {
+            _agentHooksVmOnStopScript = value;
+        }
+        s_logger.debug("agent.hooks.libvirt_vm_on_stop.script is " + _agentHooksVmOnStopScript);
+
+        value = (String) params.get("agent.hooks.libvirt_vm_on_stop.method");
+        if (null != value) {
+            _agentHooksVmOnStopMethod = value;
+        }
+        s_logger.debug("agent.hooks.libvirt_vm_on_stop.method is " + _agentHooksVmOnStopMethod);
     }
 
     private void loadUefiProperties() throws FileNotFoundException {
