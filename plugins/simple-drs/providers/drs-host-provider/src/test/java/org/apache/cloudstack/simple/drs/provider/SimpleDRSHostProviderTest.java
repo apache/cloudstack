@@ -18,7 +18,12 @@ package org.apache.cloudstack.simple.drs.provider;
 
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.org.Cluster;
+import com.cloud.resource.ResourceManager;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.lang.ArrayUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -32,9 +37,17 @@ import org.mockito.Spy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 public class SimpleDRSHostProviderTest {
+
+    @Mock
+    ResourceManager resourceManager;
+    @Mock
+    QueryService queryService;
+
+    @Spy
+    @InjectMocks
+    private SimpleDRSHostProvider hostProvider = new SimpleDRSHostProvider();
 
     @Mock
     HostResponse hostResponse1;
@@ -44,30 +57,33 @@ public class SimpleDRSHostProviderTest {
     HostResponse hostResponse3;
     @Mock
     HostResponse hostResponse4;
-
-    @Spy
-    @InjectMocks
-    private SimpleDRSHostProvider hostProvider = new SimpleDRSHostProvider();
+    @Mock
+    Cluster cluster;
 
     private List<HostResponse> hostResponses;
+    private ListResponse<HostResponse> queryResponse;
 
-    private static final String clusterUuid = UUID.randomUUID().toString();
+    private static final Long clusterId = 1L;
 
     @Before
     public void init() {
         MockitoAnnotations.initMocks(this);
         hostResponses = Arrays.asList(hostResponse1, hostResponse2, hostResponse3, hostResponse4);
+        queryResponse = new ListResponse<>();
+        queryResponse.setResponses(hostResponses);
         for (HostResponse r : hostResponses) {
             Mockito.when(r.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
             Mockito.when(r.getHostType()).thenReturn(Host.Type.Routing);
             Mockito.when(r.getCpuAllocated()).thenReturn("25%");
-            Mockito.when(r.getClusterId()).thenReturn(clusterUuid);
         }
+        Mockito.when(resourceManager.getCluster(clusterId)).thenReturn(cluster);
+        Mockito.when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(queryService.searchForServers(Mockito.any(ListHostsCmd.class))).thenReturn(queryResponse);
     }
 
     @Test
     public void testGetNormalizedMetricsListFromHosts() {
-        double[] values = hostProvider.getNormalizedMetricsListFromHosts(hostResponses, clusterUuid);
+        double[] values = hostProvider.getNormalizedMetricsListFromHosts(hostResponses);
         Assert.assertTrue(ArrayUtils.isNotEmpty(values));
         for (double v : values) {
             Assert.assertTrue(v >= 0 && v <= 1);
@@ -76,13 +92,13 @@ public class SimpleDRSHostProviderTest {
 
     @Test
     public void testGetNormalizedMetricsListFromHostsEmptyList() {
-        double[] values = hostProvider.getNormalizedMetricsListFromHosts(new ArrayList<>(), clusterUuid);
+        double[] values = hostProvider.getNormalizedMetricsListFromHosts(new ArrayList<>());
         Assert.assertTrue(ArrayUtils.isEmpty(values));
     }
 
     @Test
     public void testGetNormalizedMetricsListFromHostsNullList() {
-        double[] values = hostProvider.getNormalizedMetricsListFromHosts(null, clusterUuid);
+        double[] values = hostProvider.getNormalizedMetricsListFromHosts(null);
         Assert.assertTrue(ArrayUtils.isEmpty(values));
     }
 
@@ -92,10 +108,36 @@ public class SimpleDRSHostProviderTest {
         Mockito.when(hostResponse2.getCpuAllocated()).thenReturn("10.43%");
         Mockito.when(hostResponse3.getCpuAllocated()).thenReturn("22%");
         Mockito.when(hostResponse4.getCpuAllocated()).thenReturn("73.20%");
-        double[] values = hostProvider.getNormalizedMetricsListFromHosts(hostResponses, clusterUuid);
+        double[] values = hostProvider.getNormalizedMetricsListFromHosts(hostResponses);
         Assert.assertTrue(ArrayUtils.isNotEmpty(values));
         for (double v : values) {
             Assert.assertTrue(v >= 0 && v <= 1);
         }
+    }
+
+    @Test
+    public void testCalculateClusterImbalanceNoDeviation() {
+        double imbalance = hostProvider.calculateClusterImbalance(clusterId);
+        Assert.assertEquals(0, imbalance, 0);
+    }
+
+    @Test
+    public void testCalculateClusterImbalanceExtremeDeviation() {
+        Mockito.when(hostResponse1.getCpuAllocated()).thenReturn("0%");
+        Mockito.when(hostResponse2.getCpuAllocated()).thenReturn("0%");
+        Mockito.when(hostResponse3.getCpuAllocated()).thenReturn("100%");
+        Mockito.when(hostResponse4.getCpuAllocated()).thenReturn("100%");
+        double imbalance = hostProvider.calculateClusterImbalance(clusterId);
+        Assert.assertEquals(1, imbalance, 0);
+    }
+
+    @Test
+    public void testCalculateClusterImbalanceDistributedValues() {
+        Mockito.when(hostResponse1.getCpuAllocated()).thenReturn("25.11%");
+        Mockito.when(hostResponse2.getCpuAllocated()).thenReturn("10.43%");
+        Mockito.when(hostResponse3.getCpuAllocated()).thenReturn("22%");
+        Mockito.when(hostResponse4.getCpuAllocated()).thenReturn("73.20%");
+        double imbalance = hostProvider.calculateClusterImbalance(clusterId);
+        Assert.assertEquals(0.73, imbalance, 0.01);
     }
 }
