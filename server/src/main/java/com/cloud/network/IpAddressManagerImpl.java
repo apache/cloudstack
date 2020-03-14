@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Collections;
 
 import javax.inject.Inject;
 
@@ -1884,6 +1885,52 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         return NetUtils.long2Ip(array[rand.nextInt(array.length)]);
     }
 
+    @Override
+    public String acquireFirstGuestIpAddress(Network network) {
+        if (_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty() && network.getCidr() == null) {
+            return null;
+        }
+        Set<Long> availableIps = _networkModel.getAvailableIps(network, null);
+        if (availableIps == null || availableIps.isEmpty()) {
+            s_logger.debug("There are no free ips in the network " + network);
+            return null;
+        }
+        return NetUtils.long2Ip(availableIps.iterator().next());
+    }
+
+    @Override
+    public String acquireLastGuestIpAddress(Network network) {
+        if (_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty() && network.getCidr() == null) {
+            return null;
+        }
+        Set<Long> availableIps = _networkModel.getAvailableIps(network, null);
+        if (availableIps == null || availableIps.isEmpty()) {
+            s_logger.debug("There are no free ips in the network " + network);
+            return null;
+        }
+
+        List<Long> availableIpsReverse = new ArrayList(availableIps);
+        Collections.sort(availableIpsReverse, Collections.reverseOrder());
+
+        return NetUtils.long2Ip(availableIpsReverse.iterator().next());
+    }
+
+    @Override
+    public String acquireGuestIpAddressByPlacement(Network network, String requestedIp) {
+        if (requestedIp != null) {
+            return this.acquireGuestIpAddress(network, requestedIp);
+        }
+        String placementConfig = VrouterRedundantTiersPlacement.valueIn(network.getAccountId());
+        IpPlacement ipPlacement = IpPlacement.fromString(placementConfig);
+        switch (ipPlacement) {
+            case Last:
+                return this.acquireLastGuestIpAddress(network);
+            case First:
+                return this.acquireFirstGuestIpAddress(network);
+        }
+        return this.acquireGuestIpAddress(network, null);
+    }
+
     /**
      * Get the list of public IPs that need to be applied for a static NAT enable/disable operation.
      * Manipulating only these ips prevents concurrency issues when disabling static nat at the same time.
@@ -2175,7 +2222,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness};
+        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness, VrouterRedundantTiersPlacement};
     }
 
     /**
