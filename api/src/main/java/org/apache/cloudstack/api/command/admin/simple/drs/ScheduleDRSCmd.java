@@ -23,9 +23,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.simple.drs.ScheduleDRSResponse;
 import org.apache.cloudstack.simple.drs.SimpleDRSManager;
 import org.apache.log4j.Logger;
 
@@ -34,22 +37,30 @@ import java.util.List;
 
 @APICommand(name = ScheduleDRSCmd.APINAME,
         description = "Schedule a DRS job using configured DRS provider and rebalancing algorithm",
-        responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = true,
-        responseHasSensitiveInfo = true,
+        responseObject = ScheduleDRSResponse.class,
         since = "4.14.0",
         authorized = {RoleType.Admin})
 public class ScheduleDRSCmd extends BaseCmd {
+
+    public static final String APINAME = "scheduleDRS";
+
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID,
+            entityType = ClusterResponse.class, description = "lists hosts existing in particular cluster")
+    private Long clusterId;
 
     @Inject
     SimpleDRSManager drsManager;
 
     private static final Logger LOG = Logger.getLogger(ScheduleDRSCmd.class);
-    public static final String APINAME = "scheduleDRS";
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         List<String> providers = drsManager.listProviderNames();
+        double clusterImbalance = drsManager.getClusterImbalance(clusterId);
+        ScheduleDRSResponse r = new ScheduleDRSResponse();
+        r.setTest(clusterImbalance);
+        r.setResponseName(getCommandName());
+        this.setResponseObject(r);
     }
 
     @Override

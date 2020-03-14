@@ -33,7 +33,35 @@ public interface SimpleDRSManager extends PluggableService, Configurable {
     ConfigKey<String> SimpleDRSRebalancingAlgorithm = new ConfigKey<>("Advanced", String.class,
             "simple.drs.rebalancing.algorithm",
             "balanced",
-            "The simple DRS rebalancing algorithm plugin that is used. Possible values: balanced, condensed", true);
+            "The simple DRS rebalancing algorithm plugin that is used. Possible values: balanced, condensed",
+            true);
+
+    ConfigKey<Boolean> SimpleDRSAutomaticEnable = new ConfigKey<>("Advanced", Boolean.class,
+            "simple.drs.automatic.enable",
+            "false",
+            "Enable/disable automatic DRS on a cluster",
+            true, ConfigKey.Scope.Cluster);
+
+    ConfigKey<Integer> SimpleDRSAutomaticInterval = new ConfigKey<>("Advanced", Integer.class,
+            "simple.drs.automatic.interval",
+            "60",
+            "The interval in minutes after which a periodic background thread will schedule DRS for a cluster",
+            true, ConfigKey.Scope.Cluster);
+
+    ConfigKey<Double> SimpleDRSIterations = new ConfigKey<>("Advanced", Double.class,
+            "simple.drs.iterations",
+            "0.2",
+            "The maximum number of iterations in a DRS job defined as a percentage of total number of workloads. " +
+                    "The minimum number of iterations per round is 1 and the maximum is the number of workloads in a cluster",
+            true, ConfigKey.Scope.Cluster);
+
+    ConfigKey<Double> SimpleDRSImbalanceThreshold = new ConfigKey<>("Advanced", Double.class,
+            "simple.drs.imbalance.threshold",
+            "0.5",
+            "The cluster imbalance threshold that is compared with the standard deviation percentage for a cluster utilization metric. " +
+                    "The value is a percentage in decimal format.",
+            true, ConfigKey.Scope.Cluster);
 
     List<String> listProviderNames();
+    double getClusterImbalance(long clusterId);
 }

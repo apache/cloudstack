@@ -122,7 +122,8 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {
-                SimpleDRSProvider, SimpleDRSRebalancingAlgorithm
+                SimpleDRSProvider, SimpleDRSRebalancingAlgorithm, SimpleDRSAutomaticEnable, SimpleDRSAutomaticInterval,
+                SimpleDRSIterations, SimpleDRSImbalanceThreshold
         };
     }
 
@@ -135,5 +136,10 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
             }
         }
         return list;
+    }
+
+    @Override
+    public double getClusterImbalance(long clusterId) {
+        return configuredDRSProvider.calculateClusterImbalance(clusterId);
     }
 }
