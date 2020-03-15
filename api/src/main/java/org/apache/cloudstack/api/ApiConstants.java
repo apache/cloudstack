@@ -804,6 +804,13 @@ public class ApiConstants {
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
 
+    // Simple DRS
+    public static final String DRS_ENABLED = "drsenabled";
+    public static final String DRS_INTERVAL = "drsinterval";
+    public static final String DRS_IMBALANCE = "drsimbalance";
+    public static final String DRS_IMBALANCE_THRESHOLD = "drsimbalancethreshold";
+    public static final String DRS_MAX_ITERATIONS = "drsmaxiterations";
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

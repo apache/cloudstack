@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -166,6 +167,7 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.simple.drs.SimpleDRSManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -174,6 +176,7 @@ import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -391,6 +394,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private VMSnapshotDao vmSnapshotDao;
     @Inject
     private BackupOfferingDao backupOfferingDao;
+    @Inject
+    private SimpleDRSManager simpleDRSManager;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1230,6 +1235,18 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.addAll(getStatsCapacityresponse(null, cluster.getId(), pod.getId(), pod.getDataCenterId()));
             clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
+
+        if (cluster.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+            Boolean simpleDrsEnabled = SimpleDRSManager.SimpleDRSAutomaticEnable.valueIn(cluster.getId());
+            clusterResponse.setDrsEnabled(simpleDrsEnabled);
+            if (BooleanUtils.isTrue(simpleDrsEnabled)) {
+                clusterResponse.setDrsImbalance(simpleDRSManager.getClusterImbalance(cluster.getId()));
+                clusterResponse.setDrsImbalanceThreshold(SimpleDRSManager.SimpleDRSImbalanceThreshold.valueIn(cluster.getId()));
+                clusterResponse.setDrsInterval(SimpleDRSManager.SimpleDRSAutomaticInterval.valueIn(cluster.getId()));
+                clusterResponse.setDrsIterations(SimpleDRSManager.SimpleDRSIterations.valueIn(cluster.getId()));
+            }
+        }
+
         clusterResponse.setObjectName("cluster");
         return clusterResponse;
     }

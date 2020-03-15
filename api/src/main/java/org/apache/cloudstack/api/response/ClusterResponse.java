@@ -91,6 +91,26 @@ public class ClusterResponse extends BaseResponse {
     @Param(description = "Meta data associated with the zone (key/value pairs)")
     private Map<String, String> resourceDetails;
 
+    @SerializedName(ApiConstants.DRS_ENABLED)
+    @Param(description = "Automatic DRS enabled or disabled")
+    private Boolean drsEnabled;
+
+    @SerializedName(ApiConstants.DRS_INTERVAL)
+    @Param(description = "DRS interval for the automatic DRS jobs")
+    private Integer drsInterval;
+
+    @SerializedName(ApiConstants.DRS_MAX_ITERATIONS)
+    @Param(description = "The maximum iterations as percentage in a DRS job")
+    private Double drsIterations;
+
+    @SerializedName(ApiConstants.DRS_IMBALANCE)
+    @Param(description = "The current DRS cluster imbalance")
+    private Double drsImbalance;
+
+    @SerializedName(ApiConstants.DRS_IMBALANCE_THRESHOLD)
+    @Param(description = "The defined DRS cluster imbalance threshold")
+    private Double drsImbalanceThreshold;
+
     public String getId() {
         return id;
     }
@@ -218,5 +238,25 @@ public class ClusterResponse extends BaseResponse {
 
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
+    }
+
+    public void setDrsEnabled(Boolean drsEnabled) {
+        this.drsEnabled = drsEnabled;
+    }
+
+    public void setDrsInterval(Integer drsInterval) {
+        this.drsInterval = drsInterval;
+    }
+
+    public void setDrsIterations(Double drsIterations) {
+        this.drsIterations = drsIterations;
+    }
+
+    public void setDrsImbalance(Double drsImbalance) {
+        this.drsImbalance = drsImbalance;
+    }
+
+    public void setDrsImbalanceThreshold(Double drsImbalanceThreshold) {
+        this.drsImbalanceThreshold = drsImbalanceThreshold;
     }
 }
