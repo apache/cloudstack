@@ -17,11 +17,11 @@
 package org.apache.cloudstack.simple.drs.algorithm;
 
 import com.cloud.utils.component.AdapterBase;
-import org.apache.cloudstack.framework.simple.drs.DRSRebalancingAlgorithm;
+import org.apache.cloudstack.framework.simple.drs.SimpleDRSRebalancingAlgorithm;
 
 import java.util.List;
 
-public class SimpleDRSCondensedAlgorithm extends AdapterBase implements DRSRebalancingAlgorithm {
+public class SimpleDRSCondensedAlgorithm extends AdapterBase implements SimpleDRSRebalancingAlgorithm {
 
     private static final String ALGORITHM_NAME = "condensed";
 
@@ -31,8 +31,8 @@ public class SimpleDRSCondensedAlgorithm extends AdapterBase implements DRSRebal
     }
 
     @Override
-    public boolean isClusterImbalanced(long clusterId) {
-        return false;
+    public boolean isClusterImbalanced(double clusterImbalance, double clusterImbalanceThreshold) {
+        return clusterImbalance < clusterImbalanceThreshold;
     }
 
     @Override

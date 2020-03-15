@@ -32,15 +32,15 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.framework.simple.drs.DRSProvider;
-import org.apache.cloudstack.framework.simple.drs.DRSProviderBase;
+import org.apache.cloudstack.framework.simple.drs.SimpleDRSProvider;
+import org.apache.cloudstack.framework.simple.drs.SimpleDRSProviderBase;
 import org.apache.cloudstack.query.QueryService;
 import org.springframework.util.CollectionUtils;
 
 import javax.inject.Inject;
 import java.util.List;
 
-public class SimpleDRSHostProvider extends DRSProviderBase implements DRSProvider {
+public class SimpleDRSHostProvider extends SimpleDRSProviderBase implements SimpleDRSProvider {
 
     @Inject
     private HostDao hostDao;

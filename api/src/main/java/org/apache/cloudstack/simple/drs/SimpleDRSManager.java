@@ -64,4 +64,5 @@ public interface SimpleDRSManager extends PluggableService, Configurable {
 
     List<String> listProviderNames();
     double getClusterImbalance(long clusterId);
+    boolean isClusterImbalanced(long clusterId);
 }

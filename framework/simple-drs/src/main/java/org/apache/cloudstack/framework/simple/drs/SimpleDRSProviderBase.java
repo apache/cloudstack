@@ -20,14 +20,13 @@ import com.cloud.utils.component.AdapterBase;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
-public abstract class DRSProviderBase extends AdapterBase implements DRSProvider {
+public abstract class SimpleDRSProviderBase extends AdapterBase implements SimpleDRSProvider {
 
     @Override
     public double calculateClusterImbalance(long clusterId) {
         double[] clusterMetricValues = generateClusterMetricValues(clusterId);
         double mean = calculateClusterMean(clusterMetricValues);
         double standardDeviation = calculateClusterStandardDeviation(clusterMetricValues, mean);
-
         return standardDeviation / mean;
     }
 

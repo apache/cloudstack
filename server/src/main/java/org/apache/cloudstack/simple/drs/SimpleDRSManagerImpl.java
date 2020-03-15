@@ -19,8 +19,8 @@ package org.apache.cloudstack.simple.drs;
 import com.cloud.utils.component.ManagerBase;
 import org.apache.cloudstack.api.command.admin.simple.drs.ScheduleDRSCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.simple.drs.DRSProvider;
-import org.apache.cloudstack.framework.simple.drs.DRSRebalancingAlgorithm;
+import org.apache.cloudstack.framework.simple.drs.SimpleDRSProvider;
+import org.apache.cloudstack.framework.simple.drs.SimpleDRSRebalancingAlgorithm;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
@@ -35,34 +35,34 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
 
     public static final Logger LOG = Logger.getLogger(SimpleDRSManagerImpl.class);
 
-    private static DRSProvider configuredDRSProvider;
-    private static DRSRebalancingAlgorithm configuredDRSAlgorithm;
-    private static Map<String, DRSProvider> drsProvidersMap = new HashMap<>();
-    private static Map<String, DRSRebalancingAlgorithm> drsAlgorithmsMap = new HashMap<>();
+    private static SimpleDRSProvider configuredDRSProvider;
+    private static SimpleDRSRebalancingAlgorithm configuredDRSAlgorithm;
+    private static Map<String, SimpleDRSProvider> drsProvidersMap = new HashMap<>();
+    private static Map<String, SimpleDRSRebalancingAlgorithm> drsAlgorithmsMap = new HashMap<>();
 
-    private List<DRSProvider> drsProviders;
-    private List<DRSRebalancingAlgorithm> drsAlgorithms;
+    private List<SimpleDRSProvider> drsProviders;
+    private List<SimpleDRSRebalancingAlgorithm> drsAlgorithms;
 
     ////////////////////////////////////////////////////
     /////////////// Init DRS providers /////////////////
     ////////////////////////////////////////////////////
 
-    public void setDrsProviders(List<DRSProvider> drsProviders) {
+    public void setDrsProviders(List<SimpleDRSProvider> drsProviders) {
         this.drsProviders = drsProviders;
         initDrsProvidersMap();
     }
 
-    public List<DRSProvider> getDrsProviders() {
+    public List<SimpleDRSProvider> getDrsProviders() {
         return drsProviders;
     }
 
-    public List<DRSRebalancingAlgorithm> getDrsAlgorithms() {
+    public List<SimpleDRSRebalancingAlgorithm> getDrsAlgorithms() {
         return drsAlgorithms;
     }
 
     private void initDrsProvidersMap() {
         if (CollectionUtils.isNotEmpty(drsProviders)) {
-            for (DRSProvider provider : drsProviders) {
+            for (SimpleDRSProvider provider : drsProviders) {
                 drsProvidersMap.put(provider.getProviderName().toLowerCase(), provider);
             }
         }
@@ -74,13 +74,13 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
 
     private void initDrsAlgorithmsMap() {
         if (CollectionUtils.isNotEmpty(drsAlgorithms)) {
-            for (DRSRebalancingAlgorithm algorithm : drsAlgorithms) {
+            for (SimpleDRSRebalancingAlgorithm algorithm : drsAlgorithms) {
                 drsAlgorithmsMap.put(algorithm.getAlgorithmName().toLowerCase(), algorithm);
             }
         }
     }
 
-    public void setDrsAlgorithms(List<DRSRebalancingAlgorithm> drsAlgorithms) {
+    public void setDrsAlgorithms(List<SimpleDRSRebalancingAlgorithm> drsAlgorithms) {
         this.drsAlgorithms = drsAlgorithms;
         initDrsAlgorithmsMap();
     }
@@ -141,5 +141,12 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
     @Override
     public double getClusterImbalance(long clusterId) {
         return configuredDRSProvider.calculateClusterImbalance(clusterId);
+    }
+
+    @Override
+    public boolean isClusterImbalanced(long clusterId) {
+        double clusterImbalance = getClusterImbalance(clusterId);
+        Double threshold = SimpleDRSImbalanceThreshold.valueIn(clusterId);
+        return configuredDRSAlgorithm.isClusterImbalanced(clusterImbalance, threshold);
     }
 }

@@ -17,13 +17,15 @@
 package org.apache.cloudstack.simple.drs.algorithm;
 
 import com.cloud.utils.component.AdapterBase;
-import org.apache.cloudstack.framework.simple.drs.DRSRebalancingAlgorithm;
+import org.apache.cloudstack.framework.simple.drs.SimpleDRSRebalancingAlgorithm;
+import org.apache.log4j.Logger;
 
 import java.util.List;
 
-public class SimpleDRSBalancedAlgorithm extends AdapterBase implements DRSRebalancingAlgorithm {
+public class SimpleDRSBalancedAlgorithm extends AdapterBase implements SimpleDRSRebalancingAlgorithm {
 
     private static final String ALGORITHM_NAME = "balanced";
+    public static final Logger LOG = Logger.getLogger(SimpleDRSBalancedAlgorithm.class);
 
     @Override
     public String getAlgorithmName() {
@@ -31,8 +33,8 @@ public class SimpleDRSBalancedAlgorithm extends AdapterBase implements DRSRebala
     }
 
     @Override
-    public boolean isClusterImbalanced(long clusterId) {
-        return false;
+    public boolean isClusterImbalanced(double clusterImbalance, double clusterImbalanceThreshold) {
+        return clusterImbalance > clusterImbalanceThreshold;
     }
 
     @Override

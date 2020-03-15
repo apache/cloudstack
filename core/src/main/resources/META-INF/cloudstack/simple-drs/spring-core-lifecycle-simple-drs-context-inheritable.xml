@@ -26,12 +26,12 @@
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="drsProvidersRegistry" />
-        <property name="typeClass" value="org.apache.cloudstack.framework.simple.drs.DRSProvider" />
+        <property name="typeClass" value="org.apache.cloudstack.framework.simple.drs.SimpleDRSProvider" />
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="drsAlgorithmsRegistry" />
-        <property name="typeClass" value="org.apache.cloudstack.framework.simple.drs.DRSRebalancingAlgorithm" />
+        <property name="typeClass" value="org.apache.cloudstack.framework.simple.drs.SimpleDRSRebalancingAlgorithm" />
     </bean>
 
 </beans>
