@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.13.0.0 to 4.14.0.0
+-- Schema upgrade from 4.13.1.0 to 4.14.0.0
 --;
 
 -- KVM: enable storage data motion on KVM hypervisor_capabilities
