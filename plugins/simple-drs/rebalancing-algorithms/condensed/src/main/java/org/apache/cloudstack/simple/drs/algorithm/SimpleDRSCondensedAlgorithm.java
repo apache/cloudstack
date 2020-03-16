@@ -18,6 +18,8 @@ package org.apache.cloudstack.simple.drs.algorithm;
 
 import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.framework.simple.drs.SimpleDRSRebalancingAlgorithm;
+import org.apache.cloudstack.simple.drs.SimpleDRSResource;
+import org.apache.cloudstack.simple.drs.SimpleDRSWorkload;
 
 import java.util.List;
 
@@ -36,12 +38,12 @@ public class SimpleDRSCondensedAlgorithm extends AdapterBase implements SimpleDR
     }
 
     @Override
-    public List<String> findResourcesToBalance() {
+    public List<SimpleDRSResource> findResourcesToBalance() {
         return null;
     }
 
     @Override
-    public List<String> findWorkloadsToBalance() {
+    public List<SimpleDRSWorkload> findWorkloadsToBalance() {
         return null;
     }
 

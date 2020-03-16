@@ -14,18 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.framework.simple.drs;
+package org.apache.cloudstack.simple.drs;
 
-import org.apache.cloudstack.simple.drs.SimpleDRSResource;
-import org.apache.cloudstack.simple.drs.SimpleDRSWorkload;
+import org.apache.cloudstack.ha.HAResource;
 
-import java.util.List;
-
-public interface SimpleDRSRebalancingAlgorithm {
-    String getAlgorithmName();
-    boolean isClusterImbalanced(double clusterImbalance, double clusterImbalanceThreshold);
-    List<SimpleDRSResource> findResourcesToBalance();
-    List<SimpleDRSWorkload> findWorkloadsToBalance();
-    void sortRebalancingPlansByCost();
-    void sortRebalancingPlansByBenefit();
+public interface SimpleDRSResource extends HAResource {
 }
