@@ -17,7 +17,7 @@
 
 JAVA_OPTS="-Djava.security.properties=/etc/cloudstack/management/java.security.ciphers -Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2G -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:ErrorFile=/var/log/cloudstack/management/cloudstack-management.err "
 
-CLASSPATH="/usr/share/cloudstack-management/lib/*:/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/cloudstack-management:/usr/share/java/mysql-connector-java.jar"
+CLASSPATH="/usr/share/cloudstack-management/lib/*:/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/cloudstack-management:/usr/share/java/mysql-connector-java.jar:/usr/share/cloudstack-mysql-ha/lib/*"
 
 BOOTSTRAP_CLASS=org.apache.cloudstack.ServerDaemon
 
