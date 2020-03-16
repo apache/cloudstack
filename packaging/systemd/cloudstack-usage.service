@@ -18,8 +18,8 @@
 [Unit]
 Description=CloudStack Usage Server
 Documentation=http://www.cloudstack.org/
-Wants=network.target network-online.target
-After=network.target network-online.target
+Wants=network.target network-online.target mariadb.target
+After=network.target network-online.target mariadb.target
 
 [Service]
 Type=simple
