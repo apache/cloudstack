@@ -128,9 +128,9 @@ public class KVMStorageProcessor implements StorageProcessor {
     private String _manageSnapshotPath;
     private int _cmdsTimeout;
 
-    private static final String MANAGE_SNAPSTHOT_CREATE = "-c";
-    private static final String MANAGE_SNAPSTHOT_DESTROY = "-d";
-    private static final String NAME = "-n";
+    private static final String MANAGE_SNAPSTHOT_CREATE_OPTION = "-c";
+    private static final String MANAGE_SNAPSTHOT_DESTROY_OPTION = "-d";
+    private static final String NAME_OPTION = "-n";
     private static final String CEPH_MON_HOST = "mon_host";
     private static final String CEPH_AUTH_KEY = "key";
     private static final String CEPH_CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
@@ -571,7 +571,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final Script command = new Script(_createTmplPath, wait, s_logger);
                 command.add("-f", disk.getPath());
                 command.add("-t", tmpltPath);
-                command.add(NAME, templateName + ".qcow2");
+                command.add(NAME_OPTION, templateName + ".qcow2");
 
                 final String result = command.execute();
 
@@ -957,7 +957,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 final Script command = new Script(_manageSnapshotPath, cmd.getWaitInMillSeconds(), s_logger);
                 command.add("-b", snapshotDisk.getPath());
-                command.add(NAME, snapshotName);
+                command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
                 if (isCreatedFromVmSnapshot) {
                     descName = UUID.randomUUID().toString();
@@ -1038,8 +1038,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private void deleteSnapshotViaManageSnapshotScript(final String snapshotName, KVMPhysicalDisk snapshotDisk) {
         final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-        command.add(MANAGE_SNAPSTHOT_DESTROY, snapshotDisk.getPath());
-        command.add(NAME, snapshotName);
+        command.add(MANAGE_SNAPSTHOT_DESTROY_OPTION, snapshotDisk.getPath());
+        command.add(NAME_OPTION, snapshotName);
         final String result = command.execute();
         if (result != null) {
             s_logger.debug("Failed to delete snapshot on primary: " + result);
@@ -1517,8 +1517,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 } else {
                     /* VM is not running, create a snapshot by ourself */
                     final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-                    command.add(MANAGE_SNAPSTHOT_CREATE, disk.getPath());
-                    command.add(NAME, snapshotName);
+                    command.add(MANAGE_SNAPSTHOT_CREATE_OPTION, disk.getPath());
+                    command.add(NAME_OPTION, snapshotName);
                     final String result = command.execute();
                     if (result != null) {
                         s_logger.debug("Failed to manage snapshot: " + result);
