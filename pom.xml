@@ -95,7 +95,7 @@
         <cs.configuration.version>1.10</cs.configuration.version>
         <cs.daemon.version>1.2.2</cs.daemon.version>
         <cs.dbcp.version>2.7.0</cs.dbcp.version>
-        <cs.discovery.version>1.0-dev</cs.discovery.version>
+        <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
         <cs.pool.version>2.7.0</cs.pool.version>
 
