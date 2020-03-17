@@ -112,5 +112,14 @@
         <include>*.key</include>
       </includes>
     </fileSet>
+    <fileSet>
+      <directory>agent/noVNC</directory>
+      <outputDirectory>noVNC</outputDirectory>
+      <directoryMode>555</directoryMode>
+      <fileMode>555</fileMode>
+      <includes>
+        <include>**/*</include>
+      </includes>
+    </fileSet>
   </fileSets>
 </assembly>
