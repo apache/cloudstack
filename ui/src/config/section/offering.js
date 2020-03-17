@@ -203,7 +203,7 @@ export default {
       permission: ['listVPCOfferings'],
       params: { isrecursive: 'true' },
       resourceType: 'VpcOffering',
-      columns: ['name', 'state', 'displaytext', 'domain', 'zone'],
+      columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
       details: ['name', 'id', 'displaytext', 'distributedvpcrouter', 'service', 'tags', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
