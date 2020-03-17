@@ -18,8 +18,8 @@
 [Unit]
 Description=CloudStack Usage Server
 Documentation=http://www.cloudstack.org/
-Wants=network.target network-online.target mariadb.target mysql.target
-After=network.target network-online.target mariadb.target mysql.target
+Wants=network.target network-online.target mariadb.service mysql.service
+After=network.target network-online.target mariadb.service mysql.service
 
 [Service]
 Type=simple
