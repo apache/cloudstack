@@ -56,6 +56,8 @@ var dictionary = {
     "label.ESP.lifetime": "Tiempo de vida ESP (en segundos)",
     "label.ESP.policy": "Política ESP",
     "label.IKE.DH": "IKE DH",
+    "label.IKE.version": "Versión IKE",
+    "label.IPsec.splitconnections": "Conexiones Divididas",
     "label.IKE.encryption": "Encriptación IKE",
     "label.IKE.hash": "Hash IKE",
     "label.IKE.lifetime": "Tiempo de vida IKE (segundos)",

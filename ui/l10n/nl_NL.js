@@ -56,6 +56,8 @@ var dictionary = {
     "label.ESP.lifetime": "ESP Lifetime (secondes)",
     "label.ESP.policy": "ESP policy",
     "label.IKE.DH": "IKE DH",
+    "label.IKE.version": "IKE Versie",
+    "label.IPsec.splitconnections": "Gesplitste Verbindingen",
     "label.IKE.encryption": "IKE Encryptie",
     "label.IKE.hash": "IKE Hash",
     "label.IKE.lifetime": "IKE lifetime (secondes)",

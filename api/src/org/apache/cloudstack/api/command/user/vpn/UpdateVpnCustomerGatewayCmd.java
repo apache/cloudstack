@@ -94,6 +94,12 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
                    + "gateway associated with the account for the specified domain.")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.SPLIT_CONNECTIONS, type = CommandType.BOOLEAN, required = false, description = "For IKEv2, whether to split multiple right subnet cidrs into multiple connection statements.")
+    private Boolean splitConnections;
+
+    @Parameter(name = ApiConstants.IKE_VERSION, type = CommandType.STRING, required = false, description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2. Defaults to ike")
+    private String ikeVersion;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -139,6 +145,14 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     }
 
     public Boolean getEncap() { return encap; }
+
+    public boolean getSplitConnections() {
+        return splitConnections;
+    }
+
+    public String getIkeVersion() {
+        return ikeVersion;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
