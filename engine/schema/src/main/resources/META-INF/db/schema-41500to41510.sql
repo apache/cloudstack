@@ -56,3 +56,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 -- Add support for Ubuntu Focal Fossa 20.04 for Xenserver 8.2.0
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (335, UUID(), 10, 'Ubuntu 20.04 LTS', now());
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '8.2.0', 'Ubuntu Focal Fossa 20.04', 330, now(), 0);
+
+ALTER TABLE `cloud`.`s2s_customer_gateway` ADD COLUMN `ike_version` varchar(5) NOT NULL DEFAULT 'ike' COMMENT 'one of ike, ikev1, ikev2';
+ALTER TABLE `cloud`.`s2s_customer_gateway` ADD COLUMN `split_connections` int(1) NOT NULL DEFAULT 0;
+
