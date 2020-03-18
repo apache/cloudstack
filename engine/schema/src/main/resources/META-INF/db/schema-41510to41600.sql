@@ -301,3 +301,7 @@ from
         left join
     `cloud`.`resource_count` secondary_storage_count ON domain.id = secondary_storage_count.domain_id
         and secondary_storage_count.type = 'secondary_storage';
+
+ALTER TABLE `cloud`.`s2s_customer_gateway` ADD COLUMN `ike_version` varchar(5) NOT NULL DEFAULT 'ike' COMMENT 'one of ike, ikev1, ikev2';
+ALTER TABLE `cloud`.`s2s_customer_gateway` ADD COLUMN `split_connections` int(1) NOT NULL DEFAULT 0;
+
