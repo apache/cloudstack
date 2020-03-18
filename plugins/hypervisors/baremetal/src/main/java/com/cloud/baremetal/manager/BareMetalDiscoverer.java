@@ -205,7 +205,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             zone.setDhcpProvider(Network.Provider.ExternalDhcpServer.getName());
             _dcDao.update(zone.getId(), zone);
 
-            s_logger.debug(String.format("Discover Bare Metal host successfully(ip=%1$s, username=%2$s, password=%3%s," +
+            s_logger.debug(String.format("Discover Bare Metal host successfully(ip=%1$s, username=%2$s, password=%3$s," +
                     "cpuNum=%4$s, cpuCapacity-%5$s, memCapacity=%6$s)", ipmiIp, username, "******", cpuNum, cpuCapacity, memCapacity));
             return resources;
         } catch (Exception e) {

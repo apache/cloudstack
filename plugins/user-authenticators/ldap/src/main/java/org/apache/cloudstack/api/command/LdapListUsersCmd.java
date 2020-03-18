@@ -225,7 +225,7 @@ public class LdapListUsersCmd extends BaseListCmd {
                     rc = true;
                 } else {
                     if(s_logger.isTraceEnabled()) {
-                        s_logger.trace(String.format("ldap user %s does not match cloudstack user", ldapUser.getUsername(), cloudstackUser.getUsername()));
+                        s_logger.trace(String.format("ldap user %s does not match cloudstack user %s", ldapUser.getUsername(), cloudstackUser.getUsername()));
                     }
                 }
             }
@@ -242,12 +242,12 @@ public class LdapListUsersCmd extends BaseListCmd {
             for (final UserResponse cloudstackUser : cloudstackUsers) {
                 if (ldapUser.getUsername().equals(cloudstackUser.getUsername())) {
                     if(s_logger.isTraceEnabled()) {
-                        s_logger.trace(String.format("found user %s in cloudstack", ldapUser.getUsername()));
+                        s_logger.trace(String.format("found user %s in cloudstack user %s", ldapUser.getUsername(), cloudstackUser.getUsername()));
                     }
                     return true;
                 } else {
                     if(s_logger.isTraceEnabled()) {
-                        s_logger.trace(String.format("ldap user %s does not match cloudstack user", ldapUser.getUsername(), cloudstackUser.getUsername()));
+                        s_logger.trace(String.format("ldap user %s does not match cloudstack user %s", ldapUser.getUsername(), cloudstackUser.getUsername()));
                     }
                 }
             }
