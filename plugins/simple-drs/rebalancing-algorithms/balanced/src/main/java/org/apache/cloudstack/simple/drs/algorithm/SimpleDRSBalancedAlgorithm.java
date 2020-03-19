@@ -16,15 +16,15 @@
 // under the License.
 package org.apache.cloudstack.simple.drs.algorithm;
 
-import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.framework.simple.drs.SimpleDRSRebalancingAlgorithm;
+import org.apache.cloudstack.framework.simple.drs.SimpleDRSRebalancingAlgorithmBase;
 import org.apache.cloudstack.simple.drs.SimpleDRSResource;
 import org.apache.cloudstack.simple.drs.SimpleDRSWorkload;
 import org.apache.log4j.Logger;
 
 import java.util.List;
 
-public class SimpleDRSBalancedAlgorithm extends AdapterBase implements SimpleDRSRebalancingAlgorithm {
+public class SimpleDRSBalancedAlgorithm extends SimpleDRSRebalancingAlgorithmBase implements SimpleDRSRebalancingAlgorithm {
 
     private static final String ALGORITHM_NAME = "balanced";
     public static final Logger LOG = Logger.getLogger(SimpleDRSBalancedAlgorithm.class);
@@ -40,7 +40,7 @@ public class SimpleDRSBalancedAlgorithm extends AdapterBase implements SimpleDRS
     }
 
     @Override
-    public List<SimpleDRSResource> findResourcesToBalance() {
+    public List<SimpleDRSResource> findResourcesToBalance(long clusterId) {
         return null;
     }
 

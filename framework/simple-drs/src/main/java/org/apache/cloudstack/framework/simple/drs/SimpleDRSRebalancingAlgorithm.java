@@ -24,7 +24,7 @@ import java.util.List;
 public interface SimpleDRSRebalancingAlgorithm {
     String getAlgorithmName();
     boolean isClusterImbalanced(double clusterImbalance, double clusterImbalanceThreshold);
-    List<SimpleDRSResource> findResourcesToBalance();
+    List<SimpleDRSResource> findResourcesToBalance(long clusterId);
     List<SimpleDRSWorkload> findWorkloadsToBalance();
     void sortRebalancingPlansByCost();
     void sortRebalancingPlansByBenefit();

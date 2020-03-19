@@ -22,6 +22,8 @@ import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
 public abstract class SimpleDRSProviderBase extends AdapterBase implements SimpleDRSProvider {
 
+    public static final String GRANULAR_DRS_DETAIL_NAME = "DRS";
+
     @Override
     public double calculateClusterImbalance(long clusterId) {
         double[] clusterMetricValues = generateClusterMetricValues(clusterId);

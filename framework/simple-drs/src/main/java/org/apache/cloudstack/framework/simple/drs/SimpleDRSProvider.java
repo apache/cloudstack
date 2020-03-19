@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.framework.simple.drs;
 
+import org.apache.cloudstack.simple.drs.SimpleDRSResource;
+
 import java.util.List;
 
 public interface SimpleDRSProvider {
@@ -23,4 +25,5 @@ public interface SimpleDRSProvider {
     double calculateClusterImbalance(long clusterId);
     boolean performWorkloadRebalance(long clusterId, long workloadId, long destinationId);
     List<String> findPossibleRebalancingPlans(long clusterId);
+    List<SimpleDRSResource> findResourcesToBalance(long clusterId);
 }
