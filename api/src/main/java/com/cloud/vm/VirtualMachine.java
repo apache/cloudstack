@@ -24,19 +24,19 @@ import java.util.Map;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.kernel.Partition;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateMachine2.Transition;
 import com.cloud.utils.fsm.StateMachine2.Transition.Impact;
 import com.cloud.utils.fsm.StateObject;
+import org.apache.cloudstack.simple.drs.SimpleDRSWorkload;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine
  *
  */
-public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, Displayable, StateObject<VirtualMachine.State> {
+public interface VirtualMachine extends RunningOn, ControlledEntity, Displayable, StateObject<VirtualMachine.State>, SimpleDRSWorkload {
 
     public enum PowerState {
         PowerUnknown,

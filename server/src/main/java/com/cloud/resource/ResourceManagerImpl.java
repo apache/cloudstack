@@ -911,6 +911,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     // this is how VirtualMachineManagerImpl does it when it syncs VM states
                     vm.setState(State.Stopped);
                     vm.setHostId(null);
+                    vm.setClusterId(null);
                     _vmDao.persist(vm);
                 }
 

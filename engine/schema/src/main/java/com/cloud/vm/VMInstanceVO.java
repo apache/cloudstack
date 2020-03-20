@@ -203,6 +203,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "backup_volumes")
     protected String backupVolumes;
 
+    @Transient
+    protected Long clusterId;
+
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
                         long domainId, long accountId, long userId, boolean haEnabled) {
         this.id = id;
@@ -300,6 +303,20 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Override
     public long getDataCenterId() {
         return dataCenterId;
+    }
+
+    @Override
+    public Long getClusterId() {
+        return clusterId;
+    }
+
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    @Override
+    public ResourceType resourceType() {
+        return ResourceType.VirtualMachine;
     }
 
     @Override

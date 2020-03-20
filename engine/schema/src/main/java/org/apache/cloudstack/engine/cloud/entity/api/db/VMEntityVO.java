@@ -192,6 +192,9 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Transient
     private VMReservationVO vmReservation;
 
+    @Transient
+    private Long clusterId;
+
     public VMEntityVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
             long domainId, long accountId, boolean haEnabled, Long diskOfferingId) {
         this.id = id;
@@ -277,6 +280,20 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Override
     public long getDataCenterId() {
         return dataCenterIdToDeployIn;
+    }
+
+    @Override
+    public Long getClusterId() {
+        return clusterId;
+    }
+
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    @Override
+    public ResourceType resourceType() {
+        return ResourceType.VirtualMachine;
     }
 
     @Override

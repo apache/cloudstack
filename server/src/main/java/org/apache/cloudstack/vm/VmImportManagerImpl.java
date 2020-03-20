@@ -744,6 +744,7 @@ public class VmImportManagerImpl implements VmImportService {
                 if (vm.getState().equals(VirtualMachine.State.Stopped)) {
                     VMInstanceVO vmInstanceVO = vmDao.findById(userVm.getId());
                     vmInstanceVO.setHostId(dest.getHost().getId());
+                    vmInstanceVO.setClusterId(dest.getHost().getClusterId());
                     vmInstanceVO.setLastHostId(dest.getHost().getId());
                     vmDao.update(vmInstanceVO.getId(), vmInstanceVO);
                 } else {
