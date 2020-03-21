@@ -65,7 +65,7 @@ export default {
       title: 'Hypervisor Capabilities',
       icon: 'database',
       permission: ['listHypervisorCapabilities'],
-      columns: ['hypervisor', 'hypervisorversion', 'maxguestlimit', 'maxdatavolumeslimit', 'maxhostspercluster'],
+      columns: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxdatavolumeslimit', 'maxhostspercluster'],
       actions: [
         {
           api: 'updateHypervisorCapabilities',
