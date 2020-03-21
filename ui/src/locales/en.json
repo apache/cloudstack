@@ -917,6 +917,7 @@
 "snmpPort": "SNMP Port",
 "sockettimeout": "Socket Timeout",
 "sourcecidr": "Source CIDR",
+"destcidr": "Destination CIDR",
 "sourceNat": "Source NAT",
 "sourceipaddress": "Source IP Address",
 "sourceport": "Source Port",

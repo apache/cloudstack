@@ -20,15 +20,15 @@
     <div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">Source CIDR</div>
+          <div class="form__label">{{ $t('sourcecidr') }}</div>
           <a-input v-model="newRule.cidrlist"></a-input>
         </div>
         <div class="form__item">
-          <div class="form__label">Destination CIDR</div>
+          <div class="form__label">{{ $t('destcidr') }}</div>
           <a-input v-model="newRule.destcidrlist"></a-input>
         </div>
         <div class="form__item">
-          <div class="form__label">Protocol</div>
+          <div class="form__label">{{ $t('protocol') }}</div>
           <a-select v-model="newRule.protocol" style="width: 100%;" @change="resetRulePorts">
             <a-select-option value="tcp">TCP</a-select-option>
             <a-select-option value="udp">UDP</a-select-option>
@@ -37,19 +37,19 @@
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
-          <div class="form__label">Start Port</div>
+          <div class="form__label">{{ $t('startport') }}</div>
           <a-input v-model="newRule.startport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
-          <div class="form__label">End Port</div>
+          <div class="form__label">{{ $t('endport') }}</div>
           <a-input v-model="newRule.endport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
-          <div class="form__label">ICMP Type</div>
+          <div class="form__label">{{ $t('icmptype') }}</div>
           <a-input v-model="newRule.icmptype"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
-          <div class="form__label">ICMP Code</div>
+          <div class="form__label">{{ $t('icmpcode') }}</div>
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item">
@@ -60,35 +60,39 @@
 
     <a-divider/>
 
-    <a-list :loading="loading" style="min-height: 25px;">
-      <a-list-item v-for="rule in egressRules" :key="rule.id" class="rule">
-        <div class="rule-container">
-          <div class="rule__item">
-            <div class="rule__title">Source CIDR</div>
-            <div>{{ rule.cidrlist }}</div>
-          </div>
-          <div class="rule__item">
-            <div class="rule__title">Destination CIDR</div>
-            <div>{{ rule.destcidrlist }}</div>
-          </div>
-          <div class="rule__item">
-            <div class="rule__title">Protocol</div>
-            <div>{{ rule.protocol | capitalise }}</div>
-          </div>
-          <div class="rule__item">
-            <div class="rule__title">{{ rule.protocol === 'icmp' ? 'ICMP Type' : 'Start Port' }}</div>
-            <div>{{ rule.icmptype || rule.startport >= 0 ? rule.icmptype || rule.startport : 'All' }}</div>
-          </div>
-          <div class="rule__item">
-            <div class="rule__title">{{ rule.protocol === 'icmp' ? 'ICMP Code' : 'End Port' }}</div>
-            <div>{{ rule.icmpcode || rule.endport >= 0 ? rule.icmpcode || rule.endport : 'All' }}</div>
-          </div>
-          <div slot="actions">
-            <a-button shape="round" type="danger" icon="delete" @click="deleteRule(rule)" />
-          </div>
-        </div>
-      </a-list-item>
-    </a-list>
+    <a-table
+      size="small"
+      style="overflow-y: auto"
+      :loading="loading"
+      :columns="columns"
+      :dataSource="egressRules"
+      :pagination="false"
+      :rowKey="record => record.id">
+      <template slot="protocol" slot-scope="record">
+        {{ record.protocol | capitalise }}
+      </template>
+      <template slot="startport" slot-scope="record">
+        {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
+      </template>
+      <template slot="endport" slot-scope="record">
+        {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
+      </template>
+      <template slot="actions" slot-scope="record">
+        <a-button shape="round" type="danger" icon="delete" @click="deleteRule(record)" />
+      </template>
+    </a-table>
+    <a-pagination
+      class="pagination"
+      size="small"
+      :current="page"
+      :pageSize="pageSize"
+      :total="totalCount"
+      :showTotal="total => `Total ${total} items`"
+      :pageSizeOptions="['10', '20', '40', '80', '100']"
+      @change="handleChangePage"
+      @showSizeChange="handleChangePageSize"
+      showSizeChanger/>
+
   </div>
 </template>
 
@@ -96,6 +100,7 @@
 import { api } from '@/api'
 
 export default {
+  name: 'EgressRulesTab',
   props: {
     resource: {
       type: Object,
@@ -115,7 +120,36 @@ export default {
         icmpcode: null,
         startport: null,
         endport: null
-      }
+      },
+      totalCount: 0,
+      page: 1,
+      pageSize: 10,
+      columns: [
+        {
+          title: this.$t('sourcecidr'),
+          dataIndex: 'cidrlist'
+        },
+        {
+          title: this.$t('destcidr'),
+          dataIndex: 'destcidrlist'
+        },
+        {
+          title: this.$t('protocol'),
+          scopedSlots: { customRender: 'protocol' }
+        },
+        {
+          title: `ICMP Type / Start Port`,
+          scopedSlots: { customRender: 'startport' }
+        },
+        {
+          title: `ICMP Code / End Port`,
+          scopedSlots: { customRender: 'endport' }
+        },
+        {
+          title: this.$t('action'),
+          scopedSlots: { customRender: 'actions' }
+        }
+      ]
     }
   },
   mounted () {
@@ -141,9 +175,13 @@ export default {
       this.loading = true
       api('listEgressFirewallRules', {
         listAll: true,
-        networkid: this.resource.id
+        networkid: this.resource.id,
+        page: this.page,
+        pageSize: this.pageSize
       }).then(response => {
-        this.egressRules = response.listegressfirewallrulesresponse.firewallrule
+        this.egressRules = response.listegressfirewallrulesresponse.firewallrule || []
+        this.totalCount = response.listegressfirewallrulesresponse.count || 0
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -211,6 +249,16 @@ export default {
       this.newRule.icmpcode = null
       this.newRule.startport = null
       this.newRule.endport = null
+    },
+    handleChangePage (page, pageSize) {
+      this.page = page
+      this.pageSize = pageSize
+      this.fetchData()
+    },
+    handleChangePageSize (currentPage, pageSize) {
+      this.page = currentPage
+      this.pageSize = pageSize
+      this.fetchData()
     }
   }
 }
@@ -299,5 +347,8 @@ export default {
       font-weight: bold;
     }
 
+  }
+  .pagination {
+    margin-top: 20px;
   }
 </style>

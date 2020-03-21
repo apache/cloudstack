@@ -69,49 +69,33 @@
       </div>
     </div>
 
-    <a-list>
-      <a-list-item v-for="(rule, index) in rules" :key="index" class="list">
-        <div class="list__col">
-          <div class="list__title">Protocol</div>
-          <div>{{ rule.protocol | capitalise }}</div>
+    <a-table
+      size="small"
+      style="overflow-y: auto"
+      :columns="columns"
+      :dataSource="rules"
+      :pagination="false"
+      :rowKey="record => record.id">
+      <template slot="protocol" slot-scope="record">
+        {{ record.protocol | capitalise }}
+      </template>
+      <template slot="account" slot-scope="record">
+        <div v-if="record.account && record.securitygroupname">
+          {{ record.account }} - {{ record.securitygroupname }}
         </div>
-        <div v-if="rule.startport" class="list__col">
-          <div class="list__title">Start Port</div>
-          <div>{{ rule.startport }}</div>
-        </div>
-        <div v-if="rule.endport" class="list__col">
-          <div class="list__title">End Port</div>
-          <div>{{ rule.endport }}</div>
-        </div>
-        <div v-if="rule.icmptype" class="list__col">
-          <div class="list__title">ICMP Type</div>
-          <div>{{ rule.icmptype }}</div>
-        </div>
-        <div v-if="rule.icmpcode" class="list__col">
-          <div class="list__title">ICMP Code</div>
-          <div>{{ rule.icmpcode }}</div>
-        </div>
-        <div v-if="rule.cidr" class="list__col">
-          <div class="list__title">CIDR</div>
-          <div>{{ rule.cidr }}</div>
-        </div>
-        <div class="list__col" v-if="rule.account && rule.securitygroupname">
-          <div class="list__title">Account, Security Group</div>
-          <div>{{ rule.account }} - {{ rule.securitygroupname }}</div>
-        </div>
-        <div slot="actions" class="actions">
-          <a-button shape="round" icon="tag" class="rule-action" @click="() => openTagsModal(rule)" />
-          <a-popconfirm
-            :title="$t('label.delete') + '?'"
-            @confirm="handleDeleteRule(rule)"
-            okText="Yes"
-            cancelText="No"
-          >
-            <a-button shape="round" type="danger" icon="delete" class="rule-action" />
-          </a-popconfirm>
-        </div>
-      </a-list-item>
-    </a-list>
+      </template>
+      <template slot="actions" slot-scope="record">
+        <a-button shape="round" icon="tag" class="rule-action" @click="() => openTagsModal(record)" />
+        <a-popconfirm
+          :title="$t('label.delete') + '?'"
+          @confirm="handleDeleteRule(record)"
+          okText="Yes"
+          cancelText="No"
+        >
+          <a-button shape="round" type="danger" icon="delete" class="rule-action" />
+        </a-popconfirm>
+      </template>
+    </a-table>
 
     <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal">
       <a-spin v-if="tagsLoading"></a-spin>
@@ -187,7 +171,41 @@ export default {
       selectedRule: null,
       tagsLoading: false,
       addType: 'cidr',
-      tabType: null
+      tabType: null,
+      columns: [
+        {
+          title: this.$t('protocol'),
+          scopedSlots: { customRender: 'protocol' }
+        },
+        {
+          title: this.$t('startport'),
+          dataIndex: 'startport'
+        },
+        {
+          title: this.$t('endport'),
+          dataIndex: 'endport'
+        },
+        {
+          title: 'ICMP Type',
+          dataIndex: 'icmptype'
+        },
+        {
+          title: 'ICMP Code',
+          dataIndex: 'icmpcode'
+        },
+        {
+          title: 'CIDR',
+          dataIndex: 'cidr'
+        },
+        {
+          title: 'Account, Security Group',
+          scopedSlots: { customRender: 'account' }
+        },
+        {
+          title: this.$t('action'),
+          scopedSlots: { customRender: 'actions' }
+        }
+      ]
     }
   },
   watch: {

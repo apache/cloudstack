@@ -59,90 +59,78 @@
 
     <a-divider />
 
-    <a-list :loading="loading" style="min-height: 25px;">
-      <a-list-item v-for="rule in lbRules" :key="rule.id" class="rule custom-ant-list">
-        <div class="rule-container">
-          <div class="rule__row">
-            <div class="rule__item">
-              <div class="rule__title">{{ $t('name') }}</div>
-              <div>{{ rule.name }}</div>
+    <a-table
+      size="small"
+      style="overflow-y: auto"
+      :loading="loading"
+      :columns="columns"
+      :dataSource="lbRules"
+      :pagination="false"
+      :rowKey="record => record.id">
+      <template slot="algorithm" slot-scope="record">
+        {{ returnAlgorithmName(record.algorithm) }}
+      </template>
+      <template slot="protocol" slot-scope="record">
+        {{ record.protocol | capitalise }}
+      </template>
+      <template slot="stickiness" slot-scope="record">
+        <a-button @click="() => openStickinessModal(record.id)">
+          {{ returnStickinessLabel(record.id) }}
+        </a-button>
+      </template>
+      <template slot="add" slot-scope="record">
+        <a-button type="primary" icon="plus" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+          {{ $t('add') }}
+        </a-button>
+      </template>
+      <template slot="expandedRowRender" slot-scope="record">
+        <div class="rule-instance-list">
+          <div v-for="instance in record.ruleInstances" :key="instance.loadbalancerruleinstance.id">
+            <div v-for="ip in instance.lbvmipaddresses" :key="ip" class="rule-instance-list__item">
+              <div>
+                <a-icon type="desktop" />
+                <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
+                  {{ instance.loadbalancerruleinstance.displayname }}
+                </router-link>
+              </div>
+              <div>{{ ip }}</div>
+              <div><status :text="instance.loadbalancerruleinstance.state" displayText /></div>
+              <a-button
+                size="small"
+                shape="round"
+                type="danger"
+                icon="delete"
+                @click="() => handleDeleteInstanceFromRule(instance, record, ip)" />
             </div>
-            <div class="rule__item">
-              <div class="rule__title">{{ $t('publicport') }}</div>
-              <div>{{ rule.publicport }}</div>
-            </div>
-            <div class="rule__item">
-              <div class="rule__title">{{ $t('privateport') }}</div>
-              <div>{{ rule.privateport }}</div>
-            </div>
-            <div class="rule__item">
-              <div class="rule__title">{{ $t('algorithm') }}</div>
-              <div>{{ returnAlgorithmName(rule.algorithm) }}</div>
-            </div>
-          </div>
-          <div class="rule__row">
-            <div class="rule__item">
-              <div class="rule__title">{{ $t('protocol') }}</div>
-              <div>{{ rule.protocol | capitalise }}</div>
-            </div>
-            <div class="rule__item">
-              <div class="rule__title">{{ $t('state') }}</div>
-              <div>{{ rule.state }}</div>
-            </div>
-            <div class="rule__item">
-              <div class="rule__title">{{ $t('label.action.configure.stickiness') }}</div>
-              <a-button @click="() => openStickinessModal(rule.id)">
-                {{ returnStickinessLabel(rule.id) }}
-              </a-button>
-            </div>
-            <div class="rule__item">
-              <div class="rule__title">{{ $t('label.add.VMs') }}</div>
-              <a-button type="primary" icon="plus" @click="() => { selectedRule = rule; handleOpenAddVMModal() }">
-                {{ $t('add') }}
-              </a-button>
-            </div>
-          </div>
-          <div class="rule__row" v-if="rule.ruleInstances">
-            <a-collapse :bordered="false" class="rule-instance-collapse">
-              <template v-slot:expandIcon="props">
-                <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
-              </template>
-              <a-collapse-panel header="View Instances">
-                <div class="rule-instance-list">
-                  <div v-for="instance in rule.ruleInstances" :key="instance.loadbalancerruleinstance.id">
-                    <div v-for="ip in instance.lbvmipaddresses" :key="ip" class="rule-instance-list__item">
-                      <div>
-                        <a-icon type="desktop" />
-                        <router-link :to="{ path: '/vm/' + rule.virtualmachineid }"> {{ instance.loadbalancerruleinstance.displayname }}</router-link>
-                      </div>
-                      <div>{{ ip }}</div>
-                      <div><status :text="instance.loadbalancerruleinstance.state" displayText /></div>
-                      <a-button
-                        shape="round"
-                        type="danger"
-                        icon="delete"
-                        @click="() => handleDeleteInstanceFromRule(instance, rule, ip)" />
-                    </div>
-                  </div>
-                </div>
-              </a-collapse-panel>
-            </a-collapse>
           </div>
         </div>
-        <div class="rule__item">
-          <a-button shape="circle" icon="edit" class="rule-action" @click="() => openEditRuleModal(rule)"></a-button>
-          <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(rule.id)" />
+      </template>
+      <template slot="actions" slot-scope="record">
+        <div class="actions">
+          <a-button size="small" shape="circle" icon="edit" @click="() => openEditRuleModal(record)"></a-button>
+          <a-button size="small" shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
-            @confirm="handleDeleteRule(rule)"
+            @confirm="handleDeleteRule(record)"
             okText="Yes"
             cancelText="No"
           >
-            <a-button shape="circle" type="danger" icon="delete" class="rule-action" />
+            <a-button size="small" shape="circle" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
-      </a-list-item>
-    </a-list>
+      </template>
+    </a-table>
+    <a-pagination
+      class="pagination"
+      size="small"
+      :current="page"
+      :pageSize="pageSize"
+      :total="totalCount"
+      :showTotal="total => `Total ${total} items`"
+      :pageSizeOptions="['10', '20', '40', '80', '100']"
+      @change="handleChangePage"
+      @showSizeChange="handleChangePageSize"
+      showSizeChanger/>
 
     <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal" class="tags-modal">
       <span v-show="tagsModalLoading" class="modal-loading">
@@ -393,7 +381,48 @@ export default {
       addVmModalLoading: false,
       addVmModalNicLoading: false,
       vms: [],
-      nics: []
+      nics: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 10,
+      columns: [
+        {
+          title: this.$t('name'),
+          dataIndex: 'name'
+        },
+        {
+          title: this.$t('publicport'),
+          dataIndex: 'publicport'
+        },
+        {
+          title: this.$t('privateport'),
+          dataIndex: 'privateport'
+        },
+        {
+          title: this.$t('algorithm'),
+          scopedSlots: { customRender: 'algorithm' }
+        },
+        {
+          title: this.$t('protocol'),
+          scopedSlots: { customRender: 'protocol' }
+        },
+        {
+          title: this.$t('state'),
+          dataIndex: 'state'
+        },
+        {
+          title: this.$t('label.action.configure.stickiness'),
+          scopedSlots: { customRender: 'stickiness' }
+        },
+        {
+          title: this.$t('label.add.VMs'),
+          scopedSlots: { customRender: 'add' }
+        },
+        {
+          title: this.$t('action'),
+          scopedSlots: { customRender: 'actions' }
+        }
+      ]
     }
   },
   mounted () {
@@ -421,11 +450,12 @@ export default {
       this.stickinessPolicies = []
       api('listLoadBalancerRules', {
         listAll: true,
-        publicipid: this.resource.id
+        publicipid: this.resource.id,
+        page: this.page,
+        pageSize: this.pageSize
       }).then(response => {
-        this.lbRules = response.listloadbalancerrulesresponse.loadbalancerrule
-          ? response.listloadbalancerrulesresponse.loadbalancerrule
-          : []
+        this.lbRules = response.listloadbalancerrulesresponse.loadbalancerrule || []
+        this.totalCount = response.listloadbalancerrulesresponse.count || 0
       }).then(() => {
         if (this.lbRules.length > 0) {
           setTimeout(() => {
@@ -1041,6 +1071,16 @@ export default {
       this.newRule.virtualmachineid = []
       this.newTagsForm.resetFields()
       this.stickinessPolicyForm.resetFields()
+    },
+    handleChangePage (page, pageSize) {
+      this.page = page
+      this.pageSize = pageSize
+      this.fetchData()
+    },
+    handleChangePageSize (currentPage, pageSize) {
+      this.page = currentPage
+      this.pageSize = pageSize
+      this.fetchData()
     }
   }
 }
@@ -1368,6 +1408,18 @@ export default {
         width: auto;
       }
 
+    }
+  }
+
+  .pagination {
+    margin-top: 20px;
+  }
+
+  .actions {
+    button {
+      &:not(:last-child) {
+        margin-right: 10px;
+      }
     }
   }
 </style>

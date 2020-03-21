@@ -71,37 +71,47 @@
 
     <a-divider/>
 
-    <a-list :loading="loading" style="min-height: 25px;">
-      <a-list-item v-for="rule in portForwardRules" :key="rule.id" class="rule">
-        <div class="rule-container">
-          <div class="rule__item">
-            <div class="rule__title">{{ $t('privateport') }}</div>
-            <div>{{ rule.privateport }} - {{ rule.privateendport }}</div>
-          </div>
-          <div class="rule__item">
-            <div class="rule__title">{{ $t('publicport') }}</div>
-            <div>{{ rule.publicport }} - {{ rule.publicendport }}</div>
-          </div>
-          <div class="rule__item">
-            <div class="rule__title">{{ $t('protocol') }}</div>
-            <div>{{ rule.protocol | capitalise }}</div>
-          </div>
-          <div class="rule__item">
-            <div class="rule__title">{{ $t('state') }}</div>
-            <div>{{ rule.state }}</div>
-          </div>
-          <div class="rule__item">
-            <div class="rule__title">{{ $t('vm') }}</div>
-            <div class="rule__title"></div>
-            <div><a-icon type="desktop"/> <router-link :to="{ path: '/vm/' + rule.virtualmachineid }">{{ rule.virtualmachinename }}</router-link> ({{ rule.vmguestip }})</div>
-          </div>
-          <div slot="actions">
-            <a-button shape="round" icon="tag" class="rule-action" @click="() => openTagsModal(rule.id)" />
-            <a-button shape="round" type="danger" icon="delete" class="rule-action" @click="deleteRule(rule)" />
-          </div>
+    <a-table
+      size="small"
+      style="overflow-y: auto"
+      :loading="loading"
+      :columns="columns"
+      :dataSource="portForwardRules"
+      :pagination="false"
+      :rowKey="record => record.id">
+      <template slot="privateport" slot-scope="record">
+        {{ record.privateport }} - {{ record.privateendport }}
+      </template>
+      <template slot="publicport" slot-scope="record">
+        {{ record.publicport }} - {{ record.publicendport }}
+      </template>
+      <template slot="protocol" slot-scope="record">
+        {{ record.protocol | capitalise }}
+      </template>
+      <template slot="vm" slot-scope="record">
+        <div><a-icon type="desktop"/>
+          <router-link
+            :to="{ path: '/vm/' + record.virtualmachineid }">
+            {{ record.virtualmachinename }}</router-link> ({{ record.vmguestip }})</div>
+      </template>
+      <template slot="actions" slot-scope="record">
+        <div class="actions">
+          <a-button shape="round" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
+          <a-button shape="round" type="danger" icon="delete" class="rule-action" @click="deleteRule(record)" />
         </div>
-      </a-list-item>
-    </a-list>
+      </template>
+    </a-table>
+    <a-pagination
+      class="pagination"
+      size="small"
+      :current="page"
+      :pageSize="pageSize"
+      :total="totalCount"
+      :showTotal="total => `Total ${total} items`"
+      :pageSizeOptions="['10', '20', '40', '80', '100']"
+      @change="handleChangePage"
+      @showSizeChange="handleChangePageSize"
+      showSizeChanger/>
 
     <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal">
       <span v-show="tagsModalLoading" class="tags-modal-loading">
@@ -227,7 +237,36 @@ export default {
       addVmModalLoading: false,
       addVmModalNicLoading: false,
       vms: [],
-      nics: []
+      nics: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 10,
+      columns: [
+        {
+          title: this.$t('privateport'),
+          scopedSlots: { customRender: 'privateport' }
+        },
+        {
+          title: this.$t('publicport'),
+          scopedSlots: { customRender: 'publicport' }
+        },
+        {
+          title: this.$t('protocol'),
+          scopedSlots: { customRender: 'protocol' }
+        },
+        {
+          title: this.$t('state'),
+          dataIndex: 'state'
+        },
+        {
+          title: this.$t('vm'),
+          scopedSlots: { customRender: 'vm' }
+        },
+        {
+          title: this.$t('action'),
+          scopedSlots: { customRender: 'actions' }
+        }
+      ]
     }
   },
   mounted () {
@@ -253,9 +292,12 @@ export default {
       this.loading = true
       api('listPortForwardingRules', {
         listAll: true,
-        ipaddressid: this.resource.id
+        ipaddressid: this.resource.id,
+        page: this.page,
+        pageSize: this.pageSize
       }).then(response => {
-        this.portForwardRules = response.listportforwardingrulesresponse.portforwardingrule
+        this.portForwardRules = response.listportforwardingrulesresponse.portforwardingrule || []
+        this.totalCount = response.listportforwardingrulesresponse.count || 0
       }).catch(error => {
         this.$notification.error({
           message: `Error ${error.response.status}`,
@@ -487,6 +529,16 @@ export default {
         })
         this.closeModal()
       })
+    },
+    handleChangePage (page, pageSize) {
+      this.page = page
+      this.pageSize = pageSize
+      this.fetchData()
+    },
+    handleChangePageSize (currentPage, pageSize) {
+      this.page = currentPage
+      this.pageSize = pageSize
+      this.fetchData()
     }
   }
 }
@@ -590,7 +642,6 @@ export default {
   }
 
   .rule-action {
-    margin-bottom: 20px;
 
     &:not(:last-of-type) {
       margin-right: 10px;
@@ -670,6 +721,10 @@ export default {
 
     }
 
+  }
+
+  .pagination {
+    margin-top: 20px;
   }
 
 </style>

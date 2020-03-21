@@ -40,7 +40,7 @@ export default {
         component: () => import('@/components/view/DetailsTab.vue')
       }, {
         name: 'Egress Rules',
-        component: () => import('@/views/network/EgressConfigure.vue'),
+        component: () => import('@/views/network/EgressRulesTab.vue'),
         show: (record) => { return record.type === 'Isolated' && 'listEgressFirewallRules' in store.getters.apis }
       }, {
         name: 'Public IP Addresses',
