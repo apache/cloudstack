@@ -1313,6 +1313,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void logUefiParameters(Map<VirtualMachineProfile.Param, Object> params) {
+        if (params == null) {
+            return;
+        }
         StringBuffer msgBuf = new StringBuffer("Uefi params ");
         boolean log = false;
         if (params.get(VirtualMachineProfile.Param.UefiFlag) != null) {
