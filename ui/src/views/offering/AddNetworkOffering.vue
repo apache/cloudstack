@@ -241,7 +241,7 @@
             v-decorator="['netscalerservicepackagesdescription', {}]"
             :placeholder="this.$t('netscaler.service.packages.description')"/>
         </a-form-item>
-        <a-form-item :label="$t('service.Lb.lbIsolation')" v-if="false">
+        <a-form-item :label="$t('service.Lb.lbIsolation')" v-show="false">
           <a-radio-group
             v-decorator="['isolation', {
               initialValue: 'dedicated'
@@ -264,7 +264,7 @@
         <a-form-item :label="$t('service.Connectivity.supportsstrechedl2subnet')" v-if="this.connectivityServiceChecked">
           <a-switch v-decorator="['supportsstrechedl2subnet', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('service.Connectivity.supportspublicaccess')" v-if="false">
+        <a-form-item :label="$t('service.Connectivity.supportspublicaccess')" v-show="false">
           <a-switch v-decorator="['supportspublicaccess', {initialValue: false}]" />
         </a-form-item>
         <a-form-item :label="$t('conservemode')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && !this.isVpcVirtualRouterForAtLeastOneService">
@@ -658,7 +658,7 @@ export default {
         var self = this
         var selectedServices = null
         var keys = Object.keys(values)
-        var ignoredKeys = ['state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'promiscuousmode', 'macaddresschanges', 'forgedtransmits']
+        var ignoredKeys = ['state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'isolation', 'supportspublicaccess']
         keys.forEach(function (key, keyIndex) {
           if (self.isSupportedServiceObject(values[key])) {
             if (selectedServices == null) {
@@ -674,11 +674,11 @@ export default {
           }
         })
 
-        if (values.guestiptype === 'Shared') { // specifyVlan checkbox is disabled, so inputData won't include specifyVlan
-          params.specifyvlan = values.specifyvlan
+        if (values.guestiptype === 'shared') { // specifyVlan checkbox is disabled, so inputData won't include specifyVlan
+          params.specifyvlan = true
           params.specifyipranges = true
           delete params.ispersistent
-        } else if (values.guestiptype === 'Isolated') { // specifyVlan checkbox is shown
+        } else if (values.guestiptype === 'isolated') { // specifyVlan checkbox is shown
           if (values.specifyvlan === true) {
             params.specifyvlan = true
           }
@@ -687,7 +687,7 @@ export default {
           } else { // Isolated Network with Non-persistent network
             delete params.ispersistent
           }
-        } else if (values.guestiptype === 'L2') {
+        } else if (values.guestiptype === 'l2') {
           if (values.specifyvlan === true) {
             params.specifyvlan = true
           }
@@ -703,7 +703,7 @@ export default {
         if (values.forvpc === true) {
           params.forvpc = true
         }
-        if (values.guestiptype === 'Shared' || values.guestiptype === 'Isolated') {
+        if (values.guestiptype === 'shared' || values.guestiptype === 'isolated') {
           if (values.conservemode !== true) {
             params.conservemode = false
           }
@@ -792,6 +792,10 @@ export default {
               params['details[' + 1 + '].servicepackagedescription'] = values.netscalerservicepackagesdescription
             }
           }
+        } else {
+          if (!('supportedservices' in params)) {
+            params.supportedservices = ''
+          }
         }
 
         if ('egressdefaultpolicy' in values && values.egressdefaultpolicy !== 'allow') {
@@ -835,8 +839,8 @@ export default {
         params.traffictype = 'GUEST' // traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
         api('createNetworkOffering', params).then(json => {
           this.$notification.success({
-            message: this.$t('label.added.network.offering'),
-            description: this.$t('label.added.network.offering')
+            message: 'Network offering created',
+            description: 'Network offering created'
           })
         }).catch(error => {
           this.$notification.error({

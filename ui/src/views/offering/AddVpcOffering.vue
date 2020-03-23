@@ -362,12 +362,11 @@ export default {
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
             serviceCapabilityIndex++
           }
+        } else {
+          params.supportedservices = ''
         }
         api('createVPCOffering', params).then(json => {
-          this.$notification.success({
-            message: this.$t('message.added.vpc.offering'),
-            description: this.$t('message.added.vpc.offering')
-          })
+          this.$message.success('VPC offering created: ' + values.name)
         }).catch(error => {
           this.$notification.error({
             message: 'Request Failed',

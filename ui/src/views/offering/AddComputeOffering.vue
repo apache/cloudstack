@@ -811,8 +811,8 @@ export default {
         }
         api('createServiceOffering', params).then(json => {
           this.$notification.success({
-            message: this.isSystem ? this.$t('message.add.system.service.offering') : this.$t('message.add.service.offering'),
-            description: this.isSystem ? this.$t('message.add.system.service.offering') : this.$t('message.add.service.offering')
+            message: this.isSystem ? 'Service offering created' : 'Compute offering created',
+            description: this.isSystem ? 'Service offering created' : 'Compute offering created'
           })
         }).catch(error => {
           this.$notification.error({
