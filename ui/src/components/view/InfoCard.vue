@@ -48,10 +48,10 @@
               <a-tag v-if="resource.hypervisor">
                 {{ resource.hypervisor }}
               </a-tag>
-              <a-tag v-if="'haenable' in resource" :color="resource.haenable ? 'green': 'red'">
+              <a-tag v-if="resource.haenable">
                 {{ $t('haenable') }}
               </a-tag>
-              <a-tag v-if="'isdynamicallyscalable' in resource" :color="resource.isdynamicallyscalable ? 'green': 'red'">
+              <a-tag v-if="resource.isdynamicallyscalable">
                 {{ $t('isdynamicallyscalable') }}
               </a-tag>
               <a-tag v-if="resource.scope">
