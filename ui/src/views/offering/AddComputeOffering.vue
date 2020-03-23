@@ -810,10 +810,7 @@ export default {
           params.zoneid = zoneId
         }
         api('createServiceOffering', params).then(json => {
-          this.$notification.success({
-            message: this.isSystem ? 'Service offering created' : 'Compute offering created',
-            description: this.isSystem ? 'Service offering created' : 'Compute offering created'
-          })
+          this.$message.success((this.isSystem ? 'Service offering created: ' : 'Compute offering created: ') + values.name)
         }).catch(error => {
           this.$notification.error({
             message: 'Request Failed',

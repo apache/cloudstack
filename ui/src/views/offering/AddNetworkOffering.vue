@@ -838,10 +838,7 @@ export default {
         }
         params.traffictype = 'GUEST' // traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
         api('createNetworkOffering', params).then(json => {
-          this.$notification.success({
-            message: 'Network offering created',
-            description: 'Network offering created'
-          })
+          this.$message.success('Network offering created: ' + values.name)
         }).catch(error => {
           this.$notification.error({
             message: 'Request Failed',
