@@ -294,7 +294,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
 
-        details.put(VmDetailConstants.BOOT_MODE, to.getBootType());
+        details.put(VmDetailConstants.BOOT_MODE, to.getBootMode());
+// there should also be
+//        details.put(VmDetailConstants.BOOT_TYPE, to.getBootType());
         String diskDeviceType = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (userVm) {
             if (diskDeviceType == null) {

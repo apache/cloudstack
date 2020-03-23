@@ -1064,10 +1064,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
-                s_logger.info(" Uefi params " + "UefiFlag: " + params.get(VirtualMachineProfile.Param.UefiFlag)
-                        + " Boot Type: " + params.get(VirtualMachineProfile.Param.BootType)
-                        + " Boot Mode: " + params.get(VirtualMachineProfile.Param.BootMode)
-                );
+                logUefiParameters(params);
                 DeployDestination dest = null;
                 try {
                     dest = _dpMgr.planDeployment(vmProfile, plan, avoids, planner);
@@ -1312,6 +1309,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
+        }
+    }
+
+    private void logUefiParameters(Map<VirtualMachineProfile.Param, Object> params) {
+        StringBuffer msgBuf = new StringBuffer("Uefi params ");
+        boolean log = false;
+        if (params.get(VirtualMachineProfile.Param.UefiFlag) != null) {
+            msgBuf.append(String.format("UefiFlag: %s ", params.get(VirtualMachineProfile.Param.UefiFlag)));
+            log = true;
+        }
+        if (params.get(VirtualMachineProfile.Param.BootType) != null) {
+            msgBuf.append(String.format("Boot Type: %s ", params.get(VirtualMachineProfile.Param.BootType)));
+            log = true;
+        }
+        if (params.get(VirtualMachineProfile.Param.BootMode) != null) {
+            msgBuf.append(String.format("Boot Mode: %s ", params.get(VirtualMachineProfile.Param.BootMode)));
+            log = true;
+        }
+        if (log) {
+            s_logger.info(msgBuf.toString());
         }
     }
 
