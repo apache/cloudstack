@@ -24,8 +24,8 @@
         <strong>{{ item === 'service' ? $t('supportedservices') : $t(item) }}</strong>
         <br/>
         <div v-if="Array.isArray(resource[item]) && item === 'service'">
-          <div v-for="(item, idx) in resource[item]" :key="idx">
-            {{ item.name }} : {{ item.provider[0].name }}
+          <div v-for="(service, idx) in resource[item]" :key="idx">
+            {{ service.name }} : {{ service.provider[0].name }}
           </div>
         </div>
         <div v-else>
