@@ -1723,9 +1723,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
         String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         DiskTO rootDiskTO = null;
-        String bootMode = "bios";
+        String bootMode = null;
         if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
             bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
+        }
+        if(null == bootMode) {
+            bootMode = ApiConstants.BootType.BIOS.toString();
         }
 
         // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'

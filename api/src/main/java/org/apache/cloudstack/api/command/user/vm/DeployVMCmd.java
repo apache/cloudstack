@@ -281,10 +281,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 }
             }
         }
-        if(getBootType() != null){ // export to get
-            if(getBootType() == ApiConstants.BootType.UEFI) {
-                customparameterMap.put(getBootType().toString(), getBootMode().toString());
-            }
+        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+            customparameterMap.put(getBootType().toString(), getBootMode().toString());
         }
 
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
