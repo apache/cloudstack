@@ -85,7 +85,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('cacheMode')">
+        <a-form-item :label="$t('cachemode')">
           <a-radio-group
             v-decorator="['cachemode', {
               initialValue: this.cacheMode
@@ -386,10 +386,10 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
-            :placeholder="this.$t('tags')"
+            :placeholder="$t('storagetags')"
             v-if="this.isAdmin()">
-            <a-select-option v-for="(opt) in this.storageTags" :key="opt.name">
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="opt in storageTags" :key="opt">
+              {{ opt }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -538,7 +538,7 @@ export default {
       isSystem: false,
       storageType: 'shared',
       provisioningType: 'thin',
-      cacheMode: 'node',
+      cacheMode: 'none',
       offeringType: 'fixed',
       qosType: '',
       isCustomizedDiskIops: false,
@@ -638,14 +638,12 @@ export default {
       const params = {}
       params.listAll = true
       this.storageTagLoading = true
+      this.storageTags = []
       api('listStorageTags', params).then(json => {
-        const tags = json.liststoragetagsresponse.storagetag
-        if (this.arrayHasItems(tags)) {
-          for (var i in tags) {
-            var tag = {}
-            tag.id = tags[i].name
-            tag.name = tags[i].name
-            this.storageTags.push(tag)
+        const tags = json.liststoragetagsresponse.storagetag || []
+        for (const tag of tags) {
+          if (!this.storageTags.includes(tag.name)) {
+            this.storageTags.push(tag.name)
           }
         }
       }).finally(() => {
@@ -857,7 +855,7 @@ export default {
   .form-layout {
     width: 80vw;
     @media (min-width: 800px) {
-      width: 400px;
+      width: 500px;
     }
   }
 

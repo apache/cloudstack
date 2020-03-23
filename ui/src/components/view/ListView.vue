@@ -114,13 +114,6 @@
     <a slot="vpcname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>
     </a>
-    <a slot="account" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: '/account/' + record.accountid }" v-if="record.accountid">{{ text }}</router-link>
-      <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else>{{ text }}</router-link>
-    </a>
-    <a slot="domain" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
-    </a>
     <a slot="hostname" slot-scope="text, record" href="javascript:;">
       <router-link v-if="record.hostid" :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
       <router-link v-else-if="record.hostname" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -131,6 +124,18 @@
     </a>
     <a slot="podname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/pod/' + record.podid }">{{ text }}</router-link>
+    </a>
+    <a slot="account" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/account/' + record.accountid }" v-if="record.accountid">{{ text }}</router-link>
+      <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else>{{ text }}</router-link>
+    </a>
+    <span slot="domain" slot-scope="text, record" href="javascript:;">
+      <router-link v-if="record.domainid && !record.domainid.includes(',')" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
+    </span>
+    <a slot="zone" slot-scope="text, record" href="javascript:;">
+      <router-link v-if="record.zoneid && !record.zoneid.includes(',')" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
     </a>
     <a slot="zonename" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>

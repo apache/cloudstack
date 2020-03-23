@@ -231,9 +231,6 @@ export default {
       api('queryAsyncJobResult', { jobid: jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1 && this.maxCerts === count) {
-          console.log(result)
-          console.log(this.maxCerts)
-          console.log(count)
           this.$message.success('Certificate Uploaded: ' + result.jobresult.customcertificate.message)
           this.$notification.success({
             message: 'Certificate Uploaded',

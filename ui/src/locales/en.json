@@ -103,7 +103,7 @@
 "broadcasturi": "Broadcast URI",
 "bucket": "Bucket",
 "bypassVlanOverlapCheck": "Bypass VLAN id/range overlap",
-"cacheMode": "Write-cache Type",
+"cachemode": "Write-cache Type",
 "capacity": "Capacity",
 "capacityBytes": "Capacity Bytes",
 "capacityIops": "Capacity IOPS",

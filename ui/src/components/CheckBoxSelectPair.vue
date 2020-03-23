@@ -105,12 +105,11 @@ export default {
 
 <style scoped lang="scss">
   .pair-checkbox {
-    width: 18vw;
+    width: 180px;
   }
   .pair-select-container {
     position: relative;
     float: right;
-    margin-left: 5vw;
     margin-bottom: -5px;
     width: 20vw;
   }

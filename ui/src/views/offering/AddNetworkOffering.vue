@@ -417,7 +417,7 @@ export default {
     this.zones = [
       {
         id: null,
-        name: this.$t('all.zone')
+        name: this.$t('label.all.zone')
       }
     ]
   },
@@ -593,7 +593,6 @@ export default {
           self.supportedServices[index] = svc
         }
       })
-      console.log(this.supportedServices)
     },
     handleSupportedServiceChange (service, checked, provider) {
       if (service === 'SourceNat') {
@@ -652,7 +651,6 @@ export default {
         if (err) {
           return
         }
-        console.log(values)
         var params = {}
 
         var self = this

@@ -421,7 +421,6 @@ export default {
         if (err) {
           return
         }
-        console.log(values)
         var params = {
           isMirrored: false,
           name: values.name,
