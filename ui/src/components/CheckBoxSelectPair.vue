@@ -111,7 +111,7 @@ export default {
     position: relative;
     float: right;
     margin-left: 5vw;
-    margin-bottom: 0;
+    margin-bottom: -5px;
     width: 20vw;
   }
 </style>

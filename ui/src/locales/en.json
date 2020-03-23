@@ -945,7 +945,7 @@
 "subdomainaccess": "Subdomain Access",
 "submit": "Submit",
 "sunday": "Sunday",
-"supportedServices": "Supported Services",
+"supportedservices": "Supported Services",
 "supportspublicaccess": "Supports Public Access",
 "supportsregionLevelvpc": "Supports Region Level VPC",
 "supportsstrechedl2subnet": "Supports Streched L2 Subnet",

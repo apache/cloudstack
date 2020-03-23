@@ -46,7 +46,6 @@
                   :checkBoxLabel="item.description"
                   :checkBoxDecorator="'service.' + item.name"
                   :selectOptions="item.provider"
-                  :selectLabel="$t('serviceproviders')"
                   :selectDecorator="item.name + '.provider'"
                   @handle-checkpair-change="handleSupportedServiceChange"/>
               </a-list-item>
@@ -158,7 +157,7 @@ export default {
     this.zones = [
       {
         id: null,
-        name: this.$t('all.zone')
+        name: this.$t('label.all.zone')
       }
     ]
   },
@@ -376,6 +375,7 @@ export default {
           })
         }).finally(() => {
           this.loading = false
+          this.$emit('refresh-data')
           this.closeAction()
         })
       })
@@ -389,10 +389,10 @@ export default {
 
 <style scoped lang="scss">
   .form-layout {
-    width: 50vw;
+    width: 80vw;
 
-    @media (min-width: 450px) {
-      width: 50vw;
+    @media (min-width: 800px) {
+      width: 500px;
     }
   }
   .supported-services-container {
