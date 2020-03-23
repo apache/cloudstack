@@ -85,6 +85,24 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item :label="$t('cacheMode')">
+          <a-radio-group
+            v-decorator="['cachemode', {
+              initialValue: this.cacheMode
+            }]"
+            buttonStyle="solid"
+            @change="selected => { this.handleCacheModeChange(selected.target.value) }">
+            <a-radio-button value="none">
+              {{ $t('No disk cache') }}
+            </a-radio-button>
+            <a-radio-button value="writeback">
+              {{ $t('Write-back disk caching') }}
+            </a-radio-button>
+            <a-radio-button value="writethrough">
+              {{ $t('Write-through') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <a-form-item :label="$t('offeringtype')" v-show="!this.isSystem">
           <a-radio-group
             v-decorator="['offeringtype', {
@@ -520,6 +538,7 @@ export default {
       isSystem: false,
       storageType: 'shared',
       provisioningType: 'thin',
+      cacheMode: 'node',
       offeringType: 'fixed',
       qosType: '',
       isCustomizedDiskIops: false,
@@ -651,6 +670,9 @@ export default {
     handleProvisioningTypeChange (val) {
       this.provisioningType = val
     },
+    handleCacheModeChange (val) {
+      this.cacheMode = val
+    },
     handleComputeOfferingTypeChange (val) {
       this.offeringType = val
     },
@@ -692,6 +714,7 @@ export default {
           displaytext: values.displaytext,
           storagetype: values.storageType,
           provisioningtype: values.provisioningtype,
+          cachemode: values.cachemode,
           customized: values.offeringtype !== 'fixed',
           offerha: values.offerha === true,
           limitcpuuse: values.limitcpuuse === true
