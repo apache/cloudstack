@@ -82,6 +82,10 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = "the zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
     private String zone;
 
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
+    @Param(description = "the service offering which was used to create vpc offering")
+    private String serviceOfferingId;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -148,5 +152,9 @@ public class VpcOfferingResponse extends BaseResponse {
 
     public void setZone(String zone) {
         this.zone = zone;
+    }
+
+    public void setServiceOfferingId(String serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
     }
 }

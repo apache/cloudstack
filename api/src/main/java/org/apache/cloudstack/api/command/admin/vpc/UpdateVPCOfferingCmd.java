@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.log4j.Logger;
 
@@ -71,6 +72,12 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the VPC offering, integer")
     private Integer sortKey;
+
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = ServiceOfferingResponse.class,
+            description = "the ID of the service offering for the VPC router appliance")
+    private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -154,6 +161,10 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
 
     public Integer getSortKey() {
         return sortKey;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     /////////////////////////////////////////////////////

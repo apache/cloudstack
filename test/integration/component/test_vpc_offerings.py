@@ -53,6 +53,15 @@ class Services:
                                     "cpuspeed": 100,
                                     "memory": 128,
                                     },
+                         "vpc_service_offering": {
+                                    "name": "Tiny Instance",
+                                    "displaytext": "Tiny Instance",
+                                    "cpunumber": 1,
+                                    "cpuspeed": 100,
+                                    "memory": 128,
+                                    "systemvmtype": "domainrouter",
+                                    "issystem": True,
+                                    },
                          "network_offering": {
                                     "name": 'VPC Network offering',
                                     "displaytext": 'VPC Network off',
@@ -189,8 +198,13 @@ class TestVPCOffering(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls.system_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["vpc_service_offering"]
+        )
         cls._cleanup = [
                         cls.service_offering,
+                        cls.system_offering
                         ]
         return
 
@@ -267,6 +281,36 @@ class TestVPCOffering(cloudstackTestCase):
                  "Name of the VPC network should match with listVPC data"
                 )
         self.logger.debug("VPC network created successfully - %s" % network.name)
+        return
+
+    def validate_vpc_offering_with_selected_service_offering(self, vpc_offering):
+        """Validates the VPC offering with selected service offering"""
+
+        self.logger.debug("Check if the VPC offering is created successfully?")
+        self.logger.debug(vpc_offering.serviceofferingid)
+        vpc_offs = VpcOffering.list(
+                                    self.apiclient,
+                                    id=vpc_offering.id
+                                    )
+        self.assertEqual(
+                         isinstance(vpc_offs, list),
+                         True,
+                         "List VPC offerings should return a valid list"
+                        )
+        self.assertEqual(
+                vpc_offering.name,
+                vpc_offs[0].name,
+                "Name of the VPC offering should match with listVPCOff data"
+            )
+        self.assertEqual(
+                vpc_offering.serviceofferingid,
+                vpc_offs[0].serviceofferingid,
+                "Service offering of the VPC offering should match with listVPCOff data"
+            )
+        self.logger.debug(
+                "VPC offering is created successfully - %s" %
+                vpc_offering.name
+            )
         return
 
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
@@ -1200,4 +1244,24 @@ class TestVPCOffering(cloudstackTestCase):
                          "Didn't create any Redundant Vpc"
                          )
 
+        return
+
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
+    def test_10_create_vpc_offering_with_selected_service_offering(self):
+        """ Test create VPC offering with selected service offering
+        """
+
+        # Steps for validation
+        # 1. Create VPC Offering by specifying all supported Services
+        # 2. VPC offering should be created successfully.
+
+        self.logger.debug("Creating inter VPC offering with selected service offering")
+        vpc_off = VpcOffering.create(
+            self.api_client,
+            services=self.services["vpc_offering"],
+            serviceofferingid=self.system_offering.id
+        )
+        self.logger.debug("Check if the VPC offering is created successfully?")
+        self.cleanup.append(vpc_off)
+        self.validate_vpc_offering_with_selected_service_offering(vpc_off)
         return
