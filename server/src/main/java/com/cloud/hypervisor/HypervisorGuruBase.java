@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
@@ -172,9 +173,19 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
                 offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
 
-        String bootType = (String)vmProfile.getParameter(new VirtualMachineProfile.Param("BootType"));
-        if (StringUtils.isNotBlank(bootType)) {
-            to.setBootType(bootType);
+        Map<VirtualMachineProfile.Param, Object> map = vmProfile.getParameters();
+        if (MapUtils.isNotEmpty(map)) {
+            if (map.containsKey(VirtualMachineProfile.Param.BootMode)) {
+                if (StringUtils.isNotBlank((String) map.get(VirtualMachineProfile.Param.BootMode))) {
+                    to.setBootMode((String) map.get(VirtualMachineProfile.Param.BootMode));
+                }
+            }
+
+            if (map.containsKey(VirtualMachineProfile.Param.BootType)) {
+                if (StringUtils.isNotBlank((String) map.get(VirtualMachineProfile.Param.BootType))) {
+                    to.setBootType((String) map.get(VirtualMachineProfile.Param.BootType));
+                }
+            }
         }
 
         List<NicProfile> nicProfiles = vmProfile.getNics();
