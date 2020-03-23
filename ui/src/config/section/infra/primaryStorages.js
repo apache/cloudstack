@@ -21,7 +21,7 @@ export default {
   icon: 'database',
   permission: ['listStoragePoolsMetrics', 'listStoragePools'],
   columns: ['name', 'state', 'ipaddress', 'type', 'path', 'scope', 'disksizeusedgb', 'disksizetotalgb', 'disksizeallocatedgb', 'disksizeunallocatedgb', 'clustername', 'zonename'],
-  details: ['name', 'id', 'ipaddress', 'type', 'scope', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'clustername', 'podname', 'zonename', 'created'],
+  details: ['name', 'id', 'ipaddress', 'type', 'scope', 'tags', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'clustername', 'podname', 'zonename', 'created'],
   related: [{
     name: 'volume',
     title: 'Volumes',
@@ -40,7 +40,8 @@ export default {
       icon: 'plus',
       label: 'label.add.primary.storage',
       listView: true,
-      args: ['scope', 'zoneid', 'podid', 'clusterid', 'name', 'provider', 'managed', 'capacityBytes', 'capacityIops', 'url', 'tags']
+      popup: true,
+      component: () => import('@/views/infra/AddPrimaryStorage.vue')
     },
     {
       api: 'updateStoragePool',
@@ -69,7 +70,7 @@ export default {
       label: 'label.action.delete.primary.storage',
       dataView: true,
       args: ['forced'],
-      show: (record) => { return !(record.state === 'Down' || record.state === 'Alert' || record.state === 'Maintenance' || record.state === 'Disconnected') }
+      show: (record) => { return (record.state === 'Down' || record.state === 'Maintenance' || record.state === 'Disconnected') }
     }
   ]
 }
