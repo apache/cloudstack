@@ -395,6 +395,7 @@ export default {
       width: 500px;
     }
   }
+
   .supported-services-container {
     height: 250px;
     overflow: auto;

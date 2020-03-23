@@ -68,13 +68,13 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('ispersisitent')" v-if="this.guestType !== 'shared'">
-          <a-switch v-decorator="['ispersisitent', {initialValue: false}]" />
+        <a-form-item :label="$t('ispersistent')" v-if="this.guestType !== 'shared'">
+          <a-switch v-decorator="['ispersistent', {initialValue: false}]" />
         </a-form-item>
         <a-form-item :label="$t('specifyvlan')" v-if="this.guestType !== 'shared'">
           <a-switch v-decorator="['specifyvlan', {initialValue: true}]" :defaultChecked="true" />
         </a-form-item>
-        <a-form-item :label="$t('forvpc')" v-if="this.guestType === 'isolated'">
+        <a-form-item :label="$t('vpc')" v-if="this.guestType === 'isolated'">
           <a-switch v-decorator="['forvpc', {initialValue: this.forVpc}]" :defaultChecked="this.forVpc" @change="val => { this.handleForVpcChange(val) }" />
         </a-form-item>
         <a-form-item :label="$t('userdatal2')" v-if="this.guestType === 'l2'">
@@ -158,7 +158,6 @@
                   :checkBoxLabel="item.description"
                   :checkBoxDecorator="'service.' + item.name"
                   :selectOptions="item.provider"
-                  :selectLabel="$t('serviceproviders')"
                   :selectDecorator="item.name + '.provider'"
                   @handle-checkpair-change="handleSupportedServiceChange"/>
               </a-list-item>
@@ -188,10 +187,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('service.SourceNat.redundant.router.capability')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.sourceNatServiceChecked && !this.isVpcVirtualRouterForAtLeastOneService">
+        <a-form-item :label="$t('redundantrouter')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.sourceNatServiceChecked && !this.isVpcVirtualRouterForAtLeastOneService">
           <a-switch v-decorator="['redundantroutercapability', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('service.SourceNat.sourceNatType')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.sourceNatServiceChecked">
+        <a-form-item :label="$t('sourcenattype')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.sourceNatServiceChecked">
           <a-radio-group
             v-decorator="['sourcenattype', {
               initialValue: 'peraccount'
@@ -683,7 +682,7 @@ export default {
           if (values.specifyvlan === true) {
             params.specifyvlan = true
           }
-          if (values.ispersistent === true) {
+          if (values.ispersistent) {
             params.ispersistent = true
           } else { // Isolated Network with Non-persistent network
             delete params.ispersistent
@@ -846,6 +845,7 @@ export default {
           })
         }).finally(() => {
           this.loading = false
+          this.$emit('refresh-data')
           this.closeAction()
         })
       })
@@ -859,10 +859,10 @@ export default {
 
 <style scoped lang="scss">
   .form-layout {
-    width: 50vw;
+    width: 80vw;
 
-    @media (min-width: 450px) {
-      width: 50vw;
+    @media (min-width: 800px) {
+      width: 500px;
     }
   }
   .supported-services-container {
