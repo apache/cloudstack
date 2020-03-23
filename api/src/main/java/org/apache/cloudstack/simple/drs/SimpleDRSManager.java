@@ -21,6 +21,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SimpleDRSManager extends PluggableService, Configurable {
 
@@ -65,4 +66,5 @@ public interface SimpleDRSManager extends PluggableService, Configurable {
     List<String> listProviderNames();
     double getClusterImbalance(long clusterId);
     boolean isClusterImbalanced(long clusterId);
+    Map<SimpleDRSResource, List<SimpleDRSWorkload>> findResourcesAndWorkloadsToBalance(long clusterId);
 }

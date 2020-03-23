@@ -44,12 +44,13 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.SimpleDRSEntityVO;
 
 @Entity
 @Table(name = "host")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING, length = 32)
-public class HostVO implements Host {
+public class HostVO extends SimpleDRSEntityVO implements Host {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

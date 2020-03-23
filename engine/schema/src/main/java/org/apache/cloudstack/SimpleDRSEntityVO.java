@@ -14,7 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.simple.drs;
+package org.apache.cloudstack;
 
-public interface SimpleDRSWorkload extends SimpleDRSEntity {
+import javax.persistence.Transient;
+
+public abstract class SimpleDRSEntityVO {
+
+    @Transient
+    private double drsRebalanceMetric;
+
+    public void setDRSRebalanceMetric(double metric) {
+        this.drsRebalanceMetric = metric;
+    }
+
+    public double getDRSRebalanceMetric() {
+        return drsRebalanceMetric;
+    }
 }

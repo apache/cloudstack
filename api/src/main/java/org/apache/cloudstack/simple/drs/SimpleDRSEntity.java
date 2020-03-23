@@ -16,5 +16,9 @@
 // under the License.
 package org.apache.cloudstack.simple.drs;
 
-public interface SimpleDRSWorkload extends SimpleDRSEntity {
+import org.apache.cloudstack.ha.HAResource;
+
+public interface SimpleDRSEntity extends HAResource {
+    void setDRSRebalanceMetric(double metric);
+    double getDRSRebalanceMetric();
 }

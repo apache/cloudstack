@@ -37,6 +37,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.SimpleDRSEntityVO;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
@@ -53,7 +54,7 @@ import com.cloud.utils.db.StateMachine;
 @Table(name = "host")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING, length = 32)
-public class EngineHostVO implements EngineHost, Identity {
+public class EngineHostVO extends SimpleDRSEntityVO implements EngineHost, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

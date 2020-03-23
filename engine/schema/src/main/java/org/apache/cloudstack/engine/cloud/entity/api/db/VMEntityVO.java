@@ -38,6 +38,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.SimpleDRSEntityVO;
 import org.apache.cloudstack.backup.Backup;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -53,7 +54,7 @@ import com.google.gson.Gson;
 @Table(name = "vm_instance")
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING, length = 32)
-public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
+public class VMEntityVO extends SimpleDRSEntityVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
     @Id
     @TableGenerator(name = "vm_instance_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_instance_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)

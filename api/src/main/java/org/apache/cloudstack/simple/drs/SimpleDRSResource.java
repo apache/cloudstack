@@ -16,7 +16,5 @@
 // under the License.
 package org.apache.cloudstack.simple.drs;
 
-import org.apache.cloudstack.ha.HAResource;
-
-public interface SimpleDRSResource extends HAResource {
+public interface SimpleDRSResource extends SimpleDRSEntity {
 }

@@ -39,6 +39,15 @@ import com.cloud.resource.ResourceState;
 public class CheckOnHostCommandTest {
     public Host host = new Host() {
         @Override
+        public void setDRSRebalanceMetric(double metric) {
+        }
+
+        @Override
+        public double getDRSRebalanceMetric() {
+            return 0;
+        }
+
+        @Override
         public PartitionType partitionType() {
             return PartitionType.Host;
         }

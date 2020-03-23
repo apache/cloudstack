@@ -149,4 +149,15 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
         Double threshold = SimpleDRSImbalanceThreshold.valueIn(clusterId);
         return configuredDRSAlgorithm.isClusterImbalanced(clusterImbalance, threshold);
     }
+
+    @Override
+    public Map<SimpleDRSResource, List<SimpleDRSWorkload>> findResourcesAndWorkloadsToBalance(long clusterId) {
+        Map<SimpleDRSResource, List<SimpleDRSWorkload>> map = new HashMap<>();
+        List<SimpleDRSResource> resources = configuredDRSProvider.findResourcesToBalance(clusterId);
+        for (SimpleDRSResource resource : resources) {
+            List<SimpleDRSWorkload> workloadsInResource = configuredDRSProvider.findWorkloadsInResource(clusterId, resource.getId());
+            map.put(resource, workloadsInResource);
+        }
+        return map;
+    }
 }
