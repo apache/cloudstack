@@ -47,9 +47,9 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="this.$t('systemvmtype')">
-            <a-select-option key="domainrouter">{{ $t('domain.router') }}</a-select-option>
-            <a-select-option key="consoleproxy">{{ $t('console.proxy') }}</a-select-option>
-            <a-select-option key="secondarystoragevm">{{ $t('secondary.storage.vm') }}</a-select-option>
+            <a-select-option key="domainrouter">Domain Router</a-select-option>
+            <a-select-option key="consoleproxy">Console Proxy</a-select-option>
+            <a-select-option key="secondarystoragevm">Secondary Storage VM</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('storagetype')">
@@ -358,7 +358,7 @@
             v-decorator="['hosttags', {}]"
             :placeholder="this.$t('hosttags')"/>
         </a-form-item>
-        <a-form-item :label="$t('tags')" v-if="this.isAdmin()">
+        <a-form-item :label="$t('storagetags')" v-if="this.isAdmin()">
           <a-select
             mode="tags"
             v-decorator="['storagetags', {}]"
@@ -417,7 +417,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('pcidevice')" v-if="!this.isSystem">
+        <a-form-item :label="$t('gpu')" v-if="!this.isSystem">
           <a-radio-group
             v-decorator="['pcidevice', {
               initialValue: this.selectedGpu
@@ -446,7 +446,7 @@
         <a-form-item :label="$t('ispublic')" v-show="this.isAdmin()">
           <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :checked="this.isPublic" @change="val => { this.isPublic = val }" />
         </a-form-item>
-        <a-form-item :label="$t('domainid')" v-if="!this.isPublic">
+        <a-form-item :label="$t('domain')" v-if="!this.isPublic">
           <a-select
             mode="multiple"
             v-decorator="['domainid', {
@@ -567,7 +567,7 @@ export default {
     this.zones = [
       {
         id: null,
-        name: this.$t('all.zone')
+        name: this.$t('label.all.zone')
       }
     ]
   },
@@ -821,6 +821,7 @@ export default {
           })
         }).finally(() => {
           this.loading = false
+          this.$emit('refresh-data')
           this.closeAction()
         })
       })
@@ -833,6 +834,13 @@ export default {
 </script>
 
 <style scoped lang="scss">
+  .form-layout {
+    width: 80vw;
+    @media (min-width: 800px) {
+      width: 400px;
+    }
+  }
+
   .action-button {
     text-align: right;
 

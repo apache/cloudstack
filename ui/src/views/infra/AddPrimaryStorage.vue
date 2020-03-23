@@ -174,7 +174,7 @@
             <a-input v-decorator="['volume']" />
           </a-form-item>
         </div>
-        <a-form-item :label="$t('storageTags')">
+        <a-form-item :label="$t('storagetags')">
           <a-select
             mode="tags"
             v-model="selectedTags"

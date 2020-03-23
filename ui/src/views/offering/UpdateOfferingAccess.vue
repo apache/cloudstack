@@ -73,7 +73,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.$t('label.zone')">
+            :placeholder="this.$t('zone')">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
