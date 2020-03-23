@@ -70,7 +70,7 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item :label="$t('customdisksize')">
-          <a-switch v-decorator="['customdisksize']" :checked="this.isCustomDiskSize" @change="val => { this.isCustomDiskSize = val }" />
+          <a-switch v-decorator="['customdisksize', { initialValue: this.isCustomDiskSize }]" :checked="this.isCustomDiskSize" @change="val => { this.isCustomDiskSize = val }" />
         </a-form-item>
         <a-form-item :label="$t('disksize')" v-if="!this.isCustomDiskSize">
           <a-input
@@ -214,18 +214,18 @@
             }]"
             buttonStyle="solid"
             @change="selected => { this.handleWriteCacheTypeChange(selected.target.value) }">
-            <a-radio-button value="nodiskcache">
-              {{ $t('nodiskcache') }}
+            <a-radio-button value="none">
+              {{ $t('none') }}
             </a-radio-button>
-            <a-radio-button value="writebackdiskcaching">
-              {{ $t('writebackdiskcaching') }}
+            <a-radio-button value="writeback">
+              {{ $t('writeback') }}
             </a-radio-button>
-            <a-radio-button value="writethroughdiskcaching">
-              {{ $t('writethroughdiskcaching') }}
+            <a-radio-button value="writethrough">
+              {{ $t('writethrough') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('tags')" v-if="this.isAdmin()">
+        <a-form-item :label="$t('storagetags')" v-if="this.isAdmin()">
           <a-select
             mode="tags"
             v-decorator="['tags', {}]"
@@ -321,7 +321,7 @@ export default {
       isCustomDiskSize: true,
       qosType: '',
       isCustomizedDiskIops: false,
-      writeCacheType: 'nodiskcache',
+      writeCacheType: 'none',
       selectedDomains: [],
       selectedZones: [],
       storageTags: [],
@@ -341,7 +341,7 @@ export default {
     this.zones = [
       {
         id: null,
-        name: this.$t('all.zone')
+        name: this.$t('label.all.zone')
       }
     ]
   },
@@ -421,14 +421,15 @@ export default {
         if (err) {
           return
         }
+        console.log(values)
         var params = {
           isMirrored: false,
           name: values.name,
-          displaytext: values.description,
+          displaytext: values.displaytext,
           storageType: values.storagetype,
           cacheMode: values.writecachetype,
           provisioningType: values.provisioningtype,
-          customized: (values.customdisksize === true)
+          customized: values.customdisksize
         }
         if (values.customdisksize !== true) {
           params.disksize = values.disksize
@@ -503,6 +504,7 @@ export default {
           })
         }).finally(() => {
           this.loading = false
+          this.$emit('refresh-data')
           this.closeAction()
         })
       })
@@ -515,6 +517,13 @@ export default {
 </script>
 
 <style scoped lang="scss">
+  .form-layout {
+    width: 80vw;
+    @media (min-width: 800px) {
+      width: 400px;
+    }
+  }
+
   .action-button {
     text-align: right;
 
