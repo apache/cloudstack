@@ -119,6 +119,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy By default for BIOS")
     private String bootMode;
 
+    @Parameter(name = ApiConstants.BOOT_INTO_BIOS, type = CommandType.BOOLEAN, required = false, description = "Boot into bios or not", since = "4.15.0.0")
+    private Boolean bootIntoBios;
+
     //DataDisk information
     @ACL
     @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the ID of the disk offering for the virtual machine. If the template is of ISO format,"

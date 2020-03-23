@@ -807,6 +807,7 @@ public class ApiConstants {
 
     public static final String BOOT_TYPE ="boottype";
     public static final String BOOT_MODE ="bootmode";
+    public static final String BOOT_INTO_BIOS ="bootintobios";
 
     public enum BootType {
         UEFI, BIOS;
