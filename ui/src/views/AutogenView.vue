@@ -111,10 +111,16 @@
             <a-form-item
               v-for="(field, fieldIndex) in currentAction.paramFields"
               :key="fieldIndex"
-              :label="$t(field.name)"
               :v-bind="field.name"
               v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
             >
+              <span slot="label">
+                {{ $t(field.name) }}
+                <a-tooltip :title="field.description">
+                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                </a-tooltip>
+              </span>
+
               <span v-if="field.type==='boolean'">
                 <a-switch
                   v-decorator="[field.name, {
@@ -198,8 +204,7 @@
                   v-decorator="[field.name, {
                     rules: [{ required: field.required, message: 'Please enter input' }]
                   }]"
-                  :placeholder="field.description"
-                />
+                  :placeholder="field.description" />
               </span>
             </a-form-item>
           </a-form>

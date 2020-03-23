@@ -127,7 +127,7 @@ export default {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
-            this.zoneSelected = this.zone[0].id
+            this.zoneSelected = this.zones[0].id
           }
         }
       })

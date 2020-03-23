@@ -154,7 +154,7 @@
               placeholder="Netmask of the tier. For example, with VPC CIDR of 10.0.0.0/16 and network tier CIDR of 10.1.1.0/24, gateway is 10.1.1.1 and netmask is 255.255.255.0"
               v-decorator="['netmask',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('externalId')">
+          <a-form-item :label="$t('externalid')">
             <a-input
               v-decorator="['externalId']"></a-input>
           </a-form-item>

@@ -16,25 +16,118 @@
 // under the License.
 
 <template>
-  <div>
-    TODO: create network form: L2, isolated and shared
+  <div class="form-layout">
+    <a-tabs defaultActiveKey="1" :animated="false">
+      <a-tab-pane :tab="$t('Isolated')" key="1" v-if="this.isAdvancedZoneWithoutSGAvailable()">
+        <CreateIsolatedNetworkForm
+          :loading="loading"
+          @close-action="closeAction"
+          @refresh-data="refreshParent"
+          @refresh="handleRefresh"/>
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('L2')" key="2">
+        <CreateL2NetworkForm
+          :loading="loading"
+          @close-action="closeAction"
+          @refresh-data="refreshParent"
+          @refresh="handleRefresh"/>
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('Shared')" key="3" v-if="this.isAdmin()">
+        <CreateSharedNetworkForm
+          :loading="loading"
+          @close-action="closeAction"
+          @refresh-data="refreshParent"
+          @refresh="handleRefresh"/>
+      </a-tab-pane>
+    </a-tabs>
   </div>
 </template>
 
 <script>
+import { api } from '@/api'
+import CreateIsolatedNetworkForm from '@/views/network/CreateIsolatedNetworkForm'
+import CreateL2NetworkForm from '@/views/network/CreateL2NetworkForm'
+import CreateSharedNetworkForm from '@/views/network/CreateSharedNetworkForm'
 
 export default {
-  name: '',
+  name: 'CreateNetwork',
   components: {
+    CreateIsolatedNetworkForm,
+    CreateL2NetworkForm,
+    CreateSharedNetworkForm
+  },
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
   },
   data () {
     return {
+      defaultNetworkTypeTabKey: '1',
+      loading: false,
+      actionZones: [],
+      actionZoneLoading: false
     }
   },
+  mounted () {
+    this.fetchData()
+  },
   methods: {
+    fetchData () {
+      this.loading = true
+      this.fetchActionZoneData()
+    },
+    isAdmin () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    fetchActionZoneData () {
+      const params = {}
+      params.listAll = true
+      this.actionZonesLoading = true
+      api('listZones', params).then(json => {
+        this.actionZones = json.listzonesresponse.zone
+      }).finally(() => {
+        this.actionZoneLoading = false
+        this.loading = false
+      })
+    },
+    isAdvancedZoneWithoutSGAvailable () {
+      for (const i in this.actionZones) {
+        const zone = this.actionZones[i]
+        if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
+          return true
+        }
+      }
+      return true
+    },
+    handleRefresh () {
+      this.fetchData()
+    },
+    refreshParent () {
+      this.$emit('refresh-data')
+    },
+    closeAction () {
+      this.$emit('close-action')
+    }
   }
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+  .form-layout {
+    width: 600px;
+  }
+
+  .random {
+    width: 80%;
+  }
+
+  .action-button {
+    text-align: right;
+
+    button {
+      margin-right: 5px;
+    }
+  }
 </style>

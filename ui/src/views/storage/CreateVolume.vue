@@ -150,6 +150,7 @@ export default {
           })
         }).finally(() => {
           this.loading = false
+          this.$emit('refresh-data')
           this.closeModal()
         })
       })
