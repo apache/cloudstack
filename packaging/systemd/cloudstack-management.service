@@ -24,8 +24,8 @@
 
 [Unit]
 Description=CloudStack Management Server
-After=syslog.target network.target mariadb.service mysqld.service
-Wants=mariadb.service mysqld.service
+After=syslog.target network.target mariadb.service mysqld.service mysql.service
+Wants=mariadb.service mysqld.service mysql.service
 
 [Service]
 UMask=0022
