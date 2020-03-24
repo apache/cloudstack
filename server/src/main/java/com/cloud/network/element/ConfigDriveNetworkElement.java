@@ -28,6 +28,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -47,9 +49,11 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -262,11 +266,13 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     @Override
     public boolean addNewDisk(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
-        try {
-            recreateConfigDriveIso(nic, network, vm, dest);
-        } catch (ResourceUnavailableException e) {
-            LOG.error("Failed to add config disk drive due to: ", e);
-            return false;
+        if (vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
+            try {
+                recreateConfigDriveIso(nic, network, vm, dest);
+            } catch (ResourceUnavailableException e) {
+                LOG.error("Failed to add config disk drive due to: ", e);
+                return false;
+            }
         }
         return true;
     }
@@ -373,6 +379,26 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                 vm.setVmData(vmData);
                 vm.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
                 createConfigDriveIso(vm, dest, diskToUse);
+                if (vm.getHypervisorType().equals(Hypervisor.HypervisorType.VMware)) {
+                    DettachCommand cmd = new DettachCommand(diskToUse, vm.getInstanceName());
+                    try {
+                        Answer result = agentManager.send(dest.getHost().getId(), cmd);
+                        if (!result.getResult()) {
+                            LOG.error("Failed to detach config drive ISO from VM");
+                        }
+                    } catch (OperationTimedoutException e) {
+                        LOG.error("Operation timed-out exception: "+ e.getMessage());
+                    }
+                    AttachCommand command = new AttachCommand(diskToUse, vm.getInstanceName());
+                    try {
+                        Answer result = agentManager.send(dest.getHost().getId(), command);
+                        if (!result.getResult()) {
+                            LOG.error("Failed to attach config drive ISO from VM");
+                        }
+                    } catch (OperationTimedoutException e) {
+                        LOG.error("Operation timed-out exception: "+ e.getMessage());
+                    }
+                }
             }
         }
     }

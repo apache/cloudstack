@@ -61,7 +61,7 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> ResoureCountRunningVMsonly = new ConfigKey<Boolean>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
             "Count the resources of only running VMs in resource limitation.", true);
 
-    ConfigKey<Boolean> AllowExposeHypervisorHostnameAccoutLevel = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.expose.host.hostname.account",
+    ConfigKey<Boolean> AllowExposeHypervisorHostnameAccoutLevel = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.expose.host.hostname",
             "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Account);
 
     ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.expose.host.hostname",
