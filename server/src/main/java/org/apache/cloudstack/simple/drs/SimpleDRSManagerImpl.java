@@ -16,20 +16,35 @@
 // under the License.
 package org.apache.cloudstack.simple.drs;
 
-import com.cloud.utils.component.ManagerBase;
-import org.apache.cloudstack.api.command.admin.simple.drs.ScheduleDRSCmd;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.simple.drs.SimpleDRSProvider;
-import org.apache.cloudstack.framework.simple.drs.SimpleDRSRebalancingAlgorithm;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.utils.component.ManagerBase;
+
+import org.apache.cloudstack.api.command.admin.simple.drs.ScheduleDRSCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
+import org.apache.cloudstack.framework.simple.drs.SimpleDRSProvider;
+import org.apache.cloudstack.framework.simple.drs.SimpleDRSRebalancingAlgorithm;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.poll.BackgroundPollManager;
+import org.apache.cloudstack.poll.BackgroundPollTask;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
 
 public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManager {
 
@@ -42,6 +57,15 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
 
     private List<SimpleDRSProvider> drsProviders;
     private List<SimpleDRSRebalancingAlgorithm> drsAlgorithms;
+
+    @Inject
+    private BackgroundPollManager backgroundPollManager;
+
+    @Inject
+    private AsyncJobManager asyncJobManager;
+
+    @Inject
+    private ClusterDao clusterDao;
 
     ////////////////////////////////////////////////////
     /////////////// Init DRS providers /////////////////
@@ -85,11 +109,60 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
         initDrsAlgorithmsMap();
     }
 
+    ////////////////////////////////////////////////////
+    //////////////// Schedule DRS Task /////////////////
+    ////////////////////////////////////////////////////
+
+    private final class ScheduleDRSTask extends ManagedContextRunnable implements BackgroundPollTask {
+
+        private SimpleDRSManager manager;
+        private ClusterDao clusterDao;
+
+        private ScheduleDRSTask(SimpleDRSManager manager, ClusterDao clusterDao) {
+            this.manager = manager;
+            this.clusterDao = clusterDao;
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                List<ClusterVO> clusters = clusterDao.listAll();
+                LOG.info("Got clusters to shedule rebalancing : " + clusters);
+                if (clusters == null) {
+                    return;
+                }
+                for (ClusterVO cluster : clusters) {
+                    Long clusterId = cluster.getId();
+                    LOG.info("Rebalancing : " + clusterId + " : " + SimpleDRSAutomaticEnable.valueIn(clusterId));
+
+                    if (SimpleDRSAutomaticEnable.valueIn(clusterId)) {
+                        manager.schedule(cluster.getId());
+                    }
+                }
+            } catch (final Throwable t) {
+                LOG.error("Error trying to run schedule DRS task", t);
+            }
+        }
+
+        @Override
+        public Long getDelay() {
+            return SimpleDRSAutomaticInterval.value() * 1000L;
+        }
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        backgroundPollManager.submitTask(new ScheduleDRSTask(this, clusterDao));
+        return true;
+    }
+
     @Override
     public boolean start() {
         super.start();
         initDrsProvidersMap();
         initDrsAlgorithmsMap();
+
         if (drsProvidersMap.containsKey(SimpleDRSProvider.value())) {
             configuredDRSProvider = drsProvidersMap.get(SimpleDRSProvider.value());
         }
@@ -104,6 +177,7 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
             LOG.error("Failed to find valid configured DRS algorithm, please check!");
             return false;
         }
+
         return true;
     }
 
@@ -121,10 +195,8 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] {
-                SimpleDRSProvider, SimpleDRSRebalancingAlgorithm, SimpleDRSAutomaticEnable, SimpleDRSAutomaticInterval,
-                SimpleDRSIterations, SimpleDRSImbalanceThreshold
-        };
+        return new ConfigKey[] { SimpleDRSProvider, SimpleDRSRebalancingAlgorithm, SimpleDRSAutomaticEnable,
+                SimpleDRSAutomaticInterval, SimpleDRSIterations, SimpleDRSImbalanceThreshold };
     }
 
     @Override
@@ -155,9 +227,51 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
         Map<SimpleDRSResource, List<SimpleDRSWorkload>> map = new HashMap<>();
         List<SimpleDRSResource> resources = configuredDRSProvider.findResourcesToBalance(clusterId);
         for (SimpleDRSResource resource : resources) {
-            List<SimpleDRSWorkload> workloadsInResource = configuredDRSProvider.findWorkloadsInResource(clusterId, resource.getId());
+            List<SimpleDRSWorkload> workloadsInResource = configuredDRSProvider.findWorkloadsInResource(clusterId,
+                    resource.getId());
             map.put(resource, workloadsInResource);
         }
         return map;
+    }
+
+    public void schedule(long clusterId) {
+        ScheduleDRSCmd cmd = new ScheduleDRSCmd(clusterId);
+        schedule(cmd);
+    }
+
+    @Override
+    public void schedule(ScheduleDRSCmd cmd) {
+        Long clusterId = cmd.getClusterId();
+
+        LOG.info("Scheduling DRS for : " + clusterId);
+
+        // TODO : Check if drs enabled on cluster
+
+        // if (!isClusterImbalanced(clusterId)) {
+        //     return;
+        // }
+
+        final CallContext context = CallContext.current();
+        final User callingUser = context.getCallingUser();
+        final Account callingAccount = context.getCallingAccount();
+
+        AsyncJobVO job = new AsyncJobVO();
+        job.setRelated("");
+        job.setDispatcher(SimpleDRSDispatcher.SIMPLE_DRS_DISPATCHER);
+        job.setCmd(cmd.getClass().getName());
+        job.setAccountId(callingAccount.getId());
+        job.setUserId(callingUser.getId());
+
+        job.setCmdInfo(JobSerializerHelper.toObjectSerializedString(cmd));
+
+        asyncJobManager.submitAsyncJob(job);
+        // Maybe get the jobid and do something about it ?
+    }
+
+    @Override
+    public void balanceCluster(ScheduleDRSCmd cmd) {
+        Long clusterId = cmd.getClusterId();
+        LOG.info("Balancing : " + clusterId);
+        return;
     }
 }

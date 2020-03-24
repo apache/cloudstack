@@ -33,6 +33,8 @@ import org.apache.cloudstack.simple.drs.SimpleDRSManager;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+
+import java.io.Serializable;
 import java.util.List;
 
 @APICommand(name = ScheduleDRSCmd.APINAME,
@@ -40,7 +42,7 @@ import java.util.List;
         responseObject = ScheduleDRSResponse.class,
         since = "4.14.0",
         authorized = {RoleType.Admin})
-public class ScheduleDRSCmd extends BaseCmd {
+public class ScheduleDRSCmd extends BaseCmd implements Serializable {
 
     public static final String APINAME = "scheduleDRS";
 
@@ -52,6 +54,17 @@ public class ScheduleDRSCmd extends BaseCmd {
     SimpleDRSManager drsManager;
 
     private static final Logger LOG = Logger.getLogger(ScheduleDRSCmd.class);
+
+    public ScheduleDRSCmd() {
+    }
+
+    public ScheduleDRSCmd(Long clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public Long getClusterId() {
+        return this.clusterId;
+    }
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
