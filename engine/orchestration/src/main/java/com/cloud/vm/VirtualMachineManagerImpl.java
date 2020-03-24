@@ -2312,7 +2312,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected void migrate(final VMInstanceVO vm, final long srcHostId, final DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException {
         s_logger.info("Migrating " + vm + " to " + dest);
-
+        final UserVmVO userVm = _userVmDao.findById(vm.getId());
         final long dstHostId = dest.getHost().getId();
         final Host fromHost = _hostDao.findById(srcHostId);
         if (fromHost == null) {
@@ -2462,7 +2462,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             } catch (final OperationTimedoutException e) {
                 s_logger.debug("Error while checking the vm " + vm + " on host " + dstHostId, e);
             }
-
             migrated = true;
         } finally {
             if (!migrated) {
@@ -2485,6 +2484,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             } else {
                 _networkMgr.commitNicForMigration(vmSrc, profile);
+                _networkMgr.addNewDisk(profile, dest);
             }
 
             work.setStep(Step.Done);
@@ -2786,6 +2786,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vm.setLastHostId(srcHostId);
         vm.setPodIdToDeployIn(destHost.getPodId());
         moveVmToMigratingState(vm, destHostId, work);
+        List<String[]> vmData = null;
 
         boolean migrated = false;
         try {
@@ -2796,7 +2797,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
 
-            List<String[]> vmData = null;
             if (defaultNic != null) {
                 UserVmVO userVm = _userVmDao.findById(vm.getId());
                 Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
@@ -2806,9 +2806,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
                     final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
                     boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-
+                    final Account caller = CallContext.current().getCallingAccount();
+                    String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccoutLevel.valueIn(caller.getId())) ? destination.getHost().getName() : null;
                     vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
-                            vm.getUuid(), defaultNic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+                            vm.getUuid(), defaultNic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, destHostname);
                     String vmName = vm.getInstanceName();
                     String configDriveIsoRootFolder = "/tmp";
                     String isoFile = configDriveIsoRootFolder + "/" + vmName + "/configDrive/" + vmName + ".iso";
@@ -2826,7 +2827,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         s_logger.debug("TIme out occured while exeuting command AttachOrDettachConfigDrive " + e.getMessage());
 
                     }
-
                 }
             }
 
@@ -2850,7 +2850,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             } catch (final OperationTimedoutException e) {
                 s_logger.warn("Error while checking the vm " + vm + " is on host " + destHost, e);
             }
-
             migrated = true;
         } finally {
             if (!migrated) {
@@ -2867,6 +2866,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (final NoTransitionException e) {
                     s_logger.error("Error while transitioning vm from migrating to running state.", e);
                 }
+            } else {
+                _networkMgr.addNewDisk(profile, destination);
             }
 
             work.setStep(Step.Done);
@@ -4058,6 +4059,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (final NoTransitionException e) {
                     s_logger.warn(e.getMessage());
                 }
+            } else {
+                _networkMgr.addNewDisk(profile, dest);
             }
 
             work.setStep(Step.Done);
@@ -4288,7 +4291,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
             VmOpLockStateRetry,
             VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp,
-            ResoureCountRunningVMsonly };
+            ResoureCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccoutLevel };
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {

@@ -50,6 +50,7 @@ public class UserdataToRouterRules extends RuleApplier {
 
         UserVmDao userVmDao = visitor.getVirtualNetworkApplianceFactory().getUserVmDao();
         _userVM = userVmDao.findById(_profile.getVirtualMachine().getId());
+
         userVmDao.loadDetails(_userVM);
 
         // for basic zone, send vm data/password information only to the router in the same pod

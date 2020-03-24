@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -83,6 +84,7 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.user.Account;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
@@ -100,6 +102,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Maps;
 
 @RunWith(PowerMockRunner.class)
+@PrepareForTest(CallContext.class)
 public class ConfigDriveNetworkElementTest {
 
     public static final String CLOUD_ID = "xx";
@@ -146,6 +149,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private UserVmVO virtualMachine;
     @Mock private IPAddressVO publicIp;
     @Mock private AgentManager agentManager;
+    @Mock private CallContext callContextMock;
 
     @InjectMocks private final ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
     @InjectMocks @Spy private NetworkModelImpl _networkModel = new NetworkModelImpl();
@@ -157,7 +161,6 @@ public class ConfigDriveNetworkElementTest {
         _configDrivesNetworkElement._networkModel = _networkModel;
 
         when(_dataStoreMgr.getImageStoreWithFreeCapacity(DATACENTERID)).thenReturn(dataStore);
-
         when(_ep.select(dataStore)).thenReturn(endpoint);
         when(_vmDao.findById(VMID)).thenReturn(virtualMachine);
         when(_dcDao.findById(DATACENTERID)).thenReturn(dataCenterVO);
@@ -173,6 +176,7 @@ public class ConfigDriveNetworkElementTest {
         when(serviceOfferingVO.getDisplayText()).thenReturn(VMOFFERING);
         when(guestOSVO.getCategoryId()).thenReturn(0L);
         when(virtualMachine.getGuestOSId()).thenReturn(0L);
+        when(virtualMachine.getHostId()).thenReturn(0L);
         when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
         when(virtualMachine.getId()).thenReturn(VMID);
         when(virtualMachine.getServiceOfferingId()).thenReturn(SOID);
@@ -254,10 +258,12 @@ public class ConfigDriveNetworkElementTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    @PrepareForTest({ConfigDriveBuilder.class})
+    @PrepareForTest({ConfigDriveBuilder.class, CallContext.class})
     public void testAddPasswordAndUserData() throws Exception {
         PowerMockito.mockStatic(ConfigDriveBuilder.class);
-
+        PowerMockito.mockStatic(CallContext.class);
+        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+        Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
         Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("buildConfigDrive")).iterator().next();
         PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyString()).thenReturn("content");
 
@@ -273,11 +279,14 @@ public class ConfigDriveNetworkElementTest {
         when(_userVmDetailsDao.findDetail(anyLong(), anyString())).thenReturn(userVmDetailVO);
         when(_ipAddressDao.findByAssociatedVmId(VMID)).thenReturn(publicIp);
         when(publicIp.getAddress()).thenReturn(new Ip("7.7.7.7"));
+        when(_hostDao.findById(virtualMachine.getHostId())).thenReturn(hostVO);
+        when(_hostDao.findById(virtualMachine.getHostId()).getName()).thenReturn("dest-hyp-host-name");
 
         Map<VirtualMachineProfile.Param, Object> parms = Maps.newHashMap();
         parms.put(VirtualMachineProfile.Param.VmPassword, PASSWORD);
         parms.put(VirtualMachineProfile.Param.VmSshPubKey, PUBLIC_KEY);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(virtualMachine, null, serviceOfferingVO, null, parms);
+        profile.setConfigDriveLabel("testlabel");
         assertTrue(_configDrivesNetworkElement.addPasswordAndUserdata(
                 network, nicp, profile, deployDestination, null));
 

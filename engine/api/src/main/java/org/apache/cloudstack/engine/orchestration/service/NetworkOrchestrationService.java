@@ -294,6 +294,8 @@ public interface NetworkOrchestrationService {
 
     void finalizeUpdateInSequence(Network network, boolean success);
 
+    void addNewDisk(VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException;
+
     List<NetworkGuru> getNetworkGurus();
 
     /**

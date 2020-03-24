@@ -2389,7 +2389,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
                                          String vmName, String vmHostName, long vmId, String vmUuid,
-                                         String guestIpAddress, String publicKey, String password, Boolean isWindows) {
+                                         String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname) {
 
         DataCenterVO dcVo = _dcDao.findById(datacenterId);
         final String zoneName = dcVo.getName();
@@ -2462,7 +2462,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
             vmData.add(new String[]{PASSWORD_DIR, PASSWORD_FILE, password});
         }
-
+        vmData.add(new String[]{METATDATA_DIR, HYPERVISOR_HOST_NAME_FILE, hostname});
         return vmData;
     }
 
