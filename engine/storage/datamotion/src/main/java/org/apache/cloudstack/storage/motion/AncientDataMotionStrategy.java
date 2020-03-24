@@ -325,7 +325,25 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         Scope destScope = getZoneScope(destData.getDataStore().getScope());
         DataStore cacheStore = cacheMgr.getCacheStorage(destScope);
+        boolean bypassSecondaryStorage = false;
+        if (srcData instanceof VolumeInfo && ((VolumeInfo)srcData).isDirectDownload()) {
+            bypassSecondaryStorage = true;
+        }
+
         if (cacheStore == null) {
+            if (bypassSecondaryStorage) {
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
+                EndPoint ep = selector.select(srcData, destData);
+                Answer answer = null;
+                if (ep == null) {
+                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                    s_logger.error(errMsg);
+                    answer = new Answer(cmd, false, errMsg);
+                } else {
+                    answer = ep.sendMessage(cmd);
+                }
+                return answer;
+            }
             // need to find a nfs or cifs image store, assuming that can't copy volume
             // directly to s3
             ImageStoreEntity imageStore = (ImageStoreEntity)dataStoreMgr.getImageStoreWithFreeCapacity(destScope.getScopeId());

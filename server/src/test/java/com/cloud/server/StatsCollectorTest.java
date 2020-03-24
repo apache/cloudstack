@@ -160,12 +160,6 @@ public class StatsCollectorTest {
     }
 
     @Test
-    public void isCurrentVmDiskStatsDifferentFromPreviousTestBothNull() {
-        boolean result = statsCollector.isCurrentVmDiskStatsDifferentFromPrevious(null, null);
-        Assert.assertFalse(result);
-    }
-
-    @Test
     public void isCurrentVmDiskStatsDifferentFromPreviousTestDifferentIoWrite() {
         configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(123l, 123l, 123l, 12l, true);
     }

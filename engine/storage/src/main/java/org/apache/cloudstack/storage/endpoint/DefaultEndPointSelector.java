@@ -84,6 +84,12 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
     }
 
+    private boolean moveBetweenPrimaryDirectDownload(DataStore srcStore, DataStore destStore) {
+        DataStoreRole srcRole = srcStore.getRole();
+        DataStoreRole destRole = destStore.getRole();
+        return srcRole == DataStoreRole.Primary && destRole == DataStoreRole.Primary;
+    }
+
     protected boolean moveBetweenCacheAndImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
         DataStoreRole destRole = destStore.getRole();
@@ -181,6 +187,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
         DataStore srcStore = srcData.getDataStore();
         DataStore destStore = destData.getDataStore();
         if (moveBetweenPrimaryImage(srcStore, destStore)) {
+            return findEndPointForImageMove(srcStore, destStore);
+        } else if (moveBetweenPrimaryDirectDownload(srcStore, destStore)) {
             return findEndPointForImageMove(srcStore, destStore);
         } else if (moveBetweenCacheAndImage(srcStore, destStore)) {
             // pick ssvm based on image cache dc

@@ -21,7 +21,7 @@ import java.sql.Connection;
 
 public class Upgrade41300to41310 implements DbUpgrade {
     @Override
-    public String[] getUpgradableVersionRange()  {
+    public String[] getUpgradableVersionRange() {
         return new String[] {"4.13.0.0", "4.13.1.0"};
     }
 

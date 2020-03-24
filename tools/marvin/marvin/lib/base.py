@@ -1265,12 +1265,15 @@ class Template:
 
     @classmethod
     def create(cls, apiclient, services, volumeid=None,
-               account=None, domainid=None, projectid=None):
+               account=None, domainid=None, projectid=None, randomise=True):
         """Create template from Volume"""
         # Create template from Virtual machine and Volume ID
         cmd = createTemplate.createTemplateCmd()
         cmd.displaytext = services["displaytext"]
-        cmd.name = "-".join([services["name"], random_gen()])
+        if randomise:
+            cmd.name = "-".join([services["name"], random_gen()])
+        else:
+            cmd.name = services["name"]
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
         elif "ostype" in services:
@@ -2164,7 +2167,7 @@ class ServiceOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, tags=None, domainid=None, **kwargs):
+    def create(cls, apiclient, services, tags=None, domainid=None, cacheMode=None, **kwargs):
         """Create Service offering"""
         cmd = createServiceOffering.createServiceOfferingCmd()
         cmd.cpunumber = services["cpunumber"]
@@ -2217,6 +2220,9 @@ class ServiceOffering:
         if domainid:
             cmd.domainid = domainid
 
+        if cacheMode:
+            cmd.cacheMode = cacheMode
+
         if tags:
             cmd.tags = tags
         elif "tags" in services:
@@ -2250,7 +2256,7 @@ class DiskOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, **kwargs):
+    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, cacheMode=None, **kwargs):
         """Create Disk offering"""
         cmd = createDiskOffering.createDiskOfferingCmd()
         cmd.displaytext = services["displaytext"]
@@ -2262,6 +2268,9 @@ class DiskOffering:
 
         if domainid:
             cmd.domainid = domainid
+
+        if cacheMode:
+            cmd.cacheMode = cacheMode
 
         if tags:
             cmd.tags = tags

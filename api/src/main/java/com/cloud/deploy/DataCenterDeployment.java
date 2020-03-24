@@ -33,6 +33,7 @@ public class DataCenterDeployment implements DeploymentPlan {
     boolean _recreateDisks;
     ReservationContext _context;
     List<Long> preferredHostIds = new ArrayList<>();
+    boolean migrationPlan;
 
     public DataCenterDeployment(long dataCenterId) {
         this(dataCenterId, null, null, null, null, null);
@@ -105,6 +106,15 @@ public class DataCenterDeployment implements DeploymentPlan {
     @Override
     public List<Long> getPreferredHosts() {
         return this.preferredHostIds;
+    }
+
+    public void setMigrationPlan(boolean migrationPlan) {
+        this.migrationPlan = migrationPlan;
+    }
+
+    @Override
+    public boolean isMigrationPlan() {
+        return migrationPlan;
     }
 
 }

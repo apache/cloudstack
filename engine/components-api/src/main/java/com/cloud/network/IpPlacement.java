@@ -1,4 +1,5 @@
-//
+package com.cloud.network;
+
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,22 +16,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package com.cloud.agent.direct.download;
+public enum IpPlacement {
+    Random,
+    First,
+    Last;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DirectTemplateDownloaderImplTest {
-
-    private static final Long templateId = 202l;
-
-    @Test
-    public void testGetDirectDownloadTempPath() {
-        String path = DirectTemplateDownloaderImpl.getDirectDownloadTempPath(templateId);
-        Assert.assertEquals("template/2/202", path);
+    public static IpPlacement fromString(String param) {
+        switch (param.trim().toLowerCase()) {
+            case "first":
+                return First;
+            case "last":
+                return Last;
+        }
+        return Random;
     }
 }

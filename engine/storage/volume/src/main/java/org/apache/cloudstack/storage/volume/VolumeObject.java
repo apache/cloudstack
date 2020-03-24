@@ -74,6 +74,7 @@ public class VolumeObject implements VolumeInfo {
     DiskOfferingDao diskOfferingDao;
     private Object payload;
     private MigrationOptions migrationOptions;
+    private boolean directDownload;
 
     public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -325,6 +326,16 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void setMigrationOptions(MigrationOptions migrationOptions) {
         this.migrationOptions = migrationOptions;
+    }
+
+    @Override
+    public boolean isDirectDownload() {
+        return directDownload;
+    }
+
+    @Override
+    public void setDirectDownload(boolean directDownload) {
+        this.directDownload = directDownload;
     }
 
     public void update() {

@@ -118,7 +118,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         final NicProfile guestNic = new NicProfile();
 
         if (vpcRouterDeploymentDefinition.isRedundant()) {
-            guestNic.setIPv4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
+            guestNic.setIPv4Address(this.acquireGuestIpAddressForVrouterRedundant(guestNetwork));
         } else {
             guestNic.setIPv4Address(guestNetwork.getGateway());
         }
@@ -131,6 +131,10 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         guestNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
 
         return guestNic;
+    }
+
+    public String acquireGuestIpAddressForVrouterRedundant(Network network) {
+        return _ipAddrMgr.acquireGuestIpAddressByPlacement(network, null);
     }
 
 }

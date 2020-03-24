@@ -61,6 +61,9 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.dao.UserVmDetailsDao;
+
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
@@ -92,6 +95,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     CapacityManager _capacityMgr;
     @Inject
     CapacityDao _capacityDao;
+    @Inject
+    UserVmDetailsDao _userVmDetailsDao;
 
     boolean _checkHvm = true;
     protected String _allocationAlgorithm = "random";
@@ -112,6 +117,16 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
         Account account = vmProfile.getOwner();
 
+        boolean isVMDeployedWithUefi = false;
+        UserVmDetailVO userVmDetailVO = _userVmDetailsDao.findDetail(vmProfile.getId(), "UEFI");
+        if(userVmDetailVO != null){
+            if ("secure".equalsIgnoreCase(userVmDetailVO.getValue()) || "legacy".equalsIgnoreCase(userVmDetailVO.getValue())) {
+                isVMDeployedWithUefi = true;
+            }
+        }
+        s_logger.info(" Guest VM is requested with Cusotm[UEFI] Boot Type "+ isVMDeployedWithUefi);
+
+
         if (type == Host.Type.Storage) {
             // FirstFitAllocator should be used for user VMs only since it won't care whether the host is capable of routing or not
             return new ArrayList<Host>();
@@ -123,11 +138,20 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
         String hostTagOnOffering = offering.getHostTag();
         String hostTagOnTemplate = template.getTemplateTag();
+        String hostTagUefi = "UEFI";
 
         boolean hasSvcOfferingTag = hostTagOnOffering != null ? true : false;
         boolean hasTemplateTag = hostTagOnTemplate != null ? true : false;
 
         List<HostVO> clusterHosts = new ArrayList<HostVO>();
+        List<HostVO> hostsMatchingUefiTag = new ArrayList<HostVO>();
+        if(isVMDeployedWithUefi){
+            hostsMatchingUefiTag = _hostDao.listByHostCapability(type, clusterId, podId, dcId, Host.HOST_UEFI_ENABLE);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Hosts with tag '" + hostTagUefi + "' are:" + hostsMatchingUefiTag);
+            }
+        }
+
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         if (haVmTag != null) {
@@ -173,6 +197,10 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                     }
                 }
             }
+        }
+
+        if (isVMDeployedWithUefi) {
+            clusterHosts.retainAll(hostsMatchingUefiTag);
         }
 
         // add all hosts that we are not considering to the avoid list

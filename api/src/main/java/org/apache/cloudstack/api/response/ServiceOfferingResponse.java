@@ -192,6 +192,10 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "is true if the offering is customized", since = "4.3.0")
     private Boolean isCustomized;
 
+    @SerializedName("cacheMode")
+    @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough", since = "4.14")
+    private String cacheMode;
+
     public ServiceOfferingResponse() {
     }
 
@@ -448,4 +452,7 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     }
 
+    public void setCacheMode(String cacheMode) {
+        this.cacheMode = cacheMode;
+    }
 }

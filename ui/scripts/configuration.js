@@ -137,6 +137,28 @@
                                             });
                                         }
                                     },
+                                    cacheMode: {
+                                        label: 'label.cache.mode',
+                                        docID: 'helpDiskOfferingCacheMode',
+                                        select: function (args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'none',
+                                                description: 'No disk cache'
+                                            });
+                                            items.push({
+                                                id: 'writeback',
+                                                description: 'Write-back disk caching'
+                                            });
+                                            items.push({
+                                                id: "writethrough",
+                                                description: 'Write-through'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            })
+                                        }
+                                    },
                                     offeringType: {
                                         label: 'label.compute.offering.type',
                                         docID: 'helpComputeOfferingType',
@@ -731,7 +753,8 @@
                                     displaytext: args.data.description,
                                     storageType: args.data.storageType,
                                     provisioningType :args.data.provisioningType,
-                                    customized: !isFixedOfferingType
+                                    customized: !isFixedOfferingType,
+                                    cacheMode: args.data.cacheMode
                                 };
 
                                 //custom fields (begin)
@@ -1221,6 +1244,9 @@
                                     provisioningtype: {
                                         label: 'label.disk.provisioningtype'
                                     },
+                                    cacheMode: {
+                                        label: 'label.cache.mode'
+                                    },
                                     cpunumber: {
                                         label: 'label.num.cpu.cores'
                                     },
@@ -1481,6 +1507,28 @@
                                             });
                                         }
                                     },
+                                    cacheMode: {
+                                        label: 'label.cache.mode',
+                                        docID: 'helpDiskOfferingCacheMode',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'none',
+                                                description: 'No disk cache'
+                                            });
+                                            items.push({
+                                                id: 'writeback',
+                                                description: 'Write-back disk caching'
+                                            });
+                                            items.push({
+                                                id: 'writethrough',
+                                                description: 'Write-through disk caching'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            })
+                                        }
+                                    },
                                     cpuNumber: {
                                         label: 'label.num.cpu.cores',
                                         docID: 'helpSystemOfferingCPUCores',
@@ -1694,7 +1742,8 @@
                                     provisioningType: args.data.provisioningType,
                                     cpuNumber: args.data.cpuNumber,
                                     cpuSpeed: args.data.cpuSpeed,
-                                    memory: args.data.memory
+                                    memory: args.data.memory,
+                                    cacheMode: args.data.cacheMode
                                 };
 
                                 if (args.data.networkRate != null && args.data.networkRate.length > 0) {
@@ -1919,6 +1968,9 @@
                                     },
                                     provisioningtype: {
                                         label: 'label.disk.provisioningtype'
+                                    },
+                                    cacheMode: {
+                                        label: 'label.cache.mode'
                                     },
                                     cpunumber: {
                                         label: 'label.num.cpu.cores'
