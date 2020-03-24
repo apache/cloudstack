@@ -559,6 +559,9 @@ export default {
         }
       }
       this.currentAction.loading = false
+      if (action.dataView && action.icon === 'edit') {
+        this.fillEditFormFieldValues()
+      }
     },
     listUuidOpts (param) {
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && !this.currentAction.mapping[param.name].api) {
@@ -639,6 +642,22 @@ export default {
         loadingMessage: `${this.$t(action.label)} in progress for ${this.resource.name}`,
         catchMessage: 'Error encountered while fetching async job result',
         action
+      })
+    },
+    fillEditFormFieldValues () {
+      const form = this.form
+      this.currentAction.paramFields.map(field => {
+        let fieldValue = null
+        let fieldName = null
+        if (field.type === 'uuid' || field.type === 'list' || field.name === 'account' || (this.currentAction.mapping && field.name in this.currentAction.mapping)) {
+          fieldName = field.name.replace('ids', 'name').replace('id', 'name')
+        } else {
+          fieldName = field.name
+        }
+        fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
+        if (fieldValue) {
+          form.getFieldDecorator(field.name, { initialValue: fieldValue })
+        }
       })
     },
     handleSubmit (e) {
