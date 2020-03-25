@@ -141,6 +141,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
         URI uri = null;
         try {
+            if (url != null && url.startsWith("rbd://")) {
+                url = url.replace(",", "/");
+            }
             uri = new URI(UriUtils.encodeURIComponent(url));
             if (uri.getScheme() == null) {
                 throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
@@ -245,9 +248,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 port = 0;
             }
             parameters.setType(StoragePoolType.RBD);
-            parameters.setHost(storageHost);
+            int lastSlash = hostPath.lastIndexOf("/");
+            parameters.setHost(storageHost + hostPath.substring(0, lastSlash).replace("/", ","));
             parameters.setPort(port);
-            parameters.setPath(hostPath.replaceFirst("/", ""));
+            parameters.setPath(hostPath.substring(lastSlash + 1));
             parameters.setUserInfo(userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
             parameters.setType(StoragePoolType.PreSetup);
