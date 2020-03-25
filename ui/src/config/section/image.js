@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import kubernetes from '@/assets/icons/kubernetes.svg?inline'
+
 export default {
   name: 'image',
   title: 'Images',
@@ -194,6 +196,38 @@ export default {
           args: ['zoneid'],
           dataView: true,
           groupAction: true
+        }
+      ]
+    },
+    {
+      name: 'kubernetesiso',
+      title: 'Kubernetes ISOs',
+      icon: kubernetes,
+      permission: ['listKubernetesSupportedVersions'],
+      columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
+      details: ['name', 'semanticversion', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state'],
+      actions: [
+        {
+          api: 'addKubernetesSupportedVersion',
+          icon: 'plus',
+          label: 'Add Kubernetes Version',
+          listView: true,
+          popup: true,
+          component: () => import('@/views/image/AddKubernetesSupportedVersion.vue')
+        },
+        {
+          api: 'updateKubernetesSupportedVersion',
+          icon: 'edit',
+          label: 'Update Kuberntes Version',
+          dataView: true,
+          popup: true,
+          component: () => import('@/views/image/UpdateKubernetesSupportedVersion.vue')
+        },
+        {
+          api: 'deleteKubernetesSupportedVersion',
+          icon: 'delete',
+          label: 'Delete Kubernetes Version',
+          dataView: true
         }
       ]
     }
