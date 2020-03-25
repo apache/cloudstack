@@ -25,7 +25,7 @@ import { ACCESS_TOKEN, CURRENT_PROJECT } from '@/store/mutation-types'
 
 const service = axios.create({
   baseURL: config.apiBase,
-  timeout: 60000
+  timeout: 600000
 })
 
 const err = (error) => {

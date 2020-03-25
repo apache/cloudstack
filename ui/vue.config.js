@@ -114,7 +114,8 @@ module.exports = {
         target: process.env.CS_URL || 'http://localhost:8080',
         secure: false,
         ws: false,
-        changeOrigin: true
+        changeOrigin: true,
+        proxyTimeout: 10 * 60 * 1000 // 10 minutes
       }
     },
     https: process.env.HTTPS_KEY ? {
