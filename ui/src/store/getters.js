@@ -23,7 +23,6 @@ const getters = {
   project: state => state.user.project,
   avatar: state => state.user.avatar,
   nickname: state => state.user.name,
-  welcome: state => state.user.welcome,
   apis: state => state.user.apis,
   features: state => state.user.features,
   userInfo: state => state.user.info,
