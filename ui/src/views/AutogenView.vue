@@ -142,7 +142,10 @@
                   </a-select-option>
                 </a-select>
               </span>
-              <span v-else-if="field.type==='uuid' || (field.name==='account' && !['addAccountToProject'].includes(currentAction.api)) || field.name==='keypair'">
+              <span
+                v-else-if="field.type==='uuid' ||
+                  (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api)) ||
+                  field.name==='keypair'">
                 <a-select
                   showSearch
                   optionFilterProp="children"
@@ -687,7 +690,7 @@ export default {
                 } else if (param.type === 'list') {
                   params[key] = input.map(e => { return param.opts[e].id }).reduce((str, name) => { return str + ',' + name })
                 } else if (param.name === 'account' || param.name === 'keypair') {
-                  if (['addAccountToProject'].includes(this.currentAction.api)) {
+                  if (['addAccountToProject', 'createAccount'].includes(this.currentAction.api)) {
                     params[key] = input
                   } else {
                     params[key] = param.opts[input].name
