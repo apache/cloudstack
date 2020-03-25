@@ -24,7 +24,7 @@ import java.util.List;
 public interface SimpleDRSProvider {
     String getProviderName();
     double calculateClusterImbalance(long clusterId);
-    boolean performWorkloadRebalance(long clusterId, long workloadId, long destinationId);
+    boolean performWorkloadRebalance(SimpleDRSWorkload workload, SimpleDRSResource destination);
     List<String> findPossibleRebalancingPlans(long clusterId);
     List<SimpleDRSResource> findResourcesToBalance(long clusterId);
     List<SimpleDRSWorkload> findWorkloadsInResource(long clusterId, long resourceId);

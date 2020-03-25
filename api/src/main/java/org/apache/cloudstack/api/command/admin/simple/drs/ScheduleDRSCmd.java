@@ -69,7 +69,7 @@ public class ScheduleDRSCmd extends BaseCmd implements Serializable {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         List<String> providers = drsManager.listProviderNames();
-        double clusterImbalance = drsManager.getClusterImbalance(clusterId);
+        double clusterImbalance = drsManager.calculateClusterImbalance(clusterId);
         ScheduleDRSResponse r = new ScheduleDRSResponse();
         r.setTest(clusterImbalance);
         r.setResponseName(getCommandName());

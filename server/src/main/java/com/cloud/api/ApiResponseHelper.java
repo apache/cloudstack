@@ -1240,7 +1240,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             Boolean simpleDrsEnabled = SimpleDRSManager.SimpleDRSAutomaticEnable.valueIn(cluster.getId());
             clusterResponse.setDrsEnabled(simpleDrsEnabled);
             if (BooleanUtils.isTrue(simpleDrsEnabled)) {
-                clusterResponse.setDrsImbalance(simpleDRSManager.getClusterImbalance(cluster.getId()));
+                clusterResponse.setDrsImbalance(simpleDRSManager.calculateClusterImbalance(cluster.getId()));
                 clusterResponse.setDrsImbalanceThreshold(SimpleDRSManager.SimpleDRSImbalanceThreshold.valueIn(cluster.getId()));
                 clusterResponse.setDrsInterval(SimpleDRSManager.SimpleDRSAutomaticInterval.valueIn(cluster.getId()));
                 clusterResponse.setDrsIterations(SimpleDRSManager.SimpleDRSIterations.valueIn(cluster.getId()));

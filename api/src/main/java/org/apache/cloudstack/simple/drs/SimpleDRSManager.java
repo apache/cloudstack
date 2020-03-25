@@ -23,7 +23,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import java.util.List;
-import java.util.Map;
 
 public interface SimpleDRSManager extends PluggableService, Configurable {
 
@@ -67,15 +66,40 @@ public interface SimpleDRSManager extends PluggableService, Configurable {
 
     List<String> listProviderNames();
 
-    double getClusterImbalance(long clusterId);
-
-    boolean isClusterImbalanced(long clusterId);
-
-    Map<SimpleDRSResource, List<SimpleDRSWorkload>> findResourcesAndWorkloadsToBalance(long clusterId);
-
     void schedule(long clusterId);
 
     void schedule(ScheduleDRSCmd cmd);
 
     void balanceCluster(ScheduleDRSCmd cmd);
+
+    /**
+     * Retrieve the workloads to be rebalanced within the cluster
+     */
+    List<SimpleDRSWorkload> getWorkloadsToRebalance(long clusterId);
+
+    /**
+     * True if cluster needs DRS, false if not
+     */
+    boolean isClusterImbalanced(long clusterId);
+
+    /**
+     * Return a list of compatible resources where the workload can be moved wihin the cluster of resources.
+     * The list is sorted highest to lowest on the
+     */
+    List<SimpleDRSResource> findCompatibleDestinationResourcesForWorkloadRebalnce(SimpleDRSWorkload workload);
+
+    /**
+     * Calculate (but not attemp) workload rebalance cost-benefit to a destination resource
+     */
+    SimpleDRSRebalance calculateWorkloadRebalanceCostBenefit(SimpleDRSWorkload workload, SimpleDRSResource destination);
+
+    /**
+     * Calculate cluster imbalance
+     */
+    double calculateClusterImbalance(long clusterId);
+
+    /**
+     * Perform workload rebalance to a destination resource
+     */
+    boolean performWorkloadRebalance(SimpleDRSWorkload workload, SimpleDRSResource destination);
 }

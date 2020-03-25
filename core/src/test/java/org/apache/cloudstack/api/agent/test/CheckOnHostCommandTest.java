@@ -48,6 +48,15 @@ public class CheckOnHostCommandTest {
         }
 
         @Override
+        public void setDRSCostBenefitMetric(double metric) {
+        }
+
+        @Override
+        public double getDRSCostBenefitMetric() {
+            return 0;
+        }
+
+        @Override
         public PartitionType partitionType() {
             return PartitionType.Host;
         }

@@ -21,7 +21,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -119,8 +118,9 @@ public class SimpleDRSHostProvider extends SimpleDRSProviderBase implements Simp
             }
             long serviceOfferingId = ((VMInstanceVO) vm).getServiceOfferingId();
             ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getId(), serviceOfferingId);
-            Integer ramSize = serviceOffering.getRamSize();
-            vm.setDRSRebalanceMetric(ramSize);
+            Integer cpus = serviceOffering.getCpu();
+            Integer speedMhz = serviceOffering.getSpeed();
+            vm.setDRSRebalanceMetric((float) cpus * speedMhz / 1000);
             workloads.add(vm);
         }
         return workloads;
@@ -144,17 +144,14 @@ public class SimpleDRSHostProvider extends SimpleDRSProviderBase implements Simp
     }
 
     @Override
-    public boolean performWorkloadRebalance(long clusterId, long workloadId, long destinationId) {
-        VMInstanceVO workload = vmInstanceDao.findById(workloadId);
-        if (workload == null) {
-            throw new CloudRuntimeException("Could not find a VM with ID = " + workloadId);
-        }
-        if (workload.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
+    public boolean performWorkloadRebalance(SimpleDRSWorkload workload, SimpleDRSResource destination) {
+        VirtualMachine vm = (VirtualMachine) workload;
+        if (vm.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
             throw new CloudRuntimeException("The DRS provider " + PROVIDER_NAME + " only supports KVM clusters of hosts");
         }
-        HostVO destHost = hostDao.findById(destinationId);
+        Host destHost = (Host) destination;
         try {
-            VirtualMachine vm = userVmService.migrateVirtualMachine(workloadId, destHost);
+            VirtualMachine vmMigrated = userVmService.migrateVirtualMachine(workload.getId(), destHost);
         } catch (ResourceUnavailableException | ManagementServerException | VirtualMachineMigrationException e) {
             e.printStackTrace();
             return false;
@@ -182,7 +179,7 @@ public class SimpleDRSHostProvider extends SimpleDRSProviderBase implements Simp
                             ", skipping host from the resources to balance");
                     continue;
                 }
-                host.setDRSRebalanceMetric(Double.parseDouble(hostWithMetrics.getCpuAllocated()));
+                host.setDRSRebalanceMetric(Double.parseDouble(hostWithMetrics.getCpuAllocated()) / 100);
                 resources.add(host);
             }
         }

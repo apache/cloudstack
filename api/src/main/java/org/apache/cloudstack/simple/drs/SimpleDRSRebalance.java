@@ -14,31 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack;
+package org.apache.cloudstack.simple.drs;
 
-import javax.persistence.Transient;
+public class SimpleDRSRebalance {
 
-public abstract class SimpleDRSEntityVO {
+    private double cost;
+    private double benefit;
 
-    @Transient
-    private double drsRebalanceMetric;
-
-    @Transient
-    private double drsCostBenefitMetric;
-
-    public void setDRSRebalanceMetric(double metric) {
-        this.drsRebalanceMetric = metric;
+    public SimpleDRSRebalance(double cost, double benefit) {
+        this.cost = cost;
+        this.benefit = benefit;
     }
 
-    public double getDRSRebalanceMetric() {
-        return drsRebalanceMetric;
+    public double getCost() {
+        return cost;
     }
 
-    public void setDRSCostBenefitMetric(double metric) {
-        this.drsCostBenefitMetric = metric;
-    }
-
-    public double getDRSCostBenefitMetric() {
-        return drsCostBenefitMetric;
+    public double getBenefit() {
+        return benefit;
     }
 }

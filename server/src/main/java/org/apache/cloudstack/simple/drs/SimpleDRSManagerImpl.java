@@ -218,18 +218,32 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
     }
 
     @Override
-    public double getClusterImbalance(long clusterId) {
+    public double calculateClusterImbalance(long clusterId) {
         return configuredDRSProvider.calculateClusterImbalance(clusterId);
     }
 
     @Override
+    public boolean performWorkloadRebalance(SimpleDRSWorkload workload, SimpleDRSResource destination) {
+        return configuredDRSProvider.performWorkloadRebalance(workload, destination);
+    }
+
+    @Override
     public boolean isClusterImbalanced(long clusterId) {
-        double clusterImbalance = getClusterImbalance(clusterId);
+        double clusterImbalance = calculateClusterImbalance(clusterId);
         Double threshold = SimpleDRSImbalanceThreshold.valueIn(clusterId);
         return configuredDRSAlgorithm.isClusterImbalanced(clusterImbalance, threshold);
     }
 
     @Override
+    public List<SimpleDRSResource> findCompatibleDestinationResourcesForWorkloadRebalnce(SimpleDRSWorkload workload) {
+        return null;
+    }
+
+    @Override
+    public SimpleDRSRebalance calculateWorkloadRebalanceCostBenefit(SimpleDRSWorkload workload, SimpleDRSResource destination) {
+        return null;
+    }
+
     public Map<SimpleDRSResource, List<SimpleDRSWorkload>> findResourcesAndWorkloadsToBalance(long clusterId) {
         Map<SimpleDRSResource, List<SimpleDRSWorkload>> map = new HashMap<>();
         List<SimpleDRSResource> resources = configuredDRSProvider.findResourcesToBalance(clusterId);
@@ -281,5 +295,10 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
         Long clusterId = cmd.getClusterId();
         LOG.info("Balancing : " + clusterId);
         return;
+    }
+
+    @Override
+    public List<SimpleDRSWorkload> getWorkloadsToRebalance(long clusterId) {
+        return null;
     }
 }

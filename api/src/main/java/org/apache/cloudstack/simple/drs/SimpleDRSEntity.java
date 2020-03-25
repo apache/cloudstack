@@ -19,6 +19,16 @@ package org.apache.cloudstack.simple.drs;
 import org.apache.cloudstack.ha.HAResource;
 
 public interface SimpleDRSEntity extends HAResource {
+
+    /**
+     * Rebalance metric: used for rebalancing calculation on DRS jobs
+     */
     void setDRSRebalanceMetric(double metric);
     double getDRSRebalanceMetric();
+
+    /**
+     * Cost-benefit metric: used to evaluate and sort the possible workload rebalance on DRS jobs
+     */
+    void setDRSCostBenefitMetric(double metric);
+    double getDRSCostBenefitMetric();
 }
