@@ -81,7 +81,7 @@ export default {
       detailColumn: [],
       detail: [],
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       quickview: false,
       loading: false
     }

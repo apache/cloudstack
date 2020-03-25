@@ -16,27 +16,33 @@
 // under the License.
 
 <template>
-  <a-tabs :defaultActiveKey="Object.keys(osTypes)[0]" v-if="view === TAB_VIEW">
-    <a-button icon="search" slot="tabBarExtraContent" @click="() => toggleView(FILTER_VIEW)"/>
-    <a-tab-pane v-for="(osList, osName) in osTypes" :key="osName">
-      <span slot="tab">
-        <os-logo :os-name="osName"></os-logo>
-      </span>
-      <TemplateIsoRadioGroup
-        :osList="osList"
-        :input-decorator="inputDecorator"
-      ></TemplateIsoRadioGroup>
-    </a-tab-pane>
-  </a-tabs>
-  <div v-else>
-    <a-input class="search-input" v-model="filter">
-      <a-icon slot="prefix" type="search"/>
-      <a-icon slot="addonAfter" type="close" @click="toggleView(TAB_VIEW)"/>
-    </a-input>
-    <TemplateIsoRadioGroup
-      :osList="filteredItems"
-      :input-decorator="inputDecorator"
-    ></TemplateIsoRadioGroup>
+  <div>
+    <a-input-search
+      class="search-input"
+      placeholder="Search"
+      v-model="filter"
+      @search="filterDataSource"/>
+    <a-spin :spinning="loading">
+      <a-tabs
+        tabPosition="top"
+        :animated="false"
+        :defaultActiveKey="Object.keys(dataSource)[0]">
+        <a-tab-pane v-for="(osList, osName) in dataSource" :key="osName">
+          <span slot="tab">
+            <os-logo :os-name="osName"></os-logo>
+          </span>
+          <TemplateIsoRadioGroup
+            :osType="osName"
+            :osList="dataSource[osName]"
+            :input-decorator="inputDecorator"
+            :selected="checkedValue"
+            :itemCount="itemCount[osName]"
+            @handle-filter-tag="filterDataSource"
+            @emit-update-template-iso="updateTemplateIso"
+          ></TemplateIsoRadioGroup>
+        </a-tab-pane>
+      </a-tabs>
+    </a-spin>
   </div>
 </template>
 
@@ -45,9 +51,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import { getNormalizedOsName } from '@/utils/icons'
 import _ from 'lodash'
 import TemplateIsoRadioGroup from '@views/compute/wizard/TemplateIsoRadioGroup'
-
-export const TAB_VIEW = 1
-export const FILTER_VIEW = 2
+import store from '@/store'
 
 export default {
   name: 'TemplateIsoSelection',
@@ -60,27 +64,53 @@ export default {
     inputDecorator: {
       type: String,
       default: ''
+    },
+    selected: {
+      type: String,
+      default: ''
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
-      TAB_VIEW: TAB_VIEW,
-      FILTER_VIEW: FILTER_VIEW,
-      visible: false,
       filter: '',
       filteredItems: this.items,
-      view: TAB_VIEW
+      checkedValue: '',
+      dataSource: {},
+      itemCount: {}
     }
   },
-  computed: {
-    osTypes () {
+  watch: {
+    items (items) {
+      this.filteredItems = []
+      this.checkedValue = ''
+      if (items && items.length > 0) {
+        this.filteredItems = items
+        this.checkedValue = items[0].id
+      }
+      this.dataSource = this.mappingDataSource()
+    },
+    inputDecorator (newValue, oldValue) {
+      if (newValue !== oldValue) {
+        this.filter = ''
+      }
+    }
+  },
+  methods: {
+    mappingDataSource () {
       let mappedItems = {}
-      this.items.forEach((os) => {
+      const itemCount = {}
+      this.filteredItems.forEach((os) => {
         const osName = getNormalizedOsName(os.ostypename)
         if (Array.isArray(mappedItems[osName])) {
           mappedItems[osName].push(os)
+          itemCount[osName] = itemCount[osName] + 1
         } else {
           mappedItems[osName] = [os]
+          itemCount[osName] = 1
         }
       })
       mappedItems = _.mapValues(mappedItems, (list) => {
@@ -90,24 +120,50 @@ export default {
         nonFeaturedItems = _.sortBy(nonFeaturedItems, (item) => item.displaytext.toLowerCase())
         return featuredItems.concat(nonFeaturedItems) // pin featured isos/templates at the top
       })
+      this.itemCount = itemCount
       return mappedItems
-    }
-  },
-  watch: {
-    items (items) {
-      this.filteredItems = items
     },
-    filter (filterString) {
-      if (filterString !== '') {
-        this.filteredItems = this.filteredItems.filter((item) => item.displaytext.toLowerCase().includes(filterString))
+    updateTemplateIso (name, id) {
+      this.$emit('update-template-iso', name, id)
+    },
+    filterDataSource (strQuery) {
+      if (strQuery !== '' && strQuery.includes('is:')) {
+        this.filteredItems = []
+        this.filter = strQuery
+        const filters = strQuery.split(';')
+        filters.forEach((filter) => {
+          const query = filter.replace(/ /g, '')
+          const data = this.filterDataSourceByTag(query)
+          this.filteredItems = this.filteredItems.concat(data)
+        })
+      } else if (strQuery !== '') {
+        this.filteredItems = this.items.filter((item) => item.displaytext.toLowerCase().includes(strQuery.toLowerCase()))
       } else {
         this.filteredItems = this.items
       }
-    }
-  },
-  methods: {
-    toggleView (view) {
-      this.view = view
+      this.dataSource = this.mappingDataSource()
+    },
+    filterDataSourceByTag (tag) {
+      let arrResult = []
+      if (tag.includes('public')) {
+        arrResult = this.items.filter((item) => {
+          return item.ispublic && item.isfeatured
+        })
+      } else if (tag.includes('featured')) {
+        arrResult = this.items.filter((item) => {
+          return item.isfeatured
+        })
+      } else if (tag.includes('self')) {
+        arrResult = this.items.filter((item) => {
+          return !item.ispublic && (item.account === store.getters.userInfo.account)
+        })
+      } else if (tag.includes('shared')) {
+        arrResult = this.items.filter((item) => {
+          return !item.ispublic && (item.account !== store.getters.userInfo.account)
+        })
+      }
+
+      return arrResult
     }
   }
 }
@@ -115,6 +171,21 @@ export default {
 
 <style lang="less" scoped>
   .search-input {
-    margin: 0.5rem 0 1rem;
+    width: 25vw;
+    z-index: 8;
+    position: absolute;
+    top: 11px;
+    right: 10px;
+
+    @media (max-width: 600px) {
+      position: relative;
+      width: 100%;
+      top: 0;
+      right: 0;
+    }
+  }
+
+  /deep/.ant-tabs-nav-scroll {
+    min-height: 45px;
   }
 </style>

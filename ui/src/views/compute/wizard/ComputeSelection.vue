@@ -16,16 +16,26 @@
 // under the License.
 
 <template>
-  <a-table
-    :columns="columns"
-    :dataSource="tableSource"
-    :pagination="{showSizeChanger: true}"
-    :rowSelection="rowSelection"
-    size="middle"
-  >
-    <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('cpu') }}</span>
-    <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('memory') }}</span>
-  </a-table>
+  <div>
+    <a-input-search
+      style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
+      placeholder="Search"
+      v-model="filter"
+      @search="handleSearch" />
+    <a-table
+      :columns="columns"
+      :dataSource="tableSource"
+      :pagination="{showSizeChanger: true}"
+      :rowSelection="rowSelection"
+      :loading="loading"
+      size="middle"
+      @change="handleTableChange"
+      :scroll="{ y: 225 }"
+    >
+      <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('cpu') }}</span>
+      <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('memory') }}</span>
+    </a-table>
+  </div>
 </template>
 
 <script>
@@ -39,10 +49,15 @@ export default {
     value: {
       type: String,
       default: ''
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
+      filter: '',
       columns: [
         {
           dataIndex: 'name',
@@ -64,6 +79,13 @@ export default {
     }
   },
   computed: {
+    options () {
+      return {
+        page: 1,
+        pageSize: 10,
+        keyword: ''
+      }
+    },
     tableSource () {
       return this.computeItems.map((item) => {
         return {
@@ -78,9 +100,7 @@ export default {
       return {
         type: 'radio',
         selectedRowKeys: this.selectedRowKeys,
-        onSelect: (row) => {
-          this.$emit('select-compute-item', row.key)
-        }
+        onChange: this.onSelectRow
       }
     }
   },
@@ -89,6 +109,22 @@ export default {
       if (newValue && newValue !== oldValue) {
         this.selectedRowKeys = [newValue]
       }
+    }
+  },
+  methods: {
+    onSelectRow (value) {
+      this.selectedRowKeys = value
+      this.$emit('select-compute-item', value[0])
+    },
+    handleSearch (value) {
+      this.filter = value
+      this.options.keyword = this.filter
+      this.$emit('handle-search-filter', this.options)
+    },
+    handleTableChange (pagination) {
+      this.options.page = pagination.current
+      this.options.pageSize = pagination.pageSize
+      this.$emit('handle-search-filter', this.options)
     }
   }
 }

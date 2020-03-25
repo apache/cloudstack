@@ -16,29 +16,39 @@
 // under the License.
 
 <template>
-  <a-table
-    :columns="columns"
-    :dataSource="networkItems"
-    :rowKey="record => record.id"
-    :pagination="{showSizeChanger: true}"
-    :rowSelection="rowSelection"
-  >
-    <a-list
-      slot="expandedRowRender"
-      slot-scope="record"
-      :key="record.id"
-      :dataSource="getDetails(record)"
-      size="small"
+  <div>
+    <a-input-search
+      style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
+      placeholder="Search"
+      v-model="filter"
+      @search="handleSearch" />
+    <a-table
+      :loading="loading"
+      :columns="columns"
+      :dataSource="networkItems"
+      :rowKey="record => record.id"
+      :pagination="{showSizeChanger: true, size: 'small'}"
+      :rowSelection="rowSelection"
+      @change="handleTableChange"
+      :scroll="{ y: 225 }"
     >
-      <a-list-item slot="renderItem" slot-scope="item" :key="item.id">
-        <a-list-item-meta
-          :description="item.description"
-        >
-          <template v-slot:title>{{ item.title }}</template>
-        </a-list-item-meta>
-      </a-list-item>
-    </a-list>
-  </a-table>
+      <a-list
+        slot="expandedRowRender"
+        slot-scope="record"
+        :key="record.id"
+        :dataSource="getDetails(record)"
+        size="small"
+      >
+        <a-list-item slot="renderItem" slot-scope="item" :key="item.id">
+          <a-list-item-meta
+            :description="item.description"
+          >
+            <template v-slot:title>{{ item.title }}</template>
+          </a-list-item-meta>
+        </a-list-item>
+      </a-list>
+    </a-table>
+  </div>
 </template>
 
 <script>
@@ -56,16 +66,28 @@ export default {
     value: {
       type: Array,
       default: () => []
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
+      filter: '',
       selectedRowKeys: [],
       vpcs: [],
       filteredInfo: null
     }
   },
   computed: {
+    options () {
+      return {
+        page: 1,
+        pageSize: 10,
+        keyword: ''
+      }
+    },
     columns () {
       let vpcFilter = []
       if (this.vpcs) {
@@ -146,6 +168,16 @@ export default {
           description: network.networkofferingdisplaytext
         }
       ]
+    },
+    handleSearch (value) {
+      this.filter = value
+      this.options.keyword = this.filter
+      this.$emit('handle-search-filter', this.options)
+    },
+    handleTableChange (pagination) {
+      this.options.page = pagination.current
+      this.options.pageSize = pagination.pageSize
+      this.$emit('handle-search-filter', this.options)
     }
   }
 }

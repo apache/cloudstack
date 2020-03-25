@@ -16,16 +16,26 @@
 // under the License.
 
 <template>
-  <a-table
-    :columns="columns"
-    :dataSource="tableSource"
-    :pagination="{showSizeChanger: true}"
-    :rowSelection="rowSelection"
-    size="middle"
-  >
-    <template v-slot:account><a-icon type="user" /> {{ $t('account') }}</template>
-    <template v-slot:domain><a-icon type="block" /> {{ $t('domain') }}</template>
-  </a-table>
+  <div>
+    <a-input-search
+      style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
+      placeholder="Search"
+      v-model="filter"
+      @search="handleSearch" />
+    <a-table
+      :loading="loading"
+      :columns="columns"
+      :dataSource="tableSource"
+      :pagination="{showSizeChanger: true}"
+      :rowSelection="rowSelection"
+      size="middle"
+      @change="handleTableChange"
+      :scroll="{ y: 225 }"
+    >
+      <template v-slot:account><a-icon type="user" /> {{ $t('account') }}</template>
+      <template v-slot:domain><a-icon type="block" /> {{ $t('domain') }}</template>
+    </a-table>
+  </div>
 </template>
 
 <script>
@@ -39,10 +49,15 @@ export default {
     value: {
       type: String,
       default: ''
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
+      filter: '',
       columns: [
         {
           dataIndex: 'name',
@@ -60,12 +75,28 @@ export default {
           width: '30%'
         }
       ],
-      selectedRowKeys: []
+      selectedRowKeys: [this.$t('noselect')],
+      dataItems: []
     }
   },
+  created () {
+    this.dataItems = []
+    this.dataItems.push({
+      name: this.$t('noselect'),
+      account: '-',
+      domain: '-'
+    })
+  },
   computed: {
+    options () {
+      return {
+        page: 1,
+        pageSize: 10,
+        keyword: ''
+      }
+    },
     tableSource () {
-      return this.items.map((item) => {
+      return this.dataItems.map((item) => {
         return {
           key: item.name,
           name: item.name,
@@ -78,9 +109,7 @@ export default {
       return {
         type: 'radio',
         selectedRowKeys: this.selectedRowKeys,
-        onSelect: (row) => {
-          this.$emit('select-ssh-key-pair-item', row.key)
-        }
+        onChange: this.onSelectRow
       }
     }
   },
@@ -89,6 +118,27 @@ export default {
       if (newValue && newValue !== oldValue) {
         this.selectedRowKeys = [newValue]
       }
+    },
+    items (newData, oldData) {
+      if (newData && newData.length > 0) {
+        this.dataItems = this.dataItems.concat(newData)
+      }
+    }
+  },
+  methods: {
+    onSelectRow (value) {
+      this.selectedRowKeys = value
+      this.$emit('select-ssh-key-pair-item', value[0])
+    },
+    handleSearch (value) {
+      this.filter = value
+      this.options.keyword = this.filter
+      this.$emit('handle-search-filter', this.options)
+    },
+    handleTableChange (pagination) {
+      this.options.page = pagination.current
+      this.options.pageSize = pagination.pageSize
+      this.$emit('handle-search-filter', this.options)
     }
   }
 }

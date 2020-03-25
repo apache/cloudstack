@@ -19,7 +19,7 @@
   <a-spin :spinning="networkLoading">
     <a-tabs
       :activeKey="currentTab"
-      :tabPosition="device === 'tablet' || device === 'mobile' ? 'top' : 'left'"
+      :tabPosition="device === 'mobile' ? 'top' : 'left'"
       :animated="false"
       @change="handleChangeTab">
       <a-tab-pane :tab="$t('details')" key="details">

@@ -18,21 +18,24 @@
 <template>
   <a-table
     :columns="columns"
-    :dataSource="items"
+    :dataSource="dataItems"
     :pagination="{showSizeChanger: true}"
     :rowSelection="rowSelection"
     :rowKey="record => record.id"
     size="middle"
+    :scroll="{ y: 225 }"
   >
-    <template v-slot:ipAddress="text">
+    <template slot="ipAddress" slot-scope="text, record">
       <a-input
-        :value="text"
-      ></a-input>
+        style="width: 150px;"
+        :placeholder="$t('ipAddress')"
+        @change="($event) => updateNetworkData('ipAddress', record.id, $event.target.value)" />
     </template>
-    <template v-slot:macAddress="text">
+    <template slot="macAddress" slot-scope="text, record">
       <a-input
-        :value="text"
-      ></a-input>
+        style="width: 150px;"
+        :placeholder="$t('macAddress')"
+        @change="($event) => updateNetworkData('macAddress', record.id, $event.target.value)" />
     </template>
   </a-table>
 </template>
@@ -52,6 +55,7 @@ export default {
   },
   data () {
     return {
+      networks: [],
       columns: [
         {
           dataIndex: 'name',
@@ -71,17 +75,24 @@ export default {
           scopedSlots: { customRender: 'macAddress' }
         }
       ],
-      selectedRowKeys: []
+      selectedRowKeys: [],
+      dataItems: []
     }
+  },
+  beforeCreate () {
+    this.dataItems = []
+  },
+  created () {
+    this.dataItems = this.items
+    this.selectedRowKeys = [this.dataItems[0].id]
+    this.$emit('select-default-network-item', this.selectedRowKeys)
   },
   computed: {
     rowSelection () {
       return {
         type: 'radio',
         selectedRowKeys: this.selectedRowKeys,
-        onSelect: (row) => {
-          this.$emit('select-default-network-item', row.key)
-        }
+        onChange: this.onSelectRow
       }
     }
   },
@@ -90,6 +101,38 @@ export default {
       if (newValue && newValue !== oldValue) {
         this.selectedRowKeys = [newValue]
       }
+    },
+    items (newData, oldData) {
+      if (newData && newData.length > 0) {
+        this.dataItems = newData
+        const keyEx = this.dataItems.filter((item) => this.selectedRowKeys.includes(item.id))
+        if (!keyEx || keyEx.length === 0) {
+          this.selectedRowKeys = [this.dataItems[0].id]
+        }
+      }
+    }
+  },
+  methods: {
+    onSelectRow (value) {
+      this.selectedRowKeys = value
+      this.$emit('select-default-network-item', value[0])
+    },
+    updateNetworkData (name, key, value) {
+      if (this.networks.length === 0) {
+        const networkItem = {}
+        networkItem.key = key
+        networkItem[name] = value
+        this.networks.push(networkItem)
+        this.$emit('update-network-config', this.networks)
+        return
+      }
+
+      this.networks.filter((item, index) => {
+        if (item.key === key) {
+          this.$set(this.networks[index], name, value)
+        }
+      })
+      this.$emit('update-network-config', this.networks)
     }
   }
 }

@@ -70,7 +70,7 @@ export default {
       detailColumn: [],
       detail: [],
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       itemCount: 0,
       fetchLoading: false
     }

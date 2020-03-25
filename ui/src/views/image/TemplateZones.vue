@@ -68,7 +68,7 @@ export default {
       columns: [],
       dataSource: [],
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       itemCount: 0,
       fetchLoading: false
     }

@@ -22,14 +22,13 @@
         <a-slider
           :min="0"
           :max="1024"
-          v-decorator="[inputDecorator]"
+          v-model="inputValue"
+          @change="($event) => updateDickSize($event)"
         />
       </a-col>
       <a-col :span="4">
         <a-input-number
-          v-decorator="[inputDecorator, {
-            rules: [{ required: false, message: 'Please enter a number' }]
-          }]"
+          v-model="inputValue"
           :formatter="value => `${value} GB`"
           :parser="value => value.replace(' GB', '')"
         />
@@ -45,6 +44,16 @@ export default {
     inputDecorator: {
       type: String,
       default: ''
+    }
+  },
+  data () {
+    return {
+      inputValue: 0
+    }
+  },
+  methods: {
+    updateDickSize (value) {
+      this.$emit('update-disk-size', this.inputDecorator, value)
     }
   }
 }
