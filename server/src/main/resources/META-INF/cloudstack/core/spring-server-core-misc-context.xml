@@ -80,5 +80,7 @@
     </bean>
 
     <bean id="DPDKHelper" class="com.cloud.hypervisor.kvm.dpdk.DpdkHelperImpl" />
+
+    <bean id="SimpleDRSDispatcher" class="org.apache.cloudstack.simple.drs.SimpleDRSDispatcher" />
     
 </beans>

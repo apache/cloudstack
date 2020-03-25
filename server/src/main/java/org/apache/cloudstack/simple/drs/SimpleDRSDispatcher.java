@@ -22,8 +22,10 @@ import com.cloud.utils.component.AdapterBase;
 
 import org.apache.cloudstack.api.command.admin.simple.drs.ScheduleDRSCmd;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.log4j.Logger;
 
 public class SimpleDRSDispatcher extends AdapterBase implements AsyncJobDispatcher {
@@ -33,12 +35,21 @@ public class SimpleDRSDispatcher extends AdapterBase implements AsyncJobDispatch
     public static final Logger LOG = Logger.getLogger(SimpleDRSDispatcher.class);
 
     @Inject
-    protected SimpleDRSManager manager;
+    protected SimpleDRSManager drsManager;
+
+    @Inject
+    private AsyncJobManager asyncJobManager;
+
+    @Override
+    public String getName() {
+        return SIMPLE_DRS_DISPATCHER;
+    }
 
     @Override
     public void runJob(AsyncJob job) {
         LOG.info("Dispatching : " + job);
         ScheduleDRSCmd cmd = (ScheduleDRSCmd) JobSerializerHelper.fromObjectSerializedString(job.getCmdInfo());
-        manager.balanceCluster(cmd);
+        drsManager.balanceCluster(cmd);
+        asyncJobManager.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, "Complete");
     }
 }

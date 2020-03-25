@@ -34,7 +34,6 @@ import com.cloud.utils.component.ManagerBase;
 import org.apache.cloudstack.api.command.admin.simple.drs.ScheduleDRSCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
@@ -67,12 +66,6 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
 
     @Inject
     private ClusterDao clusterDao;
-
-    private AsyncJobDispatcher asyncJobDispatcher;
-
-    public void setAsyncJobDispatcher(final AsyncJobDispatcher dispatcher) {
-        asyncJobDispatcher = dispatcher;
-    }
 
     ////////////////////////////////////////////////////
     /////////////// Init DRS providers /////////////////
@@ -284,7 +277,6 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
         job.setUserId(callingUser.getId());
 
         job.setCmdInfo(JobSerializerHelper.toObjectSerializedString(cmd));
-        job.setDispatcher(asyncJobDispatcher.getName());
 
         asyncJobManager.submitAsyncJob(job);
         // Maybe get the jobid and do something about it ?
