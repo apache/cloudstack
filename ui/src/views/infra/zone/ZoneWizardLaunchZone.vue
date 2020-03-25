@@ -1088,7 +1088,6 @@ export default {
           let updatedCount = 0
 
           for (let index = 0; index < physicalNetworksHavingGuestIncludingVlan.length; index++) {
-            const network = physicalNetworksHavingGuestIncludingVlan[index]
             let vlan = null
 
             if (!this.prefillContent.vlanRangeEnd || !this.prefillContent.vlanRangeEnd.value) {
