@@ -15,6 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Do not modify this file as your changes will be lost in the next CSM update.
+# If you need to add specific dependencies to this service unit do it in the
+# /etc/systemd/system/cloudstack-management.service.d/ directory
+
 [Unit]
 Description=CloudStack Agent
 Documentation=http://www.cloudstack.org/
