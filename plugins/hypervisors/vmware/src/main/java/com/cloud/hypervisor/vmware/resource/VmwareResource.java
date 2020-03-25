@@ -1724,7 +1724,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
         String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         DiskTO rootDiskTO = null;
-        String bootMode = ApiConstants.BootType.BIOS.toString();
+        String bootMode = "bios";
         if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
             bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
         }
@@ -2286,7 +2286,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            if (!bootMode.equalsIgnoreCase(ApiConstants.BootType.BIOS.toString())) {
+            if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")) {
                 vmConfigSpec.setFirmware("efi");
                 if (vmSpec.getDetails().containsKey(ApiConstants.BootType.UEFI.toString()) && "secure".equalsIgnoreCase(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()))) {
                     VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
