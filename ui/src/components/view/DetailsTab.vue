@@ -28,6 +28,11 @@
             {{ service.name }} : {{ service.provider[0].name }}
           </div>
         </div>
+        <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
+          <div v-for="(volume, idx) in JSON.parse(resource[item])" :key="idx">
+            <router-link :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
+          </div>
+        </div>
         <div v-else>
           {{ resource[item] }}
         </div>

@@ -133,6 +133,26 @@ export default {
       }]
     },
     {
+      name: 'backupoffering',
+      title: 'Backup Offerings',
+      icon: 'cloud-upload',
+      permission: ['listBackupOfferings'],
+      columns: ['name', 'description', 'zoneid'],
+      details: ['name', 'id', 'description', 'externalid', 'zone', 'created'],
+      actions: [{
+        api: 'importBackupOffering',
+        icon: 'plus',
+        label: 'Import Offering',
+        listView: true,
+        args: ['name', 'description', 'zoneid', 'externalid']
+      }, {
+        api: 'deleteBackupOffering',
+        icon: 'delete',
+        label: 'Delete Offering',
+        dataView: true
+      }]
+    },
+    {
       name: 'networkoffering',
       title: 'Network Offerings',
       icon: 'wifi',

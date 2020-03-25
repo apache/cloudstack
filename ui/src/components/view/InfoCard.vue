@@ -29,7 +29,7 @@
             </div>
             <slot name="name">
               <h4 class="name">
-                {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress }}
+                {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || resource.virtualmachinename }}
               </h4>
               <console style="margin-left: 10px" :resource="resource" size="default" v-if="resource.id" />
             </slot>
@@ -214,8 +214,8 @@
           <div class="resource-detail-item__label">{{ $t('disksize') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="hdd" />
-            <span style="width: 100%;" v-if="resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
-            <span style="width: 100%;" v-else-if="resource.sizegb">{{ resource.sizegb }}</span>
+            <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
+            <span style="width: 100%;" v-else-if="resource.sizegb || resource.size">{{ resource.sizegb || (resource.size/1024.0) }}</span>
           </div>
           <div style="margin-left: 25px; margin-top: 5px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
             <a-tag style="margin-bottom: 5px;">Read {{ toSize(resource.diskkbsread) }}</a-tag>
@@ -332,6 +332,17 @@
             <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.affinitygroup && resource.affinitygroup.length > 0">
+          <div class="resource-detail-item__label">{{ $t('affinitygroup') }}</div>
+          <a-icon type="swap" />
+          <span
+            v-for="(group, index) in resource.affinitygroup"
+            :key="group.id"
+          >
+            <router-link :to="{ path: '/affinitygroup/' + group.id }">{{ group.name }}</router-link>
+            <span v-if="index + 1 < resource.affinitygroup.length">, </span>
+          </span>
+        </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
           <div class="resource-detail-item__label">{{ $t('serviceofferingname') }}</div>
           <div class="resource-detail-item__details">
@@ -352,6 +363,11 @@
             <a-icon type="hdd" />
             <router-link :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
           </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.backupofferingid">
+          <div class="resource-detail-item__label">{{ $t('backupofferingid') }}</div>
+          <a-icon type="cloud-upload" />
+          <router-link :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
         </div>
         <div class="resource-detail-item" v-if="resource.networkofferingid">
           <div class="resource-detail-item__label">{{ $t('networkofferingid') }}</div>
@@ -440,16 +456,6 @@
           <div class="resource-detail-item__details">
             <a-icon type="calendar" />{{ resource.created }}
           </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.affinitygroup && resource.affinitygroup.length > 0">
-          <a-icon type="swap" />
-          <span
-            v-for="(group, index) in resource.affinitygroup"
-            :key="group.id"
-          >
-            <router-link :to="{ path: '/affinitygroup/' + group.id }">{{ group.name }}</router-link>
-            <span v-if="index + 1 < resource.affinitygroup.length">, </span>
-          </span>
         </div>
       </div>
 

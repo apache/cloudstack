@@ -251,6 +251,58 @@ export default {
           }
         }
       ]
+    },
+    {
+      name: 'backup',
+      title: 'Backups',
+      icon: 'cloud-upload',
+      permission: ['listBackups'],
+      columns: [{ name: (record) => { return record.virtualmachinename } }, 'status', 'type', 'created', 'account', 'zone'],
+      details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
+      actions: [
+        {
+          api: 'restoreBackup',
+          icon: 'sync',
+          label: 'Restore Backup',
+          dataView: true
+        },
+        {
+          api: 'restoreVolumeFromBackupAndAttachToVM',
+          icon: 'paper-clip',
+          label: 'Restore Volume and Attach',
+          dataView: true,
+          args: ['backupid', 'virtualmachineid', 'volumeid'],
+          mapping: {
+            backupid: {
+              value: (record) => { return record.id }
+            },
+            volumeid: {
+              options: ['todo: handle custom volume ID']
+            }
+          }
+        },
+        {
+          api: 'removeVirtualMachineFromBackupOffering',
+          icon: 'scissor',
+          label: 'Expunge Offering Assignment and Delete Backups',
+          dataView: true,
+          args: ['forced', 'virtualmachineid'],
+          mapping: {
+            forced: {
+              value: (record) => { return true }
+            },
+            virtualmachineid: {
+              value: (record) => { return record.virtualmachineid }
+            }
+          }
+        },
+        {
+          api: 'deleteBackup',
+          icon: 'delete',
+          label: 'Delete Backup',
+          dataView: true
+        }
+      ]
     }
   ]
 }
