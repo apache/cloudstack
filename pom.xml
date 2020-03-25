@@ -59,18 +59,21 @@
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
         <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
-        <cs.cobertura-plugin.version>2.7</cs.cobertura-plugin.version>
+        <cs.jacoco-plugin.version>0.8.3</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
-        <cs.findbugs-plugin.version>3.0.5</cs.findbugs-plugin.version>
+        <cs.spotbugs.version>3.1.12</cs.spotbugs.version>
+        <cs.spotbugs-maven-plugin.version>3.1.12.2</cs.spotbugs-maven-plugin.version>
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
         <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
+        <cs.owasp.dependency-checker-plugin.version>5.3.0</cs.owasp.dependency-checker-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
         <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
+        <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
         <cs.log4j.version>1.2.17</cs.log4j.version>
@@ -86,6 +89,7 @@
         <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
         <cs.commons-io.version>2.6</cs.commons-io.version>
         <cs.commons-lang3.version>3.9</cs.commons-lang3.version>
+        <cs.commons-logging.version>1.2</cs.commons-logging.version>
         <cs.commons-net.version>3.6</cs.commons-net.version>
         <cs.commons-validator.version>1.6</cs.commons-validator.version>
         <cs.configuration.version>1.10</cs.configuration.version>
@@ -124,25 +128,26 @@
         <cs.cxf.version>3.2.6</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
+        <cs.google-http-client>1.34.2</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
         <cs.guava.version>28.2-jre</cs.guava.version>
         <cs.httpclient.version>4.5.11</cs.httpclient.version>
         <cs.httpcore.version>4.4.13</cs.httpcore.version>
         <cs.influxdb-java.version>2.17</cs.influxdb-java.version>
-        <cs.jackson.version>2.9.10</cs.jackson.version>
+        <cs.jackson.version>2.10.3</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
         <cs.java-ipv6.version>0.17</cs.java-ipv6.version>
         <cs.javassist.version>3.26.0-GA</cs.javassist.version>
-        <cs.javadoc.version>3.1.1</cs.javadoc.version>
+        <cs.maven-javadoc-plugin.version>3.1.1</cs.maven-javadoc-plugin.version>
         <cs.javax.annotation.version>1.3.2</cs.javax.annotation.version>
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
-        <cs.jaxws.version>2.3.2</cs.jaxws.version>
+        <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-bundle.version>1.19.4</cs.jersey-bundle.version>
         <cs.jetty.version>9.4.26.v20200117</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.26.v20200117</cs.jetty-maven-plugin.version>
         <cs.jna.version>4.0.0</cs.jna.version>
-        <cs.joda-time.version>2.8.1</cs.joda-time.version>
+        <cs.joda-time.version>2.10.5</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
         <cs.jsch.version>0.1.55</cs.jsch.version>
         <cs.json.version>20090211</cs.json.version>
@@ -172,7 +177,6 @@
     <distributionManagement>
         <site>
             <id>apache.cloudstack.site</id>
-            <url>${site.deploy.url}</url>
         </site>
     </distributionManagement>
 
@@ -279,6 +283,12 @@
                 <version>${cs.aws.sdk.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${cs.jackson.version}</version>
+                <type>bundle</type>
+            </dependency>
+            <dependency>
                 <groupId>com.globo.globodns</groupId>
                 <artifactId>globodns-client</artifactId>
                 <version>${cs.globodns-client.version}</version>
@@ -292,6 +302,11 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${cs.guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>${cs.google-http-client}</version>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.java-ipv6</groupId>
@@ -370,6 +385,11 @@
                 <version>${cs.lang.version}</version>
             </dependency>
             <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${cs.commons-logging.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-net</groupId>
                 <artifactId>commons-net</artifactId>
                 <version>${cs.commons-net.version}</version>
@@ -385,6 +405,11 @@
                 <version>${cs.commons-validator.version}</version>
             </dependency>
             <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${cs.javax.annotation.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.mail</groupId>
                 <artifactId>mail</artifactId>
                 <version>${cs.mail.version}</version>
@@ -393,6 +418,11 @@
                 <groupId>javax.servlet</groupId>
                 <artifactId>javax.servlet-api</artifactId>
                 <version>${cs.servlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>${cs.joda-time.version}</version>
             </dependency>
             <dependency>
                 <groupId>jstl</groupId>
@@ -470,6 +500,11 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${cs.kafka-clients.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.doxia</groupId>
+                <artifactId>doxia-site-renderer</artifactId>
+                <version>1.9.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.servicemix.bundles</groupId>
@@ -632,6 +667,16 @@
                 <artifactId>wsdl4j</artifactId>
                 <version>1.6.3</version>
             </dependency>
+            <dependency>
+                <groupId>xerces</groupId>
+                <artifactId>xercesimpl</artifactId>
+                <version>2.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>xml-apis</groupId>
+                <artifactId>xml-apis</artifactId>
+                <version>2.0.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -719,14 +764,55 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${cs.spotbugs-maven-plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>cloudstack-findbugs</id>
+                        <id>cloudstack-spotbugs</id>
                         <phase>none</phase>
                         <goals>
                             <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${cs.jacoco-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.openclover</groupId>
+                <artifactId>clover-maven-plugin</artifactId>
+                <version>${cs.clover-maven-plugin.version}</version>
+                <configuration>
+                    <flushPolicy>threaded</flushPolicy>
+                    <flushInterval>100</flushInterval>
+                    <targetPercentage>0%</targetPercentage>
+                    <generateHtml>true</generateHtml>
+                    <generateXml>true</generateXml>
+                    <generateHistorical>true</generateHistorical>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>main</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>instrument</goal>
+                            <goal>aggregate</goal>
+                            <goal>check</goal>
+                            <goal>log</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>site</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>instrument</goal>
+                            <goal>aggregate</goal>
+                            <!-- We save a history point in order to have data to generate a historical report -->
+                            <goal>save-history</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -1000,6 +1086,22 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${cs.owasp.dependency-checker-plugin.version}</version>
+                    <configuration>
+                        <skipProvidedScope>true</skipProvidedScope>
+                        <skipRuntimeScope>true</skipRuntimeScope>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${cs.compiler-plugin.version}</version>
@@ -1053,19 +1155,9 @@
                     <version>${cs.dependency-plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>cobertura-maven-plugin</artifactId>
-                    <configuration>
-                        <formats>
-                            <format>html</format>
-                            <format>xml</format>
-                        </formats>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>${cs.findbugs-plugin.version}</version>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${cs.spotbugs-maven-plugin.version}</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.cloudstack</groupId>
@@ -1079,11 +1171,10 @@
                         <xmlOutput>true</xmlOutput>
                         <failOnError>false</failOnError>
                         <maxHeap>2048</maxHeap>
-                        <excludeFilterFile>findbugsExcludeFilter.xml</excludeFilterFile>
                     </configuration>
                     <executions>
                         <execution>
-                            <id>cloudstack-findbugs</id>
+                            <id>cloudstack-spotbugs</id>
                             <goals>
                                 <goal>check</goal>
                             </goals>
@@ -1123,7 +1214,7 @@
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
-                        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
+                        <argLine>@{argLine} -Djava.security.egd=file:/dev/./urandom -noverify</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1131,39 +1222,56 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${cs.failsafe-plugin.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${cs.jacoco-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>prepare-coverage-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>produce-coverage-reports</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${cs.site-plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
     <reporting>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${cs.findbugs-plugin.version}</version>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${cs.owasp.dependency-checker-plugin.version}</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${cs.spotbugs-maven-plugin.version}</version>
                 <configuration>
                     <threshold>Low</threshold><!-- High|Normal|Low|Exp|Ignore -->
                     <effort>Default</effort><!-- Min|Default|Max -->
-                    <excludeFilterFile>${basedir}/findbugsExcludeFilter.xml</excludeFilterFile>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${cs.javadoc.version}</version>
-                <configuration>
-                    <minmemory>128m</minmemory>
-                    <maxmemory>1g</maxmemory>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>${cs.project-info-plugin.version}</version>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>cobertura-maven-plugin</artifactId>
-                <version>${cs.cobertura-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -1174,6 +1282,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>${cs.resources-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${cs.jacoco-plugin.version}</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <!-- select non-aggregate reports -->
+                            <report>report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
             </plugin>
         </plugins>
     </reporting>
@@ -1248,20 +1369,25 @@
             <id>enablefindbugs</id>
             <build>
                 <plugins>
-<!--                     <plugin> -->
-<!--                         <groupId>org.apache.maven.plugins</groupId> -->
-<!--                         <artifactId>maven-pmd-plugin</artifactId> -->
-<!--                     </plugin> -->
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>findbugs-maven-plugin</artifactId>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>cloudstack-findbugs</id>
+                                <id>cloudstack-spotbugs</id>
                                 <phase>process-classes</phase>
                                 <inherited>true</inherited>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.openclover</groupId>
+                        <artifactId>clover-maven-plugin</artifactId>
+                        <version>${cs.clover-maven-plugin.version}</version>
+                        <configuration>
+                            <generateHistorical>true</generateHistorical>
+                            <generateHtml>true</generateHtml>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
