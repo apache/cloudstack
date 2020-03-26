@@ -48,6 +48,9 @@
                             $regionSwitcherButton.find('.title').html(_s(currentRegion.name)).attr('title', _s(currentRegion.name));
                         } else {
                             $regionSwitcherButton.find('.title').html('').attr('title', '');
+                            // For now, hide this for white-labels, as we've not figured out a proper way to do this yet - gjg 03/26/2020
+                            $regionSwitcherButton.css('display', 'none');
+                            $('#navigation .navigation-item.regions').css('display', 'none');
                         }
                     }
                 }
