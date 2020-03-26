@@ -1090,6 +1090,14 @@ cloudStack.docs = {
         desc: 'Enter a secret key value. The endpoints of the VPN share a secret key. This is used to authenticate the customer gateway and the VPC VPN gateway to each other.',
         externalLink: ''
     },
+    helpVPNGatewayIKEVersion: {
+        desc: 'Enter ike, ikev1, or ikev2 to specify which Internet Key Exchange (IKE) version to use for the key exchange. Using ike will negotiate the version.',
+        externalLink: ''
+    },
+    helpVPNGatewaySplitConnections: {
+        desc: 'Split multiple remote networks into multiple phase 2 SAs. Often used with Cisco some products.',
+        externalLink: ''
+    },
     helpVPNGatewayIKEEncryption: {
         desc: 'Enter AES128, AES192, AES256, or 3DES to specify the Internet Key Exchange (IKE) policy for phase-1. Authentication is accomplished with Preshared Keys.',
         externalLink: ''

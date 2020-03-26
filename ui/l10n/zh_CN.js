@@ -56,6 +56,8 @@ var dictionary = {
     "label.ESP.lifetime": "ESP 使用期限(第二阶段)",
     "label.ESP.policy": "ESP 策略",
     "label.IKE.DH": "IKE DH 算法",
+    "label.IKE.version": "IKE 版",
+    "label.IPsec.splitconnections": "分割连接",
     "label.IKE.encryption": "IKE 加密算法",
     "label.IKE.hash": "IKE 哈希算法",
     "label.IKE.lifetime": "IKE 使用期限(第二阶段)",

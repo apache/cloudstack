@@ -56,6 +56,8 @@ var dictionary = {
     "label.ESP.lifetime": "ESP élettartam (mp)",
     "label.ESP.policy": "ESP szabályzat",
     "label.IKE.DH": "IKE DH",
+    "label.IKE.version": "IKE Változat",
+    "label.IPsec.splitconnections": "Megosztott Kapcsolatok",
     "label.IKE.encryption": "IKE titkosítás",
     "label.IKE.hash": "IKE Hash",
     "label.IKE.lifetime": "IKE élettartam (mp)",

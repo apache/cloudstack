@@ -56,6 +56,8 @@ var dictionary = {
     "label.ESP.lifetime": "عمر ESP (ثانية)",
     "label.ESP.policy": "سياسة ESP",
     "label.IKE.DH": "IKE DH",
+    "label.IKE.version": "IKE الإصدار",
+    "label.IPsec.splitconnections": "انقسام الاتصالات",
     "label.IKE.encryption": "IKE Encryption",
     "label.IKE.hash": "IKE Hash",
     "label.IKE.lifetime": "عمر IKE (ثانية)",

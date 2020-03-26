@@ -56,6 +56,8 @@ var dictionary = {
     "label.ESP.lifetime": "Время жизни ESP (в секундах)",
     "label.ESP.policy": "Политика ESP",
     "label.IKE.DH": "IKE DH",
+    "label.IKE.version": "версия IKE",
+    "label.IPsec.splitconnections": "разделить соединения",
     "label.IKE.encryption": "Шифрование IKE",
     "label.IKE.hash": "IKE Hash",
     "label.IKE.lifetime": "IKE lifetime (second)",
