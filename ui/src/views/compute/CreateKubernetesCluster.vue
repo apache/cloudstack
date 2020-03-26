@@ -32,7 +32,7 @@
         <a-form-item :label="$t('description')">
           <a-input
             v-decorator="['description', {
-              rules: [{ message: 'Please enter name' }]
+              rules: [{ required: true, message: 'Please enter Kubernetes cluster description' }]
             }]"
             :placeholder="apiParams.description.description"/>
         </a-form-item>
@@ -40,7 +40,7 @@
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
-              rules: [{ required: true }]
+              rules: [{ required: true, message: 'Please select zone for Kubernetes cluster' }]
             }]"
             showSearch
             optionFilterProp="children"
@@ -59,7 +59,7 @@
           <a-select
             id="version-selection"
             v-decorator="['kubernetesversionid', {
-              rules: [{ required: true }]
+              rules: [{ required: true, message: 'Please select Kubernetes version for Kubernetes cluster' }]
             }]"
             showSearch
             optionFilterProp="children"
@@ -78,7 +78,7 @@
           <a-select
             id="offering-selection"
             v-decorator="['serviceofferingid', {
-              rules: [{ required: true }]
+              rules: [{ required: true, message: 'Please select service offering for Kubernetes cluster' }]
             }]"
             showSearch
             optionFilterProp="children"
@@ -151,7 +151,7 @@
           <a-input
             v-decorator="['size', {
               initialValue: '1',
-              rules: [{ required: true, message: 'Please enter value' },
+              rules: [{ required: true, message: 'Please enter size for Kubernetes cluster' },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
