@@ -14,20 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response.simple.drs;
+package org.apache.cloudstack.simple.drs;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
+import java.io.Serializable;
 
-public class ScheduleDRSResponse extends BaseResponse {
+public class SimpleDRSJobInfo implements Serializable {
+    private Long clusterId;
 
-    // TODO : Remove this if not used
-    @SerializedName("test")
-    @Param(description = "test response param")
-    private Double test;
+    public SimpleDRSJobInfo(Long clusterId) {
+        this.clusterId = clusterId;
+    }
 
-    public void setTest(Double test) {
-        this.test = test;
+    public Long getClusterId() {
+        return this.clusterId;
     }
 }

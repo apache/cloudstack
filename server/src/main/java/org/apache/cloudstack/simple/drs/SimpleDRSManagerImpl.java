@@ -17,10 +17,13 @@
 package org.apache.cloudstack.simple.drs;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -30,6 +33,8 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 import org.apache.cloudstack.api.command.admin.simple.drs.ScheduleDRSCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -117,36 +122,102 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
 
         private SimpleDRSManager manager;
         private ClusterDao clusterDao;
+        private SortedMap<Integer, List<Long>> wakeupMap;
+        private List<Long> clusterIds;
+        private SearchBuilder<ClusterVO> sb;
+        private long delay = 5;
+        private long now = 0;
+
+        private static final long second = 1000;
+        // TODO : Make this 60 * second. Kept it this way for easy testing
+        private static final long minute = second;
 
         private ScheduleDRSTask(SimpleDRSManager manager, ClusterDao clusterDao) {
             this.manager = manager;
             this.clusterDao = clusterDao;
+            this.wakeupMap = new TreeMap<>();
+            this.clusterIds = new LinkedList<>();
+            this.sb = this.clusterDao.createSearchBuilder();
+            this.sb.and("id", this.sb.entity().getId(), SearchCriteria.Op.IN);
+            init();
+        }
+
+        private void init() {
+            List<ClusterVO> clusters = clusterDao.listAll();
+            addClustersToSchedule(clusters);
+        }
+
+        private void addClustersToSchedule(List<ClusterVO> clusters) {
+            if (clusters == null) {
+                return;
+            }
+            for (ClusterVO cluster : clusters) {
+                Long clusterId = cluster.getId();
+                clusterIds.add(clusterId);
+                Integer interval = SimpleDRSAutomaticInterval.valueIn(clusterId);
+                addToWakeupMap(interval, clusterId);
+            }
+        }
+
+        private void addToWakeupMap(Integer key, Long value) {
+            if (wakeupMap.containsKey(key)) {
+                wakeupMap.get(key).add(value);
+            } else {
+                List<Long> list = new LinkedList<Long>();
+                list.add(value);
+                wakeupMap.put(key, list);
+            }
         }
 
         @Override
         protected void runInContext() {
             try {
-                List<ClusterVO> clusters = clusterDao.listAll();
-                LOG.info("Got clusters to shedule rebalancing : " + clusters);
-                if (clusters == null) {
+                this.now += this.delay;
+                LOG.info("DRS Bacground @ " + new Date());
+                if (this.wakeupMap.isEmpty()) {
                     return;
                 }
-                for (ClusterVO cluster : clusters) {
-                    Long clusterId = cluster.getId();
-                    LOG.info("Rebalancing : " + clusterId + " : " + SimpleDRSAutomaticEnable.valueIn(clusterId));
-
-                    if (SimpleDRSAutomaticEnable.valueIn(clusterId)) {
-                        manager.schedule(cluster.getId());
-                    }
+                Integer wakeup = this.wakeupMap.firstKey();
+                if (this.now < wakeup) {
+                    return;
                 }
+                LOG.info("WakeUpMap : " + wakeupMap);
+                LOG.info("ClusterIds : " + clusterIds);
+                LOG.info("Scheduling now : " + wakeup);
+                List<Long> currentClusterIds = this.wakeupMap.get(wakeup);
+                for (Long clusterId : currentClusterIds) {
+                    // Schedule whatever needs rebalancing
+                    LOG.info("Rebalancing : " + clusterId + " : " + SimpleDRSAutomaticEnable.valueIn(clusterId));
+                    if (SimpleDRSAutomaticEnable.valueIn(clusterId)) {
+                        manager.schedule(clusterId);
+                    }
+                    // Find out when they have to run next
+                    Integer interval = SimpleDRSAutomaticInterval.valueIn(clusterId);
+                    interval += wakeup;
+                    addToWakeupMap(interval, clusterId);
+                    this.wakeupMap.remove(wakeup);
+                }
+
+                // Were any new clusters added ?
+                // TODO : maybe move this to a message bus subscriber ? Do we even publish
+                // cluster add / remove events ?
+                SearchCriteria<ClusterVO> sc = sb.create();
+                sc.setParameters("id", clusterIds);
+                List<ClusterVO> clusters = clusterDao.search(sc, null);
+                addClustersToSchedule(clusters);
+
+                // TODO : were clustes deleted ?
             } catch (final Throwable t) {
                 LOG.error("Error trying to run schedule DRS task", t);
             }
         }
 
+        // This gets called only once so we can't set variable delays. So we've
+        // set it to wake up every 5 min and check the wakup map for clusters to
+        // rebalance
         @Override
         public Long getDelay() {
-            return SimpleDRSAutomaticInterval.value() * 1000L;
+            return delay * minute;
         }
     }
 
@@ -233,7 +304,8 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
     }
 
     @Override
-    public SimpleDRSRebalance calculateWorkloadRebalanceCostBenefit(SimpleDRSWorkload workload, SimpleDRSResource destination) {
+    public SimpleDRSRebalance calculateWorkloadRebalanceCostBenefit(SimpleDRSWorkload workload,
+            SimpleDRSResource destination) {
         return null;
     }
 
@@ -249,20 +321,25 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
     }
 
     public void schedule(long clusterId) {
-        ScheduleDRSCmd cmd = new ScheduleDRSCmd(clusterId);
-        schedule(cmd);
+        SimpleDRSJobInfo info = new SimpleDRSJobInfo(clusterId);
+        schedule(info);
     }
 
     @Override
-    public void schedule(ScheduleDRSCmd cmd) {
-        Long clusterId = cmd.getClusterId();
+    public void schedule(SimpleDRSJobInfo info) {
+        Long clusterId = info.getClusterId();
 
         LOG.info("Scheduling DRS for : " + clusterId);
+
+        if (clusterId == null) {
+            LOG.warn("Trying to balance a null cluster are we?");
+            return;
+        }
 
         // TODO : Check if drs enabled on cluster
 
         // if (!isClusterImbalanced(clusterId)) {
-        //     return;
+        // return;
         // }
 
         final CallContext context = CallContext.current();
@@ -272,21 +349,24 @@ public class SimpleDRSManagerImpl extends ManagerBase implements SimpleDRSManage
         AsyncJobVO job = new AsyncJobVO();
         job.setRelated("");
         job.setDispatcher(SimpleDRSDispatcher.SIMPLE_DRS_DISPATCHER);
-        job.setCmd(cmd.getClass().getName());
+        job.setCmd(info.getClass().getName());
         job.setAccountId(callingAccount.getId());
         job.setUserId(callingUser.getId());
 
-        job.setCmdInfo(JobSerializerHelper.toObjectSerializedString(cmd));
+        job.setCmdInfo(JobSerializerHelper.toObjectSerializedString(info));
 
         asyncJobManager.submitAsyncJob(job);
         // Maybe get the jobid and do something about it ?
     }
 
     @Override
-    public void balanceCluster(ScheduleDRSCmd cmd) {
-        Long clusterId = cmd.getClusterId();
+    public void balanceCluster(SimpleDRSJobInfo info) {
+        Long clusterId = info.getClusterId();
+        if (clusterId == null) {
+            LOG.warn("Trying to balance a null cluster are we?");
+            return;
+        }
         LOG.info("Balancing : " + clusterId);
-        return;
     }
 
     @Override

@@ -20,7 +20,6 @@ import javax.inject.Inject;
 
 import com.cloud.utils.component.AdapterBase;
 
-import org.apache.cloudstack.api.command.admin.simple.drs.ScheduleDRSCmd;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -48,8 +47,8 @@ public class SimpleDRSDispatcher extends AdapterBase implements AsyncJobDispatch
     @Override
     public void runJob(AsyncJob job) {
         LOG.info("Dispatching : " + job);
-        ScheduleDRSCmd cmd = (ScheduleDRSCmd) JobSerializerHelper.fromObjectSerializedString(job.getCmdInfo());
-        drsManager.balanceCluster(cmd);
+        SimpleDRSJobInfo info = (SimpleDRSJobInfo) JobSerializerHelper.fromObjectSerializedString(job.getCmdInfo());
+        drsManager.balanceCluster(info);
         asyncJobManager.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, "Complete");
     }
 }

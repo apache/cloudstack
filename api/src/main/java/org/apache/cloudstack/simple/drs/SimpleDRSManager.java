@@ -18,7 +18,6 @@ package org.apache.cloudstack.simple.drs;
 
 import com.cloud.utils.component.PluggableService;
 
-import org.apache.cloudstack.api.command.admin.simple.drs.ScheduleDRSCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -68,9 +67,9 @@ public interface SimpleDRSManager extends PluggableService, Configurable {
 
     void schedule(long clusterId);
 
-    void schedule(ScheduleDRSCmd cmd);
+    void schedule(SimpleDRSJobInfo info);
 
-    void balanceCluster(ScheduleDRSCmd cmd);
+    void balanceCluster(SimpleDRSJobInfo info);
 
     /**
      * Retrieve the workloads to be rebalanced within the cluster
