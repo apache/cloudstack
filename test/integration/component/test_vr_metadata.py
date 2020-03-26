@@ -96,7 +96,7 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         self.debug("+++ Migrating one of the VMs in the created "
                    "VPC Tier network to another host, if available...")
         self.debug("Checking if a host is available for migration...")
-        hosts = Host.listForMigration(self.api_client, virtualmachineid=vm.id)
+        hosts = Host.listForMigration(self.apiclient, virtualmachineid=vm.id)
         if hosts:
             self.assertEqual(isinstance(hosts, list), True,
                              "List hosts should return a valid list"
@@ -105,7 +105,7 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
             self.debug("Migrating VM with ID: "
                        "%s to Host: %s" % (vm.id, host.id))
             try:
-                vm.migrate(self.api_client, hostid=host.id)
+                vm.migrate(self.apiclient, hostid=host.id)
             except Exception as e:
                 self.fail("Failed to migrate instance, %s" % e)
             self.debug("Migrated VM with ID: "
@@ -149,8 +149,9 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
 
         # Update Account level setting
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname.account",
-                              value="true"
+                              name="allow.expose.host.hostname",
+                              value="true",
+                              accountid=1
                               )
 
         # Verify that the above mentioned settings are set to true before proceeding
@@ -162,9 +163,9 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
 
         if not is_config_suitable(
                 apiclient=self.apiclient,
-                name='allow.expose.host.hostname.account',
+                name='allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname.account should be true. skipping')
+            self.skipTest('allow.expose.host.hostname should be true. skipping')
 
         self.no_isolate = NetworkOffering.create(
             self.apiclient,
@@ -225,15 +226,16 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
             "Failed to get the hypervisor host name from VR in isolated network"
         )
         # Reset configuration values to default values i.e., false
-        Configurations.update(self.api_client,
+        Configurations.update(self.apiclient,
                               name="allow.expose.host.hostname",
                               value="false"
                               )
 
         # Update Account level setting
-        Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname.account",
-                              value="false"
+        Configurations.update(self.apiclient,
+                              name="allow.expose.host.hostname",
+                              value="false",
+                              accountid=1
                               )
         return
 
@@ -255,8 +257,9 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
 
         # Update Account level setting
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname.account",
-                              value="true"
+                              name="allow.expose.host.hostname",
+                              value="true",
+                              accountid=1
                               )
 
         # Verify that the above mentioned settings are set to true before proceeding
@@ -268,9 +271,9 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
 
         if not is_config_suitable(
                 apiclient=self.apiclient,
-                name='allow.expose.host.hostname.account',
+                name='allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname.account should be true. skipping')
+            self.skipTest('Account level allow.expose.host.hostname should be true. skipping')
 
         self.no_isolate = NetworkOffering.create(
             self.apiclient,
@@ -328,15 +331,16 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
             "Failed to get the hypervisor host name from VR in isolated network"
         )
         # Reset configuration values to default values i.e., false
-        Configurations.update(self.api_client,
+        Configurations.update(self.apiclient,
                               name="allow.expose.host.hostname",
                               value="false"
                               )
 
         # Update Account level setting
-        Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname.account",
-                              value="false"
+        Configurations.update(self.apiclient,
+                              name="allow.expose.host.hostname",
+                              value="false",
+                              accountid=1
                               )
 
         return
