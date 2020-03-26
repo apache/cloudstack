@@ -72,32 +72,32 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.kubernetes_version_ids = []
         if cls.setup_failed == False:
             try:
-                cls.kuberetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso')
+                cls.kuberetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://download.cloudstack.org/cks/setup-1.14.9.iso')
                 cls.kubernetes_version_ids.append(cls.kuberetes_version_1.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.14.9.iso, %s" % e)
         if cls.setup_failed == False:
             try:
-                cls.kuberetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso')
+                cls.kuberetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://download.cloudstack.org/cks/setup-1.15.0.iso')
                 cls.kubernetes_version_ids.append(cls.kuberetes_version_2.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.15.0.iso, %s" % e)
         if cls.setup_failed == False:
             try:
-                cls.kuberetes_version_3 = cls.addKubernetesSupportedVersion('1.16.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.0.iso')
+                cls.kuberetes_version_3 = cls.addKubernetesSupportedVersion('1.16.0', 'http://download.cloudstack.org/cks/setup-1.16.0.iso')
                 cls.kubernetes_version_ids.append(cls.kuberetes_version_3.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.0.is, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.16.0.iso, %s" % e)
         if cls.setup_failed == False:
             try:
-                cls.kuberetes_version_4 = cls.addKubernetesSupportedVersion('1.16.3', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso')
+                cls.kuberetes_version_4 = cls.addKubernetesSupportedVersion('1.16.3', 'http://download.cloudstack.org/cks/setup-1.16.3.iso')
                 cls.kubernetes_version_ids.append(cls.kuberetes_version_4.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.is, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.16.3.iso, %s" % e)
 
         cks_template_data = {
             "name": "Kubernetes-Service-Template",
@@ -105,18 +105,17 @@ class TestKubernetesCluster(cloudstackTestCase):
             "format": "qcow2",
             "hypervisor": "kvm",
             "ostype": "CoreOS",
-            "url": "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-kvm.qcow2.bz2",
+            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
             "ispublic": "True",
             "isextractable": "True"
         }
-        # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2"
         cks_template_data_details = []
         if cls.hypervisor.lower() == "vmware":
-            cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-vmware.ova" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova"
+            cks_template_data["url"] = "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova"
             cks_template_data["format"] = "OVA"
             cks_template_data_details = [{"keyboard":"us","nicAdapter":"Vmxnet3","rootDiskController":"pvscsi"}]
         elif cls.hypervisor.lower() == "xenserver":
-            cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-xen.vhd.bz2" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2"
+            cks_template_data["url"] = "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2"
             cks_template_data["format"] = "VHD"
         elif cls.hypervisor.lower() == "kvm":
             cks_template_data["requireshvm"] = "True"
