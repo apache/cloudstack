@@ -84,7 +84,7 @@ export default {
       icon: 'team',
       permission: ['listAccounts'],
       columns: ['name', 'state', 'rolename', 'roletype', 'domain'],
-      details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes'],
+      details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
       related: [{
         name: 'accountuser',
         title: 'Users',
@@ -224,7 +224,7 @@ export default {
       permission: ['listDomains', 'listDomainChildren'],
       resourceType: 'Domain',
       columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
-      details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal'],
+      details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
       related: [{
         name: 'account',
         title: 'Accounts',
