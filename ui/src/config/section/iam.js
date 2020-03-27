@@ -100,13 +100,13 @@ export default {
           component: () => import('@/views/iam/SSLCertificateTab.vue')
         },
         {
-          name: 'Settings',
-          component: () => import('@/components/view/SettingsTab.vue')
-        },
-        {
           name: 'limits',
           show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
           component: () => import('@/components/view/ResourceLimitTab.vue')
+        },
+        {
+          name: 'settings',
+          component: () => import('@/components/view/SettingsTab.vue')
         }
       ],
       actions: [
@@ -239,14 +239,15 @@ export default {
         {
           name: 'details',
           component: () => import('@/components/view/DetailsTab.vue')
-        }, {
-          name: 'Settings',
-          component: () => import('@/components/view/SettingsTab.vue')
         },
         {
           name: 'limits',
           show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
           component: () => import('@/components/view/ResourceLimitTab.vue')
+        },
+        {
+          name: 'settings',
+          component: () => import('@/components/view/SettingsTab.vue')
         }
       ],
       treeView: true,
