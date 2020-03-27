@@ -192,7 +192,6 @@ export default {
       label: 'label.ha.configure',
       dataView: true,
       args: ['hostid', 'provider'],
-      show: (record) => { return ['KVM'].includes(record.hypervisor) },
       mapping: {
         hostid: {
           value: (record) => { return record.id }
