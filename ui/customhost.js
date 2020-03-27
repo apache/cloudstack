@@ -4,7 +4,8 @@
 const defaulthost = 'ippathways';
 const defaultbrand = 'adaptivecloud';
 var hostparts = window.location.hostname.split('.');
-var custombrand = hostparts.length >= 3 ? hostparts[1] : hostparts[0];
+// Grab the next to last part of the hostname every time. This should identify the actual 'name' we want to use for the brand
+var custombrand = hostparts[hostparts.length - 2];
 if (parseInt(custombrand) || custombrand == defaulthost) {
     // custombrand is an IP address or our own name (not a white-label), so use adaptive cloud base level rebrand
     custombrand = defaultbrand;
