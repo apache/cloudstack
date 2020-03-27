@@ -34,10 +34,7 @@ export default {
       component: () => import('@/views/project/AccountsTab.vue')
     },
     {
-      name: 'resources',
-      params: {
-        projectid: 'id'
-      },
+      name: 'limits',
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
       component: () => import('@/components/view/ResourceLimitTab.vue')
     }

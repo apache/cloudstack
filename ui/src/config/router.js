@@ -178,7 +178,7 @@ export const asyncRouterMap = [
               component: () => import('@/views/project/AccountsTab')
             },
             {
-              name: 'resources',
+              name: 'limits',
               params: {
                 projectid: 'id'
               },

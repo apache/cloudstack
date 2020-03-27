@@ -27,7 +27,7 @@
         :key="index"
         v-if="item.resourcetypename !== 'project'"
         :v-bind="item.resourcetypename"
-        :label="getFieldLabel(item.resourcetypename)">
+        :label="$t('max' + item.resourcetypename.replace('_', ''))">
         <a-input-number
           style="width: 100%;"
           v-decorator="[item.resourcetype, {
@@ -37,7 +37,7 @@
       </a-form-item>
       <div class="card-footer">
         <a-button
-          v-if="!disabled"
+          v-if="!($route.meta.name === 'domain' && resource.level === 0)"
           :loading="formLoading"
           type="primary"
           @click="handleSubmit">{{ $t('submit') }}</a-button>
@@ -57,14 +57,6 @@ export default {
       required: true
     },
     loading: {
-      type: Boolean,
-      default: false
-    },
-    params: {
-      type: Object,
-      default: () => {}
-    },
-    disabled: {
       type: Boolean,
       default: false
     }
@@ -91,13 +83,20 @@ export default {
     }
   },
   methods: {
-    async fetchData () {
+    getParams () {
       const params = {}
-      Object.keys(this.params).forEach((field) => {
-        const resourceField = this.params[field]
-        const fieldVal = this.resource[resourceField] ? this.resource[resourceField] : null
-        params[field] = fieldVal
-      })
+      if (this.$route.meta.name === 'account') {
+        params.account = this.resource.name
+        params.domainid = this.resource.domainid
+      } else if (this.$route.meta.name === 'domain') {
+        params.domainid = this.resource.id
+      } else { // project
+        params.projectid = this.resource.id
+      }
+      return params
+    },
+    async fetchData () {
+      const params = this.getParams()
       try {
         this.formLoading = true
         this.dataResource = await this.listResourceLimits(params)
@@ -118,13 +117,7 @@ export default {
           return
         }
         const arrAsync = []
-        const params = {}
-        Object.keys(this.params).forEach((field) => {
-          const resourceField = this.params[field]
-          const fieldVal = this.resource[resourceField] ? this.resource[resourceField] : null
-          params[field] = fieldVal
-        })
-
+        const params = this.getParams()
         for (const key in values) {
           const input = values[key]
 
@@ -157,6 +150,7 @@ export default {
         api('listResourceLimits', params).then(json => {
           if (json.listresourcelimitsresponse.resourcelimit) {
             dataResource = json.listresourcelimitsresponse.resourcelimit
+            dataResource.sort((a, b) => a.resourcetype - b.resourcetype)
           }
           resolve(dataResource)
         }).catch(error => {
@@ -172,9 +166,6 @@ export default {
           reject(error)
         })
       })
-    },
-    getFieldLabel (resourcetypename) {
-      return this.$t('max' + resourcetypename.replace('_', ''))
     }
   }
 }

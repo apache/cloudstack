@@ -104,11 +104,7 @@ export default {
           component: () => import('@/components/view/SettingsTab.vue')
         },
         {
-          name: 'resources',
-          params: {
-            account: 'name',
-            domainid: 'domainid'
-          },
+          name: 'limits',
           show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
           component: () => import('@/components/view/ResourceLimitTab.vue')
         }
@@ -248,10 +244,7 @@ export default {
           component: () => import('@/components/view/SettingsTab.vue')
         },
         {
-          name: 'resources',
-          params: {
-            domainid: 'id'
-          },
+          name: 'limits',
           show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
           component: () => import('@/components/view/ResourceLimitTab.vue')
         }

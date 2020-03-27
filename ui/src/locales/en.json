@@ -686,6 +686,7 @@
 "lbdevicename": "Type",
 "lbdevicestate": "Status",
 "level": "Level",
+"limits": "Limits",
 "limitcpuuse": "CPU Cap",
 "linklocalip": "Link Local IP Address",
 "loadbalancerinstance": "Assigned VMs",
