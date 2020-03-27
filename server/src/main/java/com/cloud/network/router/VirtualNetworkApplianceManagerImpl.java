@@ -1401,7 +1401,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                     if (dc.getNetworkType() == NetworkType.Basic) {
                         // ask domR to setup SSH on guest network
-                        buf.append(" sshonguest=true");
+                        if (profile.getHypervisorType() == HypervisorType.VMware) {
+                            buf.append(" sshonguest=false");
+                        } else {
+                            buf.append(" sshonguest=true");
+                        }
                     }
 
                 }
@@ -1760,19 +1764,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final DomainRouterVO router = _routerDao.findById(profile.getId());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         NicProfile controlNic = null;
-        if (profile.getHypervisorType() == HypervisorType.VMware && dcVo.getNetworkType() == NetworkType.Basic) {
-            // TODO this is a ugly to test hypervisor type here
-            // for basic network mode, we will use the guest NIC for control NIC
-            for (final NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Guest && nic.getIPv4Address() != null) {
-                    controlNic = nic;
-                }
-            }
-        } else {
-            for (final NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Control && nic.getIPv4Address() != null) {
-                    controlNic = nic;
-                }
+        for (final NicProfile nic : profile.getNics()) {
+            if (nic.getTrafficType() == TrafficType.Control && nic.getIPv4Address() != null) {
+                controlNic = nic;
             }
         }
         return controlNic;

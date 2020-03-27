@@ -138,22 +138,11 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         // we have to get management/private ip for the control nic for vmware/hyperv due ssh issues.
         HypervisorType hType = vm.getHypervisorType();
         if (((hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv)) && isRouterVm(vm)) {
-            if (dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
-                super.reserve(nic, config, vm, dest, context);
+            super.reserve(nic, config, vm, dest, context);
 
-                String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
-                nic.setMacAddress(mac);
-                return;
-            } else {
-                // in basic mode and in VMware case, control network will be shared with guest network
-                String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
-                nic.setMacAddress(mac);
-                nic.setIPv4Address("0.0.0.0");
-                nic.setIPv4Netmask("0.0.0.0");
-                nic.setFormat(AddressFormat.Ip4);
-                nic.setIPv4Gateway("0.0.0.0");
-                return;
-            }
+            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+            nic.setMacAddress(mac);
+            return;
         }
 
         String ip = _dcDao.allocateLinkLocalIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
