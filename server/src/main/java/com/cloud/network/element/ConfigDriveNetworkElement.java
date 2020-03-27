@@ -369,7 +369,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
             if (userVm != null) {
                 final boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(userVm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-                String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccoutLevel.valueIn(caller.getId())) ? dest.getHost().getName() : null;
+                String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? dest.getHost().getName() : null;
                 List<String[]> vmData = _networkModel.generateVmData(userVm.getUserData(), _serviceOfferingDao.findById(userVm.getServiceOfferingId()).getName(), userVm.getDataCenterId(), userVm.getInstanceName(), vm.getHostName(), vm.getId(),
                         vm.getUuid(), nic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) vm.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, destHostname);
                 vm.setVmData(vmData);
@@ -586,7 +586,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             String hostname = _hostDao.findById(vm.getHostId()).getName();
             final Account caller = CallContext.current().getCallingAccount();
-            String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccoutLevel.valueIn(caller.getId())) ? hostname : null;
+            String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? hostname : null;
             final List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
                     vm.getUuid(), nic.getIPv4Address(), sshPublicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, destHostname);
             profile.setVmData(vmData);

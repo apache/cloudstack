@@ -2803,7 +2803,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
                     boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
                     final Account caller = CallContext.current().getCallingAccount();
-                    String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccoutLevel.valueIn(caller.getId())) ? destination.getHost().getName() : null;
+                    String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? destination.getHost().getName() : null;
                     vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
                             vm.getUuid(), defaultNic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, destHostname);
                     String vmName = vm.getInstanceName();
@@ -4286,7 +4286,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
             VmOpLockStateRetry,
             VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp,
-            ResoureCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccoutLevel };
+            ResoureCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel };
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {

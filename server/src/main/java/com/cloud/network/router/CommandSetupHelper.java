@@ -197,7 +197,7 @@ public class CommandSetupHelper {
 
             Host host = _hostDao.findById(vm.getHostId());
             final Account caller = CallContext.current().getCallingAccount();
-            String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccoutLevel.valueIn(caller.getId())) ? host.getName() : null;
+            String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? host.getName() : null;
             cmds.addCommand(
                     "vmdata",
                     generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,

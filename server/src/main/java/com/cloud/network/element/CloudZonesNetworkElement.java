@@ -221,7 +221,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(uservm.getServiceOfferingId()).getDisplayText();
             String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
             final Account caller = CallContext.current().getCallingAccount();
-            String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccoutLevel.valueIn(caller.getId())) ? dest.getHost().getName() : null;
+            String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? dest.getHost().getName() : null;
             cmds.addCommand(
                 "vmdata",
                 generateVmDataCommand(nic.getIPv4Address(), userData, serviceOffering, zoneName, nic.getIPv4Address(), uservm.getHostName(), uservm.getInstanceName(),
