@@ -24,8 +24,8 @@
     >
       <a-form-item
         v-for="(item, index) in dataResource"
-        v-if="checkExistFields(item.resourcetypename)"
         :key="index"
+        v-if="item.resourcetypename !== 'project'"
         :v-bind="item.resourcetypename"
         :label="getFieldLabel(item.resourcetypename)">
         <a-input-number
@@ -40,7 +40,7 @@
           v-if="!disabled"
           :loading="formLoading"
           type="primary"
-          @click="handleSubmit">{{ this.$t('apply') }}</a-button>
+          @click="handleSubmit">{{ $t('submit') }}</a-button>
       </div>
     </a-form>
   </a-spin>
@@ -50,7 +50,7 @@
 import { api } from '@/api'
 
 export default {
-  name: 'ResourcesTab',
+  name: 'ResourceLimitTab',
   props: {
     resource: {
       type: Object,
@@ -63,10 +63,6 @@ export default {
     params: {
       type: Object,
       default: () => {}
-    },
-    fields: {
-      type: Array,
-      default: () => []
     },
     disabled: {
       type: Boolean,
@@ -177,21 +173,8 @@ export default {
         })
       })
     },
-    checkExistFields (resourcetypename) {
-      const fieldExists = this.fields.filter((item) => item.field === resourcetypename)
-      if (fieldExists && fieldExists.length > 0) {
-        return true
-      }
-
-      return false
-    },
     getFieldLabel (resourcetypename) {
-      const field = this.fields.filter((item) => item.field === resourcetypename)
-      if (field && field.length > 0) {
-        return this.$t(field[0].title)
-      }
-
-      return resourcetypename
+      return this.$t('max' + resourcetypename.replace('_', ''))
     }
   }
 }
@@ -199,8 +182,6 @@ export default {
 
 <style lang="less" scoped>
   .card-footer {
-    text-align: right;
-
     button + button {
       margin-left: 8px;
     }

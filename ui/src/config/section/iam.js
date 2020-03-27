@@ -109,54 +109,8 @@ export default {
             account: 'name',
             domainid: 'domainid'
           },
-          fields: [
-            {
-              field: 'network',
-              title: 'networkLimit'
-            },
-            {
-              field: 'volume',
-              title: 'volumeLimit'
-            },
-            {
-              field: 'public_ip',
-              title: 'ipLimit'
-            },
-            {
-              field: 'template',
-              title: 'templateLimit'
-            },
-            {
-              field: 'user_vm',
-              title: 'vmLimit'
-            },
-            {
-              field: 'snapshot',
-              title: 'snapshotLimit'
-            },
-            {
-              field: 'vpc',
-              title: 'vpcLimit'
-            },
-            {
-              field: 'cpu',
-              title: 'cpuLimit'
-            },
-            {
-              field: 'memory',
-              title: 'memoryLimit'
-            },
-            {
-              field: 'primary_storage',
-              title: 'primaryStorageLimit'
-            },
-            {
-              field: 'secondary_storage',
-              title: 'secondaryStorageLimit'
-            }
-          ],
           show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
-          component: () => import('@/components/view/ResourcesTab.vue')
+          component: () => import('@/components/view/ResourceLimitTab.vue')
         }
       ],
       actions: [
@@ -298,54 +252,8 @@ export default {
           params: {
             domainid: 'id'
           },
-          fields: [
-            {
-              field: 'network',
-              title: 'networkLimit'
-            },
-            {
-              field: 'volume',
-              title: 'volumeLimit'
-            },
-            {
-              field: 'public_ip',
-              title: 'ipLimit'
-            },
-            {
-              field: 'template',
-              title: 'templateLimit'
-            },
-            {
-              field: 'user_vm',
-              title: 'vmLimit'
-            },
-            {
-              field: 'snapshot',
-              title: 'snapshotLimit'
-            },
-            {
-              field: 'vpc',
-              title: 'vpcLimit'
-            },
-            {
-              field: 'cpu',
-              title: 'cpuLimit'
-            },
-            {
-              field: 'memory',
-              title: 'memoryLimit'
-            },
-            {
-              field: 'primary_storage',
-              title: 'primaryStorageLimit'
-            },
-            {
-              field: 'secondary_storage',
-              title: 'secondaryStorageLimit'
-            }
-          ],
           show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
-          component: () => import('@/components/view/ResourcesTab.vue')
+          component: () => import('@/components/view/ResourceLimitTab.vue')
         }
       ],
       treeView: true,
