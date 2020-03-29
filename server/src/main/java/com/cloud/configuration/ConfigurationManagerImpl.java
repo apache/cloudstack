@@ -26,10 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-<<<<<<< HEAD:server/src/main/java/com/cloud/configuration/ConfigurationManagerImpl.java
-=======
 import java.util.Comparator;
->>>>>>> Added Logic to update the user_ip_address table:server/src/com/cloud/configuration/ConfigurationManagerImpl.java
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,13 +40,8 @@ import java.util.Vector;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-<<<<<<< HEAD:server/src/main/java/com/cloud/configuration/ConfigurationManagerImpl.java
-=======
 import com.cloud.network.IpAddress;
 import com.google.common.collect.Sets;
-
->>>>>>> Added Logic to update the user_ip_address table:server/src/com/cloud/configuration/ConfigurationManagerImpl.java
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
