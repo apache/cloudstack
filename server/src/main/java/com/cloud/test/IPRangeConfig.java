@@ -313,9 +313,9 @@ public class IPRangeConfig {
         return problemIPs;
     }
 
-    private Vector<String> deletePublicIPRange(TransactionLegacy txn, long startIP, long endIP, long vlanDbId) {
-        String deleteSql = "DELETE FROM `cloud`.`user_ip_address` WHERE public_ip_address = ? AND vlan_id = ?";
-        String isPublicIPAllocatedSelectSql = "SELECT * FROM `cloud`.`user_ip_address` WHERE public_ip_address = ? AND vlan_id = ?";
+    public Vector<String> deletePublicIPRange(TransactionLegacy txn, long startIP, long endIP, long vlanDbId) {
+        String deleteSql = "DELETE FROM `cloud`.`user_ip_address` WHERE public_ip_address = ? AND vlan_db_id = ?";
+        String isPublicIPAllocatedSelectSql = "SELECT * FROM `cloud`.`user_ip_address` WHERE public_ip_address = ? AND vlan_db_id = ?";
 
         Vector<String> problemIPs = new Vector<String>();
         Connection conn = null;
@@ -329,9 +329,9 @@ public class IPRangeConfig {
         try(PreparedStatement stmt = conn.prepareStatement(deleteSql);
             PreparedStatement isAllocatedStmt = conn.prepareStatement(isPublicIPAllocatedSelectSql);) {
             while (startIP <= endIP) {
-                if (!isPublicIPAllocated(startIP, vlanDbId, isAllocatedStmt)) {
+                if (!isPublicIPAllocated(NetUtils.long2Ip(startIP), vlanDbId, isAllocatedStmt)) {
                         stmt.clearParameters();
-                        stmt.setLong(1, startIP);
+                        stmt.setString(1, NetUtils.long2Ip(startIP));
                         stmt.setLong(2, vlanDbId);
                         stmt.executeUpdate();
                     }
@@ -379,21 +379,25 @@ public class IPRangeConfig {
         return problemIPs;
     }
 
-    private boolean isPublicIPAllocated(long ip, long vlanDbId, PreparedStatement stmt) {
-        try(ResultSet rs = stmt.executeQuery();) {
-            stmt.clearParameters();
-            stmt.setLong(1, ip);
-            stmt.setLong(2, vlanDbId);
-            if (rs.next()) {
-                return (rs.getString("allocated") != null);
-            } else {
-                return false;
-            }
-        }
-        catch (SQLException ex) {
-            System.out.println(ex.getMessage());
-            return true;
-        }
+    private boolean isPublicIPAllocated(String ip, long vlanDbId, PreparedStatement stmt) {
+       try{
+           stmt.clearParameters();
+           stmt.setString(1, ip);
+           stmt.setLong(2, vlanDbId);
+           try(ResultSet rs = stmt.executeQuery();) {
+           if (rs.next()) {
+               return (rs.getString("allocated") != null);
+           } else {
+               return false;
+           }
+       }
+       catch (SQLException ex) {
+           System.out.println(ex.getMessage());
+           return true;
+       }}catch (SQLException ex) {
+           System.out.println(ex.getMessage());
+           return true;
+       }
     }
 
     private boolean isPrivateIPAllocated(String ip, long podId, long zoneId, PreparedStatement stmt) {
