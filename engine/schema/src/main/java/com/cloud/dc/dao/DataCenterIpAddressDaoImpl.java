@@ -290,6 +290,20 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         return result.size();
     }
 
+    @Override
+    public List<DataCenterIpAddressVO> listIpAddressUsage(final long podId, final long dcId, final boolean onlyListAllocated) {
+        SearchCriteria<DataCenterIpAddressVO> sc = createSearchCriteria();
+
+        if(onlyListAllocated) {
+            sc.addAnd("takenAt", SearchCriteria.Op.NNULL);
+        }
+
+        sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
+
+        return listBy(sc);
+    }
+
     public DataCenterIpAddressDaoImpl() {
         super();
 
