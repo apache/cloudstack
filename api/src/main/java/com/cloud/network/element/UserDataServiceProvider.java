@@ -35,5 +35,5 @@ public interface UserDataServiceProvider extends NetworkElement {
 
     boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String sshPublicKey) throws ResourceUnavailableException;
 
-    boolean addNewDisk(NicProfile profile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException;
+    boolean saveHypervisorHostname(NicProfile profile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException;
 }

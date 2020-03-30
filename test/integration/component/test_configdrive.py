@@ -535,15 +535,15 @@ class ConfigDriveUtils:
         # Verify hostname if the appropriate settings are true
         configs = Configurations.list(
             self.api_client,
-            name="allow.expose.host.hostname",
+            name="general.allow.expose.host.hostname",
             listall=True
         )
         exposeHypevisorHostnameGS = configs[0].value
 
         configs = Configurations.list(
             self.api_client,
-            name="allow.expose.host.hostname",
-            account="admin"
+            name="account.allow.expose.host.hostname",
+            listall=True
         )
 
         exposeHypevisorHostnameAcc = configs[0].value
@@ -2304,7 +2304,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         #    which has userdata provided ConfigDrive, create
         #    an Isolated network using that network offering.
         #    Verify network is successfully created and in the Allocated state
-        #    Set the "allow.expose.host.hostname" and "allow.expose.host.hostname" flags to true
+        #    Set the "general.allow.expose.host.hostname" and "account.allow.expose.host.hostname" flags to true
         #    to enable viewing hypevisor host name in the metadata file
         #    Deploy VM in the network created, verify metadata in the configdrive
         #    my mounting the configdrive ISO and verify the respective files
@@ -2336,29 +2336,28 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Update global setting for "allow.expose.host.hostname"
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="true"
                               )
 
         # Update Account level setting
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
-                              value="true",
-                              accountid=self.account.id
+                              name="account.allow.expose.host.hostname",
+                              value="true"
                               )
 
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='allow.expose.host.hostname',
+                name='general.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname should be true. skipping')
+            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='allow.expose.host.hostname',
+                name='account.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('Account level setting allow.expose.host.hostname should be true. skipping')
+            self.skipTest('Account level setting account.allow.expose.host.hostname should be true. skipping')
 
         self.debug("+++Deploy VM in the created Isolated network "
                    "with user data provider as configdrive")
@@ -2399,15 +2398,14 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Reset configuration values to default values i.e., false
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="false"
                               )
 
         # Update Account level setting
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
-                              value="false",
-                              accountid=self.account.id
+                              name="account.allow.expose.host.hostname",
+                              value="false"
                               )
 
         self.delete(vm1, expunge=True)
@@ -2452,29 +2450,28 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Update global setting for "allow.expose.host.hostname"
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="true"
                               )
 
         # Update Account level setting
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
-                              value="true",
-                              accountid=self.account.id
+                              name="account.allow.expose.host.hostname",
+                              value="true"
                               )
 
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='allow.expose.host.hostname',
+                name='general.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname should be true. skipping')
+            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='allow.expose.host.hostname',
+                name='account.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('Account level setting allow.expose.host.hostname should be true. skipping')
+            self.skipTest('Account level setting account.allow.expose.host.hostname should be true. skipping')
 
         # =====================================================================
         self.debug("+++ Scenario: "
@@ -2523,15 +2520,14 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Reset configuration values to default values i.e., false
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="false"
                               )
 
         # Update Account level setting
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
-                              value="false",
-                              accountid=self.account.id
+                              name="account.allow.expose.host.hostname",
+                              value="false"
                               )
 
         self.delete(vm, expunge=True)

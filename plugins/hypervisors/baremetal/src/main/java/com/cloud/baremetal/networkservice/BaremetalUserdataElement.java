@@ -89,7 +89,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean addNewDisk(NicProfile profile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+    public boolean saveHypervisorHostname(NicProfile profile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
         return true;
     }
 

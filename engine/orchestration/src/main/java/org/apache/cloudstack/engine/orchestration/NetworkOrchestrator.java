@@ -1625,7 +1625,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         && element instanceof UserDataServiceProvider &&
                         (element instanceof ConfigDriveNetworkElement || element instanceof VirtualRouterElement)) {
                     final UserDataServiceProvider sp = (UserDataServiceProvider) element;
-                    if (!sp.addNewDisk(profile, network, vm, dest)) {
+                    if (!sp.saveHypervisorHostname(profile, network, vm, dest)) {
                         throw new CloudRuntimeException("Failed to create New Iso Disk");
                     }
                 }

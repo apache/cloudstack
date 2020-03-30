@@ -141,31 +141,30 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         4. From the VM, curl the gateway of the VR to verify the corresponding metadata - hypervisor host name
             if the respective Global level and account level flags are set to true
         """
-        # Update global setting for "allow.expose.host.hostname"
+        # Update global setting for "general.allow.expose.host.hostname"
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="true"
                               )
 
         # Update Account level setting
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname",
-                              value="true",
-                              accountid=1
+                              name="account.allow.expose.host.hostname",
+                              value="true"
                               )
 
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.apiclient,
-                name='allow.expose.host.hostname',
+                name='general.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname should be true. skipping')
+            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.apiclient,
-                name='allow.expose.host.hostname',
+                name='account.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname should be true. skipping')
+            self.skipTest('account.allow.expose.host.hostname should be true. skipping')
 
         self.no_isolate = NetworkOffering.create(
             self.apiclient,
@@ -200,12 +199,6 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
 
         ip_addr = self.vm.ipaddress
         self.debug("VM ip address = %s" % ip_addr)
-        # ip_status, ip_addr = self.getVMIPAddress(self.vm.id)
-        # self.assertEqual(
-        #     ip_status,
-        #     1,
-        #     "Failed to retrieve vm ip address"
-        # )
 
         # Verify the retrieved ip address in listNICs API response
         self.list_nics(self.vm.id)
@@ -227,20 +220,19 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         )
         # Reset configuration values to default values i.e., false
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="false"
                               )
 
         # Update Account level setting
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname",
-                              value="false",
-                              accountid=1
+                              name="account.allow.expose.host.hostname",
+                              value="false"
                               )
         return
 
     @attr(tags=["advanced"], required_hardware='True')
-    def test_deployVM_verify_metadata_in_VR(self):
+    def test_deployVM_verify_metadata_in_VR_after_migration(self):
         """
         1. Create a network (VR as a provider)
         2. Deploy a VM in the network
@@ -249,31 +241,30 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         4. After migration, from the VM, curl the gateway to verify the corresponding metadata - hypervisor host name
             if the respective Global level and account level flags are set to true
         """
-        # Update global setting for "allow.expose.host.hostname"
+        # Update global setting for "general.allow.expose.host.hostname"
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="true"
                               )
 
         # Update Account level setting
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname",
-                              value="true",
-                              accountid=1
+                              name="account.allow.expose.host.hostname",
+                              value="true"
                               )
 
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.apiclient,
-                name='allow.expose.host.hostname',
+                name='general.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname should be true. skipping')
+            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.apiclient,
-                name='allow.expose.host.hostname',
+                name='account.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('Account level allow.expose.host.hostname should be true. skipping')
+            self.skipTest('Account level account.allow.expose.host.hostname should be true. skipping')
 
         self.no_isolate = NetworkOffering.create(
             self.apiclient,
@@ -332,15 +323,14 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         )
         # Reset configuration values to default values i.e., false
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="false"
                               )
 
         # Update Account level setting
         Configurations.update(self.apiclient,
-                              name="allow.expose.host.hostname",
-                              value="false",
-                              accountid=1
+                              name="account.allow.expose.host.hostname",
+                              value="false"
                               )
 
         return
