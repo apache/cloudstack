@@ -110,6 +110,8 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 index++;
             }
 
+            int isoCount = 0;
+
             for (DiskTO disk : disks) {
                 final VDI newVdi = citrixResourceBase.prepareManagedDisk(conn, disk, vmSpec.getId(), vmSpec.getName());
 
@@ -123,8 +125,11 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
                     iqnToData.put(disk.getDetails().get(DiskTO.IQN), data);
                 }
+                citrixResourceBase.createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), newVdi, isoCount);
 
-                citrixResourceBase.createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), newVdi);
+                if (disk.getType() == Volume.Type.ISO) {
+                    isoCount++;
+                }
             }
 
             for (final NicTO nic : vmSpec.getNics()) {

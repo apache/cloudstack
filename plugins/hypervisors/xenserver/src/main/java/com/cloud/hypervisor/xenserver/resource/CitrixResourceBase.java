@@ -1120,7 +1120,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException(errMsg);
     }
 
-    public VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
+    public VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi, int isoCount) throws XmlRpcException, XenAPIException {
         final Volume.Type type = volume.getType();
 
         if (vdi == null) {
@@ -1156,7 +1156,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (volume.getType() == Volume.Type.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
-            vbdr.userdevice = "3";
+            vbdr.userdevice = String.valueOf(3 + isoCount);
         } else {
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
@@ -3882,7 +3882,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // corer case, xenserver pv driver iso
             final String templateName = iso.getName();
-            if (templateName.startsWith("xs-tools")) {
+            if (templateName != null && templateName.startsWith("xs-tools")) {
                 try {
                     final String actualTemplateName = getActualIsoTemplate(conn);
                     final Set<VDI> vdis = VDI.getByNameLabel(conn, actualTemplateName);
