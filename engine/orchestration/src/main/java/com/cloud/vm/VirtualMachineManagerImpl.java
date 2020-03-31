@@ -2480,7 +2480,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             } else {
                 _networkMgr.commitNicForMigration(vmSrc, profile);
-                _networkMgr.addNewDisk(profile, dest);
+                _networkMgr.addHypervisorHostname(profile, dest);
             }
 
             work.setStep(Step.Done);
@@ -2861,7 +2861,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.error("Error while transitioning vm from migrating to running state.", e);
                 }
             } else {
-                _networkMgr.addNewDisk(profile, destination);
+                _networkMgr.addHypervisorHostname(profile, destination);
             }
 
             work.setStep(Step.Done);
@@ -4053,7 +4053,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.warn(e.getMessage());
                 }
             } else {
-                _networkMgr.addNewDisk(profile, dest);
+                _networkMgr.addHypervisorHostname(profile, dest);
             }
 
             work.setStep(Step.Done);

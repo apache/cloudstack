@@ -1613,7 +1613,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void addNewDisk(VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+    public void addHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
             final NetworkVO network = _networksDao.findById(nic.getNetworkId());
