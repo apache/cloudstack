@@ -267,6 +267,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         boolean deletedOnSecondary = false;
         if (snapshotOnImage == null) {
             s_logger.debug(String.format("Can't find snapshot [snapshot id: %d] on backup storage", snapshotId));
+            snapshotDao.remove(snapshotId);
         } else {
             SnapshotObject obj = (SnapshotObject)snapshotOnImage;
             try {
@@ -326,7 +327,6 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         if (isSnapshotOnPrimaryStorage(snapshotId) && snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo)) {
             snapshotOnPrimary.setState(State.Destroyed);
             snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
-            snapshotDao.remove(snapshotId);
             return true;
         }
         return false;
