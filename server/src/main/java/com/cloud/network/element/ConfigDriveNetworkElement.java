@@ -373,7 +373,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             final UserVmVO userVm = _userVmDao.findById(vm.getId());
 
             if (userVm != null) {
-                final boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(userVm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+                final boolean isWindows = isWindows(userVm.getGuestOSId());
                 List<String[]> vmData = _networkModel.generateVmData(userVm.getUserData(), _serviceOfferingDao.findById(userVm.getServiceOfferingId()).getName(), userVm.getDataCenterId(), userVm.getInstanceName(), vm.getHostName(), vm.getId(),
                         vm.getUuid(), nic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) vm.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, VirtualMachineManager.getHypervisorHostname(dest.getHost().getName()));
                 vm.setVmData(vmData);
@@ -388,6 +388,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                 }
             }
         }
+    }
+
+    private boolean isWindows(long guestOSId) {
+        return _guestOSCategoryDao.findById(_guestOSDao.findById(guestOSId).getCategoryId()).getName().equalsIgnoreCase("Windows");
     }
 
     private DataStore findDataStore(VirtualMachineProfile profile, DeployDestination dest) {
