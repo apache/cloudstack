@@ -1747,6 +1747,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return true;
             }
 
+            // Restart all networks in this VPC that needs a restart
+            List<? extends Network> networks = _ntwkModel.listNetworksByVpc(vpcId);
+            for (Network network: networks){
+                if (network.isRestartRequired()){
+                    _ntwkMgr.restartNetwork(network.getId(), callerAccount, callerUser, cleanUp);
+                }
+            }
+
             s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process without cleanup");
             if (!startVpc(vpcId, false)) {
                 s_logger.warn("Failed to start vpc as a part of VPC " + vpc + " restart process");
