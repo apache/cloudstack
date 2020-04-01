@@ -2988,7 +2988,7 @@ cloudStack.createTemplateFromSnapshotMethod = function (){
                                 return {}; //nothing in this snapshot needs to be updated
                             },
                             getActionFilter: function() {
-                                return snapshotActionfilter;
+                                return cloudStack.actionFilter.snapshotActionfilter;
                             }
                         }
                     });
