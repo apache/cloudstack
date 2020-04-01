@@ -294,6 +294,13 @@ public interface NetworkOrchestrationService {
 
     void finalizeUpdateInSequence(Network network, boolean success);
 
+    /**
+     * Adds hypervisor hostname to a file - hypervisor-host-name if the userdata
+     * service provider is ConfigDrive or VirtualRouter
+     * @param vm
+     * @param dest
+     * @throws ResourceUnavailableException
+     */
     void addHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException;
 
     List<NetworkGuru> getNetworkGurus();
