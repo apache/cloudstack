@@ -299,7 +299,7 @@ public interface NetworkOrchestrationService {
      * service provider is ConfigDrive or VirtualRouter
      * @param vm
      * @param dest
-     * @throws ResourceUnavailableException
+     * @throws ResourceUnavailableException in case Datastore or agent to which a command is to be sent is unavailable
      */
     void addHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException;
 
