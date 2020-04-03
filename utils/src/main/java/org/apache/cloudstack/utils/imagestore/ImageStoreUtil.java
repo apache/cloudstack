@@ -58,7 +58,7 @@ public class ImageStoreUtil {
             return "";
         }
         // raw
-        if ((output.contains("x86 boot") || output.contains("DOS/MBR boot sector") || output.contains("data")) && (isCorrectExtension(uripath, "raw") || isCorrectExtension(uripath, "img"))) {
+        if ((output.contains("x86 boot") || output.contains("DOS/MBR boot sector") || output.contains("data")) && isCorrectExtension(uripath, "raw")) {
             s_logger.debug("File at path " + path + " looks like a raw image :" + output);
             return "";
         }
