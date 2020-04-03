@@ -21,7 +21,7 @@
 
 -- Update the description to indicate this only works with KVM + Ceph 
 -- (not implemented properly atm for KVM+NFS/local, and it accidentaly works with XS + NFS. Not applicable for VMware)
-UPDATE `cloud`.`configuration` SET `description`='Indicates whether to always backup primary storage snapshot to secondary storage. Applicable for KVM + Ceph only.' WHERE  `name`='snapshot.backup.to.secondary';
+UPDATE `cloud`.`configuration` SET `description`='Indicates whether to always backup primary storage snapshot to secondary storage. Keeping snapshots only on Primary storage is applicable for KVM + Ceph only.' WHERE  `name`='snapshot.backup.to.secondary';
 
 -- KVM: enable storage data motion on KVM hypervisor_capabilities
 UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported` = 1 WHERE `hypervisor_capabilities`.`hypervisor_type` = 'KVM';
