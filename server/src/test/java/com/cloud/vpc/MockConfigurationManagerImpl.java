@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -199,6 +200,14 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public void deletePodIpRange(DeleteManagementNetworkIpRangeCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#updatePodIpRange(org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd)
+     */
+    public void updatePodIpRange(final UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return;
     }

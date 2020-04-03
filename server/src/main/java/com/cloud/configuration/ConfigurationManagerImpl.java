@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -1460,6 +1461,162 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } catch (final Exception e) {
             s_logger.error("Unable to delete Pod " + podId + "IP range due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to delete Pod " + podId + "IP range. Please contact Cloud Support.");
+        }
+    }
+
+    @Override
+    @DB
+    public void updatePodIpRange(final UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException {
+        final long podId = cmd.getPodId();
+        final String currentStartIP= cmd.getCurrentStartIP();
+        final String currentEndIP= cmd.getCurrentEndIP();
+        final HostPodVO pod = _podDao.findById(podId);
+
+        String newStartIP = cmd.getNewStartIP();
+        String newEndIP = cmd.getNewEndIP();
+        String vlan = null;
+
+        if(newStartIP == null){
+            newStartIP= currentStartIP;
+        }
+
+        if(newEndIP == null){
+            newEndIP= currentEndIP;
+        }
+
+        if(pod == null) {
+            throw new InvalidParameterValueException("Unable to find pod by id " + podId);
+        }
+
+        final String[] existingPodIpRanges = pod.getDescription().split(",");
+        if(existingPodIpRanges.length == 0) {
+            throw new InvalidParameterValueException("The IP range cannot be found since the existing IP range is empty.");
+        }
+
+        verifyIPRangeParameters(currentStartIP,currentEndIP);
+        verifyIPRangeParameters(newStartIP,newEndIP);
+        checkIpRangeContainsTakenAddresses(pod,currentStartIP,currentEndIP,newStartIP,newEndIP);
+
+        boolean foundRange = false;
+
+        for(String podIpRange: existingPodIpRanges) {
+            final String[] existingPodIpRange = podIpRange.split("-");
+
+            if(existingPodIpRange.length > 1) {
+                if (!NetUtils.isValidIp4(existingPodIpRange[0]) || !NetUtils.isValidIp4(existingPodIpRange[1])) {
+                    continue;
+                }
+                if (currentStartIP.equals(existingPodIpRange[0]) && currentEndIP.equals(existingPodIpRange[1])) {
+                    foundRange = true;
+                    vlan = existingPodIpRange[3];
+                }
+                if (!foundRange && NetUtils.ipRangesOverlap(newStartIP, newEndIP, existingPodIpRange[0], existingPodIpRange[1])) {
+                    throw new InvalidParameterValueException("The Start IP and EndIP address range overlap with private IP :" + existingPodIpRange[0] + "-" + existingPodIpRange[1]);
+                }
+            }
+        }
+
+        if(!foundRange) {
+            throw new InvalidParameterValueException("The input IP range: " + currentStartIP + "-" + currentEndIP + " of pod: " + podId + " is not present. Please input an existing range.");
+        }
+
+        List<Long> currentIPRange = listAllIPsWithintheRange(currentStartIP,currentEndIP);
+        List<Long> newIPRange = listAllIPsWithintheRange(newStartIP,newEndIP);
+
+        try {
+            final String finalNewEndIP = newEndIP;
+            final String finalNewStartIP = newStartIP;
+            final Integer vlanId = vlan.equals(Vlan.UNTAGGED) ? null : Integer.parseInt(vlan);
+
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    final long zoneId = pod.getDataCenterId();
+                    pod.setDescription(pod.getDescription().replace(currentStartIP+"-", finalNewStartIP +"-").replace(currentEndIP,
+                            finalNewEndIP));
+
+                    HostPodVO lock = null;
+
+                    try {
+                        lock = _podDao.acquireInLockTable(podId);
+                        if (lock == null) {
+                            String msg = "Unable to acquire lock on table to update the ip range of POD: " + pod.getName() + ", Update failed.";
+                            s_logger.warn(msg);
+                            throw new CloudRuntimeException(msg);
+                        }
+                        List<Long> iPAddressesToAdd = new ArrayList(newIPRange);
+                        iPAddressesToAdd.removeAll(currentIPRange);
+                        if (iPAddressesToAdd.size()>0){
+                            for(Long startIP : iPAddressesToAdd){
+                                _zoneDao.addPrivateIpAddress(zoneId, podId, NetUtils.long2Ip(startIP), NetUtils.long2Ip(startIP), false, vlanId);
+                            }
+                        }else {
+                            currentIPRange.removeAll(newIPRange);
+                            if(currentIPRange.size()>0){
+                                for (Long startIP: currentIPRange){
+                                    if(!_privateIpAddressDao.deleteIpAddressByPodDc(NetUtils.long2Ip(startIP),podId,zoneId)){
+                                        throw new CloudRuntimeException("Failed to remove private ip address: " + NetUtils.long2Ip(startIP) + " of Pod: " + podId + " DC: " + pod.getDataCenterId());
+                                    }
+                                }
+                            }
+                        }
+                        _podDao.update(podId, pod);
+                    } finally {
+                        if (lock != null) {
+                            _podDao.releaseFromLockTable(podId);
+                        }
+                    }
+                }
+            });
+        } catch (final Exception e) {
+            s_logger.error("Unable to update Pod " + podId + " IP range due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to update Pod " + podId + " IP range. Please contact Cloud Support.");
+        }
+    }
+
+    public List<Long> listAllIPsWithintheRange(String startIp, String endIP){
+        verifyIPRangeParameters(startIp,endIP);
+        long startIPLong = NetUtils.ip2Long(startIp);
+        long endIPLong = NetUtils.ip2Long(endIP);
+
+        List<Long> listOfIpsinRange = new ArrayList<>();
+        while (startIPLong<=endIPLong){
+            listOfIpsinRange.add(startIPLong);
+            startIPLong++;
+        }
+        return listOfIpsinRange;
+    }
+
+    private void verifyIPRangeParameters(String startIP, String endIp){
+
+        if (!Strings.isNullOrEmpty(startIP) && !NetUtils.isValidIp4(startIP)) {
+            throw new InvalidParameterValueException("The current start address of the IP range "+startIP+" is not a valid IP address.");
+        }
+
+        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.isValidIp4(endIp)) {
+            throw new InvalidParameterValueException("The current end address of the IP range "+endIp +" is not a valid IP address.");
+        }
+
+        if (NetUtils.ip2Long(startIP) > NetUtils.ip2Long(endIp)) {
+            throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
+        }
+
+    }
+
+    private void checkIpRangeContainsTakenAddresses(final HostPodVO pod,final String currentStartIP, final String currentEndIP,final String newStartIp, final String newEndIp ){
+        List<Long> newIPRange = listAllIPsWithintheRange(newStartIp,newEndIp);
+        List<Long> currentIPRange = listAllIPsWithintheRange(currentStartIP,currentEndIP);
+        List<Long> takenIpsList = new ArrayList<>();
+        final List<DataCenterIpAddressVO> takenIps = _privateIpAddressDao.listIpAddressUsage(pod.getId(),pod.getDataCenterId(),true);
+
+        for (DataCenterIpAddressVO takenIp : takenIps) {
+            takenIpsList.add(NetUtils.ip2Long(takenIp.getIpAddress()));
+        }
+
+        takenIpsList.retainAll(currentIPRange);
+        if(!newIPRange.containsAll(takenIpsList)){
+            throw new InvalidParameterValueException("The IP range does not contain some IP addresses that have "
+                    + "already been taken. Please adjust your IP range to include all IP addresses already taken.");
         }
     }
 
