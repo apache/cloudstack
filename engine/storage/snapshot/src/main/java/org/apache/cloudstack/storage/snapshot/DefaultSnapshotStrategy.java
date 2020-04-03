@@ -267,7 +267,6 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         boolean deletedOnSecondary = false;
         if (snapshotOnImage == null) {
             s_logger.debug(String.format("Can't find snapshot [snapshot id: %d] on backup storage", snapshotId));
-            snapshotDao.remove(snapshotId);
         } else {
             SnapshotObject obj = (SnapshotObject)snapshotOnImage;
             try {
@@ -285,7 +284,27 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             }
         }
 
-        boolean deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId);
+        boolean deletedOnPrimary = false;
+        snapshotVO = snapshotDao.findById(snapshotId);
+        SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        if (snapshotVO != null && snapshotVO.getState() == Snapshot.State.Destroyed) {
+            deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId, snapshotOnPrimaryInfo);
+        } else {
+            // This is to handle snapshots which are created only on primary when snapshot.backup.to.secondary is set to false. 
+            SnapshotObject obj = (SnapshotObject) snapshotOnPrimaryInfo;
+            try {
+                obj.processEvent(Snapshot.Event.DestroyRequested);
+                deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId, snapshotOnPrimaryInfo);
+                if (!deletedOnPrimary) {
+                    obj.processEvent(Snapshot.Event.OperationFailed);
+                } else {
+                    obj.processEvent(Snapshot.Event.OperationSucceeded);
+                }
+            } catch (NoTransitionException e) {
+            s_logger.debug("Failed to set the state to destroying: ", e);
+            return false;
+            }
+        }
         if (deletedOnPrimary) {
             s_logger.debug(String.format("Successfully deleted snapshot (id: %d) on primary storage.", snapshotId));
         } else if (deletedOnSecondary) {
@@ -321,9 +340,8 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
      * Deletes the snapshot on primary storage. It can return false when the snapshot was not stored on primary storage; however this does not means that it failed to delete the snapshot. </br>
      * In case of failure, it will throw one of the following exceptions: CloudRuntimeException, InterruptedException, or ExecutionException. </br>
      */
-    private boolean deleteSnapshotOnPrimary(Long snapshotId) {
+    private boolean deleteSnapshotOnPrimary(Long snapshotId, SnapshotInfo snapshotOnPrimaryInfo) {
         SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
-        SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
         if (isSnapshotOnPrimaryStorage(snapshotId) && snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo)) {
             snapshotOnPrimary.setState(State.Destroyed);
             snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
