@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -202,6 +203,15 @@ public interface ConfigurationService {
      * @param cmd - The command specifying pod ID, start IP, end IP.
      */
     void deletePodIpRange(DeleteManagementNetworkIpRangeCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
+
+    /**
+     * Updates a mutually exclusive IP range in the pod.
+     * @param cmd - The command specifying pod ID, current Start IP, current End IP, new Start IP, new End IP.
+     * @throws com.cloud.exception.ConcurrentOperationException
+     * @return Success
+     */
+
+    void updatePodIpRange(UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException;
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
