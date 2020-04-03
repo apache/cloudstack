@@ -22,6 +22,10 @@ import java.util.Map;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.usage.Usage;
@@ -76,10 +80,6 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 
 public class EventTypes {
 
@@ -314,6 +314,7 @@ public class EventTypes {
 
     public static final String EVENT_MANAGEMENT_IP_RANGE_CREATE = "MANAGEMENT.IP.RANGE.CREATE";
     public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
+    public static final String EVENT_MANAGEMENT_IP_RANGE_UPDATE = "MANAGEMENT.IP.RANGE.UPDATE";
 
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";

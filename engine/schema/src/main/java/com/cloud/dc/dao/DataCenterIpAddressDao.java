@@ -41,6 +41,8 @@ public interface DataCenterIpAddressDao extends GenericDao<DataCenterIpAddressVO
 
     List<DataCenterIpAddressVO> listByPodIdDcId(long podId, long dcId);
 
+    List<DataCenterIpAddressVO> listIpAddressUsage(final long podId, final long dcId, final boolean onlyListAllocated);
+
     int countIPs(long podId, long dcId, boolean onlyCountAllocated);
 
     int countIPs(long dcId, boolean onlyCountAllocated);

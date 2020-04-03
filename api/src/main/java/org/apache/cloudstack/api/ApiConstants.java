@@ -95,6 +95,8 @@ public class ApiConstants {
     public static final String CUSTOMIZED_IOPS = "customizediops";
     public static final String CUSTOM_ID = "customid";
     public static final String CUSTOM_JOB_ID = "customjobid";
+    public static final String CURRENT_START_IP = "currentstartip";
+    public static final String CURRENT_END_IP = "currentendip";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -245,6 +247,8 @@ public class ApiConstants {
     public static final String NIC = "nic";
     public static final String NIC_NETWORK_LIST = "nicnetworklist";
     public static final String NIC_IP_ADDRESS_LIST = "nicipaddresslist";
+    public static final String NEW_START_IP = "newstartip";
+    public static final String NEW_END_IP = "newendip";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
     public static final String IS_SYSTEM_OFFERING = "issystem";
