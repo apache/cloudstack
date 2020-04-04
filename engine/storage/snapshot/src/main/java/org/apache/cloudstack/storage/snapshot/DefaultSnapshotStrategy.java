@@ -290,7 +290,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         if (snapshotVO != null && snapshotVO.getState() == Snapshot.State.Destroyed) {
             deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId, snapshotOnPrimaryInfo);
         } else {
-            // This is to handle snapshots which are created only on primary when snapshot.backup.to.secondary is set to false. 
+            // This is to handle snapshots which are created only on primary when snapshot.backup.to.secondary is set to false.
             SnapshotObject obj = (SnapshotObject) snapshotOnPrimaryInfo;
             try {
                 obj.processEvent(Snapshot.Event.DestroyRequested);
