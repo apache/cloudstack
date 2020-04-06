@@ -257,21 +257,23 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             return true;
         }
 
-        if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState()) &&
+        if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) &&
                 !Snapshot.State.Destroying.equals(snapshotVO.getState())) {
             throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
         }
 
-        boolean deletedOnSecondary = deleteOnSecondaryIfNeeded(snapshotId);
+        Boolean deletedOnSecondary = deleteOnSecondaryIfNeeded(snapshotId);
         boolean deletedOnPrimary = deleteOnPrimaryIfNeeded(snapshotId);
 
         if (deletedOnPrimary) {
             s_logger.debug(String.format("Successfully deleted snapshot (id: %d) on primary storage.", snapshotId));
-        } else if (deletedOnSecondary) {
-            s_logger.debug(String.format("The snapshot was deleted on secondary storage. Could not find/delete snapshot (id: %d) on primary storage.", snapshotId));
+        } else {
+            s_logger.debug(String.format("The snapshot (id: %d) could not be found/deleted on primary storage.", snapshotId));
         }
-
-        return deletedOnSecondary || deletedOnPrimary;
+        if (null == deletedOnSecondary && deletedOnSecondary) {
+            s_logger.debug(String.format("Successfully deleted snapshot (id: %d) on secondary storage.", snapshotId));
+        }
+        return (deletedOnSecondary != null) && deletedOnSecondary || deletedOnPrimary;
     }
 
     private boolean deleteOnPrimaryIfNeeded(Long snapshotId) {
@@ -302,8 +304,8 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         return deletedOnPrimary;
     }
 
-    private boolean deleteOnSecondaryIfNeeded(Long snapshotId) {
-        boolean deletedOnSecondary = false;
+    private Boolean deleteOnSecondaryIfNeeded(Long snapshotId) {
+        Boolean deletedOnSecondary = false;
         SnapshotInfo snapshotOnImage = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
         if (snapshotOnImage == null) {
             s_logger.debug(String.format("Can't find snapshot [snapshot id: %d] on backup storage", snapshotId));
@@ -320,7 +322,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 }
             } catch (NoTransitionException e) {
                 s_logger.debug("Failed to set the state to destroying: ", e);
-                deletedOnSecondary = false;
+//                deletedOnSecondary remain null
             }
         }
         return deletedOnSecondary;
