@@ -50,7 +50,6 @@ import java.util.UUID;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
@@ -60,7 +59,6 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.junit.Assert;
@@ -82,12 +80,8 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
@@ -106,9 +100,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -232,9 +224,7 @@ public class UserVmManagerTest {
 
     @Before
     public void setup() {
-        doReturn(3L).when(_account).getId();
         doReturn(8L).when(_vmMock).getAccountId();
-        when(_accountDao.findById(anyLong())).thenReturn(_accountMock);
         lenient().when(_userDao.findById(anyLong())).thenReturn(_userMock);
         lenient().doReturn(Account.State.enabled).when(_account).getState();
         lenient().when(_vmMock.getId()).thenReturn(314L);
@@ -242,8 +232,6 @@ public class UserVmManagerTest {
         lenient().when(_vmInstance.getServiceOfferingId()).thenReturn(2L);
 
         List<VMSnapshotVO> mockList = new ArrayList<>();
-        when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
-        when(_templateStoreDao.findByTemplateZoneReady(anyLong(), anyLong())).thenReturn(_templateDataStoreMock);
 
     }
 
@@ -292,188 +280,6 @@ public class UserVmManagerTest {
         //Case 3.3:   1->(rootDiskController==scsi)
         vmDetals.put("rootDiskController", "scsi");
         _userVmMgr.validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
-    }
-
-    // Test restoreVm when VM state not in running/stopped case
-    @Test(expected = CloudRuntimeException.class)
-    public void testRestoreVMF1() throws ResourceAllocationException, InsufficientCapacityException, ResourceUnavailableException {
-
-        lenient().when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
-        lenient().when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
-        doReturn(VirtualMachine.State.Error).when(_vmMock).getState();
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
-
-        CallContext.register(user, account);
-        try {
-            _userVmMgr.restoreVMInternal(_account, _vmMock, null);
-        } finally {
-            CallContext.unregister();
-        }
-    }
-
-    // Test restoreVm when VM is in stopped state
-    @Test
-    public void testRestoreVMF2() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-
-        doReturn(VirtualMachine.State.Stopped).when(_vmMock).getState();
-        lenient().when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
-        when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
-        doReturn(false).when(_rootVols).isEmpty();
-        when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
-        doReturn(3L).when(_volumeMock).getTemplateId();
-        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
-        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
-        doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
-        when(_volumeMock.getId()).thenReturn(3L);
-        doNothing().when(_volsDao).detachVolume(anyLong());
-
-        lenient().when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
-
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
-
-        StoragePoolVO storagePool = new StoragePoolVO();
-
-        storagePool.setManaged(false);
-
-        when(_storagePoolDao.findById(anyLong())).thenReturn(storagePool);
-
-        CallContext.register(user, account);
-        try {
-            _userVmMgr.restoreVMInternal(_account, _vmMock, null);
-        } finally {
-            CallContext.unregister();
-        }
-
-    }
-
-    // Test restoreVM when VM is in running state
-    @Test
-    public void testRestoreVMF3() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-
-        doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
-        when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
-        doReturn(false).when(_rootVols).isEmpty();
-        when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
-        doReturn(3L).when(_volumeMock).getTemplateId();
-        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
-        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
-        doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
-        when(_volumeMock.getId()).thenReturn(3L);
-        doNothing().when(_volsDao).detachVolume(anyLong());
-
-        lenient().when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
-
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
-
-        StoragePoolVO storagePool = new StoragePoolVO();
-
-        storagePool.setManaged(false);
-
-        when(_storagePoolDao.findById(anyLong())).thenReturn(storagePool);
-
-        CallContext.register(user, account);
-        try {
-            _userVmMgr.restoreVMInternal(_account, _vmMock, null);
-        } finally {
-            CallContext.unregister();
-        }
-
-    }
-
-    // Test restoreVM on providing new template Id, when VM is in running state
-    @Test
-    public void testRestoreVMF4() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-        doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
-        when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
-        doReturn(false).when(_rootVols).isEmpty();
-        when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
-        doReturn(3L).when(_volumeMock).getTemplateId();
-        doReturn(ImageFormat.VHD).when(_templateMock).getFormat();
-        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
-        doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
-        when(_storageMgr.allocateDuplicateVolume(_volumeMock, 14L)).thenReturn(_volumeMock);
-        when(_templateMock.getGuestOSId()).thenReturn(5L);
-        doNothing().when(_vmMock).setGuestOSId(anyLong());
-        lenient().doNothing().when(_vmMock).setTemplateId(3L);
-        when(_vmDao.update(314L, _vmMock)).thenReturn(true);
-        lenient().when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
-        doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
-        when(_volumeMock.getId()).thenReturn(3L);
-        doNothing().when(_volsDao).detachVolume(anyLong());
-
-        List<VMSnapshotVO> mockList = new ArrayList<>();
-        when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
-        lenient().when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
-
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
-
-        StoragePoolVO storagePool = new StoragePoolVO();
-
-        storagePool.setManaged(false);
-
-        when(_storagePoolDao.findById(anyLong())).thenReturn(storagePool);
-
-        CallContext.register(user, account);
-        try {
-            _userVmMgr.restoreVMInternal(_account, _vmMock, 14L);
-        } finally {
-            CallContext.unregister();
-        }
-        verify(_vmMock, times(0)).setIsoId(Mockito.anyLong());
-    }
-
-    // Test restoreVM on providing new ISO Id, when VM(deployed using ISO) is in running state
-    @Test
-    public void testRestoreVMF5() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-        doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
-        when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
-        doReturn(false).when(_rootVols).isEmpty();
-        when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
-        doReturn(null).when(_volumeMock).getTemplateId();
-        doReturn(3L).when(_vmMock).getIsoId();
-        doReturn(ImageFormat.ISO).when(_templateMock).getFormat();
-        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
-        doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
-        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
-        doNothing().when(_vmMock).setIsoId(14L);
-        when(_templateMock.getGuestOSId()).thenReturn(5L);
-        doNothing().when(_vmMock).setGuestOSId(anyLong());
-        lenient().doNothing().when(_vmMock).setTemplateId(3L);
-        when(_vmDao.update(314L, _vmMock)).thenReturn(true);
-        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
-        doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
-        when(_volumeMock.getId()).thenReturn(3L);
-        doNothing().when(_volsDao).detachVolume(anyLong());
-        List<VMSnapshotVO> mockList = new ArrayList<>();
-        when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
-
-        lenient().when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
-
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
-
-        StoragePoolVO storagePool = new StoragePoolVO();
-
-        storagePool.setManaged(false);
-
-        when(_storagePoolDao.findById(anyLong())).thenReturn(storagePool);
-
-        CallContext.register(user, account);
-        try {
-            _userVmMgr.restoreVMInternal(_account, _vmMock, 14L);
-        } finally {
-            CallContext.unregister();
-        }
-
-        verify(_vmMock, times(1)).setIsoId(14L);
-
     }
 
     // Test scaleVm on incompatible HV.
