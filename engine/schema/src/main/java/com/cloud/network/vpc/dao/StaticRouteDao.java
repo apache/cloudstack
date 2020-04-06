@@ -30,6 +30,8 @@ public interface StaticRouteDao extends GenericDao<StaticRouteVO, Long> {
 
     List<StaticRouteVO> listByVpcId(long vpcId);
 
+    List<StaticRouteVO> listByGatewayId(long vpcId);
+
     long countRoutesByGateway(long gatewayId);
 
 }
