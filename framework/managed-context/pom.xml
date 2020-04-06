@@ -29,8 +29,9 @@
     </parent>
     <dependencies>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>${cs.log4j.version}</version>
         </dependency>
     </dependencies>
 </project>

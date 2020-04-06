@@ -60,7 +60,7 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.slf4j.MDC;
+import org.apache.log4j.MDC;
 
 import com.cloud.cluster.ClusterManagerListener;
 import org.apache.cloudstack.management.ManagementServerHost;
