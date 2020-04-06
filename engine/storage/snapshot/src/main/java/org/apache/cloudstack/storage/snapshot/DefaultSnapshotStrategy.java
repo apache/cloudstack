@@ -270,7 +270,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         } else {
             s_logger.debug(String.format("The snapshot (id: %d) could not be found/deleted on primary storage.", snapshotId));
         }
-        if (null == deletedOnSecondary && deletedOnSecondary) {
+        if (null != deletedOnSecondary && deletedOnSecondary) {
             s_logger.debug(String.format("Successfully deleted snapshot (id: %d) on secondary storage.", snapshotId));
         }
         return (deletedOnSecondary != null) && deletedOnSecondary || deletedOnPrimary;
