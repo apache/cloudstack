@@ -308,7 +308,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         Boolean deletedOnSecondary = false;
         SnapshotInfo snapshotOnImage = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
         if (snapshotOnImage == null) {
-            s_logger.debug(String.format("Can't find snapshot [snapshot id: %d] on backup storage", snapshotId));
+            s_logger.debug(String.format("Can't find snapshot [snapshot id: %d] on secondary storage", snapshotId));
         } else {
             SnapshotObject obj = (SnapshotObject)snapshotOnImage;
             try {
