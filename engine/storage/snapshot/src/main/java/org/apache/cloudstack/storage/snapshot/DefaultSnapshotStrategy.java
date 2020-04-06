@@ -262,9 +262,49 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
         }
 
-        SnapshotInfo snapshotOnImage = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+        boolean deletedOnSecondary = deleteOnSecondaryIfNeeded(snapshotId);
+        boolean deletedOnPrimary = deleteOnPrimaryIfNeeded(snapshotId);
 
+        if (deletedOnPrimary) {
+            s_logger.debug(String.format("Successfully deleted snapshot (id: %d) on primary storage.", snapshotId));
+        } else if (deletedOnSecondary) {
+            s_logger.debug(String.format("The snapshot was deleted on secondary storage. Could not find/delete snapshot (id: %d) on primary storage.", snapshotId));
+        }
+
+        return deletedOnSecondary || deletedOnPrimary;
+    }
+
+    private boolean deleteOnPrimaryIfNeeded(Long snapshotId) {
+        SnapshotVO snapshotVO;
+        boolean deletedOnPrimary = false;
+        snapshotVO = snapshotDao.findById(snapshotId);
+        SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        if (snapshotVO != null && snapshotVO.getState() == Snapshot.State.Destroyed) {
+            deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId, snapshotOnPrimaryInfo);
+        } else {
+            // Here we handle snapshots which are to be deleted but are not marked as destroyed yet.
+            // This may occur for instance when they are created only on primary because
+            // snapshot.backup.to.secondary was set to false.
+            SnapshotObject obj = (SnapshotObject) snapshotOnPrimaryInfo;
+            try {
+                obj.processEvent(Snapshot.Event.DestroyRequested);
+                deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId, snapshotOnPrimaryInfo);
+                if (!deletedOnPrimary) {
+                    obj.processEvent(Snapshot.Event.OperationFailed);
+                } else {
+                    obj.processEvent(Snapshot.Event.OperationSucceeded);
+                }
+            } catch (NoTransitionException e) {
+                s_logger.debug("Failed to set the state to destroying: ", e);
+                deletedOnPrimary = false;
+            }
+        }
+        return deletedOnPrimary;
+    }
+
+    private boolean deleteOnSecondaryIfNeeded(Long snapshotId) {
         boolean deletedOnSecondary = false;
+        SnapshotInfo snapshotOnImage = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
         if (snapshotOnImage == null) {
             s_logger.debug(String.format("Can't find snapshot [snapshot id: %d] on backup storage", snapshotId));
         } else {
@@ -280,37 +320,10 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 }
             } catch (NoTransitionException e) {
                 s_logger.debug("Failed to set the state to destroying: ", e);
-                return false;
+                deletedOnSecondary = false;
             }
         }
-
-        boolean deletedOnPrimary = false;
-        snapshotVO = snapshotDao.findById(snapshotId);
-        SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
-        if (snapshotVO != null && snapshotVO.getState() == Snapshot.State.Destroyed) {
-            deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId, snapshotOnPrimaryInfo);
-        } else {
-            // This is to handle snapshots which are created only on primary when snapshot.backup.to.secondary is set to false.
-            SnapshotObject obj = (SnapshotObject) snapshotOnPrimaryInfo;
-            try {
-                obj.processEvent(Snapshot.Event.DestroyRequested);
-                deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId, snapshotOnPrimaryInfo);
-                if (!deletedOnPrimary) {
-                    obj.processEvent(Snapshot.Event.OperationFailed);
-                } else {
-                    obj.processEvent(Snapshot.Event.OperationSucceeded);
-                }
-            } catch (NoTransitionException e) {
-            s_logger.debug("Failed to set the state to destroying: ", e);
-            return false;
-            }
-        }
-        if (deletedOnPrimary) {
-            s_logger.debug(String.format("Successfully deleted snapshot (id: %d) on primary storage.", snapshotId));
-        } else if (deletedOnSecondary) {
-            s_logger.debug(String.format("The snapshot was deleted on secondary storage. Could not find/delete snapshot (id: %d) on primary storage.", snapshotId));
-        }
-        return deletedOnSecondary || deletedOnPrimary;
+        return deletedOnSecondary;
     }
 
     /**
