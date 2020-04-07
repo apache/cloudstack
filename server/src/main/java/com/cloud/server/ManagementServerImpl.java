@@ -3711,6 +3711,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final SSHKeysHelper keys = new SSHKeysHelper(sshKeyLength.value());
 
         final String name = cmd.getName();
+        
+        if (StringUtils.isBlank(name)) {
+            throw new InvalidParameterValueException("Please specify a valid name for the key pair. The key name can't be empty");
+        }
+        
         final String publicKey = keys.getPublicKey();
         final String fingerprint = keys.getPublicKeyFingerPrint();
         final String privateKey = keys.getPrivateKey();
