@@ -1327,6 +1327,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             msgBuf.append(String.format("Boot Mode: %s ", params.get(VirtualMachineProfile.Param.BootMode)));
             log = true;
         }
+        if (params.get(VirtualMachineProfile.Param.BootIntoBios) != null) {
+            msgBuf.append(String.format("Boot into BIOS: %s ", params.get(VirtualMachineProfile.Param.BootIntoBios)));
+            log = true;
+        }
         if (log) {
             s_logger.info(msgBuf.toString());
         }

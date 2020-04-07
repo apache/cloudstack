@@ -63,6 +63,7 @@ public interface VirtualMachineProfile {
         public static final Param UefiFlag = new Param("UefiFlag");
         public static final Param BootMode = new Param("BootMode");
         public static final Param BootType = new Param("BootType");
+        public static final Param BootIntoBios = new Param("enterBIOSSetup");
 
         private String name;
 
