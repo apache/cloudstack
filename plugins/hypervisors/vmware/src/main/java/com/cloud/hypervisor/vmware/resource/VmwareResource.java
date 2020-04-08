@@ -2288,15 +2288,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")) {
-                vmConfigSpec.setFirmware("efi");
-                if (vmSpec.getDetails().containsKey(ApiConstants.BootType.UEFI.toString()) && "secure".equalsIgnoreCase(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()))) {
-                    VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
-                    bootOptions.setEfiSecureBootEnabled(true);
-                    vmConfigSpec.setBootOptions(bootOptions);
-                }
-            }
-
+            setBootOptions(vmSpec, bootMode, vmConfigSpec);
 
             //
             // Configure VM
@@ -2385,6 +2377,31 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private void setBootOptions(VirtualMachineTO vmSpec, String bootMode, VirtualMachineConfigSpec vmConfigSpec) {
+        VirtualMachineBootOptions bootOptions = null;
+        if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")) {
+            vmConfigSpec.setFirmware("efi");
+            if (vmSpec.getDetails().containsKey(ApiConstants.BootType.UEFI.toString()) && "secure".equalsIgnoreCase(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()))) {
+                if (bootOptions == null) {
+                    bootOptions = new VirtualMachineBootOptions();
+                }
+                bootOptions.setEfiSecureBootEnabled(true);
+            }
+        }
+        if (vmSpec.getDetails().containsKey(ApiConstants.BOOT_INTO_BIOS)) {
+            if (bootOptions == null) {
+                bootOptions = new VirtualMachineBootOptions();
+            }
+            String setup = vmSpec.getDetails().get(ApiConstants.BOOT_INTO_BIOS);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("value of '%s' is '%s'",ApiConstants.BOOT_INTO_BIOS,setup));
+            }
+            bootOptions.setEnterBIOSSetup("true".equalsIgnoreCase(setup)?true:false);
+        }
+        if (bootOptions != null) {
+            vmConfigSpec.setBootOptions(bootOptions);
+        }
+    }
 
     /**
      * Set the ovf section spec from existing vApp configuration
