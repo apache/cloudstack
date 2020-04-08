@@ -3359,7 +3359,7 @@
                                 }
                             },
 
-                            shareIso: {
+                            shareISO: {
                                 label: 'label.action.share.iso',
                                 messages: {
                                     notification: function (args) {
@@ -4187,9 +4187,9 @@
             //do nothing
         } else {
             if (jsonObj.isextractable){
-                allowedActions.push("downloadIso");
+                allowedActions.push("downloadISO");
             }
-            allowedActions.push("shareIso");
+            allowedActions.push("shareISO");
         }
 
         // "Delete ISO"
