@@ -288,10 +288,12 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             // This may occur for instance when they are created only on primary because
             // snapshot.backup.to.secondary was set to false.
             if (snapshotOnPrimaryInfo == null) {
-                s_logger.debug("Snapshot id:" + snapshotId + " not found on primary storage, skipping snapshot deletion on primary and marking it destroyed");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Snapshot (id: %d) not found on primary storage, skipping snapshot deletion on primary and marking it destroyed", snapshotId));
+                }
                 snapshotVO.setState(Snapshot.State.Destroyed);
                 snapshotDao.update(snapshotId, snapshotVO);
-                return true;
+                deletedOnPrimary = true;
             } else {
                 SnapshotObject obj = (SnapshotObject) snapshotOnPrimaryInfo;
                 try {
@@ -365,15 +367,21 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     private boolean deleteSnapshotOnPrimary(Long snapshotId, SnapshotInfo snapshotOnPrimaryInfo) {
         SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
         if (isSnapshotOnPrimaryStorage(snapshotId)) {
-            s_logger.debug("Snapshot reference is found on primary storage for snapshot id:" + snapshotId + ", performing snapshot deletion on primary");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Snapshot reference is found on primary storage for snapshot id: %d, performing snapshot deletion on primary", snapshotId));
+            }
             if (snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo)) {
                 snapshotOnPrimary.setState(State.Destroyed);
                 snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
-                s_logger.debug("Successfully deleted snapshot id:" + snapshotId + " on primary storage");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Successfully deleted snapshot id: %d on primary storage", snapshotId));
+                }
                 return true;
             }
         } else {
-            s_logger.debug("Snapshot reference is not found on primary storage for snapshot id:" + snapshotId + ", skipping snapshot deletion on primary");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Snapshot reference is not found on primary storage for snapshot id: %d, skipping snapshot deletion on primary", snapshotId));
+            }
             return true;
         }
         return false;
