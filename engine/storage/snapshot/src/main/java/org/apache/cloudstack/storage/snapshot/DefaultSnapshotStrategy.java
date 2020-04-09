@@ -287,18 +287,25 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             // Here we handle snapshots which are to be deleted but are not marked as destroyed yet.
             // This may occur for instance when they are created only on primary because
             // snapshot.backup.to.secondary was set to false.
-            SnapshotObject obj = (SnapshotObject) snapshotOnPrimaryInfo;
-            try {
-                obj.processEvent(Snapshot.Event.DestroyRequested);
-                deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId, snapshotOnPrimaryInfo);
-                if (!deletedOnPrimary) {
-                    obj.processEvent(Snapshot.Event.OperationFailed);
-                } else {
-                    obj.processEvent(Snapshot.Event.OperationSucceeded);
+            if (snapshotOnPrimaryInfo == null) {
+                s_logger.debug("Snapshot id:" + snapshotId + " not found on primary storage, skipping snapshot deletion on primary and marking it destroyed");
+                snapshotVO.setState(Snapshot.State.Destroyed);
+                snapshotDao.update(snapshotId, snapshotVO);
+                return true;
+            } else {
+                SnapshotObject obj = (SnapshotObject) snapshotOnPrimaryInfo;
+                try {
+                    obj.processEvent(Snapshot.Event.DestroyRequested);
+                    deletedOnPrimary = deleteSnapshotOnPrimary(snapshotId, snapshotOnPrimaryInfo);
+                    if (!deletedOnPrimary) {
+                        obj.processEvent(Snapshot.Event.OperationFailed);
+                    } else {
+                        obj.processEvent(Snapshot.Event.OperationSucceeded);
+                    }
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Failed to set the state to destroying: ", e);
+                    deletedOnPrimary = false;
                 }
-            } catch (NoTransitionException e) {
-                s_logger.debug("Failed to set the state to destroying: ", e);
-                deletedOnPrimary = false;
             }
         }
         return deletedOnPrimary;
@@ -352,14 +359,21 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     /**
-     * Deletes the snapshot on primary storage. It can return false when the snapshot was not stored on primary storage; however this does not means that it failed to delete the snapshot. </br>
-     * In case of failure, it will throw one of the following exceptions: CloudRuntimeException, InterruptedException, or ExecutionException. </br>
+     * Deletes the snapshot on primary storage. It returns true when the snapshot was not found on primary storage; </br>
+     * In case of failure while deleting the snapshot, it will throw one of the following exceptions: CloudRuntimeException, InterruptedException, or ExecutionException. </br>
      */
     private boolean deleteSnapshotOnPrimary(Long snapshotId, SnapshotInfo snapshotOnPrimaryInfo) {
         SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
-        if (isSnapshotOnPrimaryStorage(snapshotId) && snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo)) {
-            snapshotOnPrimary.setState(State.Destroyed);
-            snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+        if (isSnapshotOnPrimaryStorage(snapshotId)) {
+            s_logger.debug("Snapshot reference is found on primary storage for snapshot id:" + snapshotId + ", performing snapshot deletion on primary");
+            if (snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo)) {
+                snapshotOnPrimary.setState(State.Destroyed);
+                snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+                s_logger.debug("Successfully deleted snapshot id:" + snapshotId + " on primary storage");
+                return true;
+            }
+        } else {
+            s_logger.debug("Snapshot reference is not found on primary storage for snapshot id:" + snapshotId + ", skipping snapshot deletion on primary");
             return true;
         }
         return false;
