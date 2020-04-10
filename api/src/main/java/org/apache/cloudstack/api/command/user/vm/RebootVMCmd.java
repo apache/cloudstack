@@ -64,6 +64,10 @@ public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
         return id;
     }
 
+    public Boolean getBootIntoBios() {
+        return bootIntoBios;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

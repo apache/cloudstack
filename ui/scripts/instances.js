@@ -1115,10 +1115,28 @@
                     restart: {
                         label: 'label.action.reboot.instance',
                         compactLabel: 'label.reboot',
+                        createForm: {
+                            title: 'label.action.reboot.instance',
+                            desc: 'message.action.reboot.instance',
+                            preFilter: function(args) {
+                                args.$form.find('.form-item[rel=bootintobios]').find('input').attr('checked', 'checked'); //checked
+                                args.$form.find('.form-item[rel=bootintobios]').css('display', 'inline-block'); //shown
+                            },
+                            fields: {
+                                bootintobios: {
+                                    label: 'label.enter.bios.setup',
+                                    isBoolean: true
+                                }
+                            }
+                        },
                         action: function(args) {
                             $.ajax({
-                                url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
+                                url: createURL("rebootVirtualMachine"),
                                 dataType: "json",
+                                data: {
+                                    id: args.context.instances[0].id,
+                                    bootintobios: (args.data.bootintobios == "on")
+                                },
                                 async: true,
                                 success: function(json) {
                                     var jid = json.rebootvirtualmachineresponse.jobid;

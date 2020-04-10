@@ -3928,6 +3928,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.trace("Detected mounted vmware tools installer for :[" + cmd.getVmName() + "]");
                 }
                 try {
+                    checkAndSetEnableSetupConfig(vmMo,cmd.getVirtualMachine());
                     vmMo.rebootGuest();
                     return new RebootAnswer(cmd, "reboot succeeded", true);
                 } catch (ToolsUnavailableFaultMsg e) {
@@ -3966,6 +3967,27 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 } catch (Exception e) {
                     s_logger.warn("Unabled to re-mount vmware tools installer for :[" + cmd.getVmName() + "]");
                 }
+            }
+        }
+    }
+
+    private void checkAndSetEnableSetupConfig(VirtualMachineMO vmMo, VirtualMachineTO virtualMachine) {
+        // todo check for boot into bios request
+        if (virtualMachine.getDetails().containsKey(ApiConstants.BOOT_INTO_BIOS)) {
+            VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            String setup = virtualMachine.getDetails().get(ApiConstants.BOOT_INTO_BIOS);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("value of '%s' is '%s'",ApiConstants.BOOT_INTO_BIOS,setup));
+            }
+            bootOptions.setEnterBIOSSetup("true".equalsIgnoreCase(setup)?true:false);
+            vmConfigSpec.setBootOptions(bootOptions);
+            try {
+                if (!vmMo.configureVm(vmConfigSpec)) {
+                    throw new Exception("Failed to configure VM to boot into bios: " + vmMo.getName());
+                }
+            } catch (Exception e) {
+                s_logger.error(String.format("failed to reconfigure VM '%s' to boot into BIOS",virtualMachine.getName()),e);
             }
         }
     }

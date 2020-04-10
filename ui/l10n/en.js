@@ -788,6 +788,7 @@ var dictionary = {
 "label.end.vxlan":"End VXLAN",
 "label.endpoint":"Endpoint",
 "label.endpoint.or.operation":"Endpoint or Operation",
+"label.enter.bios.setup":"Enter BIOS Setup",
 "label.enter.token":"Enter token",
 "label.error":"Error",
 "label.error.code":"Error Code",

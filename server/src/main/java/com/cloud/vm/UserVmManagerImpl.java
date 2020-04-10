@@ -786,7 +786,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     return true;
                 }
 
-                if (rebootVirtualMachine(userId, vmId) == null) {
+                if (rebootVirtualMachine(userId, vmId, false) == null) {
                     s_logger.warn("Failed to reboot the vm " + vmInstance);
                     return false;
                 } else {
@@ -897,7 +897,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
                 return true;
             }
-            if (rebootVirtualMachine(userId, vmId) == null) {
+            if (rebootVirtualMachine(userId, vmId, false) == null) {
                 s_logger.warn("Failed to reboot the vm " + vmInstance);
                 return false;
             } else {
@@ -934,7 +934,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return status;
     }
 
-    private UserVm rebootVirtualMachine(long userId, long vmId) throws InsufficientCapacityException, ResourceUnavailableException {
+    private UserVm rebootVirtualMachine(long userId, long vmId, boolean enterSetup) throws InsufficientCapacityException, ResourceUnavailableException {
         UserVmVO vm = _vmDao.findById(vmId);
 
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
@@ -969,8 +969,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             } catch (Exception ex){
                 throw new CloudRuntimeException("Router start failed due to" + ex);
             }finally {
-                s_logger.info("Rebooting vm " + vm.getInstanceName());
-                _itMgr.reboot(vm.getUuid(), null);
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info(String.format("Rebooting vm %s%s.", vm.getInstanceName(), enterSetup? " entering BIOS setup" : " as is"));
+                }
+                Map<VirtualMachineProfile.Param,Object> params = null;
+                if(enterSetup) {
+                    params = new HashMap();
+                    params.put(VirtualMachineProfile.Param.BootIntoBios, Boolean.TRUE);
+                }
+                _itMgr.reboot(vm.getUuid(), params);
             }
             return _vmDao.findById(vmId);
         } else {
@@ -2866,7 +2873,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId + " corresponding to the vm");
         }
 
-        UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId);
+        UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, cmd.getBootIntoBios() == null ? false : cmd.getBootIntoBios());
         if (userVm != null ) {
             // update the vmIdCountMap if the vm is in advanced shared network with out services
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
@@ -4308,7 +4315,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (additonalParams == null) {
                 additonalParams = new HashMap<VirtualMachineProfile.Param, Object>();
             }
-            additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, "true");
+            additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, Boolean.TRUE);
         }
         return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
     }
