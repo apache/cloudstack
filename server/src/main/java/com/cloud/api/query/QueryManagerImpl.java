@@ -3706,7 +3706,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
         }
 
-        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, uniqueGroupsPair.second());
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, affinityGroups.size());
 
     }
 
