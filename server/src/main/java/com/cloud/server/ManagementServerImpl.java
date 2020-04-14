@@ -3701,6 +3701,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long domainId = cmd.getDomainId();
         final Long projectId = cmd.getProjectId();
 
+        final String name = cmd.getName();
+
+        if (StringUtils.isBlank(name)) {
+            throw new InvalidParameterValueException("Please specify a valid name for the key pair. The key name can't be empty");
+        }
+
         final Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
         final SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
@@ -3709,8 +3715,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final SSHKeysHelper keys = new SSHKeysHelper(sshKeyLength.value());
-
-        final String name = cmd.getName();
         final String publicKey = keys.getPublicKey();
         final String fingerprint = keys.getPublicKeyFingerPrint();
         final String privateKey = keys.getPrivateKey();
