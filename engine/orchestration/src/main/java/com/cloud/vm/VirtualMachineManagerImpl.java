@@ -3171,7 +3171,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             final Commands cmds = new Commands(Command.OnError.Stop);
             RebootCommand rebootCmd = new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType()));
-            rebootCmd.setVirtualMachine(getVmTO(vm.getId()));
+            VirtualMachineTO vmTo = getVmTO(vm.getId());
+            vmTo.setEnterBiosSetup(((Boolean)params.getOrDefault(params.get(VirtualMachineProfile.Param.BootIntoBios),Boolean.FALSE)).booleanValue());
+            rebootCmd.setVirtualMachine(vmTo);
             cmds.addCommand(rebootCmd);
             _agentMgr.send(host.getId(), cmds);
 

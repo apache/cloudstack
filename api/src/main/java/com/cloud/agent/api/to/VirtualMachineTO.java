@@ -65,6 +65,7 @@ public class VirtualMachineTO {
     String uuid;
     String bootType;
     String bootMode;
+    boolean enterBiosSetup;
 
     DiskTO[] disks;
     NicTO[] nics;
@@ -393,4 +394,12 @@ public class VirtualMachineTO {
     public String getBootMode() { return bootMode; }
 
     public void setBootMode(String bootMode) { this.bootMode = bootMode; }
+
+    public boolean isEnterBiosSetup() {
+        return enterBiosSetup;
+    }
+
+    public void setEnterBiosSetup(boolean enterBiosSetup) {
+        this.enterBiosSetup = enterBiosSetup;
+    }
 }
