@@ -395,11 +395,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     private VMSnapshotDao vmSnapshotDao;
     @Inject
-<<<<<<< HEAD
     private BackupOfferingDao backupOfferingDao;
-=======
+
+    @Inject
     private PodIpRangeMapDao _podIpRangeMapDao;
->>>>>>> 251550343b... Refer pod_ip_range_map table instead of host_pod_ref.decription.
 
     @Override
     public UserResponse createUserResponse(User user) {
