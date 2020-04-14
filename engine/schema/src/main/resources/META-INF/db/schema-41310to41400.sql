@@ -379,3 +379,21 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_details` (
     PRIMARY KEY(`id`),
     CONSTRAINT `fk_kubernetes_cluster_details__cluster_id` FOREIGN KEY `fk_kubernetes_cluster_details__cluster_id`(`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Separate pod_ip_range_map table from host_pod_ref.description
+CREATE TABLE IF NOT EXISTS `cloud`.`pod_ip_range_map` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `uuid` varchar(40),
+  `pod_id` bigint unsigned NOT NULL,
+  `start_ip` varchar(39) NOT NULL COMMENT 'The start address of the range',
+  `end_ip` varchar(39) COMMENT 'The end address of the range',
+  `vlan_id` bigint unsigned COMMENT 'vlan id',
+  `forsystemvms` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Indicates if IP is dedicated for CPVM or SSVM',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  INDEX `i_pod_ip_range_map__removed`(`removed`),
+  CONSTRAINT `uc_pod_ip_range_map__uuid` UNIQUE (`uuid`),
+  CONSTRAINT `fk_pod_ip_range_map__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.op_dc_ip_address_alloc','forsystemvms', 'TINYINT(1) NOT NULL DEFAULT 0 COMMENT ''Indicates if IP is dedicated for CPVM or SSVM'' ');

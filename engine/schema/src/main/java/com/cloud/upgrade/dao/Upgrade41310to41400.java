@@ -64,7 +64,60 @@ public class Upgrade41310to41400 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        populatePodIpRangeMapTable(conn);
         updateSystemVmTemplates(conn);
+    }
+
+    private void populatePodIpRangeMapTable(Connection conn) {
+        LOG.info("Populating pod_ip_range_map table...");
+        try (PreparedStatement pstmt = conn.prepareStatement("select id, gateway, cidr_address, cidr_size, description from `cloud`.`host_pod_ref` where removed is null"); ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                Long podId = rs.getLong("id");
+                String description = rs.getString("host_pod_ref.description");
+
+               if (description == null) continue;
+
+               String[] ipRangeArray = description.split(",");
+               for (String ipRange: ipRangeArray) {
+                   String[] ipRangeParts = ipRange.split("-");
+                   String startIp = ipRangeParts[0];
+                   String endIp = ipRangeParts.length >= 2 ? ipRangeParts[1] : ipRangeParts[0];
+                   boolean forSystemVms = ipRangeParts.length >= 3 && ipRangeParts[2].equals("1");
+                   Long vlanId = null;
+                   try {
+                       if (ipRangeParts.length >= 4 && !ipRangeParts[3].equals("untagged")) {
+                           vlanId = Long.parseLong(ipRangeParts[3]);
+                       }
+                   } catch (NumberFormatException ex) {
+                       LOG.error("Failed to parse vlan id " + ipRangeParts[3] + "of the pod " + podId.toString());
+                       throw ex;
+                   }
+
+                   PreparedStatement insertStatement = conn.prepareStatement("INSERT INTO `cloud`.`pod_ip_range_map`(uuid, pod_id, start_ip, end_ip, vlan_id, forsystemvms) VALUES(?, ?, ?, ?, ?, ?) ");
+                   insertStatement.setString(1, UUID.randomUUID().toString());
+                   insertStatement.setLong(2, podId);
+                   insertStatement.setString(3, startIp);
+                   insertStatement.setString(4, endIp);
+                   if (vlanId == null) {
+                       insertStatement.setNull(5, Types.NULL);
+                   } else {
+                       insertStatement.setLong(5, vlanId);
+                   }
+                   insertStatement.setBoolean(6, forSystemVms);
+
+                   try {
+                       insertStatement.execute();
+                   } catch (final SQLException e) {
+                       LOG.error("populatePodIpRangeMapTable: Exception caught while inserting into pod_ip_range_map: " + e.getMessage());
+                       throw new CloudRuntimeException("populatePodIpRangeMapTable() failed.");
+                   }
+               }
+            }
+        } catch (final SQLException e) {
+            LOG.error("populatePodIpRangeMapTable: Exception caught while getting pods from host_pod_ref: " + e.getMessage());
+            throw new CloudRuntimeException("populatePodIpRangeMapTable:Exception while getting pods from host_pod_ref", e);
+        }
+        LOG.info("Populating pod_ip_range_map completed!");
     }
 
     @SuppressWarnings("serial")
