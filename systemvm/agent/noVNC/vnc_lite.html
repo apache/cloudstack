@@ -49,7 +49,14 @@
             padding: 5px 5px 4px 5px;
             cursor: pointer;
         }
-
+        #sendCtrlEscButton {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            border: 1px outset;
+            padding: 5px 5px 4px 5px;
+            cursor: pointer;
+        }
         #screen {
             flex: 1; /* fill remaining space */
             overflow: hidden;
@@ -118,6 +125,11 @@
             return false;
         }
 
+        function sendCtrlEsc() {
+            rfb.sendCtrlEsc();
+            return false;
+        }
+
         // Show a status text in the top bar
         function status(text) {
             document.getElementById('status').textContent = text;
@@ -146,6 +158,9 @@
 
         document.getElementById('sendCtrlAltDelButton')
             .onclick = sendCtrlAltDel;
+
+        document.getElementById('sendCtrlEscButton')
+            .onclick = sendCtrlEsc;
 
         // Read parameters specified in the URL query string
         // By default, use the host and port of server that served this file
@@ -195,6 +210,7 @@
     <div id="top_bar">
         <div id="status">Loading</div>
         <div id="sendCtrlAltDelButton">Send CtrlAltDel</div>
+        <div id="sendCtrlEscButton">Send CtrlEsc</div>
     </div>
     <div id="screen">
         <!-- This is where the remote screen will appear -->

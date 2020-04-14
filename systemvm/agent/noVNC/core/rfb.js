@@ -334,6 +334,16 @@ export default class RFB extends EventTargetMixin {
         this.sendKey(KeyTable.XK_Control_L, "ControlLeft", false);
     }
 
+    sendCtrlEsc() {
+        if (this._rfb_connection_state !== 'connected' || this._viewOnly) { return; }
+        Log.Info("Sending Ctrl-Esc");
+
+        this.sendKey(KeyTable.XK_Control_L, "ControlLeft", true);
+        this.sendKey(KeyTable.XK_Escape, "Escape", true);
+        this.sendKey(KeyTable.XK_Escape, "Escape", false);
+        this.sendKey(KeyTable.XK_Control_L, "ControlLeft", false);
+    }
+
     machineShutdown() {
         this._xvpOp(1, 2);
     }
@@ -790,7 +800,7 @@ export default class RFB extends EventTargetMixin {
         }
 
         const sversion = this._sock.rQshiftStr(12).substr(4, 7);
-        console.log("Server ProtocolVersion: " + sversion);
+        Log.Info("Server ProtocolVersion: " + sversion);
         let is_repeater = 0;
         switch (sversion) {
             case "000.000":  // UltraVNC repeater
