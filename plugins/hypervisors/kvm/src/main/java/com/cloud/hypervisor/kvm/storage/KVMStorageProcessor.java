@@ -1007,7 +1007,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                         final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
                         try {
                             vm.suspend();
-                        } catch(final Exception e) {
+                        } catch (final LibvirtException e) {
                             s_logger.debug("Failed to suspend the VM: " + e);
                             throw e;
                         }                      
