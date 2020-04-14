@@ -43,8 +43,6 @@ import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.PodIpRangeMapDao;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
