@@ -312,6 +312,9 @@ export default {
       this.virtualmachines = []
       if (!this.isObjectEmpty(this.resource) && this.arrayHasItems(this.resource.virtualmachineids)) {
         var params = {}
+        if (this.isAdminOrDomainAdmin()) {
+          params.listall = true
+        }
         if (this.isValidValueForKey(this.resource, 'projectid') &&
           this.resource.projectid !== '') {
           params.projectid = this.resource.projectid
