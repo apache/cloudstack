@@ -24,6 +24,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
+import org.libvirt.DomainInfo;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 
@@ -51,14 +52,28 @@ public final class LibvirtDeleteVMSnapshotCommandWrapper extends CommandWrapper<
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         Domain dm = null;
         DomainSnapshot snapshot = null;
+        DomainInfo.DomainState state = null;
+        boolean didDelete = false;
+        Connect conn = null;
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
-            Connect conn = libvirtUtilitiesHelper.getConnection();
+            conn = libvirtUtilitiesHelper.getConnection();
             dm = libvirtComputingResource.getDomain(conn, vmName);
 
             snapshot = dm.snapshotLookupByName(cmd.getTarget().getSnapshotName());
 
+            // Suspend the VM prior to deleting the snapshot to guard against corruption
+            dm.suspend();
+
             snapshot.delete(0); // only remove this snapshot, not children
+            didDelete = true;
+
+            // Resume the VM
+            dm = libvirtComputingResource.getDomain(conn, vmName);
+            state = dm.getInfo().state;
+            if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+                dm.resume();
+            }
 
             return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
         } catch (LibvirtException e) {
@@ -93,12 +108,26 @@ public final class LibvirtDeleteVMSnapshotCommandWrapper extends CommandWrapper<
             } else if (snapshot == null) {
                 s_logger.debug("Can not find vm snapshot " + cmd.getTarget().getSnapshotName() + " on vm: " + vmName + ", return true");
                 return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
+            } else if (didDelete) {
+                s_logger.error("Failed to resume vm after delete snapshot " + cmd.getTarget().getSnapshotName() + " on vm: " + vmName + " return true : " + e);
+                return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
             }
 
             s_logger.warn(msg, e);
             return new DeleteVMSnapshotAnswer(cmd, false, msg);
         } finally {
             if (dm != null) {
+                // Make sure if the VM is paused, then resume it, in case we got an exception during our delete() and didn't have the chance before
+                try {
+                    dm = libvirtComputingResource.getDomain(conn, vmName);
+                    state = dm.getInfo().state;
+                    if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+                        dm.resume();
+                    }
+                } catch (LibvirtException e) {
+                    s_logger.error("Failed to resume vm after delete snapshot " + cmd.getTarget().getSnapshotName() + " on vm: " + vmName + " return true : " + e);
+                }
+
                 try {
                     dm.free();
                 } catch (LibvirtException l) {
