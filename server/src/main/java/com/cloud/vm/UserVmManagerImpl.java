@@ -4311,11 +4311,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             additonalParams.put(VirtualMachineProfile.Param.BootType, ApiConstants.BootType.UEFI.toString());
             additonalParams.put(VirtualMachineProfile.Param.BootMode, map.get(ApiConstants.BootType.UEFI.toString()));
         }
-        if (cmd.getDetails().containsKey(ApiConstants.BOOT_INTO_BIOS)) {
+        if (cmd.getBootIntoBios() != null) {
             if (additonalParams == null) {
                 additonalParams = new HashMap<VirtualMachineProfile.Param, Object>();
             }
-            additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, Boolean.TRUE);
+            additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, cmd.getBootIntoBios());
         }
         return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
     }

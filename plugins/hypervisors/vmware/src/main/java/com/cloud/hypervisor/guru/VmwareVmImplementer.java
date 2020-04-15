@@ -135,6 +135,9 @@ public class VmwareVmImplementer {
         }
 
         details.put(VmDetailConstants.BOOT_MODE, to.getBootMode());
+        if (vm.getParameter(VirtualMachineProfile.Param.BootIntoBios) != null && (Boolean)vm.getParameter(VirtualMachineProfile.Param.BootIntoBios) == true) {
+            to.setEnterBiosSetup(true);
+        }
 // there should also be
 //        details.put(VmDetailConstants.BOOT_TYPE, to.getBootType());
         String diskDeviceType = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);

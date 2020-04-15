@@ -2388,15 +2388,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 bootOptions.setEfiSecureBootEnabled(true);
             }
         }
-        if (vmSpec.getDetails().containsKey(ApiConstants.BOOT_INTO_BIOS)) {
+        if (vmSpec.isEnterBiosSetup()) {
             if (bootOptions == null) {
                 bootOptions = new VirtualMachineBootOptions();
             }
-            String setup = vmSpec.getDetails().get(ApiConstants.BOOT_INTO_BIOS);
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("value of '%s' is '%s'",ApiConstants.BOOT_INTO_BIOS,setup));
+                s_logger.debug(String.format("configuring VM '%s' to enter BIOS setup",vmSpec.getName()));
             }
-            bootOptions.setEnterBIOSSetup("true".equalsIgnoreCase(setup)?true:false);
+            bootOptions.setEnterBIOSSetup(vmSpec.isEnterBiosSetup());
         }
         if (bootOptions != null) {
             vmConfigSpec.setBootOptions(bootOptions);
@@ -3973,14 +3972,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private void checkAndSetEnableSetupConfig(VirtualMachineMO vmMo, VirtualMachineTO virtualMachine) {
         // todo check for boot into bios request
-        if (virtualMachine.getDetails().containsKey(ApiConstants.BOOT_INTO_BIOS)) {
+        if (virtualMachine.isEnterBiosSetup()) {
             VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            String setup = virtualMachine.getDetails().get(ApiConstants.BOOT_INTO_BIOS);
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("value of '%s' is '%s'",ApiConstants.BOOT_INTO_BIOS,setup));
+                s_logger.debug(String.format("configuring VM '%s' to reboot into BIOS setup.",virtualMachine.getName()));
             }
-            bootOptions.setEnterBIOSSetup("true".equalsIgnoreCase(setup)?true:false);
+            bootOptions.setEnterBIOSSetup(virtualMachine.isEnterBiosSetup());
             vmConfigSpec.setBootOptions(bootOptions);
             try {
                 if (!vmMo.configureVm(vmConfigSpec)) {

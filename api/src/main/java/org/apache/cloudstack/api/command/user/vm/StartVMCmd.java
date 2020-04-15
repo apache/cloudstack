@@ -108,6 +108,10 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
         return clusterId;
     }
 
+    public Boolean getBootIntoBios() {
+        return bootIntoBios;
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////

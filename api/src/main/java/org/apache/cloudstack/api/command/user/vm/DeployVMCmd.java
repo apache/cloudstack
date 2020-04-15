@@ -292,9 +292,6 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             customparameterMap.put("rootdisksize", rootdisksize.toString());
         }
 
-        if (bootIntoBios != null && bootIntoBios.booleanValue() == true) {
-            customparameterMap.put(ApiConstants.BOOT_INTO_BIOS, "enterBIOSSetup");
-        }
         return customparameterMap;
     }
 
@@ -580,6 +577,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public boolean getCopyImageTags() {
         return copyImageTags == null ? false : copyImageTags;
+    }
+
+    public Boolean getBootIntoBios() {
+        return bootIntoBios;
     }
 
     /////////////////////////////////////////////////////
