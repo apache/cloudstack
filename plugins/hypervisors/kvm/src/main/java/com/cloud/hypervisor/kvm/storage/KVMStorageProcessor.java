@@ -1010,7 +1010,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                         } catch (final LibvirtException e) {
                             s_logger.debug("Failed to suspend the VM: " + e);
                             throw e;
-                        }                      
+                        }
                         snap.delete(0);
 
                         /*
