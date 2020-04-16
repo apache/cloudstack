@@ -2125,6 +2125,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
 
+        if (Boolean.TRUE.equals(ExposeDnsAndBootpServer.valueIn(dc.getId()))) {
+            buf.append(" exposedns=true");
+        }
+
         if (Boolean.valueOf(_configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()))) {
             final QueryBuilder<UserVO> acntq = QueryBuilder.create(UserVO.class);
             acntq.and(acntq.entity().getUsername(), SearchCriteria.Op.EQ, "baremetal-system-account");
@@ -3251,7 +3255,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksToExclude,
                 RouterHealthChecksFreeDiskSpaceThreshold,
                 RouterHealthChecksMaxCpuUsageThreshold,
-                RouterHealthChecksMaxMemoryUsageThreshold
+                RouterHealthChecksMaxMemoryUsageThreshold,
+                ExposeDnsAndBootpServer
         };
     }
 
