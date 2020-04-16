@@ -54,7 +54,7 @@ public class NetworkACLItemResponse extends BaseResponse {
     private String state;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "the cidr list to forward traffic from")
+    @Param(description = "the cidr list to forward traffic from. Multiple entries are separated by a single comma character (,).")
     private String cidrList;
 
     @SerializedName(ApiConstants.ICMP_TYPE)
