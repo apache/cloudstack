@@ -1005,6 +1005,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                             primaryStore.getUuid());
                     if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
                         final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
+                        try {
+                            s_logger.info(String.format("Suspending VM '%s' to delete snapshot,", vm.getName()));
+                            vm.suspend();
+                        } catch (final LibvirtException e) {
+                            s_logger.error("Failed to suspend the VM", e);
+                            throw e;
+                        }
                         snap.delete(0);
 
                         /*
