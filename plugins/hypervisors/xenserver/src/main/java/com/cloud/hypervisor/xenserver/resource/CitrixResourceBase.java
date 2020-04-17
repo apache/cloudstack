@@ -201,6 +201,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
 
+    private final static int USER_DEVICE_START_ID = 3;
+
     private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
     private static final long mem_128m = 134217728L;
@@ -1156,7 +1158,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (volume.getType() == Volume.Type.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
-            vbdr.userdevice = String.valueOf(3 + isoCount);
+            vbdr.userdevice = String.valueOf(USER_DEVICE_START_ID + isoCount);
         } else {
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
