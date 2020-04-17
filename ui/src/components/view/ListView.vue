@@ -266,14 +266,19 @@ export default {
       api('updateConfiguration', {
         name: record.name,
         value: this.editableValue
-      }).then(() => {
+      }).then(json => {
         this.editableValueKey = null
 
         this.$message.success('Setting Updated: ' + record.name)
-        this.$notification.warning({
-          message: 'Status',
-          description: 'Please restart your management server(s) for your new settings to take effect.'
-        })
+        if (json.updateconfigurationresponse &&
+          json.updateconfigurationresponse.configuration &&
+          !json.updateconfigurationresponse.configuration.isdynamic &&
+          ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
+          this.$notification.warning({
+            message: 'Status',
+            description: 'Please restart your management server(s) for your new settings to take effect.'
+          })
+        }
       }).catch(error => {
         console.error(error)
         this.$message.error('There was an error saving this setting.')
