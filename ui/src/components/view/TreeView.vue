@@ -61,7 +61,7 @@
             v-for="tab in tabs"
             :tab="$t(tab.name)"
             :key="tab.name"
-            v-if="checkShowTabDetail(tab.name)">
+            v-if="checkShowTabDetail(tab)">
             <component
               :is="tab.component"
               :resource="resource"
@@ -430,17 +430,12 @@ export default {
       }
       return json[responseName][objectName]
     },
-    checkShowTabDetail (tabKey) {
-      // get tab item from the route
-      const itemTab = this.tabs.filter(item => item.name === tabKey)
-
-      // check tab item not exists
-      if (!itemTab || !itemTab[0]) {
-        return false
+    checkShowTabDetail (tab) {
+      if ('show' in tab) {
+        return tab.show(this.resource, this.$route, store.getters.userInfo)
       }
-
       // get permission from the route
-      const permission = itemTab[0].permission ? itemTab[0].permission[0] : ''
+      const permission = tab.permission ? tab.permission[0] : ''
 
       // check permission not exists
       if (!permission || permission === '') {
