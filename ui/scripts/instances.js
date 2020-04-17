@@ -74,6 +74,10 @@
                   });
                 }
               }
+            },
+            bootintobios: {
+              label: 'label.enter.bios.setup',
+              isBoolean: true
             }
           }
         },
@@ -1049,7 +1053,12 @@
                                           });
                                       }
                                   }
+                                },
+                                bootintobios: {
+                                    label: 'label.enter.bios.setup',
+                                    isBoolean: true
                                 }
+
                             }
                         },
                         action: function(args) {
@@ -1069,6 +1078,12 @@
                             if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
                                 $.extend(data, {
                                     hostid: args.data.hostId
+                                });
+                            }
+                            var bootintobios = (args.data.bootintobios == "on");
+                            if (bootintobios) {
+                                $.extend(data, {
+                                    bootintobios : bootintobios
                                 });
                             }
                             $.ajax({

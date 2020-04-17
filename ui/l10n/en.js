@@ -994,6 +994,7 @@ var dictionary = {
 "label.keyboard.language":"Keyboard language",
 "label.vm.boottype":"Boot Type",
 "label.vm.bootmode":"Boot Mode",
+"label.vm.enterbiossetup":"enter BIOS after boot",
 "label.keyboard.type":"Keyboard type",
 "label.kubernetes.cluster":"Kubernetes cluster",
 "label.kubernetes.cluster.details":"Kubernetes cluster details",
