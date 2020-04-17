@@ -2843,7 +2843,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), null, cmd.getDeploymentPlanner()).first();
+        Map<VirtualMachineProfile.Param, Object> additonalParams = null;
+        if (cmd.getBootIntoBios() != null) {
+            if (additonalParams == null) {
+                additonalParams = new HashMap<>();
+            }
+            additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, cmd.getBootIntoBios());
+        }
+
+        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
     }
 
     @Override
@@ -4304,7 +4312,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         if (MapUtils.isNotEmpty(cmd.getDetails()) && cmd.getDetails().containsKey(ApiConstants.BootType.UEFI.toString())) {
             if (additonalParams == null) {
-                additonalParams = new HashMap<VirtualMachineProfile.Param, Object>();
+                additonalParams = new HashMap<>();
             }
             Map<String, String> map = cmd.getDetails();
             additonalParams.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
@@ -4313,7 +4321,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         if (cmd.getBootIntoBios() != null) {
             if (additonalParams == null) {
-                additonalParams = new HashMap<VirtualMachineProfile.Param, Object>();
+                additonalParams = new HashMap<>();
             }
             additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, cmd.getBootIntoBios());
         }
