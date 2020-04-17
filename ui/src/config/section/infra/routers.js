@@ -92,6 +92,19 @@ export default {
       }
     },
     {
+      api: 'getDiagnosticsData',
+      icon: 'experiment',
+      label: 'label.action.get.diagnostics',
+      dataView: true,
+      show: (record) => { return record.state === 'Running' },
+      args: ['targetid', 'files'],
+      mapping: {
+        targetid: {
+          value: (record) => { return record.id }
+        }
+      }
+    },
+    {
       api: 'destroyRouter',
       icon: 'delete',
       label: 'label.destroy.router',
