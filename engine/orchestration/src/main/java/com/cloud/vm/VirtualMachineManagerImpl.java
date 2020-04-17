@@ -888,7 +888,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("value of %s == %s", VirtualMachineProfile.Param.BootIntoBios.getName(), params.get(params.get(VirtualMachineProfile.Param.BootIntoBios))));
+            s_logger.trace(String.format("start parameter value of %s == %s", VirtualMachineProfile.Param.BootIntoBios.getName(),
+                    (params == null?"<very null>":params.get(params.get(VirtualMachineProfile.Param.BootIntoBios)))));
         }
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
@@ -3111,6 +3112,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void advanceReboot(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("reboot parameter value of %s == %s", VirtualMachineProfile.Param.BootIntoBios.getName(),
+                    (params == null? "<very null>":params.get(params.get(VirtualMachineProfile.Param.BootIntoBios)))));
+        }
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
