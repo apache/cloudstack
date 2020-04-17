@@ -4766,11 +4766,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // use it to encrypt & save the vm password
             encryptAndStorePassword(vm, password);
 
-            params = new HashMap<VirtualMachineProfile.Param, Object>();
-            if (additionalParams != null) {
-                params.putAll(additionalParams);
-            }
-            params.put(VirtualMachineProfile.Param.VmPassword, password);
+            createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.VmPassword, password);
+        }
+
+        if(additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoBios)) {
+            createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoBios, additionalParams.get(VirtualMachineProfile.Param.BootIntoBios));
         }
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
@@ -4803,6 +4803,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vmParamPair;
+    }
+
+    private Map<VirtualMachineProfile.Param, Object> createParameterInParameterMap(Map<VirtualMachineProfile.Param, Object> params, Map<VirtualMachineProfile.Param, Object> parameterMap, VirtualMachineProfile.Param parameter,
+            Object parameterValue) {
+        if (params == null) {
+            params = new HashMap<>();
+            if (parameterMap != null) {
+                params.putAll(parameterMap);
+            }
+        }
+        params.put(parameter, parameterValue);
+        return params;
     }
 
     private Pod getDestinationPod(Long podId, boolean isRootAdmin) {
