@@ -751,6 +751,9 @@ export default {
       this.$set(this.format, 'opts', format)
     },
     handlerSelectZone (value) {
+      if (!Array.isArray(value)) {
+        value = [value]
+      }
       this.validZone(value)
       this.hyperVisor.opts = []
 
