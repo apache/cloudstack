@@ -887,6 +887,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void advanceStart(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params, final DeploymentPlan planToDeploy, final DeploymentPlanner planner)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("value of %s == %s", VirtualMachineProfile.Param.BootIntoBios.getName(), params.get(params.get(VirtualMachineProfile.Param.BootIntoBios))));
+        }
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
