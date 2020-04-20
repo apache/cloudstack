@@ -980,6 +980,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if(enterSetup) {
                     params = new HashMap();
                     params.put(VirtualMachineProfile.Param.BootIntoBios, Boolean.TRUE);
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace(String.format("Adding %s to paramlist", VirtualMachineProfile.Param.BootIntoBios));
+                    }
                 }
                 _itMgr.reboot(vm.getUuid(), params);
             }
@@ -4671,7 +4674,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
+    public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
+            Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         // Input validation
         final Account callerAccount = CallContext.current().getCallingAccount();

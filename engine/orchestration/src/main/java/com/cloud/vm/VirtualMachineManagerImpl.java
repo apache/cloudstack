@@ -3112,10 +3112,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void advanceReboot(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("reboot parameter value of %s == %s", VirtualMachineProfile.Param.BootIntoBios.getName(),
-                    (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
-        }
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
@@ -3123,6 +3119,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
             placeHolder = createPlaceHolderWork(vm.getId());
             try {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("reboot parameter value of %s == %s at orchestration", VirtualMachineProfile.Param.BootIntoBios.getName(),
+                            (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
+                }
                 orchestrateReboot(vmUuid, params);
             } finally {
                 if (placeHolder != null) {
@@ -3130,6 +3130,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
         } else {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("reboot parameter value of %s == %s through job-queue", VirtualMachineProfile.Param.BootIntoBios.getName(),
+                        (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
+            }
             final Outcome<VirtualMachine> outcome = rebootVmThroughJobQueue(vmUuid, params);
 
             try {
