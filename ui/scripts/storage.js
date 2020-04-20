@@ -1696,7 +1696,7 @@
                                 action: function(args) {
                                     var array1 = [];
                                     var newSize;
-                                    if (selectedDiskOfferingObj == null || selectedDiskOfferingObj.iscustomized == true) {
+                                    if (selectedDiskOfferingObj == null) {
                                         newSize = args.data.newsize;
                                         if (newSize != null && newSize.length > 0) {
                                             array1.push("&size=" + todb(newSize));
