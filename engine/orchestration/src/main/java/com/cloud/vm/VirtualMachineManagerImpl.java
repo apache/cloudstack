@@ -889,7 +889,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (s_logger.isTraceEnabled()) {
             s_logger.trace(String.format("start parameter value of %s == %s", VirtualMachineProfile.Param.BootIntoBios.getName(),
-                    (params == null?"<very null>":params.get(params.get(VirtualMachineProfile.Param.BootIntoBios)))));
+                    (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
         }
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
