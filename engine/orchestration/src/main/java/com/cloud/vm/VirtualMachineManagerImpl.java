@@ -3180,7 +3180,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final Commands cmds = new Commands(Command.OnError.Stop);
             RebootCommand rebootCmd = new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType()));
             VirtualMachineTO vmTo = getVmTO(vm.getId());
-            vmTo.setEnterBiosSetup(((Boolean)params.getOrDefault(params.get(VirtualMachineProfile.Param.BootIntoBios),Boolean.FALSE)).booleanValue());
+            Boolean enterSetup = (Boolean)params.get(VirtualMachineProfile.Param.BootIntoBios);
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("orchestrating VM reboot for '%s' %s set to %s", vm.getInstanceName(), VirtualMachineProfile.Param.BootIntoBios, enterSetup));
+            }
+            vmTo.setEnterBiosSetup(enterSetup == null ? false : enterSetup);
             rebootCmd.setVirtualMachine(vmTo);
             cmds.addCommand(rebootCmd);
             _agentMgr.send(host.getId(), cmds);
@@ -5253,6 +5257,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.info("Unable to find vm " + work.getVmId());
         }
         assert vm != null;
+
+        Boolean enterSetup = (Boolean)work.getParams().get(VirtualMachineProfile.Param.BootIntoBios);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("orchestrating VM start for '%s' %s set to %s", vm.getInstanceName(), VirtualMachineProfile.Param.BootIntoBios, enterSetup));
+        }
 
         try{
             orchestrateStart(vm.getUuid(), work.getParams(), work.getPlan(), _dpMgr.getDeploymentPlannerByName(work.getDeploymentPlanner()));
