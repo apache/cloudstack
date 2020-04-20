@@ -937,6 +937,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private UserVm rebootVirtualMachine(long userId, long vmId, boolean enterSetup) throws InsufficientCapacityException, ResourceUnavailableException {
         UserVmVO vm = _vmDao.findById(vmId);
 
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("reboot %s with enterSetup set to %s", vm.getInstanceName(), Boolean.toString(enterSetup)));
+        }
+
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
             s_logger.warn("Vm id=" + vmId + " doesn't exist");
             return null;
@@ -2848,6 +2852,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (additonalParams == null) {
                 additonalParams = new HashMap<>();
             }
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("Adding %s into the param map", VirtualMachineProfile.Param.BootIntoBios.getName()));
+            }
+
             additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, cmd.getBootIntoBios());
         }
 
@@ -4770,7 +4778,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if(additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoBios)) {
-            createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoBios, additionalParams.get(VirtualMachineProfile.Param.BootIntoBios));
+            Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoBios);
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("It was specified whether to enter setup mode: " + paramValue.toString());
+            }
+            createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoBios, paramValue);
         }
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
