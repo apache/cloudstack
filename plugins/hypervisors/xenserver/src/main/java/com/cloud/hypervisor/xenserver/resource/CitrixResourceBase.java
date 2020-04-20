@@ -5544,7 +5544,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.debug("Attaching config drive iso device for the VM " + vmName + " In host " + ipAddr);
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
 
-            SR sr = getSRByNameLabel(conn, _configDriveSRName + ipAddr);
+            SR sr = getSRByNameLabel(conn, vmName + "-ISO");
             //Here you will find only two vdis with the <vmname>.iso.
             //one is from source host and second from dest host
             Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + ".iso");
