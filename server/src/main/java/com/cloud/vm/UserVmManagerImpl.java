@@ -4784,7 +4784,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if(additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoBios)) {
             Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoBios);
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("It was specified whether to enter setup mode: " + paramValue.toString());
+                    s_logger.trace("It was specified whether to enter setup mode: " + paramValue.toString());
             }
             createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoBios, paramValue);
         }

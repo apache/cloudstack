@@ -887,12 +887,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void advanceStart(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params, final DeploymentPlan planToDeploy, final DeploymentPlanner planner)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("start parameter value of %s == %s", VirtualMachineProfile.Param.BootIntoBios.getName(),
-                    (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
-        }
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("start parameter value of %s == %s during dispatching",
+                        VirtualMachineProfile.Param.BootIntoBios.getName(),
+                        (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
+            }
             // avoid re-entrance
             VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
@@ -905,6 +906,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
         } else {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("start parameter value of %s == %s during processing of queued job",
+                        VirtualMachineProfile.Param.BootIntoBios.getName(),
+                        (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
+            }
             final Outcome<VirtualMachine> outcome = startVmThroughJobQueue(vmUuid, params, planToDeploy, planner);
 
             try {
@@ -1068,7 +1074,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
-                logUefiParameters(params);
+                logBootModeParameters(params);
                 DeployDestination dest = null;
                 try {
                     dest = _dpMgr.planDeployment(vmProfile, plan, avoids, planner);
@@ -1137,6 +1143,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
                     final VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+
+                    checkAndSetEnterSetupMode(vmTO, params);
 
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
 
@@ -1316,7 +1324,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void logUefiParameters(Map<VirtualMachineProfile.Param, Object> params) {
+    private void logBootModeParameters(Map<VirtualMachineProfile.Param, Object> params) {
         StringBuffer msgBuf = new StringBuffer("Uefi params ");
         boolean log = false;
         if (params.get(VirtualMachineProfile.Param.UefiFlag) != null) {
@@ -3184,11 +3192,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final Commands cmds = new Commands(Command.OnError.Stop);
             RebootCommand rebootCmd = new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType()));
             VirtualMachineTO vmTo = getVmTO(vm.getId());
-            Boolean enterSetup = (Boolean)params.get(VirtualMachineProfile.Param.BootIntoBios);
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("orchestrating VM reboot for '%s' %s set to %s", vm.getInstanceName(), VirtualMachineProfile.Param.BootIntoBios, enterSetup));
-            }
-            vmTo.setEnterBiosSetup(enterSetup == null ? false : enterSetup);
+            checkAndSetEnterSetupMode(vmTo, params);
             rebootCmd.setVirtualMachine(vmTo);
             cmds.addCommand(rebootCmd);
             _agentMgr.send(host.getId(), cmds);
@@ -3207,6 +3211,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.warn("Unable to send the reboot command to host " + dest.getHost() + " for the vm " + vm + " due to operation timeout", e);
             throw new CloudRuntimeException("Failed to reboot the vm on host " + dest.getHost());
         }
+    }
+
+    private void checkAndSetEnterSetupMode(VirtualMachineTO vmTo, Map<VirtualMachineProfile.Param, Object> params) {
+        Boolean enterSetup = (Boolean)params.get(VirtualMachineProfile.Param.BootIntoBios);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("orchestrating VM reboot for '%s' %s set to %s", vmTo.getName(), VirtualMachineProfile.Param.BootIntoBios, enterSetup));
+        }
+        vmTo.setEnterBiosSetup(enterSetup == null ? false : enterSetup);
     }
 
     protected VirtualMachineTO getVmTO(Long vmId) {
