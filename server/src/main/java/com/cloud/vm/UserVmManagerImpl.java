@@ -47,6 +47,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -2892,7 +2893,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId + " corresponding to the vm");
         }
 
-        UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, cmd.getBootIntoBios() == null ? false : cmd.getBootIntoBios());
+        Boolean enterSetup = cmd.getBootIntoBios();
+        if (! (enterSetup == null || HypervisorType.VMware.equals(vmInstance.getHypervisorType()))) {
+            throw new InvalidParameterValueException("boot into bios does not make sense on " + vmInstance.getHypervisorType());
+        }
+        UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, enterSetup == null ? false : cmd.getBootIntoBios());
         if (userVm != null ) {
             // update the vmIdCountMap if the vm is in advanced shared network with out services
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
@@ -4782,6 +4787,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if(additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoBios)) {
+            if (! HypervisorType.VMware.equals(vm.getHypervisorType())) {
+                throw new InvalidParameterValueException("BootIntoBios makes no sense for " + vm.getHypervisorType());
+            }
             Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoBios);
             if (s_logger.isTraceEnabled()) {
                     s_logger.trace("It was specified whether to enter setup mode: " + paramValue.toString());
