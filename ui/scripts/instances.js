@@ -77,7 +77,13 @@
             },
             bootintobios: {
               label: 'label.enter.bios.setup',
-              isBoolean: true
+              isBoolean: true,
+              isHidden: function(args) {
+                if (args.context.instances[0].hypervisor !== 'VMware') {
+                  return true;
+                }
+                return false;
+              }
             }
           }
         },
@@ -1056,7 +1062,14 @@
                                 },
                                 bootintobios: {
                                     label: 'label.enter.bios.setup',
-                                    isBoolean: true
+                                    isBoolean: true,
+                                                  isHidden: function(args) {
+                                                    if (args.context.instances[0].hypervisor !== 'VMware') {
+                                                      return true;
+                                                    }
+                                                    return false;
+                                                  }
+
                                 }
 
                             }
@@ -1140,7 +1153,13 @@
                             fields: {
                                 bootintobios: {
                                     label: 'label.enter.bios.setup',
-                                    isBoolean: true
+                                    isBoolean: true,
+                                    isHidden: function(args) {
+                                      if (args.context.instances[0].hypervisor !== 'VMware') {
+                                        return true;
+                                      }
+                                      return false;
+                                    }
                                 }
                             }
                         },
