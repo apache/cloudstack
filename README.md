@@ -51,4 +51,4 @@ Note
 - taking into the consideration that we have never so far documented API changes between minor versions (i.e. 4.11.0 and 4.11.1), 
 - ...
 - the naming scheme, used as of 4.11, is now in X.Y form (i.e. 4.11 or 4.12) instead of minor version (4.11.0 or 4.12.0), 
-- while the older generated documentation was moved to folder "before-4.11".
+while the older generated documentation was moved to folder "before-4.11".
