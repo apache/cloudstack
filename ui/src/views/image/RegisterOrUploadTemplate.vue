@@ -773,7 +773,7 @@ export default {
       }
 
       for (let i = 0; i < value.length; i++) {
-        const zoneSelected = this.zones.opts.filter(zone => zone.name === value[i])
+        const zoneSelected = this.zones.opts.filter(zone => zone.id === value[i])
 
         if (zoneSelected.length > 0) {
           params.zoneid = zoneSelected[0].id
