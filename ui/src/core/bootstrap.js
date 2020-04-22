@@ -47,5 +47,5 @@ export default function Initializer () {
   store.commit('TOGGLE_MULTI_TAB', Vue.ls.get(DEFAULT_MULTI_TAB, config.multiTab))
   store.commit('SET_TOKEN', Vue.ls.get(ACCESS_TOKEN))
   store.commit('SET_PROJECT', Vue.ls.get(CURRENT_PROJECT))
-  store.commit('SET_ASYNC_JOB_IDS', Vue.ls.get(ASYNC_JOB_IDS))
+  store.commit('SET_ASYNC_JOB_IDS', Vue.ls.get(ASYNC_JOB_IDS) || [])
 }

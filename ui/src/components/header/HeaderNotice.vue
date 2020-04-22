@@ -122,7 +122,7 @@ export default {
     this.startPolling()
   },
   mounted () {
-    this.jobs = store.getters.asyncJobIds.reverse()
+    this.jobs = (store.getters.asyncJobIds || []).reverse()
     this.$store.watch(
       (state, getters) => getters.asyncJobIds,
       (newValue, oldValue) => {
