@@ -84,6 +84,7 @@
 "all": "All",
 "allocatediops": "IOPS Allocated",
 "allocationstate": "Allocation State",
+"allowuserdrivenbackups": "Allow User Driven Backups",
 "annotation": "Annotation",
 "apikey": "API Key",
 "associatednetwork": "Associated Network",
@@ -218,7 +219,7 @@
 "fingerprint": "FingerPrint",
 "firewall": "Firewall",
 "firstname": "First Name",
-"forced": "Force Stop",
+"forced": "Force",
 "forceencap": "Force UDP Encapsulation of ESP Packets",
 "forgedtransmits": "Forged Transmits",
 "format": "Format",
@@ -588,7 +589,9 @@
 "label.ha.configure": "Configure HA",
 "label.ha.disable": "Disable HA",
 "label.ha.enable": "Enable HA",
+"label.scheduled.backups": "Scheduled Backups",
 "label.scheduled.snapshots": "Scheduled Snapshots",
+"label.header.backup.schedule": "You can set up recurring backup schedules by selecting from the available options below and applying your policy preference",
 "label.header.volume.snapshot": "You can set up recurring snapshot schedules by selecting from the available options below and applying your policy preference",
 "label.header.volume.take.snapshot": "Please confirm that you want to take a snapshot of this volume.",
 "label.instanciate.template.associate.profile.blade": "Instanciate Template and Associate Profile to Blade",
@@ -1263,6 +1266,5 @@
 "label.launch.zone": "Launch Zone",
 "label.done": "Done",
 "label.fix.errors": "Fix errors",
-"label.zone": "Zone",
 "error.something.went.wrong.please.correct.the.following": "Something went wrong; please correct the following"
 }

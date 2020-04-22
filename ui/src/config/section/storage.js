@@ -271,15 +271,8 @@ export default {
           icon: 'paper-clip',
           label: 'Restore Volume and Attach',
           dataView: true,
-          args: ['backupid', 'virtualmachineid', 'volumeid'],
-          mapping: {
-            backupid: {
-              value: (record) => { return record.id }
-            },
-            volumeid: {
-              options: ['todo: handle custom volume ID']
-            }
-          }
+          popup: true,
+          component: () => import('@/views/storage/RestoreAttachBackupVolume.vue')
         },
         {
           api: 'removeVirtualMachineFromBackupOffering',

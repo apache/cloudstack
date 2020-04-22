@@ -144,7 +144,8 @@ export default {
         icon: 'plus',
         label: 'Import Offering',
         listView: true,
-        args: ['name', 'description', 'zoneid', 'externalid']
+        popup: true,
+        component: () => import('@/views/offering/ImportBackupOffering.vue')
       }, {
         api: 'deleteBackupOffering',
         icon: 'delete',

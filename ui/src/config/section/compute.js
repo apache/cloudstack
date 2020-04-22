@@ -162,8 +162,9 @@ export default {
           icon: 'schedule',
           label: 'Configure Backup Schedule',
           dataView: true,
-          args: ['virtualmachineid', 'intervaltype', 'schedule', 'timezone'],
+          popup: true,
           show: (record) => { return record.backupofferingid },
+          component: () => import('@/views/compute/BackupScheduleWizard.vue'),
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }

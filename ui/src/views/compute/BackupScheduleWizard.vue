@@ -16,23 +16,19 @@
 // under the License.
 
 <template>
-  <div class="snapshot-layout">
+  <div class="backup-layout">
     <a-tabs defaultActiveKey="1" :animated="false">
       <a-tab-pane :tab="$t('schedule')" key="1">
         <FormSchedule
           :loading="loading"
           :resource="resource"
-          :dataSource="dataSource"
-          @close-action="closeAction"
-          @refresh="handleRefresh"/>
+          :dataSource="dataSource"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.scheduled.snapshots')" key="2">
-        <ScheduledSnapshots
+      <a-tab-pane :tab="$t('label.scheduled.backups')" key="2">
+        <BackupSchedule
           :loading="loading"
           :resource="resource"
-          :dataSource="dataSource"
-          @refresh="handleRefresh"
-          @close-action="closeAction"/>
+          :dataSource="dataSource" />
       </a-tab-pane>
     </a-tabs>
   </div>
@@ -40,14 +36,14 @@
 
 <script>
 import { api } from '@/api'
-import FormSchedule from '@/views/storage/FormSchedule'
-import ScheduledSnapshots from '@/views/storage/ScheduledSnapshots'
+import FormSchedule from '@views/compute/backup/FormSchedule'
+import BackupSchedule from '@views/compute/backup/BackupSchedule'
 
 export default {
-  name: 'RecurringSnapshotVolume',
+  name: 'BackupScheduleWizard',
   components: {
     FormSchedule,
-    ScheduledSnapshots
+    BackupSchedule
   },
   props: {
     resource: {
@@ -58,7 +54,13 @@ export default {
   data () {
     return {
       loading: false,
-      dataSource: []
+      dataSource: {}
+    }
+  },
+  provide () {
+    return {
+      refreshSchedule: this.fetchData,
+      closeSchedule: this.closeAction
     }
   },
   mounted () {
@@ -67,19 +69,14 @@ export default {
   methods: {
     fetchData () {
       const params = {}
-      this.dataSource = []
+      this.dataSource = {}
       this.loading = true
-      params.volumeid = this.resource.id
-      api('listSnapshotPolicies', params).then(json => {
+      params.virtualmachineid = this.resource.id
+      api('listBackupSchedule', params).then(json => {
+        this.dataSource = json.listbackupscheduleresponse.backupschedule || {}
+      }).finally(() => {
         this.loading = false
-        const listSnapshotPolicies = json.listsnapshotpoliciesresponse.snapshotpolicy
-        if (listSnapshotPolicies && listSnapshotPolicies.length > 0) {
-          this.dataSource = listSnapshotPolicies
-        }
       })
-    },
-    handleRefresh () {
-      this.fetchData()
     },
     closeAction () {
       this.$emit('close-action')
@@ -88,8 +85,11 @@ export default {
 }
 </script>
 
-<style lang="less" scoped>
-  .snapshot-layout {
-    max-width: 600px;
+<style scoped lang="less">
+  .backup-layout {
+    width: 80vw;
+    @media (min-width: 800px) {
+      width: 600px;
+    }
   }
 </style>
