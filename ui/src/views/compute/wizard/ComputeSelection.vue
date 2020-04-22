@@ -16,122 +16,228 @@
 // under the License.
 
 <template>
-  <div>
-    <a-input-search
-      style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
-      placeholder="Search"
-      v-model="filter"
-      @search="handleSearch" />
-    <a-table
-      :columns="columns"
-      :dataSource="tableSource"
-      :pagination="{showSizeChanger: true}"
-      :rowSelection="rowSelection"
-      :loading="loading"
-      size="middle"
-      @change="handleTableChange"
-      :scroll="{ y: 225 }"
-    >
-      <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('cpu') }}</span>
-      <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('memory') }}</span>
-    </a-table>
-  </div>
+  <a-card>
+    <a-col>
+      <a-row>
+        <a-col :md="colContraned" :lg="colContraned">
+          <a-form-item
+            :label="this.$t('cpunumber')"
+            :validate-status="errors.cpu.status"
+            :help="errors.cpu.message">
+            <a-row :gutter="12">
+              <a-col :md="10" :lg="10" v-show="isConstrained">
+                <a-slider
+                  :min="minCpu"
+                  :max="maxCpu"
+                  v-model="cpuNumberInputValue"
+                  @change="($event) => updateComputeCpuNumber($event)"
+                />
+              </a-col>
+              <a-col :md="4" :lg="4">
+                <a-input-number
+                  v-model="cpuNumberInputValue"
+                  :formatter="value => `${value}`"
+                  @change="($event) => updateComputeCpuNumber($event)"
+                />
+              </a-col>
+            </a-row>
+          </a-form-item>
+        </a-col>
+        <a-col :md="8" :lg="8" v-show="!isConstrained">
+          <a-form-item
+            :label="this.$t('cpuspeed')"
+            :validate-status="errors.cpuspeed.status"
+            :help="errors.cpuspeed.message">
+            <a-input-number
+              v-model="cpuSpeedInputValue"
+              @change="($event) => updateComputeCpuSpeed($event)"
+            />
+          </a-form-item>
+        </a-col>
+        <a-col :md="colContraned" :lg="colContraned">
+          <a-form-item
+            :label="this.$t('memory')"
+            :validate-status="errors.memory.status"
+            :help="errors.memory.message">
+            <a-row :gutter="12">
+              <a-col :md="10" :lg="10" v-show="isConstrained">
+                <a-slider
+                  :min="minMemory"
+                  :max="maxMemory"
+                  v-model="memoryInputValue"
+                  @change="($event) => updateComputeMemory($event)"
+                />
+              </a-col>
+              <a-col :md="4" :lg="4">
+                <a-input-number
+                  v-model="memoryInputValue"
+                  :formatter="value => `${value} MB`"
+                  :parser="value => value.replace(' MB', '')"
+                  @change="($event) => updateComputeMemory($event)"
+                />
+              </a-col>
+            </a-row>
+          </a-form-item>
+        </a-col>
+      </a-row>
+    </a-col>
+  </a-card>
 </template>
 
 <script>
 export default {
   name: 'ComputeSelection',
   props: {
-    computeItems: {
-      type: Array,
-      default: () => []
+    computeOfferingId: {
+      type: String,
+      default: () => ''
     },
-    value: {
+    isConstrained: {
+      type: Boolean,
+      default: true
+    },
+    minCpu: {
+      type: Number,
+      default: 1
+    },
+    maxCpu: {
+      type: Number,
+      default: 2
+    },
+    minMemory: {
+      type: Number,
+      default: 1
+    },
+    maxMemory: {
+      type: Number,
+      default: 256
+    },
+    cpunumberInputDecorator: {
       type: String,
       default: ''
     },
-    loading: {
-      type: Boolean,
-      default: false
+    cpuspeedInputDecorator: {
+      type: String,
+      default: ''
+    },
+    memoryInputDecorator: {
+      type: String,
+      default: ''
+    },
+    preFillContent: {
+      type: Object,
+      default: () => {}
     }
   },
   data () {
     return {
-      filter: '',
-      columns: [
-        {
-          dataIndex: 'name',
-          title: this.$t('serviceOfferingId'),
-          width: '40%'
+      cpuNumberInputValue: 1,
+      cpuSpeedInputValue: 1,
+      memoryInputValue: 1,
+      errors: {
+        cpu: {
+          status: '',
+          message: ''
         },
-        {
-          dataIndex: 'cpu',
-          slots: { title: 'cpuTitle' },
-          width: '30%'
+        cpuspeed: {
+          status: '',
+          message: ''
         },
-        {
-          dataIndex: 'ram',
-          slots: { title: 'ramTitle' },
-          width: '30%'
+        memory: {
+          status: '',
+          message: ''
         }
-      ],
-      selectedRowKeys: []
+      }
     }
   },
   computed: {
-    options () {
-      return {
-        page: 1,
-        pageSize: 10,
-        keyword: ''
-      }
-    },
-    tableSource () {
-      return this.computeItems.map((item) => {
-        return {
-          key: item.id,
-          name: item.name,
-          cpu: `${item.cpunumber} CPU x ${parseFloat(item.cpuspeed / 1000.0).toFixed(2)} Ghz`,
-          ram: `${item.memory} MB`
-        }
-      })
-    },
-    rowSelection () {
-      return {
-        type: 'radio',
-        selectedRowKeys: this.selectedRowKeys,
-        onChange: this.onSelectRow
-      }
+    colContraned () {
+      return this.isConstrained ? 12 : 8
     }
   },
   watch: {
-    value (newValue, oldValue) {
-      if (newValue && newValue !== oldValue) {
-        this.selectedRowKeys = [newValue]
+    computeOfferingId (newValue, oldValue) {
+      if (newValue !== oldValue) {
+        this.cpuNumberInputValue = this.minCpu
+        this.memoryInputValue = this.minMemory
       }
     }
   },
+  mounted () {
+    this.cpuNumberInputValue = this.minCpu
+    this.memoryInputValue = this.minMemory
+    this.fillValue()
+  },
   methods: {
-    onSelectRow (value) {
-      this.selectedRowKeys = value
-      this.$emit('select-compute-item', value[0])
+    fillValue () {
+      if (this.preFillContent.cpunumber) {
+        this.cpuNumberInputValue = this.preFillContent.cpunumber
+      }
+      if (this.preFillContent.cpuspeed) {
+        this.cpuSpeedInputValue = this.preFillContent.cpuspeed
+      }
+      if (this.preFillContent.memory) {
+        this.memoryInputValue = this.preFillContent.memory
+      }
     },
-    handleSearch (value) {
-      this.filter = value
-      this.options.keyword = this.filter
-      this.$emit('handle-search-filter', this.options)
+    updateComputeCpuNumber (value) {
+      if (!this.validateInput('cpu', value)) {
+        return
+      }
+      this.$emit('update-compute-cpunumber', this.cpunumberInputDecorator, value)
     },
-    handleTableChange (pagination) {
-      this.options.page = pagination.current
-      this.options.pageSize = pagination.pageSize
-      this.$emit('handle-search-filter', this.options)
+    updateComputeCpuSpeed (value) {
+      this.$emit('update-compute-cpuspeed', this.cpuspeedInputDecorator, value)
+    },
+    updateComputeMemory (value) {
+      if (!this.validateInput('memory', value)) {
+        return
+      }
+      this.$emit('update-compute-memory', this.memoryInputDecorator, value)
+    },
+    validateInput (input, value) {
+      this.errors[input].status = ''
+      this.errors[input].message = ''
+
+      if (value === null || value === undefined || value.length === 0) {
+        this.errors[input].status = 'error'
+        this.errors[input].message = this.$t('message.error.required.input')
+        return false
+      }
+
+      if (!this.isConstrained) {
+        return true
+      }
+
+      let min
+      let max
+
+      switch (input) {
+        case 'cpu':
+          min = this.minCpu
+          max = this.maxCpu
+          break
+        case 'memory':
+          min = this.minMemory
+          max = this.maxMemory
+          break
+      }
+
+      if (!this.checkValidRange(value, min, max)) {
+        this.errors[input].status = 'error'
+        this.errors[input].message = this.$t('message.error.invalid.range', { min: min, max: max })
+        return false
+      }
+
+      return true
+    },
+    checkValidRange (value, min, max) {
+      if (value < min || value > max) {
+        return false
+      }
+
+      return true
     }
   }
 }
 </script>
-
-<style lang="less" scoped>
-  .ant-table-wrapper {
-    margin: 2rem 0;
-  }
-</style>

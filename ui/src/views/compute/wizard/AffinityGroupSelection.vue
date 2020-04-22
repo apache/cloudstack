@@ -53,6 +53,10 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    preFillContent: {
+      type: Object,
+      default: () => {}
     }
   },
   data () {
@@ -95,6 +99,17 @@ export default {
     value (newValue, oldValue) {
       if (newValue && !_.isEqual(newValue, oldValue)) {
         this.selectedRowKeys = newValue
+      }
+    },
+    loading () {
+      if (!this.loading) {
+        if (this.preFillContent.affinitygroupids) {
+          this.selectedRowKeys = this.preFillContent.affinitygroupids
+          this.$emit('select-affinity-group-item', this.preFillContent.affinitygroupids)
+        } else {
+          this.selectedRowKeys = []
+          this.$emit('select-affinity-group-item', null)
+        }
       }
     }
   },

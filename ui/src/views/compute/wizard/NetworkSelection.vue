@@ -22,6 +22,13 @@
       placeholder="Search"
       v-model="filter"
       @search="handleSearch" />
+    <a-tooltip
+      arrowPointAtCenter
+      placement="bottomRight">
+      <template slot="title">
+        {{ $t('addNewNetworks') }}
+      </template>
+    </a-tooltip>
     <a-table
       :loading="loading"
       :columns="columns"
@@ -70,6 +77,14 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    zoneId: {
+      type: String,
+      default: () => ''
+    },
+    preFillContent: {
+      type: Object,
+      default: () => {}
     }
   },
   data () {
@@ -77,7 +92,11 @@ export default {
       filter: '',
       selectedRowKeys: [],
       vpcs: [],
-      filteredInfo: null
+      filteredInfo: null,
+      networkOffering: {
+        loading: false,
+        opts: []
+      }
     }
   },
   computed: {
@@ -147,7 +166,21 @@ export default {
       if (newValue && !_.isEqual(newValue, oldValue)) {
         this.selectedRowKeys = newValue
       }
+    },
+    loading () {
+      if (!this.loading) {
+        if (this.preFillContent.networkids) {
+          this.selectedRowKeys = this.preFillContent.networkids
+          this.$emit('select-network-item', this.preFillContent.networkids)
+        } else {
+          this.selectedRowKeys = []
+          this.$emit('select-network-item', null)
+        }
+      }
     }
+  },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
   },
   created () {
     api('listVPCs', {
@@ -156,6 +189,7 @@ export default {
       this.vpcs = _.get(response, 'listvpcsresponse.vpc')
     })
   },
+  inject: ['vmFetchNetworks'],
   methods: {
     getDetails (network) {
       return [
@@ -178,6 +212,24 @@ export default {
       this.options.page = pagination.current
       this.options.pageSize = pagination.pageSize
       this.$emit('handle-search-filter', this.options)
+    },
+    listNetworkOfferings () {
+      return new Promise((resolve, reject) => {
+        const args = {}
+        args.forvpc = false
+        args.zoneid = this.zoneId
+        args.guestiptype = 'Isolated'
+        args.supportedServices = 'SourceNat'
+        args.specifyvlan = false
+        args.state = 'Enabled'
+
+        api('listNetworkOfferings', args).then(json => {
+          const listNetworkOfferings = json.listnetworkofferingsresponse.networkoffering || []
+          resolve(listNetworkOfferings)
+        }).catch(error => {
+          resolve(error)
+        })
+      })
     }
   }
 }

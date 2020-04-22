@@ -23,37 +23,26 @@
       v-model="filter"
       @search="handleSearch" />
     <a-table
-      :loading="loading"
       :columns="columns"
       :dataSource="tableSource"
       :pagination="{showSizeChanger: true}"
       :rowSelection="rowSelection"
+      :loading="loading"
       size="middle"
       @change="handleTableChange"
       :scroll="{ y: 225 }"
     >
-      <span slot="diskSizeTitle"><a-icon type="hdd" /> {{ $t('disksize') }}</span>
-      <span slot="iopsTitle"><a-icon type="rocket" /> {{ $t('minMaxIops') }}</span>
-      <template slot="diskSize" slot-scope="text, record">
-        <div v-if="record.isCustomized">{{ $t('isCustomized') }}</div>
-        <div v-else-if="record.diskSize">{{ record.diskSize }} GB</div>
-        <div v-else>-</div>
-      </template>
-      <template slot="iops" slot-scope="text, record">
-        <span v-if="record.miniops && record.maxiops">{{ record.miniops }} - {{ record.maxiops }}</span>
-        <span v-else-if="record.miniops && !record.maxiops">{{ record.miniops }}</span>
-        <span v-else-if="!record.miniops && record.maxiops">{{ record.maxiops }}</span>
-        <span v-else>-</span>
-      </template>
+      <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('cpu') }}</span>
+      <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('memory') }}</span>
     </a-table>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'DiskOfferingSelection',
+  name: 'ComputeOfferingSelection',
   props: {
-    items: {
+    computeItems: {
       type: Array,
       default: () => []
     },
@@ -76,28 +65,22 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('diskoffering'),
+          title: this.$t('serviceOfferingId'),
           width: '40%'
         },
         {
-          dataIndex: 'disksize',
-          slots: { title: 'diskSizeTitle' },
-          width: '30%',
-          scopedSlots: { customRender: 'diskSize' }
+          dataIndex: 'cpu',
+          slots: { title: 'cpuTitle' },
+          width: '30%'
         },
         {
-          dataIndex: 'iops',
-          slots: { title: 'iopsTitle' },
-          width: '30%',
-          scopedSlots: { customRender: 'iops' }
+          dataIndex: 'ram',
+          slots: { title: 'ramTitle' },
+          width: '30%'
         }
       ],
-      selectedRowKeys: ['0'],
-      dataItems: []
+      selectedRowKeys: []
     }
-  },
-  created () {
-    this.initDataItem()
   },
   computed: {
     options () {
@@ -108,14 +91,29 @@ export default {
       }
     },
     tableSource () {
-      return this.dataItems.map((item) => {
+      return this.computeItems.map((item) => {
+        var cpuNumberValue = item.cpunumber + ''
+        var cpuSpeedValue = (item.cpuspeed !== null && item.cpuspeed !== undefined && item.cpuspeed > 0) ? parseFloat(item.cpuspeed / 1000.0).toFixed(2) + '' : ''
+        var ramValue = item.memory + ''
+        if (item.iscustomized === true) {
+          cpuNumberValue = ''
+          ramValue = ''
+          if ('serviceofferingdetails' in item &&
+            'mincpunumber' in item.serviceofferingdetails &&
+            'maxcpunumber' in item.serviceofferingdetails) {
+            cpuNumberValue = item.serviceofferingdetails.mincpunumber + '-' + item.serviceofferingdetails.maxcpunumber
+          }
+          if ('serviceofferingdetails' in item &&
+            'minmemory' in item.serviceofferingdetails &&
+            'maxmemory' in item.serviceofferingdetails) {
+            ramValue = item.serviceofferingdetails.minmemory + '-' + item.serviceofferingdetails.maxmemory
+          }
+        }
         return {
           key: item.id,
           name: item.name,
-          diskSize: item.disksize,
-          miniops: item.miniops,
-          maxiops: item.maxiops,
-          isCustomized: item.iscustomized
+          cpu: cpuNumberValue.length > 0 ? `${cpuNumberValue} CPU x ${cpuSpeedValue} Ghz` : '',
+          ram: ramValue.length > 0 ? `${ramValue} MB` : ''
         }
       })
     },
@@ -133,39 +131,22 @@ export default {
         this.selectedRowKeys = [newValue]
       }
     },
-    items (newData, oldData) {
-      if (newData && newData.length > 0) {
-        this.initDataItem()
-        this.dataItems = this.dataItems.concat(newData)
-      }
-    },
     loading () {
       if (!this.loading) {
-        if (this.preFillContent.diskofferingid) {
-          this.selectedRowKeys = [this.preFillContent.diskofferingid]
-          this.$emit('select-disk-offering-item', this.preFillContent.diskofferingid)
+        if (this.preFillContent.computeofferingid) {
+          this.selectedRowKeys = [this.preFillContent.computeofferingid]
+          this.$emit('select-compute-item', this.preFillContent.computeofferingid)
         } else {
-          this.selectedRowKeys = ['0']
-          this.$emit('select-disk-offering-item', '0')
+          this.selectedRowKeys = []
+          this.$emit('select-compute-item', null)
         }
       }
     }
   },
   methods: {
-    initDataItem () {
-      this.dataItems = []
-      this.dataItems.push({
-        id: '0',
-        name: this.$t('noselect'),
-        diskSize: undefined,
-        miniops: undefined,
-        maxiops: undefined,
-        isCustomized: undefined
-      })
-    },
     onSelectRow (value) {
       this.selectedRowKeys = value
-      this.$emit('select-disk-offering-item', value[0])
+      this.$emit('select-compute-item', value[0])
     },
     handleSearch (value) {
       this.filter = value

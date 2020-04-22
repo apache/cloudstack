@@ -53,6 +53,10 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    preFillContent: {
+      type: Object,
+      default: () => {}
     }
   },
   data () {
@@ -80,12 +84,7 @@ export default {
     }
   },
   created () {
-    this.dataItems = []
-    this.dataItems.push({
-      name: this.$t('noselect'),
-      account: '-',
-      domain: '-'
-    })
+    this.initDataItem()
   },
   computed: {
     options () {
@@ -121,11 +120,31 @@ export default {
     },
     items (newData, oldData) {
       if (newData && newData.length > 0) {
+        this.initDataItem()
         this.dataItems = this.dataItems.concat(newData)
+      }
+    },
+    loading () {
+      if (!this.loading) {
+        if (this.preFillContent.keypair) {
+          this.selectedRowKeys = [this.preFillContent.keypair]
+          this.$emit('select-ssh-key-pair-item', this.preFillContent.keypair)
+        } else {
+          this.selectedRowKeys = [this.$t('noselect')]
+          this.$emit('select-ssh-key-pair-item', this.$t('noselect'))
+        }
       }
     }
   },
   methods: {
+    initDataItem () {
+      this.dataItems = []
+      this.dataItems.push({
+        name: this.$t('noselect'),
+        account: '-',
+        domain: '-'
+      })
+    },
     onSelectRow (value) {
       this.selectedRowKeys = value
       this.$emit('select-ssh-key-pair-item', value[0])

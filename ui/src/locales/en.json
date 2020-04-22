@@ -1151,6 +1151,8 @@
 "message.required.traffic.type": "Error in configuration! All required traffic types should be added and with multiple physical networks each network should have a label.",
 "message.desc.primary.storage": "Each cluster must contain one or more primary storage servers, and we will add the first one now. Primary storage contains the disk volumes for all the VMs running on hosts in the cluster. Use any standards-compliant protocol that is supported by the underlying hypervisor.",
 "message.desc.secondary.storage": "Each zone must have at least one NFS or secondary storage server, and we will add the first one now. Secondary storage stores VM templates, ISO images, and VM disk volume snapshots. This server must be available to all hosts in the zone.<br/><br/>Provide the IP address and exported path.",
+"message.error.required.input": "Please enter input",
+"message.error.invalid.range": "Please enter values from {min} to {max}",
 "label.name": "Name",
 "label.ipv4.dns1": "IPv4 DNS1",
 "label.ipv4.dns2": "IPv4 DNS2",
@@ -1266,5 +1268,10 @@
 "label.launch.zone": "Launch Zone",
 "label.done": "Done",
 "label.fix.errors": "Fix errors",
-"error.something.went.wrong.please.correct.the.following": "Something went wrong; please correct the following"
+"error.something.went.wrong.please.correct.the.following": "Something went wrong; please correct the following",
+"filter": "Filter",
+"featured": "Featured",
+"community": "Community",
+"selfexecutable": "Self",
+"sharedexecutable": "Shared"
 }

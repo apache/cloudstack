@@ -67,9 +67,9 @@ export default {
           if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
             this.projects.push(...json.listprojectsresponse.project)
           }
-          const currentProject = Vue.ls.get(CURRENT_PROJECT)
+          const currentProject = Vue.ls.get(CURRENT_PROJECT) || {}
           for (var project of this.projects) {
-            if (project.id === currentProject.id) {
+            if (project && currentProject && project.id === currentProject.id) {
               this.setSelectedProject(project)
               break
             }

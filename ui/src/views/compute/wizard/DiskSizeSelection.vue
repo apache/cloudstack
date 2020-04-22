@@ -16,22 +16,26 @@
 // under the License.
 
 <template>
-  <a-form-item :label="this.$t('diskSize')">
-    <a-row>
-      <a-col :span="10">
+  <a-form-item
+    :label="this.$t('diskSize')"
+    class="form-item">
+    <a-row :gutter="12">
+      <a-col :md="10" :lg="10">
         <a-slider
           :min="0"
           :max="1024"
           v-model="inputValue"
-          @change="($event) => updateDickSize($event)"
+          @change="($event) => updateDiskSize($event)"
         />
       </a-col>
-      <a-col :span="4">
-        <a-input-number
-          v-model="inputValue"
-          :formatter="value => `${value} GB`"
-          :parser="value => value.replace(' GB', '')"
-        />
+      <a-col :md="4" :lg="4">
+        <span style="display: inline-flex">
+          <a-input-number
+            v-model="inputValue"
+            @change="($event) => updateDiskSize($event)"
+          />
+          <span style="padding-top: 6px">GB</span>
+        </span>
       </a-col>
     </a-row>
   </a-form-item>
@@ -44,6 +48,10 @@ export default {
     inputDecorator: {
       type: String,
       default: ''
+    },
+    preFillContent: {
+      type: Object,
+      default: () => {}
     }
   },
   data () {
@@ -51,14 +59,27 @@ export default {
       inputValue: 0
     }
   },
+  mounted () {
+    this.fillValue()
+  },
   methods: {
-    updateDickSize (value) {
+    fillValue () {
+      if (this.inputDecorator === 'rootdisksize') {
+        this.inputValue = this.preFillContent.rootdisksize ? this.preFillContent.rootdisksize : 0
+      } else if (this.inputDecorator === 'size') {
+        this.inputValue = this.preFillContent.size ? this.preFillContent.size : 0
+      }
+      this.$emit('update-disk-size', this.inputDecorator, this.inputValue)
+    },
+    updateDiskSize (value) {
       this.$emit('update-disk-size', this.inputDecorator, value)
     }
   }
 }
 </script>
 
-<style scoped>
-
+<style scoped lang="less">
+  .form-item {
+    margin: 0 5px;
+  }
 </style>

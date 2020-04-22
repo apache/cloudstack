@@ -81,6 +81,14 @@ export default {
     itemCount: {
       type: Number,
       default: 0
+    },
+    osType: {
+      type: String,
+      default: ''
+    },
+    preFillContent: {
+      type: Object,
+      default: () => {}
     }
   },
   data () {
@@ -90,16 +98,14 @@ export default {
       pageSize: 10
     }
   },
-  created () {
-    this.value = this.selected
-    this.$emit('emit-update-template-iso', this.inputDecorator, this.value)
-  },
-  watch: {
-    inputDecorator (value) {
-      if (value === 'templateid') {
-        this.value = this.selected
-      }
+  mounted () {
+    if (this.inputDecorator === 'templateid') {
+      this.value = !this.preFillContent.templateid ? this.selected : this.preFillContent.templateid
+    } else {
+      this.value = !this.preFillContent.isoid ? this.selected : this.preFillContent.isoid
     }
+
+    this.$emit('emit-update-template-iso', this.inputDecorator, this.value)
   },
   computed: {
     pagination () {
