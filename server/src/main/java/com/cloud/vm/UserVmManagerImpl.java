@@ -4318,7 +4318,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long podId = null;
         Long clusterId = null;
         Long hostId = cmd.getHostId();
-        Map<VirtualMachineProfile.Param, Object> additonalParams = null;
+        Map<VirtualMachineProfile.Param, Object> additonalParams =  new HashMap<>();
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         if (cmd instanceof DeployVMCmdByAdmin) {
             DeployVMCmdByAdmin adminCmd = (DeployVMCmdByAdmin)cmd;
@@ -4326,24 +4326,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             clusterId = adminCmd.getClusterId();
         }
         if (MapUtils.isNotEmpty(cmd.getDetails()) && cmd.getDetails().containsKey(ApiConstants.BootType.UEFI.toString())) {
-            if (additonalParams == null) {
-                additonalParams = new HashMap<>();
-            }
             Map<String, String> map = cmd.getDetails();
             additonalParams.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
             additonalParams.put(VirtualMachineProfile.Param.BootType, ApiConstants.BootType.UEFI.toString());
             additonalParams.put(VirtualMachineProfile.Param.BootMode, map.get(ApiConstants.BootType.UEFI.toString()));
         }
         if (cmd.getBootIntoBios() != null) {
-            if (additonalParams == null) {
-                additonalParams = new HashMap<>();
-            }
             additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, cmd.getBootIntoBios());
         }
         return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
     }
 
-    private UserVm startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<Long, DiskOffering> diskOfferingMap, Map<VirtualMachineProfile.Param, Object> additonalParams, String deploymentPlannerToUse)
+    private UserVm startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<Long, DiskOffering> diskOfferingMap
+            , Map<VirtualMachineProfile.Param, Object> additonalParams, String deploymentPlannerToUse)
             throws ResourceUnavailableException,
             InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         UserVmVO vm = _vmDao.findById(vmId);
@@ -4785,7 +4780,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.VmPassword, password);
         }
 
-        if(additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoBios)) {
+        if(null != additionalParams && additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoBios)) {
             if (! HypervisorType.VMware.equals(vm.getHypervisorType())) {
                 throw new InvalidParameterValueException("BootIntoBios makes no sense for " + vm.getHypervisorType());
             }
