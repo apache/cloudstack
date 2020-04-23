@@ -4173,7 +4173,7 @@
                     } else if (args.data.returnedZone.networktype == "Advanced") { //update VLAN in physical network(s) in advanced zone
                         var physicalNetworksHavingGuestIncludingVlan = [];
                         $(args.data.physicalNetworks).each(function() {
-                            if (this.guestConfiguration != null && this.guestConfiguration.vlanRangeStart != null && this.guestConfiguration.vlanRangeStart.length > 0) {
+                            if (args.data.guestTraffic != null && args.data.guestTraffic.vlanRangeStart != null && args.data.guestTraffic.vlanRangeStart.length > 0) {
                                 physicalNetworksHavingGuestIncludingVlan.push(this);
                             }
                         });
@@ -4186,10 +4186,10 @@
                             var updatedCount = 0;
                             $(physicalNetworksHavingGuestIncludingVlan).each(function() {
                                 var vlan;
-                                if (this.guestConfiguration.vlanRangeEnd == null || this.guestConfiguration.vlanRangeEnd.length == 0)
-                                    vlan = this.guestConfiguration.vlanRangeStart;
+                                if (args.data.guestTraffic.vlanRangeEnd == null || args.data.guestTraffic.vlanRangeEnd.length == 0)
+                                    vlan = args.data.guestTraffic.vlanRangeStart;
                                 else
-                                    vlan = this.guestConfiguration.vlanRangeStart + "-" + this.guestConfiguration.vlanRangeEnd;
+                                    vlan = args.data.guestTraffic.vlanRangeStart + "-" + args.data.guestTraffic.vlanRangeEnd;
 
                                 var originalId = this.id;
                                 var returnedId;
