@@ -4825,7 +4825,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private Map<VirtualMachineProfile.Param, Object> createParameterInParameterMap(Map<VirtualMachineProfile.Param, Object> params, Map<VirtualMachineProfile.Param, Object> parameterMap, VirtualMachineProfile.Param parameter,
             Object parameterValue) {
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("createParameterInParameterMap(%s, %s)", parameter, parameterValue));
+        }
         if (params == null) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("creating new Parameter map");
+            }
             params = new HashMap<>();
             if (parameterMap != null) {
                 params.putAll(parameterMap);
