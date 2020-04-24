@@ -249,8 +249,18 @@ public class NetUtilsTest {
     }
 
     @Test
-    public void testGenerateUriForPvlan() {
+    public void testGenerateUriForIsolatedPvlan() {
         assertEquals("pvlan://123-i456", NetUtils.generateUriForPvlan("123", "456").toString());
+    }
+
+    @Test
+    public void testGenerateUriForCommunityPvlan() {
+        assertEquals("pvlan://123-c456", NetUtils.generateUriForPvlan("123", "456", "Community").toString());
+    }
+
+    @Test
+    public void testGenerateUriForPromiscuousPvlan() {
+        assertEquals("pvlan://123-p123", NetUtils.generateUriForPvlan("123", "123", "promiscuous").toString());
     }
 
     @Test

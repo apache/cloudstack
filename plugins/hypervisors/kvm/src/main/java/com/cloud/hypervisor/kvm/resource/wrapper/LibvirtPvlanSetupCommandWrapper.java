@@ -43,6 +43,7 @@ public final class LibvirtPvlanSetupCommandWrapper extends CommandWrapper<PvlanS
     public Answer execute(final PvlanSetupCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String primaryPvlan = command.getPrimary();
         final String isolatedPvlan = command.getIsolated();
+        final String pvlanType = "-" + command.getPvlanType();
         final String op = command.getOp();
         final String dhcpName = command.getDhcpName();
         final String dhcpMac = command.getDhcpMac();
@@ -89,7 +90,7 @@ public final class LibvirtPvlanSetupCommandWrapper extends CommandWrapper<PvlanS
                 final String ovsPvlanVmPath = libvirtComputingResource.getOvsPvlanVmPath();
 
                 final Script script = new Script(ovsPvlanVmPath, timeout, s_logger);
-                script.add(opr, "-b", guestBridgeName, "-p", primaryPvlan, "-i", isolatedPvlan, "-v", vmMac);
+                script.add(opr, pvlanType, "-b", guestBridgeName, "-p", primaryPvlan, "-s", isolatedPvlan, "-v", vmMac);
                 result = script.execute();
 
                 if (result != null) {

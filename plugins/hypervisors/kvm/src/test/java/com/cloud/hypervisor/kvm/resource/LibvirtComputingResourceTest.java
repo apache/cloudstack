@@ -4384,7 +4384,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testPvlanSetupCommandVm() {
         final String op = "add";
-        final URI uri = URI.create("http://localhost");
+        final URI uri = URI.create("pvlan://200-p200");
         final String networkTag = "/105";
         final String vmMac = "00:00:00:00";
 
