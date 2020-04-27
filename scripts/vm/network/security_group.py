@@ -510,7 +510,7 @@ def check_default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brna
         rules = execute("iptables-save |grep -w %s |grep -w %s |grep -w %s" % (brfw, vif, vmchain_default))
     except:
         rules = None
-    if rules is None or rules is "":
+    if rules is None or rules == "":
         logging.debug("iptables rules do not exist, programming default rules for %s %s" % (vm_name,vif))
         default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips, is_first_nic)
     else:
@@ -519,7 +519,7 @@ def check_default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brna
             rules = execute("ebtables -t nat -L PREROUTING | grep %s |grep -w %s" % (vmchain_in, vif))
         except:
             rules = None
-        if rules is None or rules is "":
+        if rules is None or rules == "":
             logging.debug("ebtables rules do not exist, programming default ebtables rules for %s %s" % (vm_name,vif))
             default_ebtables_rules(vm_name, vm_ip, vm_mac, vif, is_first_nic)
             ips = sec_ips.split(';')
@@ -820,7 +820,7 @@ def network_rules_for_rebooted_vm(vmName):
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
     brName = execute("iptables-save | awk -F '-j ' '/FORWARD -o(.*)physdev-is-bridged(.*)BF/ {print $2}'").strip()
-    if brName is None or brName is "":
+    if brName is None or brName == "":
         brName = "cloudbr0"
     else:
         brName = execute("iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' |awk '{print $4}' | head -1").strip()
