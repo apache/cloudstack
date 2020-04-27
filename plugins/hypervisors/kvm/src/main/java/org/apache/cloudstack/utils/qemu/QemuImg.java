@@ -150,6 +150,8 @@ public class QemuImg {
         s.add("-f");
         if (backingFile != null) {
             s.add(backingFile.getFormat().toString());
+            s.add("-F");
+            s.add(backingFile.getFormat().toString());
             s.add("-b");
             s.add(backingFile.getFileName());
         } else {
