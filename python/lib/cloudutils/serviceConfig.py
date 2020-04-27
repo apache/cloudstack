@@ -566,6 +566,12 @@ class libvirtConfigUbuntu(serviceCfgBase):
         elif os.path.exists("/etc/default/libvirtd"):
             cfo = configFileOps("/etc/default/libvirtd", self)
             cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
+            if os.path.exists("/lib/systemd/system/libvirtd.socket"):
+                bash("/bin/systemctl mask libvirtd.socket");
+                bash("/bin/systemctl mask libvirtd-ro.socket");
+                bash("/bin/systemctl mask libvirtd-admin.socket");
+                bash("/bin/systemctl mask libvirtd-tls.socket");
+                bash("/bin/systemctl mask libvirtd-tcp.socket");
 
     def config(self):
         try:
