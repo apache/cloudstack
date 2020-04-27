@@ -70,9 +70,15 @@ public class DpdkDriverImpl extends AdapterBase implements DpdkDriver {
                 dpdkPortVhostUserClientType;
 
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(String.format("ovs-vsctl add-port %s %s " +
-                "vlan_mode=access tag=%s " +
-                "-- set Interface %s type=%s", bridgeName, port, vlan, port, type));
+        
+        if (Integer.parseInt(vlan) > 0 && Integer.parseInt(vlan) < 4095) {
+            stringBuilder.append(String.format("ovs-vsctl add-port %s %s " +
+                 "vlan_mode=access tag=%s " +
+                 "-- set Interface %s type=%s", bridgeName, port, vlan, port, type));
+        } else {
+            stringBuilder.append(String.format("ovs-vsctl add-port %s %s " +
+                 "-- set Interface %s type=%s", bridgeName, port, port, type));
+        }
 
         if (vHostUserMode == DpdkHelper.VHostUserMode.CLIENT) {
             stringBuilder.append(String.format(" options:vhost-server-path=%s/%s",
