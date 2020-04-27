@@ -119,8 +119,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy By default for BIOS", since = "4.14.0.0")
     private String bootMode;
 
-    @Parameter(name = ApiConstants.BOOT_INTO_BIOS, type = CommandType.BOOLEAN, required = false, description = "Boot into bios or not (ignored if startVm = false, only valid for vmware)", since = "4.15.0.0")
-    private Boolean bootIntoBios;
+    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup or not (ignored if startVm = false, only valid for vmware)", since = "4.15.0.0")
+    private Boolean bootIntoSetup;
 
     //DataDisk information
     @ACL
@@ -579,8 +579,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return copyImageTags == null ? false : copyImageTags;
     }
 
-    public Boolean getBootIntoBios() {
-        return bootIntoBios;
+    public Boolean getBootIntoSetup() {
+        return bootIntoSetup;
     }
 
     /////////////////////////////////////////////////////

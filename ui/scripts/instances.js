@@ -75,8 +75,8 @@
                 }
               }
             },
-            bootintobios: {
-              label: 'label.enter.bios.setup',
+            bootintosetup: {
+              label: 'label.enter.hardware.setup',
               isBoolean: true,
               isHidden: function(args) {
                 if (args.context.instances[0].hypervisor !== 'VMware') {
@@ -1060,16 +1060,15 @@
                                       }
                                   }
                                 },
-                                bootintobios: {
-                                    label: 'label.enter.bios.setup',
+                                bootintosetup: {
+                                    label: 'label.enter.hardware.setup',
                                     isBoolean: true,
-                                                  isHidden: function(args) {
-                                                    if (args.context.instances[0].hypervisor !== 'VMware') {
-                                                      return true;
-                                                    }
-                                                    return false;
-                                                  }
-
+                                    isHidden: function(args) {
+                                       if (args.context.instances[0].hypervisor !== 'VMware') {
+                                         return true;
+                                       }
+                                         return false;
+                                       }
                                 }
 
                             }
@@ -1093,10 +1092,10 @@
                                     hostid: args.data.hostId
                                 });
                             }
-                            var bootintobios = (args.data.bootintobios == "on");
-                            if (bootintobios) {
+                            var bootintosetup = (args.data.bootintosetup == "on");
+                            if (bootintosetup) {
                                 $.extend(data, {
-                                    bootintobios : bootintobios
+                                    bootintosetup : bootintosetup
                                 });
                             }
                             $.ajax({
@@ -1147,12 +1146,12 @@
                             title: 'label.action.reboot.instance',
                             desc: 'message.action.reboot.instance',
                             preFilter: function(args) {
-                                args.$form.find('.form-item[rel=bootintobios]').find('input').attr('checked', 'checked'); //checked
-                                args.$form.find('.form-item[rel=bootintobios]').css('display', 'inline-block'); //shown
+                                args.$form.find('.form-item[rel=bootintosetup]').find('input').attr('checked', 'checked'); //checked
+                                args.$form.find('.form-item[rel=bootintosetup]').css('display', 'inline-block'); //shown
                             },
                             fields: {
-                                bootintobios: {
-                                    label: 'label.enter.bios.setup',
+                                bootintosetup: {
+                                    label: 'label.enter.hardware.setup',
                                     isBoolean: true,
                                     isHidden: function(args) {
                                       if (args.context.instances[0].hypervisor !== 'VMware') {
@@ -1169,7 +1168,7 @@
                                 dataType: "json",
                                 data: {
                                     id: args.context.instances[0].id,
-                                    bootintobios: (args.data.bootintobios == "on")
+                                    bootintosetup: (args.data.bootintosetup == "on")
                                 },
                                 async: true,
                                 success: function(json) {

@@ -135,8 +135,8 @@ public class VmwareVmImplementer {
         }
 
         details.put(VmDetailConstants.BOOT_MODE, to.getBootMode());
-        if (vm.getParameter(VirtualMachineProfile.Param.BootIntoBios) != null && (Boolean)vm.getParameter(VirtualMachineProfile.Param.BootIntoBios) == true) {
-            to.setEnterBiosSetup(true);
+        if (vm.getParameter(VirtualMachineProfile.Param.BootIntoSetup) != null && (Boolean)vm.getParameter(VirtualMachineProfile.Param.BootIntoSetup) == true) {
+            to.setEnterHardwareSetup(true);
         }
 // there should also be
 //        details.put(VmDetailConstants.BOOT_TYPE, to.getBootType());

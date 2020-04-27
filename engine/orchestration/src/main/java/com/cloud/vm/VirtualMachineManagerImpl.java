@@ -891,8 +891,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("start parameter value of %s == %s during dispatching",
-                        VirtualMachineProfile.Param.BootIntoBios.getName(),
-                        (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
+                        VirtualMachineProfile.Param.BootIntoSetup.getName(),
+                        (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
             }
             // avoid re-entrance
             VmWorkJobVO placeHolder = null;
@@ -908,8 +908,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } else {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("start parameter value of %s == %s during processing of queued job",
-                        VirtualMachineProfile.Param.BootIntoBios.getName(),
-                        (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
+                        VirtualMachineProfile.Param.BootIntoSetup.getName(),
+                        (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
             }
             final Outcome<VirtualMachine> outcome = startVmThroughJobQueue(vmUuid, params, planToDeploy, planner);
 
@@ -1339,8 +1339,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             msgBuf.append(String.format("Boot Mode: %s ", params.get(VirtualMachineProfile.Param.BootMode)));
             log = true;
         }
-        if (params.get(VirtualMachineProfile.Param.BootIntoBios) != null) {
-            msgBuf.append(String.format("Boot into BIOS: %s ", params.get(VirtualMachineProfile.Param.BootIntoBios)));
+        if (params.get(VirtualMachineProfile.Param.BootIntoSetup) != null) {
+            msgBuf.append(String.format("Boot into Setup: %s ", params.get(VirtualMachineProfile.Param.BootIntoSetup)));
             log = true;
         }
         if (log) {
@@ -3128,8 +3128,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("reboot parameter value of %s == %s at orchestration", VirtualMachineProfile.Param.BootIntoBios.getName(),
-                            (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
+                    s_logger.trace(String.format("reboot parameter value of %s == %s at orchestration", VirtualMachineProfile.Param.BootIntoSetup.getName(),
+                            (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
                 }
                 orchestrateReboot(vmUuid, params);
             } finally {
@@ -3139,8 +3139,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         } else {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("reboot parameter value of %s == %s through job-queue", VirtualMachineProfile.Param.BootIntoBios.getName(),
-                        (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoBios))));
+                s_logger.trace(String.format("reboot parameter value of %s == %s through job-queue", VirtualMachineProfile.Param.BootIntoSetup.getName(),
+                        (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
             }
             final Outcome<VirtualMachine> outcome = rebootVmThroughJobQueue(vmUuid, params);
 
@@ -3214,11 +3214,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void checkAndSetEnterSetupMode(VirtualMachineTO vmTo, Map<VirtualMachineProfile.Param, Object> params) {
-        Boolean enterSetup = (Boolean)params.get(VirtualMachineProfile.Param.BootIntoBios);
+        Boolean enterSetup = (Boolean)params.get(VirtualMachineProfile.Param.BootIntoSetup);
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("orchestrating VM reboot for '%s' %s set to %s", vmTo.getName(), VirtualMachineProfile.Param.BootIntoBios, enterSetup));
+            s_logger.trace(String.format("orchestrating VM reboot for '%s' %s set to %s", vmTo.getName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup));
         }
-        vmTo.setEnterBiosSetup(enterSetup == null ? false : enterSetup);
+        vmTo.setEnterHardwareSetup(enterSetup == null ? false : enterSetup);
     }
 
     protected VirtualMachineTO getVmTO(Long vmId) {
@@ -5274,9 +5274,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         assert vm != null;
 
-        Boolean enterSetup = (Boolean)work.getParams().get(VirtualMachineProfile.Param.BootIntoBios);
+        Boolean enterSetup = (Boolean)work.getParams().get(VirtualMachineProfile.Param.BootIntoSetup);
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("orchestrating VM start for '%s' %s set to %s", vm.getInstanceName(), VirtualMachineProfile.Param.BootIntoBios, enterSetup));
+            s_logger.trace(String.format("orchestrating VM start for '%s' %s set to %s", vm.getInstanceName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup));
         }
 
         try{

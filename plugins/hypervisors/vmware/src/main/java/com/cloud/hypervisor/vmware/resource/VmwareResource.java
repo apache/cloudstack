@@ -2388,14 +2388,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 bootOptions.setEfiSecureBootEnabled(true);
             }
         }
-        if (vmSpec.isEnterBiosSetup()) {
+        if (vmSpec.isEnterHardwareSetup()) {
             if (bootOptions == null) {
                 bootOptions = new VirtualMachineBootOptions();
             }
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("configuring VM '%s' to enter BIOS setup",vmSpec.getName()));
+                s_logger.debug(String.format("configuring VM '%s' to enter hardware setup",vmSpec.getName()));
             }
-            bootOptions.setEnterBIOSSetup(vmSpec.isEnterBiosSetup());
+            bootOptions.setEnterBIOSSetup(vmSpec.isEnterHardwareSetup());
         }
         if (bootOptions != null) {
             vmConfigSpec.setBootOptions(bootOptions);
@@ -3971,21 +3971,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private void checkAndSetEnableSetupConfig(VirtualMachineMO vmMo, VirtualMachineTO virtualMachine) {
-        // todo check for boot into bios request
-        if (virtualMachine.isEnterBiosSetup()) {
+        if (virtualMachine.isEnterHardwareSetup()) {
             VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("configuring VM '%s' to reboot into BIOS setup.",virtualMachine.getName()));
+                s_logger.debug(String.format("configuring VM '%s' to reboot into hardware setup menu.",virtualMachine.getName()));
             }
-            bootOptions.setEnterBIOSSetup(virtualMachine.isEnterBiosSetup());
+            bootOptions.setEnterBIOSSetup(virtualMachine.isEnterHardwareSetup());
             vmConfigSpec.setBootOptions(bootOptions);
             try {
                 if (!vmMo.configureVm(vmConfigSpec)) {
-                    throw new Exception("Failed to configure VM to boot into bios: " + vmMo.getName());
+                    throw new Exception("Failed to configure VM to boot into hardware setup menu: " + vmMo.getName());
                 }
             } catch (Exception e) {
-                s_logger.error(String.format("failed to reconfigure VM '%s' to boot into BIOS",virtualMachine.getName()),e);
+                s_logger.error(String.format("failed to reconfigure VM '%s' to boot into hardware setup menu",virtualMachine.getName()),e);
             }
         }
     }

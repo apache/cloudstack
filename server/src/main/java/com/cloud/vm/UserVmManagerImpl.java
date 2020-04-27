@@ -974,14 +974,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("Router start failed due to" + ex);
             }finally {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info(String.format("Rebooting vm %s%s.", vm.getInstanceName(), enterSetup? " entering BIOS setup" : " as is"));
+                    s_logger.info(String.format("Rebooting vm %s%s.", vm.getInstanceName(), enterSetup? " entering hardware setup menu" : " as is"));
                 }
                 Map<VirtualMachineProfile.Param,Object> params = null;
                 if(enterSetup) {
                     params = new HashMap();
-                    params.put(VirtualMachineProfile.Param.BootIntoBios, Boolean.TRUE);
+                    params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
                     if (s_logger.isTraceEnabled()) {
-                        s_logger.trace(String.format("Adding %s to paramlist", VirtualMachineProfile.Param.BootIntoBios));
+                        s_logger.trace(String.format("Adding %s to paramlist", VirtualMachineProfile.Param.BootIntoSetup));
                     }
                 }
                 _itMgr.reboot(vm.getUuid(), params);
@@ -2851,15 +2851,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         Map<VirtualMachineProfile.Param, Object> additonalParams = null;
-        if (cmd.getBootIntoBios() != null) {
+        if (cmd.getBootIntoSetup() != null) {
             if (additonalParams == null) {
                 additonalParams = new HashMap<>();
             }
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("Adding %s into the param map", VirtualMachineProfile.Param.BootIntoBios.getName()));
+                s_logger.trace(String.format("Adding %s into the param map", VirtualMachineProfile.Param.BootIntoSetup.getName()));
             }
 
-            additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, cmd.getBootIntoBios());
+            additonalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
         }
 
         return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
@@ -2892,11 +2892,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId + " corresponding to the vm");
         }
 
-        Boolean enterSetup = cmd.getBootIntoBios();
+        Boolean enterSetup = cmd.getBootIntoSetup();
         if (! (enterSetup == null || HypervisorType.VMware.equals(vmInstance.getHypervisorType()))) {
-            throw new InvalidParameterValueException("boot into bios does not make sense on " + vmInstance.getHypervisorType());
+            throw new InvalidParameterValueException("booting into a hardware setup menu does not make sense on " + vmInstance.getHypervisorType());
         }
-        UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, enterSetup == null ? false : cmd.getBootIntoBios());
+        UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, enterSetup == null ? false : cmd.getBootIntoSetup());
         if (userVm != null ) {
             // update the vmIdCountMap if the vm is in advanced shared network with out services
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
@@ -4331,8 +4331,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             additonalParams.put(VirtualMachineProfile.Param.BootType, ApiConstants.BootType.UEFI.toString());
             additonalParams.put(VirtualMachineProfile.Param.BootMode, map.get(ApiConstants.BootType.UEFI.toString()));
         }
-        if (cmd.getBootIntoBios() != null) {
-            additonalParams.put(VirtualMachineProfile.Param.BootIntoBios, cmd.getBootIntoBios());
+        if (cmd.getBootIntoSetup() != null) {
+            additonalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
         }
         return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
     }
@@ -4780,15 +4780,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.VmPassword, password);
         }
 
-        if(null != additionalParams && additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoBios)) {
+        if(null != additionalParams && additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoSetup)) {
             if (! HypervisorType.VMware.equals(vm.getHypervisorType())) {
-                throw new InvalidParameterValueException("BootIntoBios makes no sense for " + vm.getHypervisorType());
+                throw new InvalidParameterValueException(ApiConstants.BOOT_INTO_SETUP + " makes no sense for " + vm.getHypervisorType());
             }
-            Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoBios);
+            Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoSetup);
             if (s_logger.isTraceEnabled()) {
                     s_logger.trace("It was specified whether to enter setup mode: " + paramValue.toString());
             }
-            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoBios, paramValue);
+            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
         }
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());

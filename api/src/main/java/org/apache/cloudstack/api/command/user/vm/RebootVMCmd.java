@@ -53,8 +53,8 @@ public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
             required=true, description="The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name = ApiConstants.BOOT_INTO_BIOS, type = CommandType.BOOLEAN, required = false, description = "Boot into bios or not", since = "4.15.0.0")
-    private Boolean bootIntoBios;
+    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup menu or not", since = "4.15.0.0")
+    private Boolean bootIntoSetup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -64,8 +64,8 @@ public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
         return id;
     }
 
-    public Boolean getBootIntoBios() {
-        return bootIntoBios;
+    public Boolean getBootIntoSetup() {
+        return bootIntoSetup;
     }
 
     /////////////////////////////////////////////////////

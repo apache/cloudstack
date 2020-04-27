@@ -1413,10 +1413,10 @@
                     bootmode : bootmode
                 });
             }
-            var bootintobios = (args.data.bootintobios == "on");
-            if (bootintobios) {
+            var bootintosetup = (args.data.bootintosetup == "on");
+            if (bootintosetup) {
                 $.extend(deployVmData, {
-                    bootintobios : bootintobios
+                    bootintosetup : bootintosetup
                 });
             }
 
