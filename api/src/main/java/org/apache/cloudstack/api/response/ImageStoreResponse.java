@@ -60,6 +60,14 @@ public class ImageStoreResponse extends BaseResponse {
     @Param(description = "the scope of the image store")
     private ScopeType scope;
 
+    @SerializedName("disksizetotal")
+    @Param(description = "the total disk size of the host")
+    private Long diskSizeTotal;
+
+    @SerializedName("disksizeused")
+    @Param(description = "the host's currently used disk size")
+    private Long diskSizeUsed;
+
     public ImageStoreResponse() {
     }
 
@@ -130,6 +138,14 @@ public class ImageStoreResponse extends BaseResponse {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public void setDiskSizeTotal(Long diskSizeTotal) {
+        this.diskSizeTotal = diskSizeTotal;
+    }
+
+    public void setDiskSizeUsed(Long diskSizeUsed) {
+        this.diskSizeUsed = diskSizeUsed;
     }
 
 }
