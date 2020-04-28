@@ -1760,7 +1760,19 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             String userName = event.getResourceName();
             UsageVPNUserVO vpnUser = new UsageVPNUserVO(zoneId, event.getAccountId(), acct.getDomainId(), userId, userName, event.getCreateDate(), null);
-            _usageVPNUserDao.persist(vpnUser);
+            SearchCriteria<UsageVPNUserVO> sc = _usageVPNUserDao.createSearchCriteria();
+            sc.addAnd("zoneId", SearchCriteria.Op.EQ, zoneId);
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, acct.getDomainId());
+            sc.addAnd("userId", SearchCriteria.Op.EQ, userId);
+            sc.addAnd("userName", SearchCriteria.Op.EQ, userName);
+            sc.addAnd("deleted", SearchCriteria.Op.NULL);
+            List<UsageVPNUserVO> vuVOs = _usageVPNUserDao.search(sc, null);
+            if(vuVOs.isEmpty()){
+                _usageVPNUserDao.persist(vpnUser);
+            }else{
+                s_logger.debug("wont presist the User: " + userId + " assigned to account: " + event.getAccountId() + " because already exist an entry for this vpn user");
+            }
         } else if (EventTypes.EVENT_VPN_USER_REMOVE.equals(event.getType())) {
             SearchCriteria<UsageVPNUserVO> sc = _usageVPNUserDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
