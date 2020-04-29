@@ -55,6 +55,12 @@ const err = (error) => {
       this.$router.push({ path: '/exception/404' })
     }
   }
+  if (error.isAxiosError && !error.response) {
+    notification.warn({
+      message: error.message || 'Network Error',
+      description: 'Unable to reach the management server or a browser extension may be blocking the network request.'
+    })
+  }
   return Promise.reject(error)
 }
 
