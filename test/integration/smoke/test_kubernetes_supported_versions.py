@@ -258,21 +258,18 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         response = self.apiclient.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
         return response
 
-    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=20, interval=30):
+    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=40, interval=30):
         """Check if Kubernetes supported version ISO is in Ready state"""
 
-        while retries > -1:
+        while retries > 0:
             time.sleep(interval)
             list_versions_response = self.listKubernetesSupportedVersion(version_id)
             if not hasattr(list_versions_response, 'isostate') or not list_versions_response or not list_versions_response.isostate:
                 retries = retries - 1
                 continue
-            if 'Creating' == list_versions_response.isostate:
-                retries = retries - 1
-            elif 'Ready' == list_versions_response.isostate:
+            if 'Ready' == list_versions_response.isostate:
                 return
-            else:
-                raise Exception(
-                    "Failed to download Kubernetes supported version ISO: status - %s" %
-                    list_versions_response.isostate)
+            elif 'Failed' == list_versions_response.isostate:
+                raise Exception( "Failed to download template: status - %s" % template.status)
+            retries = retries - 1
         raise Exception("Kubernetes supported version Ready state timed out")
