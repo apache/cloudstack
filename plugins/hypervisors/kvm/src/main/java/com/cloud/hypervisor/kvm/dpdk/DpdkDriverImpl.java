@@ -75,7 +75,7 @@ public class DpdkDriverImpl extends AdapterBase implements DpdkDriver {
             stringBuilder.append(String.format("vlan_mode=access tag=%s ", vlan));
         }
         stringBuilder.append(String.format("-- set Interface %s type=%s", port, type));
-        
+
         if (vHostUserMode == DpdkHelper.VHostUserMode.CLIENT) {
             stringBuilder.append(String.format(" options:vhost-server-path=%s/%s",
                     dpdkOvsPath, port));
