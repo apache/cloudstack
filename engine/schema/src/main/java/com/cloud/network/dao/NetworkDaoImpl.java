@@ -740,6 +740,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
      *      - The requested exact PVLAN pair exists
      *      - The requested secondary VLAN ID is secondary VLAN ID of an existing PVLAN pair
      *      - The requested secondary VLAN ID is primary VLAN ID of an existing PVLAN pair
+     *      - The requested primary VLAN ID is secondary VLAN ID of an existing PVLAN pair
      */
     protected boolean isNetworkOverlappingRequestedPvlan(Integer existingPrimaryVlan, Integer existingSecondaryVlan, Network.PVlanType existingPvlanType,
                                                          Integer requestedPrimaryVlan, Integer requestedSecondaryVlan, Network.PVlanType requestedPvlanType) {
@@ -749,6 +750,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         }
         boolean exactMatch = existingPrimaryVlan.equals(requestedPrimaryVlan) && existingSecondaryVlan.equals(requestedSecondaryVlan);
         boolean secondaryVlanUsed = requestedPvlanType != Network.PVlanType.Promiscuous && requestedSecondaryVlan.equals(existingPrimaryVlan) || requestedSecondaryVlan.equals(existingSecondaryVlan);
+        boolean primaryVlanUsed = existingPvlanType != Network.PVlanType.Promiscuous && requestedPrimaryVlan.equals(existingSecondaryVlan);
         boolean isolatedMax = false;
         boolean promiscuousMax = false;
         if (requestedPvlanType == Network.PVlanType.Isolated && existingPrimaryVlan.equals(requestedPrimaryVlan) && existingPvlanType.equals(Network.PVlanType.Isolated)) {
@@ -756,7 +758,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         } else if (requestedPvlanType == Network.PVlanType.Promiscuous && existingPrimaryVlan.equals(requestedPrimaryVlan) && existingPvlanType == Network.PVlanType.Promiscuous) {
             promiscuousMax = true;
         }
-        return exactMatch || secondaryVlanUsed || isolatedMax || promiscuousMax;
+        return exactMatch || secondaryVlanUsed || primaryVlanUsed || isolatedMax || promiscuousMax;
     }
 
     protected Network.PVlanType getNetworkPvlanType(long networkId, List<Integer> existingPvlan) {

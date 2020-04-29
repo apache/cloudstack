@@ -24,8 +24,10 @@
 # it managed to work. But take note that the'res no checking over here for secondary vlan overlap. That has to be handled while
 # creating the pvlan!!
 
+exec 2>&1
+
 usage() {
-  printf "Usage: %s: (-A|-D) (-P/I/C) -b <bridge/switch> -p <primary vlan> -s <secondary vlan> -v <VM MAC> -h \n" $(basename $0) >&2
+  printf "Usage: %s: (-A|-D) (-P/I/C) -b <bridge/switch> -p <primary vlan> -s <secondary vlan> -m <VM MAC> -h \n" $(basename $0) >&2
   exit 2
 }
 
@@ -36,7 +38,7 @@ vm_mac=
 op=
 type=
 
-while getopts 'ADPCIb:p:s:i:d:m:v:n:h' OPTION
+while getopts 'ADPICb:p:s:m:h' OPTION
 do
   case $OPTION in
   A)  op="add"
@@ -55,7 +57,7 @@ do
       ;;
   s)  sec_vlan="$OPTARG"
       ;;
-  v)  vm_mac="$OPTARG"
+  m)  vm_mac="$OPTARG"
       ;;
   h)  usage
       exit 1
@@ -106,7 +108,7 @@ find_port() {
 }
 
 find_port_group() {
-  ovs-ofctl -O OpenFlow13 dump-groups $br | grep group_id=$1, | sed -e 's/.*actions=//g' -e 's/resubmit(,3)//g' -e 's/output://g' -e 's/^,//g' -e 's/,$//g' -e 's/,,/,/g' -e 's/ //g'
+  ovs-ofctl -O OpenFlow13 dump-groups $br | grep group_id=$1, | sed -e 's/.*type=all,//g' -e 's/bucket=actions=//g' -e 's/resubmit(,1)//g' -e 's/strip_vlan,//g' -e 's/pop_vlan,//g' -e 's/output://g' -e 's/^,//g' -e 's/,$//g' -e 's/,,/,/g' -e 's/ //g'
 }
 
 # try to find the physical link to outside, only supports eth and em prefix now
@@ -122,11 +124,7 @@ sec_vlan_header=$((4096 + $sec_vlan))
 # Since we're creating a separate group for just the promiscuous devices, adding 4096 so that it'll be unique. Hence we're restricted to 4096 vlans!
 # Not a big deal because if you have vxlan, why do you even need pvlan!!
 pri_vlan_ports=$(find_port_group $pri_vlan_header)
-# Be smart! If it's an isolated pvlan, why do we need a group for those ports ?
-if [ "$type" != "I" ]
-then
-  sec_vlan_ports=$(find_port_group $sec_vlan)
-fi
+sec_vlan_ports=$(find_port_group $sec_vlan)
 
 add_to_ports() {
   if [ -z "$1" ]
@@ -147,13 +145,15 @@ del_from_ports() {
 
 mod_group() {
   # Ensure that we don't delete the prom port group, because if we do, the rules that have it go away!
+  actions=`echo "$2" | sed -e 's/,/,bucket=actions=/g'`
   if [ "$1" == "$pri_vlan" ]
   then
+    actions=`echo "$2" | sed -e 's/,/,bucket=actions=strip_vlan,output:/g'`
     if [ -z "$2" ]
     then
-      ovs-ofctl -O OpenFlow13 mod-group --may-create $br group_id=$1,type=indirect,bucket=resubmit\(,3\)
+      ovs-ofctl -O OpenFlow13 mod-group --may-create $br group_id=$1,type=all,bucket=resubmit\(,1\)
     else
-      ovs-ofctl -O OpenFlow13 mod-group --may-create $br group_id=$1,type=indirect,bucket=resubmit\(,3\),$2
+      ovs-ofctl -O OpenFlow13 mod-group --may-create $br group_id=$1,type=all,bucket=resubmit\(,1\),bucket=actions=strip_vlan,output:$actions
     fi
     return
   fi
@@ -161,7 +161,7 @@ mod_group() {
   then
     ovs-ofctl -O OpenFlow13 del-groups $br group_id=$1
   else
-    ovs-ofctl -O OpenFlow13 mod-group --may-create $br group_id=$1,type=indirect,bucket=$2
+    ovs-ofctl -O OpenFlow13 mod-group --may-create $br group_id=$1,type=all,bucket=actions=$actions
   fi
 }
 
@@ -175,19 +175,26 @@ ovs-ofctl add-flow $br priority=0,actions=NORMAL
 if [ "$op" == "add" ]
 then
   # From our pri vlan
-  ovs-ofctl add-flow $br table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=$vm_mac,actions=strip_vlan,resubmit\(,1\)
-  # From promiscuous
+  if [ "$type" == "P" ]
+  then
+    ovs-ofctl add-flow $br table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=$vm_mac,actions=strip_vlan,strip_vlan,output:$vm_port
+  else
+    ovs-ofctl add-flow $br table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=$vm_mac,actions=strip_vlan,resubmit\(,1\)
+  fi
+
+  # Accept from promiscuous
   ovs-ofctl add-flow $br table=1,priority=70,dl_vlan=$pri_vlan,dl_dst=$vm_mac,actions=strip_vlan,output:$vm_port
   # From others in our own community
   if [ "$type" == "C" ]
   then
     ovs-ofctl add-flow $br table=1,priority=70,dl_vlan=$sec_vlan,dl_dst=$vm_mac,actions=strip_vlan,output:$vm_port
   fi
-  # If we're promiscuous, accept anything because it's passed the first header
-  if [ "$type" == "P" ]
+  # Allow only dhcp to isolated vm
+  if [ "$type" == "I" ]
   then
-    ovs-ofctl add-flow $br table=1,priority=70,dl_dst=$vm_mac,actions=strip_vlan,output:$vm_port
+    ovs-ofctl add-flow $br table=1,priority=70,udp,dl_vlan=$sec_vlan,dl_dst=$vm_mac,tp_src=67,actions=strip_vlan,output:$vm_port
   fi
+  
   # Security101
   ovs-ofctl add-flow $br table=1,priority=0,actions=drop
 
@@ -196,40 +203,39 @@ then
   # QinQ the packet. Outter header is the primary vlan and inner is the secondary
   ovs-ofctl add-flow -O OpenFlow13 $br table=0,priority=50,vlan_tci=0x0000,dl_src=$vm_mac,actions=push_vlan:0x8100,set_field:$sec_vlan_header-\>vlan_vid,push_vlan:0x8100,set_field:$pri_vlan_header-\>vlan_vid,resubmit:$trunk_port
 
-  # Broadcasats
+  # BROADCASTS
   # Create the respective groups
-  # To output anything that comes from a promiscuous device
-  pri_vlan_ports=$(add_to_ports "$pri_vlan_ports" "$vm_port")
-  mod_group $pri_vlan_header $pri_vlan_ports
-  if [ "$type" != "I" ]
+  # pri_vlan_ports are the list of ports of all iso & comm dev for a give pvlan
+  if [ "$type" != "P" ]
   then
-    # To output anything that comes from the same sec vlan
-    sec_vlan_ports=$(add_to_ports "$sec_vlan_ports" "$vm_port")
-    mod_group $sec_vlan $sec_vlan_ports
+    pri_vlan_ports=$(add_to_ports "$pri_vlan_ports" "$vm_port")
+    mod_group $pri_vlan_header $pri_vlan_ports
   fi
-  # Group id 9999 for braodcasts sent by a vm on this switch. One  action is to to output it to the trunk port, the other to process it ourselves
-  # Chose 9999 since the vlan range goes upto 4096, so it's more than double of that
-  ovs-ofctl -O OpenFlow13 mod-group --may-create $br group_id=9999,type=all,bucket=action:output:$trunk_port,bucket=action:strip_vlan,resubmit\(,1\)
-  
-  # From a device on the same switch
-  ovs-ofctl add-flow $br table=0,priority=80,dl_vlan=$pri_vlan,dl_src=$vm_mac,dl_dst=ff:ff:ff:ff:ff:ff,actions=group:9999
-  # From our pri vlan
-  ovs-ofctl add-flow $br table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,resubmit\(,1\)
-  # From a promiscuous device
+  # sec_vlan_ports are the list of ports for a given secondary pvlan
+  sec_vlan_ports=$(add_to_ports "$sec_vlan_ports" "$vm_port")
+  mod_group $sec_vlan $sec_vlan_ports
+
+  # Ensure we have the promiscuous port group because if we don't, it'll fail to create the following rule
+  prom_ports=$(find_port_group $pri_vlan)
+  mod_group $pri_vlan $prom_ports
+
+  # From a device on this switch. Pass it to the trunk port and process it ourselves for other devices on the switch.
+  ovs-ofctl add-flow $br table=0,priority=300,dl_vlan=$pri_vlan,dl_src=$vm_mac,dl_dst=ff:ff:ff:ff:ff:ff,actions=output:$trunk_port,strip_vlan,group:$pri_vlan
+  # Got a packet from the trunk port from out pri vlan, pass it to pri_vlan_group which sends the packet out to the promiscuous devices as well as passes it onto table 1
+  ovs-ofctl add-flow $br table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$pri_vlan
+  # From a promiscuous device, so send it to all community and isolated devices on this switch. Passed to all promiscuous devices in the prior step ^^
   ovs-ofctl add-flow $br table=1,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$pri_vlan_header
+  # Since it's from a community, gotta braodcast it to all community devices
   if [ "$type" == "C" ]
   then
-    # Ensure we have the promiscuous port group because if we don't, it'll fail to create the following rule
-    prom_ports=$(find_port_group $pri_vlan)
-    mod_group $pri_vlan $prom_ports
-    # Since it's from a community, gotta braodcast it to all community and promiscuous ports
-    ovs-ofctl add-flow $br table=1,priority=70,dl_vlan=$sec_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$sec_vlan,group:$pri_vlan
+    ovs-ofctl add-flow $br table=1,priority=70,dl_vlan=$sec_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$sec_vlan
   fi
-  # I'm promiscuous, accept anything because it's passed the first header
-  if [ "$type" == "P" ]
+  # Allow only dhcp form isolated router to isolated vm
+  if [ "$type" == "I" ]
   then
-    ovs-ofctl add-flow $br table=1,priority=60,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$pri_vlan
+    ovs-ofctl add-flow $br table=1,priority=70,udp,dl_vlan=$sec_vlan,tp_src=67,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$sec_vlan
   fi
+  
 else
   # Delete whatever we've added that's vm specific
   ovs-ofctl del-flows $br --strict table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=$vm_mac
@@ -241,10 +247,11 @@ else
   then
     ovs-ofctl del-flows $br --strict table=1,priority=70,dl_vlan=$sec_vlan,dl_dst=$vm_mac
   fi
-  if [ "$type" == "P" ]
+  if [ "$type" == "I" ]
   then
-    ovs-ofctl del-flows $br --strict table=1,priority=70,dl_dst=$vm_mac
+    ovs-ofctl del-flows $br --strict table=1,priority=70,udp,dl_vlan=$sec_vlan,dl_dst=$vm_mac,tp_src=67
   fi
+
   ovs-ofctl del-flows $br --strict table=0,priority=60,dl_vlan=$pri_vlan,dl_src=$vm_mac
   ovs-ofctl del-flows $br --strict table=0,priority=50,vlan_tci=0x0000,dl_src=$vm_mac
   # For some ovs versions
@@ -253,15 +260,11 @@ else
   # Remove the port from the groups
   pri_vlan_ports=$(del_from_ports "$pri_vlan_ports" "$vm_port")
   mod_group $pri_vlan_header $pri_vlan_ports
-  if [ "$type" != "I" ]
-  then
-    # To output anything that comes from the same sec vlan
-    sec_vlan_ports=$(del_from_ports "$sec_vlan_ports" "$vm_port")
-    mod_group $sec_vlan $sec_vlan_ports
-  fi
+  sec_vlan_ports=$(del_from_ports "$sec_vlan_ports" "$vm_port")
+  mod_group $sec_vlan $sec_vlan_ports
 
   # Remove vm specific rules
-  ovs-ofctl del-flows $br --strict table=0,priority=80,dl_vlan=$pri_vlan,dl_src=$vm_mac,dl_dst=ff:ff:ff:ff:ff:ff
+  ovs-ofctl del-flows $br --strict table=0,priority=300,dl_vlan=$pri_vlan,dl_src=$vm_mac,dl_dst=ff:ff:ff:ff:ff:ff
 
   # If no more vms exist on this host, clear up all the rules
   result=`ovs-vsctl find port tag=$pri_vlan`
@@ -269,16 +272,6 @@ else
   then
     ovs-ofctl del-flows $br --strict table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff
     ovs-ofctl del-flows $br --strict table=1,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff
-    ovs-ofctl del-flows $br --strict table=1,priority=70,dl_vlan=$sec_vlan,dl_dst=ff:ff:ff:ff:ff:ff
-    ovs-ofctl del-flows $br --strict table=1,priority=60,dl_dst=ff:ff:ff:ff:ff:ff
     ovs-ofctl -O OpenFlow13 del-groups $br group_id=$pri_vlan
-  fi
-
-  # Remove the remaining rules / groups if there's no vm with pvlan on this host
-  result=`ovs-ofctl dump-flows $br | grep -e "actions=group:9999$"`
-  if [ -z "$result" ]
-  then
-    ovs-ofctl del-flows $br --strict table=1,priority=0
-    ovs-ofctl -O OpenFlow13 del-groups $br group_id=9999
   fi
 fi
