@@ -804,6 +804,7 @@
 "ovm3vip": "Master Vip IP",
 "ovmnetworklabel": "OVM Traffic Label",
 "palp": "Palo Alto Log Profile",
+"params": "Parameters",
 "parentName": "Parent",
 "passive": "Passive",
 "password": "Password",

@@ -80,7 +80,8 @@ export default {
         type: {
           options: ['ping', 'traceroute', 'arping']
         }
-      }
+      },
+      response: (result) => { return result && result.diagnostics ? `<strong>Output</strong>:<br/>${result.diagnostics.stdout}<br/><strong>Error</strong>: ${result.diagnostics.stderr}<br/><strong>Exit Code</strong>: ${result.diagnostics.exitcode}` : 'Invalid response' }
     },
     {
       api: 'getDiagnosticsData',
