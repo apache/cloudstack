@@ -20,7 +20,5 @@ node_js:
   - 12
 cache:
   npm: false
-before_install:
-  - npm i -g npm@version-number
 script:
   - npm run lint && npm run build
