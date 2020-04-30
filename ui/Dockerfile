@@ -17,13 +17,18 @@
 
 FROM node:10-buster AS build
 
+MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
+LABEL Description="Apache CloudStack Primate; Modern role-base progressive UI for Apache CloudStack"
+LABEL Vendor="Apache.org"
+LABEL License=ApacheV2
+LABEL Version=0.4.0
+
 WORKDIR /build
 
-RUN apt-get -y update && \
-	apt-get -y upgrade
+RUN apt-get -y update && apt-get -y upgrade
 
 COPY . /build/
-RUN	npm install
+RUN npm install
 RUN npm run build
 
 FROM nginx:alpine AS runtime
