@@ -977,7 +977,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     s_logger.info(String.format("Rebooting vm %s%s.", vm.getInstanceName(), enterSetup? " entering hardware setup menu" : " as is"));
                 }
                 Map<VirtualMachineProfile.Param,Object> params = null;
-                if(enterSetup) {
+                if (enterSetup) {
                     params = new HashMap();
                     params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
                     if (s_logger.isTraceEnabled()) {
@@ -2893,7 +2893,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         Boolean enterSetup = cmd.getBootIntoSetup();
-        if (! (enterSetup == null || HypervisorType.VMware.equals(vmInstance.getHypervisorType()))) {
+        if (enterSetup != null && !HypervisorType.VMware.equals(vmInstance.getHypervisorType())) {
             throw new InvalidParameterValueException("booting into a hardware setup menu does not make sense on " + vmInstance.getHypervisorType());
         }
         UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, enterSetup == null ? false : cmd.getBootIntoSetup());

@@ -400,7 +400,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
     }
 
-    @Override public boolean trackVmHostChange() {
+    @Override
+    public boolean trackVmHostChange() {
         return true;
     }
 

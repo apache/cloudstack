@@ -1727,7 +1727,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
             bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
         }
-        if(null == bootMode) {
+        if (null == bootMode) {
             bootMode = ApiConstants.BootType.BIOS.toString();
         }
 
