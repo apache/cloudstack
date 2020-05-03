@@ -231,7 +231,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             return False
 
     @classmethod
-    def waitForTemplateReadyState(cls, template_id, retries=30, interval=30):
+    def waitForTemplateReadyState(cls, template_id, retries=30, interval=60):
         """Check if template download will finish"""
         while retries > 0:
             time.sleep(interval)
@@ -255,7 +255,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         raise Exception("Template download timed out")
 
     @classmethod
-    def waitForKubernetesSupportedVersionIsoReadyState(cls, version_id, retries=40, interval=30):
+    def waitForKubernetesSupportedVersionIsoReadyState(cls, version_id, retries=30, interval=60):
         """Check if Kubernetes supported version ISO is in Ready state"""
 
         while retries > 0:

@@ -258,7 +258,7 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         response = self.apiclient.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
         return response
 
-    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=40, interval=30):
+    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=30, interval=60):
         """Check if Kubernetes supported version ISO is in Ready state"""
 
         while retries > 0:
