@@ -903,20 +903,28 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<Long> orderHostsByFreeCapacity(Long clusterId, short capacityTypeForOrdering){
+    public List<Long> orderHostsByFreeCapacity(Long zoneId, Long clusterId, short capacityTypeForOrdering){
          TransactionLegacy txn = TransactionLegacy.currentTxn();
          PreparedStatement pstmt = null;
          List<Long> result = new ArrayList<Long>();
          StringBuilder sql = new StringBuilder(ORDER_HOSTS_BY_FREE_CAPACITY_PART1);
-        if(clusterId != null) {
-            sql.append("AND cluster_id = ?");
-        }
-        sql.append(ORDER_HOSTS_BY_FREE_CAPACITY_PART2);
+         if (zoneId != null) {
+             sql.append(" AND data_center_id = ?");
+         }
+         if (clusterId != null) {
+             sql.append(" AND cluster_id = ?");
+         }
+         sql.append(ORDER_HOSTS_BY_FREE_CAPACITY_PART2);
          try {
              pstmt = txn.prepareAutoCloseStatement(sql.toString());
              pstmt.setShort(1, capacityTypeForOrdering);
-             if(clusterId != null) {
-                pstmt.setLong(2, clusterId);
+             int index = 2;
+             if (zoneId != null) {
+                 pstmt.setLong(index, zoneId);
+                 index ++;
+             }
+             if (clusterId != null) {
+                 pstmt.setLong(index, clusterId);
              }
 
              ResultSet rs = pstmt.executeQuery();
