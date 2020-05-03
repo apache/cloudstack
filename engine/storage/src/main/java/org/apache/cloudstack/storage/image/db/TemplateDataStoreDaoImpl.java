@@ -299,7 +299,8 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     @Override
     public List<TemplateDataStoreVO> listByTemplateZoneDownloadStatus(long templateId, Long zoneId, Status... status) {
         // get all elgible image stores
-        List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        //List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> imgStores = _storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         if (imgStores != null) {
             List<TemplateDataStoreVO> result = new ArrayList<TemplateDataStoreVO>();
             for (DataStore store : imgStores) {
@@ -326,7 +327,8 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     @Override
     public TemplateDataStoreVO findByTemplateZoneDownloadStatus(long templateId, Long zoneId, Status... status) {
         // get all elgible image stores
-        List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        //List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> imgStores = _storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         if (imgStores != null) {
             for (DataStore store : imgStores) {
                 List<TemplateDataStoreVO> sRes = listByTemplateStoreDownloadStatus(templateId, store.getId(), status);
@@ -423,7 +425,8 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         // get all elgible image stores
         List<DataStore> imgStores = null;
         if (role == DataStoreRole.Image) {
-            imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+            //imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+            imgStores = _storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         } else if (role == DataStoreRole.ImageCache) {
             imgStores = _storeMgr.getImageCacheStores(new ZoneScope(zoneId));
         }
@@ -441,7 +444,8 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     @Override
     public TemplateDataStoreVO findByTemplateZoneReady(long templateId, Long zoneId) {
         List<DataStore> imgStores = null;
-        imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        //imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        imgStores = _storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         if (imgStores != null) {
             Collections.shuffle(imgStores);
             for (DataStore store : imgStores) {

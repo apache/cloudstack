@@ -1358,7 +1358,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // so here we don't need to issue DeleteCommand to resource anymore, only need to remove db entry.
         try {
             // Cleanup templates in template_store_ref
-            List<DataStore> imageStores = _dataStoreMgr.getImageStoresByScope(new ZoneScope(null));
+            List<DataStore> imageStores = _dataStoreMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(null));
             for (DataStore store : imageStores) {
                 try {
                     long storeId = store.getId();
@@ -2142,6 +2142,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         // add object store
         return discoverImageStore(name, url, providerName, null, details);
+    }
+
+    @Override
+    public ImageStore updateImageStoreStatus(Long id, Boolean readonly) {
+        // Input validation
+        ImageStoreVO imageStoreVO = _imageStoreDao.findById(id);
+        if (imageStoreVO == null) {
+            throw new IllegalArgumentException("Unable to find image store with ID: " + id);
+        }
+        imageStoreVO.setReadonly(readonly);
+        _imageStoreDao.update(id, imageStoreVO);
+        return imageStoreVO;
     }
 
     private void duplicateCacheStoreRecordsToRegionStore(long storeId) {

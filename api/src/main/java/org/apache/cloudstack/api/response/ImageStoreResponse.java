@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -25,6 +23,7 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ImageStore.class)
 public class ImageStoreResponse extends BaseResponse {
@@ -59,6 +58,10 @@ public class ImageStoreResponse extends BaseResponse {
     @SerializedName("scope")
     @Param(description = "the scope of the image store")
     private ScopeType scope;
+
+    @SerializedName("readonly")
+    @Param(description = "defines if store is read-only")
+    private Boolean readonly;
 
     public ImageStoreResponse() {
     }
@@ -132,4 +135,11 @@ public class ImageStoreResponse extends BaseResponse {
         this.protocol = protocol;
     }
 
+    public Boolean getReadonly() {
+        return readonly;
+    }
+
+    public void setReadonly(Boolean readonly) {
+        this.readonly = readonly;
+    }
 }

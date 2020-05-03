@@ -31,6 +31,8 @@ public interface ImageStoreDao extends GenericDao<ImageStoreVO, Long> {
 
     List<ImageStoreVO> findByScope(ZoneScope scope);
 
+    List<ImageStoreVO> findByScopeExcludingReadOnly(ZoneScope scope);
+
     List<ImageStoreVO> findRegionImageStores();
 
     List<ImageStoreVO> findImageCacheByScope(ZoneScope scope);

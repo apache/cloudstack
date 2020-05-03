@@ -54,6 +54,7 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -67,7 +68,6 @@ import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.storage.template.UploadManager;
 import org.apache.cloudstack.storage.template.UploadManagerImpl;
@@ -1060,6 +1060,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
 
+        if (DataStoreRole.Image == srcDataStore.getRole()  && DataStoreRole.Image == destDataStore.getRole()) {
+            return copyFromNfsToNfs(cmd);
+        }
+
         if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
             return createTemplateFromSnapshot(cmd);
         }
@@ -1264,7 +1268,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected File findFile(String path) {
-
         File srcFile = _storage.getFile(path);
         if (!srcFile.exists()) {
             srcFile = _storage.getFile(path + ".qcow2");
@@ -1283,6 +1286,95 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         return srcFile;
+    }
+
+    protected Answer copyFromNfsToNfs(CopyCommand cmd) {
+        s_logger.info("PEARL - copying from nfs to nfs");
+        try {
+            long randSleep = (long) (Math.random() * (((600 - 300) + 1) + 300 * 1000));
+            Thread.sleep(randSleep);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+        final DataTO srcData = cmd.getSrcTO();
+        final DataTO destData = cmd.getDestTO();
+        DataStoreTO srcDataStore = srcData.getDataStore();
+        NfsTO srcStore = (NfsTO)srcDataStore;
+        DataStoreTO destDataStore = destData.getDataStore();
+        final NfsTO destStore = (NfsTO) destDataStore;
+        try {
+            s_logger.info("PEARL - src store url = "+ srcStore.getUrl());
+            s_logger.info("PEARL - dest store url = "+ destStore.getUrl());
+            File srcFile = new File(getDir(srcStore.getUrl(), _nfsVersion), srcData.getPath());
+            s_logger.info("PEARL - src file = "+ srcFile.getPath() + " src filename: "+ srcFile.getName());
+            File destFile = new File(getDir(destStore.getUrl(), _nfsVersion), destData.getPath());
+            s_logger.info("PEARL - dest file = "+destFile.getPath()+ " dest filename = "+destFile.getName());
+            ImageFormat format = getTemplateFormat(srcFile.getName());
+            s_logger.info("PEARL - file format = "+format);
+
+            if (srcFile == null) {
+                return new CopyCmdAnswer("Can't find src file:" + srcFile);
+            }
+
+            if (srcData instanceof TemplateObjectTO || srcData instanceof VolumeObjectTO) {
+                File srcDir = null;
+                if (srcFile.isFile()) {
+                    srcDir = new File(srcFile.getParent());
+                }
+                File destDir = null;
+                if (destFile.isFile()) {
+                    destDir = new File(destFile.getParent());
+                }
+
+                s_logger.info("PEARL - src dir == " + srcDir);
+                s_logger.info("PEARL - dest dir == " + destDir);
+                try {
+                    FileUtils.copyDirectory((srcDir == null ? srcFile : srcDir), (destDir == null? destFile : destDir));
+                    //FileUtils.copyFile(srcFile, destFile);
+                } catch (IOException e) {
+                    String msg = "PEARL - Failed to copy file to destination";
+                    s_logger.info(msg);
+                    return new CopyCmdAnswer(msg);
+                }
+            } else {
+                destFile = new File(destFile, srcFile.getName());
+                try {
+                    FileUtils.copyFile(srcFile, destFile);
+                } catch (IOException e) {
+                    String msg = "PEARL - Failed to copy file to destination";
+                    s_logger.info(msg);
+                    return new CopyCmdAnswer(msg);
+                }
+            }
+
+            DataTO retObj = null;
+            // TODO: remove it maybe ?
+            if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+                TemplateObjectTO newTemplate = new TemplateObjectTO();
+                s_logger.info("PEARL - src filename =  "+ srcFile.getName() + " dest install path = "+destData.getPath() + File.separator + srcFile.getName());
+                newTemplate.setPath(destData.getPath() + File.separator + srcFile.getName());
+                newTemplate.setSize(getVirtualSize(srcFile, format));
+                s_logger.info("PEARL - file size = "+ getVirtualSize(srcFile, format));
+                newTemplate.setPhysicalSize(srcFile.length());
+                s_logger.info("PEARL - file phy size = "+ getVirtualSize(srcFile, format));
+                newTemplate.setFormat(format);
+
+                retObj = newTemplate;
+            } else if (destData.getObjectType() == DataObjectType.VOLUME) {
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setPath(destData.getPath() + File.separator + srcFile.getName());
+                newVol.setSize(srcFile.length());
+                retObj = newVol;
+            } else if (destData.getObjectType() == DataObjectType.SNAPSHOT) {
+                SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+                newSnapshot.setPath(destData.getPath() + File.separator + destFile.getName());
+                retObj = newSnapshot;
+            }
+            return new CopyCmdAnswer(retObj);
+            } catch (Exception e) {
+            s_logger.error("failed to copy file" + srcData.getPath(), e);
+            return new CopyCmdAnswer("failed to copy file" + srcData.getPath() + e.toString());
+        }
     }
 
     protected Answer copyFromNfsToS3(CopyCommand cmd) {
@@ -2443,6 +2535,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
+    private String getDir(String secUrl, Integer nfsVersion) {
+        try {
+            URI uri = new URI(secUrl);
+            String dir = mountUri(uri, nfsVersion);
+            return _parent + "/" + dir;
+        } catch (Exception e) {
+            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
     @Override
     synchronized public String getRootDir(String secUrl, Integer nfsVersion) {
         if (!_inSystemVM) {
@@ -2502,6 +2606,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        // TODO: create GS for number of threads for migrate job
         _eth1ip = (String)params.get("eth1ip");
         _eth1mask = (String)params.get("eth1mask");
         if (_eth1ip != null) { // can only happen inside service vm

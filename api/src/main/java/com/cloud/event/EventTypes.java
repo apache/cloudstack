@@ -229,6 +229,7 @@ public class EventTypes {
     public static final String EVENT_TEMPLATE_EXTRACT = "TEMPLATE.EXTRACT";
     public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";
     public static final String EVENT_TEMPLATE_CLEANUP = "TEMPLATE.CLEANUP";
+    public static final String EVENT_TEMPLATE_MIGRATE = "TEMPLATE.MIGRATE";
 
     // Volume Events
     public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";

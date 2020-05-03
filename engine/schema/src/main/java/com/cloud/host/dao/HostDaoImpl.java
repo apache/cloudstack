@@ -1265,6 +1265,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
+    @Override
+    public HostVO findByName(String name) {
+        SearchCriteria<HostVO> sc = NameSearch.create();
+        sc.setParameters("name", name);
+        return findOneBy(sc);
+    }
+
     private ResultSet executeSqlGetResultsetForMethodFindHostInZoneToExecuteCommand(HypervisorType hypervisorType, long zoneId, TransactionLegacy tx, String sql) throws SQLException {
         PreparedStatement pstmt = tx.prepareAutoCloseStatement(sql);
         pstmt.setString(1, Objects.toString(hypervisorType));
