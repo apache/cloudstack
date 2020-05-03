@@ -777,46 +777,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${cs.jacoco-plugin.version}</version>
-            </plugin>
-            <plugin>
-                <groupId>org.openclover</groupId>
-                <artifactId>clover-maven-plugin</artifactId>
-                <version>${cs.clover-maven-plugin.version}</version>
-                <configuration>
-                    <flushPolicy>threaded</flushPolicy>
-                    <flushInterval>100</flushInterval>
-                    <targetPercentage>0%</targetPercentage>
-                    <generateHtml>true</generateHtml>
-                    <generateXml>true</generateXml>
-                    <generateHistorical>true</generateHistorical>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>main</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>instrument</goal>
-                            <goal>aggregate</goal>
-                            <goal>check</goal>
-                            <goal>log</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>site</id>
-                        <phase>pre-site</phase>
-                        <goals>
-                            <goal>instrument</goal>
-                            <goal>aggregate</goal>
-                            <!-- We save a history point in order to have data to generate a historical report -->
-                            <goal>save-history</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -1086,22 +1046,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.owasp</groupId>
-                    <artifactId>dependency-check-maven</artifactId>
-                    <version>${cs.owasp.dependency-checker-plugin.version}</version>
-                    <configuration>
-                        <skipProvidedScope>true</skipProvidedScope>
-                        <skipRuntimeScope>true</skipRuntimeScope>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${cs.compiler-plugin.version}</version>
@@ -1214,33 +1158,13 @@
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
-                        <argLine>@{argLine} -Djava.security.egd=file:/dev/./urandom -noverify</argLine>
+                        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${cs.failsafe-plugin.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.jacoco</groupId>
-                    <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>${cs.jacoco-plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <id>prepare-coverage-agent</id>
-                            <goals>
-                                <goal>prepare-agent</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>produce-coverage-reports</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>report</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1252,18 +1176,6 @@
     </build>
     <reporting>
         <plugins>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>${cs.owasp.dependency-checker-plugin.version}</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>aggregate</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
@@ -1282,19 +1194,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>${cs.resources-plugin.version}</version>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${cs.jacoco-plugin.version}</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <!-- select non-aggregate reports -->
-                            <report>report</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
             </plugin>
         </plugins>
     </reporting>
@@ -1346,6 +1245,125 @@
             <modules>
                 <module>vmware-base</module>
             </modules>
+        </profile>
+        <profile>
+            <id>quality</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${cs.jacoco-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.openclover</groupId>
+                        <artifactId>clover-maven-plugin</artifactId>
+                        <version>${cs.clover-maven-plugin.version}</version>
+                        <configuration>
+                            <flushPolicy>threaded</flushPolicy>
+                            <flushInterval>100</flushInterval>
+                            <targetPercentage>0%</targetPercentage>
+                            <generateHtml>true</generateHtml>
+                            <generateXml>true</generateXml>
+                            <generateHistorical>true</generateHistorical>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>main</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>instrument</goal>
+                                    <goal>aggregate</goal>
+                                    <goal>check</goal>
+                                    <goal>log</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>site</id>
+                                <phase>pre-site</phase>
+                                <goals>
+                                    <goal>instrument</goal>
+                                    <goal>aggregate</goal>
+                                    <!-- We save a history point in order to have data to generate a historical report -->
+                                    <goal>save-history</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.owasp</groupId>
+                            <artifactId>dependency-check-maven</artifactId>
+                            <version>${cs.owasp.dependency-checker-plugin.version}</version>
+                            <configuration>
+                                <skipProvidedScope>true</skipProvidedScope>
+                                <skipRuntimeScope>true</skipRuntimeScope>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <goals>
+                                        <goal>check</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.jacoco</groupId>
+                            <artifactId>jacoco-maven-plugin</artifactId>
+                            <version>${cs.jacoco-plugin.version}</version>
+                            <executions>
+                                <execution>
+                                    <id>prepare-coverage-agent</id>
+                                    <goals>
+                                        <goal>prepare-agent</goal>
+                                    </goals>
+                                </execution>
+                                <execution>
+                                    <id>produce-coverage-reports</id>
+                                    <phase>test</phase>
+                                    <goals>
+                                        <goal>report</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+            <reporting>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <version>${cs.owasp.dependency-checker-plugin.version}</version>
+                        <reportSets>
+                            <reportSet>
+                                <reports>
+                                    <report>aggregate</report>
+                                </reports>
+                            </reportSet>
+                        </reportSets>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${cs.jacoco-plugin.version}</version>
+                        <reportSets>
+                            <reportSet>
+                                <reports>
+                                    <!-- select non-aggregate reports -->
+                                    <report>report</report>
+                                </reports>
+                            </reportSet>
+                        </reportSets>
+                    </plugin>
+                </plugins>
+            </reporting>
         </profile>
         <profile>
             <id>disablecheckstyle</id>

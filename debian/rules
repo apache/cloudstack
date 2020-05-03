@@ -141,7 +141,7 @@ override_dh_auto_install:
 	cp -r test/integration/* $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests/
 
 override_dh_systemd_enable:
-	dh_systemd_enable -pcloudstack-management -pcloudstack-agent -pcloudstack-usage -pcloudstack-rolling-maintenance@
+	dh_systemd_enable -pcloudstack-management -pcloudstack-agent -pcloudstack-usage
 
 override_dh_strip_nondeterminism:
 	# Disable dh_strip_nondeterminism to speed up the build
