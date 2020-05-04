@@ -3870,7 +3870,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return getVDIbyUuid(conn, volumePath);
     }
 
-    protected VDI mount(final Connection conn, final String vmName, final DiskTO volume) throws XmlRpcException, XenAPIException {
+    public VDI mount(final Connection conn, final String vmName, final DiskTO volume) throws XmlRpcException, XenAPIException {
         final DataTO data = volume.getData();
         final Volume.Type type = volume.getType();
         if (type == Volume.Type.ISO) {
@@ -3913,7 +3913,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } catch (final URISyntaxException e) {
                 throw new CloudRuntimeException("Incorrect uri " + mountpoint, e);
             }
-            final SR isoSr = createIsoSRbyURI(conn, uri, vmName, false);
+            final SR isoSr = createIsoSRbyURI(conn, uri, vmName, true);
 
             final String isoname = isoPath.substring(index + 1);
 
@@ -4099,17 +4099,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             throw new CloudRuntimeException("There are " + (vms == null ? "0" : vms.size()) + " VMs named " + vmName);
         }
         final VM vm = vms.iterator().next();
-
-        if (vmDataList != null) {
-            // create SR
-            SR sr = createLocalIsoSR(conn, _configDriveSRName + getHost().getIp());
-
-            // 1. create vm data files
-            createVmdataFiles(vmName, vmDataList, configDriveLabel);
-
-            // 2. copy config drive iso to host
-            copyConfigDriveIsoToHost(conn, sr, vmName);
-        }
 
         final Set<VBD> vbds = vm.getVBDs(conn);
         for (final VBD vbd : vbds) {
@@ -5451,7 +5440,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public SR createLocalIsoSR(final Connection conn, final String srName) throws XenAPIException, XmlRpcException {
 
         // if config drive sr already exists then return
-        SR sr = getSRByNameLabelandHost(conn, _configDriveSRName + _host.getIp());
+        SR sr = getSRByNameLabelandHost(conn, srName);
 
         if (sr != null) {
             s_logger.debug("Config drive SR already exist, returing it");
