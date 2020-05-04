@@ -24,7 +24,7 @@
         layout="vertical">
 
         <a-form-item :label="$t('ispublic')" v-show="this.isAdmin()">
-          <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :defaultChecked="this.offeringIsPublic" @change="val => { this.offeringIsPublic = val }" />
+          <a-switch v-decorator="['ispublic', { initialValue: this.offeringIsPublic }]" :checked="this.offeringIsPublic" @change="val => { this.offeringIsPublic = val }" />
         </a-form-item>
 
         <a-form-item :label="$t('domainid')" v-if="!this.offeringIsPublic">
@@ -36,7 +36,8 @@
                   required: true,
                   message: 'Please select option'
                 }
-              ]
+              ],
+              initialValue: this.selectedDomains
             }]"
             showSearch
             optionFilterProp="children"
@@ -44,7 +45,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('label.domain')">
+            :placeholder="this.apiParams.domainid.description">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -73,7 +74,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.$t('zone')">
+            :placeholder="this.apiParams.zoneid.description">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -103,7 +104,6 @@ export default {
   },
   data () {
     return {
-      offeringType: '',
       selectedDomains: [],
       selectedZones: [],
       offeringIsPublic: false,
@@ -116,16 +116,6 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-  },
-  created () {
-    this.zones = [
-      {
-        id: 'all',
-        name: this.$t('label.all.zone')
-      }
-    ]
-  },
-  mounted () {
     switch (this.$route.meta.name) {
       case 'computeoffering':
         this.offeringType = 'ServiceOffering'
@@ -142,6 +132,21 @@ export default {
       default:
         this.offeringType = this.$route.meta.name
     }
+    this.apiParams = {}
+    this.apiParamsConfig = this.$store.getters.apis['update' + this.offeringType] || {}
+    this.apiParamsConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
+  },
+  created () {
+    this.zones = [
+      {
+        id: 'all',
+        name: this.$t('label.all.zone')
+      }
+    ]
+  },
+  mounted () {
     this.fetchData()
   },
   methods: {
@@ -186,7 +191,7 @@ export default {
         for (var i = 0; i < offeringDomainIds.length; i++) {
           for (var j = 0; j < this.domains.length; j++) {
             if (offeringDomainIds[i] === this.domains[j].id) {
-              this.selectedDomains = this.selectedDomains.concat(j)
+              this.selectedDomains.push(j)
             }
           }
         }
@@ -195,9 +200,11 @@ export default {
           this.offeringIsPublic = true
         }
       }
-      this.form.setFieldsValue({
-        domainid: this.selectedDomains
-      })
+      if ('domainid' in this.form.fieldsStore.fieldsMeta) {
+        this.form.setFieldsValue({
+          domainid: this.selectedDomains
+        })
+      }
     },
     updateZoneSelection () {
       var offeringZoneIds = this.resource.zoneid
@@ -207,7 +214,7 @@ export default {
         for (var i = 0; i < offeringZoneIds.length; i++) {
           for (var j = 0; j < this.zones.length; j++) {
             if (offeringZoneIds[i] === this.zones[j].id) {
-              this.selectedZones = this.selectedZones.concat(j)
+              this.selectedZones.push(j)
             }
           }
         }
