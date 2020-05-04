@@ -203,6 +203,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private final static int USER_DEVICE_START_ID = 3;
 
+    private final static String VM_NAME_ISO_SUFFIX = "-ISO";
+
     private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
     private static final long mem_128m = 134217728L;
@@ -5533,7 +5535,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.debug("Attaching config drive iso device for the VM " + vmName + " In host " + ipAddr);
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
 
-            SR sr = getSRByNameLabel(conn, vmName + "-ISO");
+            SR sr = getSRByNameLabel(conn, vmName + VM_NAME_ISO_SUFFIX);
             //Here you will find only two vdis with the <vmname>.iso.
             //one is from source host and second from dest host
             Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + ".iso");
