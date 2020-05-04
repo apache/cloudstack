@@ -205,6 +205,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private final static String VM_NAME_ISO_SUFFIX = "-ISO";
 
+    private final static String VM_FILE_ISO_SUFFIX = ".iso";
+
     private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
     private static final long mem_128m = 134217728L;
@@ -5538,7 +5540,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             SR sr = getSRByNameLabel(conn, vmName + VM_NAME_ISO_SUFFIX);
             //Here you will find only two vdis with the <vmname>.iso.
             //one is from source host and second from dest host
-            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + ".iso");
+            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + VM_FILE_ISO_SUFFIX);
             if (vdis.isEmpty()) {
                 s_logger.debug("Could not find config drive ISO: " + vmName);
                 return false;
