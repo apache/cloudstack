@@ -3927,9 +3927,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.trace("Detected mounted vmware tools installer for :[" + cmd.getVmName() + "]");
                 }
                 try {
-                    checkAndSetEnableSetupConfig(vmMo,cmd.getVirtualMachine());
-                    vmMo.rebootGuest();
-                    return new RebootAnswer(cmd, "reboot succeeded", true);
+                    if (canSetEnableSetupConfig(vmMo,cmd.getVirtualMachine())) {
+                        vmMo.rebootGuest();
+                        return new RebootAnswer(cmd, "reboot succeeded", true);
+                    } else {
+                        return new RebootAnswer(cmd, "Failed to configure VM to boot into hardware setup menu: " + vmMo.getName(), false);
+                    }
                 } catch (ToolsUnavailableFaultMsg e) {
                     s_logger.warn("VMware tools is not installed at guest OS, we will perform hard reset for reboot");
                 } catch (Exception e) {
@@ -3970,7 +3973,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private void checkAndSetEnableSetupConfig(VirtualMachineMO vmMo, VirtualMachineTO virtualMachine) {
+    /**
+     * set the boot into setup option if possible
+     * @param vmMo vmware view on the vm
+     * @param virtualMachine orchestration spec for the vm
+     * @return true unless reboot into setup is requested and vmware is unable to comply
+     */
+    private boolean canSetEnableSetupConfig(VirtualMachineMO vmMo, VirtualMachineTO virtualMachine) {
         if (virtualMachine.isEnterHardwareSetup()) {
             VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
@@ -3981,12 +3990,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmConfigSpec.setBootOptions(bootOptions);
             try {
                 if (!vmMo.configureVm(vmConfigSpec)) {
-                    throw new Exception("Failed to configure VM to boot into hardware setup menu: " + vmMo.getName());
+                    return false;
                 }
             } catch (Exception e) {
                 s_logger.error(String.format("failed to reconfigure VM '%s' to boot into hardware setup menu",virtualMachine.getName()),e);
+                return false;
             }
         }
+        return true;
     }
 
     protected Answer execute(CheckVirtualMachineCommand cmd) {
