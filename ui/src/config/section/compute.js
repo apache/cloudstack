@@ -457,14 +457,8 @@ export default {
           icon: 'plus',
           label: 'Create SSH Key Pair',
           listView: true,
-          args: ['name', 'account', 'domainid']
-        },
-        {
-          api: 'registerSSHKeyPair',
-          icon: 'key',
-          label: 'Register SSH Public Key',
-          listView: true,
-          args: ['name', 'account', 'domainid', 'publickey']
+          popup: true,
+          component: () => import('@/views/compute/CreateSSHKeyPair.vue')
         },
         {
           api: 'deleteSSHKeyPair',

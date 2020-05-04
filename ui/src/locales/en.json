@@ -744,6 +744,7 @@
 "message.network.removeNIC": "Please confirm that want to remove this NIC, which will also remove the associated network from the VM.",
 "message.network.secondaryIP" : "Please confirm that you would like to acquire a new secondary IP for this NIC. \n NOTE: You need to manually configure the newly-acquired secondary IP inside the virtual machine.",
 "message.network.updateIp": "Please confirm that you would like to change the IP address for this NIC on VM.",
+"message.desc.create.ssh.key.pair": "Please fill in the following data to create or register a ssh key pair.<br><br>(1) If public key is set, CloudStack will register the public key. You can use it through your private key.<br><br>(2) If public key is not set, CloudStack will create a new SSH Key pair. In this case, please copy and save the private key. CloudStack will not keep it.<br>",
 "mincpunumber": "Min CPU Cores",
 "minInstance": "Min Instances",
 "minIops": "Min IOPS",
