@@ -736,11 +736,6 @@ export default {
 
           var hasJobId = false
           api(this.currentAction.api, params).then(json => {
-            // set action data for reload tree-view
-            if (this.treeView) {
-              this.actionData.push(json)
-            }
-
             for (const obj in json) {
               if (obj.includes('response')) {
                 for (const res in json[obj]) {
@@ -758,7 +753,14 @@ export default {
               this.$router.go(-1)
             } else {
               if (!hasJobId) {
+                // set action data for reload tree-view
+                if (this.treeView) {
+                  this.actionData.push(json)
+                }
                 this.fetchData()
+              } else {
+                this.$set(this.resource, 'isDel', true)
+                this.actionData.push(this.resource)
               }
             }
           }).catch(error => {
