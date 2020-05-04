@@ -37,7 +37,6 @@ public class CommandExecLogDaoImpl extends GenericDaoBase<CommandExecLogVO, Long
         ExpungeSearch.and("created", ExpungeSearch.entity().getCreated(), Op.LT);
         ExpungeSearch.done();
 
-
         CommandSearch = createSearchBuilder();
         CommandSearch.and("host_id", CommandSearch.entity().getHostId(), Op.EQ);
         CommandSearch.and("command_name", CommandSearch.entity().getCommandName(), Op.EQ);

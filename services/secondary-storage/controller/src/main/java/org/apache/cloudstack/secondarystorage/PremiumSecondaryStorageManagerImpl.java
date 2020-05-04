@@ -97,7 +97,6 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         activeCopyCommandSearch.and("command_name", activeCopyCommandSearch.entity().getCommandName(), Op.EQ);
         activeCopyCommandSearch.join("hostSearch", hostSearch, activeCopyCommandSearch.entity().getHostId(), hostSearch.entity().getId(), JoinType.INNER);
 
-
         hostSearch.done();
         activeCommandSearch.done();
         activeCopyCommandSearch.done();
@@ -151,9 +150,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
 
             alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, dataCenterId, State.Running, State.Migrating, State.Starting);
 
-            List<CommandExecLogVO> activeCmds = findActiveCommands(dataCenterId, cutTime, null);
-
-            nMaxExecutionMinutes = 240;
+            List<CommandExecLogVO> activeCmds = findActiveCommands(dataCenterId, cutTime);
 
             List<CommandExecLogVO> copyCmdsInPipeline = findAllActiveCopyCommands(dataCenterId, cutTime);
             Integer hostsCount = _hostDao.countAllByType(Host.Type.Routing);
@@ -209,7 +206,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         return null;
     }
 
-    private List<CommandExecLogVO> findActiveCommands(long dcId, Date cutTime, String cmdName) {
+    private List<CommandExecLogVO> findActiveCommands(long dcId, Date cutTime) {
         SearchCriteria<CommandExecLogVO> sc = activeCommandSearch.create();
         sc.setParameters("created", cutTime);
         sc.setJoinParameters("hostSearch", "dc", dcId);

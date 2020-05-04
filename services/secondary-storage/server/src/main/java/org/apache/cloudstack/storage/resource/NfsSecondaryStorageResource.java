@@ -2586,7 +2586,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        // TODO: create GS for number of threads for migrate job
         _eth1ip = (String)params.get("eth1ip");
         _eth1mask = (String)params.get("eth1mask");
         if (_eth1ip != null) { // can only happen inside service vm

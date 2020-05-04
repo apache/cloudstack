@@ -102,8 +102,6 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
             sc.addAnd("scope", SearchCriteria.Op.SC, scc);
             sc.addAnd("readonly", SearchCriteria.Op.EQ, Boolean.FALSE);
         }
-        // we should return all image stores if cross-zone scope is passed
-        // (scopeId = null)
         return listBy(sc);
     }
 

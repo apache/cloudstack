@@ -189,31 +189,6 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     }
 
     @Override
-    public List<DataStore> orderImageStoresOnFreeCapacity(List<DataStore> imageStores) {
-        List<DataStore> stores = new ArrayList<>();
-        if (imageStores.size() > 1) {
-            imageStores.sort(new Comparator<DataStore>() { // Sort data stores based on free capacity
-                @Override
-                public int compare(DataStore store1, DataStore store2) {
-                    return Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store1),
-                            _statsCollector.imageStoreCurrentFreeCapacity(store2));
-                }
-            });
-            for (DataStore imageStore : imageStores) {
-                // Return image store if used percentage is less then threshold value i.e. 90%.
-                if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
-                    stores.add(imageStore);
-                }
-            }
-        } else if (imageStores.size() == 1) {
-            if (_statsCollector.imageStoreHasEnoughCapacity(imageStores.get(0))) {
-                stores.add(imageStores.get(0));
-            }
-        }
-       return stores;
-    }
-
-    @Override
     public List<DataStore> listImageStoresWithFreeCapacity(List<DataStore> imageStores) {
         List<DataStore> stores = new ArrayList<>();
         for (DataStore imageStore : imageStores) {

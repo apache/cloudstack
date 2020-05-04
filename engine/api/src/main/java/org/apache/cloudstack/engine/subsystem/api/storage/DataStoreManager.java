@@ -54,6 +54,4 @@ public interface DataStoreManager {
     List<DataStore> listImageCacheStores();
 
     boolean isRegionStore(DataStore store);
-
-    List<DataStore> orderImageStoresOnFreeCapacity(List<DataStore> stores);
 }

@@ -131,11 +131,6 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
-    public List<DataStore> orderImageStoresOnFreeCapacity(List<DataStore> stores) {
-        return imageDataStoreMgr.orderImageStoresOnFreeCapacity(stores);
-    }
-
-    @Override
     public DataStore getPrimaryDataStore(long storeId) {
         return primaryStoreMgr.getPrimaryDataStore(storeId);
     }

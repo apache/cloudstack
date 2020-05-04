@@ -78,11 +78,4 @@ public interface ImageStoreProviderManager {
      * @return            the list of DataStore which have free capacity
      */
     List<DataStore> listImageStoresWithFreeCapacity(List<DataStore> imageStores);
-
-    /**
-     * Returns the provided list of Datastores in descending order of their free capacity
-     * @param imageStores list of image stores that need to be arranged
-     * @return sorted list
-     */
-    List<DataStore> orderImageStoresOnFreeCapacity(List<DataStore> imageStores);
 }
