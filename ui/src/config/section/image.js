@@ -94,7 +94,7 @@ export default {
           dataView: true,
           popup: true,
           show: (record, store) => { return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) || record.templatetype !== 'BUILTIN') },
-          component: () => import('@/views/image/UpdateTemplatePermissions')
+          component: () => import('@/views/image/UpdateTemplateIsoPermissions')
         },
         {
           api: 'copyTemplate',
@@ -180,7 +180,9 @@ export default {
           icon: 'reconciliation',
           label: 'Update ISO Permissions',
           dataView: true,
-          args: ['op', 'accounts', 'projectids']
+          popup: true,
+          show: (record, store) => { return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) || record.templatetype !== 'BUILTIN') },
+          component: () => import('@/views/image/UpdateTemplateIsoPermissions')
         },
         {
           api: 'copyIso',
