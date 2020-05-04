@@ -59,7 +59,7 @@ public class DataMotionServiceImpl implements DataMotionService {
         if (srcData.getDataStore() == null || destData.getDataStore() == null) {
             throw new CloudRuntimeException("can't find data store");
         }
-        LOGGER.debug("PEARL - getting copyasync driver!!");
+
         if (srcData.getDataStore().getDriver().canCopy(srcData, destData)) {
             srcData.getDataStore().getDriver().copyAsync(srcData, destData, callback);
             return;

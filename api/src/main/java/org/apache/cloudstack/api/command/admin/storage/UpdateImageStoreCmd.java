@@ -70,9 +70,7 @@ public class UpdateImageStoreCmd extends BaseCmd {
         ImageStore result = _storageService.updateImageStoreStatus(getId(), getReadonly());
         ImageStoreResponse storeResponse = null;
         if (result != null) {
-            LOG.debug("PEARL - response received");
             storeResponse = _responseGenerator.createImageStoreResponse(result);
-            LOG.debug("PEARL - store resp == "+storeResponse.getId() + " name: "+storeResponse.getName()+ " url"+storeResponse.getUrl());
             storeResponse.setResponseName(getCommandName()+"response");
             storeResponse.setObjectName("imagestore");
             setResponseObject(storeResponse);

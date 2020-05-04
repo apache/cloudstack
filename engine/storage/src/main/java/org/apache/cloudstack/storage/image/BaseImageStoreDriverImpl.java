@@ -376,7 +376,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 boolean sent = false;
                 // Find the first endpoint to which the command can be sent to
                 for (EndPoint ep : eps) {
-                    s_logger.debug("PEARL - number of cmds running on "+ep.getId()+" is: "+getCopyCmdsCountToSpecificSSVM(ep.getId()));
                     if (getCopyCmdsCountToSpecificSSVM(ep.getId()) >= maxConcurrentCopyOpsPerSSVM) {
                         continue;
                     }
@@ -392,7 +391,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 if (!sent) {
                     // Picking endpoint with least number of copy commands running on it
                     Long epId = ssvmWithLeastMigrateJobs();
-                    s_logger.debug("PEARL - edpoint : "+ epId);
                     EndPoint endPoint = _defaultEpSelector.getEndPointFromHostId(epId);
                     CommandExecLogVO execLog = new CommandExecLogVO(epId, _secStorageVmDao.findByInstanceName(hostDao.findById(epId).getName()).getId(), cmd.getClass().getSimpleName(), 1);
                     Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
@@ -479,7 +477,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     private Long ssvmWithLeastMigrateJobs() {
-        s_logger.debug("PEARL - picking ssvm from the pool with least commands running on it");
+        s_logger.debug("Picking ssvm from the pool with least commands running on it");
         String query = "select host_id, count(*) from cmd_exec_log group by host_id order by 2 limit 1;";
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 

@@ -72,29 +72,22 @@ public class StorageServiceImpl implements SecondaryStorageService {
         DataObject destDataObject = null;
         try {
             if (srcDataObject instanceof SnapshotInfo && snapshotChain.keySet().contains(srcDataObject)) {
-                s_logger.debug("PEARL - snapshot instance with a chain of snaps: size"+ snapshotChain.get(srcDataObject).first().size());
                 for (SnapshotInfo snapshotInfo : snapshotChain.get(srcDataObject).first()) {
                     destDataObject = destDatastore.create(snapshotInfo);
                     snapshotInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
                     destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
-                    // migrateJob(future, snapshotInfo, destDataObject, destDatastore);
-                    s_logger.debug("PEARL - snap name: "+ snapshotInfo.getName());
                     MigrateDataContext<DataObjectResult> context = new MigrateDataContext<DataObjectResult>(null, future, snapshotInfo, destDataObject, destDatastore);
                     AsyncCallbackDispatcher<StorageServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
                     caller.setCallback(caller.getTarget().migrateDataCallBack(null, null)).setContext(context);
-                    s_logger.debug(snapshotInfo.getDataStore().getTO().toString());
                     motionSrv.copyAsync(snapshotInfo, destDataObject, caller);
                 }
             } else {
-                s_logger.debug("PEARL - not a snapshot instance");
                 destDataObject = destDatastore.create(srcDataObject);
                 srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
                 destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
-                //migrateJob(future, srcDataObject, destDataObject, destDatastore);
                 MigrateDataContext<DataObjectResult> context = new MigrateDataContext<DataObjectResult>(null, future, srcDataObject, destDataObject, destDatastore);
                 AsyncCallbackDispatcher<StorageServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
                 caller.setCallback(caller.getTarget().migrateDataCallBack(null, null)).setContext(context);
-                s_logger.debug(srcDataObject.getDataStore().getTO().toString());
                 motionSrv.copyAsync(srcDataObject, destDataObject, caller);
             }
         } catch (Exception e) {
@@ -110,7 +103,6 @@ public class StorageServiceImpl implements SecondaryStorageService {
     }
 
 //    protected void migrateJob(AsyncCallFuture<DataObjectResult> future, DataObject srcDataObject, DataObject destDataObject, DataStore destDatastore) throws ExecutionException, InterruptedException {
-//        s_logger.debug("PEARL - in migrateJob() ");
 //        MigrateDataContext<DataObjectResult> context = new MigrateDataContext<DataObjectResult>(null, future, srcDataObject, destDataObject, destDatastore);
 //        AsyncCallbackDispatcher<StorageManagerImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
 //        caller.setCallback(caller.getTarget().migrateDataCallBack(null, null)).setContext(context);
@@ -122,18 +114,15 @@ public class StorageServiceImpl implements SecondaryStorageService {
      * Callback function to handle state change of source and destination data objects based on the success or failure of the migrate task
      */
     protected Void migrateDataCallBack(AsyncCallbackDispatcher<StorageServiceImpl, CopyCommandResult> callback, MigrateDataContext<DataObjectResult> context) throws ExecutionException, InterruptedException {
-        s_logger.debug("PEARL - completed transfer - @ migrate callback");
         DataObject srcData = context.srcData;
         DataObject destData = context.destData;
-        s_logger.debug("PEARL - src data = "+srcData.getUri());
-        s_logger.debug("PEARL - dest data = "+ destData.getUri());
         CopyCommandResult result = callback.getResult();
         AsyncCallFuture<DataObjectResult> future = context.future;
         DataObjectResult res = new DataObjectResult(srcData);
         CopyCmdAnswer answer = (CopyCmdAnswer) result.getAnswer();
         try {
             if (!answer.getResult()) {
-                s_logger.debug("PEARL - migration failed");
+                s_logger.warn("Migration failed for "+srcData.getUuid());
                 res.setResult(result.getResult());
                 srcData.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
                 destData.processEvent(ObjectInDataStoreStateMachine.Event.MigrationFailed);
@@ -144,10 +133,10 @@ public class StorageServiceImpl implements SecondaryStorageService {
                 }
 
             } else {
-                s_logger.debug("PEARL - migration succeeded");
                 destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
-                s_logger.debug("PEARL - Deleting source data");
+                s_logger.debug("Deleting source data");
                 srcData.getDataStore().delete(srcData);
+                s_logger.debug("Successfully migrated "+srcData.getUuid());
             }
             _cmdExecLogDao.expunge(Long.parseLong(answer.getContextParam("cmd")));
             future.complete(res);

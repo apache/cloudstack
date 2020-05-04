@@ -39,7 +39,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.StringUtils;
 
 @APICommand(name = MigrateSecondaryStorageDataCmd.APINAME,
-        description = "migrates templates from one secondary storage to destination image store",
+        description = "migrates data objects from one secondary storage to destination image store(s)",
         responseObject = MigrationResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
@@ -58,29 +58,24 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.FROM,
             type = CommandType.UUID,
             entityType = ImageStoreResponse.class,
-            description = "id of the image store from where the data is to be migrated")
+            description = "id of the image store from where the data is to be migrated",
+    required = true)
     private Long id;
 
     @Parameter(name = ApiConstants.MIGRATE_TO,
     type = CommandType.LIST,
     collectionType = CommandType.UUID,
     entityType = ImageStoreResponse.class,
-    description = "id of the destination secondary storage pool to which the templates are to be migrated to")
+    description = "id of the destination secondary storage pool to which the templates are to be migrated to",
+    required = true)
     private List<Long> migrateTo;
 
     @Parameter(name = ApiConstants.MIGRATION_TYPE,
     type = CommandType.STRING,
-    description = "partial: if you want data to be distributed evenly among the destination stores, " +
-            "complete: If you want to migrate the entire data from source image store to the destination store(s)")
+    description = "Balance: if you want data to be distributed evenly among the destination stores, " +
+            "Complete: If you want to migrate the entire data from source image store to the destination store(s)",
+    required = true)
     private String migrationType;
-
-    @Parameter(name = ApiConstants.TEMP,
-            type = CommandType.LONG,
-            description = "partial: if you want data to be distributed evenly among the destination stores, " +
-                    "complete: If you want to migrate the entire data from source image store to the destination store(s)")
-    private Long temp;
-
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -90,8 +85,6 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-
-
 
     public List<Long> getMigrateTo() {
         return migrateTo;
@@ -103,25 +96,17 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_TEMPLATE_MIGRATE;
+        return EventTypes.EVENT_FILE_MIGRATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate templates " + "from : " + this.getId() + " to: " + StringUtils.join(getMigrateTo(), ",");
-    }
-
-    public Long getTemp() {
-        return temp;
+        return "Attempting to migrate files/data objects " + "from : " + this.getId() + " to: " + StringUtils.join(getMigrateTo(), ",");
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        String message = "Migration still in progress";
         MigrationResponse response = _imageStoreService.migrateData(this);
-        if (response.getMessage() == null) {
-            response.setMessage(message);
-        }
         response.setObjectName("imagestore");
         this.setResponseObject(response);
     }

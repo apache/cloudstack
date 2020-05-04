@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api;
 
 public class ApiConstants {
-    public static final String TEMP = "temp";
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
     public static final String ACCOUNT_TYPE = "accounttype";

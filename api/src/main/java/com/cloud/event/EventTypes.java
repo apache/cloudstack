@@ -22,6 +22,10 @@ import java.util.Map;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.usage.Usage;
@@ -76,10 +80,6 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 
 public class EventTypes {
 
@@ -229,7 +229,7 @@ public class EventTypes {
     public static final String EVENT_TEMPLATE_EXTRACT = "TEMPLATE.EXTRACT";
     public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";
     public static final String EVENT_TEMPLATE_CLEANUP = "TEMPLATE.CLEANUP";
-    public static final String EVENT_TEMPLATE_MIGRATE = "TEMPLATE.MIGRATE";
+    public static final String EVENT_FILE_MIGRATE = "FILE.MIGRATE";
 
     // Volume Events
     public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";

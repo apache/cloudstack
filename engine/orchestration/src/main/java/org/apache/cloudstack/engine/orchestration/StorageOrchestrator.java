@@ -171,7 +171,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     }
 
     @Override
-    public MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, String migrationPolicy, Long temp) {
+    public MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, String migrationPolicy) {
         List<DataObject> files = new LinkedList<>();
         int successCount = 0;
         boolean success = true;
@@ -205,11 +205,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
         });
 
-        s_logger.debug("PEARL - sorted files");
-        for (DataObject obj : files) {
-            s_logger.debug("PEARL - data object: " + obj.getDataStore().getName() + " Size : " + obj.getSize());
-        }
-
         if (files.isEmpty()) {
             return new MigrationResponse("No files in Image store "+srcDatastore.getId()+ " to migrate", migrationPolicy, true);
         }
@@ -222,15 +217,11 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
 
         storageCapacities.put(srcDataStoreId, new Pair<>(null, null));
-        s_logger.debug("PEARL - before all");
-        for (Map.Entry<Long, Pair<Long, Long>> entry : storageCapacities.entrySet()) {
-            s_logger.debug("PEARL - store id : " + entry.getKey() + "  free capacity: " + entry.getValue().first() + " total cap: " + entry.getValue().second());
-        }
 
         // If the migration policy is to completely migrate data from the given source Image Store, then set it's state
         // to readonly
         if (migrationPolicy.equals(ImageStoreService.MigrationPolicy.Complete.toString())) {
-            s_logger.debug("PEARL - setting source image store "+srcDatastore.getId()+ " to read-only");
+            s_logger.debug("Setting source image store "+srcDatastore.getId()+ " to read-only");
             storageService.updateImageStoreStatus(srcDataStoreId, true);
         }
 
@@ -239,28 +230,17 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         double threshold = ImageStoreImbalanceThreshold.value();
         MigrationResponse response = null;
 
-        // TODO: core = max; & core = no of ssvms * concurrent/ssvm
         ThreadPoolExecutor executor = new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM , numConcurrentCopyTasksPerSSVM, 30, TimeUnit.MINUTES, new MigrateBlockingQueue<>(2));
-        // TODO : return if meanstddev < threshold
-        s_logger.debug("PEARL - mean std deviation = " + meanstddev);
 
-        // TODO: uncomment when testing is completed
-//        if (meanstddev < threshold) {
-//            s_logger.debug("PEARL - mean std deviation of the storages is below threshold, no migration required");
-//            response = new MigrationResponse("Migration not required as system seems balanced", migrationType, true);
-//            return response;
-//        }
+        if (meanstddev < threshold) {
+            s_logger.debug("mean std deviation of the image stores is below threshold, no migration required");
+            response = new MigrationResponse("Migration not required as system seems balanced", migrationPolicy, true);
+            return response;
+        }
 
         List<Future<AsyncCallFuture<DataObjectResult>>> futures = new ArrayList<>();
 
         while (true) {
-            s_logger.debug("PEARL - files size == " + files.size());
-            s_logger.debug("PEARL - datastore dest size == " + destDatastores.size());
-            s_logger.debug("PEARL - stores to capacity map == ");
-            for (Map.Entry<Long, Pair<Long, Long>> entry : storageCapacities.entrySet()) {
-                s_logger.debug("PEARL - store id : " + entry.getKey() + "  free capacity: " + entry.getValue().first() + " total cap: " + entry.getValue().second());
-            }
-
             DataObject chosenFileForMigration = null;
             if (files.size() > 0) {
                 chosenFileForMigration = files.remove(0);
@@ -273,15 +253,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
             // If there aren't anymore files available for migration or no valid Image stores available for migration
             // end the migration process
-            destDatastoreId = temp;
-            s_logger.debug("PEARL - chosen file = "+ (chosenFileForMigration != null ? chosenFileForMigration.getId() : "null file"));
-            s_logger.debug("PEARL - destid "+ destDatastoreId);
-            s_logger.debug("PEARL - src id = "+ srcDatastore.getId());
             if (chosenFileForMigration == null || destDatastoreId == null || destDatastoreId == srcDatastore.getId()) {
-                s_logger.debug("PEARL - migration completed ");
                 if (destDatastoreId == srcDatastore.getId() && !files.isEmpty() ) {
                     if (migrationPolicy.equals(ImageStoreService.MigrationPolicy.Balance.toString())) {
-                        s_logger.debug("PEARL - src id = dest id");
+                        s_logger.debug("Migration completed : data stores have been balanced ");
                         message = "Image stores have been balanced";
                         success = true;
                     } else {
@@ -297,30 +272,22 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (chosenFileForMigration.getSize() > storageCapacities.get(destDatastoreId).first()) {
-                s_logger.debug("PEARL - file " + chosenFileForMigration.getId() + " too large to be migrated to " + destDatastoreId);
+                s_logger.debug("file: " + chosenFileForMigration.getId() + " too large to be migrated to " + destDatastoreId);
                 continue;
             }
 
             // If there is a benefit in migration of the chosen file to the destination store, then proceed with migration
             if (shouldMigrate(chosenFileForMigration, srcDatastore.getId(), destDatastoreId, storageCapacities, snapshotChains, migrationPolicy)) {
                 Long fileSize = getFileSize(chosenFileForMigration, snapshotChains);
-                s_logger.debug("PEARL - in migrate decision function -  yes");
-                s_logger.debug("PEARL - current metrics = ");
-                for (Map.Entry<Long, Pair<Long, Long>> p : storageCapacities.entrySet()) {
-                    s_logger.debug("PEARL - Datastore : " + p.getKey() + " free capacity: " + p.getValue().first() + " total capacity: " + p.getValue().second());
-                }
-
                 storageCapacities = assumeMigrate(storageCapacities, srcDatastore.getId(), destDatastoreId, fileSize);
 
                 long activeSsvms = activeSSVMCount(srcDatastore);
                 long totalJobs = activeSsvms * numConcurrentCopyTasksPerSSVM;
-                s_logger.debug("PEARL - total jobs =  "+ totalJobs);
+
                 // Increase thread pool size with increase in number of SSVMs
                 if ( totalJobs > executor.getCorePoolSize()) {
                     executor.setMaximumPoolSize((int) (totalJobs));
                     executor.setCorePoolSize((int) (totalJobs));
-                    s_logger.debug("PEARL - max pool size : "+ executor.getMaximumPoolSize());
-                    s_logger.debug("PEARL - core pool size : "+ executor.getCorePoolSize());
                 }
 
                 MigrateDataTask task = new MigrateDataTask(chosenFileForMigration, srcDatastore, dataStoreManager.getDataStore(destDatastoreId, DataStoreRole.Image));
@@ -328,9 +295,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                     task.setSnapshotChains(snapshotChains);
                 }
                 futures.add((executor.submit(task)));
-                s_logger.debug("PEARL - migration of file  " + chosenFileForMigration.getId() + " is done");
+                s_logger.debug("Migration of file  " + chosenFileForMigration.getId() + " is initiated");
             } else {
-                s_logger.debug("PEARL - migration completed!");
                 if (migrationPolicy.equals(ImageStoreService.MigrationPolicy.Balance.toString())) {
                     message = "Migration completed and has successfully balanced the data objects among stores:  " + StringUtils.join(storageCapacities.keySet(), ",");
                 } else {
@@ -348,7 +314,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                     successCount++;
                 }
             } catch ( InterruptedException | ExecutionException e) {
-                throw new CloudRuntimeException("Failed to get result");
+                s_logger.warn("Failed to get result");
+                continue;
             }
         }
         message += ". successful migrations: "+successCount;
@@ -358,18 +325,13 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     private Map<Long, Pair<Long, Long>> getStorageCapacities(Map<Long, Pair<Long, Long>> storageCapacities) {
         Map<Long, Pair<Long, Long>> capacities = new Hashtable<>();
         for (Long storeId : storageCapacities.keySet()) {
-            s_logger.debug("PEARL - store ID = " + storeId);
             StorageStats stats = statsCollector.getStorageStats(storeId);
             if (stats != null) {
                 if (storageCapacities.get(storeId) == null || storageCapacities.get(storeId).first() == null || storageCapacities.get(storeId).second() == null) {
-                    s_logger.debug("PEARL - free caap : " + (stats.getCapacityBytes() - stats.getByteUsed()));
-                    s_logger.debug("PEARL - total cap : " + stats.getCapacityBytes());
                     capacities.put(storeId, new Pair<>(stats.getCapacityBytes() - stats.getByteUsed(), stats.getCapacityBytes()));
                 } else {
                     long totalCapacity = stats.getCapacityBytes();
                     Long freeCapacity = totalCapacity - stats.getByteUsed();
-                    s_logger.debug("PEARL - pair value: " + storageCapacities.get(storeId));
-                    s_logger.debug("PEARL - free capacity = " + freeCapacity);
                     if (freeCapacity >= storageCapacities.get(storeId).first()) {
                         capacities.put(storeId, storageCapacities.get(storeId));
                     } else {
@@ -379,10 +341,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             } else {
                 throw new CloudRuntimeException("Stats Collector hasn't yet collected metrics from the Image store, kindly try again later");
             }
-        }
-        s_logger.debug("PEARL - stg capacities computed");
-        for (Map.Entry<Long, Pair<Long, Long>> p : capacities.entrySet()) {
-            s_logger.debug("PEARL - Datastore : " + p.getKey() + " free capacity: " + p.getValue().first() + " total capacity: " + p.getValue().second());
         }
         return capacities;
     }
@@ -395,12 +353,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
      */
     private double getStandardDeviation(Map<Long, Pair<Long, Long>> storageCapacities) {
         double[] freeCapacities = storageCapacities.values().stream().mapToDouble(x -> ((double) x.first() / x.second())).toArray();
-        s_logger.debug("PEARL - free capcitites size :");
-        for (double cap : freeCapacities) {
-            s_logger.debug("PEARL - cap : " + cap);
-        }
         double mean = calculateStorageMean(freeCapacities);
-        s_logger.debug("PEARL: - mean = " + mean);
         return (calculateStorageStandardDeviation(freeCapacities, mean) / mean);
     }
 
@@ -409,7 +362,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
      * an informed decision of picking the datastore with maximum free capactiy for migration
      */
     private List<Long> sortDataStores(Map<Long, Pair<Long, Long>> storageCapacities) {
-        s_logger.debug("PEARL - storage capacity size: " + storageCapacities.size());
         List<Map.Entry<Long, Pair<Long, Long>>> list =
                 new LinkedList<Map.Entry<Long, Pair<Long, Long>>>((storageCapacities.entrySet()));
 
@@ -421,14 +373,9 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         });
         HashMap<Long, Pair<Long, Long>> temp = new LinkedHashMap<>();
         for (Map.Entry<Long, Pair<Long, Long>> value : list) {
-            s_logger.debug("PEARL - list : " + value.getKey() + " pair val: " + value.getValue());
             temp.put(value.getKey(), value.getValue());
         }
 
-        s_logger.debug("PEARL - temp size: " + temp.size());
-        for (Map.Entry<Long, Pair<Long, Long>> e : temp.entrySet()) {
-            s_logger.debug("PEARL - storeID : " + e.getKey() + " pair val: " + e.getValue());
-        }
         return new ArrayList<>(temp.keySet());
     }
 
@@ -475,44 +422,40 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
      */
     private boolean shouldMigrate(DataObject chosenFile, Long srcDatastoreId, Long destDatastoreId, Map<Long, Pair<Long, Long>> storageCapacities,
                                   Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, String migrationPolicy) {
-        //private boolean shouldMigrate(DummyObject chosenFile, Long srcDatastoreId, Long destDatastoreId, Map<Long, Pair<Long, Long>> storageCapacities, String policy) {
-        return true;
-//        if (migrationPolicy == MigrationPolicy.Balance.toString()) {
-//            double meanStdDevCurrent = getStandardDeviation(storageCapacities);
-//
-//            s_logger.debug("PEARL - meanstd deviation before migration = " + meanStdDevCurrent);
-//            Long fileSize = getFileSize(chosenFile, snapshotChains)
-//            Map<Long, Pair<Long, Long>> proposedCapacities = assumeMigrate(storageCapacities, srcDatastoreId, destDatastoreId, fileSize);
-//            double meanStdDevAfter = getStandardDeviation(proposedCapacities);
-//
-//            // calculateStorageImbalanceAfterSupposedMigration(stores, storesToCapacityMap, meanStdDeviation, fileSize);
-//
-//            s_logger.debug("PEARL - meanstd deviation after migration = " + meanStdDevAfter);
-//
-////        if (meanStdDevAfter > meanStdDevCurrent) {
-////            s_logger.debug("PEARL - migrating the file doesn't prove to be beneficial, skipping migration");
-////            return false;
-////        }
-//
-//            Double threshold = ImageStoreImbalanceThreshold.value();
-//            if (meanStdDevCurrent > threshold && storageCapacityBelowThreshold(storageCapacities, destDatastoreId)) {
-//                return true;
-//            }
-//        } else {
-//            if (storageCapacityBelowThreshold(storageCapacities, destDatastoreId)) {
-//                return true;
-//            }
-//        }
-//        return false;
+
+        if (migrationPolicy == MigrationPolicy.Balance.toString()) {
+            double meanStdDevCurrent = getStandardDeviation(storageCapacities);
+
+            Long fileSize = getFileSize(chosenFile, snapshotChains);
+            Map<Long, Pair<Long, Long>> proposedCapacities = assumeMigrate(storageCapacities, srcDatastoreId, destDatastoreId, fileSize);
+            double meanStdDevAfter = getStandardDeviation(proposedCapacities);
+
+
+
+            if (meanStdDevAfter > meanStdDevCurrent) {
+                s_logger.debug("migrating the file doesn't prove to be beneficial, skipping migration");
+                return false;
+            }
+
+            Double threshold = ImageStoreImbalanceThreshold.value();
+            if (meanStdDevCurrent > threshold && storageCapacityBelowThreshold(storageCapacities, destDatastoreId)) {
+                return true;
+            }
+        } else {
+            if (storageCapacityBelowThreshold(storageCapacities, destDatastoreId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean storageCapacityBelowThreshold(Map<Long, Pair<Long, Long>> storageCapacities, Long destStoreId) {
         Pair<Long, Long> imageStoreCapacity = storageCapacities.get(destStoreId);
         if (imageStoreCapacity != null && (imageStoreCapacity.first() / (imageStoreCapacity.second() * 1.0)) <= imageStoreCapacityThreshold) {
-            s_logger.debug("PEARL - image store has sufficient capacity to proceed with migration of file");
+            s_logger.debug("image store: " + destStoreId + " has sufficient capacity to proceed with migration of file");
             return true;
         }
-        s_logger.debug("PEARL - image store capacity threshold exceeded, migration not possible");
+        s_logger.debug("Image store capacity threshold exceeded, migration not possible");
         return false;
     }
 
@@ -587,15 +530,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
             snapshotChains.put(parent, new Pair<List<SnapshotInfo>, Long>(chain, getSizeForChain(chain)));
         }
-        //Log
-        for (DataObject snap: snapshotChains.keySet()) {
-            s_logger.debug("PEARL - parent = "+snap);
-            List<SnapshotInfo> chain = snapshotChains.get(snap).first();
-            s_logger.debug("PEARL - chain: ");
-            for (int i =0;i<chain.size();i++) {
-                s_logger.debug("PEARL - "+chain.get(i).getName()+"-> ");
-            }
-        }
+
         return (List<DataObject>) (List<?>) files;
     }
 
@@ -664,7 +599,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
         @Override
         public AsyncCallFuture<DataObjectResult> call() throws Exception {
-            s_logger.debug("PEARL - running migration TASK");
             return secStgSrv.migrateData(file, srcDataStore, destDataStore, snapshotChain);
         }
     }

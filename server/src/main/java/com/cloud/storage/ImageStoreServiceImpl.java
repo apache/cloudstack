@@ -108,7 +108,7 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
             return new MigrationResponse(message, migrationType, false);
         }
 
-        return  stgService.migrateData(srcImgStoreId, destDatastores, migrationType, cmd.getTemp());
+        return  stgService.migrateData(srcImgStoreId, destDatastores, migrationType);
     }
 
 

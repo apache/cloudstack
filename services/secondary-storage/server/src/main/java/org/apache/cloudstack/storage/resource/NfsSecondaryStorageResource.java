@@ -1289,13 +1289,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected Answer copyFromNfsToNfs(CopyCommand cmd) {
-        s_logger.info("PEARL - copying from nfs to nfs");
-        try {
-            long randSleep = (long) (Math.random() * (((600 - 300) + 1) + 300 * 1000));
-            Thread.sleep(randSleep);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-        }
         final DataTO srcData = cmd.getSrcTO();
         final DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
@@ -1303,14 +1296,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO destDataStore = destData.getDataStore();
         final NfsTO destStore = (NfsTO) destDataStore;
         try {
-            s_logger.info("PEARL - src store url = "+ srcStore.getUrl());
-            s_logger.info("PEARL - dest store url = "+ destStore.getUrl());
             File srcFile = new File(getDir(srcStore.getUrl(), _nfsVersion), srcData.getPath());
-            s_logger.info("PEARL - src file = "+ srcFile.getPath() + " src filename: "+ srcFile.getName());
             File destFile = new File(getDir(destStore.getUrl(), _nfsVersion), destData.getPath());
-            s_logger.info("PEARL - dest file = "+destFile.getPath()+ " dest filename = "+destFile.getName());
             ImageFormat format = getTemplateFormat(srcFile.getName());
-            s_logger.info("PEARL - file format = "+format);
 
             if (srcFile == null) {
                 return new CopyCmdAnswer("Can't find src file:" + srcFile);
@@ -1326,13 +1314,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     destDir = new File(destFile.getParent());
                 }
 
-                s_logger.info("PEARL - src dir == " + srcDir);
-                s_logger.info("PEARL - dest dir == " + destDir);
                 try {
                     FileUtils.copyDirectory((srcDir == null ? srcFile : srcDir), (destDir == null? destFile : destDir));
-                    //FileUtils.copyFile(srcFile, destFile);
                 } catch (IOException e) {
-                    String msg = "PEARL - Failed to copy file to destination";
+                    String msg = "Failed to copy file to destination";
                     s_logger.info(msg);
                     return new CopyCmdAnswer(msg);
                 }
@@ -1341,24 +1326,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 try {
                     FileUtils.copyFile(srcFile, destFile);
                 } catch (IOException e) {
-                    String msg = "PEARL - Failed to copy file to destination";
+                    String msg = "Failed to copy file to destination";
                     s_logger.info(msg);
                     return new CopyCmdAnswer(msg);
                 }
             }
 
             DataTO retObj = null;
-            // TODO: remove it maybe ?
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                 TemplateObjectTO newTemplate = new TemplateObjectTO();
-                s_logger.info("PEARL - src filename =  "+ srcFile.getName() + " dest install path = "+destData.getPath() + File.separator + srcFile.getName());
                 newTemplate.setPath(destData.getPath() + File.separator + srcFile.getName());
                 newTemplate.setSize(getVirtualSize(srcFile, format));
-                s_logger.info("PEARL - file size = "+ getVirtualSize(srcFile, format));
                 newTemplate.setPhysicalSize(srcFile.length());
-                s_logger.info("PEARL - file phy size = "+ getVirtualSize(srcFile, format));
                 newTemplate.setFormat(format);
-
                 retObj = newTemplate;
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
                 VolumeObjectTO newVol = new VolumeObjectTO();

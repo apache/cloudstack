@@ -26,5 +26,5 @@ public interface StorageOrchestrationService {
         Balance, Complete
     }
 
-    MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, String migrationPolicy, Long temp);
+    MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, String migrationPolicy);
 }

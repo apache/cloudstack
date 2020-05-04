@@ -160,8 +160,6 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
             Integer maxSsvms = (hostsCount < MaxNumberOfSsvmsForMigration.value()) ? hostsCount : MaxNumberOfSsvmsForMigration.value();
 
             currentTime = DateUtil.currentGMTTime().getTime();
-            s_logger.debug("PEARL - current time: "+ currentTime);
-            s_logger.debug("PEARL - next spawn time: "+nextSpawnTime);
 
             if (alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() < _standbyCapacity) {
                 s_logger.info("secondary storage command execution standby capactiy low (running VMs: " + alreadyRunning.size() + ", active cmds: " + activeCmds.size() +
@@ -174,7 +172,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
                     (((currentTime - copyCmdsInPipeline.get(alreadyRunning.size() - 1).getCreated().getTime()) /1000 > nMaxExecutionMinutes/2)) &&
                             (currentTime > nextSpawnTime) &&  alreadyRunning.size() <=  maxSsvms) {
                     nextSpawnTime = currentTime + nMaxExecutionMinutes * 1000;
-                    s_logger.debug("PEARL - scale SSVM!!!");
+                    s_logger.debug("scaling SSVM");
                     return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
                 }
 
