@@ -181,7 +181,7 @@ export default {
             if (json.createsshkeypairresponse && json.createsshkeypairresponse.keypair && json.createsshkeypairresponse.keypair.privatekey) {
               this.$notification.info({
                 message: this.$t('label.create.ssh.key.pair'),
-                description: (<span domPropsInnerHTML={'<pre>' + json.createsshkeypairresponse.keypair.privatekey + '</pre>'}></span>),
+                description: (<span domPropsInnerHTML={'<strong>' + values.name + '</strong><br/><pre>' + json.createsshkeypairresponse.keypair.privatekey + '</pre>'}></span>),
                 duration: 0
               })
             }
