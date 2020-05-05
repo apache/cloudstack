@@ -362,7 +362,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 (srcdata.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME)) {
 
             int nMaxExecutionMinutes = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
-            int maxConcurrentCopyOpsPerSSVM = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageCopyCmdMaxSessions.key()), 2);
+            int maxConcurrentCopyOpsPerSSVM = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageMaxMigrateSessions.key()), 2);
             CopyCommand cmd = new CopyCommand(srcdata.getTO(), destData.getTO(), nMaxExecutionMinutes * 60 * 1000, true);
             Answer answer = null;
 

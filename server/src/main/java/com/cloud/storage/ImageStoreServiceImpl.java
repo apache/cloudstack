@@ -31,6 +31,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
@@ -68,7 +69,13 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
         Long srcImgStoreId = cmd.getId();
         ImageStoreVO srcImageVO = imageStoreDao.findById(srcImgStoreId);
         List<Long> destImgStoreIds = cmd.getMigrateTo();
-        String migrationType = cmd.getMigrationType();
+        String migrationType = cmd.getMigrationType().toUpperCase();
+
+        if (!EnumUtils.isValidEnum(MigrationPolicy.class, migrationType)) {
+            throw new CloudRuntimeException("Not a valid migration policy");
+        }
+
+        MigrationPolicy policy = MigrationPolicy.valueOf(migrationType);
 
         String message = null;
 
@@ -105,10 +112,10 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
 
         if (isMigrateJobRunning()){
             message = "A migrate job is in progress, please try again later...";
-            return new MigrationResponse(message, migrationType, false);
+            return new MigrationResponse(message, policy.toString(), false);
         }
 
-        return  stgService.migrateData(srcImgStoreId, destDatastores, migrationType);
+        return  stgService.migrateData(srcImgStoreId, destDatastores, policy);
     }
 
 

@@ -57,9 +57,8 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     private int migrateCapPerSSVM = DEFAULT_MIGRATE_SS_VM_CAPACITY;
     private int _standbyCapacity = SecondaryStorageVmManager.DEFAULT_STANDBY_CAPACITY;
     private int _maxExecutionTimeMs = 1800000;
-    int nMaxExecutionMinutes = 120;
     long currentTime = DateUtil.currentGMTTime().getTime();
-    long nextSpawnTime = currentTime + (nMaxExecutionMinutes *1000) ;
+    long nextSpawnTime = currentTime + _maxExecutionTimeMs;
     private List<SecondaryStorageVmVO> migrationSSVMS = new ArrayList<>();
 
     @Inject
@@ -83,6 +82,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
 
         int nMaxExecutionMinutes = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
         _maxExecutionTimeMs = nMaxExecutionMinutes * 60 * 1000;
+        nextSpawnTime = currentTime + _maxExecutionTimeMs;
 
         hostSearch = _hostDao.createSearchBuilder();
         hostSearch.and("dc", hostSearch.entity().getDataCenterId(), Op.EQ);
@@ -149,11 +149,12 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
             }
 
             alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, dataCenterId, State.Running, State.Migrating, State.Starting);
-
             List<CommandExecLogVO> activeCmds = findActiveCommands(dataCenterId, cutTime);
-
+            // Find running copy / migrate commands running
             List<CommandExecLogVO> copyCmdsInPipeline = findAllActiveCopyCommands(dataCenterId, cutTime);
+            // Count of total hosts
             Integer hostsCount = _hostDao.countAllByType(Host.Type.Routing);
+            // Maximum number of allowed SSVMs for migration task
             Integer maxSsvms = (hostsCount < MaxNumberOfSsvmsForMigration.value()) ? hostsCount : MaxNumberOfSsvmsForMigration.value();
 
             currentTime = DateUtil.currentGMTTime().getTime();
@@ -166,14 +167,14 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
             // Scale the number of SSVMs if the number of Copy operations is greater than the number of SSVMs running and the copy operation has been in pipeline for
             // more than half of the total time allocated for secondary storage operations
             else if (!copyCmdsInPipeline.isEmpty()  && copyCmdsInPipeline.size() >= alreadyRunning.size() &&
-                    (((currentTime - copyCmdsInPipeline.get(alreadyRunning.size() - 1).getCreated().getTime()) /1000 > nMaxExecutionMinutes/2)) &&
+                    (((currentTime - copyCmdsInPipeline.get(alreadyRunning.size() - 1).getCreated().getTime()) > _maxExecutionTimeMs/2 )) &&
                             (currentTime > nextSpawnTime) &&  alreadyRunning.size() <=  maxSsvms) {
-                    nextSpawnTime = currentTime + nMaxExecutionMinutes * 1000;
+                    nextSpawnTime = currentTime + _maxExecutionTimeMs/2;
                     s_logger.debug("scaling SSVM");
                     return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
                 }
 
-            // Scale down the number of SSVMs if the load on then has reduced
+            // Scale down the number of SSVMs if the load on them has reduced
             if ((copyCmdsInPipeline.size() < alreadyRunning.size() && alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() > _standbyCapacity) && alreadyRunning.size() > 1) {
                 Collections.reverse(alreadyRunning);
                 for(SecondaryStorageVmVO vm : alreadyRunning) {

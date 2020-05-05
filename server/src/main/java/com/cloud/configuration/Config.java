@@ -1811,8 +1811,8 @@ public enum Config {
 
     SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null),
 
-    SecStorageCopyCmdMaxSessions(
-            "Advanced", AgentManager.class, Integer.class, "secstorage.cpy.cmd.max.sessions","2","The max number of concurrent copy command execution sessions that an SSVM can handle",null);
+    SecStorageMaxMigrateSessions(
+            "Advanced", AgentManager.class, Integer.class, "secstorage.max.migrate.sessions","2","The max number of concurrent copy command execution sessions that an SSVM can handle",null);
 
     private final String _category;
     private final Class<?> _componentClass;

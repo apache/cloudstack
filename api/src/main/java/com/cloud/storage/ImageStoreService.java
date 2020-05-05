@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.response.MigrationResponse;
 public interface ImageStoreService {
 
     public static enum MigrationPolicy {
-        Balance, Complete
+        BALANCE, COMPLETE
     }
     MigrationResponse migrateData(MigrateSecondaryStorageDataCmd cmd);
 }

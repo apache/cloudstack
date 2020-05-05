@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.db;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -71,4 +72,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<SnapshotDataStoreVO> listAllByVolumeAndDataStore(long volumeId, DataStoreRole role);
 
     List<SnapshotDataStoreVO> listByState(ObjectInDataStoreStateMachine.State... states);
+
+    List<SnapshotDataStoreVO> findSnapshots(Long storeId, Date start, Date end);
 }

@@ -138,12 +138,12 @@ public class SnapshotObject implements SnapshotInfo {
         sc.and(sc.entity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
         sc.and(sc.entity().getParentSnapshotId(), Op.EQ, getId());
         List<SnapshotDataStoreVO> vos = sc.list();
-        if (vos == null) {
-            return null;
-        }
+
         List<SnapshotInfo> children = new ArrayList<>();
-        for (SnapshotDataStoreVO vo : vos ) {
-            children.add(snapshotFactory.getSnapshot(vo.getId(), store));
+        if (vos != null) {
+            for (SnapshotDataStoreVO vo : vos) {
+                children.add(snapshotFactory.getSnapshot(vo.getSnapshotId(), DataStoreRole.Image));
+            }
         }
         return children;
     }

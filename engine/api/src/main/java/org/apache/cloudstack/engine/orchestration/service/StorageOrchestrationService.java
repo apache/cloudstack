@@ -21,10 +21,8 @@ import java.util.List;
 
 import org.apache.cloudstack.api.response.MigrationResponse;
 
-public interface StorageOrchestrationService {
-    public static enum MigrationPolicy {
-        Balance, Complete
-    }
+import com.cloud.storage.ImageStoreService.MigrationPolicy;
 
-    MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, String migrationPolicy);
+public interface StorageOrchestrationService {
+    MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, MigrationPolicy migrationPolicy);
 }
