@@ -104,6 +104,7 @@ export default {
   },
   data () {
     return {
+      formOffering: {},
       selectedDomains: [],
       selectedZones: [],
       offeringIsPublic: false,
@@ -151,11 +152,27 @@ export default {
   },
   methods: {
     fetchData () {
+      this.fetchOfferingData()
       this.fetchDomainData()
       this.fetchZoneData()
     },
     isAdmin () {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    fetchOfferingData () {
+      this.loading = true
+      const params = {}
+      params.id = this.resource.id
+      params.isrecursive = true
+      var apiName = 'list' + this.offeringType + 's'
+      api(apiName, params).then(json => {
+        const offerings = json[apiName.toLowerCase() + 'response'][this.offeringType.toLowerCase()]
+        this.formOffering = offerings[0]
+      }).finally(() => {
+        this.updateDomainSelection()
+        this.updateZoneSelection()
+        this.loading = false
+      })
     },
     fetchDomainData () {
       const params = {}
@@ -183,7 +200,8 @@ export default {
       })
     },
     updateDomainSelection () {
-      var offeringDomainIds = this.resource.domainid
+      if (!this.formOffering || Object.keys(this.formOffering).length === 0) return
+      var offeringDomainIds = this.formOffering.domainid
       this.selectedDomains = []
       if (offeringDomainIds) {
         this.offeringIsPublic = false
@@ -207,7 +225,8 @@ export default {
       }
     },
     updateZoneSelection () {
-      var offeringZoneIds = this.resource.zoneid
+      if (!this.formOffering || Object.keys(this.formOffering).length === 0) return
+      var offeringZoneIds = this.formOffering.zoneid
       this.selectedZones = []
       if (offeringZoneIds) {
         offeringZoneIds = offeringZoneIds.indexOf(',') !== -1 ? offeringZoneIds.split(',') : [offeringZoneIds]
