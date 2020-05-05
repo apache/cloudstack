@@ -98,7 +98,6 @@ class VmwareVmImplementer {
     private Boolean globalNestedVirtualisationEnabled;
     private Boolean globalNestedVPerVMEnabled;
 
-
     Boolean getGlobalNestedVirtualisationEnabled() {
         if (globalNestedVirtualisationEnabled == null) {
             globalNestedVirtualisationEnabled = VMwareGuru.VmwareEnableNestedVirtualization.value();
