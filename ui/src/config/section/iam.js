@@ -46,34 +46,35 @@ export default {
         {
           api: 'updateUser',
           icon: 'key',
-          label: 'Change Password',
+          label: 'label.action.change.password',
           dataView: true,
-          args: ['currentpassword', 'password']
+          popup: true,
+          component: () => import('@/views/iam/ChangeUserPassword.vue')
         },
         {
           api: 'registerUserKeys',
           icon: 'file-protect',
-          label: 'Generate Keys',
+          label: 'label.action.generate.keys',
           dataView: true
         },
         {
           api: 'enableUser',
           icon: 'play-circle',
-          label: 'Enable User',
+          label: 'label.action.enable.user',
           dataView: true,
           show: (record) => { return record.state === 'disabled' }
         },
         {
           api: 'disableUser',
           icon: 'pause-circle',
-          label: 'Disable User',
+          label: 'label.action.disable.user',
           dataView: true,
           show: (record) => { return record.state === 'enabled' }
         },
         {
           api: 'deleteUser',
           icon: 'delete',
-          label: 'Delete user',
+          label: 'label.action.delete.user',
           dataView: true
         }
       ]
