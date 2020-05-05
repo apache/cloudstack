@@ -24,6 +24,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
@@ -56,18 +57,20 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class VmwareVmImplementer {
+class VmwareVmImplementer {
     private static final Logger LOG = Logger.getLogger(VmwareVmImplementer.class);
-    private final VMwareGuru guru;
 
     @Inject
     DomainRouterDao domainRouterDao;
@@ -92,12 +95,33 @@ public class VmwareVmImplementer {
     @Inject
     VmwareManager vmwareMgr;
 
-    public VmwareVmImplementer(VMwareGuru guru) {
-        this.guru = guru;
+    private Boolean globalNestedVirtualisationEnabled;
+    private Boolean globalNestedVPerVMEnabled;
+
+
+    Boolean getGlobalNestedVirtualisationEnabled() {
+        if (globalNestedVirtualisationEnabled == null) {
+            globalNestedVirtualisationEnabled = VMwareGuru.VmwareEnableNestedVirtualization.value();
+        }
+        return globalNestedVirtualisationEnabled;
     }
 
-    VirtualMachineTO implement(VirtualMachineProfile vm) {
-        VirtualMachineTO to = guru.toVirtualMachineTO(vm);
+    void setGlobalNestedVirtualisationEnabled(Boolean globalNestedVirtualisationEnabled) {
+        this.globalNestedVirtualisationEnabled = globalNestedVirtualisationEnabled;
+    }
+
+    Boolean getGlobalNestedVPerVMEnabled() {
+        if (globalNestedVPerVMEnabled == null) {
+            globalNestedVPerVMEnabled = VMwareGuru.VmwareEnableNestedVirtualizationPerVM.value();
+        }
+        return globalNestedVPerVMEnabled;
+    }
+
+    void setGlobalNestedVPerVMEnabled(Boolean globalNestedVPerVMEnabled) {
+        this.globalNestedVPerVMEnabled = globalNestedVPerVMEnabled;
+    }
+
+    VirtualMachineTO implement(VirtualMachineProfile vm, VirtualMachineTO to, long clusterId) {
         to.setBootloader(VirtualMachineTemplate.BootloaderType.HVM);
 
         Map<String, String> details = to.getDetails();
@@ -134,43 +158,14 @@ public class VmwareVmImplementer {
             }
         }
 
-        details.put(VmDetailConstants.BOOT_MODE, to.getBootMode());
-        if (vm.getParameter(VirtualMachineProfile.Param.BootIntoSetup) != null && (Boolean)vm.getParameter(VirtualMachineProfile.Param.BootIntoSetup) == true) {
-            to.setEnterHardwareSetup(true);
-        }
-// there should also be
-//        details.put(VmDetailConstants.BOOT_TYPE, to.getBootType());
-        String diskDeviceType = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
-        if (userVm) {
-            if (diskDeviceType == null) {
-                details.put(VmDetailConstants.ROOT_DISK_CONTROLLER,vmwareMgr.getRootDiskController());
-            }
-        }
-        String diskController = details.get(VmDetailConstants.DATA_DISK_CONTROLLER);
-        if (userVm) {
-            if (diskController == null) {
-                details.put(VmDetailConstants.DATA_DISK_CONTROLLER, DiskControllerType.lsilogic.toString());
-            }
-        }
+        setBootParameters(vm, to, details);
 
-        if (vm.getType() == VirtualMachine.Type.NetScalerVm) {
-            details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
-        }
+        setDiskControllers(vm, details, userVm);
 
-        List<NicProfile> nicProfiles = vm.getNics();
+        List<NicProfile> nicProfiles = getNicProfiles(vm, details);
 
-        for (NicProfile nicProfile : nicProfiles) {
-            if (nicProfile.getTrafficType() == Networks.TrafficType.Guest) {
-                if (networkMgr.isProviderSupportServiceInNetwork(nicProfile.getNetworkId(), Network.Service.Firewall, Network.Provider.CiscoVnmc)) {
-                    details.put("ConfigureVServiceInNexus", Boolean.TRUE.toString());
-                }
-                break;
-            }
-        }
-
-        long clusterId = guru.getClusterId(vm.getId());
-        details.put(com.cloud.hypervisor.guru.VMwareGuru.VmwareReserveCpu.key(), com.cloud.hypervisor.guru.VMwareGuru.VmwareReserveCpu.valueIn(clusterId).toString());
-        details.put(com.cloud.hypervisor.guru.VMwareGuru.VmwareReserveMemory.key(), com.cloud.hypervisor.guru.VMwareGuru.VmwareReserveMemory.valueIn(clusterId).toString());
+        details.put(VMwareGuru.VmwareReserveCpu.key(), VMwareGuru.VmwareReserveCpu.valueIn(clusterId).toString());
+        details.put(VMwareGuru.VmwareReserveMemory.key(), VMwareGuru.VmwareReserveMemory.valueIn(clusterId).toString());
         to.setDetails(details);
 
         if (vmType.equals(VirtualMachine.Type.DomainRouter)) {
@@ -249,7 +244,7 @@ public class VmwareVmImplementer {
             }
 
             StringBuffer sbMacSequence = new StringBuffer();
-            for (NicTO nicTo : guru.sortNicsByDeviceId(to.getNics())) {
+            for (NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
                 sbMacSequence.append(nicTo.getMac()).append("|");
             }
             if (!sbMacSequence.toString().isEmpty()) {
@@ -263,7 +258,7 @@ public class VmwareVmImplementer {
         // Don't do this if the virtual machine is one of the special types
         // Should only be done on user machines
         if (userVm) {
-            guru.configureNestedVirtualization(details, to);
+            configureNestedVirtualization(details, to);
         }
         // Determine the VM's OS description
         GuestOSVO guestOS = guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
@@ -272,7 +267,7 @@ public class VmwareVmImplementer {
         HostVO host = hostDao.findById(vm.getVirtualMachine().getHostId());
         GuestOSHypervisorVO guestOsMapping = null;
         if (host != null) {
-            guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), guru.getHypervisorType().toString(), host.getHypervisorVersion());
+            guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), host.getHypervisorVersion());
         }
         if (guestOsMapping == null || host == null) {
             to.setPlatformEmulator(null);
@@ -328,6 +323,48 @@ public class VmwareVmImplementer {
         return to;
     }
 
+    private List<NicProfile> getNicProfiles(VirtualMachineProfile vm, Map<String, String> details) {
+        List<NicProfile> nicProfiles = vm.getNics();
+
+        for (NicProfile nicProfile : nicProfiles) {
+            if (nicProfile.getTrafficType() == Networks.TrafficType.Guest) {
+                if (networkMgr.isProviderSupportServiceInNetwork(nicProfile.getNetworkId(), Network.Service.Firewall, Network.Provider.CiscoVnmc)) {
+                    details.put("ConfigureVServiceInNexus", Boolean.TRUE.toString());
+                }
+                break;
+            }
+        }
+        return nicProfiles;
+    }
+
+    private void setDiskControllers(VirtualMachineProfile vm, Map<String, String> details, boolean userVm) {
+        String diskDeviceType = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+        if (userVm) {
+            if (diskDeviceType == null) {
+                details.put(VmDetailConstants.ROOT_DISK_CONTROLLER,vmwareMgr.getRootDiskController());
+            }
+        }
+        String diskController = details.get(VmDetailConstants.DATA_DISK_CONTROLLER);
+        if (userVm) {
+            if (diskController == null) {
+                details.put(VmDetailConstants.DATA_DISK_CONTROLLER, DiskControllerType.lsilogic.toString());
+            }
+        }
+
+        if (vm.getType() == VirtualMachine.Type.NetScalerVm) {
+            details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
+        }
+    }
+
+    private void setBootParameters(VirtualMachineProfile vm, VirtualMachineTO to, Map<String, String> details) {
+        details.put(VmDetailConstants.BOOT_MODE, to.getBootMode());
+        if (vm.getParameter(VirtualMachineProfile.Param.BootIntoSetup) != null && (Boolean)vm.getParameter(VirtualMachineProfile.Param.BootIntoSetup) == true) {
+            to.setEnterHardwareSetup(true);
+        }
+// there should also be
+//        details.put(VmDetailConstants.BOOT_TYPE, to.getBootType());
+    }
+
     /*
         Remove OVF properties from details to be sent to hypervisor (avoid duplicate data)
      */
@@ -336,5 +373,72 @@ public class VmwareVmImplementer {
             String key = propertyTO.getKey();
             details.remove(ApiConstants.OVF_PROPERTIES + "-" + key);
         }
+    }
+
+    /**
+     * Adds {@code 'nestedVirtualizationFlag'} value to {@code details} due to if it should be enabled or not
+     * @param details vm details
+     * @param to vm to
+     */
+    protected void configureNestedVirtualization(Map<String, String> details, VirtualMachineTO to) {
+        String localNestedV = details.get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG);
+
+        Boolean globalNestedVirtualisationEnabled = getGlobalNestedVirtualisationEnabled();
+        Boolean globalNestedVPerVMEnabled = getGlobalNestedVPerVMEnabled();
+
+        Boolean shouldEnableNestedVirtualization = shouldEnableNestedVirtualization(globalNestedVirtualisationEnabled, globalNestedVPerVMEnabled, localNestedV);
+        LOG.debug("Nested virtualization requested, adding flag to vm configuration");
+        details.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, Boolean.toString(shouldEnableNestedVirtualization));
+        to.setDetails(details);
+    }
+
+    /**
+     * Decide in which cases nested virtualization should be enabled based on (1){@code globalNestedV}, (2){@code globalNestedVPerVM}, (3){@code localNestedV}<br/>
+     * Nested virtualization should be enabled when one of this cases:
+     * <ul>
+     * <li>(1)=TRUE, (2)=TRUE, (3) is NULL (missing)</li>
+     * <li>(1)=TRUE, (2)=TRUE, (3)=TRUE</li>
+     * <li>(1)=TRUE, (2)=FALSE</li>
+     * <li>(1)=FALSE, (2)=TRUE, (3)=TRUE</li>
+     * </ul>
+     * In any other case, it shouldn't be enabled
+     * @param globalNestedV value of {@code 'vmware.nested.virtualization'} global config
+     * @param globalNestedVPerVM value of {@code 'vmware.nested.virtualization.perVM'} global config
+     * @param localNestedV value of {@code 'nestedVirtualizationFlag'} key in vm details if present, null if not present
+     * @return "true" for cases in which nested virtualization is enabled, "false" if not
+     */
+    Boolean shouldEnableNestedVirtualization(Boolean globalNestedV, Boolean globalNestedVPerVM, String localNestedV) {
+        if (globalNestedV == null || globalNestedVPerVM == null) {
+            return false;
+        }
+        boolean globalNV = globalNestedV.booleanValue();
+        boolean globalNVPVM = globalNestedVPerVM.booleanValue();
+
+        if (globalNVPVM) {
+            return (localNestedV == null && globalNV) || BooleanUtils.toBoolean(localNestedV);
+        }
+        return globalNV;
+    }
+
+    private NicTO[] sortNicsByDeviceId(NicTO[] nics) {
+
+        List<NicTO> listForSort = new ArrayList<NicTO>();
+        for (NicTO nic : nics) {
+            listForSort.add(nic);
+        }
+        Collections.sort(listForSort, new Comparator<NicTO>() {
+
+            @Override public int compare(NicTO arg0, NicTO arg1) {
+                if (arg0.getDeviceId() < arg1.getDeviceId()) {
+                    return -1;
+                } else if (arg0.getDeviceId() == arg1.getDeviceId()) {
+                    return 0;
+                }
+
+                return 1;
+            }
+        });
+
+        return listForSort.toArray(new NicTO[0]);
     }
 }

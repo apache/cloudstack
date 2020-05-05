@@ -17,8 +17,6 @@
 package com.cloud.hypervisor.guru;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +25,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -65,7 +62,6 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.cluster.ClusterManager;
@@ -138,7 +134,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -158,7 +153,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
 
-    private VmwareVmImplementer vmwareVmImplementer;
+    @Inject VmwareVmImplementer vmwareVmImplementer;
 
     @Inject NetworkDao _networkDao;
     @Inject GuestOSDao _guestOsDao;
@@ -196,10 +191,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     public static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.mem", "Advanced", "false",
             "Specify whether or not to reserve memory when deploying an instance.", true, ConfigKey.Scope.Cluster, null);
 
-    protected ConfigKey<Boolean> VmwareEnableNestedVirtualization = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization", "Advanced", "false",
+    public static final ConfigKey<Boolean> VmwareEnableNestedVirtualization = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization", "Advanced", "false",
             "When set to true this will enable nested virtualization when this is supported by the hypervisor", true, ConfigKey.Scope.Global, null);
 
-    protected ConfigKey<Boolean> VmwareEnableNestedVirtualizationPerVM = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization.perVM", "Advanced", "false",
+    public static final ConfigKey<Boolean> VmwareEnableNestedVirtualizationPerVM = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization.perVM", "Advanced", "false",
             "When set to true this will enable nested virtualization per vm", true, ConfigKey.Scope.Global, null);
 
     @Override public HypervisorType getHypervisorType() {
@@ -207,53 +202,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override public VirtualMachineTO implement(VirtualMachineProfile vm) {
-        vmwareVmImplementer = ComponentContext.inject(new VmwareVmImplementer(this));
-
-        return vmwareVmImplementer.implement(vm);
-    }
-
-    /**
-     * Decide in which cases nested virtualization should be enabled based on (1){@code globalNestedV}, (2){@code globalNestedVPerVM}, (3){@code localNestedV}<br/>
-     * Nested virtualization should be enabled when one of this cases:
-     * <ul>
-     * <li>(1)=TRUE, (2)=TRUE, (3) is NULL (missing)</li>
-     * <li>(1)=TRUE, (2)=TRUE, (3)=TRUE</li>
-     * <li>(1)=TRUE, (2)=FALSE</li>
-     * <li>(1)=FALSE, (2)=TRUE, (3)=TRUE</li>
-     * </ul>
-     * In any other case, it shouldn't be enabled
-     * @param globalNestedV value of {@code 'vmware.nested.virtualization'} global config
-     * @param globalNestedVPerVM value of {@code 'vmware.nested.virtualization.perVM'} global config
-     * @param localNestedV value of {@code 'nestedVirtualizationFlag'} key in vm details if present, null if not present
-     * @return "true" for cases in which nested virtualization is enabled, "false" if not
-     */
-    protected Boolean shouldEnableNestedVirtualization(Boolean globalNestedV, Boolean globalNestedVPerVM, String localNestedV) {
-        if (globalNestedV == null || globalNestedVPerVM == null) {
-            return false;
-        }
-        boolean globalNV = globalNestedV.booleanValue();
-        boolean globalNVPVM = globalNestedVPerVM.booleanValue();
-
-        if (globalNVPVM) {
-            return (localNestedV == null && globalNV) || BooleanUtils.toBoolean(localNestedV);
-        }
-        return globalNV;
-    }
-
-    /**
-     * Adds {@code 'nestedVirtualizationFlag'} value to {@code details} due to if it should be enabled or not
-     * @param details vm details
-     * @param to vm to
-     */
-    protected void configureNestedVirtualization(Map<String, String> details, VirtualMachineTO to) {
-        Boolean globalNestedV = VmwareEnableNestedVirtualization.value();
-        Boolean globalNestedVPerVM = VmwareEnableNestedVirtualizationPerVM.value();
-        String localNestedV = details.get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG);
-
-        Boolean shouldEnableNestedVirtualization = shouldEnableNestedVirtualization(globalNestedV, globalNestedVPerVM, localNestedV);
-        s_logger.debug("Nested virtualization requested, adding flag to vm configuration");
-        details.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, Boolean.toString(shouldEnableNestedVirtualization));
-        to.setDetails(details);
+        return vmwareVmImplementer.implement(vm, toVirtualMachineTO(vm), getClusterId(vm.getId()));
     }
 
     long getClusterId(long vmId) {
@@ -268,28 +217,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         clusterId = _hostDao.findById(hostId).getClusterId();
 
         return clusterId;
-    }
-
-    NicTO[] sortNicsByDeviceId(NicTO[] nics) {
-
-        List<NicTO> listForSort = new ArrayList<NicTO>();
-        for (NicTO nic : nics) {
-            listForSort.add(nic);
-        }
-        Collections.sort(listForSort, new Comparator<NicTO>() {
-
-            @Override public int compare(NicTO arg0, NicTO arg1) {
-                if (arg0.getDeviceId() < arg1.getDeviceId()) {
-                    return -1;
-                } else if (arg0.getDeviceId() == arg1.getDeviceId()) {
-                    return 0;
-                }
-
-                return 1;
-            }
-        });
-
-        return listForSort.toArray(new NicTO[0]);
     }
 
     @Override @DB public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
