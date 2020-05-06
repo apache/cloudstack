@@ -195,7 +195,7 @@ class VmwareVmImplementer {
     private void setDetails(VirtualMachineTO to, Map<String, String> details) {
         if (LOG.isTraceEnabled()) {
             for (String key: details.keySet()) {
-                LOG.trace(String.format("Detail for VM %s: %s => %s",to.getNics(), key, details.get(key)));
+                LOG.trace(String.format("Detail for VM %s: %s => %s",to.getName(), key, details.get(key)));
             }
         }
         to.setDetails(details);
