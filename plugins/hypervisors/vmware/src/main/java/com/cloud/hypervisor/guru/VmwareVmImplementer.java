@@ -99,10 +99,6 @@ class VmwareVmImplementer {
     private Boolean globalNestedVPerVMEnabled;
 
     Boolean getGlobalNestedVirtualisationEnabled() {
-        Boolean globalValue = VMwareGuru.VmwareEnableNestedVirtualization.value();
-        if (globalValue != null) {
-            globalNestedVirtualisationEnabled = globalValue;
-        }
         return globalNestedVirtualisationEnabled != null ? globalNestedVirtualisationEnabled : false;
     }
 
@@ -111,10 +107,6 @@ class VmwareVmImplementer {
     }
 
     Boolean getGlobalNestedVPerVMEnabled() {
-        Boolean globalValue = VMwareGuru.VmwareEnableNestedVirtualizationPerVM.value();
-        if (globalValue != null) {
-            globalNestedVPerVMEnabled = globalValue;
-        }
         return globalNestedVPerVMEnabled != null ? globalNestedVPerVMEnabled : false;
     }
 

@@ -16,10 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.guru;
 
-import static org.mockito.Mockito.inOrder;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,9 +27,9 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -77,10 +76,9 @@ public class VmwareVmImplementerTest {
     public void testConfigureNestedVirtualization(){
         setConfigValues(true, true, null);
         implementer.configureNestedVirtualization(vmDetails, vmTO);
+        Map<String,String> spyDetails = Mockito.spy(vmDetails);
 
-        InOrder inOrder = inOrder(implementer, vmTO);
-        inOrder.verify(implementer).shouldEnableNestedVirtualization(true, true, null);
-        inOrder.verify(vmTO).setDetails(vmDetails);
+        verify(implementer).shouldEnableNestedVirtualization(true, true, null);
 
         assertTrue(vmDetails.containsKey(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG));
         assertEquals(Boolean.toString(true), vmDetails.get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG));
