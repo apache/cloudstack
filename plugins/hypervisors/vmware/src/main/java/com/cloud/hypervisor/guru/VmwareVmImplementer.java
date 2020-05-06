@@ -99,10 +99,11 @@ class VmwareVmImplementer {
     private Boolean globalNestedVPerVMEnabled;
 
     Boolean getGlobalNestedVirtualisationEnabled() {
-        if (globalNestedVirtualisationEnabled == null) {
-            globalNestedVirtualisationEnabled = VMwareGuru.VmwareEnableNestedVirtualization.value();
+        Boolean globalValue = VMwareGuru.VmwareEnableNestedVirtualization.value();
+        if (globalValue != null) {
+            globalNestedVirtualisationEnabled = globalValue;
         }
-        return globalNestedVirtualisationEnabled;
+        return globalNestedVirtualisationEnabled != null ? globalNestedVirtualisationEnabled : false;
     }
 
     void setGlobalNestedVirtualisationEnabled(Boolean globalNestedVirtualisationEnabled) {
@@ -110,10 +111,11 @@ class VmwareVmImplementer {
     }
 
     Boolean getGlobalNestedVPerVMEnabled() {
-        if (globalNestedVPerVMEnabled == null) {
-            globalNestedVPerVMEnabled = VMwareGuru.VmwareEnableNestedVirtualizationPerVM.value();
+        Boolean globalValue = VMwareGuru.VmwareEnableNestedVirtualizationPerVM.value();
+        if (globalValue != null) {
+            globalNestedVPerVMEnabled = globalValue;
         }
-        return globalNestedVPerVMEnabled;
+        return globalNestedVPerVMEnabled != null ? globalNestedVPerVMEnabled : false;
     }
 
     void setGlobalNestedVPerVMEnabled(Boolean globalNestedVPerVMEnabled) {
@@ -163,95 +165,10 @@ class VmwareVmImplementer {
 
         List<NicProfile> nicProfiles = getNicProfiles(vm, details);
 
-        details.put(VMwareGuru.VmwareReserveCpu.key(), VMwareGuru.VmwareReserveCpu.valueIn(clusterId).toString());
-        details.put(VMwareGuru.VmwareReserveMemory.key(), VMwareGuru.VmwareReserveMemory.valueIn(clusterId).toString());
-        to.setDetails(details);
+        addReservationDetails(clusterId, details);
 
         if (vmType.equals(VirtualMachine.Type.DomainRouter)) {
-
-            NicProfile publicNicProfile = null;
-            for (NicProfile nicProfile : nicProfiles) {
-                if (nicProfile.getTrafficType() == Networks.TrafficType.Public) {
-                    publicNicProfile = nicProfile;
-                    break;
-                }
-            }
-
-            if (publicNicProfile != null) {
-                NicTO[] nics = to.getNics();
-
-                // reserve extra NICs
-                NicTO[] expandedNics = new NicTO[nics.length + vmwareMgr.getRouterExtraPublicNics()];
-                int i = 0;
-                int deviceId = -1;
-                for (i = 0; i < nics.length; i++) {
-                    expandedNics[i] = nics[i];
-                    if (nics[i].getDeviceId() > deviceId)
-                        deviceId = nics[i].getDeviceId();
-                }
-                deviceId++;
-
-                long networkId = publicNicProfile.getNetworkId();
-                NetworkVO network = networkDao.findById(networkId);
-
-                for (; i < nics.length + vmwareMgr.getRouterExtraPublicNics(); i++) {
-                    NicTO nicTo = new NicTO();
-
-                    nicTo.setDeviceId(deviceId++);
-                    nicTo.setBroadcastType(publicNicProfile.getBroadcastType());
-                    nicTo.setType(publicNicProfile.getTrafficType());
-                    nicTo.setIp("0.0.0.0");
-                    nicTo.setNetmask("255.255.255.255");
-
-                    try {
-                        String mac = networkMgr.getNextAvailableMacAddressInNetwork(networkId);
-                        nicTo.setMac(mac);
-                    } catch (InsufficientAddressCapacityException e) {
-                        throw new CloudRuntimeException("unable to allocate mac address on network: " + networkId);
-                    }
-                    nicTo.setDns1(publicNicProfile.getIPv4Dns1());
-                    nicTo.setDns2(publicNicProfile.getIPv4Dns2());
-                    if (publicNicProfile.getIPv4Gateway() != null) {
-                        nicTo.setGateway(publicNicProfile.getIPv4Gateway());
-                    } else {
-                        nicTo.setGateway(network.getGateway());
-                    }
-                    nicTo.setDefaultNic(false);
-                    nicTo.setBroadcastUri(publicNicProfile.getBroadCastUri());
-                    nicTo.setIsolationuri(publicNicProfile.getIsolationUri());
-
-                    Integer networkRate = networkMgr.getNetworkRate(network.getId(), null);
-                    nicTo.setNetworkRateMbps(networkRate);
-
-                    expandedNics[i] = nicTo;
-                }
-
-                to.setNics(expandedNics);
-
-                VirtualMachine router = vm.getVirtualMachine();
-                DomainRouterVO routerVO = domainRouterDao.findById(router.getId());
-                if (routerVO != null && routerVO.getIsRedundantRouter()) {
-                    Long peerRouterId = nicDao.getPeerRouterId(publicNicProfile.getMacAddress(), router.getId());
-                    DomainRouterVO peerRouterVO = null;
-                    if (peerRouterId != null) {
-                        peerRouterVO = domainRouterDao.findById(peerRouterId);
-                        if (peerRouterVO != null) {
-                            details.put("PeerRouterInstanceName", peerRouterVO.getInstanceName());
-                        }
-                    }
-                }
-            }
-
-            StringBuffer sbMacSequence = new StringBuffer();
-            for (NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
-                sbMacSequence.append(nicTo.getMac()).append("|");
-            }
-            if (!sbMacSequence.toString().isEmpty()) {
-                sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
-                String bootArgs = to.getBootArgs();
-                to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
-            }
-
+            configureDomainRouterNicsAndDetails(vm, to, details, nicProfiles);
         }
 
         // Don't do this if the virtual machine is one of the special types
@@ -274,22 +191,110 @@ class VmwareVmImplementer {
             to.setPlatformEmulator(guestOsMapping.getGuestOsName());
         }
 
-        List<OVFPropertyTO> ovfProperties = new ArrayList<OVFPropertyTO>();
-        for (String detailKey : details.keySet()) {
-            if (detailKey.startsWith(ApiConstants.OVF_PROPERTIES)) {
-                String ovfPropKey = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
-                TemplateOVFPropertyVO templateOVFPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), ovfPropKey);
-                if (templateOVFPropertyVO == null) {
-                    LOG.warn(String.format("OVF property %s not found on template, discarding", ovfPropKey));
-                    continue;
-                }
-                String ovfValue = details.get(detailKey);
-                boolean isPassword = templateOVFPropertyVO.isPassword();
-                OVFPropertyTO propertyTO = new OVFPropertyTO(ovfPropKey, ovfValue, isPassword);
-                ovfProperties.add(propertyTO);
+        List<OVFPropertyTO> ovfProperties = getOvfPropertyList(vm, details);
+
+        handleOvfProperties(vm, to, details, ovfProperties);
+
+        setDetails(to, details);
+
+        return to;
+    }
+
+    private void setDetails(VirtualMachineTO to, Map<String, String> details) {
+        if (LOG.isTraceEnabled()) {
+            for (String key: details.keySet()) {
+                LOG.trace(String.format("Detail for VM %s: %s => %s",to.getNics(), key, details.get(key)));
+            }
+        }
+        to.setDetails(details);
+    }
+
+    private void configureDomainRouterNicsAndDetails(VirtualMachineProfile vm, VirtualMachineTO to, Map<String, String> details, List<NicProfile> nicProfiles) {
+        NicProfile publicNicProfile = null;
+        for (NicProfile nicProfile : nicProfiles) {
+            if (nicProfile.getTrafficType() == Networks.TrafficType.Public) {
+                publicNicProfile = nicProfile;
+                break;
             }
         }
 
+        if (publicNicProfile != null) {
+            NicTO[] nics = to.getNics();
+
+            // reserve extra NICs
+            NicTO[] expandedNics = new NicTO[nics.length + vmwareMgr.getRouterExtraPublicNics()];
+            int i = 0;
+            int deviceId = -1;
+            for (i = 0; i < nics.length; i++) {
+                expandedNics[i] = nics[i];
+                if (nics[i].getDeviceId() > deviceId)
+                    deviceId = nics[i].getDeviceId();
+            }
+            deviceId++;
+
+            long networkId = publicNicProfile.getNetworkId();
+            NetworkVO network = networkDao.findById(networkId);
+
+            for (; i < nics.length + vmwareMgr.getRouterExtraPublicNics(); i++) {
+                NicTO nicTo = new NicTO();
+
+                nicTo.setDeviceId(deviceId++);
+                nicTo.setBroadcastType(publicNicProfile.getBroadcastType());
+                nicTo.setType(publicNicProfile.getTrafficType());
+                nicTo.setIp("0.0.0.0");
+                nicTo.setNetmask("255.255.255.255");
+
+                try {
+                    String mac = networkMgr.getNextAvailableMacAddressInNetwork(networkId);
+                    nicTo.setMac(mac);
+                } catch (InsufficientAddressCapacityException e) {
+                    throw new CloudRuntimeException("unable to allocate mac address on network: " + networkId);
+                }
+                nicTo.setDns1(publicNicProfile.getIPv4Dns1());
+                nicTo.setDns2(publicNicProfile.getIPv4Dns2());
+                if (publicNicProfile.getIPv4Gateway() != null) {
+                    nicTo.setGateway(publicNicProfile.getIPv4Gateway());
+                } else {
+                    nicTo.setGateway(network.getGateway());
+                }
+                nicTo.setDefaultNic(false);
+                nicTo.setBroadcastUri(publicNicProfile.getBroadCastUri());
+                nicTo.setIsolationuri(publicNicProfile.getIsolationUri());
+
+                Integer networkRate = networkMgr.getNetworkRate(network.getId(), null);
+                nicTo.setNetworkRateMbps(networkRate);
+
+                expandedNics[i] = nicTo;
+            }
+
+            to.setNics(expandedNics);
+
+            VirtualMachine router = vm.getVirtualMachine();
+            DomainRouterVO routerVO = domainRouterDao.findById(router.getId());
+            if (routerVO != null && routerVO.getIsRedundantRouter()) {
+                Long peerRouterId = nicDao.getPeerRouterId(publicNicProfile.getMacAddress(), router.getId());
+                DomainRouterVO peerRouterVO = null;
+                if (peerRouterId != null) {
+                    peerRouterVO = domainRouterDao.findById(peerRouterId);
+                    if (peerRouterVO != null) {
+                        details.put("PeerRouterInstanceName", peerRouterVO.getInstanceName());
+                    }
+                }
+            }
+        }
+
+        StringBuffer sbMacSequence = new StringBuffer();
+        for (NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
+            sbMacSequence.append(nicTo.getMac()).append("|");
+        }
+        if (!sbMacSequence.toString().isEmpty()) {
+            sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
+            String bootArgs = to.getBootArgs();
+            to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+        }
+    }
+
+    private void handleOvfProperties(VirtualMachineProfile vm, VirtualMachineTO to, Map<String, String> details, List<OVFPropertyTO> ovfProperties) {
         if (CollectionUtils.isNotEmpty(ovfProperties)) {
             removeOvfPropertiesFromDetails(ovfProperties, details);
             String templateInstallPath = null;
@@ -318,8 +323,30 @@ class VmwareVmImplementer {
             Pair<String, List<OVFPropertyTO>> pair = new Pair<String, List<OVFPropertyTO>>(templateInstallPath, ovfProperties);
             to.setOvfProperties(pair);
         }
+    }
 
-        return to;
+    private List<OVFPropertyTO> getOvfPropertyList(VirtualMachineProfile vm, Map<String, String> details) {
+        List<OVFPropertyTO> ovfProperties = new ArrayList<OVFPropertyTO>();
+        for (String detailKey : details.keySet()) {
+            if (detailKey.startsWith(ApiConstants.OVF_PROPERTIES)) {
+                String ovfPropKey = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
+                TemplateOVFPropertyVO templateOVFPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), ovfPropKey);
+                if (templateOVFPropertyVO == null) {
+                    LOG.warn(String.format("OVF property %s not found on template, discarding", ovfPropKey));
+                    continue;
+                }
+                String ovfValue = details.get(detailKey);
+                boolean isPassword = templateOVFPropertyVO.isPassword();
+                OVFPropertyTO propertyTO = new OVFPropertyTO(ovfPropKey, ovfValue, isPassword);
+                ovfProperties.add(propertyTO);
+            }
+        }
+        return ovfProperties;
+    }
+
+    private void addReservationDetails(long clusterId, Map<String, String> details) {
+        details.put(VMwareGuru.VmwareReserveCpu.key(), VMwareGuru.VmwareReserveCpu.valueIn(clusterId).toString());
+        details.put(VMwareGuru.VmwareReserveMemory.key(), VMwareGuru.VmwareReserveMemory.valueIn(clusterId).toString());
     }
 
     private List<NicProfile> getNicProfiles(VirtualMachineProfile vm, Map<String, String> details) {
@@ -376,7 +403,7 @@ class VmwareVmImplementer {
 
     /**
      * Adds {@code 'nestedVirtualizationFlag'} value to {@code details} due to if it should be enabled or not
-     * @param details vm details
+     * @param details vm details should not be null
      * @param to vm to
      */
     protected void configureNestedVirtualization(Map<String, String> details, VirtualMachineTO to) {
@@ -386,9 +413,15 @@ class VmwareVmImplementer {
         Boolean globalNestedVPerVMEnabled = getGlobalNestedVPerVMEnabled();
 
         Boolean shouldEnableNestedVirtualization = shouldEnableNestedVirtualization(globalNestedVirtualisationEnabled, globalNestedVPerVMEnabled, localNestedV);
-        LOG.debug("Nested virtualization requested, adding flag to vm configuration");
+        if(LOG.isDebugEnabled()) {
+            LOG.debug(String.format(
+                    "Due to '%B'(globalNestedVirtualisationEnabled) and '%B'(globalNestedVPerVMEnabled) I'm adding a flag with value %B to the vm configuration for Nested Virtualisation.",
+                    globalNestedVirtualisationEnabled,
+                    globalNestedVPerVMEnabled,
+                    shouldEnableNestedVirtualization)
+            );
+        }
         details.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, Boolean.toString(shouldEnableNestedVirtualization));
-        to.setDetails(details);
     }
 
     /**
