@@ -26,7 +26,7 @@ function package_deb() {
     DATE=$(date +"%Y%m%d")
     sed -i "s/VERSION/$VERSION-$DATE/g" debian/changelog
     dpkg-buildpackage -uc -us
-    $(cd ../; tar czf primate-$VERSION-$DATE.tar.gz dist --transform s/dist/primate/)
+    $(cd ../; tar czf cloudstack-primate-$VERSION-$DATE.tar.gz dist --transform s/dist/primate/)
 }
 
 function package_rpm() {
