@@ -110,6 +110,7 @@ export default {
   },
   methods: {
     execAction (action) {
+      action.resource = this.resource
       this.$emit('exec-action', action)
     },
     handleShowBadge () {
