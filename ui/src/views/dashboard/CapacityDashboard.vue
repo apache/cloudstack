@@ -182,7 +182,12 @@ export default {
         case 'STORAGE_ALLOCATED':
         case 'SECONDARY_STORAGE':
         case 'CAPACITY_TYPE_LOCAL_STORAGE':
-          value = parseFloat(value / (1024 * 1024 * 1024.0), 10).toFixed(2) + ' GB'
+          value = parseFloat(value / (1024 * 1024 * 1024.0), 10).toFixed(2)
+          if (value >= 1024.0) {
+            value = parseFloat(value / 1024.0).toFixed(2) + ' TB'
+          } else {
+            value = value + ' GB'
+          }
           break
       }
       return value
