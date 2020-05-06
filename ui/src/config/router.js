@@ -116,6 +116,15 @@ export function generateRouterMap (section) {
   } else {
     map.component = section.component ? section.component : AutogenView
     map.hideChildrenInMenu = true
+
+    map.meta.name = section.name
+    map.meta.permission = section.permission
+    map.meta.resourceType = section.resourceType
+    map.meta.details = section.details
+    map.meta.actions = section.actions
+    map.meta.treeView = section.treeView ? section.treeView : false
+    map.meta.tabs = section.treeView ? section.tabs : {}
+
     map.children = [{
       path: '/' + section.name + '/:id',
       actions: section.actions ? section.actions : [],
