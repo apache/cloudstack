@@ -19,7 +19,7 @@ export default {
   name: 'host',
   title: 'Hosts',
   icon: 'desktop',
-  permission: ['listHostsMetrics', 'listHosts'],
+  permission: ['listHostsMetrics'],
   resourceType: 'Host',
   params: { type: 'routing' },
   columns: ['name', 'state', 'resourcestate', 'powerstate', 'ipaddress', 'hypervisor', 'instances', 'cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'networkread', 'networkwrite', 'clustername', 'zonename'],

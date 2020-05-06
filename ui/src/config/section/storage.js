@@ -24,7 +24,7 @@ export default {
       name: 'volume',
       title: 'Volumes',
       icon: 'hdd',
-      permission: ['listVolumesMetrics', 'listVolumes'],
+      permission: ['listVolumesMetrics'],
       resourceType: 'Volume',
       columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskiopstotal', 'storage', 'account', 'zonename'],
       details: ['name', 'id', 'type', 'storagetype', 'diskofferingdisplaytext', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'miniops', 'maxiops', 'path'],

@@ -27,7 +27,7 @@ export default {
       title: 'Instances',
       icon: 'desktop',
       docHelp: 'adminguide/virtual_machines.html',
-      permission: ['listVirtualMachinesMetrics', 'listVirtualMachines'],
+      permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       columns: [
         'name', 'state', 'instancename', 'ipaddress', 'cpunumber', 'cpuused', 'cputotal',

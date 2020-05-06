@@ -19,7 +19,7 @@ export default {
   name: 'cluster',
   title: 'Clusters',
   icon: 'cluster',
-  permission: ['listClustersMetrics', 'listClusters'],
+  permission: ['listClustersMetrics'],
   columns: ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'podname', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename'],
   related: [{

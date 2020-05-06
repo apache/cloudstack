@@ -25,7 +25,10 @@ import network from '@/config/section/network'
 import image from '@/config/section/image'
 import project from '@/config/section/project'
 import event from '@/config/section/event'
-import iam from '@/config/section/iam'
+import user from '@/config/section/user'
+import account from '@/config/section/account'
+import domain from '@/config/section/domain'
+import role from '@/config/section/role'
 import infra from '@/config/section/infra'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
@@ -194,9 +197,12 @@ export const asyncRouterMap = [
       generateRouterMap(storage),
       generateRouterMap(network),
       generateRouterMap(image),
-      generateRouterMap(project),
       generateRouterMap(event),
-      generateRouterMap(iam),
+      generateRouterMap(project),
+      generateRouterMap(user),
+      generateRouterMap(account),
+      generateRouterMap(domain),
+      generateRouterMap(role),
       generateRouterMap(infra),
       generateRouterMap(offering),
       generateRouterMap(config),

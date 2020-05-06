@@ -130,16 +130,17 @@
       <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else>{{ text }}</router-link>
     </a>
     <span slot="domain" slot-scope="text, record" href="javascript:;">
-      <router-link v-if="record.domainid && !record.domainid.includes(',')" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
+      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).route.name !== '404'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
     <a slot="zone" slot-scope="text, record" href="javascript:;">
-      <router-link v-if="record.zoneid && !record.zoneid.includes(',')" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+      <router-link v-if="record.zoneid && !record.zoneid.includes(',') && $router.resolve('/zone/' + record.zoneid).route.name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </a>
-    <a slot="zonename" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
-    </a>
+    <span slot="zonename" slot-scope="text, record">
+      <router-link v-if="$router.resolve('/zone/' + record.zoneid).route.name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
+    </span>
 
     <div slot="order" slot-scope="text, record" class="shift-btns">
       <a-tooltip placement="top">
