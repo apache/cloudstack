@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -57,7 +56,7 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.FROM,
             type = CommandType.UUID,
-            entityType = ImageStoreResponse.class,
+            entityType = MigrationResponse.class,
             description = "id of the image store from where the data is to be migrated",
     required = true)
     private Long id;
@@ -65,7 +64,7 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.MIGRATE_TO,
     type = CommandType.LIST,
     collectionType = CommandType.UUID,
-    entityType = ImageStoreResponse.class,
+    entityType = MigrationResponse.class,
     description = "id of the destination secondary storage pool to which the templates are to be migrated to",
     required = true)
     private List<Long> migrateTo;
@@ -80,7 +79,6 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getId() {
         return id;

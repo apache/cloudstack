@@ -71,7 +71,7 @@ public class StorageServiceImpl implements SecondaryStorageService {
         DataObjectResult res = new DataObjectResult(srcDataObject);
         DataObject destDataObject = null;
         try {
-            if (srcDataObject instanceof SnapshotInfo && snapshotChain.keySet().contains(srcDataObject)) {
+            if (srcDataObject instanceof SnapshotInfo && snapshotChain != null && snapshotChain.keySet().contains(srcDataObject)) {
                 for (SnapshotInfo snapshotInfo : snapshotChain.get(srcDataObject).first()) {
                     destDataObject = destDatastore.create(snapshotInfo);
                     snapshotInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
@@ -101,14 +101,6 @@ public class StorageServiceImpl implements SecondaryStorageService {
         }
         return future;
     }
-
-//    protected void migrateJob(AsyncCallFuture<DataObjectResult> future, DataObject srcDataObject, DataObject destDataObject, DataStore destDatastore) throws ExecutionException, InterruptedException {
-//        MigrateDataContext<DataObjectResult> context = new MigrateDataContext<DataObjectResult>(null, future, srcDataObject, destDataObject, destDatastore);
-//        AsyncCallbackDispatcher<StorageManagerImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
-//        caller.setCallback(caller.getTarget().migrateDataCallBack(null, null)).setContext(context);
-//        s_logger.debug(srcDataObject.getDataStore().getTO().toString());
-//        motionSrv.copyAsync(srcDataObject, destDataObject, caller);
-//    }
 
     /**
      * Callback function to handle state change of source and destination data objects based on the success or failure of the migrate task

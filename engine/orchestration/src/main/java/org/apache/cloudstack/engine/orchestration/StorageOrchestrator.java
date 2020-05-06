@@ -326,7 +326,9 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 }
                 if (parentSnapshot != null) {
                     DataStore parentDS = dataStoreManager.getDataStore(parentSnapshot.getDataStore().getId(), DataStoreRole.Image);
-                    futures.add(executor.submit(new MigrateDataTask(snapshotInfo, srcDatastore, parentDS)));
+                    if (parentDS.getId() != snapshotInfo.getDataStore().getId()) {
+                        futures.add(executor.submit(new MigrateDataTask(snapshotInfo, srcDatastore, parentDS)));
+                    }
                 }
             }
         }

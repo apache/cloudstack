@@ -905,6 +905,14 @@ public enum Config {
             "random",
             "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
             null),
+    ImageStoreAllocationAlgorithm(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "image.store.allocation.algorithm",
+            "firstfitleastconsumed",
+            "firstfitleastconsumed','random' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
+            null),
     VmDeploymentPlanner(
             "Advanced",
             ManagementServer.class,

@@ -97,7 +97,6 @@ public class DataStoreManagerImpl implements DataStoreManager {
 
     @Override
     public DataStore getImageStoreWithFreeCapacity(long zoneId) {
-        //List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
         List<DataStore> stores = getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         if (stores == null || stores.size() == 0) {
             return null;
