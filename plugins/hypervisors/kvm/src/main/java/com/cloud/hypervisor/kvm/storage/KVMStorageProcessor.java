@@ -1667,8 +1667,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     rbd.close(image);
                     r.ioCtxDestroy(io);
                 }
-            } else if (primaryPool.getType() == StoragePoolType.NetworkFilesystem) {
-                s_logger.info(String.format("Attempting to remove snapshot (id=%s, name=%s, path=%s, storage type=%s) on primary storage", snapshotTO.getId(), snapshotTO.getName(), snapshotTO.getPath(), primaryPool.getType()));
+            } else if (primaryPool.getType() == StoragePoolType.NetworkFilesystem || primaryPool.getType() == StoragePoolType.Filesystem) {
+                s_logger.info(String.format("Deleting snapshot (id=%s, name=%s, path=%s, storage type=%s) on primary storage", snapshotTO.getId(), snapshotTO.getName(), snapshotTO.getPath(), primaryPool.getType()));
                 deleteSnapshotViaManageSnapshotScript(snapshotName, disk);
             } else {
                 s_logger.warn("Operation not implemented for storage pool type of " + primaryPool.getType().toString());
