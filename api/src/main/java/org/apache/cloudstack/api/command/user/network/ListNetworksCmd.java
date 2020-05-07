@@ -88,6 +88,9 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list networks  by name")
+    private String networkName;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -142,6 +145,10 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
 
     public Boolean getForVpc() {
         return forVpc;
+    }
+
+    public String getNetworkName() {
+        return networkName;
     }
 
     @Override
