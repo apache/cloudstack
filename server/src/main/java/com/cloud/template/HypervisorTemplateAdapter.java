@@ -247,8 +247,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
 
         Set<Long> zoneSet = new HashSet<Long>();
-        Collections.shuffle(imageStores);
-        // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
         for (DataStore imageStore : imageStores) {
             // skip data stores for a disabled zone
             Long zoneId = imageStore.getScope().getScopeId();

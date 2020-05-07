@@ -35,11 +35,13 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.storage.ImageStore;
 import com.cloud.utils.StringUtils;
 
 @APICommand(name = MigrateSecondaryStorageDataCmd.APINAME,
         description = "migrates data objects from one secondary storage to destination image store(s)",
         responseObject = MigrationResponse.class,
+        entityType = {ImageStore.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         since = "4.14.0",

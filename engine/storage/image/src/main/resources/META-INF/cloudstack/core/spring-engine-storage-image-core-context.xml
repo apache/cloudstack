@@ -46,6 +46,4 @@
     <bean id="imageStoreProviderMgr"
         class="org.apache.cloudstack.storage.image.manager.ImageStoreProviderManagerImpl" />
 
-
-    
 </beans>

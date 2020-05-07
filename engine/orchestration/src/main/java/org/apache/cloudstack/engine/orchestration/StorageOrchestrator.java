@@ -318,7 +318,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 if (parentSnapshot == null && migrationPolicy == MigrationPolicy.COMPLETE) {
                     List<Long> dstores = sortDataStores(storageCapacities);
                     Long storeId = dstores.get(0);
-                    if (storeId == srcDataStoreId) {
+                    if (storeId.equals(srcDataStoreId)) {
                         storeId = dstores.get(1);
                     }
                     DataStore datastore =  dataStoreManager.getDataStore(storeId, DataStoreRole.Image);

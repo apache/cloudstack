@@ -71,7 +71,7 @@ public class StorageServiceImpl implements SecondaryStorageService {
         DataObjectResult res = new DataObjectResult(srcDataObject);
         DataObject destDataObject = null;
         try {
-            if (srcDataObject instanceof SnapshotInfo && snapshotChain != null && snapshotChain.keySet().contains(srcDataObject)) {
+            if (srcDataObject instanceof SnapshotInfo && snapshotChain != null && snapshotChain.containsKey(srcDataObject)) {
                 for (SnapshotInfo snapshotInfo : snapshotChain.get(srcDataObject).first()) {
                     destDataObject = destDatastore.create(snapshotInfo);
                     snapshotInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
