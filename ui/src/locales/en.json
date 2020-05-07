@@ -1157,6 +1157,9 @@
 "message.desc.secondary.storage": "Each zone must have at least one NFS or secondary storage server, and we will add the first one now. Secondary storage stores VM templates, ISO images, and VM disk volume snapshots. This server must be available to all hosts in the zone.<br/><br/>Provide the IP address and exported path.",
 "message.error.required.input": "Please enter input",
 "message.error.invalid.range": "Please enter values from {min} to {max}",
+"message.error.number": "Please enter a valid number",
+"message.error.select": "Please select option",
+"message.disk.offering.created": "Disk offering created: {name}",
 "label.name": "Name",
 "label.ipv4.dns1": "IPv4 DNS1",
 "label.ipv4.dns2": "IPv4 DNS2",
@@ -1288,6 +1291,11 @@
 "diskbyteswriterate": "Disk Write Rate (BPS)",
 "diskiopsreadrate": "Disk Read Rate (IOPS)",
 "diskiopswriterate": "Disk Write Rate (IOPS)",
+"customdisksize": "Custom Disk Size",
+"writecachetype": "Write-cache Type",
+"nodiskcache": "No disk cache",
+"writeback": "Write-back disk caching",
+"writethrough": "Write-through",
 "none": "None",
 "maxcpunumber": "Max CPU Cores"
 }

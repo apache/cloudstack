@@ -25,14 +25,14 @@
         <a-form-item :label="$t('name')">
           <a-input
             v-decorator="['name', {
-              rules: [{ required: true, message: 'Please enter name' }]
+              rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
             :placeholder="this.$t('Name')"/>
         </a-form-item>
         <a-form-item :label="$t('displaytext')">
           <a-input
             v-decorator="['displaytext', {
-              rules: [{ required: true, message: 'Please enter description' }]
+              rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
             :placeholder="this.$t('displaytext')"/>
         </a-form-item>
@@ -75,15 +75,16 @@
         <a-form-item :label="$t('disksize')" v-if="!this.isCustomDiskSize">
           <a-input
             v-decorator="['disksize', {
-              rules: [{ required: true, message: 'Please enter disk size' },
-                      {
-                        validator: (rule, value, callback) => {
-                          if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
-                          }
-                          callback()
-                        }
-                      }
+              rules: [
+                { required: true, message: $t('message.error.required.input') },
+                {
+                  validator: (rule, value, callback) => {
+                    if (value && (isNaN(value) || value <= 0)) {
+                      callback(this.$t('message.error.number'))
+                    }
+                    callback()
+                  }
+                }
               ]
             }]"
             :placeholder="this.$t('disksize')"/>
@@ -112,7 +113,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -126,7 +127,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -140,7 +141,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -154,7 +155,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -171,7 +172,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -185,7 +186,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -199,7 +200,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -215,7 +216,7 @@
             buttonStyle="solid"
             @change="selected => { this.handleWriteCacheTypeChange(selected.target.value) }">
             <a-radio-button value="none">
-              {{ $t('none') }}
+              {{ $t('nodiskcache') }}
             </a-radio-button>
             <a-radio-button value="writeback">
               {{ $t('writeback') }}
@@ -252,7 +253,7 @@
               rules: [
                 {
                   required: true,
-                  message: 'Please select option'
+                  message: $t('message.error.select')
                 }
               ]
             }]"
@@ -277,7 +278,7 @@
                 {
                   validator: (rule, value, callback) => {
                     if (value && value.length > 1 && value.indexOf(0) !== -1) {
-                      callback('All Zones cannot be combined with any other zone')
+                      callback(this.$t('label.error.zone.combined'))
                     }
                     callback()
                   }
@@ -492,7 +493,7 @@ export default {
           params.zoneid = zoneId
         }
         api('createDiskOffering', params).then(json => {
-          this.$message.success('Disk offering created: ' + values.name)
+          this.$message.success(this.$t('message.disk.offering.created', { name: values.name }))
         }).catch(error => {
           this.$notification.error({
             message: 'Request Failed',
@@ -515,8 +516,9 @@ export default {
 <style scoped lang="scss">
   .form-layout {
     width: 80vw;
+
     @media (min-width: 800px) {
-      width: 400px;
+      width: 430px;
     }
   }
 

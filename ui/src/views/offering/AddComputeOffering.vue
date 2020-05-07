@@ -25,16 +25,16 @@
         <a-form-item :label="$t('name')">
           <a-input
             v-decorator="['name', {
-              rules: [{ required: true, message: 'Please enter name' }]
+              rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
             :placeholder="this.$t('Name')"/>
         </a-form-item>
         <a-form-item :label="$t('displaytext')">
           <a-input
             v-decorator="['displaytext', {
-              rules: [{ required: true, message: 'Please enter description' }]
+              rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="this.$t('displaytext  ')"/>
+            :placeholder="this.$t('displaytext')"/>
         </a-form-item>
         <a-form-item :label="$t('systemvmtype')" v-if="this.isSystem">
           <a-select
@@ -93,13 +93,13 @@
             buttonStyle="solid"
             @change="selected => { this.handleCacheModeChange(selected.target.value) }">
             <a-radio-button value="none">
-              {{ $t('No disk cache') }}
+              {{ $t('nodiskcache') }}
             </a-radio-button>
             <a-radio-button value="writeback">
-              {{ $t('Write-back disk caching') }}
+              {{ $t('writeback') }}
             </a-radio-button>
             <a-radio-button value="writethrough">
-              {{ $t('Write-through') }}
+              {{ $t('writethrough') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
@@ -124,11 +124,11 @@
         <a-form-item :label="$t('cpunumber')" v-if="this.offeringType === 'fixed'">
           <a-input
             v-decorator="['cpunumber', {
-              rules: [{ required: true, message: 'Please enter value' },
+              rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
+                            callback(this.$t('message.error.number'))
                           }
                           callback()
                         }
@@ -140,11 +140,11 @@
         <a-form-item :label="$t('cpuspeed')" v-if="this.offeringType !== 'customunconstrained'">
           <a-input
             v-decorator="['cpuspeed', {
-              rules: [{ required: true, message: 'Please enter value' },
+              rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
+                            callback(this.$t('message.error.number'))
                           }
                           callback()
                         }
@@ -156,11 +156,11 @@
         <a-form-item :label="$t('mincpunumber')" v-if="this.offeringType === 'customconstrained'">
           <a-input
             v-decorator="['mincpunumber', {
-              rules: [{ required: true, message: 'Please enter value' },
+              rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
+                            callback(this.$t('message.error.number'))
                           }
                           callback()
                         }
@@ -172,11 +172,11 @@
         <a-form-item :label="$t('maxcpunumber')" v-if="this.offeringType === 'customconstrained'">
           <a-input
             v-decorator="['maxcpunumber', {
-              rules: [{ required: true, message: 'Please enter value' },
+              rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
+                            callback(this.$t('message.error.number'))
                           }
                           callback()
                         }
@@ -188,11 +188,11 @@
         <a-form-item :label="$t('memory')" v-if="this.offeringType === 'fixed'">
           <a-input
             v-decorator="['memory', {
-              rules: [{ required: true, message: 'Please enter value' },
+              rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
+                            callback(this.$t('message.error.number'))
                           }
                           callback()
                         }
@@ -204,11 +204,11 @@
         <a-form-item :label="$t('minmemory')" v-if="this.offeringType === 'customconstrained'">
           <a-input
             v-decorator="['minmemory', {
-              rules: [{ required: true, message: 'Please enter value' },
+              rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
+                            callback(this.$t('message.error.number'))
                           }
                           callback()
                         }
@@ -220,11 +220,11 @@
         <a-form-item :label="$t('maxmemory')" v-if="this.offeringType === 'customconstrained'">
           <a-input
             v-decorator="['maxmemory', {
-              rules: [{ required: true, message: 'Please enter value' },
+              rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
+                            callback(this.$t('message.error.number'))
                           }
                           callback()
                         }
@@ -240,7 +240,7 @@
                 {
                   validator: (rule, value, callback) => {
                     if (value && (isNaN(value) || value <= 0)) {
-                      callback('Please enter a valid number')
+                      callback(this.$t('message.error.number'))
                     }
                     callback()
                   }
@@ -273,7 +273,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -287,7 +287,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -301,7 +301,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -315,7 +315,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -332,7 +332,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -346,7 +346,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -360,7 +360,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -471,7 +471,7 @@
               rules: [
                 {
                   required: true,
-                  message: 'Please select option'
+                  message: $t('message.error.select')
                 }
               ]
             }]"
@@ -496,7 +496,7 @@
                 {
                   validator: (rule, value, callback) => {
                     if (value && value.length > 1 && value.indexOf(0) !== -1) {
-                      callback('All Zones cannot be combined with any other zone')
+                      callback(this.$t('label.error.zone.combined'))
                     }
                     callback()
                   }
