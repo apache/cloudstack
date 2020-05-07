@@ -86,7 +86,7 @@ export default {
           dataView: true,
           groupAction: true,
           show: (record) => { return ['Stopped'].includes(record.state) },
-          args: ['podid', 'clusterid', 'hostid'],
+          args: (record, store) => { return ['Admin'].includes(store.userInfo.roletype) ? ['podid', 'clusterid', 'hostid'] : [] },
           response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
         },
         {
