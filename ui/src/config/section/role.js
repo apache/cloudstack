@@ -19,7 +19,7 @@ export default {
   name: 'role',
   title: 'Roles',
   icon: 'idcard',
-  permission: ['listRoles', 'createRole'],
+  permission: ['listRoles', 'listRolePermissions'],
   columns: ['name', 'type', 'description'],
   details: ['name', 'id', 'type', 'description'],
   tabs: [{
