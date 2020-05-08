@@ -535,14 +535,14 @@ class ConfigDriveUtils:
         # Verify hostname if the appropriate settings are true
         configs = Configurations.list(
             self.api_client,
-            name="allow.expose.host.hostname",
+            name="general.allow.expose.host.hostname",
             listall=True
         )
         exposeHypevisorHostnameGS = configs[0].value
 
         configs = Configurations.list(
             self.api_client,
-            name="allow.expose.host.hostname.account",
+            name="account.allow.expose.host.hostname",
             listall=True
         )
 
@@ -2304,7 +2304,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         #    which has userdata provided ConfigDrive, create
         #    an Isolated network using that network offering.
         #    Verify network is successfully created and in the Allocated state
-        #    Set the "allow.expose.host.hostname" and "allow.expose.host.hostname" flags to true
+        #    Set the "general.allow.expose.host.hostname" and "account.allow.expose.host.hostname" flags to true
         #    to enable viewing hypevisor host name in the metadata file
         #    Deploy VM in the network created, verify metadata in the configdrive
         #    my mounting the configdrive ISO and verify the respective files
@@ -2332,80 +2332,45 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.then_the_network_is_successfully_created(create_network1)
         self.then_the_network_has(create_network1, state="Allocated")
 
-        create_network2 = self.when_I_create_a_network_with_that_offering()
-        self.then_the_network_is_successfully_created(create_network2)
-        self.then_the_network_has(create_network2, state="Allocated")
-
         network1 = create_network1.network
-        network2 = create_network2.network
 
         # Update global setting for "allow.expose.host.hostname"
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="true"
                               )
 
         # Update Account level setting
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname.account",
+                              name="account.allow.expose.host.hostname",
                               value="true"
                               )
 
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='allow.expose.host.hostname',
+                name='general.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname should be true. skipping')
+            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='allow.expose.host.hostname.account',
+                name='account.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname.account should be true. skipping')
+            self.skipTest('Account level setting account.allow.expose.host.hostname should be true. skipping')
 
         self.debug("+++Deploy VM in the created Isolated network "
                    "with user data provider as configdrive")
 
         vm1 = self.when_I_deploy_a_vm(network1)
 
-        public_ip_1 = \
-            self.when_I_create_a_static_nat_ip_to(vm1, network1)
+        public_ip_1 = self.when_I_create_a_static_nat_ip_to(vm1, network1)
 
         self.then_vr_is_as_expected(network1)
         self.then_config_drive_is_as_expected(
             vm1, public_ip_1,
             metadata=True)
 
-        # =====================================================================
-
-        self.debug("Adding a non-default nic to the VM "
-                   "making it a multi-nic VM...")
-        self.plug_nic(vm1, network2)
-
-        # =====================================================================
-        # Test using network2 as default network
-        # =====================================================================
-
-        self.debug("updating non-default nic as the default nic "
-                   "of the multi-nic VM and enable staticnat...")
-        self.update_default_nic(vm1, network2)
-
-        public_ip_2 = \
-            self.when_I_create_a_static_nat_ip_to(vm1, network2)
-        self.stop_and_start_vm(vm1)
-        self.then_config_drive_is_as_expected(vm1, public_ip_2, metadata=True)
-
-        self.debug("Updating the default nic of the multi-nic VM, "
-                   "deleting the non-default nic...")
-        self.update_default_nic(vm1, network1)
-        self.stop_and_start_vm(vm1)
-        self.then_config_drive_is_as_expected(vm1, public_ip_1, metadata=True)
-
-        self.delete(public_ip_2)
-        self.unplug_nic(vm1, network2)
-
-        self.delete(network2)
 
         # =====================================================================
         # Network restart tests
@@ -2433,13 +2398,13 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Reset configuration values to default values i.e., false
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="false"
                               )
 
         # Update Account level setting
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname.account",
+                              name="account.allow.expose.host.hostname",
                               value="false"
                               )
 
@@ -2485,35 +2450,34 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Update global setting for "allow.expose.host.hostname"
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="true"
                               )
 
         # Update Account level setting
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname.account",
+                              name="account.allow.expose.host.hostname",
                               value="true"
                               )
 
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='allow.expose.host.hostname',
+                name='general.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname should be true. skipping')
+            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='allow.expose.host.hostname.account',
+                name='account.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('allow.expose.host.hostname.account should be true. skipping')
+            self.skipTest('Account level setting account.allow.expose.host.hostname should be true. skipping')
 
         # =====================================================================
         self.debug("+++ Scenario: "
                    "Deploy VM in the Tier 1 with user data")
         vm = self.when_I_deploy_a_vm(network1)
-        public_ip_1 = \
-            self.when_I_create_a_static_nat_ip_to(vm, network1)
+        public_ip_1 = self.when_I_create_a_static_nat_ip_to(vm, network1)
 
         self.then_config_drive_is_as_expected(vm, public_ip_1, metadata=True)
 
@@ -2549,20 +2513,20 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # =====================================================================
         self.debug("+++ Scenario: "
-                   "update userdata and reset password after migrate")
+                   "validate updated userdata after migrate")
         host = self.migrate_VM(vm)
         vm.hostname = host.name
         self.then_config_drive_is_as_expected(vm, public_ip_1, metadata=True)
 
         # Reset configuration values to default values i.e., false
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname",
+                              name="general.allow.expose.host.hostname",
                               value="false"
                               )
 
         # Update Account level setting
         Configurations.update(self.api_client,
-                              name="allow.expose.host.hostname.account",
+                              name="account.allow.expose.host.hostname",
                               value="false"
                               )
 

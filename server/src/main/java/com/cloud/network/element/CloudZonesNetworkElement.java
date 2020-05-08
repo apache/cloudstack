@@ -22,7 +22,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -50,7 +49,6 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -220,8 +218,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             }
             String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(uservm.getServiceOfferingId()).getDisplayText();
             String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
-            final Account caller = CallContext.current().getCallingAccount();
-            String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccoutLevel.valueIn(caller.getId())) ? dest.getHost().getName() : null;
+            String destHostname = VirtualMachineManager.getHypervisorHostname(dest.getHost().getName());
             cmds.addCommand(
                 "vmdata",
                 generateVmDataCommand(nic.getIPv4Address(), userData, serviceOffering, zoneName, nic.getIPv4Address(), uservm.getHostName(), uservm.getInstanceName(),
@@ -256,7 +253,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean addNewDisk(NicProfile profile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+    public boolean saveHypervisorHostname(NicProfile profile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
         return true;
     }
 

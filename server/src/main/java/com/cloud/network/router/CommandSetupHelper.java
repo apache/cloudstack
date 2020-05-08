@@ -26,7 +26,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -196,8 +195,7 @@ public class CommandSetupHelper {
             final IPAddressVO staticNatIp = _ipAddressDao.findByVmIdAndNetworkId(nic.getNetworkId(), vm.getId());
 
             Host host = _hostDao.findById(vm.getHostId());
-            final Account caller = CallContext.current().getCallingAccount();
-            String destHostname = (VirtualMachineManager.AllowExposeHypervisorHostname.value() && VirtualMachineManager.AllowExposeHypervisorHostnameAccoutLevel.valueIn(caller.getId())) ? host.getName() : null;
+            String destHostname = VirtualMachineManager.getHypervisorHostname(host.getName());
             cmds.addCommand(
                     "vmdata",
                     generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,

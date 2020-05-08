@@ -294,7 +294,14 @@ public interface NetworkOrchestrationService {
 
     void finalizeUpdateInSequence(Network network, boolean success);
 
-    void addNewDisk(VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException;
+    /**
+     * Adds hypervisor hostname to a file - hypervisor-host-name if the userdata
+     * service provider is ConfigDrive or VirtualRouter
+     * @param vm holds the details of the Virtual Machine
+     * @param dest holds information of the destination
+     * @throws ResourceUnavailableException in case Datastore or agent to which a command is to be sent is unavailable
+     */
+    void addHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException;
 
     List<NetworkGuru> getNetworkGurus();
 
