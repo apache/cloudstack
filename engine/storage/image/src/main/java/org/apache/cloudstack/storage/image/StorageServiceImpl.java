@@ -30,11 +30,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.secstorage.CommandExecLogDao;
@@ -48,6 +51,8 @@ public class StorageServiceImpl implements SecondaryStorageService {
     DataMotionService motionSrv;
     @Inject
     CommandExecLogDao _cmdExecLogDao;
+    @Inject
+    TemplateDataStoreDao templateStoreDao;
 
     private class MigrateDataContext<T> extends AsyncRpcContext<T> {
         final DataObject srcData;
@@ -76,30 +81,44 @@ public class StorageServiceImpl implements SecondaryStorageService {
                     destDataObject = destDatastore.create(snapshotInfo);
                     snapshotInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
                     destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
-                    MigrateDataContext<DataObjectResult> context = new MigrateDataContext<DataObjectResult>(null, future, snapshotInfo, destDataObject, destDatastore);
-                    AsyncCallbackDispatcher<StorageServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
-                    caller.setCallback(caller.getTarget().migrateDataCallBack(null, null)).setContext(context);
-                    motionSrv.copyAsync(snapshotInfo, destDataObject, caller);
+                    migrateJob(future, snapshotInfo, destDataObject, destDatastore);
                 }
             } else {
+                // Check if template in destination store, if yes, do not proceed
+                if (srcDataObject instanceof TemplateInfo) {
+                    s_logger.debug("Checking if template present at destination");
+                    TemplateDataStoreVO templateStoreVO = templateStoreDao.findByStoreTemplate(destDatastore.getId(), srcDataObject.getId());
+                    if (templateStoreVO != null) {
+                        String msg = "Template already exists in destination store";
+                        s_logger.debug(msg);
+                        res.setResult(msg);
+                        res.setSuccess(true);
+                        future.complete(res);
+                        return future;
+                    }
+                }
                 destDataObject = destDatastore.create(srcDataObject);
                 srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
                 destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
-                MigrateDataContext<DataObjectResult> context = new MigrateDataContext<DataObjectResult>(null, future, srcDataObject, destDataObject, destDatastore);
-                AsyncCallbackDispatcher<StorageServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
-                caller.setCallback(caller.getTarget().migrateDataCallBack(null, null)).setContext(context);
-                motionSrv.copyAsync(srcDataObject, destDataObject, caller);
+                migrateJob(future, srcDataObject, destDataObject, destDatastore);
             }
         } catch (Exception e) {
             s_logger.debug("Failed to copy Data", e);
             if (destDataObject != null) {
                 destDataObject.getDataStore().delete(destDataObject);
-                srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
             }
+            srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
             res.setResult(e.toString());
             future.complete(res);
         }
         return future;
+    }
+
+    protected void migrateJob(AsyncCallFuture<DataObjectResult> future, DataObject srcDataObject, DataObject destDataObject, DataStore destDatastore) throws ExecutionException, InterruptedException {
+        MigrateDataContext<DataObjectResult> context = new MigrateDataContext<DataObjectResult>(null, future, srcDataObject, destDataObject, destDatastore);
+        AsyncCallbackDispatcher<StorageServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().migrateDataCallBack(null, null)).setContext(context);
+        motionSrv.copyAsync(srcDataObject, destDataObject, caller);
     }
 
     /**

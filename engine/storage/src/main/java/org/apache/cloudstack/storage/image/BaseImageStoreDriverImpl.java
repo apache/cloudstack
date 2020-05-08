@@ -364,7 +364,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 (srcdata.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME)) {
 
             int nMaxExecutionMinutes = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
-            int maxConcurrentCopyOpsPerSSVM = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageMaxMigrateSessions.key()), 2);
             CopyCommand cmd = new CopyCommand(srcdata.getTO(), destData.getTO(), nMaxExecutionMinutes * 60 * 1000, true);
             Answer answer = null;
 
@@ -376,28 +375,34 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 answer = new Answer(cmd, false, errMsg);
             } else {
                 // select endpoint with least number of commands running on them
-                EndPoint endPoint = null;
-                Long epId = ssvmWithLeastMigrateJobs();
-                if (epId == null) {
-                    Collections.shuffle(eps);
-                    endPoint = eps.get(0);
-                } else {
-                    List<EndPoint> remainingEps = eps.stream().filter(ep -> ep.getId() != epId ).collect(Collectors.toList());
-                    if (!remainingEps.isEmpty()) {
-                        Collections.shuffle(remainingEps);
-                        endPoint = remainingEps.get(0);
-                    } else {
-                        endPoint = _defaultEpSelector.getEndPointFromHostId(epId);
-                    }
-                }
-                CommandExecLogVO execLog = new CommandExecLogVO(endPoint.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(endPoint.getId()).getName()).getId(), cmd.getClass().getSimpleName(), 1);
-                Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
-                answer = endPoint.sendMessage(cmd);
-                answer.setContextParam("cmd", cmdExecId.toString());
+                answer = sendToLeastBusyEndpoint(eps, cmd);
             }
             CopyCommandResult result = new CopyCommandResult("", answer);
             callback.complete(result);
         }
+    }
+
+    private Answer sendToLeastBusyEndpoint(List<EndPoint> eps, CopyCommand cmd) {
+        Answer answer = null;
+        EndPoint endPoint = null;
+        Long epId = ssvmWithLeastMigrateJobs();
+        if (epId == null) {
+            Collections.shuffle(eps);
+            endPoint = eps.get(0);
+        } else {
+            List<EndPoint> remainingEps = eps.stream().filter(ep -> ep.getId() != epId ).collect(Collectors.toList());
+            if (!remainingEps.isEmpty()) {
+                Collections.shuffle(remainingEps);
+                endPoint = remainingEps.get(0);
+            } else {
+                endPoint = _defaultEpSelector.getEndPointFromHostId(epId);
+            }
+        }
+        CommandExecLogVO execLog = new CommandExecLogVO(endPoint.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(endPoint.getId()).getName()).getId(), cmd.getClass().getSimpleName(), 1);
+        Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
+        answer = endPoint.sendMessage(cmd);
+        answer.setContextParam("cmd", cmdExecId.toString());
+        return answer;
     }
 
     @Override
