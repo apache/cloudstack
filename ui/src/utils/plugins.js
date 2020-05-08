@@ -104,7 +104,7 @@ export const notifierPlugin = {
       }
       notification.error({
         message: msg,
-        description: error && error.response && 'x-description' in error.response.headers ? error.response.headers['x-description'] : error.message,
+        description: desc,
         duration: 0
       })
     }
