@@ -179,10 +179,7 @@ export default {
         this.dataSource = listProjectInvitations
         this.itemCount = itemCount
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
@@ -237,10 +234,7 @@ export default {
         }
       }).catch(error => {
         // show error
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         setTimeout(loading, 1000)
       })

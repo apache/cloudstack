@@ -293,10 +293,7 @@ export default {
             this.kubernetesVersion = versionObjs[0]
           }
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: error.response.headers['x-description']
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.versionLoading = false
           if (!this.isObjectEmpty(this.kubernetesVersion) && this.isValidValueForKey(this.kubernetesVersion, 'semanticversion')) {
@@ -333,10 +330,7 @@ export default {
             this.virtualmachines = this.virtualmachines.concat(listVms)
           }
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: error.response.headers['x-description']
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.instanceLoading = false
         })
@@ -363,10 +357,7 @@ export default {
           this.publicIpAddress = ips[0]
         }
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.networkLoading = false
       })

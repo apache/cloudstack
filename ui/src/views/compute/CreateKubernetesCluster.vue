@@ -405,10 +405,7 @@ export default {
         api('createKubernetesCluster', params).then(json => {
           this.$message.success('Successfully created Kubernetes cluster: ' + values.name)
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.$emit('refresh-data')
           this.loading = false

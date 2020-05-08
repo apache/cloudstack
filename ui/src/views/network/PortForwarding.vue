@@ -299,10 +299,7 @@ export default {
         this.portForwardRules = response.listportforwardingrulesresponse.portforwardingrule || []
         this.totalCount = response.listportforwardingrulesresponse.count || 0
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
@@ -321,10 +318,7 @@ export default {
           catchMethod: () => this.fetchData()
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.fetchData()
       })
     },
@@ -356,10 +350,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.createportforwardingruleresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
         this.fetchData()
       })
@@ -403,10 +394,7 @@ export default {
         this.tags = response.listtagsresponse.tag
         this.tagsModalLoading = false
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -441,10 +429,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.createtagsresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -479,10 +464,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.deletetagsresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -500,10 +482,7 @@ export default {
         this.vms = response.listvirtualmachinesresponse.virtualmachine
         this.addVmModalLoading = false
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -523,10 +502,7 @@ export default {
         this.addVmModalNicLoading = false
       }).catch(error => {
         console.log(error)
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },

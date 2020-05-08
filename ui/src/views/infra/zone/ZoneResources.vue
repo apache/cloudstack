@@ -73,10 +73,7 @@ export default {
         this.resourcesList = response.listcapacityresponse.capacity
         this.animatePercentVals()
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })

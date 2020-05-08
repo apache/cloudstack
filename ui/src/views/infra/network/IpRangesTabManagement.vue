@@ -220,11 +220,7 @@ export default {
         }
       }).catch(error => {
         console.log(error)
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.listpodsresponse
-            ? error.response.data.listpodsresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.componentLoading = false
       })
@@ -271,11 +267,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.deletemanagementnetworkiprangeresponse
-            ? error.response.data.deletemanagementnetworkiprangeresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.componentLoading = false
         this.fetchData()
       })
@@ -319,11 +311,7 @@ export default {
             }
           })
         }).catch(error => {
-          this.$notification.error({
-            message: `Error ${error.response.status}`,
-            description: error.response.data.createmanagementnetworkiprangeresponse
-              ? error.response.data.createmanagementnetworkiprangeresponse.errortext : error.response.data.errorresponse.errortext
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.componentLoading = false
           this.fetchData()

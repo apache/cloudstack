@@ -44,16 +44,13 @@ export default {
   },
   methods: {
     doSso () {
+      this.showError = false
       api('cloudianSsoLogin').then(json => {
         const url = json.cloudianssologinresponse.cloudianssologin.url
         const cmcWindow = window.open(url, 'CMCWindow')
         cmcWindow.focus()
       }).catch(error => {
-        this.$notification.error({
-          message: 'Single-Sign-On Failed',
-          description: error.response.headers['x-description'] || 'Request Failed',
-          duration: 0
-        })
+        this.$notifyError(error)
         this.showError = true
       })
     }

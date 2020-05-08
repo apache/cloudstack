@@ -129,11 +129,7 @@ export default {
           }
         }
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description'],
-          duration: 0
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })

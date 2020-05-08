@@ -268,11 +268,7 @@ export default {
       }).then(response => {
         this.items = response.listvlaniprangesresponse.vlaniprange ? response.listvlaniprangesresponse.vlaniprange : []
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.listvlaniprangesresponse
-            ? error.response.data.listvlaniprangesresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.componentLoading = false
       })
@@ -289,11 +285,7 @@ export default {
           this.form.setFieldsValue({ domain: this.domains[0].id })
         }
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.listdomains
-            ? error.response.data.listdomains.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.domainsLoading = false
       })
@@ -312,11 +304,7 @@ export default {
         domainid: this.addAccount.domain,
         account: this.addAccount.account
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.dedicatepubliciprangeresponse
-            ? error.response.data.dedicatepubliciprangeresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.addAccountModal = false
         this.domainsLoading = false
@@ -326,11 +314,7 @@ export default {
     handleRemoveAccount (id) {
       this.componentLoading = true
       api('releasePublicIpRange', { id }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.releasepubliciprangeresponse
-            ? error.response.data.releasepubliciprangeresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchData()
       })
@@ -364,11 +348,7 @@ export default {
           message: 'Removed IP Range'
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.deletevlaniprangeresponse
-            ? error.response.data.deletevlaniprangeresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.componentLoading = false
         this.fetchData()

@@ -144,10 +144,7 @@ export default {
             catchMessage: 'Error encountered while fetching async job result'
           })
         }).catch(error => {
-          this.$notification.error({
-            message: `Error ${error.response.status}`,
-            description: error.response.data.errorresponse.errortext
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
           this.$emit('refresh-data')

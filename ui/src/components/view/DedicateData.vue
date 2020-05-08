@@ -121,10 +121,7 @@ export default {
           this.dedicatedAccountId = response.listdedicatedzonesresponse.dedicatedzone[0].accountid
         }
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     fetchDedicatedPods () {
@@ -137,10 +134,7 @@ export default {
           this.dedicatedAccountId = response.listdedicatedpodsresponse.dedicatedpod[0].accountid
         }
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     fetchDedicatedClusters () {
@@ -153,10 +147,7 @@ export default {
           this.dedicatedAccountId = response.listdedicatedclustersresponse.dedicatedcluster[0].accountid
         }
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     fetchDedicatedHosts () {
@@ -169,10 +160,7 @@ export default {
           this.dedicatedAccountId = response.listdedicatedhostsresponse.dedicatedhost[0].accountid
         }
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     releaseDedidcatedZone () {
@@ -202,10 +190,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     releaseDedidcatedPod () {
@@ -235,10 +220,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     releaseDedidcatedCluster () {
@@ -268,10 +250,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     releaseDedidcatedHost () {
@@ -301,10 +280,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     handleRelease () {

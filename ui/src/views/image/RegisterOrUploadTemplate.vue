@@ -873,11 +873,7 @@ export default {
               description: 'Successfully registered template ' + params.name
             })
           }).catch(error => {
-            this.$notification.error({
-              message: 'Request Failed',
-              description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-              duration: 0
-            })
+            this.$notifyError(error)
           }).finally(() => {
             this.loading = false
             this.closeAction()
@@ -895,11 +891,7 @@ export default {
             this.uploadParams = (json.postuploadtemplateresponse && json.postuploadtemplateresponse.getuploadparams) ? json.postuploadtemplateresponse.getuploadparams : ''
             this.handleUpload()
           }).catch(error => {
-            this.$notification.error({
-              message: 'Request Failed',
-              description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-              duration: 0
-            })
+            this.$notifyError(error)
           }).finally(() => {
             this.loading = false
           })

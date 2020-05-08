@@ -146,10 +146,7 @@ export default {
             description: 'Successfully changed password for user "' + this.resource.username + '"'
           })
         }).catch(error => {
-          this.$notification.error({
-            message: 'Error',
-            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.$emit('refresh-data')
           this.loading = false

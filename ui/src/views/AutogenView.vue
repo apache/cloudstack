@@ -507,11 +507,7 @@ export default {
           this.treeSelected = {}
         }
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description'],
-          duration: 0
-        })
+        this.$notifyError(error)
 
         if ([401, 405].includes(error.response.status)) {
           this.$router.push({ path: '/exception/403' })
@@ -771,10 +767,7 @@ export default {
             }
           }).catch(error => {
             console.log(error)
-            this.$notification.error({
-              message: 'Request Failed',
-              description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
-            })
+            this.$notifyError(error)
           }).finally(f => {
             this.closeAction()
           })

@@ -105,10 +105,7 @@ export default {
         this.zones.opts = json.listzonesresponse.zone || []
         this.$forceUpdate()
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
-        })
+        this.$notifyError(error)
       }).finally(f => {
         this.zones.loading = false
       })
@@ -123,10 +120,7 @@ export default {
         this.externals.opts = json.listbackupproviderofferingsresponse.backupoffering || []
         this.$forceUpdate()
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
-        })
+        this.$notifyError(error)
       }).finally(f => {
         this.externals.loading = false
       })
@@ -170,10 +164,7 @@ export default {
             })
           }
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
-          })
+          this.$notifyError(error)
         }).finally(f => {
           this.loading = false
         })

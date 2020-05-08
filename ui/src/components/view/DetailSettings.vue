@@ -193,10 +193,7 @@ export default {
           return { name: k, value: details[k], edit: false }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: 'Failed to add setting',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(f => {
         this.loading = false
         this.showAddDetail = false

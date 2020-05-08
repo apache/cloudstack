@@ -285,10 +285,7 @@ export default {
             description: this.$t('label.action.update.offering.access')
           })
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
           this.closeAction()

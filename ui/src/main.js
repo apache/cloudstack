@@ -27,11 +27,12 @@ import './core/use'
 import './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
-import { pollJobPlugin } from './utils/plugins'
+import { pollJobPlugin, notifierPlugin } from './utils/plugins'
 
 Vue.config.productionTip = false
 Vue.use(VueAxios, router)
 Vue.use(pollJobPlugin)
+Vue.use(notifierPlugin)
 
 new Vue({
   router,

@@ -71,10 +71,7 @@ export default {
         }
         this.$set(this.resource, 'vmwaredc', this.vmwaredc)
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     }
   }

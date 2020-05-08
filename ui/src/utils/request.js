@@ -41,7 +41,7 @@ const err = (error) => {
       if (response.config && response.config.params && ['listIdps'].includes(response.config.params.command)) {
         return
       }
-      notification.error({ message: 'Unauthorized', description: 'Authorization verification failed' })
+      notification.error({ message: 'Unauthorized', description: 'Session expired, authorization verification failed' })
       if (token) {
         store.dispatch('Logout').then(() => {
           setTimeout(() => {

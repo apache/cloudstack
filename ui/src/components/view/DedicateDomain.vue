@@ -80,12 +80,9 @@ export default {
           this.domainId = this.domainsList[0].id
           this.handleChangeDomain(this.domainId)
         }
-        this.domainsLoading = false
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
+      }).finally(() => {
         this.domainsLoading = false
       })
     },
@@ -98,10 +95,7 @@ export default {
           this.handleChangeAccount(null)
         }
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     handleChangeDomain (e) {

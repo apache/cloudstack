@@ -94,10 +94,7 @@ export default {
           ? response.listremoteaccessvpnsresponse.remoteaccessvpn[0] : null
       }).catch(error => {
         console.log(error)
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     handleCreateVpn () {
@@ -137,11 +134,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.createremoteaccessvpnresponse
-            ? error.response.data.createremoteaccessvpnresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.fetchData()
         this.parentFetchData()
         this.parentToggleLoading()
@@ -177,11 +170,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.deleteremoteaccessvpnresponse
-            ? error.response.data.deleteremoteaccessvpnresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.fetchData()
         this.parentFetchData()
         this.parentToggleLoading()

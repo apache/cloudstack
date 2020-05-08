@@ -495,10 +495,7 @@ export default {
         api('createDiskOffering', params).then(json => {
           this.$message.success(this.$t('message.disk.offering.created', { name: values.name }))
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
           this.$emit('refresh-data')

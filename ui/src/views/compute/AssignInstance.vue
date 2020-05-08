@@ -216,10 +216,7 @@ export default {
         this.$parent.$parent.close()
         this.parentFetchData()
       }).catch(error => {
-        this.$notification.error({
-          message: 'Failed to assign instance',
-          description: error.response.data.assignvirtualmachineresponse.errortext && error.response.data.assignvirtualmachineresponse.errortext
-        })
+        this.$notifyError(error)
         this.$parent.$parent.close()
         this.parentFetchData()
       })

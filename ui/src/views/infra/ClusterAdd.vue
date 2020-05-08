@@ -167,10 +167,7 @@ export default {
         this.zoneId = this.zonesList[0].id || null
         this.fetchPods()
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
@@ -181,10 +178,7 @@ export default {
         this.hypervisorsList = response.listhypervisorsresponse.hypervisor || []
         this.hypervisor = this.hypervisorsList[0].name || null
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
@@ -197,10 +191,7 @@ export default {
         this.podsList = response.listpodsresponse.pod || []
         this.podId = this.podsList[0].id || null
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })

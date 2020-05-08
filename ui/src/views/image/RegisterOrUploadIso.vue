@@ -334,11 +334,7 @@ export default {
               description: 'Sucessfully registered ISO ' + params.name
             })
           }).catch(error => {
-            this.$notification.error({
-              message: 'Request Failed',
-              description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-              duration: 0
-            })
+            this.$notifyError(error)
           }).finally(() => {
             this.loading = false
             this.closeAction()
@@ -359,11 +355,7 @@ export default {
               })
             }
           }).catch(error => {
-            this.$notification.error({
-              message: 'Request Failed',
-              description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-              duration: 0
-            })
+            this.$notifyError(error)
           }).finally(() => {
             this.loading = false
           })

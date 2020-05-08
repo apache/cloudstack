@@ -110,10 +110,7 @@ export default {
       api('listSystemVms', { zoneid: this.resource.id }).then(json => {
         this.vms = json.listsystemvmsresponse.systemvm || []
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })

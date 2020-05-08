@@ -408,10 +408,7 @@ export default {
         this.privateGateways = json.listprivategatewaysresponse.privategateway
         this.itemCounts.privateGateways = json.listprivategatewaysresponse.count
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })
@@ -424,10 +421,7 @@ export default {
       }).then(json => {
         this.vpnGateways = json.listvpngatewaysresponse.vpngateway ? json.listvpngatewaysresponse.vpngateway : []
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })
@@ -443,10 +437,7 @@ export default {
         this.vpnConnections = json.listvpnconnectionsresponse.vpnconnection
         this.itemCounts.vpnConnections = json.listvpnconnectionsresponse.count
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })
@@ -467,10 +458,7 @@ export default {
           })
         }
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })
@@ -485,10 +473,7 @@ export default {
           })
         }
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.modals.gatewayLoading = false
       })
@@ -503,10 +488,7 @@ export default {
           })
         }
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.modals.vpnConnectionLoading = false
       })
@@ -576,10 +558,7 @@ export default {
             }
           })
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: error.response.headers['x-description']
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.modals.gatewayLoading = false
           this.modals.gateway = false
@@ -626,10 +605,7 @@ export default {
             }
           })
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: error.response.headers['x-description']
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.fetchVpnConnections()
           this.fetchLoading = false
@@ -671,10 +647,7 @@ export default {
             }
           })
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: error.response.headers['x-description']
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.fetchLoading = false
           this.fetchAclList()
@@ -707,10 +680,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
         this.handleFetchData()

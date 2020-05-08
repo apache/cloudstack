@@ -271,10 +271,7 @@ export default {
           this.acls.sort((a, b) => a.number - b.number)
         }
       }).catch(error => {
-        this.$notification.error({
-          message: 'Request Failed',
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })
@@ -287,10 +284,7 @@ export default {
       }).then(response => {
         this.tags = response.listtagsresponse.tag || []
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       })
     },
     openTagsModal (acl) {
@@ -332,10 +326,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.deletetagsresponse.errortext
-        })
+        this.$notifyError(error)
         this.tagsLoading = false
       })
     },
@@ -380,10 +371,7 @@ export default {
             }
           })
         }).catch(error => {
-          this.$notification.error({
-            message: `Error ${error.response.status}`,
-            description: error.response.data.createtagsresponse.errortext
-          })
+          this.$notifyError(error)
           this.tagsLoading = false
         })
       })
@@ -451,10 +439,7 @@ export default {
             }
           })
         }).catch(error => {
-          this.$notification.error({
-            message: `Error ${error.response.status}`,
-            description: error.response.data.createnetworkaclresponse.errortext
-          })
+          this.$notifyError(error)
           this.fetchLoading = false
         })
       })
@@ -487,10 +472,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.deletenetworkaclresponse.errortext
-        })
+        this.$notifyError(error)
         this.fetchLoading = false
       })
     },
@@ -552,10 +534,7 @@ export default {
             description: 'Successfully added new rule'
           })
         }).catch(error => {
-          this.$notification.error({
-            message: 'Request Failed',
-            description: error.response.headers['x-description']
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.fetchLoading = false
           this.fetchData()
@@ -602,10 +581,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.headers['x-description']
-        })
+        this.$notifyError(error)
         this.fetchLoading = false
       })
     },

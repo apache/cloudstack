@@ -175,10 +175,7 @@ export default {
         this.iLb.vmguestip[index] = this.nics[index][0]
         this.addVmModalNicLoading = false
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}` || 'Error',
-          description: error.response.data.errorresponse.errortext || 'Error'
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },

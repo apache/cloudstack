@@ -190,11 +190,7 @@ export default {
       }).then(response => {
         this.items = response.liststoragenetworkiprangeresponse.storagenetworkiprange ? response.liststoragenetworkiprangeresponse.storagenetworkiprange : []
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.liststoragenetworkiprangeresponse
-            ? error.response.data.liststoragenetworkiprangeresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.componentLoading = false
       })
@@ -206,11 +202,7 @@ export default {
       }).then(response => {
         this.pods = response.listpodsresponse.pod ? response.listpodsresponse.pod : []
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.listpodsresponse
-            ? error.response.data.listpodsresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
       }).finally(() => {
         this.componentLoading = false
       })
@@ -256,11 +248,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.deletestoragenetworkiprangeresponse
-            ? error.response.data.deletestoragenetworkiprangeresponse.errortext : error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.componentLoading = false
         this.fetchData()
       })
@@ -304,11 +292,7 @@ export default {
             }
           })
         }).catch(error => {
-          this.$notification.error({
-            message: `Error ${error.response.status}`,
-            description: error.response.data.createstoragenetworkiprangeresponse
-              ? error.response.data.createstoragenetworkiprangeresponse.errortext : error.response.data.errorresponse.errortext
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.componentLoading = false
           this.fetchData()

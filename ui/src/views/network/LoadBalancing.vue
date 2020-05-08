@@ -466,10 +466,7 @@ export default {
         }
         this.loading = false
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.loading = false
       })
     },
@@ -483,10 +480,7 @@ export default {
         }).then(response => {
           this.$set(rule, 'ruleInstances', response.listloadbalancerruleinstancesresponse.lbrulevmidip)
         }).catch(error => {
-          this.$notification.error({
-            message: `Error ${error.response.status}`,
-            description: error.response.data.errorresponse.errortext
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
         })
@@ -501,10 +495,7 @@ export default {
         }).then(response => {
           this.stickinessPolicies.push(...response.listlbstickinesspoliciesresponse.stickinesspolicies)
         }).catch(error => {
-          this.$notification.error({
-            message: `Error ${error.response.status}`,
-            description: error.response.data.errorresponse.errortext
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
         })
@@ -543,10 +534,7 @@ export default {
         this.tags = response.listtagsresponse.tag
         this.tagsModalLoading = false
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -589,10 +577,7 @@ export default {
             }
           })
         }).catch(error => {
-          this.$notification.error({
-            message: `Error ${error.response.status}`,
-            description: error.response.data.createtagsresponse.errortext
-          })
+          this.$notifyError(error)
           this.closeModal()
         })
       })
@@ -628,10 +613,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.deletetagsresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -692,10 +674,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.createLBStickinessPolicy.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -728,10 +707,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -800,10 +776,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.fetchData()
       })
     },
@@ -847,10 +820,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.loading = false
         this.closeModal()
       })
@@ -886,10 +856,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.loading = false
         this.closeModal()
       })
@@ -931,10 +898,7 @@ export default {
         })
         this.addVmModalLoading = false
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -962,10 +926,7 @@ export default {
         this.newRule.vmguestip[index] = this.nics[index][0]
         this.addVmModalNicLoading = false
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+        this.$notifyError(error)
         this.closeModal()
       })
     },
@@ -1042,10 +1003,7 @@ export default {
         this.addVmModalVisible = false
         this.handleAssignToLBRule(response.createloadbalancerruleresponse.id)
       }).catch(error => {
-        this.$notification.error({
-          message: `Error ${error.response.status}`,
-          description: error.response.data.createloadbalancerruleresponse.errortext
-        })
+        this.$notifyError(error)
         this.loading = false
       })
 
