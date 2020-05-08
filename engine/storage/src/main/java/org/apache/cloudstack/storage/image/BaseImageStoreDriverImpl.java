@@ -24,9 +24,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -373,32 +375,26 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 s_logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
             } else {
-                boolean sent = false;
-                // Find the first endpoint to which the command can be sent to
-                for (EndPoint ep : eps) {
-                    if (getCopyCmdsCountToSpecificSSVM(ep.getId()) >= maxConcurrentCopyOpsPerSSVM) {
-                        continue;
+                // select endpoint with least number of commands running on them
+                EndPoint endPoint = null;
+                Long epId = ssvmWithLeastMigrateJobs();
+                if (epId == null) {
+                    Collections.shuffle(eps);
+                    endPoint = eps.get(0);
+                } else {
+                    List<EndPoint> remainingEps = eps.stream().filter(ep -> ep.getId() != epId ).collect(Collectors.toList());
+                    if (!remainingEps.isEmpty()) {
+                        Collections.shuffle(remainingEps);
+                        endPoint = remainingEps.get(0);
+                    } else {
+                        endPoint = _defaultEpSelector.getEndPointFromHostId(epId);
                     }
-
-                    CommandExecLogVO execLog = new CommandExecLogVO(ep.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(ep.getId()).getName()).getId(), cmd.getClass().getSimpleName(), 1);
-                    Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
-                    answer = ep.sendMessage(cmd);
-                    answer.setContextParam("cmd", cmdExecId.toString());
-                    sent = true;
-                    break;
                 }
-                // If both SSVMs are pre-occupied with tasks, choose the SSVM with least migrate jobs
-                if (!sent) {
-                    // Picking endpoint with least number of copy commands running on it
-                    Long epId = ssvmWithLeastMigrateJobs();
-                    EndPoint endPoint = _defaultEpSelector.getEndPointFromHostId(epId);
-                    CommandExecLogVO execLog = new CommandExecLogVO(epId, _secStorageVmDao.findByInstanceName(hostDao.findById(epId).getName()).getId(), cmd.getClass().getSimpleName(), 1);
-                    Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
-                    answer = endPoint.sendMessage(cmd);
-                    answer.setContextParam("cmd", cmdExecId.toString());
-                }
+                CommandExecLogVO execLog = new CommandExecLogVO(endPoint.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(endPoint.getId()).getName()).getId(), cmd.getClass().getSimpleName(), 1);
+                Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
+                answer = endPoint.sendMessage(cmd);
+                answer.setContextParam("cmd", cmdExecId.toString());
             }
-
             CopyCommandResult result = new CopyCommandResult("", answer);
             callback.complete(result);
         }
@@ -486,8 +482,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         try {
             pstmt = txn.prepareAutoCloseStatement(query);
             ResultSet rs = pstmt.executeQuery();
-            rs.absolute(1);
-            epId = (long) rs.getInt(1);
+            if (rs.getFetchSize() > 0) {
+                rs.absolute(1);
+                epId = (long) rs.getInt(1);
+            }
         } catch (SQLException e) {
             s_logger.debug("SQLException caught", e);
         }

@@ -18,11 +18,28 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.serializer.Param;
+import com.cloud.storage.ImageStore;
+import com.google.gson.annotations.SerializedName;
+
+@EntityReference(value = ImageStore.class)
 public class MigrationResponse extends BaseResponse {
+    @SerializedName("message")
+    @Param(description = "Response message")
     private String message;
+
+    @SerializedName("migrationtype")
+    @Param(description = "Type of migration requested for")
     private String migrationType;
+
+    @SerializedName("success")
+    @Param(description = "true if operation is executed successfully")
     private boolean success;
+
+    MigrationResponse() {
+    }
 
     public MigrationResponse(String message, String migrationType, boolean success) {
         this.message = message;
