@@ -29,7 +29,7 @@ export default {
       icon: 'plus',
       label: 'label.add.user',
       listView: true,
-      args: ['username', 'password', 'password', 'email', 'firstname', 'lastname', 'timezone', 'account', 'domainid']
+      args: ['username', 'password', 'email', 'firstname', 'lastname', 'timezone', 'account', 'domainid']
     },
     {
       api: 'updateUser',

@@ -53,7 +53,7 @@ export default {
       icon: 'plus',
       label: 'label.add.account',
       listView: true,
-      args: ['username', 'password', 'password', 'email', 'firstname', 'lastname', 'domainid', 'account', 'roleid', 'timezone', 'networkdomain']
+      args: ['username', 'password', 'email', 'firstname', 'lastname', 'domainid', 'account', 'roleid', 'timezone', 'networkdomain']
     },
     {
       api: 'ldapCreateAccount',
