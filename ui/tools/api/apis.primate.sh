@@ -6,8 +6,8 @@ grep store.getters.apis -R . | sed "s/' in.*//g" | sed "s/').*//g" | grep "'" | 
 grep 'permission:\ \[' -R config | sed "s/.*permission: \['//g" | grep -v .js | sed "s/', '/\\n/g" | sed "s/'.*//g" >> apis.txt
 cat apis.txt | sort | uniq > apis.uniq
 rm -f apis.txt
-mv apis.uniq ../docs/api/apis.txt
-cd ../docs/api
+mv apis.uniq ../tools/api/apis.txt
+cd ../tools/api
 diff -Naur apis.old apis.txt | grep ^- | grep -v "^--" | sed 's/^-//g' | grep -v -i -e cisco -e nicira -e baremetal -e srx -e f5 -e brocade -e palo -e autoscale -e counter -e condition -e ucs -e netscaler -e bigswitch -e ovs -e globalloadbalancer -e opendaylight -e region -e quota | sort | uniq > apis.remaining
 
 echo "$(cat apis.txt | wc -l) APIs are supported by Primate"

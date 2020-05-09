@@ -106,9 +106,9 @@ server {
 A production-ready Docker container can also be built with the provided
 Dockerfile and build script.
 
-Make sure Docker is installed, then run build.sh:
+Make sure Docker is installed, then run:
 
-    ./build.sh
+    bash tools/docker.sh
 
 Change the example configuration in `nginx/default.conf` according to your needs.
 
