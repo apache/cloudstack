@@ -61,6 +61,7 @@ export function generateRouterMap (section) {
           docHelp: child.docHelp,
           permission: child.permission,
           resourceType: child.resourceType,
+          filters: child.filters,
           params: child.params ? child.params : {},
           columns: child.columns,
           details: child.details,
@@ -122,6 +123,7 @@ export function generateRouterMap (section) {
     map.meta.resourceType = section.resourceType
     map.meta.details = section.details
     map.meta.actions = section.actions
+    map.meta.filters = section.filters
     map.meta.treeView = section.treeView ? section.treeView : false
     map.meta.tabs = section.treeView ? section.tabs : {}
 

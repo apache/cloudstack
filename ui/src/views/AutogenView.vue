@@ -19,7 +19,7 @@
   <div>
     <a-card class="breadcrumb-card">
       <a-row>
-        <a-col :span="14" style="padding-left: 6px">
+        <a-col :span="12" style="padding-left: 6px">
           <breadcrumb :resource="resource">
             <a-tooltip placement="bottom" slot="end">
               <template slot="title">
@@ -37,7 +37,7 @@
             </a-tooltip>
           </breadcrumb>
         </a-col>
-        <a-col :span="10">
+        <a-col :span="12">
           <span style="float: right">
             <action-button
               style="margin-bottom: 5px"
@@ -47,6 +47,17 @@
               :dataView="dataView"
               :resource="resource"
               @exec-action="execAction"/>
+            <a-select
+              v-if="filters && filters.length > 0"
+              placeholder="Filter By"
+              :value="$t(selectedFilter)"
+              style="min-width: 100px; margin-left: 10px"
+              @change="changeFilter">
+              <a-icon slot="suffixIcon" type="filter" />
+              <a-select-option v-for="filter in filters" :key="filter">
+                {{ $t(filter) }}
+              </a-select-option>
+            </a-select>
             <a-input-search
               style="width: 20vw; margin-left: 10px"
               placeholder="Search"
@@ -305,6 +316,8 @@ export default {
       showAction: false,
       dataView: false,
       treeView: false,
+      selectedFilter: '',
+      filters: [],
       actions: [],
       treeData: [],
       treeSelected: {},
@@ -337,6 +350,7 @@ export default {
         this.searchQuery = ''
         this.page = 1
         this.itemCount = 0
+        this.selectedFilter = ''
         this.fetchData()
       }
     },
@@ -347,7 +361,7 @@ export default {
     }
   },
   methods: {
-    fetchData () {
+    fetchData (params = { listall: true }) {
       if (this.routeName !== this.$route.name) {
         this.routeName = this.$route.name
         this.items = []
@@ -357,11 +371,12 @@ export default {
       }
       this.apiName = ''
       this.actions = []
+      this.filters = this.$route.meta.filters || []
       this.columns = []
       this.columnKeys = []
       this.treeData = []
       this.treeSelected = {}
-      var params = { listall: true }
+
       if (Object.keys(this.$route.query).length > 0) {
         Object.assign(params, this.$route.query)
       } else if (this.$route.meta.params) {
@@ -391,6 +406,26 @@ export default {
 
       if (this.apiName === '' || this.apiName === undefined) {
         return
+      }
+
+      if (['listTemplates', 'listIsos'].includes(this.apiName) && !this.dataView) {
+        if (['Admin'].includes(this.$store.getters.userInfo.roletype)) {
+          this.filters = ['all', ...this.filters]
+          if (this.selectedFilter === '') {
+            this.selectedFilter = 'all'
+          }
+        }
+        if (this.selectedFilter === '') {
+          this.selectedFilter = 'self'
+        }
+      }
+
+      if (this.selectedFilter && this.filters.length > 0) {
+        if (this.$route.path.startsWith('/template')) {
+          params.templatefilter = this.selectedFilter
+        } else if (this.$route.path.startsWith('/iso')) {
+          params.isofilter = this.selectedFilter
+        }
       }
 
       if (this.searchQuery !== '') {
@@ -448,12 +483,6 @@ export default {
         const domainId = this.$store.getters.userInfo.domainid
         params.id = domainId
         delete params.treeView
-      }
-
-      if (['listTemplates', 'listIsos'].includes(this.apiName) && !this.dataView) {
-        if (['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          params.templatefilter = 'all'
-        }
       }
 
       api(this.apiName, params).then(json => {
@@ -524,6 +553,13 @@ export default {
         this.loading = false
       })
     },
+    removeStringStartSubstringIfPresent (str, searchstr) {
+      var index = str.indexOf(searchstr)
+      if (index !== 0) {
+        return str
+      }
+      return str.slice(index + searchstr.length)
+    },
     onSearch (value) {
       this.searchQuery = value
       this.page = 1
@@ -576,7 +612,7 @@ export default {
         }
       }
       this.currentAction.loading = false
-      if (action.dataView && action.icon === 'edit') {
+      if (action.dataView && ['copy', 'edit'].includes(action.icon)) {
         this.fillEditFormFieldValues()
       }
     },
@@ -585,8 +621,11 @@ export default {
         return
       }
       var paramName = param.name
+      var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
+      extractedParamName = this.removeStringStartSubstringIfPresent(extractedParamName, 'source')
+      extractedParamName = this.removeStringStartSubstringIfPresent(extractedParamName, 'dest')
       var params = { listall: true }
-      const possibleName = 'list' + paramName.replace('ids', '').replace('id', '').toLowerCase() + 's'
+      const possibleName = 'list' + extractedParamName + 's'
       var possibleApi
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && this.currentAction.mapping[param.name].api) {
         possibleApi = this.currentAction.mapping[param.name].api
@@ -668,6 +707,7 @@ export default {
         let fieldName = null
         if (field.type === 'uuid' || field.type === 'list' || field.name === 'account' || (this.currentAction.mapping && field.name in this.currentAction.mapping)) {
           fieldName = field.name.replace('ids', 'name').replace('id', 'name')
+          fieldName = this.removeStringStartSubstringIfPresent(fieldName, 'source')
         } else {
           fieldName = field.name
         }
@@ -773,6 +813,10 @@ export default {
           })
         }
       })
+    },
+    changeFilter (filter) {
+      this.selectedFilter = filter
+      this.fetchData()
     },
     changePage (page, pageSize) {
       this.page = page

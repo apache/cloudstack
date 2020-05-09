@@ -27,8 +27,9 @@ export default {
       title: 'Templates',
       icon: 'save',
       permission: ['listTemplates'],
-      params: { templatefilter: 'executable' },
+      params: { templatefilter: 'self' },
       resourceType: 'Template',
+      filters: ['self', 'shared', 'featured', 'community'],
       columns: ['name', 'ostypename', 'status', 'hypervisor', 'account', 'domain', 'order'],
       details: ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'crosszones', 'type', 'account', 'domain', 'created'],
       related: [{
@@ -95,21 +96,6 @@ export default {
           popup: true,
           show: (record, store) => { return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) || record.templatetype !== 'BUILTIN') },
           component: () => import('@/views/image/UpdateTemplateIsoPermissions')
-        },
-        {
-          api: 'copyTemplate',
-          icon: 'copy',
-          label: 'Copy Template',
-          args: ['sourcezoneid', 'destzoneids'],
-          dataView: true
-        },
-        {
-          api: 'deleteTemplate',
-          icon: 'delete',
-          label: 'Delete Template',
-          args: ['zoneid'],
-          dataView: true,
-          groupAction: true
         }
       ]
     },
@@ -118,8 +104,9 @@ export default {
       title: 'ISOs',
       icon: 'usb',
       permission: ['listIsos'],
-      params: { isofilter: 'executable' },
+      params: { isofilter: 'self' },
       resourceType: 'ISO',
+      filters: ['self', 'shared', 'featured', 'community'],
       columns: ['name', 'ostypename', 'account', 'domain'],
       details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created'],
       related: [{
@@ -180,24 +167,10 @@ export default {
           icon: 'reconciliation',
           label: 'Update ISO Permissions',
           dataView: true,
+          args: ['op', 'accounts', 'projectids'],
           popup: true,
           show: (record, store) => { return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) || record.templatetype !== 'BUILTIN') },
           component: () => import('@/views/image/UpdateTemplateIsoPermissions')
-        },
-        {
-          api: 'copyIso',
-          icon: 'copy',
-          label: 'Copy ISO',
-          args: ['sourcezoneid', 'destzoneids'],
-          dataView: true
-        },
-        {
-          api: 'deleteIso',
-          icon: 'delete',
-          label: 'Delete ISO',
-          args: ['zoneid'],
-          dataView: true,
-          groupAction: true
         }
       ]
     },
