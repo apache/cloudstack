@@ -27,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = ImageStore.class)
 public class MigrationResponse extends BaseResponse {
     @SerializedName("message")
-    @Param(description = "Response message")
+    @Param(description = "Response message from migration of secondary storage data objects")
     private String message;
 
     @SerializedName("migrationtype")

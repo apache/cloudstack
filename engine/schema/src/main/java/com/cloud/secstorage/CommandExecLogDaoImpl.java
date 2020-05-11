@@ -57,6 +57,4 @@ public class CommandExecLogDaoImpl extends GenericDaoBase<CommandExecLogVO, Long
         List<CommandExecLogVO> copyCmds = customSearch(sc, null);
         return copyCmds.size();
     }
-
-
 }

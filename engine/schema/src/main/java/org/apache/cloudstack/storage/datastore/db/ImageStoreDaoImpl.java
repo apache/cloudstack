@@ -77,7 +77,7 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     }
 
     @Override
-    public List<ImageStoreVO> findByScope(ZoneScope scope) {
+    public List<ImageStoreVO> findByZone(ZoneScope scope, Boolean readonly) {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
         sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
         if (scope.getScopeId() != null) {
@@ -85,23 +85,12 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
             scc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);
             scc.addOr("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
             sc.addAnd("scope", SearchCriteria.Op.SC, scc);
+            if (readonly != null) {
+                sc.addAnd("readonly", SearchCriteria.Op.EQ, readonly);
+            }
         }
         // we should return all image stores if cross-zone scope is passed
         // (scopeId = null)
-        return listBy(sc);
-    }
-
-    @Override
-    public List<ImageStoreVO> findByScopeExcludingReadOnly(ZoneScope scope) {
-        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
-        sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
-        if (scope.getScopeId() != null) {
-            SearchCriteria<ImageStoreVO> scc = createSearchCriteria();
-            scc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);
-            scc.addOr("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
-            sc.addAnd("scope", SearchCriteria.Op.SC, scc);
-            sc.addAnd("readonly", SearchCriteria.Op.EQ, Boolean.FALSE);
-        }
         return listBy(sc);
     }
 

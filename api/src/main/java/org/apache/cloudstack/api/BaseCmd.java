@@ -39,6 +39,7 @@ import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.storage.ImageStoreService;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
 
@@ -69,7 +70,6 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.DataStoreProviderApiService;
-import com.cloud.storage.ImageStoreService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.snapshot.SnapshotApiService;

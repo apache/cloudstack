@@ -780,7 +780,8 @@ public class ApiConstants {
     public static final String EXITCODE = "exitcode";
     public static final String TARGET_ID = "targetid";
     public static final String FILES = "files";
-    public static final String FROM = "from";
+    public static final String SRC_POOL = "srcpool";
+    public static final String DEST_POOLS = "destpools";
     public static final String VOLUME_IDS = "volumeids";
 
     public static final String ROUTER_ID = "routerid";

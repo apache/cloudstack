@@ -29,6 +29,8 @@ import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.storage.ImageStoreService;
+import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.commons.lang3.EnumUtils;
@@ -69,13 +71,17 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
         Long srcImgStoreId = cmd.getId();
         ImageStoreVO srcImageVO = imageStoreDao.findById(srcImgStoreId);
         List<Long> destImgStoreIds = cmd.getMigrateTo();
-        String migrationType = cmd.getMigrationType().toUpperCase();
+        String migrationType = cmd.getMigrationType();
 
-        if (!EnumUtils.isValidEnum(MigrationPolicy.class, migrationType)) {
-            throw new CloudRuntimeException("Not a valid migration policy");
+        // default policy is complete
+        MigrationPolicy policy = MigrationPolicy.COMPLETE;
+
+        if (migrationType != null) {
+            if (!EnumUtils.isValidEnum(MigrationPolicy.class, migrationType.toUpperCase())) {
+                throw new CloudRuntimeException("Not a valid migration policy");
+            }
+            policy = MigrationPolicy.valueOf(migrationType.toUpperCase());
         }
-
-        MigrationPolicy policy = MigrationPolicy.valueOf(migrationType);
 
         String message = null;
 

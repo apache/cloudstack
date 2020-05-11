@@ -115,7 +115,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
 
     @Override
     public List<DataStore> listImageStoresByScope(ZoneScope scope) {
-        List<ImageStoreVO> stores = dataStoreDao.findByScope(scope);
+        List<ImageStoreVO> stores = dataStoreDao.findByZone(scope, null);
         List<DataStore> imageStores = new ArrayList<DataStore>();
         for (ImageStoreVO store : stores) {
             imageStores.add(getImageStore(store.getId()));
@@ -127,7 +127,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     public List<DataStore> listImageStoresByScopeExcludingReadOnly(ZoneScope scope) {
         String allocationAlgorithm = configDao.getValue(Config.ImageStoreAllocationAlgorithm.key());
 
-        List<ImageStoreVO> stores = dataStoreDao.findByScopeExcludingReadOnly(scope);
+        List<ImageStoreVO> stores = dataStoreDao.findByZone(scope, Boolean.FALSE);
         List<DataStore> imageStores = new ArrayList<DataStore>();
         for (ImageStoreVO store : stores) {
             imageStores.add(getImageStore(store.getId()));

@@ -24,25 +24,17 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.storage.ImageStore;
 import com.cloud.utils.StringUtils;
 
 @APICommand(name = MigrateSecondaryStorageDataCmd.APINAME,
         description = "migrates data objects from one secondary storage to destination image store(s)",
         responseObject = MigrationResponse.class,
-        entityType = {ImageStore.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         since = "4.14.0",
@@ -57,26 +49,25 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.FROM,
+    @Parameter(name = ApiConstants.SRC_POOL,
             type = CommandType.UUID,
             entityType = ImageStoreResponse.class,
             description = "id of the image store from where the data is to be migrated",
     required = true)
     private Long id;
 
-    @Parameter(name = ApiConstants.MIGRATE_TO,
+    @Parameter(name = ApiConstants.DEST_POOLS,
     type = CommandType.LIST,
     collectionType = CommandType.UUID,
     entityType = ImageStoreResponse.class,
-    description = "id of the destination secondary storage pool to which the templates are to be migrated to",
+    description = "id(s) of the destination secondary storage pool(s) to which the templates are to be migrated",
     required = true)
     private List<Long> migrateTo;
 
     @Parameter(name = ApiConstants.MIGRATION_TYPE,
     type = CommandType.STRING,
     description = "Balance: if you want data to be distributed evenly among the destination stores, " +
-            "Complete: If you want to migrate the entire data from source image store to the destination store(s)",
-    required = true)
+            "Complete: If you want to migrate the entire data from source image store to the destination store(s). Default: Complete")
     private String migrationType;
 
     /////////////////////////////////////////////////////
@@ -106,7 +97,7 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute()  {
         MigrationResponse response = _imageStoreService.migrateData(this);
         response.setObjectName("imagestore");
         this.setResponseObject(response);

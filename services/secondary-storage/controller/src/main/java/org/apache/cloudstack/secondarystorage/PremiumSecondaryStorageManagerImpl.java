@@ -59,7 +59,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     private int _standbyCapacity = SecondaryStorageVmManager.DEFAULT_STANDBY_CAPACITY;
     private int _maxExecutionTimeMs = 1800000;
     long currentTime = DateUtil.currentGMTTime().getTime();
-    long nextSpawnTime = currentTime + _maxExecutionTimeMs;
+    long nextSpawnTime = currentTime + _maxExecutionTimeMs/2;
     private List<SecondaryStorageVmVO> migrationSSVMS = new ArrayList<>();
 
     @Inject
@@ -83,7 +83,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
 
         int nMaxExecutionMinutes = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
         _maxExecutionTimeMs = nMaxExecutionMinutes * 60 * 1000;
-        nextSpawnTime = currentTime + _maxExecutionTimeMs;
+        nextSpawnTime = currentTime + _maxExecutionTimeMs/2;
 
         migrateCapPerSSVM = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageMaxMigrateSessions.key()), DEFAULT_MIGRATE_SS_VM_CAPACITY);
 
@@ -173,7 +173,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
                     (((currentTime - copyCmdsInPipeline.get(halfLimit - 1).getCreated().getTime()) > _maxExecutionTimeMs/2 )) &&
                             (currentTime > nextSpawnTime) &&  alreadyRunning.size() <=  maxSsvms) {
                     nextSpawnTime = currentTime + _maxExecutionTimeMs/2;
-                    s_logger.debug("scaling SSVM");
+                    s_logger.debug("scaling SSVM to handle migration tasks");
                     return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
                 }
 

@@ -50,7 +50,6 @@ public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataS
         DestroyRequested,
         OperationSuccessed,
         OperationFailed,
-        // Added as volume converts migrationrequested to copyrequested - VolumeObject.java
         CopyRequested,
         CopyingRequested,
         MigrationRequested,

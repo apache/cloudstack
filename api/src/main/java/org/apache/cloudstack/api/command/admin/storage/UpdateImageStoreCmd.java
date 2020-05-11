@@ -27,11 +27,6 @@ import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.ImageStore;
 
 @APICommand(name = UpdateImageStoreCmd.APINAME, description = "Updates image store read-only status", responseObject = ImageStoreResponse.class, entityType = {ImageStore.class},
@@ -46,7 +41,8 @@ public class UpdateImageStoreCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true, description = "Image Store UUID")
     private Long id;
 
-    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, required = true, description = "If set to true, it designates the corresponding image store to read-only")
+    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, required = true, description = "If set to true, it designates the corresponding image store to read-only, " +
+            "hence not considering them during storage migration")
     private Boolean readonly;
 
     /////////////////////////////////////////////////////
@@ -66,7 +62,7 @@ public class UpdateImageStoreCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() {
         ImageStore result = _storageService.updateImageStoreStatus(getId(), getReadonly());
         ImageStoreResponse storeResponse = null;
         if (result != null) {

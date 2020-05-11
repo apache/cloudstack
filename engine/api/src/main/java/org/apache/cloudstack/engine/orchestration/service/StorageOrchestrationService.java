@@ -20,8 +20,7 @@ package org.apache.cloudstack.engine.orchestration.service;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.MigrationResponse;
-
-import com.cloud.storage.ImageStoreService.MigrationPolicy;
+import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 
 public interface StorageOrchestrationService {
     MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, MigrationPolicy migrationPolicy);
