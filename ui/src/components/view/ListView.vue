@@ -23,7 +23,7 @@
     :dataSource="items"
     :rowKey="record => record.id || record.name"
     :pagination="false"
-    :rowSelection="['vm', 'event', 'alert'].includes($route.name) ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+    :rowSelection="['vm-tbd', 'event-tbd', 'alert-tbd'].includes($route.name) ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >

@@ -107,7 +107,12 @@ export default {
     },
     showHideTab (tab) {
       if ('networkServiceFilter' in tab) {
-        if (this.resource.virtualmachineid && tab.name !== 'Firewall') return false
+        if (this.resource.virtualmachineid && tab.name !== 'Firewall') {
+          return false
+        }
+        if (this.resource && this.resource.vpcid && tab.name !== 'Firewall') {
+          return true
+        }
         return this.networkService && this.networkService.service &&
           tab.networkServiceFilter(this.networkService.service)
       } else if ('show' in tab) {

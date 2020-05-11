@@ -214,7 +214,8 @@ export default {
         networkServiceFilter: networkService => networkService.filter(x => x.name === 'Lb').length > 0
       }, {
         name: 'VPN',
-        component: () => import('@/views/network/VpnDetails.vue')
+        component: () => import('@/views/network/VpnDetails.vue'),
+        show: (record) => { return record.issourcenat }
       }],
       actions: [
         {
