@@ -20,17 +20,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.acl.dao.RolePermissionsDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.acl.CreateRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.CreateRolePermissionCmd;
 import org.apache.cloudstack.api.command.admin.acl.DeleteRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.DeleteRolePermissionCmd;
+import org.apache.cloudstack.api.command.admin.acl.ImportRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListRolePermissionsCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListRolesCmd;
 import org.apache.cloudstack.api.command.admin.acl.UpdateRoleCmd;
@@ -54,6 +57,7 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
 
 public class RoleManagerImpl extends ManagerBase implements RoleService, Configurable, PluggableService {
@@ -124,11 +128,12 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    public RolePermission findRolePermissionByUuid(final String uuid) {
-        if (Strings.isNullOrEmpty(uuid)) {
+    public RolePermission findRolePermissionByRoleIdAndRule(final Long roleId, final String rule) {
+        if (roleId == null || Strings.isNullOrEmpty(rule)) {
             return null;
         }
-        return rolePermissionsDao.findByUuid(uuid);
+
+        return rolePermissionsDao.findByRoleIdAndRule(roleId, rule);
     }
 
     @Override
@@ -147,9 +152,98 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ROLE_CREATE, eventDescription = "creating role by cloning another role")
+    public Role createRole(String name, Role role, String description) {
+        checkCallerAccess();
+        return Transaction.execute(new TransactionCallback<RoleVO>() {
+            @Override
+            public RoleVO doInTransaction(TransactionStatus status) {
+                RoleVO newRoleVO = roleDao.persist(new RoleVO(name, role.getRoleType(), description));
+                if (newRoleVO == null) {
+                    throw new CloudRuntimeException("Unable to create the role: " + name + ", failed to persist in DB");
+                }
+
+                List<RolePermissionVO> rolePermissions = rolePermissionsDao.findAllByRoleIdSorted(role.getId());
+                if (rolePermissions != null && !rolePermissions.isEmpty()) {
+                    for (RolePermissionVO permission : rolePermissions) {
+                        rolePermissionsDao.persist(new RolePermissionVO(newRoleVO.getId(), permission.getRule().toString(), permission.getPermission(), permission.getDescription()));
+                    }
+                }
+
+                return newRoleVO;
+            }
+        });
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ROLE_IMPORT, eventDescription = "importing Role")
+    public Role importRole(String name, RoleType type, String description, List<Map<String, Object>> rules, boolean forced) {
+        checkCallerAccess();
+        if (Strings.isNullOrEmpty(name)) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role name provided");
+        }
+        if (type == null || type == RoleType.Unknown) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role type provided");
+        }
+
+        List<RoleVO> existingRoles = roleDao.findByName(name);
+        if (CollectionUtils.isNotEmpty(existingRoles) && !forced) {
+            throw new CloudRuntimeException("Role already exists");
+        }
+
+        return Transaction.execute(new TransactionCallback<RoleVO>() {
+            @Override
+            public RoleVO doInTransaction(TransactionStatus status) {
+                RoleVO newRole = null;
+                RoleVO existingRole = roleDao.findByNameAndType(name, type);
+                if (existingRole != null) {
+                    if (existingRole.isDefault()) {
+                        throw new CloudRuntimeException("Failed to import the role: " + name + ", default role cannot be overriden");
+                    }
+
+                    //Cleanup old role permissions
+                    List<? extends RolePermission> rolePermissions = rolePermissionsDao.findAllByRoleIdSorted(existingRole.getId());
+                    if (rolePermissions != null && !rolePermissions.isEmpty()) {
+                        for (RolePermission rolePermission : rolePermissions) {
+                            rolePermissionsDao.remove(rolePermission.getId());
+                        }
+                    }
+
+                    existingRole.setName(name);
+                    existingRole.setRoleType(type);
+                    existingRole.setDescription(description);
+                    roleDao.update(existingRole.getId(), existingRole);
+
+                    newRole = existingRole;
+                } else {
+                    newRole = roleDao.persist(new RoleVO(name, type, description));
+                }
+
+                if (newRole == null) {
+                    throw new CloudRuntimeException("Unable to import the role: " + name + ", failed to persist in DB");
+                }
+
+                if (rules != null && !rules.isEmpty()) {
+                    for (Map<String, Object> ruleDetail : rules) {
+                        Rule rule = (Rule)ruleDetail.get(ApiConstants.RULE);
+                        RolePermission.Permission rulePermission = (RolePermission.Permission) ruleDetail.get(ApiConstants.PERMISSION);
+                        String ruleDescription = (String) ruleDetail.get(ApiConstants.DESCRIPTION);
+
+                        rolePermissionsDao.persist(new RolePermissionVO(newRole.getId(), rule.toString(), rulePermission, ruleDescription));
+                    }
+                }
+                return newRole;
+            }
+        });
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_UPDATE, eventDescription = "updating Role")
     public Role updateRole(final Role role, final String name, final RoleType roleType, final String description) {
         checkCallerAccess();
+        if (role.isDefault()) {
+            throw new PermissionDeniedException("Default roles cannot be updated");
+        }
 
         if (roleType != null && roleType == RoleType.Unknown) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unknown is not a valid role type");
@@ -159,9 +253,6 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             roleVO.setName(name);
         }
         if (roleType != null) {
-            if (role.getId() <= RoleType.User.getId()) {
-                throw new PermissionDeniedException("The role type of default roles cannot be changed");
-            }
             List<? extends Account> accounts = accountDao.findAccountsByRole(role.getId());
             if (accounts == null || accounts.isEmpty()) {
                 roleVO.setRoleType(roleType);
@@ -184,7 +275,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         if (role == null) {
             return false;
         }
-        if (role.getId() <= RoleType.User.getId()) {
+        if (role.isDefault()) {
             throw new PermissionDeniedException("Default roles cannot be deleted");
         }
         List<? extends Account> accounts = accountDao.findAccountsByRole(role.getId());
@@ -214,6 +305,14 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_CREATE, eventDescription = "creating Role Permission")
     public RolePermission createRolePermission(final Role role, final Rule rule, final RolePermission.Permission permission, final String description) {
         checkCallerAccess();
+        if (role.isDefault()) {
+            throw new PermissionDeniedException("Role permission cannot be added for Default roles");
+        }
+
+        if (findRolePermissionByRoleIdAndRule(role.getId(), rule.toString()) != null) {
+            throw new PermissionDeniedException("Rule already exists for the role: " + role.getName());
+        }
+
         return Transaction.execute(new TransactionCallback<RolePermissionVO>() {
             @Override
             public RolePermissionVO doInTransaction(TransactionStatus status) {
@@ -226,12 +325,18 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_UPDATE, eventDescription = "updating Role Permission order")
     public boolean updateRolePermission(final Role role, final List<RolePermission> newOrder) {
         checkCallerAccess();
+        if (role.isDefault()) {
+            throw new PermissionDeniedException("Role permission cannot be updated for Default roles");
+        }
         return role != null && newOrder != null && rolePermissionsDao.update(role, newOrder);
     }
 
     @Override
     public boolean updateRolePermission(Role role, RolePermission rolePermission, RolePermission.Permission permission) {
         checkCallerAccess();
+        if (role.isDefault()) {
+            throw new PermissionDeniedException("Role permission cannot be updated for Default roles");
+        }
         return role != null && rolePermissionsDao.update(role, rolePermission, permission);
     }
 
@@ -239,6 +344,10 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_DELETE, eventDescription = "deleting Role Permission")
     public boolean deleteRolePermission(final RolePermission rolePermission) {
         checkCallerAccess();
+        Role role = findRole(rolePermission.getRoleId());
+        if (role.isDefault()) {
+            throw new PermissionDeniedException("Role permission cannot be deleted for Default roles");
+        }
         return rolePermission != null && rolePermissionsDao.remove(rolePermission.getId());
     }
 
@@ -277,7 +386,6 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                 rolesIterator.remove();
             }
         }
-
     }
 
     @Override
@@ -306,6 +414,18 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
+    public RolePermission.Permission getRolePermission(String permission) {
+        if (Strings.isNullOrEmpty(permission)) {
+            return null;
+        }
+        if (!permission.equalsIgnoreCase(RolePermission.Permission.ALLOW.toString()) &&
+                !permission.equalsIgnoreCase(RolePermission.Permission.DENY.toString())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Values for permission parameter should be: allow or deny");
+        }
+        return permission.equalsIgnoreCase(RolePermission.Permission.ALLOW.toString()) ? RolePermission.Permission.ALLOW : RolePermission.Permission.DENY;
+    }
+
+    @Override
     public String getConfigComponentName() {
         return RoleService.class.getSimpleName();
     }
@@ -319,6 +439,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<>();
         cmdList.add(CreateRoleCmd.class);
+        cmdList.add(ImportRoleCmd.class);
         cmdList.add(ListRolesCmd.class);
         cmdList.add(UpdateRoleCmd.class);
         cmdList.add(DeleteRoleCmd.class);
