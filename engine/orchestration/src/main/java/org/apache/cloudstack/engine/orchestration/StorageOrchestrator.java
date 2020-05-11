@@ -18,13 +18,9 @@
 package org.apache.cloudstack.engine.orchestration;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -43,67 +39,41 @@ import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationSe
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageService.DataObjectResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.StorageStats;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.SecondaryStorageVm;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 public class StorageOrchestrator extends ManagerBase implements StorageOrchestrationService, Configurable {
 
     private static final Logger s_logger = Logger.getLogger(StorageOrchestrator.class);
     @Inject
-    TemplateDataStoreDao templateDataStoreDao;
-    @Inject
     SnapshotDataStoreDao snapshotDataStoreDao;
-    @Inject
-    VolumeDataStoreDao volumeDataStoreDao;
-    @Inject
-    VolumeDataFactory volumeFactory;
-    @Inject
-    VMTemplateDao templateDao;
-    @Inject
-    TemplateDataFactory templateFactory;
     @Inject
     SnapshotDao snapshotDao;
     @Inject
@@ -111,31 +81,28 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     @Inject
     DataStoreManager dataStoreManager;
     @Inject
-    ImageStoreDao imageStoreDao;
-    @Inject
     StatsCollector statsCollector;
     @Inject
     public StorageService storageService;
     @Inject
-    SecondaryStorageVmDao secStorageVmDao;
-    @Inject
     ConfigurationDao configDao;
     @Inject
-    HostDao hostDao;
-    @Inject
-    private AsyncJobManager jobMgr;
-    @Inject
     private SecondaryStorageService secStgSrv;
+    @Inject
+    TemplateDataStoreDao templateDataStoreDao;
+    @Inject
+    VolumeDataStoreDao volumeDataStoreDao;
+    @Inject
+    DataMigrationUtility migrationHelper;
 
     ConfigKey<Double> ImageStoreImbalanceThreshold = new ConfigKey<>("Advanced", Double.class,
             "image.store.imbalance.threshold",
-            "0.1",
+            "0.5",
             "The storage imbalance threshold that is compared with the standard deviation percentage for a storage utilization metric. " +
                     "The value is a percentage in decimal format.",
             true, ConfigKey.Scope.Global);
 
     Integer numConcurrentCopyTasksPerSSVM = 2;
-
     private double imageStoreCapacityThreshold = 0.90;
 
     @Override
@@ -176,11 +143,11 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         boolean success = true;
         String message = null;
 
-        checkIfCompleteMigrationPossible(migrationPolicy, srcDataStoreId);
+        migrationHelper.checkIfCompleteMigrationPossible(migrationPolicy, srcDataStoreId);
 
         DataStore srcDatastore = dataStoreManager.getDataStore(srcDataStoreId, DataStoreRole.Image);
         Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains = new HashMap<>();
-        files = getSortedValidSourcesList(srcDatastore, snapshotChains);
+        files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains);
 
         if (files.isEmpty()) {
             return new MigrationResponse("No files in Image store "+srcDatastore.getId()+ " to migrate", migrationPolicy.toString(), true);
@@ -192,7 +159,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         for (Long storeId : destDatastores) {
             storageCapacities.put(storeId, new Pair<>(null, null));
         }
-
         storageCapacities.put(srcDataStoreId, new Pair<>(null, null));
 
         // If the migration policy is to completely migrate data from the given source Image Store, then set it's state
@@ -216,7 +182,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
 
         List<Future<AsyncCallFuture<DataObjectResult>>> futures = new ArrayList<>();
-
         while (true) {
             DataObject chosenFileForMigration = null;
             if (files.size() > 0) {
@@ -225,8 +190,9 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
             // Choose datastore with maximum free capacity as the destination datastore for migration
             storageCapacities = getStorageCapacities(storageCapacities);
-            List<Long> orderedDS = sortDataStores(storageCapacities);
+            List<Long> orderedDS = migrationHelper.sortDataStores(storageCapacities);
             Long destDatastoreId = orderedDS.get(0);
+
             // If there aren't anymore files available for migration or no valid Image stores available for migration
             // end the migration process
             if (chosenFileForMigration == null || destDatastoreId == null || destDatastoreId == srcDatastore.getId()) {
@@ -254,12 +220,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
             // If there is a benefit in migration of the chosen file to the destination store, then proceed with migration
             if (shouldMigrate(chosenFileForMigration, srcDatastore.getId(), destDatastoreId, storageCapacities, snapshotChains, migrationPolicy)) {
-                Long fileSize = getFileSize(chosenFileForMigration, snapshotChains);
+                Long fileSize = migrationHelper.getFileSize(chosenFileForMigration, snapshotChains);
                 storageCapacities = assumeMigrate(storageCapacities, srcDatastore.getId(), destDatastoreId, fileSize);
-
-                long activeSsvms = activeSSVMCount(srcDatastore);
+                long activeSsvms = migrationHelper.activeSSVMCount(srcDatastore);
                 long totalJobs = activeSsvms * numConcurrentCopyTasksPerSSVM;
-
                 // Increase thread pool size with increase in number of SSVMs
                 if ( totalJobs > executor.getCorePoolSize()) {
                     executor.setMaximumPoolSize((int) (totalJobs));
@@ -318,7 +282,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 SnapshotInfo parentSnapshot = snapshotInfo.getParent();
 
                 if (parentSnapshot == null && policy == MigrationPolicy.COMPLETE) {
-                    List<Long> dstores = sortDataStores(storageCapacities);
+                    List<Long> dstores = migrationHelper.sortDataStores(storageCapacities);
                     Long storeId = dstores.get(0);
                     if (storeId.equals(srcDataStoreId)) {
                         storeId = dstores.get(1);
@@ -372,28 +336,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     }
 
     /**
-     * Sorts the datastores in decreasing order of their free capacities, so as to make
-     * an informed decision of picking the datastore with maximum free capactiy for migration
-     */
-    private List<Long> sortDataStores(Map<Long, Pair<Long, Long>> storageCapacities) {
-        List<Map.Entry<Long, Pair<Long, Long>>> list =
-                new LinkedList<Map.Entry<Long, Pair<Long, Long>>>((storageCapacities.entrySet()));
-
-        Collections.sort(list, new Comparator<Map.Entry<Long, Pair<Long, Long>>>() {
-            @Override
-            public int compare(Map.Entry<Long, Pair<Long, Long>> e1, Map.Entry<Long, Pair<Long, Long>> e2) {
-                return e2.getValue().first() > e1.getValue().first() ? 1 : -1;
-            }
-        });
-        HashMap<Long, Pair<Long, Long>> temp = new LinkedHashMap<>();
-        for (Map.Entry<Long, Pair<Long, Long>> value : list) {
-            temp.put(value.getKey(), value.getValue());
-        }
-
-        return new ArrayList<>(temp.keySet());
-    }
-
-    /**
      *
      * @param storageCapacities Map comprising the metrics(free and total capacities) of the images stores considered
      * @param srcDsId source image store ID from where data is to be migrated
@@ -409,15 +351,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         modifiedCapacities.put(srcDsId, new Pair<>(srcDSMetrics.first() + fileSize, srcDSMetrics.second()));
         modifiedCapacities.put(destDsId, new Pair<>(destDSMetrics.first() - fileSize, destDSMetrics.second()));
         return modifiedCapacities;
-    }
-
-    private Long getFileSize(DataObject file, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain) {
-        Long size = file.getSize();
-        Pair<List<SnapshotInfo>, Long> chain = snapshotChain.get(file);
-        if (file instanceof SnapshotInfo && chain.first() != null) {
-            size = chain.second();
-        }
-        return size;
     }
 
     /**
@@ -440,7 +373,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         if (migrationPolicy == MigrationPolicy.BALANCE) {
             double meanStdDevCurrent = getStandardDeviation(storageCapacities);
 
-            Long fileSize = getFileSize(chosenFile, snapshotChains);
+            Long fileSize = migrationHelper.getFileSize(chosenFile, snapshotChains);
             Map<Long, Pair<Long, Long>> proposedCapacities = assumeMigrate(storageCapacities, srcDatastoreId, destDatastoreId, fileSize);
             double meanStdDevAfter = getStandardDeviation(proposedCapacities);
 
@@ -479,146 +412,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     private double calculateStorageStandardDeviation(double[] metricValues, double mean) {
         StandardDeviation standardDeviation = new StandardDeviation(false);
         return standardDeviation.evaluate(metricValues, mean);
-    }
-
-    /** This function verifies if the given image store comprises of data objects that are not in either the "Ready" or
-     * "Allocated" state - in such a case, if the migration policy is complete, the migration is terminated
-     */
-    private boolean filesReady(Long srcDataStoreId) {
-        String[] validStates = new String[]{"Ready", "Allocated"};
-        boolean isReady = true;
-        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
-        for (TemplateDataStoreVO template : templates) {
-            isReady &= (Arrays.asList(validStates).contains(template.getState().toString()));
-        }
-        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
-        for (SnapshotDataStoreVO snapshot : snapshots) {
-            isReady &= (Arrays.asList(validStates).contains(snapshot.getState().toString()));
-        }
-        List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
-        for (VolumeDataStoreVO volume : volumes) {
-            isReady &= (Arrays.asList(validStates).contains(volume.getState().toString()));
-        }
-        return isReady;
-    }
-
-    private void checkIfCompleteMigrationPossible(MigrationPolicy policy, Long srcDataStoreId) {
-        if (policy == MigrationPolicy.COMPLETE) {
-            if (!filesReady(srcDataStoreId)) {
-                throw new CloudRuntimeException("Complete migration failed as there are data objects which are not Ready");
-            }
-        }
-        return;
-    }
-
-    private List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
-        List<DataObject> files = new ArrayList<>();
-        files.addAll(getAllValidTemplates(srcDataStore));
-        files.addAll(getAllValidSnapshotsAndChains(srcDataStore, snapshotChains));
-        files.addAll(getAllValidVolumes(srcDataStore));
-
-        Collections.sort(files, new Comparator<DataObject>() {
-            @Override
-            public int compare(DataObject o1, DataObject o2) {
-                Long size1 = o1.getSize();
-                Long size2 = o2.getSize();
-                if (o1 instanceof SnapshotInfo) {
-                    size1 = snapshotChains.get(o1).second();
-                }
-                if (o2 instanceof  SnapshotInfo) {
-                    size2 = snapshotChains.get(o2).second();
-                }
-                return size2 > size1 ? 1 : -1;
-            }
-        });
-
-        return files;
-    }
-
-    // Gets list of all valid templates, i.e, templates in "Ready" state for migration
-    private List<DataObject> getAllValidTemplates(DataStore srcDataStore) {
-
-        List<DataObject> files = new LinkedList<>();
-        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStore.getId());
-        for (TemplateDataStoreVO template : templates) {
-            VMTemplateVO templateVO = templateDao.findById(template.getTemplateId());
-            if (template.getState() == ObjectInDataStoreStateMachine.State.Ready && !templateVO.isPublicTemplate()) {
-                files.add(templateFactory.getTemplate(template.getTemplateId(), srcDataStore));
-            }
-        }
-        return files;
-    }
-
-    /** Returns parent snapshots and snapshots that do not have any children; snapshotChains comprises of the snapshot chain info
-     * for each parent snapshot and the cumulative size of the chain - this is done to ensure that all the snapshots in a chain
-     * are migrated to the same datastore
-     */
-    private List<DataObject> getAllValidSnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
-        List<SnapshotInfo> files = new LinkedList<>();
-        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStore.getId(), DataStoreRole.Image);
-        for (SnapshotDataStoreVO snapshot : snapshots) {
-            SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getSnapshotId());
-            if (snapshot.getState() == ObjectInDataStoreStateMachine.State.Ready && snapshot.getParentSnapshotId() == 0 ) {
-                SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), DataStoreRole.Image);
-                files.add(snap);
-            }
-        }
-
-        for (SnapshotInfo parent : files) {
-            List<SnapshotInfo> chain = new ArrayList<>();
-            chain.add(parent);
-            for (int i =0; i< chain.size(); i++) {
-                SnapshotInfo child = chain.get(i);
-                List<SnapshotInfo> children = child.getChildren();
-                if (children != null) {
-                    chain.addAll(children);
-                }
-            }
-            snapshotChains.put(parent, new Pair<List<SnapshotInfo>, Long>(chain, getSizeForChain(chain)));
-        }
-
-        return (List<DataObject>) (List<?>) files;
-    }
-
-    // Finds the cumulative file size for all data objects in the chain
-    private Long getSizeForChain(List<SnapshotInfo> chain) {
-        Long size = 0L;
-        for (SnapshotInfo snapshot : chain) {
-            size += snapshot.getSize();
-        }
-        return size;
-    }
-
-    // Returns a list of volumes that are in "Ready" state
-    private List<DataObject> getAllValidVolumes(DataStore srcDataStore) {
-        List<DataObject> files = new LinkedList<>();
-        List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStore.getId());
-        for (VolumeDataStoreVO volume : volumes) {
-            if (volume.getState() == ObjectInDataStoreStateMachine.State.Ready) {
-                files.add(volumeFactory.getVolume(volume.getVolumeId(), srcDataStore));
-            }
-        }
-        return files;
-    }
-
-    /** Returns the count of active SSVMs - SSVM with agents in connected state, so as to dynamically increase the thread pool
-     * size when SSVMs scale
-     */
-    private int activeSSVMCount(DataStore dataStore) {
-        long datacenterId = dataStore.getScope().getScopeId();
-        List<SecondaryStorageVmVO> ssvms =
-                secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, datacenterId, VirtualMachine.State.Running, VirtualMachine.State.Migrating);
-        int activeSSVMs = 0;
-        for (SecondaryStorageVmVO vm : ssvms) {
-            String name = "s-"+vm.getId()+"-VM";
-            HostVO ssHost = hostDao.findByName(name);
-            if (ssHost != null) {
-                if (ssHost.getState() == Status.Up) {
-                    activeSSVMs++;
-                }
-            }
-        }
-        return activeSSVMs;
     }
 
     private class MigrateDataTask implements Callable<AsyncCallFuture<DataObjectResult>> {

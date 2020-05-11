@@ -104,6 +104,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         activeTmpltSearch.and("store_id", activeTmpltSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("type", activeTmpltSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("templateState", activeTmpltSearch.entity().getTemplateState(), SearchCriteria.Op.EQ);
+        activeTmpltSearch.and("public", activeTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
         activeTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
@@ -488,6 +489,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
         sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
+        sc.setParameters("public", Boolean.FALSE);
         return searchIncludingRemoved(sc, null, null, false);
     }
 
