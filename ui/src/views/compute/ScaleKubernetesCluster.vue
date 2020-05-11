@@ -25,7 +25,7 @@
         <a-form-item :label="$t('cks.cluster.size')">
           <a-input
             v-decorator="['size', {
-              initialValue: '1',
+              initialValue: originalSize,
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
@@ -76,7 +76,6 @@ export default {
   },
   data () {
     return {
-      originalSize: 1,
       serviceOfferings: [],
       serviceOfferingLoading: false,
       minCpu: 2,
@@ -93,13 +92,13 @@ export default {
     })
   },
   created () {
+    this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
   },
   mounted () {
     this.fetchData()
   },
   methods: {
     fetchData () {
-      this.originalSize = !this.isObjectEmpty(this.resource) ? 1 : this.resource.size
       this.fetchKubernetesVersionData()
     },
     isValidValueForKey (obj, key) {
@@ -165,13 +164,28 @@ export default {
           id: this.resource.id
         }
         if (this.isValidValueForKey(values, 'size') && values.size > 0) {
-          params.kubernetesversionid = this.kubernetesVersions[values.kubernetesversionid].id
+          params.size = values.size
         }
         if (this.isValidValueForKey(values, 'serviceofferingid') && this.arrayHasItems(this.serviceOfferings)) {
           params.serviceofferingid = this.serviceOfferings[values.serviceofferingid].id
         }
         api('scaleKubernetesCluster', params).then(json => {
-          this.$message.success('Successfully scaled Kubernetes cluster: ' + this.resource.name)
+          const jobId = json.scalekubernetesclusterresponse.jobid
+          this.$store.dispatch('AddAsyncJob', {
+            title: this.$t('label.kubernetes.cluster.scale'),
+            jobid: jobId,
+            description: this.resource.name,
+            status: 'progress'
+          })
+          this.$pollJob({
+            jobId,
+            loadingMessage: `Scale Kubernetes cluster ${this.resource.name} in progress`,
+            catchMessage: 'Error encountered while fetching async job result',
+            successMessage: `Successfully scaled Kubernetes cluster ${this.resource.name}`,
+            successMethod: result => {
+              this.$emit('refresh-data')
+            }
+          })
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

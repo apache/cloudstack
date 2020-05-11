@@ -75,6 +75,8 @@ export default {
         case 'Starting':
         case 'Stopping':
         case 'Scheduled':
+        case 'Scaling':
+        case 'Upgrading':
           status = 'processing'
           break
         case 'Alert':

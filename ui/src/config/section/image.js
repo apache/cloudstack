@@ -185,7 +185,7 @@ export default {
         {
           api: 'addKubernetesSupportedVersion',
           icon: 'plus',
-          label: 'Add Kubernetes Version',
+          label: 'label.kubernetes.version.add',
           listView: true,
           popup: true,
           component: () => import('@/views/image/AddKubernetesSupportedVersion.vue')
@@ -193,7 +193,7 @@ export default {
         {
           api: 'updateKubernetesSupportedVersion',
           icon: 'edit',
-          label: 'Update Kuberntes Version',
+          label: 'label.kubernetes.version.update',
           dataView: true,
           popup: true,
           component: () => import('@/views/image/UpdateKubernetesSupportedVersion.vue')
@@ -201,7 +201,7 @@ export default {
         {
           api: 'deleteKubernetesSupportedVersion',
           icon: 'delete',
-          label: 'Delete Kubernetes Version',
+          label: 'label.kubernetes.version.update',
           dataView: true
         }
       ]

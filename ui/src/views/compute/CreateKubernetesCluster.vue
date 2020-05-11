@@ -403,7 +403,22 @@ export default {
           params.keypair = this.keyPairs[values.keypair].id
         }
         api('createKubernetesCluster', params).then(json => {
-          this.$message.success('Successfully created Kubernetes cluster: ' + values.name)
+          const jobId = json.createkubernetesclusterresponse.jobid
+          this.$store.dispatch('AddAsyncJob', {
+            title: this.$t('label.kubernetes.cluster.create'),
+            jobid: jobId,
+            description: values.name,
+            status: 'progress'
+          })
+          this.$pollJob({
+            jobId,
+            loadingMessage: `Create Kubernetes cluster ${values.name} in progress`,
+            catchMessage: 'Error encountered while fetching async job result',
+            successMessage: `Successfully created Kubernetes cluster ${values.name}`,
+            successMethod: result => {
+              this.$emit('refresh-data')
+            }
+          })
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

@@ -147,7 +147,24 @@ export default {
           params.kubernetesversionid = this.kubernetesVersions[values.kubernetesversionid].id
         }
         api('upgradeKubernetesCluster', params).then(json => {
-          this.$message.success('Successfully upgraded Kubernetes cluster: ' + this.resource.name)
+          this.$emit('refresh-data')
+          const jobId = json.upgradekubernetesclusterresponse.jobid
+          this.$store.dispatch('AddAsyncJob', {
+            title: this.$t('label.kubernetes.cluster.upgrade'),
+            jobid: jobId,
+            description: this.resource.name,
+            status: 'progress'
+          })
+          this.$pollJob({
+            jobId,
+            loadingMessage: `Upgrade Kubernetes cluster ${this.resource.name} in progress`,
+            catchMessage: 'Error encountered while fetching async job result',
+            successMessage: `Successfully upgraded Kubernetes cluster ${this.resource.name}`,
+            successMethod: result => {
+              this.$emit('refresh-data')
+              console.log('hello!')
+            }
+          })
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

@@ -352,7 +352,7 @@ export default {
         {
           api: 'createKubernetesCluster',
           icon: 'plus',
-          label: 'Create Kubernetes Cluster',
+          label: 'label.kubernetes.cluster.create',
           listView: true,
           popup: true,
           component: () => import('@/views/compute/CreateKubernetesCluster.vue')
@@ -360,28 +360,21 @@ export default {
         {
           api: 'startKubernetesCluster',
           icon: 'caret-right',
-          label: 'Start Kubernetes Cluster',
+          label: 'label.kubernetes.cluster.start',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
           api: 'stopKubernetesCluster',
           icon: 'stop',
-          label: 'Stop Kubernetes Cluster',
+          label: 'label.kubernetes.cluster.stop',
           dataView: true,
           show: (record) => { return !['Stopped'].includes(record.state) }
         },
-        // {
-        //   api: 'getKubernetesClusterConfig',
-        //   icon: 'cloud-download',
-        //   label: 'Download Cluster Config',
-        //   dataView: true,
-        //   show: (record) => { return !['Stopped'].includes(record.state) }
-        // },
         {
           api: 'scaleKubernetesCluster',
           icon: 'swap',
-          label: 'Scale Kubernetes Cluster',
+          label: 'label.kubernetes.cluster.scale',
           dataView: true,
           show: (record) => { return ['Created', 'Running'].includes(record.state) },
           popup: true,
@@ -390,7 +383,7 @@ export default {
         {
           api: 'upgradeKubernetesCluster',
           icon: 'plus-circle',
-          label: 'Upgrade Kubernetes Cluster',
+          label: 'label.kubernetes.cluster.upgrade',
           dataView: true,
           show: (record) => { return ['Created', 'Running'].includes(record.state) },
           popup: true,
@@ -399,7 +392,7 @@ export default {
         {
           api: 'deleteKubernetesCluster',
           icon: 'delete',
-          label: 'Delete Kubernetes Cluster',
+          label: 'label.kubernetes.cluster.delete',
           dataView: true,
           show: (record) => { return !['Destroyed', 'Destroying'].includes(record.state) }
         }
