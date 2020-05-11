@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -25,13 +25,13 @@ def isOldStyleBridge(brName):
     else:
        return False
 def upgradeBridgeName(brName, enslavedDev):
-    print("upgrade bridge: %s, %s"%(brName, enslavedDev))
+    print(("upgrade bridge: %s, %s"%(brName, enslavedDev)))
     vlanId = brName.replace("cloudVirBr", "")
-    print("find vlan Id: %s"%vlanId)
+    print(("find vlan Id: %s"%vlanId))
     phyDev = enslavedDev.split(".")[0]
-    print("find physical device %s"%phyDev)
+    print(("find physical device %s"%phyDev))
     newBrName = "br" + phyDev + "-" + vlanId
-    print("new bridge name %s"%newBrName)
+    print(("new bridge name %s"%newBrName))
     bash("ip link set %s down"%brName) 
     bash("ip link set %s name %s"%(brName, newBrName))
     bash("ip link set %s up" %newBrName)
@@ -49,15 +49,15 @@ def upgradeBridgeName(brName, enslavedDev):
 if __name__ == '__main__':
    netlib = networkConfig() 
    bridges = netlib.listNetworks()
-   bridges = filter(isOldStyleBridge, bridges)
+   bridges = list(filter(isOldStyleBridge, bridges))
    for br in bridges:
        enslavedDev = netlib.getEnslavedDev(br, 1)
        if enslavedDev is not None:
            upgradeBridgeName(br, enslavedDev)
    
    bridges = netlib.listNetworks()
-   bridges = filter(isOldStyleBridge, bridges)
+   bridges = list(filter(isOldStyleBridge, bridges))
    if len(bridges) > 0:
-       print("Warning: upgrade is not finished, still some bridges have the old style name:" + str(bridges))
+       print(("Warning: upgrade is not finished, still some bridges have the old style name:" + str(bridges)))
    else:
        print("Upgrade succeed")
