@@ -16,10 +16,16 @@
 # under the License.
 
 # Systemd unit file for CloudStack Management server
+# Do not modify this file as your changes will be lost in the next CSM update.
+# If you need to add specific dependencies to this service unit do it in the
+# /etc/systemd/system/cloudstack-management.service.d/ directory
+# If you know that either mysql or mariadb is running on this system is a good idea to
+# add a Requires dependency there. Check systemd documentation for details
 
 [Unit]
 Description=CloudStack Management Server
-After=syslog.target network.target
+After=syslog.target network.target mariadb.service mysqld.service mysql.service
+Wants=mariadb.service mysqld.service mysql.service
 
 [Service]
 UMask=0022

@@ -18,6 +18,7 @@
 //
 package com.cloud.agent.direct.download;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -51,13 +52,13 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         }
     }
 
-    public NfsDirectTemplateDownloader(String url, String destPool, Long templateId, String checksum) {
-        super(url, destPool, templateId, checksum);
+    public NfsDirectTemplateDownloader(String url, String destPool, Long templateId, String checksum, String downloadPath) {
+        super(url, destPool, templateId, checksum, downloadPath);
         parseUrl();
     }
 
     @Override
-    public boolean downloadTemplate() {
+    public Pair<Boolean, String> downloadTemplate() {
         String mountSrcUuid = UUID.randomUUID().toString();
         String mount = String.format(mountCommand, srcHost + ":" + srcPath, "/mnt/" + mountSrcUuid);
         Script.runSimpleBashScript(mount);
@@ -65,6 +66,6 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         setDownloadedFilePath(downloadDir + File.separator + getFileNameFromUrl());
         Script.runSimpleBashScript("cp /mnt/" + mountSrcUuid + srcPath + " " + getDownloadedFilePath());
         Script.runSimpleBashScript("umount /mnt/" + mountSrcUuid);
-        return true;
+        return new Pair<>(true, getDownloadedFilePath());
     }
 }

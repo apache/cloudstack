@@ -205,4 +205,6 @@ public interface ResourceManager extends ResourceService, Configurable {
     HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(HostVO host);
 
     HostVO findOneRandomRunningHostByHypervisor(HypervisorType type);
+
+    boolean cancelMaintenance(final long hostId);
 }

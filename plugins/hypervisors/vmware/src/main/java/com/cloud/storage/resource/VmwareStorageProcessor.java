@@ -3554,4 +3554,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         return null;
     }
+
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
+        return null;
+    }
 }

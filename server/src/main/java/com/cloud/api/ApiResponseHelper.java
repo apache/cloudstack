@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -44,6 +45,9 @@ import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceHostSkippedResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceHostUpdatedResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
@@ -4280,5 +4284,32 @@ public class ApiResponseHelper implements ResponseGenerator {
             responses.add(healthCheckResponse);
         }
         return responses;
+    }
+
+    @Override
+    public RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details, List<RollingMaintenanceManager.HostUpdated> hostsUpdated, List<RollingMaintenanceManager.HostSkipped> hostsSkipped) {
+        RollingMaintenanceResponse response = new RollingMaintenanceResponse(success, details);
+        List<RollingMaintenanceHostUpdatedResponse> updated = new ArrayList<>();
+        for (RollingMaintenanceManager.HostUpdated h : hostsUpdated) {
+            RollingMaintenanceHostUpdatedResponse r = new RollingMaintenanceHostUpdatedResponse();
+            r.setHostId(h.getHost().getUuid());
+            r.setHostName(h.getHost().getName());
+            r.setStartDate(getDateStringInternal(h.getStart()));
+            r.setEndDate(getDateStringInternal(h.getEnd()));
+            r.setOutput(h.getOutputMsg());
+            updated.add(r);
+        }
+        List<RollingMaintenanceHostSkippedResponse> skipped = new ArrayList<>();
+        for (RollingMaintenanceManager.HostSkipped h : hostsSkipped) {
+            RollingMaintenanceHostSkippedResponse r = new RollingMaintenanceHostSkippedResponse();
+            r.setHostId(h.getHost().getUuid());
+            r.setHostName(h.getHost().getName());
+            r.setReason(h.getReason());
+            skipped.add(r);
+        }
+        response.setUpdatedHosts(updated);
+        response.setSkippedHosts(skipped);
+        response.setObjectName("rollingmaintenance");
+        return response;
     }
 }

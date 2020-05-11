@@ -245,6 +245,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -399,6 +400,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
+
+    public final static ConfigKey<Long> BYTES_MAX_READ_LENGTH= new ConfigKey<Long>(Long.class, "vm.disk.bytes.maximum.read.length", "Advanced", "0",
+            "Maximum Bytes read burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
+    public final static ConfigKey<Long> BYTES_MAX_WRITE_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.bytes.maximum.write.length", "Advanced", "0",
+            "Maximum Bytes write burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
+    public final static ConfigKey<Long> IOPS_MAX_READ_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.iops.maximum.read.length", "Advanced", "0",
+            "Maximum IOPS read burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
+    public final static ConfigKey<Long> IOPS_MAX_WRITE_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.iops.maximum.write.length", "Advanced", "0",
+            "Maximum IOPS write burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
+
+    private static final String IOPS_READ_RATE = "IOPS Read";
+    private static final String IOPS_WRITE_RATE = "IOPS Write";
+    private static final String BYTES_READ_RATE = "Bytes Read";
+    private static final String BYTES_WRITE_RATE = "Bytes Write";
 
     private static final String DefaultForSystemVmsForPodIpRange = "0";
     private static final String DefaultVlanForPodIpRange = Vlan.UNTAGGED.toString();
@@ -2353,6 +2368,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        // check if cache_mode parameter is valid
+        validateCacheMode(cmd.getCacheMode());
+
         final Boolean offerHA = cmd.isOfferHa();
 
         boolean localStorageRequired = false;
@@ -2433,7 +2451,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve());
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -2444,7 +2462,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve) {
+            final Integer hypervisorSnapshotReserve, String cacheMode) {
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -2540,6 +2558,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
             offering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
+        }
+        if(cacheMode != null) {
+            offering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
         }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
@@ -2799,7 +2820,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                 Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                final Integer hypervisorSnapshotReserve) {
+                                                final Integer hypervisorSnapshotReserve, String cacheMode) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && numGibibytes <= 0) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2905,6 +2926,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
             newDiskOffering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
         }
+        if (cacheMode != null) {
+            newDiskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
+        }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
             throw new InvalidParameterValueException("If provided, Hypervisor Snapshot Reserve must be greater than or equal to 0.");
@@ -2971,6 +2995,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Disksize is not allowed for a customized disk offering");
         }
 
+        // check if cache_mode parameter is valid
+        validateCacheMode(cmd.getCacheMode());
+
         boolean localStorageRequired = false;
         final String storageType = cmd.getStorageType();
         if (storageType != null) {
@@ -2997,13 +3024,72 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long iopsWriteRateMax = cmd.getIopsWriteRateMax();
         final Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         final Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
+        final String cacheMode = cmd.getCacheMode();
+
+        validateMaxRateEqualsOrGreater(iopsReadRate, iopsReadRateMax, IOPS_READ_RATE);
+        validateMaxRateEqualsOrGreater(iopsWriteRate, iopsWriteRateMax, IOPS_WRITE_RATE);
+        validateMaxRateEqualsOrGreater(bytesReadRate, bytesReadRateMax, BYTES_READ_RATE);
+        validateMaxRateEqualsOrGreater(bytesWriteRate, bytesWriteRateMax, BYTES_WRITE_RATE);
+
+        validateMaximumIopsAndBytesLength(iopsReadRateMaxLength, iopsWriteRateMaxLength, bytesReadRateMaxLength, bytesWriteRateMaxLength);
 
         final Long userId = CallContext.current().getCallingUserId();
         return createDiskOffering(userId, domainIds, zoneIds, name, description, provisioningType, numGibibytes, tags, isCustomized,
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve);
+                hypervisorSnapshotReserve, cacheMode);
+    }
+
+    /**
+     * Validates rate offerings, being flexible about which rate is being validated (e.g. read/write Bytes, read/write IOPS).</br>
+     * It throws InvalidParameterValueException if normal rate is greater than maximum rate
+     */
+    protected void validateMaxRateEqualsOrGreater(Long normalRate, Long maxRate, String rateType) {
+        if (normalRate != null && maxRate != null && maxRate < normalRate) {
+            throw new InvalidParameterValueException(
+                    String.format("%s rate (%d) cannot be greater than %s maximum rate (%d)", rateType, normalRate, rateType, maxRate));
+        }
+    }
+
+    /**
+     *  Throws InvalidParameterValueException if At least one of the VM disk Bytes/IOPS Read/Write length are smaller than the respective disk offering max length.</br>
+     *  It will ignore verification in case of default values (zero):
+     * <ul>
+     *  <li>vm.disk.bytes.maximum.read.length = 0</li>
+     *  <li>vm.disk.bytes.maximum.write.length = 0</li>
+     *  <li>vm.disk.iops.maximum.read.length = 0</li>
+     *  <li>vm.disk.iops.maximum.write.length = 0</li>
+     * </ul>
+     */
+    protected void validateMaximumIopsAndBytesLength(final Long iopsReadRateMaxLength, final Long iopsWriteRateMaxLength, Long bytesReadRateMaxLength, Long bytesWriteRateMaxLength) {
+        if (IOPS_MAX_READ_LENGTH.value() != null && IOPS_MAX_READ_LENGTH.value() != 0l) {
+            if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > IOPS_MAX_READ_LENGTH.value()) {
+                throw new InvalidParameterValueException(String.format("IOPS read max length (%d seconds) cannot be greater than vm.disk.iops.maximum.read.length (%d seconds)",
+                        iopsReadRateMaxLength, IOPS_MAX_READ_LENGTH.value()));
+            }
+        }
+
+        if (IOPS_MAX_WRITE_LENGTH.value() != null && IOPS_MAX_WRITE_LENGTH.value() != 0l) {
+            if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > IOPS_MAX_WRITE_LENGTH.value()) {
+                throw new InvalidParameterValueException(String.format("IOPS write max length (%d seconds) cannot be greater than vm.disk.iops.maximum.write.length (%d seconds)",
+                        iopsWriteRateMaxLength, IOPS_MAX_WRITE_LENGTH.value()));
+            }
+        }
+
+        if (BYTES_MAX_READ_LENGTH.value() != null && BYTES_MAX_READ_LENGTH.value() != 0l) {
+            if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > BYTES_MAX_READ_LENGTH.value()) {
+                throw new InvalidParameterValueException(String.format("Bytes read max length (%d seconds) cannot be greater than vm.disk.bytes.maximum.read.length (%d seconds)",
+                        bytesReadRateMaxLength, BYTES_MAX_READ_LENGTH.value()));
+            }
+        }
+
+        if (BYTES_MAX_WRITE_LENGTH.value() != null && BYTES_MAX_WRITE_LENGTH.value() != 0l) {
+            if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > BYTES_MAX_WRITE_LENGTH.value()) {
+                throw new InvalidParameterValueException(String.format("Bytes write max length (%d seconds) cannot be greater than vm.disk.bytes.maximum.write.length (%d seconds)",
+                        bytesWriteRateMaxLength, BYTES_MAX_WRITE_LENGTH.value()));
+            }
+        }
     }
 
     @Override
@@ -5357,7 +5443,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Object keyword = cmd.getKeyword();
 
         if (keyword != null) {
-            final SearchCriteria<NetworkOfferingVO> ssc = _networkOfferingDao.createSearchCriteria();
+            final SearchCriteria<NetworkOfferingJoinVO> ssc = networkOfferingJoinDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
@@ -6267,6 +6353,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return filteredDomainIds;
     }
 
+    protected void validateCacheMode(String cacheMode){
+        if(cacheMode != null &&
+                !Enums.getIfPresent(DiskOffering.DiskCacheMode.class,
+                        cacheMode.toUpperCase()).isPresent()) {
+            throw new InvalidParameterValueException(String.format("Invalid cache mode (%s). Please specify one of the following " +
+                    "valid cache mode parameters: none, writeback or writethrough", cacheMode));
+        }
+    }
+
     public List<SecurityChecker> getSecChecker() {
         return _secChecker;
     }
@@ -6283,6 +6378,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {SystemVMUseLocalStorage};
+        return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH, BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH};
     }
 }

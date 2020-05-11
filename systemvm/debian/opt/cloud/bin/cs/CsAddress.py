@@ -566,9 +566,12 @@ class CsIP:
                 logging.error(
                     "Not able to setup source-nat for a regular router yet")
 
-            if self.config.has_dns() or self.config.is_dhcp():
+            if (self.config.has_dns() or self.config.is_dhcp()) and self.config.expose_dns():
+                logging.info("Making dns publicly available")
                 dns = CsDnsmasq(self)
                 dns.add_firewall_rules()
+            else:
+                logging.info("Not making dns publicly available")
 
             if self.config.has_metadata():
                 app = CsApache(self)
@@ -583,9 +586,9 @@ class CsIP:
                         CsPasswdSvc(self.address['public_ip']).stop()
                 elif cmdline.is_master():
                     if method == "add":
-                        CsPasswdSvc(self.address['gateway'] + "," + self.address['public_ip']).start()
+                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).start()
                     elif method == "delete":
-                        CsPasswdSvc(self.address['gateway'] + "," + self.address['public_ip']).stop()
+                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).stop()
 
         if self.get_type() == "public" and self.config.is_vpc() and method == "add":
             if self.address["source_nat"]:

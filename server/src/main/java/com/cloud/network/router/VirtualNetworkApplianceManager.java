@@ -72,6 +72,9 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             "If true, router minimum required version is checked before sending command", false);
     static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
             "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<Boolean> ExposeDnsAndBootpServer = new ConfigKey<Boolean>(Boolean.class, "expose.dns.externally", "Advanced", "true",
+            "open dns, dhcp and bootp on the public interface", true, ConfigKey.Scope.Zone, null);
+
     static final ConfigKey<String> VirtualRouterServiceOffering = new ConfigKey<String>(String.class, VirtualRouterServiceOfferingCK, "Advanced", "",
             "Uuid of the service offering used by virtual routers; if NULL - system offering will be used", true, ConfigKey.Scope.Account, null);
 

@@ -129,6 +129,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
             "Check name in createServiceOffering"
         )
         return
+
     @attr(
         tags=[
             "advanced",
@@ -195,6 +196,109 @@ class TestCreateServiceOffering(cloudstackTestCase):
                 "Check " + str(key) + " => " + str(mapped) +  " in createServiceOffering"
             )
 
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg"],
+        required_hardware="false")
+    def test_03_create_service_offering_with_cache_mode_type(self):
+        """Test to create service offering with each one of the valid cache mode types : none, writeback and writethrough"""
+
+        # Validate the following:
+        # 1. createServiceOfferings should return a valid information
+        #    for newly created offering
+        # 2. The Cloud Database contains the valid information
+
+        cache_mode_types=["none", "writeback", "writethrough"]
+        for i in range(3):
+            service_offering = ServiceOffering.create(
+                self.apiclient,
+                self.services["service_offerings"]["tiny"],
+                cacheMode=cache_mode_types[i]
+            )
+            self.cleanup.append(service_offering)
+
+            self.debug(
+                "Created service offering with ID: %s" %
+                service_offering.id)
+
+            list_service_response = list_service_offering(
+                self.apiclient,
+                id=service_offering.id
+            )
+            self.assertEqual(
+                isinstance(list_service_response, list),
+                True,
+                "Check list response returns a valid list"
+            )
+
+            self.assertNotEqual(
+                len(list_service_response),
+                0,
+                "Check Service offering is created"
+            )
+
+            self.assertEqual(
+                list_service_response[0].cpunumber,
+                self.services["service_offerings"]["tiny"]["cpunumber"],
+                "Check server id in createServiceOffering"
+            )
+            self.assertEqual(
+                list_service_response[0].cpuspeed,
+                self.services["service_offerings"]["tiny"]["cpuspeed"],
+                "Check cpuspeed in createServiceOffering"
+            )
+            self.assertEqual(
+                list_service_response[0].displaytext,
+                self.services["service_offerings"]["tiny"]["displaytext"],
+                "Check server displaytext in createServiceOfferings"
+            )
+            self.assertEqual(
+                list_service_response[0].memory,
+                self.services["service_offerings"]["tiny"]["memory"],
+                "Check memory in createServiceOffering"
+            )
+            self.assertEqual(
+                list_service_response[0].name,
+                self.services["service_offerings"]["tiny"]["name"],
+                "Check name in createServiceOffering"
+            )
+            self.assertEqual(
+                list_service_response[0].cacheMode,
+                cache_mode_types[i],
+                "Check cacheMode in createServiceOffering"
+            )
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg"],
+        required_hardware="false")
+    def test_04_create_service_offering_with_invalid_cache_mode_type(self):
+        """Test to create service offering with invalid cache mode type"""
+
+        # Validate the following:
+        # 1. createServiceOfferings should return a valid information
+        #    for newly created offering
+        # 2. The Cloud Database contains the valid information
+
+        with self.assertRaises(Exception):
+            service_offering = ServiceOffering.create(
+                self.apiclient,
+                self.services["service_offerings"]["tiny"],
+                cacheMode="invalid_cache_mode_type"
+            )
         return
 
 

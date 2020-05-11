@@ -189,7 +189,6 @@ public class SshHelper {
 
             byte[] buffer = new byte[8192];
             StringBuffer sbResult = new StringBuffer();
-
             int currentReadBytes = 0;
             while (true) {
                 throwSshExceptionIfStdoutOrStdeerIsNull(stdout, stderr);
@@ -207,22 +206,18 @@ public class SshHelper {
                     if (canEndTheSshConnection(waitResultTimeoutInMs, sess, conditions)) {
                         break;
                     }
-
                 }
 
-                while (stdout.available() > 0) {
-                    currentReadBytes = stdout.read(buffer);
-                    sbResult.append(new String(buffer, 0, currentReadBytes));
+               while((currentReadBytes = stdout.read(buffer)) != -1) {
+                    sbResult.append(new String(buffer, 0 , currentReadBytes));
                 }
 
-                while (stderr.available() > 0) {
-                    currentReadBytes = stderr.read(buffer);
+                while((currentReadBytes = stderr.read(buffer)) != -1) {
                     sbResult.append(new String(buffer, 0, currentReadBytes));
                 }
             }
 
             String result = sbResult.toString();
-
             if (StringUtils.isBlank(result)) {
                 try {
                     result = IOUtils.toString(stdout, StandardCharsets.UTF_8);
@@ -243,7 +238,6 @@ public class SshHelper {
                 s_logger.error(String.format("SSH execution of command %s has an error status code in return. Result output: %s", command, result));
                 return new Pair<Boolean, String>(false, result);
             }
-
             return new Pair<Boolean, String>(true, result);
         } finally {
             if (sess != null)

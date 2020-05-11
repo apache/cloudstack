@@ -76,6 +76,10 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 public class EventTypes {
 
@@ -591,6 +595,13 @@ public class EventTypes {
     // Diagnostics Events
     public static final String EVENT_SYSTEM_VM_DIAGNOSTICS = "SYSTEM.VM.DIAGNOSTICS";
 
+    // Rolling Maintenance
+    public static final String EVENT_START_ROLLING_MAINTENANCE = "SYSTEM.ROLLING.MAINTENANCE";
+    public static final String EVENT_HOST_ROLLING_MAINTENANCE = "HOST.ROLLING.MAINTENANCE";
+    public static final String EVENT_CLUSTER_ROLLING_MAINTENANCE = "CLUSTER.ROLLING.MAINTENANCE";
+    public static final String EVENT_POD_ROLLING_MAINTENANCE = "POD.ROLLING.MAINTENANCE";
+    public static final String EVENT_ZONE_ROLLING_MAINTENANCE = "ZONE.ROLLING.MAINTENANCE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -990,6 +1001,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE, VirtualMachineTemplate.class);
         entityEventDetails.put(EVENT_ISO_DIRECT_DOWNLOAD_FAILURE, "Iso");
         entityEventDetails.put(EVENT_SYSTEM_VM_DIAGNOSTICS, VirtualMachine.class);
+
+        entityEventDetails.put(EVENT_ZONE_ROLLING_MAINTENANCE, ZoneResponse.class);
+        entityEventDetails.put(EVENT_POD_ROLLING_MAINTENANCE, PodResponse.class);
+        entityEventDetails.put(EVENT_CLUSTER_ROLLING_MAINTENANCE, ClusterResponse.class);
+        entityEventDetails.put(EVENT_HOST_ROLLING_MAINTENANCE, HostResponse.class);
     }
 
     public static String getEntityForEvent(String eventName) {

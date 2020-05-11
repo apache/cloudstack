@@ -102,6 +102,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.host.dao.HostDetailsDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -283,6 +284,12 @@ public class DeploymentPlanningManagerImplTest {
         public HostTagsDao hostTagsDao() {
             return Mockito.mock(HostTagsDao.class);
         }
+
+        @Bean
+        public HostDetailsDao hostDetailsDao() {
+            return Mockito.mock(HostDetailsDao.class);
+        }
+
 
         @Bean
         public ClusterDetailsDao clusterDetailsDao() {

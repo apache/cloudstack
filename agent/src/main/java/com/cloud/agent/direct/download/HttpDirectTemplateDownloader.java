@@ -27,6 +27,8 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
@@ -34,8 +36,6 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
@@ -45,20 +45,25 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     protected GetMethod request;
     protected Map<String, String> reqHeaders = new HashMap<>();
 
-    public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers, Integer connectTimeout, Integer soTimeout) {
-        super(url, destPoolPath, templateId, checksum);
+    public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum,
+                                        Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath) {
+        super(url, destPoolPath, templateId, checksum, downloadPath);
         s_httpClientManager.getParams().setConnectionTimeout(connectTimeout == null ? 5000 : connectTimeout);
         s_httpClientManager.getParams().setSoTimeout(soTimeout == null ? 5000 : soTimeout);
         client = new HttpClient(s_httpClientManager);
         request = createRequest(url, headers);
         String downloadDir = getDirectDownloadTempPath(templateId);
-        createTemporaryDirectoryAndFile(downloadDir);
+        File tempFile = createTemporaryDirectoryAndFile(downloadDir);
+        setDownloadedFilePath(tempFile.getAbsolutePath());
     }
 
-    protected void createTemporaryDirectoryAndFile(String downloadDir) {
-        createFolder(getDestPoolPath() + File.separator + downloadDir);
-        File f = new File(getDestPoolPath() + File.separator + downloadDir + File.separator + getFileNameFromUrl());
-        setDownloadedFilePath(f.getAbsolutePath());
+    /**
+     * Create download directory (if it does not exist) and set the download file
+     * @return
+     */
+    protected File createTemporaryDirectoryAndFile(String downloadDir) {
+        createFolder(downloadDir);
+        return new File(downloadDir + File.separator + getFileNameFromUrl());
     }
 
     protected GetMethod createRequest(String downloadUrl, Map<String, String> headers) {
@@ -74,12 +79,12 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     }
 
     @Override
-    public boolean downloadTemplate() {
+    public Pair<Boolean, String> downloadTemplate() {
         try {
             int status = client.executeMethod(request);
             if (status != HttpStatus.SC_OK) {
                 s_logger.warn("Not able to download template, status code: " + status);
-                return false;
+                return new Pair<>(false, null);
             }
             return performDownload();
         } catch (IOException e) {
@@ -89,7 +94,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         }
     }
 
-    protected boolean performDownload() {
+    protected Pair<Boolean, String> performDownload() {
         s_logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         try (
                 InputStream in = request.getResponseBodyAsStream();
@@ -98,8 +103,8 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
             IOUtils.copy(in, out);
         } catch (IOException e) {
             s_logger.error("Error downloading template " + getTemplateId() + " due to: " + e.getMessage());
-            return false;
+            return new Pair<>(false, null);
         }
-        return true;
+        return new Pair<>(true, getDownloadedFilePath());
     }
 }

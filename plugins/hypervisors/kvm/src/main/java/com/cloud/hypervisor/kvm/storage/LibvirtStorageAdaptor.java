@@ -122,6 +122,64 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return disk;
     }
 
+    /**
+     * Checks if downloaded template is extractable
+     * @return true if it should be extracted, false if not
+     */
+    private boolean isTemplateExtractable(String templatePath) {
+        String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
+        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
+    }
+
+    /**
+     * Return extract command to execute given downloaded file
+     * @param downloadedTemplateFile
+     * @param templateUuid
+     */
+    private String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateUuid) {
+        if (downloadedTemplateFile.endsWith(".zip")) {
+            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateUuid;
+        } else if (downloadedTemplateFile.endsWith(".bz2")) {
+            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateUuid;
+        } else if (downloadedTemplateFile.endsWith(".gz")) {
+            return "gunzip -c " + downloadedTemplateFile + " > " + templateUuid;
+        } else {
+            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
+        }
+    }
+
+    /**
+     * Extract downloaded template into installPath, remove compressed file
+     */
+    private void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
+        String extractCommand = getExtractCommandForDownloadedFile(downloadedTemplateFile, destinationFile);
+        Script.runSimpleBashScript(extractCommand);
+        Script.runSimpleBashScript("rm -f " + downloadedTemplateFile);
+    }
+
+    @Override
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+        File sourceFile = new File(templateFilePath);
+        if (!sourceFile.exists()) {
+            throw new CloudRuntimeException("Direct download template file " + sourceFile + " does not exist on this host");
+        }
+        String templateUuid = UUID.randomUUID().toString();
+        if (isIso) {
+            templateUuid += ".iso";
+        }
+        String destinationFile = destPool.getLocalPath() + File.separator + templateUuid;
+
+        if (destPool.getType() == StoragePoolType.NetworkFilesystem || destPool.getType() == StoragePoolType.Filesystem
+            || destPool.getType() == StoragePoolType.SharedMountPoint) {
+            if (!isIso && isTemplateExtractable(templateFilePath)) {
+                extractDownloadedTemplate(templateFilePath, destPool, destinationFile);
+            } else {
+                Script.runSimpleBashScript("mv " + templateFilePath + " " + destinationFile);
+            }
+        }
+        return destPool.getPhysicalDisk(templateUuid);
+    }
+
     public StorageVol getVolume(StoragePool pool, String volName) {
         StorageVol vol = null;
 
@@ -1198,7 +1256,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize());
             } else {
-                    newDisk = destPool.createPhysicalDisk(name, Storage.ProvisioningType.THIN, disk.getVirtualSize());
+                newDisk = destPool.createPhysicalDisk(name, Storage.ProvisioningType.THIN, disk.getVirtualSize());
             }
         } else {
             newDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + name, name, destPool);

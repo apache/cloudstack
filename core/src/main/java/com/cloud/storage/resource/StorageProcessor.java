@@ -74,4 +74,6 @@ public interface StorageProcessor {
     public Answer resignature(ResignatureCommand cmd);
 
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd);
+
+    Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd);
 }

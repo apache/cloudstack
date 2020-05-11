@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade cleanup from 4.13.0.0 to 4.14.0.0
+-- Schema upgrade cleanup from 4.13.1.0 to 4.14.0.0
 --;
 
 DELETE FROM `cloud`.`configuration` WHERE name = 'host.maintenance.retries';

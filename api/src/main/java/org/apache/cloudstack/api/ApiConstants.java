@@ -74,6 +74,7 @@ public class ApiConstants {
     public static final String CLEANUP = "cleanup";
     public static final String MAKEREDUNDANT = "makeredundant";
     public static final String CLUSTER_ID = "clusterid";
+    public static final String CLUSTER_IDS = "clusterids";
     public static final String CLUSTER_NAME = "clustername";
     public static final String CLUSTER_TYPE = "clustertype";
     public static final String CN = "cn";
@@ -173,6 +174,7 @@ public class ApiConstants {
     public static final String HEALTH = "health";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
+    public static final String HOST_IDS = "hostids";
     public static final String HOST_NAME = "hostname";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
@@ -225,8 +227,8 @@ public class ApiConstants {
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";
-    public static final String MAX = "max";
     public static final String MAC_ADDRESS = "macaddress";
+    public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";
@@ -256,6 +258,7 @@ public class ApiConstants {
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
+    public static final String OUTPUT = "output";
     public static final String OVF_PROPERTIES = "ovfproperties";
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
@@ -267,6 +270,7 @@ public class ApiConstants {
     public static final String PASSWORD_ENABLED = "passwordenabled";
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
+    public static final String PAYLOAD = "payload";
     public static final String POD_ID = "podid";
     public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";
@@ -781,6 +785,45 @@ public class ApiConstants {
     public static final String ROUTER_CHECK_TYPE = "checktype";
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
+    public static final String CACHE_MODE = "cachemode";
+
+    public static final String CONSOLE_END_POINT = "consoleendpoint";
+    public static final String EXTERNAL_LOAD_BALANCER_IP_ADDRESS = "externalloadbalanceripaddress";
+    public static final String DOCKER_REGISTRY_USER_NAME = "dockerregistryusername";
+    public static final String DOCKER_REGISTRY_PASSWORD = "dockerregistrypassword";
+    public static final String DOCKER_REGISTRY_URL = "dockerregistryurl";
+    public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
+    public static final String ISO_NAME = "isoname";
+    public static final String ISO_STATE = "isostate";
+    public static final String SEMANTIC_VERSION = "semanticversion";
+    public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
+    public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
+    public static final String MASTER_NODES = "masternodes";
+    public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
+    public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
+    public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
+    public static final String SUPPORTS_HA = "supportsha";
+
+    public static final String BOOT_TYPE ="boottype";
+    public static final String BOOT_MODE ="bootmode";
+
+    public enum BootType {
+        UEFI, BIOS;
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+    }
+
+    public enum BootMode {
+        LEGACY, SECURE;
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+    }
 
     public enum HostDetails {
         all, capacity, events, stats, min;
