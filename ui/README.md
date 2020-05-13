@@ -104,7 +104,8 @@ server {
 ### Docker
 
 A production-ready Docker container can also be built with the provided
-Dockerfile and build script.
+Dockerfile and build script. Official builds are available here:
+https://hub.docker.com/r/apache/cloudstack-primate
 
 Make sure Docker is installed, then run:
 

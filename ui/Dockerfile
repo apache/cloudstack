@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Build example: docker build -t cloudstack/primate:latest .
+# Build example: docker build -t apache/cloudstack-primate:latest .
 
 FROM node:lts-buster AS build
 
