@@ -54,7 +54,7 @@
         </a-form-item>
         <a-form-item :label="$t('account')" v-if="this.isAdminOrDomainAdmin() && !this.isObjectEmpty(this.selectedDomain) && this.selectedDomain.id !== null">
           <a-input
-            v-decorator="['name', {}]"
+            v-decorator="['account', {}]"
             :placeholder="apiParams.account.description"/>
         </a-form-item>
 
