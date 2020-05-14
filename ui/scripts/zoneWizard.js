@@ -3895,7 +3895,7 @@
                             gateway: args.data.guestTraffic.guestGateway,
                             netmask: args.data.guestTraffic.guestNetmask,
                             startip: args.data.guestTraffic.guestStartIp,
-                            vlan: args.data.guestTraffic.vlanId,
+                            vlan: args.data.guestTraffic.vlanId
                         });
                         if (args.data.guestTraffic.guestEndIp != null && args.data.guestTraffic.guestEndIp.length > 0) {
                             $.extend(data, {
