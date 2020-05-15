@@ -60,13 +60,13 @@ class bash:
         return self.success
     
     def getStdout(self):
-        return self.stdout.strip("\n")
+        return self.stdout.decode('utf-8').strip('\n')
     
     def getLines(self):
-        return self.stdout.split("\n")
+        return self.stdout.decode('utf-8').strip('\n')
 
     def getStderr(self):
-        return self.stderr.strip("\n")
+        return self.stderr.decode('utf-8').strip('\n')
     
     def getErrMsg(self):
         if self.isSuccess():
@@ -114,6 +114,8 @@ class Distribution:
                 self.distro = "RHEL6"
             elif version.find("Red Hat Enterprise Linux Server release 7") != -1 or version.find("Scientific Linux release 7") != -1 or version.find("CentOS Linux release 7") != -1 or version.find("CentOS release 7.") != -1:
                 self.distro = "RHEL7"
+            elif version.find("Red Hat Enterprise Linux Server release 8") != -1 or version.find("Scientific Linux release 8") != -1 or version.find("CentOS Linux release 8") != -1 or version.find("CentOS release 8.") != -1:
+                self.distro = "RHEL8"
             elif version.find("CentOS") != -1:
                 self.distro = "CentOS"
             else:
@@ -214,6 +216,15 @@ class serviceOpsUbuntu(serviceOps):
         return bash("kvm-ok").isSuccess() 
 
 class serviceOpsRedhat7(serviceOps):
+    def isServiceRunning(self, servicename):
+        try:
+            o = bash("systemctl is-active " + servicename)
+            textout = o.getStdout()
+            return "inactive" not in textout and "failed" not in textout
+        except:
+            return False
+
+class serviceOpsRedhat8(serviceOps):
     def isServiceRunning(self, servicename):
         try:
             o = bash("systemctl is-active " + servicename)

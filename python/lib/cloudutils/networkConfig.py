@@ -87,7 +87,7 @@ class networkConfig:
         if os.path.exists("/proc/sys/net/bridge"):
             return True
 
-        return bash("modprobe -b bridge").isSucess()
+        return bash("modprobe -b bridge").isSuccess()
 
     @staticmethod
     def isNetworkDev(devName):

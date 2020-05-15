@@ -27,9 +27,11 @@ import shutil
 Unknown = 0
 CentOS6 = 1
 CentOS7 = 2
-Ubuntu = 3
-RHEL6 = 4
-RHEL7 = 5
+CentOS8 = 3
+Ubuntu = 4
+RHEL6 = 5
+RHEL7 = 6
+RHEL8 = 7
 distro = None
 
 #=================== DISTRIBUTION DETECTION =================
@@ -39,12 +41,16 @@ if os.path.exists("/etc/centos-release"):
       distro = CentOS6
     elif version.find("CentOS Linux release 7") != -1:
       distro = CentOS7
+    elif version.find("CentOS Linux release 8") != -1:
+      distro = CentOS8
 elif os.path.exists("/etc/redhat-release"):
     version = open("/etc/redhat-release").readline()
     if version.find("Red Hat Enterprise Linux Server release 6") != -1:
       distro = RHEL6
     elif version.find("Red Hat Enterprise Linux Server 7") != -1:
       distro = RHEL7
+    elif version.find("Red Hat Enterprise Linux Server 8") != -1:
+      distro = RHEL8
 elif os.path.exists("/etc/lsb-release") and "Ubuntu" in open("/etc/lsb-release").read(-1): distro = Ubuntu
 else: distro = Unknown
 #=================== DISTRIBUTION DETECTION =================
@@ -343,7 +349,7 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
             cfo.addEntry("NOZEROCONF", "yes")
             cfo.save()
 
-            if not bash("service network restart").isSuccess():
+            if not bash("systemctl restart NetworkManager.service").isSuccess():
                 raise CloudInternalException("Can't restart network")
 
             self.syscfg.env.nics.append(self.brName)
