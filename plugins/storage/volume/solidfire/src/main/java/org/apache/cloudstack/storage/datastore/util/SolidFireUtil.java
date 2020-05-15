@@ -393,7 +393,7 @@ public class SolidFireUtil {
             }
         }
         else {
-            List<ClusterVO> clustersInZone = clusterDao.listByZoneId(storagePoolVO.getDataCenterId());
+            List<ClusterVO> clustersInZone = clusterDao.listClustersByDcId(storagePoolVO.getDataCenterId());
 
             if (clustersInZone != null) {
                 for (ClusterVO clusterInZone : clustersInZone) {
