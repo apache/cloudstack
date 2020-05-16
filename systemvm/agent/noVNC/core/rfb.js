@@ -1204,11 +1204,6 @@ export default class RFB extends EventTargetMixin {
             Log.Warn("Server native blue-shift is not 0");
         }
 
-        // we're past the point where we could backtrack, so it's safe to call this
-        this.dispatchEvent(new CustomEvent(
-            "desktopname",
-            { detail: { name: this._fb_name } }));
-
         this._resize(width, height);
 
         if (!this._viewOnly) { this._keyboard.grab(); }
