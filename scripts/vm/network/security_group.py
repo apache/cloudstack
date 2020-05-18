@@ -1451,7 +1451,7 @@ def verify_iptables_rules_for_bridge(brname):
     expected_rules.append("-A %s -m state --state RELATED,ESTABLISHED -j ACCEPT" % (brfw))
     expected_rules.append("-A %s -m physdev --physdev-is-in --physdev-is-bridged -j %s" % (brfw, brfwin))
     expected_rules.append("-A %s -m physdev --physdev-is-out --physdev-is-bridged -j %s" % (brfw, brfwout))
-    phydev = execute("brctl show | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
+    phydev = execute("ip link show type bridge | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
     expected_rules.append("-A %s -m physdev --physdev-out %s --physdev-is-bridged -j ACCEPT" % (brfw, phydev))
 
     rules = execute("iptables-save |grep -w %s |grep -v \"^:\"" % brfw).split('\n')
