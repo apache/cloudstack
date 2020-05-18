@@ -2286,11 +2286,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("booting %s in %s mode and type %s",
+                            vmInternalCSName,
+                            bootMode,
+                            vmSpec.getDetails().containsKey(ApiConstants.BootType.UEFI.toString()) ? vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()) : "<nada>"));
+                }
                 vmConfigSpec.setFirmware("efi");
                 if (vmSpec.getDetails().containsKey(ApiConstants.BootType.UEFI.toString()) && "secure".equalsIgnoreCase(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()))) {
                     VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
                     bootOptions.setEfiSecureBootEnabled(true);
                     vmConfigSpec.setBootOptions(bootOptions);
+                }
+                else
+                {
+                    throw new Exception("Failed to start VM. vmName: " + vmInternalCSName + " with in mode " + bootMode + " and type " + vmSpec.getDetails().get(ApiConstants.BootType.UEFI));
                 }
             }
 
