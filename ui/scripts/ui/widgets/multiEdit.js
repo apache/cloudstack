@@ -311,6 +311,8 @@
                             return true;
                         });
                         $button.appendTo($td);
+                    } else if (field.display) {
+                        $td.append($('<span>').html(_s(data[fieldName])));
                     }
                 }
 

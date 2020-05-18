@@ -57,6 +57,7 @@ import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleService;
 import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.lb.LoadBalancerConfigService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
@@ -149,6 +150,8 @@ public abstract class BaseCmd {
     public AutoScaleService _autoScaleService;
     @Inject
     public LoadBalancingRulesService _lbService;
+    @Inject
+    public LoadBalancerConfigService _lbConfigService;
     @Inject
     public RemoteAccessVpnService _ravService;
     @Inject

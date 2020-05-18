@@ -87,6 +87,7 @@ import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.LoadBalancerConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
@@ -162,6 +163,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
@@ -270,6 +272,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.LoadBalancerConfig;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -988,6 +991,35 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         lbResponse.setObjectName("loadbalancer");
         return lbResponse;
+    }
+
+    @Override
+    public LoadBalancerConfigResponse createLoadBalancerConfigResponse(LoadBalancerConfig config) {
+        LoadBalancerConfigResponse response = new LoadBalancerConfigResponse();
+        if (config.getUuid() != null) {
+            response.setId(config.getUuid());
+        }
+        response.setName(config.getName());
+        response.setValue(config.getValue());
+        response.setScope(String.valueOf(config.getScope()));
+        if (config.getNetworkId() != null) {
+            response.setNetworkId(String.valueOf(config.getNetworkId())); //TODO SHOULD BE UUID
+        }
+        if (config.getVpcId() != null) {
+            response.setVpcId(String.valueOf(config.getVpcId())); //UUID
+        }
+        if (config.getLoadBalancerId() != null) {
+            response.setLoadBalancerId(String.valueOf(config.getLoadBalancerId())); //UUID
+        }
+        response.setCreated(config.getCreated());
+        LoadBalancerConfigKey configKey = LoadBalancerConfigKey.getConfigsByScopeAndName(config.getScope(), config.getName());
+        if (configKey == null) {
+            throw new CloudRuntimeException(String.format("Unable to determine the load balancer config for scope %s and name %s", config.getScope(), config.getName()));
+        }
+        response.setDescription(configKey.displayText());
+        response.setDefaultValue(configKey.defaultValue());
+        response.setObjectName("loadbalancerconfig");
+        return response;
     }
 
     @Override

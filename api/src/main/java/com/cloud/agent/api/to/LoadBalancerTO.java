@@ -33,6 +33,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
+import com.cloud.network.rules.LoadBalancerConfig;
 import com.cloud.utils.Pair;
 
 public class LoadBalancerTO {
@@ -50,6 +51,7 @@ public class LoadBalancerTO {
     String srcIpNetmask;
     Long networkId;
     DestinationTO[] destinations;
+    private LoadBalancerConfigTO[] lbConfigs;
     private StickinessPolicyTO[] stickinessPolicies;
     private HealthCheckPolicyTO[] healthCheckPolicies;
     private LbSslCert sslCert; /* XXX: Should this be SslCertTO?  */
@@ -177,6 +179,21 @@ public class LoadBalancerTO {
 
     public boolean isInline() {
         return inline;
+    }
+
+    public LoadBalancerConfigTO[] getLbConfigs() {
+        return this.lbConfigs;
+    }
+
+    public void setLbConfigs(List<? extends LoadBalancerConfig> lbConfigs) {
+        if (lbConfigs == null) {
+            lbConfigs = new ArrayList<LoadBalancerConfig>();
+        }
+        this.lbConfigs = new LoadBalancerConfigTO[lbConfigs.size()];
+        int i = 0;
+        for (LoadBalancerConfig lbConfig : lbConfigs) {
+            this.lbConfigs[i++] = new LoadBalancerConfigTO(lbConfig);
+        }
     }
 
     public StickinessPolicyTO[] getStickinessPolicies() {

@@ -139,6 +139,8 @@
 
     <bean id="uUIDManagerImpl" class="com.cloud.uuididentity.UUIDManagerImpl" />
 
+    <bean id="loadBalancerConfigManager" class="com.cloud.network.lb.LoadBalancerConfigManagerImpl" />
+
     <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" >
         <property name="lbProviders" value="#{loadBalancingServiceProvidersRegistry.registered}" />
     </bean>

@@ -27,9 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.to.LoadBalancerConfigTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
 import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
@@ -49,6 +51,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         "\toption forwardfor", "\toption forceclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
 
     private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
+
+    private final HashMap<String, String> networkLbConfigsMap = new HashMap<String, String>();
 
     @Override
     public String[] generateConfiguration(final List<PortForwardingRuleTO> fwRules) {
@@ -474,6 +478,14 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final int publicPort = lbTO.getSrcPort();
         final String algorithm = lbTO.getAlgorithm();
 
+        final LoadBalancerConfigTO[] lbConfigs = lbTO.getLbConfigs();
+        final HashMap<String, String> lbConfigsMap = new HashMap<String, String>();
+        if (lbConfigs != null) {
+            for (LoadBalancerConfigTO lbConfig: lbConfigs) {
+                lbConfigsMap.put(lbConfig.getName(), lbConfig.getValue());
+            }
+        }
+
         final List<String> result = new ArrayList<String>();
         // add line like this: "listen  65_37_141_30-80\n\tbind 65.37.141.30:80"
         sb = new StringBuilder();
@@ -576,6 +588,13 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
     @Override
     public String[] generateConfiguration(final LoadBalancerConfigCommand lbCmd) {
+        final LoadBalancerConfigTO[] networkLbConfigs = lbCmd.getNetworkLbConfigs();
+        if (networkLbConfigs != null) {
+            for (LoadBalancerConfigTO networkLbConfig: networkLbConfigs) {
+                networkLbConfigsMap.put(networkLbConfig.getName(), networkLbConfig.getValue());
+            }
+        }
+
         final List<String> result = new ArrayList<String>();
         final List<String> gSection = Arrays.asList(globalSection);
         //        note that this is overwritten on the String in the static ArrayList<String>
