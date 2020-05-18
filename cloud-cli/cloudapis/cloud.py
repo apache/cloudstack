@@ -21,15 +21,15 @@
 
 
 from cloudtool.utils import describe
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import os
 import xml.dom.minidom
 import re
 import base64
 import hmac
 import hashlib
-import httplib
+import http.client
 
 class CloudAPI:
 
@@ -51,30 +51,30 @@ class CloudAPI:
         requests["command"] = command
         requests["apiKey"] = self.apiKey
         requests["response"] = "xml"
-        requests = zip(requests.keys(), requests.values())
+        requests = list(zip(list(requests.keys()), list(requests.values())))
         requests.sort(key=lambda x: str.lower(x[0]))
 
-        requestUrl = "&".join(["=".join([request[0], urllib.quote_plus(str(request[1]))]) for request in requests])
-        hashStr = "&".join(["=".join([str.lower(request[0]), urllib.quote_plus(str.lower(str(request[1])))]) for request in requests])
+        requestUrl = "&".join(["=".join([request[0], urllib.parse.quote_plus(str(request[1]))]) for request in requests])
+        hashStr = "&".join(["=".join([str.lower(request[0]), urllib.parse.quote_plus(str.lower(str(request[1])))]) for request in requests])
 
-        sig = urllib.quote_plus(base64.encodestring(hmac.new(self.securityKey, hashStr, hashlib.sha1).digest()).strip())
+        sig = urllib.parse.quote_plus(base64.encodestring(hmac.new(self.securityKey, hashStr, hashlib.sha1).digest()).strip())
 
         requestUrl += "&signature=%s"%sig
         return requestUrl
 
 
     def _make_request_with_auth(self, command, requests):
-        self.connection = httplib.HTTPConnection("%s"%(self.server))
+        self.connection = http.client.HTTPConnection("%s"%(self.server))
         requests["command"] = command
         requests["apiKey"] = self.apiKey
         requests["response"] = self.responseformat
-        requests = zip(requests.keys(), requests.values())
+        requests = list(zip(list(requests.keys()), list(requests.values())))
         requests.sort(key=lambda x: str.lower(x[0]))
 
-        requestUrl = "&".join(["=".join([request[0], urllib.quote(str(request[1],""))]) for request in requests])
-        hashStr = "&".join(["=".join([str.lower(request[0]), urllib.quote(str.lower(str(request[1])),"")]) for request in requests])
+        requestUrl = "&".join(["=".join([request[0], urllib.parse.quote(str(request[1],""))]) for request in requests])
+        hashStr = "&".join(["=".join([str.lower(request[0]), urllib.parse.quote(str.lower(str(request[1])),"")]) for request in requests])
 
-        sig = urllib.quote_plus(base64.encodestring(hmac.new(self.securityKey, str.lower(hashStr), hashlib.sha1).digest()).strip())
+        sig = urllib.parse.quote_plus(base64.encodestring(hmac.new(self.securityKey, str.lower(hashStr), hashlib.sha1).digest()).strip())
 
         requestUrl += "&signature=%s"%sig
 
@@ -99,11 +99,11 @@ class CloudAPI:
         else:
             parameters["command"] = command
             parameters["response"] = self.responseformat
-            querystring = urllib.urlencode(parameters)
+            querystring = urllib.parse.urlencode(parameters)
 
         url += querystring
 
-        f = urllib2.urlopen(url)
+        f = urllib.request.urlopen(url)
         data = f.read()
         if self.stripxml == "true":
             data=re.sub("<\?.*\?>", "\n", data);
@@ -149,7 +149,7 @@ def load_dynamic_methods():
             required = getText(param.getElementsByTagName('required')[0].childNodes).strip()
             if required == 'true': required = True
             elif required == 'false': required = False
-            else: raise AssertionError, "Not reached"
+            else: raise AssertionError("Not reached")
             if required: arguments.append(argname)
             options.append(argname)
 
@@ -179,7 +179,7 @@ def load_dynamic_methods():
         """%(name,funcparams,description,arguments,name)
 
         namespace = {}
-        exec code.strip() in namespace
+        exec(code.strip(), namespace)
 
         func = namespace[name]
         for argname,description in descriptions:
