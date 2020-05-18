@@ -14,8 +14,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7
-from serviceConfig import *
+from .utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7
+from .serviceConfig import *
 class sysConfigFactory:
     @staticmethod
     def getSysConfigFactory(glbEnv):
@@ -44,7 +44,7 @@ class sysConfigAgentFactory:
         elif distribution == "RHEL7":
             return sysConfigRedhat7(glbEnv)
         else:
-            print "Can't find the distribution version"
+            print("Can't find the distribution version")
             return sysConfig()
 
 class sysConfigServerFactory:
@@ -57,7 +57,7 @@ class sysConfigServerFactory:
         elif distribution != "Unknown":
             return sysConfigServerRedhat(glbEnv)
         else:
-            print "Can't find the distribution version"
+            print("Can't find the distribution version")
             return sysConfig()
     
 class sysConfigDbFactory:

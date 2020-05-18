@@ -17,7 +17,7 @@
 import re
 import tempfile
 import shutil
-from utilities import bash
+from .utilities import bash
 class configFileOps:
     class entry:
         def __init__(self, name, value, op, separator):
@@ -49,7 +49,7 @@ class configFileOps:
     
     def getEntry(self, name, separator="="):
         try:
-            ctx = file(self.fileName).read(-1)
+            ctx = open(self.fileName).read(-1)
             match = re.search("^" + name + ".*", ctx, re.MULTILINE)
             if match is None:
                 return ""
@@ -103,10 +103,10 @@ class configFileOps:
 
         fp.close()
         
-        file(self.fileName, "w").writelines(newLines)
+        open(self.fileName, "w").writelines(newLines)
 
     def replace_line(self, startswith,stanza,always_add=False):
-        lines = [ s.strip() for s in file(self.fileName).readlines() ]
+        lines = [ s.strip() for s in open(self.fileName).readlines() ]
         newlines = []
         replaced = False
         for line in lines:
@@ -120,36 +120,36 @@ class configFileOps:
             newlines.append(stanza)
             self.backups.append([None, stanza])
         newlines = [ s + '\n' for s in newlines ]
-        file(self.fileName,"w").writelines(newlines)
+        open(self.fileName,"w").writelines(newlines)
 
     def replace_or_add_line(self, startswith,stanza):
         return self.replace_line(startswith,stanza,always_add=True)
 
     def add_lines(self, lines, addToBackup=True):
-        fp = file(self.fileName).read(-1) 
+        fp = open(self.fileName).read(-1) 
         sh = re.escape(lines)
         match = re.search(sh, fp, re.MULTILINE) 
         if match is not None:
             return
     
         fp += lines
-        file(self.fileName, "w").write(fp)
+        open(self.fileName, "w").write(fp)
         self.backups.append([None, lines])
         
     def replace_lines(self, src, dst, addToBackup=True):
-        fp = file(self.fileName).read(-1) 
+        fp = open(self.fileName).read(-1) 
         sh = re.escape(src)
         if dst is None:
             dst = ""
         repl,nums = re.subn(sh, dst, fp)
         if nums <=0:
             return
-        file(self.fileName, "w").write(repl)
+        open(self.fileName, "w").write(repl)
         if addToBackup:
             self.backups.append([src, dst])
 
     def append_lines(self, match_lines, append_lines):
-        fp = file(self.fileName).read(-1)
+        fp = open(self.fileName).read(-1)
         sh = re.escape(match_lines)
         match = re.search(sh, fp, re.MULTILINE)
         if match is None:
@@ -160,14 +160,14 @@ class configFileOps:
             return
 
         newlines = []
-        for line in file(self.fileName).readlines():
+        for line in open(self.fileName).readlines():
             if re.search(match_lines, line) is not None:
                 newlines.append(line + append_lines)
                 self.backups.append([line, line + append_lines])
             else:
                 newlines.append(line)
 
-        file(self.fileName, "w").writelines(newlines)
+        open(self.fileName, "w").writelines(newlines)
             
     def backup(self):
         for oldLine, newLine in self.backups:
