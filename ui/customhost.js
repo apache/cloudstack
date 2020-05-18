@@ -1,14 +1,41 @@
 //
 // Use https://realfavicongenerator.net to generate custom host based resources
 //
-const defaulthost = 'ippathways';
+const ippSLDs = ['ippathways', 'adaptivecloud'];
+const ippSubDomainPrefixes = ["www", "cloud", "labcloud"]; // Make sure this has all possible IPP subdomain prefixes!
 const defaultbrand = 'adaptivecloud';
+
+// See if a given string starts with any of the strings in the array
+function arrayHasPrefixFor(prefixArray, needle) {
+    for (var idx in prefixArray) {
+        if (needle.startsWith(prefixArray[idx])) {
+            return true;
+        }
+    }
+    return false;
+};
+
 var hostparts = window.location.hostname.split('.');
-// Grab the next to last part of the hostname every time. This should identify the actual 'name' we want to use for the brand
-var custombrand = hostparts[hostparts.length - 2];
-if (parseInt(custombrand) || custombrand == defaulthost) {
-    // custombrand is an IP address or our own name (not a white-label), so use adaptive cloud base level rebrand
-    custombrand = defaultbrand;
+
+// Grab the Second-level Domain. If this isn't an IPP SLD, then it is a white-label name that we want to use
+var sld = hostparts[hostparts.length - 2];
+
+// Default to the IPP AdaptiveCloud branding
+var custombrand = defaultbrand;
+
+// Grab the sub-domain, just in case the SLD is an IP Pathways SLD, we need this to see if this is a white-label
+var subdomain = (hostparts.length > 2 ? hostparts[hostparts.length - 3] : '');
+
+// If this part is a number, must be an IP, so use default branding
+if (!parseInt(sld)) {
+    // If this part is not one of the IP Pathways SLDs, use it as a white-label brand
+    if (!ippSLDs.includes(sld)) {
+        custombrand = sld;
+    }
+    // This is an IPP SLD, see if the sub-domain is one reserved for IPP, if not, use it as a white-label brand
+    else if (subdomain.length > 0 && !arrayHasPrefixFor(ippSubDomainPrefixes, subdomain)) {
+        custombrand = subdomain;
+    }
 }
 
 function getHostPath(host) {
