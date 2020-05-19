@@ -5819,7 +5819,6 @@
                             var hiddenTabs = [];
                             var isRouterOwner = isAdmin();
                             if (!isRouterOwner) {
-                                hiddenTabs.push("router");
                                 hiddenTabs.push("virtualRouters");
                             }
                             return hiddenTabs;
@@ -5909,81 +5908,6 @@
                                             args.response.success({
                                                 data: item
                                             });
-                                        }
-                                    });
-                                }
-                            },
-                            router: {
-                                title: 'label.vpc.router.details',
-                                fields: [{
-                                    name: {
-                                        label: 'label.name'
-                                    }
-                                }, {
-                                    state: {
-                                        label: 'label.state'
-                                    },
-                                    hostname: {
-                                        label: 'label.host'
-                                    },
-                                    linklocalip: {
-                                        label: 'label.linklocal.ip'
-                                    },
-                                    isredundantrouter: {
-                                        label: 'label.redundant.router',
-                                        converter: function(booleanValue) {
-                                            if (booleanValue == true) {
-                                                return "Yes";
-                                            }
-                                            return "No";
-                                        }
-                                    },
-                                    redundantstate: {
-                                        label: 'label.redundant.state'
-                                    },
-                                    id: {
-                                        label: 'label.id'
-                                    },
-                                    serviceofferingname: {
-                                        label: 'label.service.offering'
-                                    },
-                                    zonename: {
-                                        label: 'label.zone'
-                                    },
-                                    gateway: {
-                                        label: 'label.gateway'
-                                    },
-                                    publicip: {
-                                        label: 'label.public.ip'
-                                    },
-                                    guestipaddress: {
-                                        label: 'label.guest.ip'
-                                    },
-                                    dns1: {
-                                        label: 'label.dns'
-                                    },
-                                    account: {
-                                        label: 'label.account'
-                                    },
-                                    domain: {
-                                        label: 'label.domain'
-                                    }
-                                }],
-
-                                dataProvider: function(args) {
-                                    $.ajax({
-                                        url: createURL("listRouters&listAll=true&vpcid=" + args.context.vpc[0].id),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            for (var i = 0; i < json.listroutersresponse.router.length; i++) {
-                                                var item = json.listroutersresponse.router[i];
-
-                                                args.response.success({
-                                                    actionFilter: cloudStack.sections.system.routerActionFilter,
-                                                    data: item
-                                                });
-                                            }
                                         }
                                     });
                                 }
