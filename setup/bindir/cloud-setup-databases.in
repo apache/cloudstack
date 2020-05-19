@@ -389,7 +389,7 @@ for example:
     def processEncryptionStuff(self):
         def encrypt(input):
             cmd = ['java','-Djava.security.egd=file:/dev/urandom','-classpath','"' + self.encryptionJarPath + '"','org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
-            return str(runCmd(cmd)).strip('\r\n')
+            return str(runCmd(cmd).decode('utf-8')).strip('\r\n')
 
         def saveMgmtServerSecretKey():
             if self.encryptiontype == 'file':

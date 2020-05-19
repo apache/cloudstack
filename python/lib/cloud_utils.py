@@ -315,7 +315,7 @@ def check_selinux():
 	enforcing = False
 	config_enforcing = False
 	try:
-		output = getenforce().stdout.strip()
+		output = getenforce().stdout.decode('utf-8').strip()
 		if "nforcing" in output:
 			enforcing = True
 		if any ( [ s.startswith("SELINUX=enforcing") for s in open("/etc/selinux/config").readlines() ] ):
