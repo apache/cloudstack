@@ -568,6 +568,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     }
 
     private String generateStatsRule(final LoadBalancerConfigCommand lbCmd, final String ruleName, final String statsIp) {
+        String haproxyStatsEnabled = networkLbConfigsMap.get(LoadBalancerConfigKey.HAproxyStatsEnable.key());
+        if (haproxyStatsEnabled != null && ! haproxyStatsEnabled.equalsIgnoreCase("true")) {
+            return "";
+        }
         final StringBuilder rule = new StringBuilder("\nlisten ").append(ruleName).append("\n\tbind ").append(statsIp).append(":").append(lbCmd.lbStatsPort);
         // TODO DH: write test for this in both cases
         if (!lbCmd.keepAliveEnabled) {
