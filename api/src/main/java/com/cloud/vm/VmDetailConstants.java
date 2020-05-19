@@ -20,7 +20,6 @@ public interface VmDetailConstants {
     String KEYBOARD = "keyboard";
     String CPU_CORE_PER_SOCKET = "cpu.corespersocket";
     String ROOT_DISK_SIZE = "rootdisksize";
-    String BOOT_MODE = "boot.mode";
 
     // VMware specific
     String NIC_ADAPTER = "nicAdapter";

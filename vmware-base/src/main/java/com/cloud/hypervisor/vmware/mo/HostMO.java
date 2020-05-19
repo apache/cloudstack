@@ -1196,17 +1196,4 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
         return morNetwork;
     }
-
-    public String getProductVersion() throws Exception {
-        return getHostAboutInfo().getVersion();
-    }
-
-    public boolean isUefiLegacySupported() throws Exception {
-        String hostVersion = getProductVersion();
-        if (hostVersion.compareTo(VmwareHelper.MIN_VERSION_UEFI_LEGACY) >= 0) {
-            return true;
-        }
-        return false;
-    }
-
 }

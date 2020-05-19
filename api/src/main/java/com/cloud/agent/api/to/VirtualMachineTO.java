@@ -63,8 +63,6 @@ public class VirtualMachineTO {
     String vncAddr;
     Map<String, String> params;
     String uuid;
-    String bootType;
-    String bootMode;
 
     DiskTO[] disks;
     NicTO[] nics;
@@ -382,15 +380,4 @@ public class VirtualMachineTO {
     public void setOvfProperties(Pair<String, List<OVFPropertyTO>> ovfProperties) {
         this.ovfProperties = ovfProperties;
     }
-    public String getBootType() {
-        return bootType;
-    }
-
-    public void setBootType(String bootType) {
-        this.bootType = bootType;
-    }
-
-    public String getBootMode() { return bootMode; }
-
-    public void setBootMode(String bootMode) { this.bootMode = bootMode; }
 }

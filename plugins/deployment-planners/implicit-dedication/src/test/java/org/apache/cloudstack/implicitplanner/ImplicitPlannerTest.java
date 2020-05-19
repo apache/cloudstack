@@ -73,7 +73,6 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
@@ -573,10 +572,6 @@ public class ImplicitPlannerTest {
         public DataStoreManager dataStoreManager() {
             return Mockito.mock(DataStoreManager.class);
         }
-
-        @Bean
-        public HostDetailsDao hostDetailsDao() { return Mockito.mock(HostDetailsDao.class); }
-
 
         @Bean
         public ClusterDetailsDao clusterDetailsDao() {

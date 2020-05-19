@@ -202,7 +202,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     @Override
     public Map<? extends ServerResource, Map<String, String>>
         find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException {
-        boolean isUefiSupported = false;
 
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null || cluster.getHypervisorType() != getHypervisorType()) {
@@ -255,11 +254,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "ls /dev/kvm")) {
                 s_logger.debug("It's not a KVM enabled machine");
                 return null;
-            }
-
-            if (SSHCmdHelper.sshExecuteCmd(sshConnection, "rpm -qa | grep -i ovmf", 3)) {
-                s_logger.debug("It's UEFI enabled KVM machine");
-                isUefiSupported = true;
             }
 
             List<PhysicalNetworkSetupInfo> netInfos = _networkMgr.getPhysicalNetworkInfo(dcId, getHypervisorType());
@@ -344,7 +338,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             Map<String, String> hostDetails = connectedHost.getDetails();
             hostDetails.put("password", password);
             hostDetails.put("username", username);
-            hostDetails.put(Host.HOST_UEFI_ENABLE, isUefiSupported == true ? Boolean.toString(true) : Boolean.toString(false));
             _hostDao.saveDetails(connectedHost);
             return resources;
         } catch (DiscoveredWithErrorException e) {

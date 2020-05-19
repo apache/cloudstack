@@ -18024,10 +18024,6 @@
                                             });
                                         }
                                     },
-                                    ueficapability: {
-                                        label:'label.host.ueficapability',
-                                        converter: cloudStack.converters.toBooleanText
-                                    },
                                     hahost: {
                                         label: 'label.ha.enabled',
                                         converter: cloudStack.converters.toBooleanText
