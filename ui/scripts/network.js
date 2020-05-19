@@ -5912,6 +5912,181 @@
                                     });
                                 }
                             },
+
+                            lbConfigs: {
+                                title: 'LB Configs',
+                                custom: function(args) {
+                                    var context = args.context;
+
+                                    return $('<div>').multiEdit({
+                                        context: context,
+                                        noSelect: true,
+                                        noHeaderActionsColumn: true,
+                                        fields: {
+                                            'displayname': {
+                                                label: 'label.name',
+                                                select: function(args) {
+                                                    var config_list = [];
+                                                    $.ajax({
+                                                        url: createURL('listLoadBalancerConfigs'),
+                                                        data: {
+                                                            listAll: true,
+                                                            scope: 'Vpc',
+                                                            vpcid: args.context.vpc[0].id
+                                                        },
+                                                        dataType: 'json',
+                                                        async: false,
+                                                        success: function(json) {
+                                                            var configs = json.listloadbalancerconfigsresponse.loadbalancerconfig ?
+                                                                json.listloadbalancerconfigsresponse.loadbalancerconfig : [];
+                                                            $(configs).each(function() {
+                                                                config_list[this.name] = {
+                                                                    desc: this.description,
+                                                                    defaultvalue: this.defaultvalue
+                                                                }
+                                                            });
+
+                                                            args.response.success({
+                                                                data: $.map(configs, function(config) {
+                                                                    return {
+                                                                        name: config.name,
+                                                                        description: config.name
+                                                                    };
+                                                                })
+                                                            });
+                                                        }
+                                                    });
+                                                    args.$select.change(function() {
+                                                        var name = $(this).children(':selected').val();
+                                                        var desc = config_list[name].desc;
+                                                        $(this).parent().parent().find('.description').html(desc);
+                                                        var dvalue = config_list[name].defaultvalue;
+                                                        $(this).parent().parent().find('.defaultvalue').html(dvalue);
+                                                    });
+                                                }
+                                            },
+                                            'description': {
+                                                edit: false,
+                                                display: true,
+                                                label: 'label.description',
+                                                isOptional: true
+                                            },
+                                            'defaultvalue': {
+                                                edit: false,
+                                                display: true,
+                                                label: 'default value',
+                                                isOptional: true
+                                            },
+                                            'value': {
+                                                edit: true,
+                                                label: 'value',
+                                                isOptional: false
+                                            },
+                                            'add-rule': {
+                                                label: 'label.add',
+                                                addButton: true
+                                            }
+                                        },
+                                        add: {
+                                            label: 'label.add',
+                                            action: function(args) {
+                                                var data = {
+                                                    scope: 'Vpc',
+                                                    name: args.data.displayname,
+                                                    value: args.data.value,
+                                                    forced: true,
+                                                    vpcid: args.context.vpc[0].id
+                                                };
+
+                                                $.ajax({
+                                                    url: createURL('createLoadBalancerConfig'),
+                                                    data: data,
+                                                    dataType: 'json',
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var jobId = json.createloadbalancerconfigresponse.jobid;
+
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: jobId
+                                                            },
+                                                            notification: {
+                                                                label: 'Added load balancer config ' + args.data.displayname,
+                                                                poll: pollAsyncJobResult
+                                                            }
+                                                        });
+                                                    },
+                                                    error: function(json) {
+                                                        args.response.error(parseXMLHttpResponse(json));
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        actions: {
+                                            destroy: {
+                                                label: 'Remove load balancer config',
+                                                action: function(args) {
+                                                    $.ajax({
+                                                        url: createURL('deleteLoadBalancerConfig'),
+                                                        data: {
+                                                            id: args.context.multiRule[0].id
+                                                        },
+                                                        dataType: 'json',
+                                                        async: true,
+                                                        success: function(data) {
+                                                            var jobID = data.deleteloadbalancerconfigresponse.jobid;
+
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jobID
+                                                                },
+                                                                notification: {
+                                                                    label: 'Removed load balancer config ' + args.context.multiRule[0].displayname,
+                                                                    poll: pollAsyncJobResult
+                                                                }
+                                                            });
+                                                        },
+                                                        error: function(json) {
+                                                            args.response.error(parseXMLHttpResponse(json));
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        },
+                                        ignoreEmptyFields: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL('listLoadBalancerConfigs'),
+                                                data: {
+                                                    scope: 'Vpc',
+                                                    vpcid: args.context.vpc[0].id
+                                                },
+                                                dataType: 'json',
+                                                async: false,
+                                                success: function(json) {
+                                                    var configs = json.listloadbalancerconfigsresponse.loadbalancerconfig ?
+                                                        json.listloadbalancerconfigsresponse.loadbalancerconfig : [];
+
+
+                                                    args.response.success({
+                                                        data: $.map(configs, function(config) {
+                                                            $.extend(config, {
+                                                                displayname: config.name
+                                                            });
+                                                            if (this.defaultvalue == "") {
+                                                                $.extend(config, {
+                                                                    defaultvalue: "<null>"
+                                                                });
+                                                            }
+                                                            return config;
+                                                        })
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            },
                             virtualRouters: {
                                 title: "label.virtual.routers",
                                 listView: cloudStack.sections.system.subsections.virtualRouters.sections.routerNoGroup.listView

@@ -43,6 +43,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerConfigCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLoadBalancerConfigCmd;
@@ -272,6 +273,9 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             }
             // Perform permission check
             _accountMgr.checkAccess(caller, null, true, network);
+            if (network.getVpcId() != null) {
+                throw new InvalidParameterValueException("network " + network.getName() + " is a VPC tier, please add LB configs to VPC instead");
+            }
         } else if (scope == Scope.Vpc) {
             if (vpcId == null) {
                 throw new InvalidParameterValueException("vpcId is required");
@@ -323,17 +327,33 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             LoadBalancerVO rule = _lbDao.findById(loadBalancerId);
             networkId = rule.getNetworkId();
         }
+        if (networkId != null) {
+            applyLbConfigsForNetwork(networkId);
+        } else if (vpcId != null) {
+            List<NetworkVO> networks = _networkDao.listByVpc(vpcId);
+            for (NetworkVO network : networks) {
+                if (applyLbConfigsForNetwork(network.getId())) {
+                    break;
+                }
+            }
+        }
+    }
+
+    private boolean applyLbConfigsForNetwork(Long networkId) {
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Lb, Provider.VirtualRouter) &&
                 !_ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Lb, Provider.VPCVirtualRouter)) {
             s_logger.info("Lb is not supported or not provided by VirtualRouter/VpcVirtualRouter in network " + networkId);
-            return;
+            return false;
         }
         try {
             if (!_lbMgr.applyLoadBalancersForNetwork(networkId, Scheme.Public)) {
                 s_logger.warn("Failed to apply LB configs of network id=" + networkId);
+                return false;
             }
+            return true;
         } catch (ResourceUnavailableException ex) {
             s_logger.error("Failed to apply LB configs in virtual router on network: " + networkId, ex);
+            throw new CloudRuntimeException("Failed to apply LB configs in virtual router on network: " + networkId);
         }
     }
 }

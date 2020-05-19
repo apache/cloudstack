@@ -347,7 +347,11 @@ public class CommandSetupHelper {
         final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, routerPublicIp, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()),
                 router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
-        cmd.setNetworkLbConfigs(_lbConfigMgr.getNetworkLbConfigs(guestNetworkId));
+        if (router.getVpcId() != null) {
+            cmd.setNetworkLbConfigs(_lbConfigMgr.getVpcLbConfigs(router.getVpcId()));
+        } else {
+            cmd.setNetworkLbConfigs(_lbConfigMgr.getNetworkLbConfigs(guestNetworkId));
+        }
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
         cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());

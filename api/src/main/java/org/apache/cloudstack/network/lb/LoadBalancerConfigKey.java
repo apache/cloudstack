@@ -103,6 +103,12 @@ public enum LoadBalancerConfigKey {
             Map<String, LoadBalancerConfigKey> currentConfigs = Configs.get(scope);
             currentConfigs.put(c.key(), c);
             Configs.put(scope, currentConfigs);
+            if (scope == Scope.Network) {
+                scope = Scope.Vpc;
+                currentConfigs = Configs.get(scope);
+                currentConfigs.put(c.key(), c);
+                Configs.put(scope, currentConfigs);
+            }
         }
     }
 
