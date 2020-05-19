@@ -41,6 +41,12 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
+
+import com.cloud.vm.VmDetailConstants;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
@@ -59,10 +65,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 /**
  * Thumbnail access : /console?cmd=thumbnail&vm=xxx&w=xxx&h=xxx
@@ -478,7 +481,12 @@ public class ConsoleProxyServlet extends HttpServlet {
             param.setClientTunnelSession(parsedHostInfo.third());
         }
 
-        sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
+        if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
+            sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
+        } else {
+            sb.append("/resource/noVNC/vnc_lite.html?port=" + ConsoleProxyManager.DEFAULT_NOVNC_PORT + "&token="
+                + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
+        }
 
         // for console access, we need guest OS type to help implement keyboard
         long guestOs = vm.getGuestOSId();
