@@ -30,6 +30,7 @@ import com.cloud.capacity.CapacityManager;
 import com.google.common.base.Preconditions;
 
 public class ImageStoreDetailsUtil {
+
     @Inject
     protected ImageStoreDao imageStoreDao;
     @Inject

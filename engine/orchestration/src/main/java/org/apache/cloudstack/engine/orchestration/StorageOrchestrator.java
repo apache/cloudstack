@@ -56,14 +56,13 @@ import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.Config;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
@@ -133,7 +132,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        numConcurrentCopyTasksPerSSVM = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageMaxMigrateSessions.key()), 2);
+        numConcurrentCopyTasksPerSSVM = StorageManager.SecStorageMaxMigrateSessions.value();
         return true;
     }
 
@@ -144,7 +143,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         String message = null;
 
         migrationHelper.checkIfCompleteMigrationPossible(migrationPolicy, srcDataStoreId);
-
         DataStore srcDatastore = dataStoreManager.getDataStore(srcDataStoreId, DataStoreRole.Image);
         Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains = new HashMap<>();
         files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains);
@@ -152,17 +150,11 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         if (files.isEmpty()) {
             return new MigrationResponse("No files in Image store "+srcDatastore.getId()+ " to migrate", migrationPolicy.toString(), true);
         }
-
-        // Create capacity class with free and total space, maybe id of ds too and use that as the value
         Map<Long, Pair<Long, Long>> storageCapacities = new Hashtable<>();
-
         for (Long storeId : destDatastores) {
             storageCapacities.put(storeId, new Pair<>(null, null));
         }
         storageCapacities.put(srcDataStoreId, new Pair<>(null, null));
-
-        // If the migration policy is to completely migrate data from the given source Image Store, then set it's state
-        // to readonly
         if (migrationPolicy == MigrationPolicy.COMPLETE) {
             s_logger.debug("Setting source image store "+srcDatastore.getId()+ " to read-only");
             storageService.updateImageStoreStatus(srcDataStoreId, true);
@@ -172,8 +164,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         double meanstddev = getStandardDeviation(storageCapacities);
         double threshold = ImageStoreImbalanceThreshold.value();
         MigrationResponse response = null;
-
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM , numConcurrentCopyTasksPerSSVM, 30, TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM));
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM , numConcurrentCopyTasksPerSSVM, 30,
+                TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM));
         Date start = new Date();
         if (meanstddev < threshold && migrationPolicy == MigrationPolicy.BALANCE) {
             s_logger.debug("mean std deviation of the image stores is below threshold, no migration required");
@@ -188,28 +180,14 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 chosenFileForMigration = files.remove(0);
             }
 
-            // Choose datastore with maximum free capacity as the destination datastore for migration
             storageCapacities = getStorageCapacities(storageCapacities);
             List<Long> orderedDS = migrationHelper.sortDataStores(storageCapacities);
             Long destDatastoreId = orderedDS.get(0);
 
-            // If there aren't anymore files available for migration or no valid Image stores available for migration
-            // end the migration process
             if (chosenFileForMigration == null || destDatastoreId == null || destDatastoreId == srcDatastore.getId()) {
-                if (destDatastoreId == srcDatastore.getId() && !files.isEmpty() ) {
-                    if (migrationPolicy == MigrationPolicy.BALANCE) {
-                        s_logger.debug("Migration completed : data stores have been balanced ");
-                        message = "Image stores have been balanced";
-                        success = true;
-                    } else {
-                        message = "Files not completely migrated from "+ srcDatastore.getId() +
-                                " If you want to continue using the Image Store, please change the read-only status using 'update imagestore' command";
-                        success = false;
-                    }
-                } else {
-                    message = "Migration completed";
-                    success = true;
-                }
+                Pair<String, Boolean> result = migrateCompleted(destDatastoreId, srcDatastore, files, migrationPolicy);
+                message = result.first();
+                success = result.second();
                 break;
             }
 
@@ -218,24 +196,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 continue;
             }
 
-            // If there is a benefit in migration of the chosen file to the destination store, then proceed with migration
             if (shouldMigrate(chosenFileForMigration, srcDatastore.getId(), destDatastoreId, storageCapacities, snapshotChains, migrationPolicy)) {
-                Long fileSize = migrationHelper.getFileSize(chosenFileForMigration, snapshotChains);
-                storageCapacities = assumeMigrate(storageCapacities, srcDatastore.getId(), destDatastoreId, fileSize);
-                long activeSsvms = migrationHelper.activeSSVMCount(srcDatastore);
-                long totalJobs = activeSsvms * numConcurrentCopyTasksPerSSVM;
-                // Increase thread pool size with increase in number of SSVMs
-                if ( totalJobs > executor.getCorePoolSize()) {
-                    executor.setMaximumPoolSize((int) (totalJobs));
-                    executor.setCorePoolSize((int) (totalJobs));
-                }
-
-                MigrateDataTask task = new MigrateDataTask(chosenFileForMigration, srcDatastore, dataStoreManager.getDataStore(destDatastoreId, DataStoreRole.Image));
-                if (chosenFileForMigration instanceof SnapshotInfo ) {
-                    task.setSnapshotChains(snapshotChains);
-                }
-                futures.add((executor.submit(task)));
-                s_logger.debug("Migration of file  " + chosenFileForMigration.getId() + " is initiated");
+                migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, srcDatastore, destDatastoreId, executor, futures);
             } else {
                 if (migrationPolicy == MigrationPolicy.BALANCE) {
                     message = "Migration completed and has successfully balanced the data objects among stores:  " + StringUtils.join(storageCapacities.keySet(), ",");
@@ -247,9 +209,48 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
         }
         Date end = new Date();
-        // Migrate snapshots created during the migration process
         handleSnapshotMigration(srcDataStoreId, start, end, migrationPolicy, futures, storageCapacities, executor);
         return handleResponse(futures, migrationPolicy, message, success);
+    }
+
+    protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy) {
+        String message = "";
+        boolean success = true;
+        if (destDatastoreId == srcDatastore.getId() && !files.isEmpty() ) {
+            if (migrationPolicy == MigrationPolicy.BALANCE) {
+                s_logger.debug("Migration completed : data stores have been balanced ");
+                message = "Image stores have been balanced";
+                success = true;
+            } else {
+                message = "Files not completely migrated from "+ srcDatastore.getId() +
+                        " If you want to continue using the Image Store, please change the read-only status using 'update imagestore' command";
+                success = false;
+            }
+        } else {
+            message = "Migration completed";
+        }
+        return new Pair<String, Boolean>(message, success);
+    }
+
+    protected void migrateAway(DataObject chosenFileForMigration, Map<Long, Pair<Long, Long>> storageCapacities,
+                               Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, DataStore srcDatastore, Long destDatastoreId, ThreadPoolExecutor executor,
+    List<Future<AsyncCallFuture<DataObjectResult>>> futures) {
+        Long fileSize = migrationHelper.getFileSize(chosenFileForMigration, snapshotChains);
+        storageCapacities = assumeMigrate(storageCapacities, srcDatastore.getId(), destDatastoreId, fileSize);
+        long activeSsvms = migrationHelper.activeSSVMCount(srcDatastore);
+        long totalJobs = activeSsvms * numConcurrentCopyTasksPerSSVM;
+        // Increase thread pool size with increase in number of SSVMs
+        if ( totalJobs > executor.getCorePoolSize()) {
+            executor.setMaximumPoolSize((int) (totalJobs));
+            executor.setCorePoolSize((int) (totalJobs));
+        }
+
+        MigrateDataTask task = new MigrateDataTask(chosenFileForMigration, srcDatastore, dataStoreManager.getDataStore(destDatastoreId, DataStoreRole.Image));
+        if (chosenFileForMigration instanceof SnapshotInfo ) {
+            task.setSnapshotChains(snapshotChains);
+        }
+        futures.add((executor.submit(task)));
+        s_logger.debug("Migration of file  " + chosenFileForMigration.getId() + " is initiated");
     }
 
 
@@ -271,7 +272,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         return new MigrationResponse(message, migrationPolicy.toString(), success);
     }
 
-    private  void handleSnapshotMigration(Long srcDataStoreId, Date start, Date end, MigrationPolicy policy,
+    private void handleSnapshotMigration(Long srcDataStoreId, Date start, Date end, MigrationPolicy policy,
                                           List<Future<AsyncCallFuture<DataObjectResult>>> futures, Map<Long, Pair<Long, Long>> storageCapacities, ThreadPoolExecutor executor) {
         DataStore srcDatastore = dataStoreManager.getDataStore(srcDataStoreId, DataStoreRole.Image);
         List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.findSnapshots(srcDataStoreId, start, end);

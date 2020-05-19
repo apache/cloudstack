@@ -34,8 +34,8 @@
     <bean id="templateDataFactoryImpl"
         class="org.apache.cloudstack.storage.image.TemplateDataFactoryImpl" />
 
-    <bean id="storageServiceImpl"
-          class="org.apache.cloudstack.storage.image.StorageServiceImpl"
+    <bean id="secondaryStorageServiceImpl"
+          class="org.apache.cloudstack.storage.image.SecondaryStorageServiceImpl"
           depends-on="dataMotionServiceImpl, objectInDataStoreManagerImpl" />
 
     <bean id="imageStoreHelper"

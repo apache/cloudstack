@@ -51,7 +51,7 @@ public class ListImageStoresCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, description = "the ID of the storage pool")
     private Long id;
 
-    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, entityType = ImageStoreResponse.class, description = "read-only status of the image store")
+    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, entityType = ImageStoreResponse.class, description = "read-only status of the image store", since = "4.15.0")
     private Boolean readonly;
 
     /////////////////////////////////////////////////////

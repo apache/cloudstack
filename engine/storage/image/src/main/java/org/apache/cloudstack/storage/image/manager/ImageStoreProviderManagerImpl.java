@@ -33,6 +33,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -43,13 +45,12 @@ import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.Config;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.VMTemplateDao;
 
 @Component
-public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager {
+public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(ImageStoreProviderManagerImpl.class);
     @Inject
     ImageStoreDao dataStoreDao;
@@ -63,6 +64,9 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     ConfigurationDao configDao;
 
     Map<String, ImageStoreDriver> driverMaps;
+
+    static final ConfigKey<String> ImageStoreAllocationAlgorithm = new ConfigKey<String>("Advanced", String.class, "image.store.allocation.algorithm", "firstfitleastconsumed",
+            "firstfitleastconsumed','random' : Order in which hosts within a cluster will be considered for VM/volume allocation", true, ConfigKey.Scope.Global );
 
     @PostConstruct
     public void config() {
@@ -125,7 +129,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
 
     @Override
     public List<DataStore> listImageStoresByScopeExcludingReadOnly(ZoneScope scope) {
-        String allocationAlgorithm = configDao.getValue(Config.ImageStoreAllocationAlgorithm.key());
+        String allocationAlgorithm = ImageStoreAllocationAlgorithm.value();
 
         List<ImageStoreVO> stores = dataStoreDao.findByZone(scope, Boolean.FALSE);
         List<DataStore> imageStores = new ArrayList<DataStore>();
@@ -242,5 +246,15 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
                     Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
         }
         return stores;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ImageStoreProviderManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { ImageStoreAllocationAlgorithm };
     }
 }

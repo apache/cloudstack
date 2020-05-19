@@ -37,11 +37,11 @@ import com.cloud.utils.StringUtils;
         responseObject = MigrationResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
-        since = "4.14.0",
+        since = "4.15.0",
         authorized = {RoleType.Admin})
 public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(MigrateSecondaryStorageDataCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(MigrateSecondaryStorageDataCmd.class.getName());
 
     public static final String APINAME = "migrateSecondaryStorageData";
 

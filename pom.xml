@@ -98,6 +98,7 @@
         <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
         <cs.pool.version>2.7.0</cs.pool.version>
+        <cs.commons-math3.version>3.6.1</cs.commons-math3.version>
 
         <!-- Testing versions -->
         <!-- do not forget to also upgrade hamcrest library with junit -->

@@ -1352,8 +1352,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
             return new CopyCmdAnswer(retObj);
             } catch (Exception e) {
-            s_logger.error("failed to copy file" + srcData.getPath(), e);
-            return new CopyCmdAnswer("failed to copy file" + srcData.getPath() + e.toString());
+                s_logger.error("failed to copy file" + srcData.getPath(), e);
+                return new CopyCmdAnswer("failed to copy file" + srcData.getPath() + e.toString());
         }
     }
 

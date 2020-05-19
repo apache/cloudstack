@@ -43,7 +43,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -82,13 +81,11 @@ public class DataMigrationUtility {
     @Inject
     SnapshotDao snapshotDao;
 
-    private static final Logger s_logger = Logger.getLogger(DataMigrationUtility.class);
-
     /** This function verifies if the given image store comprises of data objects that are not in either the "Ready" or
      * "Allocated" state - in such a case, if the migration policy is complete, the migration is terminated
      */
-    private boolean filesReady(Long srcDataStoreId) {
-        String[] validStates = new String[]{"Ready", "Allocated"};
+    private boolean filesReadyToMigrate(Long srcDataStoreId) {
+        String[] validStates = new String[]{"Ready", "Allocated", "Destroying", "Destroyed", "Failed"};
         boolean isReady = true;
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
         for (TemplateDataStoreVO template : templates) {
@@ -107,7 +104,7 @@ public class DataMigrationUtility {
 
     protected void checkIfCompleteMigrationPossible(ImageStoreService.MigrationPolicy policy, Long srcDataStoreId) {
         if (policy == ImageStoreService.MigrationPolicy.COMPLETE) {
-            if (!filesReady(srcDataStoreId)) {
+            if (!filesReadyToMigrate(srcDataStoreId)) {
                 throw new CloudRuntimeException("Complete migration failed as there are data objects which are not Ready");
             }
         }
@@ -147,9 +144,9 @@ public class DataMigrationUtility {
 
     protected List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
         List<DataObject> files = new ArrayList<>();
-        files.addAll(getAllValidTemplates(srcDataStore));
-        files.addAll(getAllValidSnapshotsAndChains(srcDataStore, snapshotChains));
-        files.addAll(getAllValidVolumes(srcDataStore));
+        files.addAll(getAllReadyTemplates(srcDataStore));
+        files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains));
+        files.addAll(getAllReadyVolumes(srcDataStore));
 
         files = sortFilesOnSize(files, snapshotChains);
 
@@ -168,14 +165,13 @@ public class DataMigrationUtility {
                 if (o2 instanceof  SnapshotInfo) {
                     size2 = snapshotChains.get(o2).second();
                 }
-                return (int) (size2 - size1);
+                return size2 > size1 ? 1 : -1;
             }
         });
         return files;
     }
 
-    // Gets list of all valid templates, i.e, templates in "Ready" state for migration
-    protected List<DataObject> getAllValidTemplates(DataStore srcDataStore) {
+    protected List<DataObject> getAllReadyTemplates(DataStore srcDataStore) {
 
         List<DataObject> files = new LinkedList<>();
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStore.getId());
@@ -192,7 +188,7 @@ public class DataMigrationUtility {
      * for each parent snapshot and the cumulative size of the chain - this is done to ensure that all the snapshots in a chain
      * are migrated to the same datastore
      */
-    protected List<DataObject> getAllValidSnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
+    protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
         List<SnapshotInfo> files = new LinkedList<>();
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStore.getId(), DataStoreRole.Image);
         for (SnapshotDataStoreVO snapshot : snapshots) {
@@ -219,7 +215,6 @@ public class DataMigrationUtility {
         return (List<DataObject>) (List<?>) files;
     }
 
-    // Finds the cumulative file size for all data objects in the chain
     protected Long getSizeForChain(List<SnapshotInfo> chain) {
         Long size = 0L;
         for (SnapshotInfo snapshot : chain) {
@@ -228,8 +223,8 @@ public class DataMigrationUtility {
         return size;
     }
 
-    // Returns a list of volumes that are in "Ready" state
-    protected List<DataObject> getAllValidVolumes(DataStore srcDataStore) {
+
+    protected List<DataObject> getAllReadyVolumes(DataStore srcDataStore) {
         List<DataObject> files = new LinkedList<>();
         List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStore.getId());
         for (VolumeDataStoreVO volume : volumes) {

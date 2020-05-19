@@ -36,6 +36,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -85,7 +86,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         _maxExecutionTimeMs = nMaxExecutionMinutes * 60 * 1000;
         nextSpawnTime = currentTime + _maxExecutionTimeMs/2;
 
-        migrateCapPerSSVM = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageMaxMigrateSessions.key()), DEFAULT_MIGRATE_SS_VM_CAPACITY);
+        migrateCapPerSSVM = StorageManager.SecStorageMaxMigrateSessions.value();
 
         hostSearch = _hostDao.createSearchBuilder();
         hostSearch.and("dc", hostSearch.entity().getDataCenterId(), Op.EQ);
@@ -151,47 +152,53 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
                 return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
             }
 
+
             alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, dataCenterId, State.Running, State.Migrating, State.Starting);
             List<CommandExecLogVO> activeCmds = findActiveCommands(dataCenterId, cutTime);
-            // Find running copy / migrate commands running arranged in ascending order of their creation time i.e., oldest first
             List<CommandExecLogVO> copyCmdsInPipeline = findAllActiveCopyCommands(dataCenterId, cutTime);
-            // Count of total hosts
-            Integer hostsCount = _hostDao.countAllByType(Host.Type.Routing);
-            // Maximum number of allowed SSVMs for migration task
-            Integer maxSsvms = (hostsCount < MaxNumberOfSsvmsForMigration.value()) ? hostsCount : MaxNumberOfSsvmsForMigration.value();
-            int halfLimit = Math.round((float) (alreadyRunning.size() * migrateCapPerSSVM) / 2);
-            currentTime = DateUtil.currentGMTTime().getTime();
+            return scaleSSVMOnLoad(alreadyRunning, activeCmds, copyCmdsInPipeline);
 
-            if (alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() < _standbyCapacity) {
-                s_logger.info("secondary storage command execution standby capactiy low (running VMs: " + alreadyRunning.size() + ", active cmds: " + activeCmds.size() +
-                        "), starting a new one");
-                return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.commandExecutor);
-            }
-            // Scale the number of SSVMs if the number of Copy operations is greater than the number of SSVMs running and the copy operation has been in pipeline for
-            // more than half of the total time allocated for secondary storage operation
-            else if (!copyCmdsInPipeline.isEmpty()  && copyCmdsInPipeline.size() >= halfLimit &&
-                    (((currentTime - copyCmdsInPipeline.get(halfLimit - 1).getCreated().getTime()) > _maxExecutionTimeMs/2 )) &&
-                            (currentTime > nextSpawnTime) &&  alreadyRunning.size() <=  maxSsvms) {
-                    nextSpawnTime = currentTime + _maxExecutionTimeMs/2;
-                    s_logger.debug("scaling SSVM to handle migration tasks");
-                    return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
-                }
+        }
+        return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
+    }
 
-            // Scale down the number of SSVMs if the load on them has reduced
-            if ((copyCmdsInPipeline.size() < halfLimit && alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() > _standbyCapacity) && alreadyRunning.size() > 1) {
-                Collections.reverse(alreadyRunning);
-                for(SecondaryStorageVmVO vm : alreadyRunning) {
-                    long count = copyCmdsInPipeline.stream().map(cmd -> cmd.getInstanceId() == vm.getId()).count();
-                    count += activeCmds.stream().map(cmd -> cmd.getInstanceId() == vm.getId()).count();
-                    if (count == 0) {
-                        destroySecStorageVm(vm.getId());
-                        break;
-                    }
+    private Pair<AfterScanAction, Object> scaleSSVMOnLoad(List<SecondaryStorageVmVO> alreadyRunning, List<CommandExecLogVO> activeCmds,
+                                                    List<CommandExecLogVO> copyCmdsInPipeline) {
+        Integer hostsCount = _hostDao.countAllByType(Host.Type.Routing);
+        Integer maxSsvms = (hostsCount < MaxNumberOfSsvmsForMigration.value()) ? hostsCount : MaxNumberOfSsvmsForMigration.value();
+        int halfLimit = Math.round((float) (alreadyRunning.size() * migrateCapPerSSVM) / 2);
+        currentTime = DateUtil.currentGMTTime().getTime();
+        if (alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() < _standbyCapacity) {
+            s_logger.info("secondary storage command execution standby capactiy low (running VMs: " + alreadyRunning.size() + ", active cmds: " + activeCmds.size() +
+                    "), starting a new one");
+            return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.commandExecutor);
+        }
+        else if (!copyCmdsInPipeline.isEmpty()  && copyCmdsInPipeline.size() >= halfLimit &&
+                ((Math.abs(currentTime - copyCmdsInPipeline.get(halfLimit - 1).getCreated().getTime()) > _maxExecutionTimeMs/2 )) &&
+                (currentTime > nextSpawnTime) &&  alreadyRunning.size() <=  maxSsvms) {
+            nextSpawnTime = currentTime + _maxExecutionTimeMs/2;
+            s_logger.debug("scaling SSVM to handle migration tasks");
+            return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
+
+        }
+        scaleDownSSVMOnLoad(alreadyRunning, activeCmds, copyCmdsInPipeline);
+        return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
+    }
+
+    private void scaleDownSSVMOnLoad(List<SecondaryStorageVmVO> alreadyRunning, List<CommandExecLogVO> activeCmds,
+                               List<CommandExecLogVO> copyCmdsInPipeline)  {
+        int halfLimit = Math.round((float) (alreadyRunning.size() * migrateCapPerSSVM) / 2);
+        if ((copyCmdsInPipeline.size() < halfLimit && alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() > _standbyCapacity) && alreadyRunning.size() > 1) {
+            Collections.reverse(alreadyRunning);
+            for(SecondaryStorageVmVO vm : alreadyRunning) {
+                long count = copyCmdsInPipeline.stream().map(cmd -> cmd.getInstanceId() == vm.getId()).count();
+                count += activeCmds.stream().map(cmd -> cmd.getInstanceId() == vm.getId()).count();
+                if (count == 0) {
+                    destroySecStorageVm(vm.getId());
+                    break;
                 }
             }
         }
-
-        return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
     }
 
     @Override

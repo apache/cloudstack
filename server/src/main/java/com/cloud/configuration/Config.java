@@ -905,14 +905,6 @@ public enum Config {
             "random",
             "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
             null),
-    ImageStoreAllocationAlgorithm(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "image.store.allocation.algorithm",
-            "firstfitleastconsumed",
-            "firstfitleastconsumed','random' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
-            null),
     VmDeploymentPlanner(
             "Advanced",
             ManagementServer.class,
@@ -1817,10 +1809,7 @@ public enum Config {
     // StatsCollector
     StatsOutPutGraphiteHost("Advanced", ManagementServer.class, String.class, "stats.output.uri", "", "URI to additionally send StatsCollector statistics to", null),
 
-    SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null),
-
-    SecStorageMaxMigrateSessions(
-            "Advanced", AgentManager.class, Integer.class, "secstorage.max.migrate.sessions","2","The max number of concurrent copy command execution sessions that an SSVM can handle",null);
+    SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null);
 
     private final String _category;
     private final Class<?> _componentClass;

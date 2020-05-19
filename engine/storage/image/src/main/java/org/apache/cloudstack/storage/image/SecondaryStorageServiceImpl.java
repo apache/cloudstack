@@ -36,6 +36,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
@@ -43,9 +44,9 @@ import org.apache.log4j.Logger;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.utils.Pair;
 
-public class StorageServiceImpl implements SecondaryStorageService {
+public class SecondaryStorageServiceImpl implements SecondaryStorageService {
 
-    private static final Logger s_logger = Logger.getLogger(StorageServiceImpl.class);
+    private static final Logger s_logger = Logger.getLogger(SecondaryStorageServiceImpl.class);
 
     @Inject
     DataMotionService motionSrv;
@@ -53,6 +54,8 @@ public class StorageServiceImpl implements SecondaryStorageService {
     CommandExecLogDao _cmdExecLogDao;
     @Inject
     TemplateDataStoreDao templateStoreDao;
+    @Inject
+    SnapshotDataStoreDao snapshotStoreDao;
 
     private class MigrateDataContext<T> extends AsyncRpcContext<T> {
         final DataObject srcData;
@@ -116,7 +119,7 @@ public class StorageServiceImpl implements SecondaryStorageService {
 
     protected void migrateJob(AsyncCallFuture<DataObjectResult> future, DataObject srcDataObject, DataObject destDataObject, DataStore destDatastore) throws ExecutionException, InterruptedException {
         MigrateDataContext<DataObjectResult> context = new MigrateDataContext<DataObjectResult>(null, future, srcDataObject, destDataObject, destDatastore);
-        AsyncCallbackDispatcher<StorageServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<SecondaryStorageServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().migrateDataCallBack(null, null)).setContext(context);
         motionSrv.copyAsync(srcDataObject, destDataObject, caller);
     }
@@ -124,7 +127,7 @@ public class StorageServiceImpl implements SecondaryStorageService {
     /**
      * Callback function to handle state change of source and destination data objects based on the success or failure of the migrate task
      */
-    protected Void migrateDataCallBack(AsyncCallbackDispatcher<StorageServiceImpl, CopyCommandResult> callback, MigrateDataContext<DataObjectResult> context) throws ExecutionException, InterruptedException {
+    protected Void migrateDataCallBack(AsyncCallbackDispatcher<SecondaryStorageServiceImpl, CopyCommandResult> callback, MigrateDataContext<DataObjectResult> context) throws ExecutionException, InterruptedException {
         DataObject srcData = context.srcData;
         DataObject destData = context.destData;
         CopyCommandResult result = callback.getResult();
