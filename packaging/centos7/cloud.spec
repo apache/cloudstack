@@ -27,6 +27,7 @@ Summary:   CloudStack IaaS Platform
 %define _maventag %{_fullver}
 Release:   %{_rel}%{dist}
 
+%define __python python3
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Version:   %{_ver}
@@ -78,7 +79,7 @@ Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
-Requires: python-dns
+Requires: python3-dns
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -88,8 +89,8 @@ management, and intelligence in CloudStack.
 Summary: Apache CloudStack common files and scripts
 Requires: python
 Requires: python3
-Requires: python-argparse
-Requires: python-netaddr
+#Requires: python-argparse
+Requires: python3-netaddr
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -109,7 +110,7 @@ Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
-Requires: libvirt-python
+Requires: python3-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
@@ -193,7 +194,9 @@ if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
    FLAGS="$FLAGS -Dsimulator"
 fi
 
-mvn -Psystemvm,developer $FLAGS clean package
+# TODO : Revert
+# mvn -Psystemvm,developer $FLAGS clean package
+mvn -Psystemvm,developer $FLAGS clean package  -DskipTests -T4 -Dcheckstyle.skip
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -219,8 +222,8 @@ cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 install -D systemvm/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.iso
 install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
-python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
-python -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
+python3 -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
+python3 -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
 cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 cp packaging/centos7/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
 
@@ -543,7 +546,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) /usr/bin/cloudstack-sccs
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
 %attr(0644,root,root) %{python_sitearch}/cloud_utils.py
-%attr(0644,root,root) %{python_sitearch}/cloud_utils.pyc
+%attr(0644,root,root) %{python_sitearch}/__pycache__/*
 %attr(0644,root,root) %{python_sitearch}/cloudutils/*
 %attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
 %{_defaultdocdir}/%{name}-common-%{version}/LICENSE
@@ -598,3 +601,4 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 * Fri Oct 5 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
+
