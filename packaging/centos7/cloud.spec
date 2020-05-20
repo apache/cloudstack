@@ -90,7 +90,7 @@ Summary: Apache CloudStack common files and scripts
 Requires: python
 Requires: python3
 #Requires: python-argparse
-Requires: python3-netaddr
+#Requires: python3-netaddr
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -110,7 +110,7 @@ Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
-Requires: python3-libvirt
+#Requires: python3-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
