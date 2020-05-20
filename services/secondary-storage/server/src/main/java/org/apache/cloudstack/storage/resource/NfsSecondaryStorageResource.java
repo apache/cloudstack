@@ -1303,7 +1303,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (srcFile == null) {
                 return new CopyCmdAnswer("Can't find src file:" + srcFile);
             }
-
             if (srcData instanceof TemplateObjectTO || srcData instanceof VolumeObjectTO) {
                 File srcDir = null;
                 if (srcFile.isFile()) {
@@ -1313,7 +1312,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 if (destFile.isFile()) {
                     destDir = new File(destFile.getParent());
                 }
-
                 try {
                     FileUtils.copyDirectory((srcDir == null ? srcFile : srcDir), (destDir == null? destFile : destDir));
                 } catch (IOException e) {
@@ -1324,7 +1322,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             } else {
                 destFile = new File(destFile, srcFile.getName());
                 try {
+                if (srcFile.isFile()) {
                     FileUtils.copyFile(srcFile, destFile);
+                } else {
+                    // for vmware
+                    srcFile = new File(srcFile.getParent());
+                    FileUtils.copyDirectory(srcFile, destFile);
+                }
                 } catch (IOException e) {
                     String msg = "Failed to copy file to destination";
                     s_logger.info(msg);
@@ -1347,7 +1351,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 retObj = newVol;
             } else if (destData.getObjectType() == DataObjectType.SNAPSHOT) {
                 SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-                newSnapshot.setPath(destData.getPath() + File.separator + destFile.getName());
+                if (srcFile.isFile()) {
+                    newSnapshot.setPath(destData.getPath() + File.separator + destFile.getName());
+                } else {
+                    newSnapshot.setPath(destData.getPath() + File.separator + destFile.getName() + File.separator + destFile.getName());
+                }
                 retObj = newSnapshot;
             }
             return new CopyCmdAnswer(retObj);
