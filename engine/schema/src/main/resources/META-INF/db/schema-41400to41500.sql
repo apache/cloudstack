@@ -16,5 +16,5 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.15.0.0 to 4.15.0.0
+-- Schema upgrade from 4.14.0.0 to 4.15.0.0
 --;
