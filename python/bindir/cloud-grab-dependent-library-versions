@@ -27,7 +27,7 @@ def runCmd(cmds):
     stdout, stderr = process.communicate()
     if process.returncode != 0:
         raise Exception(stderr)
-    return stdout
+    return stdout.decode('utf-8')
 
 
 def getDependentLibraryInfo():

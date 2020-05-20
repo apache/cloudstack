@@ -37,13 +37,13 @@ class dhcp:
 		self.netmask=None
 		self.initialized=False
 
-		options = augtool.match("/files/etc/dnsmasq.conf/dhcp-option").stdout.strip()
+		options = augtool.match("/files/etc/dnsmasq.conf/dhcp-option").stdout.decode('utf-8').strip()
 		for option in options.splitlines():
 			if option.find("option:router") != -1:
 				self.router = option.split("=")[1].strip().split(",")[1]
 				print(self.router)
 
-		dhcp_range = augtool.get("/files/etc/dnsmasq.conf/dhcp-range").stdout.strip()
+		dhcp_range = augtool.get("/files/etc/dnsmasq.conf/dhcp-range").stdout.decode('utf-8').strip()
 		dhcp_start = dhcp_range.split("=")[1].strip().split(",")[0]
 		dhcp_end = dhcp_range.split("=")[1].strip().split(",")[1]
 		self.netmask = dhcp_range.split("=")[1].strip().split(",")[2]
@@ -87,7 +87,7 @@ class dhcp:
 	getInstance = staticmethod(getInstance)
 
 	def reloadAllocatedIP(self):
-		dhcp_hosts = augtool.match("/files/etc/dnsmasq.conf/dhcp-host").stdout.strip().splitlines()
+		dhcp_hosts = augtool.match("/files/etc/dnsmasq.conf/dhcp-host").stdout.decode('utf-8').strip().splitlines()
 		
 		for host in dhcp_hosts:
 			if host.find("dhcp-host") != -1:
@@ -97,7 +97,7 @@ class dhcp:
 		
 	def allocateIP(self, mac):
 		newIP = self.getFreeIP()
-		dhcp_host = augtool.match("/files/etc/dnsmasq.conf/dhcp-host").stdout.strip()
+		dhcp_host = augtool.match("/files/etc/dnsmasq.conf/dhcp-host").stdout.decode('utf-8').strip()
 		cnt = len(dhcp_host.splitlines()) + 1
 		script = """set %s %s
 			    save"""%("/files/etc/dnsmasq.conf/dhcp-host[" + str(cnt) + "]", str(mac) + "," + newIP)
@@ -107,7 +107,7 @@ class dhcp:
 		return newIP
 
 	def releaseIP(self, ip):
-		dhcp_host = augtool.match("/files/etc/dnsmasq.conf/dhcp-host").stdout.strip()
+		dhcp_host = augtool.match("/files/etc/dnsmasq.conf/dhcp-host").stdout.decode('utf-8').strip()
 		path = None
 		for host in dhcp_host.splitlines():
 			if host.find(ip) != -1:
