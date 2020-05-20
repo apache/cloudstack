@@ -153,7 +153,7 @@ destroy_snapshot() {
     lvm lvremove -f "${vg}/${snapshotname}-cow"
   elif [ -f $disk ]; then
      #delete all the existing snapshots
-     $qemu_img snapshot -l $disk |tail -n +3|awk '{print $1}'|xargs -I {} $qemu_img snapshot -d {} $disk >&2
+     $qemu_img snapshot -l $disk |tail -n +3|awk '{print $2}'|xargs -I {} $qemu_img snapshot -d {} $disk >&2
      if [ $? -gt 0 ]
      then
        failed=2
@@ -223,7 +223,7 @@ backup_snapshot() {
       return 1
     fi
 
-    $qemu_img convert -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
+    $qemu_img convert -f qcow2 -O qcow2 -l snapshot.name=$snapshotname $disk $destPath/$destName >& /dev/null
     if [ $? -gt 0 ]
     then
       printf "Failed to backup $snapshotname for disk $disk to $destPath\n" >&2
