@@ -81,9 +81,10 @@ public class DataMigrationUtility {
     @Inject
     SnapshotDao snapshotDao;
 
-    /** This function verifies if the given image store comprises of data objects that are not in the following states"
-     *  "Ready" "Allocated", "Destroying", "Destroyed", "Failed" - in such a case, if the migration policy is complete,
-     *  the migration is terminated
+    /**
+     * This function verifies if the given image store contains data objects that are not in any of the following states: 
+     *  "Ready" "Allocated", "Destroying", "Destroyed", "Failed". If this is the case, and if the migration policy is complete,
+     *  the migration is terminated.
      */
     private boolean filesReadyToMigrate(Long srcDataStoreId) {
         String[] validStates = new String[]{"Ready", "Allocated", "Destroying", "Destroyed", "Failed"};
