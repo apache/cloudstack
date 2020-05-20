@@ -47,6 +47,7 @@
                   initialValue: this.zoneSelected,
                   rules: [{ required: true, message: 'required'}]
                 }]"
+              @change="val => { zoneSelected = val }"
             >
               <a-select-option
                 :value="zone.id"
@@ -195,7 +196,7 @@ export default {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
-            this.zoneSelected = this.zones[0].name
+            this.zoneSelected = this.zones[0].id || ''
           }
         }
       })
