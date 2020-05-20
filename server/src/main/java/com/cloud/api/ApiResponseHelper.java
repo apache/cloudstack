@@ -995,6 +995,48 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public LoadBalancerConfigResponse createLoadBalancerConfigResponse(LoadBalancerConfig config) {
+        Network network = null;
+        Vpc vpc = null;
+        LoadBalancer lb = null;
+        if (config.getNetworkId() != null) {
+            network = ApiDBUtils.findNetworkById(config.getNetworkId());
+        }
+        if (config.getVpcId() != null) {
+            vpc = ApiDBUtils.findVpcById(config.getVpcId());
+        }
+        if (config.getLoadBalancerId() != null) {
+            lb = ApiDBUtils.findLoadBalancerById(config.getLoadBalancerId());
+        }
+        return setLoadBalancerConfigResponse(network, vpc, lb, config);
+    }
+
+    @Override
+    public List<LoadBalancerConfigResponse> createLoadBalancerConfigResponse(List<? extends LoadBalancerConfig> configs) {
+        List<LoadBalancerConfigResponse> lbConfigResponses = new ArrayList<LoadBalancerConfigResponse>();
+        if (configs == null || configs.size() == 0) {
+            return lbConfigResponses;
+        }
+        LoadBalancerConfig config = configs.get(0);
+        Network network = null;
+        Vpc vpc = null;
+        LoadBalancer lb = null;
+        if (config.getNetworkId() != null) {
+            network = ApiDBUtils.findNetworkById(config.getNetworkId());
+        }
+        if (config.getVpcId() != null) {
+            vpc = ApiDBUtils.findVpcById(config.getVpcId());
+        }
+        if (config.getLoadBalancerId() != null) {
+            lb = ApiDBUtils.findLoadBalancerById(config.getLoadBalancerId());
+        }
+        for (LoadBalancerConfig lbConfig : configs) {
+            LoadBalancerConfigResponse lbConfigResponse = setLoadBalancerConfigResponse(network, vpc, lb, lbConfig);
+            lbConfigResponses.add(lbConfigResponse);
+        }
+        return lbConfigResponses;
+    }
+
+    private LoadBalancerConfigResponse setLoadBalancerConfigResponse(Network network, Vpc vpc, LoadBalancer lb, LoadBalancerConfig config) {
         LoadBalancerConfigResponse response = new LoadBalancerConfigResponse();
         if (config.getUuid() != null) {
             response.setId(config.getUuid());
@@ -1002,14 +1044,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setName(config.getName());
         response.setValue(config.getValue());
         response.setScope(String.valueOf(config.getScope()));
-        if (config.getNetworkId() != null) {
-            response.setNetworkId(String.valueOf(config.getNetworkId())); //TODO SHOULD BE UUID
+        if (network != null) {
+            response.setNetworkId(network.getUuid());
         }
-        if (config.getVpcId() != null) {
-            response.setVpcId(String.valueOf(config.getVpcId())); //UUID
+        if (vpc != null) {
+            response.setVpcId(vpc.getUuid());
         }
-        if (config.getLoadBalancerId() != null) {
-            response.setLoadBalancerId(String.valueOf(config.getLoadBalancerId())); //UUID
+        if (lb != null) {
+            response.setLoadBalancerId(lb.getUuid());
         }
         response.setCreated(config.getCreated());
         LoadBalancerConfigKey configKey = LoadBalancerConfigKey.getConfigsByScopeAndName(config.getScope(), config.getName());

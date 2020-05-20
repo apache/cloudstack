@@ -133,10 +133,7 @@ public class ListLoadBalancerConfigsCmd extends BaseListCmd {
         ListResponse<LoadBalancerConfigResponse> response = new ListResponse<LoadBalancerConfigResponse>();
         List<LoadBalancerConfigResponse> lbConfigResponses = new ArrayList<LoadBalancerConfigResponse>();
         if (configs != null) {
-            for (LoadBalancerConfig config : configs) {
-                LoadBalancerConfigResponse lbConfigResponse = _responseGenerator.createLoadBalancerConfigResponse(config);
-                lbConfigResponses.add(lbConfigResponse);
-            }
+            lbConfigResponses = _responseGenerator.createLoadBalancerConfigResponse(configs);
             response.setResponses(lbConfigResponses);
         }
         response.setResponseName(getCommandName());

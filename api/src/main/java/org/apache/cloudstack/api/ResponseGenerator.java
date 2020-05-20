@@ -264,6 +264,8 @@ public interface ResponseGenerator {
 
     LoadBalancerConfigResponse createLoadBalancerConfigResponse(LoadBalancerConfig config);
 
+    List<LoadBalancerConfigResponse> createLoadBalancerConfigResponse(List<? extends LoadBalancerConfig> configs);
+
     LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb);
 
     LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb);
