@@ -694,7 +694,7 @@ export default {
       }).then(function () {
       })
     },
-    pollActionCompletion (jobId, action) {
+    pollActionCompletion (jobId, action, resourceName) {
       this.$pollJob({
         jobId,
         successMethod: result => {
@@ -711,7 +711,7 @@ export default {
           }
         },
         errorMethod: () => this.fetchData(),
-        loadingMessage: `${this.$t(action.label)} in progress for ${this.resource.name}`,
+        loadingMessage: `${this.$t(action.label)} in progress for ${resourceName}`,
         catchMessage: 'Error encountered while fetching async job result',
         action
       })
@@ -791,16 +791,23 @@ export default {
           console.log(this.resource)
           console.log(params)
 
+          const resourceName = params.displayname || params.displaytext || params.name || params.hostname || params.username || params.ipaddress || params.virtualmachinename || this.resource.name
+
           var hasJobId = false
           api(this.currentAction.api, params).then(json => {
             for (const obj in json) {
               if (obj.includes('response')) {
                 for (const res in json[obj]) {
                   if (res === 'jobid') {
-                    this.$store.dispatch('AddAsyncJob', { title: this.$t(this.currentAction.label), jobid: json[obj][res], description: this.resource.name, status: 'progress' })
-                    this.pollActionCompletion(json[obj][res], this.currentAction)
+                    this.$store.dispatch('AddAsyncJob', { title: this.$t(this.currentAction.label), jobid: json[obj][res], description: resourceName, status: 'progress' })
+                    this.pollActionCompletion(json[obj][res], this.currentAction, resourceName)
                     hasJobId = true
                     break
+                  } else {
+                    this.$notification.success({
+                      message: this.$t(this.currentAction.label),
+                      description: resourceName
+                    })
                   }
                 }
                 break

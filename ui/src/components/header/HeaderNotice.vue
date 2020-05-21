@@ -25,7 +25,7 @@
     overlayClassName="header-notice-popover">
     <template slot="content">
       <a-spin :spinning="loading">
-        <a-list style="min-width: 200px">
+        <a-list style="min-width: 200px; max-width: 300px">
           <a-list-item>
             <a-list-item-meta title="Notifications">
               <a-avatar :style="{backgroundColor: '#6887d0', verticalAlign: 'middle'}" icon="notification" slot="avatar"/>
@@ -72,9 +72,8 @@ export default {
       this.visible = !this.visible
     },
     clearJobs () {
-      this.visible = false
-      this.jobs = []
-      this.$store.commit('SET_ASYNC_JOB_IDS', [])
+      this.jobs = this.jobs.filter(x => x.status === 'progress')
+      this.$store.commit('SET_ASYNC_JOB_IDS', this.jobs)
     },
     startPolling () {
       this.poller = setInterval(() => {
