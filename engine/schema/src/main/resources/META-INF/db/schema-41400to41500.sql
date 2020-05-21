@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.14.0.0 to 4.15.0.0
 --;
+
+-- mysql8 nics table fix for newer distributions
+ALTER TABLE nics MODIFY COLUMN update_time timestamp NULL;
