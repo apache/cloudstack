@@ -137,6 +137,7 @@
                   v-decorator="[field.name, {
                     rules: [{ required: field.required, message: 'Please provide input' }]
                   }]"
+                  v-model="formModel[field.name]"
                   :placeholder="field.description"
                 />
               </span>
@@ -154,9 +155,8 @@
                 </a-select>
               </span>
               <span
-                v-else-if="field.type==='uuid' ||
-                  (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api)) ||
-                  field.name==='keypair'">
+                v-else-if="field.name==='keypair' ||
+                  (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api))">
                 <a-select
                   showSearch
                   optionFilterProp="children"
@@ -170,6 +170,25 @@
                   }"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                    {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                  </a-select-option>
+                </a-select>
+              </span>
+              <span
+                v-else-if="field.type==='uuid'">
+                <a-select
+                  showSearch
+                  optionFilterProp="children"
+                  v-decorator="[field.name, {
+                    rules: [{ required: field.required, message: 'Please select option' }]
+                  }]"
+                  :loading="field.loading"
+                  :placeholder="field.description"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                >
+                  <a-select-option v-for="opt in field.opts" :key="opt.id">
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
                 </a-select>
@@ -321,7 +340,8 @@ export default {
       actions: [],
       treeData: [],
       treeSelected: {},
-      actionData: []
+      actionData: [],
+      formModel: {}
     }
   },
   computed: {
@@ -564,6 +584,8 @@ export default {
       this.currentAction = {}
     },
     execAction (action) {
+      this.form = this.$form.createForm(this)
+      this.formModel = {}
       this.actionData = []
       if (action.component && action.api && !action.popup) {
         this.$router.push({ name: action.api })
@@ -657,6 +679,9 @@ export default {
                 continue
               }
               param.opts = json[obj][res]
+              if (['listTemplates', 'listIsos'].includes(possibleApi)) {
+                param.opts = [...new Map(param.opts.map(x => [x.id, x])).values()]
+              }
               this.$forceUpdate()
               break
             }
@@ -696,7 +721,7 @@ export default {
       this.currentAction.paramFields.map(field => {
         let fieldValue = null
         let fieldName = null
-        if (field.type === 'uuid' || field.type === 'list' || field.name === 'account' || (this.currentAction.mapping && field.name in this.currentAction.mapping)) {
+        if (field.type === 'list' || field.name === 'account' || (this.currentAction.mapping && field.name in this.currentAction.mapping)) {
           fieldName = field.name.replace('ids', 'name').replace('id', 'name')
         } else {
           fieldName = field.name
@@ -704,6 +729,7 @@ export default {
         fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
           form.getFieldDecorator(field.name, { initialValue: fieldValue })
+          this.formModel[field.name] = fieldValue
         }
       })
     },
@@ -720,30 +746,29 @@ export default {
           for (const key in values) {
             const input = values[key]
             for (const param of this.currentAction.params) {
-              if (param.name === key) {
-                if (input === undefined) {
-                  if (param.type === 'boolean') {
-                    params[key] = false
-                  }
-                  break
-                }
-                if (this.currentAction.mapping && key in this.currentAction.mapping && this.currentAction.mapping[key].options) {
-                  params[key] = this.currentAction.mapping[key].options[input]
-                } else if (param.type === 'uuid') {
-                  params[key] = param.opts[input].id
-                } else if (param.type === 'list') {
-                  params[key] = input.map(e => { return param.opts[e].id }).reduce((str, name) => { return str + ',' + name })
-                } else if (param.name === 'account' || param.name === 'keypair') {
-                  if (['addAccountToProject', 'createAccount'].includes(this.currentAction.api)) {
-                    params[key] = input
-                  } else {
-                    params[key] = param.opts[input].name
-                  }
-                } else {
-                  params[key] = input
+              if (param.name !== key) {
+                continue
+              }
+              if (input === undefined || input === null) {
+                if (param.type === 'boolean') {
+                  params[key] = false
                 }
                 break
               }
+              if (this.currentAction.mapping && key in this.currentAction.mapping && this.currentAction.mapping[key].options) {
+                params[key] = this.currentAction.mapping[key].options[input]
+              } else if (param.type === 'list') {
+                params[key] = input.map(e => { return param.opts[e].id }).reduce((str, name) => { return str + ',' + name })
+              } else if (param.name === 'account' || param.name === 'keypair') {
+                if (['addAccountToProject', 'createAccount'].includes(this.currentAction.api)) {
+                  params[key] = input
+                } else {
+                  params[key] = param.opts[input].name
+                }
+              } else {
+                params[key] = input
+              }
+              break
             }
           }
 
