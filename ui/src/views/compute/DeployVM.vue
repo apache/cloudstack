@@ -72,11 +72,7 @@
                       ></a-select>
                     </a-form-item>
                     <a-form-item :label="this.$t('group')">
-                      <a-select
-                        v-decorator="['group']"
-                        :options="groupsSelectOptions"
-                        :loading="loading.groups"
-                      ></a-select>
+                      <a-input v-decorator="['group']" />
                     </a-form-item>
                     <a-form-item :label="this.$t('keyboard')">
                       <a-select
@@ -122,8 +118,7 @@
                           :selected="tabKey"
                           :loading="loading.isos"
                           :preFillContent="dataPreFill"
-                          @update-template-iso="updateFieldValue"
-                        ></template-iso-selection>
+                          @update-template-iso="updateFieldValue" />
                         <a-form-item :label="this.$t('hypervisor')">
                           <a-select
                             v-decorator="['hypervisor', {
@@ -133,9 +128,7 @@
                               rules: [{ required: true, message: 'Please select option' }]
                             }]"
                             :options="hypervisorSelectOptions"
-                            @change="value => this.hypervisor = value"
-                          >
-                          </a-select>
+                            @change="value => this.hypervisor = value" />
                         </a-form-item>
                       </p>
                     </a-card>
@@ -318,8 +311,8 @@ import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
 
 import InfoCard from '@/components/view/InfoCard'
-import ComputeOfferingSelection from './wizard/ComputeOfferingSelection'
-import ComputeSelection from './wizard/ComputeSelection'
+import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
+import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
 import TemplateIsoSelection from '@views/compute/wizard/TemplateIsoSelection'
@@ -424,6 +417,7 @@ export default {
       initDataConfig: {},
       defaultNetwork: '',
       networkConfig: [],
+      dataNetworkCreated: [],
       tabList: [
         {
           key: 'templateid',
@@ -548,14 +542,6 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
-        },
-        groups: {
-          list: 'listInstanceGroups',
-          options: {
-            listall: false
-          },
-          isLoad: true,
-          field: 'group'
         }
       }
     },
@@ -607,14 +593,6 @@ export default {
         return {
           label: this.$t(keyboard.description),
           value: keyboard.id
-        }
-      })
-    },
-    groupsSelectOptions () {
-      return this.options.groups.map((group) => {
-        return {
-          label: group.name,
-          value: group.id
         }
       })
     }
@@ -854,10 +832,23 @@ export default {
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFields(async (err, values) => {
         if (err) {
           return
         }
+
+        if (!values.templateid && !values.isoid) {
+          this.$notification.error({
+            message: 'Request Failed',
+            description: this.$t('message.template.iso')
+          })
+          return
+        }
+
+        this.loading.deploy = true
+
+        let networkIds = []
+
         const deployVmData = {}
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
@@ -902,15 +893,30 @@ export default {
         // step 5: select an affinity group
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
         // step 6: select network
-        if (values.networkids && values.networkids.length > 0) {
-          for (let i = 0; i < values.networkids.length; i++) {
-            deployVmData['iptonetworklist[' + i + '].networkid'] = values.networkids[i]
-            if (this.networkConfig.length > 0) {
-              const networkConfig = this.networkConfig.filter((item) => item.key === values.networkids[i])
-              if (networkConfig && networkConfig.length > 0) {
-                deployVmData['iptonetworklist[' + i + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
-                deployVmData['iptonetworklist[' + i + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
+        const arrNetwork = []
+        networkIds = values.networkids
+        if (networkIds.length > 0) {
+          for (let i = 0; i < networkIds.length; i++) {
+            if (networkIds[i] === this.defaultNetwork) {
+              const ipToNetwork = {
+                networkid: this.defaultNetwork
               }
+              arrNetwork.unshift(ipToNetwork)
+            } else {
+              const ipToNetwork = {
+                networkid: networkIds[i]
+              }
+              arrNetwork.push(ipToNetwork)
+            }
+          }
+        }
+        for (let j = 0; j < arrNetwork.length; j++) {
+          deployVmData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
+          if (this.networkConfig.length > 0) {
+            const networkConfig = this.networkConfig.filter((item) => item.key === arrNetwork[j].networkid)
+            if (networkConfig && networkConfig.length > 0) {
+              deployVmData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
+              deployVmData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
             }
           }
         }
@@ -918,30 +924,33 @@ export default {
         deployVmData.keypair = values.keypair
         deployVmData.name = values.name
         deployVmData.displayname = values.name
-        const title = this.$t('Launch Virtual Machine')
-        const description = deployVmData.name ? deployVmData.name : values.zoneid
-        this.loading.deploy = true
+        const title = this.$t('label.launch.vm')
+        const description = values.name || ''
+        const password = this.$t('password')
         api('deployVirtualMachine', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
               jobId,
               successMethod: result => {
-                let successDescription = ''
-                if (result.jobresult.virtualmachine.name) {
-                  successDescription = result.jobresult.virtualmachine.name
-                } else {
-                  successDescription = result.jobresult.virtualmachine.id
+                const vm = result.jobresult.virtualmachine
+                const name = vm.displayname || vm.name || vm.id
+                if (vm.password) {
+                  this.$notification.success({
+                    message: password + ' for ' + name,
+                    description: vm.password,
+                    duration: 0
+                  })
                 }
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
               },
-              loadingMessage: `${title} in progress for ${description}`,
+              loadingMessage: `${title} in progress`,
               catchMessage: 'Error encountered while fetching async job result'
+            })
+            this.$store.dispatch('AddAsyncJob', {
+              title: title,
+              jobid: jobId,
+              description: description,
+              status: 'progress'
             })
           }
           this.$router.back()
@@ -1036,12 +1045,12 @@ export default {
         })
       })
     },
-    fetchAllTemplates (filterKey) {
+    fetchAllTemplates (filterKeys) {
       const promises = []
       this.options.templates = []
       this.loading.templates = true
       this.templateFilter.forEach((filter) => {
-        if (filterKey && filterKey !== filter) {
+        if (filterKeys && !filterKeys.includes(filter)) {
           return true
         }
         promises.push(this.fetchTemplates(filter))
@@ -1095,7 +1104,7 @@ export default {
       this.tabKey = 'templateid'
       _.each(this.params, (param, name) => {
         if (!('isLoad' in param) || param.isLoad) {
-          this.fetchOptions(param, name, ['zones', 'groups'])
+          this.fetchOptions(param, name, ['zones'])
         }
       })
       this.fetchAllTemplates()

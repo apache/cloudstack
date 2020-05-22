@@ -19,7 +19,7 @@
   <a-table
     :columns="columns"
     :dataSource="dataItems"
-    :pagination="{showSizeChanger: true}"
+    :pagination="false"
     :rowSelection="rowSelection"
     :rowKey="record => record.id"
     size="middle"
@@ -64,7 +64,7 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('defaultNetwork'),
-          width: '40%'
+          width: '30%'
         },
         {
           dataIndex: 'ip',
@@ -88,8 +88,10 @@ export default {
   },
   created () {
     this.dataItems = this.items
-    this.selectedRowKeys = [this.dataItems[0].id]
-    this.$emit('select-default-network-item', this.selectedRowKeys)
+    if (this.dataItems.length > 0) {
+      this.selectedRowKeys = [this.dataItems[0].id]
+      this.$emit('select-default-network-item', this.dataItems[0].id)
+    }
   },
   computed: {
     rowSelection () {
@@ -112,6 +114,7 @@ export default {
         const keyEx = this.dataItems.filter((item) => this.selectedRowKeys.includes(item.id))
         if (!keyEx || keyEx.length === 0) {
           this.selectedRowKeys = [this.dataItems[0].id]
+          this.$emit('select-default-network-item', this.dataItems[0].id)
         }
       }
     }
@@ -122,7 +125,8 @@ export default {
       this.$emit('select-default-network-item', value[0])
     },
     updateNetworkData (name, key, value) {
-      if (this.networks.length === 0) {
+      const index = this.networks.findIndex(item => item.key === key)
+      if (index === -1) {
         const networkItem = {}
         networkItem.key = key
         networkItem[name] = value
@@ -137,6 +141,15 @@ export default {
         }
       })
       this.$emit('update-network-config', this.networks)
+    },
+    removeItem (id) {
+      this.dataItems = this.dataItems.filter(item => item.id !== id)
+      if (this.selectedRowKeys.includes(id)) {
+        if (this.dataItems && this.dataItems.length > 0) {
+          this.selectedRowKeys = [this.dataItems[0].id]
+          this.$emit('select-default-network-item', this.dataItems[0].id)
+        }
+      }
     }
   }
 }

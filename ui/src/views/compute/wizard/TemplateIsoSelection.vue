@@ -37,6 +37,7 @@
               <a-form-item :label="$t('filter')">
                 <a-select
                   allowClear
+                  mode="multiple"
                   v-decorator="['filter']">
                   <a-select-option
                     v-for="(opt) in filterOpts"
@@ -244,21 +245,23 @@ export default {
         if (err) {
           return
         }
-        if (this.inputDecorator === 'template') {
-          this.vmFetchTemplates(values.filter)
-        } else {
-          this.vmFetchIsos(values.filter)
-        }
+        const filtered = values.filter || []
+        this.filter = ''
+        filtered.map(item => {
+          if (this.filter.length === 0) {
+            this.filter += 'is:' + item
+          } else {
+            this.filter += '; is:' + item
+          }
+        })
+        this.filterDataSource(this.filter)
       })
     },
     onClear () {
       const field = { filter: undefined }
       this.form.setFieldsValue(field)
-      if (this.inputDecorator === 'template') {
-        this.vmFetchTemplates()
-      } else {
-        this.vmFetchIsos()
-      }
+      this.filter = ''
+      this.filterDataSource('')
     },
     changeOsName (value) {
       this.osType = value
@@ -288,8 +291,27 @@ export default {
   }
 
   .filter-group {
+    /deep/.ant-input-affix-wrapper {
+      float: right;
+      width: calc(100% - 32px);
+
+      .ant-input {
+        border-radius: 4px;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+      }
+    }
+
     /deep/.ant-input-group-addon {
-      padding: 0 5px;
+      float: left;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      border-right: 0;
+      border-left: 1px solid #d9d9d9;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      padding: 0 0 0 1px;
     }
 
     &-button {
@@ -301,7 +323,7 @@ export default {
     &-button {
       position: relative;
       display: block;
-      min-height: 25px;
+      min-height: 30px;
 
       &-clear {
         position: absolute;

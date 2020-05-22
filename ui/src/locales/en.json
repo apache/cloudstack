@@ -481,6 +481,7 @@
 "label.add.ldap.list.users": "List LDAP users",
 "label.add.list.name":"ACL List Name",
 "label.add.netScaler.device": "Add Netscaler device",
+"label.add.network":"Add Network",
 "label.add.network.offering": "Add network offering",
 "label.add.new.gateway": "Add new gateway",
 "label.add.new.tier": "Add new tier",
@@ -1308,5 +1309,7 @@
 "writeback": "Write-back disk caching",
 "writethrough": "Write-through",
 "none": "None",
-"maxcpunumber": "Max CPU Cores"
+"maxcpunumber": "Max CPU Cores",
+"message.template.iso": "Please select a template or ISO to continue",
+"label.launch.vm": "Launch Virtual Machine"
 }

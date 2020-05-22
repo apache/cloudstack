@@ -344,19 +344,19 @@
             <span v-if="index + 1 < resource.affinitygroup.length">, </span>
           </span>
         </div>
+        <div class="resource-detail-item" v-if="resource.templateid">
+          <div class="resource-detail-item__label">{{ $t('templatename') }}</div>
+          <div class="resource-detail-item__details">
+            <a-icon type="picture" />
+            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
           <div class="resource-detail-item__label">{{ $t('serviceofferingname') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="cloud" />
             <router-link v-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).route.name !== '404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ $t('templatename') }}</div>
-          <div class="resource-detail-item__details">
-            <a-icon type="picture" />
-            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.diskofferingname && resource.diskofferingid">

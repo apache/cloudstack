@@ -54,7 +54,7 @@
               }"
               :loading="zoneLoading"
               :placeholder="this.$t('zoneid')"
-              @change="val => { this.handleZoneChanged(this.zones[val]) }">
+              @change="val => { this.handleZoneChange(this.zones[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
