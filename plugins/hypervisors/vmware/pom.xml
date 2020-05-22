@@ -72,5 +72,11 @@
             <groupId>wsdl4j</groupId>
             <artifactId>wsdl4j</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.cloud.com.vmware</groupId>
+            <artifactId>pbm</artifactId>
+            <version>${cs.vmware.api.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>

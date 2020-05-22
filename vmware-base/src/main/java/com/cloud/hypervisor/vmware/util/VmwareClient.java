@@ -32,6 +32,8 @@ import javax.xml.ws.handler.MessageContext;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+import com.vmware.pbm.PbmPortType;
+import com.vmware.pbm.PbmServiceInstanceContent;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 
@@ -120,8 +122,14 @@ public class VmwareClient {
     }
 
     private final ManagedObjectReference svcInstRef = new ManagedObjectReference();
+    private final ManagedObjectReference pbmSvcInstRef = new ManagedObjectReference();
+
     private static VimService vimService;
     private VimPortType vimPort;
+    private PbmPortType pbmPort;
+    private static final String PBM_SERVICE_INSTANCE_TYPE = "PbmServiceInstance";
+    private static final String PBM_SERVICE_INSTANCE_VALUE = "ServiceInstance";
+
     private String serviceCookie;
     private final static String SVC_INST_NAME = "ServiceInstance";
     private int vCenterSessionTimeout = 1200000; // Timeout in milliseconds
@@ -207,6 +215,24 @@ public class VmwareClient {
         try {
             return vimPort.retrieveServiceContent(svcInstRef);
         } catch (RuntimeFaultFaultMsg e) {
+        }
+        return null;
+    }
+
+    /**
+     * @return PBM service instance
+     */
+    public PbmPortType getPbmService() {
+        return pbmPort;
+    }
+
+    /**
+     * @return Service instance content
+     */
+    public PbmServiceInstanceContent getPbmServiceContent() {
+        try {
+            return pbmPort.pbmRetrieveServiceContent(pbmSvcInstRef);
+        } catch (com.vmware.pbm.RuntimeFaultFaultMsg e) {
         }
         return null;
     }
