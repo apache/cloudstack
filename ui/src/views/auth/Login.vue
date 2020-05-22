@@ -33,7 +33,7 @@
       <a-tab-pane key="cs">
         <span slot="tab">
           <a-icon type="safety" />
-          Portal Login
+          Portal {{ $t('label.login') }}
         </span>
         <a-form-item>
           <a-input
@@ -82,7 +82,7 @@
       <a-tab-pane key="saml" :disabled="idps.length === 0">
         <span slot="tab">
           <a-icon type="audit" />
-          Single-Sign-On
+          Single Sign-On
         </span>
         <a-form-item>
           <a-select v-decorator="['idp', { initialValue: selectedIdp } ]">
@@ -102,8 +102,9 @@
         class="login-button"
         :loading="state.loginBtn"
         :disabled="state.loginBtn"
-      >Log In</a-button>
+      >{{ $t('label.login') }}</a-button>
     </a-form-item>
+    <translation-menu/>
   </a-form>
 </template>
 
@@ -111,9 +112,11 @@
 import { api } from '@/api'
 import { mapActions } from 'vuex'
 import config from '@/config/settings'
+import TranslationMenu from '@/components/header/TranslationMenu'
 
 export default {
   components: {
+    TranslationMenu
   },
   data () {
     return {

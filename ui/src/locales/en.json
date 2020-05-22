@@ -612,6 +612,7 @@
 "label.kubernetes.version.update": "Update Kubernetes Version",
 "label.link.domain.to.ldap": "Link Domain to LDAP",
 "label.local.storage":"Local Storage",
+"label.login":"Login",
 "label.make.project.owner": "Make account project owner",
 "label.management.ips":"Management IP Addresses",
 "label.management.server":"Management Server",

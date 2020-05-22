@@ -16,7 +16,6 @@
 // under the License.
 
 <template>
-
   <a-dropdown>
     <span class="action ant-dropdown-link translation-menu">
       <font-awesome-icon :icon="['fas', 'language']" size="lg" />
@@ -44,7 +43,6 @@
       <a-menu-item key="ru_RU" :value="ruRU">Русский</a-menu-item>
     </a-menu>
   </a-dropdown>
-
 </template>
 
 <script>

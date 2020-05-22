@@ -32,7 +32,7 @@ export default {
       api: 'archiveEvents',
       icon: 'book',
       label: 'Archive Event',
-      listView: true,
+      listView: false,
       dataView: true,
       args: ['ids'],
       mapping: {
@@ -45,7 +45,7 @@ export default {
       api: 'deleteEvents',
       icon: 'delete',
       label: 'Delete Event',
-      listView: true,
+      listView: false,
       dataView: true,
       args: ['ids'],
       mapping: {
