@@ -19,7 +19,7 @@ import Cookies from 'js-cookie'
 import Vue from 'vue'
 import md5 from 'md5'
 import { login, logout, api } from '@/api'
-import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, ASYNC_JOB_IDS } from '@/store/mutation-types'
+import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, APIS, ASYNC_JOB_IDS } from '@/store/mutation-types'
 
 const user = {
   state: {
@@ -54,6 +54,7 @@ const user = {
     },
     SET_APIS: (state, apis) => {
       state.apis = apis
+      Vue.ls.set(APIS, apis)
     },
     SET_FEATURES: (state, features) => {
       state.features = features
@@ -114,22 +115,29 @@ const user = {
 
     GetInfo ({ commit }) {
       return new Promise((resolve, reject) => {
-        api('listApis').then(response => {
-          const apis = {}
-          const apiList = response.listapisresponse.api
-          for (var idx = 0; idx < apiList.length; idx++) {
-            const api = apiList[idx]
-            const apiName = api.name
-            apis[apiName] = {
-              params: api.params,
-              response: api.response
+        const cachedApis = Vue.ls.get(APIS, {})
+        if (Object.keys(cachedApis).length > 0) {
+          console.log('Login detected, using cached APIs')
+          commit('SET_APIS', cachedApis)
+          resolve(cachedApis)
+        } else {
+          api('listApis').then(response => {
+            const apis = {}
+            const apiList = response.listapisresponse.api
+            for (var idx = 0; idx < apiList.length; idx++) {
+              const api = apiList[idx]
+              const apiName = api.name
+              apis[apiName] = {
+                params: api.params,
+                response: api.response
+              }
             }
-          }
-          commit('SET_APIS', apis)
-          resolve(apis)
-        }).catch(error => {
-          reject(error)
-        })
+            commit('SET_APIS', apis)
+            resolve(apis)
+          }).catch(error => {
+            reject(error)
+          })
+        }
 
         api('listUsers').then(response => {
           const result = response.listusersresponse.user[0]

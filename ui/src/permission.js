@@ -25,7 +25,7 @@ import 'nprogress/nprogress.css' // progress bar style
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import { setDocumentTitle, domTitle } from '@/utils/domUtil'
-import { ACCESS_TOKEN } from '@/store/mutation-types'
+import { ACCESS_TOKEN, APIS } from '@/store/mutation-types'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
@@ -42,7 +42,10 @@ router.beforeEach((to, from, next) => {
       NProgress.done()
     } else {
       if (Object.keys(store.getters.apis).length === 0) {
-        message.loading('Discovering features...', 5)
+        const cachedApis = Vue.ls.get(APIS, {})
+        if (Object.keys(cachedApis).length === 0) {
+          message.loading('Loading...', 4)
+        }
         store
           .dispatch('GetInfo')
           .then(apis => {
