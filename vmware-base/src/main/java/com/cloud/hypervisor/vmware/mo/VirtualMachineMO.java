@@ -34,6 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.vmware.vim25.VStorageObject;
+import com.vmware.vim25.VStorageObjectConfigInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -2485,7 +2487,13 @@ public class VirtualMachineMO extends BaseMO {
                                     String deviceNumbering = getDeviceBusName(devices, device);
 
                                     s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
-
+                                    if (((VirtualDisk) device).getVDiskId() == null) {
+                                        s_logger.debug("vDiskid does not exist for volume " + vmdkDatastorePath + " registering the disk now");
+                                        VirtualStorageObjectManager vStorageObjectManagerMO = new VirtualStorageObjectManager(getOwnerDatacenter().first().getContext());
+                                        VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsBackingFile, null, getOwnerDatacenter().first().getName());
+                                        VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
+                                        ((VirtualDisk) device).setVDiskId(diskConfigInfo.getId());
+                                    }
                                     return new Pair<>((VirtualDisk)device, deviceNumbering);
                                 }
 

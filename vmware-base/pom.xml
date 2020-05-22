@@ -75,5 +75,11 @@
             <version>${cs.jaxws.version}</version>
             <type>pom</type>
         </dependency>
+        <dependency>
+            <groupId>com.cloud.com.vmware</groupId>
+            <artifactId>pbm</artifactId>
+            <version>${cs.vmware.api.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>

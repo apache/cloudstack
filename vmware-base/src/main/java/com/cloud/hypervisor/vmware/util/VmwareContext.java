@@ -20,6 +20,8 @@ import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.StringUtils;
+import com.vmware.pbm.PbmPortType;
+import com.vmware.pbm.PbmServiceInstanceContent;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
@@ -146,6 +148,14 @@ public class VmwareContext {
 
     public ServiceContent getServiceContent() {
         return _vimClient.getServiceContent();
+    }
+
+    public PbmPortType getPbmService() {
+        return _vimClient.getPbmService();
+    }
+
+    public PbmServiceInstanceContent getPbmServiceContent() {
+        return _vimClient.getPbmServiceContent();
     }
 
     public ManagedObjectReference getPropertyCollector() {
