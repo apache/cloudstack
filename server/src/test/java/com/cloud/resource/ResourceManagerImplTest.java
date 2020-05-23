@@ -36,16 +36,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDeadCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -426,5 +423,19 @@ public class ResourceManagerImplTest {
         verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
         verify(resourceManager, never()).resourceStateTransitTo(anyObject(), any(), anyLong());
         Assert.assertFalse(enterMaintenanceMode);
+    }
+
+//    @Test
+    public void declareHostAsDeadTest() throws NoTransitionException {
+        DeclareHostAsDeadCmd declareHostAsDeadCmd = Mockito.spy(new DeclareHostAsDeadCmd());
+        Mockito.doReturn(0l).when(declareHostAsDeadCmd.getHostId());
+        Mockito.doReturn(false).when(declareHostAsDeadCmd.isForceDeleteHost());
+        when(host.getStatus()).thenReturn(Status.Disconnected);
+
+        Host result = resourceManager.declareHostAsDead(declareHostAsDeadCmd);
+
+        verify(resourceManager, never()).deleteHost(anyLong(),anyBoolean(), anyBoolean());
+        verify(resourceManager, times(1)).resourceStateTransitTo(host, ResourceState.Event.DeclareHostDead, anyLong());
+        Assert.assertEquals(host, result);
     }
 }

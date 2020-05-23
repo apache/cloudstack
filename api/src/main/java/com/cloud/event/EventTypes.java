@@ -336,6 +336,10 @@ public class EventTypes {
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";
 
+    // Host-as-dead
+    public static final String EVENT_DECLARE_HOST_DEAD = "HOST.DECLARE.DEAD";
+    public static final String EVENT_CANCEL_DECLARE_HOST_DEAD = "HOST.CANCEL.DEAD";
+
     // Host Out-of-band management
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE = "HOST.OOBM.ENABLE";
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_DISABLE = "HOST.OOBM.DISABLE";

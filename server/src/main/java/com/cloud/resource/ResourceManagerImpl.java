@@ -33,13 +33,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
-import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
-import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
-import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
-import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.host.*;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -837,7 +831,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), host.getDataCenterId());
 
-        if (!isForced && host.getResourceState() != ResourceState.Maintenance) {
+        if (!canDeleteHost(host) && !isForced) {
             throw new CloudRuntimeException("Host " + host.getUuid() +
                     " cannot be deleted as it is not in maintenance mode. Either put the host into maintenance or perform a forced deletion.");
         }
@@ -947,6 +941,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return true;
+    }
+
+    /**
+     * Returns true if host can be deleted.</br>
+     * A host can be deleted either if it is in Maintenance or "Dead" state.
+     */
+    protected boolean canDeleteHost(HostVO host) {
+        return host.getResourceState() == ResourceState.Maintenance || host.getResourceState() == ResourceState.Dead;
     }
 
     @Override
@@ -1319,6 +1321,39 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         } catch (final AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
         }
+    }
+
+    /**
+     * Declares host as dead. This method is used in critical situations; e.g. if it is not possible to start host, not even via out-of-band.
+     * If command DeclareHostAsDeadCmd has isForceDeleteHost set to true, then it also deletes the Host (executing deleteHost with isForced=true and isForceDeleteStorage=true).
+     */
+    @Override public Host declareHostAsDead(final DeclareHostAsDeadCmd cmd) {
+        Long hostId = cmd.getHostId();
+        Host host = _hostDao.findById(hostId);
+        boolean isForceDeleteHost = cmd.isForceDeleteHost();
+
+        if (host == null || host.getRemoved() != null) {
+            throw new InvalidParameterValueException(String.format("Host [id:%s] does not exist", host.getId()));
+        }
+
+        if (host.getStatus() != Status.Alert || host.getStatus() != Status.Disconnected) {
+            throw new InvalidParameterValueException(
+                    String.format("Cannot perform declareHostAsDead on host [id:%s, name:%s, state:%s, status:%s] when host status is %s", host.getId(), host.getName(),
+                            host.getState(), host.getStatus(), host.getStatus()));
+        }
+
+        if (isForceDeleteHost) {
+            deleteHost(host.getId(), true, true);
+        }
+
+        try {
+            resourceStateTransitTo(host, ResourceState.Event.DeclareHostDead, _nodeId);
+        } catch (NoTransitionException e) {
+            s_logger.debug(String.format("Cannot transmit host [id:%s, name:%s, state:%s, status:%s] to %s state", host.getId(), host.getName(), host.getState(), host.getStatus(),
+                    ResourceState.Event.DeclareHostDead), e);
+        }
+
+        return host;
     }
 
     /**
