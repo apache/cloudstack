@@ -44,7 +44,6 @@
         :collapsed="collapsed"
         :collapsible="true"></side-menu>
     </template>
-    <!-- 下次优化这些代码 -->
     <template v-else>
       <a-drawer
         v-if="isMobile()"
@@ -112,7 +111,6 @@ export default {
   },
   computed: {
     ...mapState({
-      // 主路由
       mainMenu: state => state.permission.addRouters
     }),
     contentPaddingLeft () {
@@ -128,6 +126,9 @@ export default {
   watch: {
     sidebarOpened (val) {
       this.collapsed = !val
+    },
+    mainMenu (newMenu) {
+      this.menus = newMenu.find((item) => item.path === '/').children
     }
   },
   created () {

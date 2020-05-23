@@ -35,7 +35,7 @@ import config from '@/config/section/config'
 import quota from '@/config/section/plugin/quota'
 import cloudian from '@/config/section/plugin/cloudian'
 
-export function generateRouterMap (section) {
+function generateRouterMap (section) {
   var map = {
     name: section.name,
     path: '/' + section.name,
@@ -167,8 +167,8 @@ export function generateRouterMap (section) {
   return map
 }
 
-export const asyncRouterMap = [
-  {
+export function asyncRouterMap () {
+  return [{
     path: '/',
     name: 'index',
     component: BasicLayout,
@@ -255,8 +255,8 @@ export const asyncRouterMap = [
   },
   {
     path: '*', redirect: '/exception/404', hidden: true
-  }
-]
+  }]
+}
 
 export const constantRouterMap = [
   {

@@ -43,8 +43,8 @@ router.beforeEach((to, from, next) => {
     } else {
       if (Object.keys(store.getters.apis).length === 0) {
         const cachedApis = Vue.ls.get(APIS, {})
-        if (Object.keys(cachedApis).length === 0) {
-          message.loading('Loading...', 4)
+        if (Object.keys(cachedApis).length > 0) {
+          message.loading('Loading...', 1.5)
         }
         store
           .dispatch('GetInfo')

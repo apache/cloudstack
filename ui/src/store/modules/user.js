@@ -18,6 +18,9 @@
 import Cookies from 'js-cookie'
 import Vue from 'vue'
 import md5 from 'md5'
+import message from 'ant-design-vue/es/message'
+import router from '@/router'
+import store from '@/store'
 import { login, logout, api } from '@/api'
 import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, APIS, ASYNC_JOB_IDS } from '@/store/mutation-types'
 
@@ -116,11 +119,25 @@ const user = {
     GetInfo ({ commit }) {
       return new Promise((resolve, reject) => {
         const cachedApis = Vue.ls.get(APIS, {})
-        if (Object.keys(cachedApis).length > 0) {
+        const hasAuth = Object.keys(cachedApis).length > 0
+        if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_APIS', cachedApis)
           resolve(cachedApis)
         } else {
+          // This will show the dashboard and some common navigation sections
+          // to most users/roles, while we complete API autodiscovery
+          const apis = {}
+          apis.listVirtualMachinesMetrics = {}
+          apis.listVolumesMetrics = {}
+          apis.listNetworks = {}
+          apis.listTemplates = {}
+          apis.listUsers = {}
+          apis.listAccounts = {}
+          commit('SET_APIS', apis)
+          resolve(apis)
+
+          const hide = message.loading('Discovering features...', 0)
           api('listApis').then(response => {
             const apis = {}
             const apiList = response.listapisresponse.api
@@ -133,7 +150,11 @@ const user = {
               }
             }
             commit('SET_APIS', apis)
-            resolve(apis)
+            store.dispatch('GenerateRoutes', { apis }).then(() => {
+              router.addRoutes(store.getters.addRouters)
+            })
+            hide()
+            message.success('Discovered all available features!')
           }).catch(error => {
             reject(error)
           })
