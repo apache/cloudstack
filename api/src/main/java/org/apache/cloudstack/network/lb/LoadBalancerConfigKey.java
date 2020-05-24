@@ -24,33 +24,33 @@ import com.cloud.utils.Pair;
 
 public enum LoadBalancerConfigKey {
 
-    HAproxyStatsEnable(Category.Stats, Scope.Network, "haproxy.stats.enable", "HAProxy stats enable", Boolean.class, "true", "Enable or Disable HAProxy stats. To access the dashboard, please add firewall rule"),
+    HAproxyStatsEnable(Category.Stats, "haproxy.stats.enable", "HAProxy stats enable", Boolean.class, "true", "Enable or Disable HAProxy stats. To access the dashboard, please add firewall rule", Scope.Network, Scope.Vpc),
 
-    HAproxyStatsUri(Category.Stats, Scope.Network, "haproxy.stats.uri", "HAProxy stats URI", String.class, "/admin?stats", "URI of HAProxy stats, default is '/admin?stats'"),
+    HAproxyStatsUri(Category.Stats, "haproxy.stats.uri", "HAProxy stats URI", String.class, "/admin?stats", "URI of HAProxy stats, default is '/admin?stats'", Scope.Network, Scope.Vpc),
 
-    HAproxyStatsAuth(Category.Stats, Scope.Network, "haproxy.stats.auth", "HAProxy stats auth", String.class, "admin1:AdMiN123", "HAproxy stats username and password, default is 'admin1:AdMiN123'"),
+    HAproxyStatsAuth(Category.Stats, "haproxy.stats.auth", "HAProxy stats auth", String.class, "admin1:AdMiN123", "HAproxy stats username and password, default is 'admin1:AdMiN123'", Scope.Network, Scope.Vpc),
 
-    LbHttp(Category.LoadBalancer, Scope.LoadBalancerRule, "lb.http", "LB http", Boolean.class, "false", "If LB is http, default is 'true' for port 80 and 'false' for others'"),
+    LbHttp(Category.LoadBalancer, "lb.http", "LB http", Boolean.class, "false", "If LB is http, default is 'true' for port 80 and 'false' for others'", Scope.LoadBalancerRule),
 
-    LbHttpKeepalive(Category.LoadBalancer, Scope.LoadBalancerRule, "lb.http.keepalive", "LB http keepalive enabled/disabled", Boolean.class, "false", "If LB http is enabled, default is 'false'"),
+    LbHttpKeepalive(Category.LoadBalancer, "lb.http.keepalive", "LB http keepalive enabled/disabled", Boolean.class, "false", "If LB http is enabled, default is 'false'", Scope.LoadBalancerRule),
 
-    LbMaxConn(Category.LoadBalancer, Scope.LoadBalancerRule, "lb.max.conn", "LB max connection", Long.class, "", "LB max connection, default is ''"),
+    LbMaxConn(Category.LoadBalancer, "lb.max.conn", "LB max connection", Long.class, "", "LB max connection, default is ''", Scope.LoadBalancerRule),
 
-    LbFullConn(Category.LoadBalancer, Scope.LoadBalancerRule, "lb.full.conn", "LB full connection", Long.class, "", "LB full connection, default is 'maxconn/10'");
+    LbFullConn(Category.LoadBalancer, "lb.full.conn", "LB full connection", Long.class, "", "LB full connection, default is 'maxconn/10'", Scope.LoadBalancerRule);
 
     public static enum Category {
         General, Advanced, Stats, LoadBalancer
     }
 
     private final Category _category;
-    private final Scope _scope;
+    private final Scope[] _scope;
     private final String _key;
     private final String _displayText;
     private final String _description;
     private final Class<?> _type;
     private final String _defaultValue;
 
-    private LoadBalancerConfigKey(Category category, Scope scope, String key, String displayText, Class<?> type, String defaultValue, String description) {
+    private LoadBalancerConfigKey(Category category, String key, String displayText, Class<?> type, String defaultValue, String description, Scope... scope) {
         _category = category;
         _scope = scope;
         _key = key;
@@ -84,7 +84,7 @@ public enum LoadBalancerConfigKey {
         return _description;
     }
 
-    public Scope scope() {
+    public Scope[] scope() {
         return _scope;
     }
 
@@ -99,13 +99,9 @@ public enum LoadBalancerConfigKey {
         Configs.put(Scope.Vpc, new HashMap<String, LoadBalancerConfigKey>());
         Configs.put(Scope.LoadBalancerRule, new HashMap<String, LoadBalancerConfigKey>());
         for (LoadBalancerConfigKey c : LoadBalancerConfigKey.values()) {
-            Scope scope = c.scope();
-            Map<String, LoadBalancerConfigKey> currentConfigs = Configs.get(scope);
-            currentConfigs.put(c.key(), c);
-            Configs.put(scope, currentConfigs);
-            if (scope == Scope.Network) {
-                scope = Scope.Vpc;
-                currentConfigs = Configs.get(scope);
+            Scope[] scopes = c.scope();
+            for (Scope scope : scopes) {
+                Map<String, LoadBalancerConfigKey> currentConfigs = Configs.get(scope);
                 currentConfigs.put(c.key(), c);
                 Configs.put(scope, currentConfigs);
             }
