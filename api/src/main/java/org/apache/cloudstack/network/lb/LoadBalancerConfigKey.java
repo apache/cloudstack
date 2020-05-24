@@ -17,6 +17,7 @@
 package org.apache.cloudstack.network.lb;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.cloud.network.rules.LoadBalancerConfig.Scope;
@@ -95,9 +96,9 @@ public enum LoadBalancerConfigKey {
 
     private static final HashMap<Scope, Map<String, LoadBalancerConfigKey>> Configs = new HashMap<Scope, Map<String, LoadBalancerConfigKey>>();
     static {
-        Configs.put(Scope.Network, new HashMap<String, LoadBalancerConfigKey>());
-        Configs.put(Scope.Vpc, new HashMap<String, LoadBalancerConfigKey>());
-        Configs.put(Scope.LoadBalancerRule, new HashMap<String, LoadBalancerConfigKey>());
+        Configs.put(Scope.Network, new LinkedHashMap<String, LoadBalancerConfigKey>());
+        Configs.put(Scope.Vpc, new LinkedHashMap<String, LoadBalancerConfigKey>());
+        Configs.put(Scope.LoadBalancerRule, new LinkedHashMap<String, LoadBalancerConfigKey>());
         for (LoadBalancerConfigKey c : LoadBalancerConfigKey.values()) {
             Scope[] scopes = c.scope();
             for (Scope scope : scopes) {

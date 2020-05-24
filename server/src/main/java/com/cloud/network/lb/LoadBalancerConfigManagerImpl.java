@@ -17,6 +17,7 @@
 package com.cloud.network.lb;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -92,7 +93,7 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             if (scope == null) {
                 throw new InvalidParameterValueException("Invalid scope " + scopeStr);
             }
-            checkPermission(scope, networkId, vpcId, loadBalancerId);
+            checkPermission(scope, networkId, vpcId, loadBalancerId, cmd.listAll());
         }
 
         if (id != null) {
@@ -101,6 +102,12 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
                 throw new InvalidParameterValueException("Cannot find load balancer config by id " + id);
             }
             checkPermission(config);
+        }
+
+        if (cmd.listAll()) {
+            if (id != null || name != null) {
+                throw new InvalidParameterValueException("id and name must be null if listall is true");
+            }
         }
 
         SearchCriteria<LoadBalancerConfigVO> sc = _lbConfigDao.createSearchCriteria();
@@ -122,24 +129,29 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
-        List<LoadBalancerConfigVO> configs = _lbConfigDao.search(sc, null);
-
-        if (id == null && name == null && cmd.listAll()) {
+        List<LoadBalancerConfigVO> configs = new ArrayList<LoadBalancerConfigVO>();
+        if (id != null || networkId != null || vpcId != null || loadBalancerId != null) {
+            configs = _lbConfigDao.search(sc, null);
+        }
+        if (cmd.listAll()) {
             s_logger.debug("Adding config keys for scope " + scope);
-            List<String> names = new ArrayList<String>();
+            Map<String, LoadBalancerConfigVO> configsMap = new LinkedHashMap<String, LoadBalancerConfigVO>();
             for (LoadBalancerConfigVO config : configs) {
-                names.add(config.getName());
+                configsMap.put(config.getName(), config);
             }
+            List<LoadBalancerConfigVO> result = new ArrayList<LoadBalancerConfigVO>();
             Map<String, LoadBalancerConfigKey> configKeys = LoadBalancerConfigKey.getConfigsByScope(scope);
             for (LoadBalancerConfigKey configKey : configKeys.values()) {
-                if (names.contains(configKey.key())) {
-                    continue;
+                if (configsMap.get(configKey.key()) != null) {
+                    result.add(configsMap.get(configKey.key()));
+                } else {
+                    result.add(new LoadBalancerConfigVO(scope, null, null, null, configKey, null));
                 }
-                configs.add(new LoadBalancerConfigVO(scope, null, null, null, configKey, null));
             }
+            return result;
+        } else {
+            return configs;
         }
-
-        return configs;
     }
 
     @Override
@@ -259,13 +271,23 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
     }
 
     private void checkPermission(Scope scope, Long networkId, Long vpcId, Long loadBalancerId) {
+        checkPermission(scope, networkId, vpcId, loadBalancerId, false);
+    }
+
+    private void checkPermission(Scope scope, Long networkId, Long vpcId, Long loadBalancerId, Boolean listAll) {
         Account caller = CallContext.current().getCallingAccount();
         if (scope == Scope.Network) {
             if (networkId == null) {
+                if (listAll) {
+                    return;
+                }
                 throw new InvalidParameterValueException("networkId is required");
             }
             if (vpcId != null || loadBalancerId != null) {
                 throw new InvalidParameterValueException("vpcId and loadBalancerId should be null if scope is Network");
+            }
+            if (networkId == null) {
+                throw new InvalidParameterValueException("networkId is required");
             }
             NetworkVO network = _networkDao.findById(networkId);
             if (network == null) {
@@ -278,6 +300,9 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             }
         } else if (scope == Scope.Vpc) {
             if (vpcId == null) {
+                if (listAll) {
+                    return;
+                }
                 throw new InvalidParameterValueException("vpcId is required");
             }
             if (networkId != null || loadBalancerId != null) {
@@ -291,6 +316,9 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             _accountMgr.checkAccess(caller, null, true, vpc);
         } else if (scope == Scope.LoadBalancerRule) {
             if (loadBalancerId == null) {
+                if (listAll) {
+                    return;
+                }
                 throw new InvalidParameterValueException("loadBalancerId is required");
             }
             if (networkId != null || vpcId != null) {
