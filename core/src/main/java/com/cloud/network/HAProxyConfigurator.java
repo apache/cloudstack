@@ -52,8 +52,6 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
     private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
 
-    private final HashMap<String, String> networkLbConfigsMap = new HashMap<String, String>();
-
     @Override
     public String[] generateConfiguration(final List<PortForwardingRuleTO> fwRules) {
         // Group the rules by publicip:publicport
@@ -471,7 +469,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         return sb.toString();
     }
 
-    private List<String> getRulesForPool(final LoadBalancerTO lbTO, final boolean keepAliveEnabled) {
+    private List<String> getRulesForPool(final LoadBalancerTO lbTO, final boolean keepAliveEnabled, HashMap<String, String> networkLbConfigsMap) {
         StringBuilder sb = new StringBuilder();
         final String poolName = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
         final String publicIP = lbTO.getSrcIp();
@@ -567,7 +565,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         return result;
     }
 
-    private String generateStatsRule(final LoadBalancerConfigCommand lbCmd, final String ruleName, final String statsIp) {
+    private String generateStatsRule(final LoadBalancerConfigCommand lbCmd, final String ruleName, final String statsIp, HashMap<String, String> networkLbConfigsMap) {
         String haproxyStatsEnabled = networkLbConfigsMap.get(LoadBalancerConfigKey.HAproxyStatsEnable.key());
         if (haproxyStatsEnabled != null && ! haproxyStatsEnabled.equalsIgnoreCase("true")) {
             return "";
@@ -593,6 +591,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     @Override
     public String[] generateConfiguration(final LoadBalancerConfigCommand lbCmd) {
         final LoadBalancerConfigTO[] networkLbConfigs = lbCmd.getNetworkLbConfigs();
+        HashMap<String, String> networkLbConfigsMap = new HashMap<String, String>();
         if (networkLbConfigs != null) {
             for (LoadBalancerConfigTO networkLbConfig: networkLbConfigs) {
                 networkLbConfigsMap.put(networkLbConfig.getName(), networkLbConfig.getValue());
@@ -631,15 +630,15 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if (!lbCmd.lbStatsVisibility.equals("disabled")) {
             /* new rule : listen admin_page guestip/link-local:8081 */
             if (lbCmd.lbStatsVisibility.equals("global")) {
-                result.add(generateStatsRule(lbCmd, "stats_on_public", lbCmd.lbStatsPublicIP));
+                result.add(generateStatsRule(lbCmd, "stats_on_public", lbCmd.lbStatsPublicIP, networkLbConfigsMap));
             } else if (lbCmd.lbStatsVisibility.equals("guest-network")) {
-                result.add(generateStatsRule(lbCmd, "stats_on_guest", lbCmd.lbStatsGuestIP));
+                result.add(generateStatsRule(lbCmd, "stats_on_guest", lbCmd.lbStatsGuestIP, networkLbConfigsMap));
             } else if (lbCmd.lbStatsVisibility.equals("link-local")) {
-                result.add(generateStatsRule(lbCmd, "stats_on_private", lbCmd.lbStatsPrivateIP));
+                result.add(generateStatsRule(lbCmd, "stats_on_private", lbCmd.lbStatsPrivateIP, networkLbConfigsMap));
             } else if (lbCmd.lbStatsVisibility.equals("all")) {
-                result.add(generateStatsRule(lbCmd, "stats_on_public", lbCmd.lbStatsPublicIP));
-                result.add(generateStatsRule(lbCmd, "stats_on_guest", lbCmd.lbStatsGuestIP));
-                result.add(generateStatsRule(lbCmd, "stats_on_private", lbCmd.lbStatsPrivateIP));
+                result.add(generateStatsRule(lbCmd, "stats_on_public", lbCmd.lbStatsPublicIP, networkLbConfigsMap));
+                result.add(generateStatsRule(lbCmd, "stats_on_guest", lbCmd.lbStatsGuestIP, networkLbConfigsMap));
+                result.add(generateStatsRule(lbCmd, "stats_on_private", lbCmd.lbStatsPrivateIP, networkLbConfigsMap));
             } else {
                 /*
                  * stats will be available on the default http serving port, no
@@ -659,7 +658,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             if (lbTO.isRevoked()) {
                 continue;
             }
-            final List<String> poolRules = getRulesForPool(lbTO, lbCmd.keepAliveEnabled);
+            final List<String> poolRules = getRulesForPool(lbTO, lbCmd.keepAliveEnabled, networkLbConfigsMap);
             result.addAll(poolRules);
             has_listener = true;
         }
