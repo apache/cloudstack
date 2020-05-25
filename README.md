@@ -2,7 +2,7 @@ acs-api-commands
 ================
 
 Collection of API commands.xml of [Apache CloudStack](http://cloudstack.apache.org/) versions. used to generate
-[Apache CloudStack Release Notes](http://docs.cloudstack.apache.org/projects/cloudstack-release-notes).
+[Apache CloudStack Release Notes](http://docs.cloudstack.apache.org/en/latest/releasenotes/index.html).
 
 [How To Generate CloudStack API Documentation](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+To+Generate+CloudStack+API+Documentation)
 
@@ -52,3 +52,5 @@ Note
 - ...
 - the naming scheme, used as of 4.11, is now in X.Y form (i.e. 4.11 or 4.12) instead of minor version (4.11.0 or 4.12.0), 
 while the older generated documentation was moved to folder "before-4.11".
+
+In order to generate .rst version based on the diffs generated here, as well as for the generating a list of PRs/changes/fixed issues in the new release, please see https://github.com/swill/generate_acs_rn 
