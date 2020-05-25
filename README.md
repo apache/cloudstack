@@ -34,8 +34,8 @@ Generate Diff
 ```bash
 $ cd /path/to/cloudstack
 $ export COMMANDS=/path/to/acs-api-commands
-$ export OLD_RELEASE=4.12
-$ export NEW_RELEASE=4.13
+$ export OLD_RELEASE=4.13
+$ export NEW_RELEASE=4.14
 $ cp tools/apidoc/target/commands.xml $COMMANDS/${NEW_RELEASE}_commands.xml
 $ mkdir $COMMANDS/diff-${OLD_RELEASE//.}-${NEW_RELEASE//.}
 $ java -cp $HOME/.m2/repository/com/thoughtworks/xstream/xstream/1.4.10/xstream-1.4.10.jar:$HOME/.m2/repository/com/google/code/gson/gson/1.7.2/gson-1.7.2.jar:server/target/classes com.cloud.api.doc.ApiXmlDocReader -old $COMMANDS/${OLD_RELEASE}_commands.xml -new $COMMANDS/${NEW_RELEASE}_commands.xml -d $COMMANDS/diff-${OLD_RELEASE//.}-${NEW_RELEASE//.}
