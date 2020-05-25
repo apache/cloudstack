@@ -471,11 +471,16 @@ public class ApiConstants {
     public static final String PROJECT = "project";
     public static final String ROLE = "role";
     public static final String ROLE_ID = "roleid";
+    public static final String ACCOUNT_ROLE_TYPE = "accountroletype";
+    public static final String PROJECT_ROLE_ID = "projectroleid";
+    public static final String PROJECT_ROLE_NAME = "projectrolename";
+    public static final String PROJECT_ROLE_TYPE = "projectroletype";
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
     public static final String RULE_ID = "ruleid";
+    public static final String PROJECT_RULE_ID = "projectruleid";
     public static final String RULE_ORDER = "ruleorder";
     public static final String USER = "user";
     public static final String ACTIVE_ONLY = "activeonly";

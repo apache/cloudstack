@@ -41,6 +41,8 @@
   <bean id="dedicatedResourceDaoImpl" class="com.cloud.dc.dao.DedicatedResourceDaoImpl" />
   <bean id="roleDaoImpl" class="org.apache.cloudstack.acl.dao.RoleDaoImpl" />
   <bean id="rolePermissionsDaoImpl" class="org.apache.cloudstack.acl.dao.RolePermissionsDaoImpl" />
+  <bean id="projectRoleDaoImpl" class="org.apache.cloudstack.acl.dao.ProjectRoleDaoImpl"/>
+  <bean id="projectRolePermissionsDaoImpl" class="org.apache.cloudstack.acl.dao.ProjectRolePermissionsDaoImpl" />
   <bean id="accountDaoImpl" class="com.cloud.user.dao.AccountDaoImpl" />
   <bean id="accountDetailsDaoImpl" class="com.cloud.user.AccountDetailsDaoImpl" />
   <bean id="accountJoinDaoImpl" class="com.cloud.api.query.dao.AccountJoinDaoImpl" />

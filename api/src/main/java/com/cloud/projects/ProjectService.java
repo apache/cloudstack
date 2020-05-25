@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.projects;
 
+import java.util.List;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -34,10 +36,17 @@ public interface ProjectService {
      *            - account name of the project owner
      * @param domainId
      *            - domainid of the project owner
+     *
+     * @param userId
+     *            - id of the user to be made as project owner
+     *
+     * @param accountId
+     *            - id of the account to which the user belongs
+     *
      * @return the project if created successfully, null otherwise
      * @throws ResourceAllocationException
      */
-    Project createProject(String name, String displayText, String accountName, Long domainId) throws ResourceAllocationException;
+    Project createProject(String name, String displayText, String accountName, Long domainId, Long userId, Long accountId) throws ResourceAllocationException;
 
     /**
      * Deletes a project
@@ -57,9 +66,11 @@ public interface ProjectService {
      */
     Project getProject(long id);
 
-    ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
+    ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole, Long userId, Long projectRoleId);
 
     Account getProjectOwner(long projectId);
+
+    List<Long> getProjectOwners(long projectId);
 
     boolean unassignAccountFromProject(long projectId, long accountId);
 
@@ -67,11 +78,15 @@ public interface ProjectService {
 
     Project findByNameAndDomainId(String name, long domainId);
 
-    Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException;
+    //Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException;
 
-    boolean addAccountToProject(long projectId, String accountName, String email);
+    Project updateProject(long id, String displayText, String newOwnerName, Long userId, Long accountId, Long domainId, Role newRole) throws ResourceAllocationException;
+
+    boolean addAccountToProject(long projectId, String accountName, String email, Long projectRoleId, Role projectRoleType);
 
     boolean deleteAccountFromProject(long projectId, String accountName);
+
+    boolean deleteUserFromProject(long projectId, long userId);
 
     boolean updateInvitation(long projectId, String accountName, String token, boolean accept);
 
@@ -84,4 +99,6 @@ public interface ProjectService {
     boolean deleteProjectInvitation(long invitationId);
 
     Project findByProjectAccountIdIncludingRemoved(long projectAccountId);
+
+    boolean addUserToProject(Long projectId, Long userId, Long projectRoleId, Role projectRole);
 }

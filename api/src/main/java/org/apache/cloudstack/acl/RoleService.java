@@ -19,7 +19,6 @@ package org.apache.cloudstack.acl;
 
 import java.util.List;
 
-import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface RoleService {

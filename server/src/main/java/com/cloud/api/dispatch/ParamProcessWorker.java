@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -269,20 +270,24 @@ public class ParamProcessWorker implements DispatchWorker {
         doAccessChecks(cmd, entitiesToAccess);
     }
 
-
     private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
-        // due to deleteAccount design flaw CLOUDSTACK-6588, we should still include those removed account as well to clean up leftover resources from that account
-        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+        List<Long> entityOwners = cmd.getEntityOwnerIds();
+        Account[] owners = null;
+        if (entityOwners != null) {
+            owners = entityOwners.stream().map(id -> _accountMgr.getAccount(id)).collect(Collectors.toList()).toArray(new Account[0]);
+        } else {
+            owners = new Account[]{_accountMgr.getAccount(cmd.getEntityOwnerId())};
+        }
 
         if (cmd instanceof BaseAsyncCreateCmd) {
             // check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, false, owner);
+            _accountMgr.checkAccess(caller, null, false, owners);
         }
 
         if (!entitiesToAccess.isEmpty()) {
             // check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, false, owner);
+            _accountMgr.checkAccess(caller, null, false, owners);
             for (Map.Entry<Object,AccessType>entry : entitiesToAccess.entrySet()) {
                 Object entity = entry.getKey();
                 if (entity instanceof ControlledEntity) {

@@ -37,7 +37,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
@@ -123,6 +122,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.projects.ProjectAccount;
+import com.cloud.projects.ProjectAccountVO;
 import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
@@ -499,6 +500,35 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkAccess(caller, accessType, sameOwner, null, entities);
     }
 
+    private void checkProjectAccess(Account caller) {
+        User user = CallContext.current().getCallingUser();
+        Project project = CallContext.current().getProject();
+        if (project == null) {
+            return;
+        }
+        ProjectAccountVO projectAccountVO = _projectAccountDao.findByProjectIdUserId(project.getId(), caller.getAccountId(), user.getId());
+        if (projectAccountVO != null) {
+            if (isProjectAdmin(projectAccountVO)) {
+                return;
+            }
+            throw new PermissionDeniedException(String.format("User %s of account %s doesn't have permission in project %s", user.getId(), caller.getId(), project.getId()));
+        }
+        projectAccountVO = _projectAccountDao.findByProjectIdAccountId(project.getId(), caller.getAccountId());
+        if (projectAccountVO != null) {
+            if (isProjectAdmin(projectAccountVO)) {
+                return;
+            }
+            throw new PermissionDeniedException(String.format("Account %s doesn't have permission in project %s", caller.getId(), project.getId()));
+        }
+    }
+
+    private boolean isProjectAdmin(ProjectAccountVO projectAccount) {
+        if (projectAccount.getAccountRole() != ProjectAccount.Role.Admin) {
+            throw new PermissionDeniedException("Current user is not permitted to perform the operation in the project");
+        }
+        return true;
+    }
+
     @Override
     public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) {
 
@@ -507,14 +537,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         ControlledEntity prevEntity = null;
         if (sameOwner) {
             for (ControlledEntity entity : entities) {
-                if (sameOwner) {
-                    if (ownerId == null) {
-                        ownerId = entity.getAccountId();
-                    } else if (ownerId.longValue() != entity.getAccountId()) {
-                        throw new PermissionDeniedException("Entity " + entity + " and entity " + prevEntity + " belong to different accounts");
-                    }
-                    prevEntity = entity;
+                if (ownerId == null) {
+                    ownerId = entity.getAccountId();
+                } else if (ownerId.longValue() != entity.getAccountId()) {
+                    throw new PermissionDeniedException("Entity " + entity + " and entity " + prevEntity + " belong to different accounts");
                 }
+                prevEntity = entity;
             }
         }
 
@@ -523,6 +551,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
             }
+
+            //checkProjectAccess(caller);
             return;
         }
 

@@ -1833,6 +1833,7 @@ public class ApiDBUtils {
     }
 
     public static List<ProjectJoinVO> newProjectView(Project proj) {
+
         return s_projectJoinDao.newProjectView(proj);
     }
 

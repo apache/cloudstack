@@ -18,7 +18,6 @@ package com.cloud.projects.dao;
 
 import java.util.List;
 
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +36,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     final GenericSearchBuilder<ProjectAccountVO, Long> AdminSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> ProjectAccountSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> CountByRoleSearch;
+
     public static final Logger s_logger = Logger.getLogger(ProjectAccountDaoImpl.class.getName());
 
     protected ProjectAccountDaoImpl() {
@@ -45,6 +45,8 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         AllFieldsSearch.and("projectId", AllFieldsSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectAccountId", AllFieldsSearch.entity().getProjectAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("userId", AllFieldsSearch.entity().getUserId(), Op.EQ);
+        AllFieldsSearch.and("projectRoleId", AllFieldsSearch.entity().getProjectRoleId(), Op.EQ);
         AllFieldsSearch.done();
 
         AdminSearch = createSearchBuilder(Long.class);
@@ -74,6 +76,14 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         return findOneBy(sc);
     }
 
+    public List<ProjectAccountVO> getProjectOwners(long projectId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("role", ProjectAccount.Role.Admin);
+        sc.setParameters("projectId", projectId);
+
+        return listBy(sc);
+    }
+
     @Override
     public List<ProjectAccountVO> listByProjectId(long projectId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
@@ -86,6 +96,16 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     public ProjectAccountVO findByProjectIdAccountId(long projectId, long accountId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("projectId", projectId);
+        sc.setParameters("accountId", accountId);
+
+        return findOneBy(sc);
+    }
+
+    @Override
+    public ProjectAccountVO findByProjectIdUserId(long projectId, long accountId, long userId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("projectId", projectId);
+        sc.setParameters("userId", userId);
         sc.setParameters("accountId", accountId);
 
         return findOneBy(sc);
@@ -152,4 +172,23 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         }
     }
 
+    @Override
+    public boolean canUserModifyProject(long projectId, long accountId, long userId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("role",  ProjectAccount.Role.Admin);
+        sc.setParameters("projectId",projectId);
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("userId", userId);
+        if (findOneBy(sc) != null) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public List<ProjectAccountVO> listUsersOrAccountsByRole(long id) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("projectRoleId", id);
+        return listBy(sc);
+    }
 }

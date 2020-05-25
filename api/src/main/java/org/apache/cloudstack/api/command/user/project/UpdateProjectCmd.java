@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
-import org.apache.log4j.Logger;
+import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -24,13 +24,19 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
 
 @APICommand(name = "updateProject", description = "Updates a project", responseObject = ProjectResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -43,7 +49,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be modified")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be modified")
     private Long id;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "new Admin account for the project")
@@ -51,6 +57,18 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "display text of the project")
     private String displayText;
+
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "ID of the user to be promoted/demoted")
+    private Long userId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "ID of the user to be promoted/demoted")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account owning a project")
+    private Long accountId;
+
+    @Parameter(name = ApiConstants.ROLE_TYPE, type = CommandType.STRING, required = true, description = "Account level role to be assigned to the user/account : Admin/Regular")
+    private String roleType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -66,6 +84,33 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
     public String getDisplayText() {
         return displayText;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public Long getDomainId() {
+        if (domainId != null) {
+            return domainId;
+        }
+        return CallContext.current().getCallingAccount().getDomainId();
+    }
+
+    public ProjectAccount.Role getRoleType(String role) {
+        String type = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
+        if (!EnumUtils.isValidEnum(ProjectAccount.Role.class, type)) {
+            throw new InvalidParameterValueException("Only Admin or Regular project role types are valid");
+        }
+        return Enum.valueOf(ProjectAccount.Role.class, type);
+    }
+
+    public ProjectAccount.Role getAccountRole() {
+        return getRoleType(roleType);
+    }
+
+    public Long getAccountId() {
+        return accountId;
     }
 
     @Override
@@ -84,6 +129,11 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
         return _projectService.getProjectOwner(id).getId();
     }
 
+    @Override
+    public List<Long> getEntityOwnerIds() {
+        return _projectService.getProjectOwners(id);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -91,7 +141,21 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceAllocationException {
         CallContext.current().setEventDetails("Project id: " + getId());
-        Project project = _projectService.updateProject(getId(), getDisplayText(), getAccountName());
+        if (getAccountName() != null && (getUserId() != null)) {
+            throw new InvalidParameterValueException("Account name and user ID are mutually exclusive. Provide either account name" +
+                    "to update account or user ID to update the user of the project");
+        }
+
+        if (getUserId() != null) {
+            if (getDomainId() == null) {
+                throw new InvalidParameterValueException("Domain ID needs to be provided when User ID is provided");
+            }
+            if (getAccountId() == null) {
+                throw new InvalidParameterValueException("Account ID needs to be provided when User ID is provided");
+            }
+        }
+
+        Project project = _projectService.updateProject(getId(), getDisplayText(), getAccountName(), getUserId(), getAccountId(), getDomainId(), getAccountRole());
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
             response.setResponseName(getCommandName());

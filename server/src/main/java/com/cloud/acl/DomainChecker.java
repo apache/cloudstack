@@ -23,7 +23,9 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -40,6 +42,9 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
+import com.cloud.projects.ProjectAccountVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -64,7 +69,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject
     ProjectManager _projectMgr;
     @Inject
-    ProjectAccountDao _projecAccountDao;
+    ProjectAccountDao _projectAccountDao;
     @Inject
     NetworkModel _networkMgr;
     @Inject
@@ -80,6 +85,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject
     VpcOfferingDetailsDao vpcOfferingDetailsDao;
 
+    public static final Logger s_logger = Logger.getLogger(DomainChecker.class.getName());
     protected DomainChecker() {
         super();
     }
@@ -107,6 +113,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         if (user.getRemoved() != null) {
             throw new PermissionDeniedException(user + " is no longer active.");
         }
+
         Account account = _accountDao.findById(user.getAccountId());
         return checkAccess(account, domain);
     }
@@ -154,7 +161,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         } else {
             if (_accountService.isNormalUser(caller.getId())) {
                 Account account = _accountDao.findById(entity.getAccountId());
-
                 if (account != null && account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                     //only project owner can delete/modify the project
                     if (accessType != null && accessType == AccessType.ModifyProject) {
@@ -171,7 +177,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 }
             }
         }
-
         return true;
     }
 
@@ -412,6 +417,35 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
         }
         return false;
+    }
+
+    private void checkProjectAccess(Account caller) {
+        User user = CallContext.current().getCallingUser();
+        Project project = CallContext.current().getProject();
+        if (project == null) {
+            return;
+        }
+        ProjectAccountVO projectAccountVO = _projectAccountDao.findByProjectIdUserId(project.getId(), caller.getAccountId(), user.getId());
+        if (projectAccountVO != null) {
+            if (isProjectAdmin(projectAccountVO)) {
+                return;
+            }
+            throw new PermissionDeniedException(String.format("User %s of account %s doesn't have permission in project %s", user.getId(), caller.getId(), project.getId()));
+        }
+        projectAccountVO = _projectAccountDao.findByProjectIdAccountId(project.getId(), caller.getAccountId());
+        if (projectAccountVO != null) {
+            if (isProjectAdmin(projectAccountVO)) {
+                return;
+            }
+            throw new PermissionDeniedException(String.format("Account %s doesn't have permission in project %s", caller.getId(), project.getId()));
+        }
+    }
+
+    private boolean isProjectAdmin(ProjectAccountVO projectAccount) {
+        if (projectAccount.getAccountRole() != ProjectAccount.Role.Admin) {
+            throw new PermissionDeniedException("Current user is not permitted to perform the operation in the project");
+        }
+        return true;
     }
 
     @Override

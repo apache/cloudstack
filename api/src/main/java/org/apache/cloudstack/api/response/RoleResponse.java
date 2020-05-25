@@ -17,39 +17,20 @@
 
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-@EntityReference(value = Role.class)
-public class RoleResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the role")
-    private String id;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
-    @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the role")
-    private String roleName;
+@EntityReference(value = Role.class)
+public class RoleResponse extends BaseRoleResponse {
 
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "the type of the role")
     private String roleType;
-
-    @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the role")
-    private String roleDescription;
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void setRoleName(String roleName) {
-        this.roleName = roleName;
-    }
 
     public void setRoleType(RoleType roleType) {
         if (roleType != null) {
@@ -57,7 +38,4 @@ public class RoleResponse extends BaseResponse {
         }
     }
 
-    public void setDescription(String description) {
-        this.roleDescription = description;
-    }
 }

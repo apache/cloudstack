@@ -17,13 +17,14 @@
 
 package org.apache.cloudstack.acl.dao;
 
-import com.cloud.utils.db.GenericDao;
+import java.util.List;
+
+import org.apache.cloudstack.acl.Permission;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.acl.RolePermissionVO;
 
-import java.util.List;
+import com.cloud.utils.db.GenericDao;
 
 public interface RolePermissionsDao extends GenericDao<RolePermissionVO, Long> {
     /**
