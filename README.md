@@ -38,13 +38,13 @@ $ export OLD_RELEASE=4.13
 $ export NEW_RELEASE=4.14
 $ cp tools/apidoc/target/commands.xml $COMMANDS/${NEW_RELEASE}_commands.xml
 $ mkdir $COMMANDS/diff-${OLD_RELEASE//.}-${NEW_RELEASE//.}
-$ java -cp $HOME/.m2/repository/com/thoughtworks/xstream/xstream/1.4.10/xstream-1.4.10.jar:$HOME/.m2/repository/com/google/code/gson/gson/1.7.2/gson-1.7.2.jar:server/target/classes com.cloud.api.doc.ApiXmlDocReader -old $COMMANDS/${OLD_RELEASE}_commands.xml -new $COMMANDS/${NEW_RELEASE}_commands.xml -d $COMMANDS/diff-${OLD_RELEASE//.}-${NEW_RELEASE//.}
+$ java -cp $HOME/.m2/repository/com/thoughtworks/xstream/xstream/1.4.11.1/xstream-1.4.11.1.jar:$HOME/.m2/repository/com/google/code/gson/gson/1.7.2/gson-1.7.2.jar:server/target/classes com.cloud.api.doc.ApiXmlDocReader -old $COMMANDS/${OLD_RELEASE}_commands.xml -new $COMMANDS/${NEW_RELEASE}_commands.xml -d $COMMANDS/diff-${OLD_RELEASE//.}-${NEW_RELEASE//.}
 ```
 
 Note
 ----
 
-- For easier automation (i.e. select the "OLD_RELEASE" by simply choosing a previous branch like "4.11" or 4.12")
+- For easier automation (i.e. select the "OLD_RELEASE" by simply choosing a previous branch like "4.12" or 4.13")
 - and
 - taking into consideration that the minor release never has a new/removed API/command (and very rarely changed/updated an existing API call)
 - and
