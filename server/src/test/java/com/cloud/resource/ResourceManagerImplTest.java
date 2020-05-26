@@ -27,22 +27,26 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.StorageManager;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDeadCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDeadCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.*;
+import org.mockito.BDDMockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -58,7 +62,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -69,6 +72,11 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ActionEventUtils.class, ResourceManagerImpl.class, SSHCmdHelper.class})
@@ -425,17 +433,94 @@ public class ResourceManagerImplTest {
         Assert.assertFalse(enterMaintenanceMode);
     }
 
-//    @Test
-    public void declareHostAsDeadTest() throws NoTransitionException {
+    @Test
+    public void declareHostAsDeadTestDisconnected() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDead(Status.Disconnected, ResourceState.Enabled, ResourceState.Dead);
+    }
+
+    @Test
+    public void declareHostAsDeadTestAlert() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDead(Status.Alert, ResourceState.Enabled, ResourceState.Dead);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void declareHostAsDeadExpectNoTransitionException() throws NoTransitionException {
+        Status[] statusArray = Status.values();
+        for (int i = 0; i < statusArray.length - 1; i++) {
+            if (statusArray[i] != Status.Alert && statusArray[i] != Status.Disconnected) {
+                prepareAndTestDeclareHostAsDead(statusArray[i], ResourceState.Enabled, ResourceState.Enabled);
+            }
+        }
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDeadTestAlreadyDead() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDead(Status.Alert, ResourceState.Dead, ResourceState.Dead);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDeadTestOnError() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDead(Status.Alert, ResourceState.Error, ResourceState.Dead);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDeadTestOnCreating() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDead(Status.Alert, ResourceState.Creating, ResourceState.Dead);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDeadTestOnErrorInMaintenance() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDead(Status.Alert, ResourceState.ErrorInPrepareForMaintenance, ResourceState.Dead);
+    }
+
+    @Test
+    public void declareHostAsDeadTestSupportedStates() throws NoTransitionException {
+        ResourceState[] states = ResourceState.values();
+        for (int i = 0; i < states.length - 1; i++) {
+            if (states[i] == ResourceState.Enabled
+                    || states[i] == ResourceState.Maintenance
+                    || states[i] == ResourceState.Disabled) {
+                prepareAndTestDeclareHostAsDead(Status.Alert, states[i], ResourceState.Dead);
+            }
+        }
+    }
+
+    private void prepareAndTestDeclareHostAsDead(Status hostStatus, ResourceState originalState, ResourceState expectedResourceState) throws NoTransitionException {
         DeclareHostAsDeadCmd declareHostAsDeadCmd = Mockito.spy(new DeclareHostAsDeadCmd());
-        Mockito.doReturn(0l).when(declareHostAsDeadCmd.getHostId());
-        Mockito.doReturn(false).when(declareHostAsDeadCmd.isForceDeleteHost());
-        when(host.getStatus()).thenReturn(Status.Disconnected);
+        HostVO hostVo = createDummyHost(hostStatus);
+        hostVo.setResourceState(originalState);
+        when(declareHostAsDeadCmd.getHostId()).thenReturn(0l);
+        when(hostDao.findById(0l)).thenReturn(hostVo);
 
         Host result = resourceManager.declareHostAsDead(declareHostAsDeadCmd);
 
-        verify(resourceManager, never()).deleteHost(anyLong(),anyBoolean(), anyBoolean());
-        verify(resourceManager, times(1)).resourceStateTransitTo(host, ResourceState.Event.DeclareHostDead, anyLong());
-        Assert.assertEquals(host, result);
+        Assert.assertEquals(expectedResourceState, hostVo.getResourceState());
+    }
+
+    @Test
+    public void cancelHostAsDeadTest() throws NoTransitionException {
+        prepareAndTestCancelHostAsDead(Status.Alert, ResourceState.Dead, ResourceState.Enabled);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void cancelHostAsDeadTestHostNotDead() throws NoTransitionException {
+        prepareAndTestCancelHostAsDead(Status.Alert, ResourceState.Enabled, ResourceState.Enabled);
+    }
+
+    private void prepareAndTestCancelHostAsDead(Status hostStatus, ResourceState originalState, ResourceState expectedResourceState) throws NoTransitionException {
+        CancelHostAsDeadCmd cancelHostAsDeadCmd = Mockito.spy(new CancelHostAsDeadCmd());
+        HostVO hostVo = createDummyHost(hostStatus);
+        hostVo.setResourceState(originalState);
+        when(cancelHostAsDeadCmd.getHostId()).thenReturn(0l);
+        when(hostDao.findById(0l)).thenReturn(hostVo);
+
+        Host result = resourceManager.cancelHostAsDead(cancelHostAsDeadCmd);
+
+        Assert.assertEquals(expectedResourceState, hostVo.getResourceState());
+    }
+
+    private HostVO createDummyHost(Status hostStatus) {
+        return new HostVO(1L, "host01", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null, UUID.randomUUID().toString(),
+                hostStatus, "1.0", null, null, 1L, null, 0, 0, null, 0, null);
     }
 }

@@ -32,11 +32,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = "declareHostAsDead", description = "Declares host as dead. Host must be on disconnected or alert state.", responseObject = HostResponse.class,
+@APICommand(name = "cancelHostAsDead", description = "Cancels host status from Dead. Host is set back to status of Enabled.", responseObject = HostResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.15", authorized = {RoleType.Admin})
-public class DeclareHostAsDeadCmd extends BaseAsyncCmd {
+public class CancelHostAsDeadCmd extends BaseAsyncCmd {
 
-    private static final String S_NAME = "declarehostasdead";
+    private static final String S_NAME = "cancelhostasdead";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -73,7 +73,7 @@ public class DeclareHostAsDeadCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_DECLARE_HOST_DEAD;
+        return EventTypes.EVENT_CANCEL_HOST_DEAD;
     }
 
     @Override
@@ -94,16 +94,16 @@ public class DeclareHostAsDeadCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         try {
-            Host result = _resourceService.declareHostAsDead(this);
+            Host result = _resourceService.cancelHostAsDead(this);
             if (result != null) {
                 HostResponse response = _responseGenerator.createHostResponse(result);
                 response.setResponseName("host");
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to declare host as dead");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to cancel host from Dead status");
             }
         } catch (NoTransitionException exception) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to declare host as dead due to: " + exception.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to Cancel host from Dead status due to: " + exception.getMessage());
         }
     }
 

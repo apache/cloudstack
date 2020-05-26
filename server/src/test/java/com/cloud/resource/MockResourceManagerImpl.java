@@ -28,10 +28,13 @@ import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDeadCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDeadCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.StartupCommand;
@@ -138,6 +141,16 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     @Override
     public Host maintain(final PrepareForMaintenanceCmd cmd) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Host declareHostAsDead(DeclareHostAsDeadCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public Host cancelHostAsDead(final CancelHostAsDeadCmd cmd) {
         return null;
     }
 
