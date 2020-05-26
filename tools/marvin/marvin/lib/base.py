@@ -966,6 +966,20 @@ class VirtualMachine:
             cmd.details[0]["memory"] = custommemory
         return apiclient.scaleVirtualMachine(cmd)
 
+    def unmanage(self, apiclient):
+        """Unmanage a VM from CloudStack (currently VMware only)"""
+        cmd = unmanageVirtualMachine.unmanageVirtualMachineCmd()
+        cmd.id = self.id
+        return apiclient.unmanageVirtualMachine(cmd)
+
+    @classmethod
+    def listUnmanagedInstances(cls, apiclient, clusterid, name = None):
+        """List unmanaged VMs (currently VMware only)"""
+        cmd = listUnmanagedInstances.listUnmanagedInstancesCmd()
+        cmd.clusterid = clusterid
+        cmd.name = name
+        return apiclient.listUnmanagedInstances(cmd)
+
 
 class Volume:
     """Manage Volume Life cycle

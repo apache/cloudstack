@@ -213,4 +213,11 @@ public interface VirtualMachineManager extends Manager {
     void migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException;
 
     boolean getExecuteInSequence(HypervisorType hypervisorType);
+
+    /**
+     * Unmanage a VM from CloudStack:
+     * - Remove the references of the VM and its volumes, nics, IPs from database
+     * - Keep the VM as it is on the hypervisor
+     */
+    boolean unmanage(String vmUuid);
 }

@@ -3144,6 +3144,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     @Override
+    public void finalizeUnmanage(VirtualMachine vm) {
+    }
+
+    @Override
     public VirtualRouter findRouter(final long routerId) {
         return _routerDao.findById(routerId);
     }

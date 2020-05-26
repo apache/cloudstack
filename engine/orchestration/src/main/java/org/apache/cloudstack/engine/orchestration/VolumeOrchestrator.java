@@ -1680,4 +1680,27 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol = _volsDao.persist(vol);
         return toDiskProfile(vol, offering);
     }
+
+    @Override
+    public void unmanageVolumes(long vmId) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Unmanaging storage for vm: " + vmId);
+        }
+        final List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (VolumeVO vol : volumesForVm) {
+                    boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || vol.getState() == Volume.State.Expunged
+                            || vol.getState() == Volume.State.Expunging);
+                    if (volumeAlreadyDestroyed) {
+                        s_logger.debug("Skipping destroy for the volume " + vol + " as its in state " + vol.getState().toString());
+                    } else {
+                        volService.unmanageVolume(vol.getId());
+                    }
+                }
+            }
+        });
+    }
 }
