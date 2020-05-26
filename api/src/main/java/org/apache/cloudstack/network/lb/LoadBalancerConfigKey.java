@@ -31,6 +31,12 @@ public enum LoadBalancerConfigKey {
 
     HAproxyStatsAuth(Category.Stats, "haproxy.stats.auth", "HAProxy stats auth", String.class, "admin1:AdMiN123", "HAproxy stats username and password, default is 'admin1:AdMiN123'", Scope.Network, Scope.Vpc),
 
+    TimeoutConnect(Category.General, "timeout.connect", "Maximum time (in ms) to wait for a connection to succeed", Long.class, "5000", "Set the maximum time to wait for a connection attempt to a server to succeed.", Scope.Network, Scope.Vpc, Scope.LoadBalancerRule),
+
+    TimeoutServer(Category.General, "timeout.server", "Maximum inactivity time (in ms) on server side", Long.class, "50000", "Set the maximum inactivity time on the server side.", Scope.Network, Scope.Vpc, Scope.LoadBalancerRule),
+
+    TimeoutClient(Category.General, "timeout.client", "Maximum inactivity time (in ms) on client side", Long.class, "50000", "Set the maximum inactivity time on the client side.", Scope.Network, Scope.Vpc, Scope.LoadBalancerRule),
+
     LbHttp(Category.LoadBalancer, "lb.http", "LB http", Boolean.class, "false", "If LB is http, default is 'true' for port 80 and 'false' for others'", Scope.LoadBalancerRule),
 
     LbHttpKeepalive(Category.LoadBalancer, "lb.http.keepalive", "LB http keepalive enabled/disabled", Boolean.class, "false", "If LB http is enabled, default is 'false'", Scope.LoadBalancerRule),

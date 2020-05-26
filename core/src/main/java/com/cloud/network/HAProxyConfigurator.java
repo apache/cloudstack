@@ -496,6 +496,25 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         sb.append("\t").append("balance ").append(algorithm);
         result.add(sb.toString());
 
+        String timeoutConnect = lbConfigsMap.get(LoadBalancerConfigKey.TimeoutConnect.key());
+        if (timeoutConnect != null) {
+            sb = new StringBuilder();
+            sb.append("\t").append("timeout connect    " + timeoutConnect);
+            result.add(sb.toString());
+        }
+        String timeoutClient = lbConfigsMap.get(LoadBalancerConfigKey.TimeoutClient.key());
+        if (timeoutClient != null) {
+            sb = new StringBuilder();
+            sb.append("\t").append("timeout client     " + timeoutClient);
+            result.add(sb.toString());
+        }
+        String timeoutServer = lbConfigsMap.get(LoadBalancerConfigKey.TimeoutServer.key());
+        if (timeoutServer != null) {
+            sb = new StringBuilder();
+            sb.append("\t").append("timeout server     " + timeoutServer);
+            result.add(sb.toString());
+        }
+
         int i = 0;
         Boolean destsAvailable = false;
         final String stickinessSubRule = getLbSubRuleForStickiness(lbTO);
@@ -619,6 +638,19 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final List<String> dSection = Arrays.asList(defaultsSection);
         if (lbCmd.keepAliveEnabled) {
             dSection.set(7, "\tno option forceclose");
+        }
+
+        String timeoutConnect = networkLbConfigsMap.get(LoadBalancerConfigKey.TimeoutConnect.key());
+        if (timeoutConnect != null) {
+            dSection.set(8, "\ttimeout connect    " + timeoutConnect);
+        }
+        String timeoutClient = networkLbConfigsMap.get(LoadBalancerConfigKey.TimeoutClient.key());
+        if (timeoutClient != null) {
+            dSection.set(9, "\ttimeout client     " + timeoutClient);
+        }
+        String timeoutServer = networkLbConfigsMap.get(LoadBalancerConfigKey.TimeoutServer.key());
+        if (timeoutServer != null) {
+            dSection.set(10, "\ttimeout server     " + timeoutServer);
         }
 
         if (s_logger.isDebugEnabled()) {
