@@ -1745,7 +1745,7 @@ public class HypervisorHostHelper {
         return ovfString;
     }
 
-    public static void importVmFromOVF(VmwareHypervisorHost host, String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, ManagedObjectReference morRp,
+    public static void      importVmFromOVF(VmwareHypervisorHost host, String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, ManagedObjectReference morRp,
             ManagedObjectReference morHost) throws Exception {
 
         assert (morRp != null);
