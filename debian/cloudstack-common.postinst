@@ -1,0 +1,11 @@
+
+if which pycompile >/dev/null 2>&1; then
+	pycompile -p cloudstack-common 
+fi
+
+if which pycompile >/dev/null 2>&1; then
+	pycompile -p cloudstack-common /usr/share/cloudstack-common
+fi
+
+python3 -m py_compile /usr/share/pyshared/cloud_utils.py
+python3 -m compileall /usr/share/pyshared/cloudutils
