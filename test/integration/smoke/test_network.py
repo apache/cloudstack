@@ -1562,7 +1562,6 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         # Supported hypervisor = Vmware using dvSwitches for guest traffic
         isVmware = False
         isDvSwitch = False
-        isKVM = False
         if cls.hypervisor.lower() in ["vmware"]:
             isVmware = True
             clusters = Cluster.list(cls.apiclient, zoneid=cls.zone.id, hypervisor=cls.hypervisor)
@@ -1572,9 +1571,21 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
                     isDvSwitch = True
                     break
 
+        # Supported hypervisor = KVM using OVS
         isKVM = cls.hypervisor.lower() in ["kvm"]
+        isOVSEnabled = False
+        hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        if isKVM :
+            # Test only if all the hosts use OVS
+            grepCmd = 'grep "network.bridge.type=openvswitch" /etc/cloudstack/agent/agent.properties'
+            hosts = list_hosts(cls.apiclient, type='Routing', hypervisor='kvm')
+            if len(hosts) > 0 :
+                isOVSEnabled = True
+            for host in hosts :
+                isOVSEnabled = isOVSEnabled and len(SshClient(host.ipaddress, port=22, user=hostConfig["username"],
+                    passwd=hostConfig["password"]).execute(grepCmd)) != 0
 
-        supported = isVmware and isDvSwitch or isKVM
+        supported = isVmware and isDvSwitch or isKVM and isOVSEnabled
         cls.unsupportedHardware = not supported
 
         cls._cleanup = []
