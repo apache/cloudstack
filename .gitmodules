@@ -1,0 +1,4 @@
+[submodule "primate"]
+	path = primate
+	url = https://github.com/shapeblue/cloudstack-primate.git
+	branch = master
