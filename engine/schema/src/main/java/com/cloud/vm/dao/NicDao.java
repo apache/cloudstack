@@ -50,6 +50,8 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     NicVO findDefaultNicForVM(long instanceId);
 
+    NicVO findFirstNicForVM(long instanceId);
+
     /**
      * @param networkId
      * @param instanceId
@@ -84,4 +86,6 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     Long getPeerRouterId(String publicMacAddress, long routerId);
 
     List<NicVO> listByVmIdAndKeyword(long instanceId, String keyword);
+
+    NicVO findByInstanceIdAndMacAddress(long instanceId, String macAddress);
 }

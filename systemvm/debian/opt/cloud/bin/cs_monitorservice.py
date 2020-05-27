@@ -22,4 +22,15 @@ def merge(dbag, data):
 
     if "config" in data:
         dbag['config'] = data["config"]
+    if "health_checks_enabled" in data:
+        dbag["health_checks_enabled"] = data["health_checks_enabled"]
+    if "health_checks_basic_run_interval" in data:
+        dbag["health_checks_basic_run_interval"] = data["health_checks_basic_run_interval"]
+    if "health_checks_advanced_run_interval" in data:
+        dbag["health_checks_advanced_run_interval"] = data["health_checks_advanced_run_interval"]
+    if "excluded_health_checks" in data:
+        dbag["excluded_health_checks"] = data["excluded_health_checks"]
+    if "health_checks_config" in data:
+        dbag["health_checks_config"] = data["health_checks_config"]
+
     return dbag

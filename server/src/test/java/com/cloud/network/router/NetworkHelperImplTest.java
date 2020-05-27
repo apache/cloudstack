@@ -19,6 +19,7 @@ package com.cloud.network.router;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -85,7 +86,7 @@ public class NetworkHelperImplTest {
         Answer[] answers = {answer1, answer2, answer3};
         when(answer1.getResult()).thenReturn(true);
         when(answer2.getResult()).thenReturn(false);
-        when(answer3.getResult()).thenReturn(false);
+        lenient().when(answer3.getResult()).thenReturn(false);
         when(this.agentManager.send(HOST_ID, commands)).thenReturn(answers);
 
         // Execute

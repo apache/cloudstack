@@ -16,21 +16,22 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.host.Host;
-import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.host.Host;
+import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Host.class)
 public class HostResponse extends BaseResponse {
@@ -243,10 +244,9 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the admin that annotated this host", since = "4.11")
     private String username;
 
-    // Default visibility to support accessing the details from unit tests
-    Map getDetails() {
-        return details;
-    }
+    @SerializedName("ueficapability")
+    @Param(description = "true if the host has capability to support UEFI boot")
+    private Boolean uefiCapabilty;
 
     @Override
     public String getObjectId() {
@@ -361,7 +361,7 @@ public class HostResponse extends BaseResponse {
         this.memoryUsed = memoryUsed;
     }
 
-    public void setGpuGroups(List<GpuResponse> gpuGroup) {
+    public void setGpuGroup(List<GpuResponse> gpuGroup) {
         this.gpuGroup = gpuGroup;
     }
 
@@ -437,12 +437,20 @@ public class HostResponse extends BaseResponse {
         this.hostHAResponse = new HostHAResponse(config);
     }
 
+    public void setHostHAResponse(HostHAResponse hostHAResponse) {
+        this.hostHAResponse = hostHAResponse;
+    }
+
     public OutOfBandManagementResponse getOutOfBandManagementResponse() {
         return outOfBandManagementResponse;
     }
 
     public void setOutOfBandManagementResponse(final OutOfBandManagement outOfBandManagementConfig) {
         this.outOfBandManagementResponse =  new OutOfBandManagementResponse(outOfBandManagementConfig);
+    }
+
+    public void setOutOfBandManagementResponse(OutOfBandManagementResponse outOfBandManagementResponse) {
+        this.outOfBandManagementResponse = outOfBandManagementResponse;
     }
 
     public String getResourceState() {
@@ -495,8 +503,19 @@ public class HostResponse extends BaseResponse {
         detailsCopy.remove("username");
         detailsCopy.remove("password");
 
-        this.details = detailsCopy;
+        if(detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
+            this.setUefiCapabilty(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_UEFI_ENABLE)));
+            detailsCopy.remove(Host.HOST_UEFI_ENABLE);
+        } else {
+            this.setUefiCapabilty(new Boolean(false)); // in case of existing host which is not scanned for UEFI capability
+        }
 
+
+        this.details = detailsCopy;
+    }
+
+    public Map getDetails() {
+        return details;
     }
 
     public void setMemoryTotal(Long memoryTotal) {
@@ -660,5 +679,9 @@ public class HostResponse extends BaseResponse {
 
     public Boolean getHaHost() {
         return haHost;
+    }
+
+    public void setUefiCapabilty(Boolean hostCapability) {
+        this.uefiCapabilty = hostCapability;
     }
 }

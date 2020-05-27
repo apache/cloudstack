@@ -19,7 +19,6 @@
 package com.cloud.agent.direct.download;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -28,7 +27,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.UUID;
 
 public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDownloader {
 
@@ -36,16 +34,19 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     private String destPoolPath;
     private Long templateId;
     private String downloadedFilePath;
-    private String installPath;
     private String checksum;
     private boolean redownload = false;
+    protected String temporaryDownloadPath;
+
     public static final Logger s_logger = Logger.getLogger(DirectTemplateDownloaderImpl.class.getName());
 
-    protected DirectTemplateDownloaderImpl(final String url, final String destPoolPath, final Long templateId, final String checksum) {
+    protected DirectTemplateDownloaderImpl(final String url, final String destPoolPath, final Long templateId,
+                                           final String checksum, final String temporaryDownloadPath) {
         this.url = url;
         this.destPoolPath = destPoolPath;
         this.templateId = templateId;
         this.checksum = checksum;
+        this.temporaryDownloadPath = temporaryDownloadPath;
     }
 
     private static String directDownloadDir = "template";
@@ -53,10 +54,10 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     /**
      * Return direct download temporary path to download template
      */
-    protected static String getDirectDownloadTempPath(Long templateId) {
+    protected String getDirectDownloadTempPath(Long templateId) {
         String templateIdAsString = String.valueOf(templateId);
-        return directDownloadDir + File.separator + templateIdAsString.substring(0,1) +
-                File.separator + templateIdAsString;
+        return this.temporaryDownloadPath + File.separator + directDownloadDir + File.separator +
+                templateIdAsString.substring(0,1) + File.separator + templateIdAsString;
     }
 
     /**
@@ -111,64 +112,6 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     public String getFileNameFromUrl() {
         String[] urlParts = url.split("/");
         return urlParts[urlParts.length - 1];
-    }
-
-    /**
-     * Checks if downloaded template is extractable
-     * @return true if it should be extracted, false if not
-     */
-    private boolean isTemplateExtractable() {
-        String type = Script.runSimpleBashScript("file " + downloadedFilePath + " | awk -F' ' '{print $2}'");
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    @Override
-    public boolean extractAndInstallDownloadedTemplate() {
-        installPath = UUID.randomUUID().toString();
-        if (isTemplateExtractable()) {
-            extractDownloadedTemplate();
-        } else {
-            Script.runSimpleBashScript("mv " + downloadedFilePath + " " + getInstallFullPath());
-        }
-        return true;
-    }
-
-    /**
-     * Return install full path
-     */
-    private String getInstallFullPath() {
-        return destPoolPath + File.separator + installPath;
-    }
-
-    /**
-     * Return extract command to execute given downloaded file
-     */
-    private String getExtractCommandForDownloadedFile() {
-        if (downloadedFilePath.endsWith(".zip")) {
-            return "unzip -p " + downloadedFilePath + " | cat > " + getInstallFullPath();
-        } else if (downloadedFilePath.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedFilePath + " > " + getInstallFullPath();
-        } else if (downloadedFilePath.endsWith(".gz")) {
-            return "gunzip -c " + downloadedFilePath + " > " + getInstallFullPath();
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + templateId + " on " + downloadedFilePath);
-        }
-    }
-
-    /**
-     * Extract downloaded template into installPath, remove compressed file
-     */
-    private void extractDownloadedTemplate() {
-        String extractCommand = getExtractCommandForDownloadedFile();
-        Script.runSimpleBashScript(extractCommand);
-        Script.runSimpleBashScript("rm -f " + downloadedFilePath);
-    }
-
-    @Override
-    public DirectTemplateInformation getTemplateInformation() {
-        String sizeResult = Script.runSimpleBashScript("ls -als " + getInstallFullPath() + " | awk '{print $1}'");
-        long size = Long.parseLong(sizeResult);
-        return new DirectTemplateInformation(installPath, size, checksum);
     }
 
     @Override

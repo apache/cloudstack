@@ -154,7 +154,7 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, ResourceAllocationException {
+    public void execute() {
         try {
             CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
 
@@ -177,6 +177,12 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
         } catch (ExecutionException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (ResourceAllocationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         } catch (InsufficientCapacityException ex) {
             StringBuilder message = new StringBuilder(ex.getMessage());
             if (ex instanceof InsufficientServerCapacityException) {

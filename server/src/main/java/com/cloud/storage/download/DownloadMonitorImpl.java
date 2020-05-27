@@ -53,28 +53,20 @@ import com.cloud.configuration.Config;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.upload.UploadListener;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor {
-    static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
+    static final Logger LOGGER = Logger.getLogger(DownloadMonitorImpl.class);
 
     @Inject
     private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
-    private VolumeDao _volumeDao;
-    @Inject
     private VolumeDataStoreDao _volumeStoreDao;
-    @Inject
-    private final VMTemplateDao _templateDao = null;
     @Inject
     private AgentManager _agentMgr;
     @Inject
@@ -94,7 +86,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
         String cert = configs.get("secstorage.ssl.cert.domain");
         if (!"realhostip.com".equalsIgnoreCase(cert)) {
-            s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
+            LOGGER.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
 
         _copyAuthPasswd = configs.get("secstorage.copy.password");
@@ -125,7 +117,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     private void initiateTemplateDownload(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback) {
         boolean downloadJobExists = false;
-        TemplateDataStoreVO vmTemplateStore = null;
+        TemplateDataStoreVO vmTemplateStore;
         DataStore store = template.getDataStore();
 
         vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
@@ -141,7 +133,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
         if (vmTemplateStore != null) {
             start();
-            VirtualMachineTemplate tmpl = _templateDao.findById(template.getId());
             DownloadCommand dcmd = new DownloadCommand((TemplateObjectTO)(template.getTO()), maxTemplateSizeInBytes);
             dcmd.setProxy(getHttpProxy());
             if (downloadJobExists) {
@@ -153,7 +144,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             EndPoint ep = _epSelector.select(template);
             if (ep == null) {
                 String errMsg = "There is no secondary storage VM for downloading template to image store " + store.getName();
-                s_logger.warn(errMsg);
+                LOGGER.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
             DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd, callback);
@@ -164,14 +155,14 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 // DownloadListener to use
                 // new ObjectInDataStore.State transition. TODO: fix this later
                 // to be able to remove downloadState from template_store_ref.
-                s_logger.info("found existing download job");
+                LOGGER.info("found existing download job");
                 dl.setCurrState(vmTemplateStore.getDownloadState());
             }
 
             try {
                 ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
-                s_logger.warn("Unable to start /resume download of template " + template.getId() + " to " + store.getName(), e);
+                LOGGER.warn("Unable to start /resume download of template " + template.getId() + " to " + store.getName(), e);
                 dl.setDisconnected();
                 dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -187,12 +178,12 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 if (template.getUri() != null) {
                     initiateTemplateDownload(template, callback);
                 } else {
-                    s_logger.info("Template url is null, cannot download");
+                    LOGGER.info("Template url is null, cannot download");
                     DownloadAnswer ans = new DownloadAnswer("Template url is null", Status.UNKNOWN);
                     callback.complete(ans);
                 }
             } else {
-                s_logger.info("Template download is already in progress or already downloaded");
+                LOGGER.info("Template download is already in progress or already downloaded");
                 DownloadAnswer ans =
                         new DownloadAnswer("Template download is already in progress or already downloaded", Status.UNKNOWN);
                 callback.complete(ans);
@@ -203,7 +194,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     @Override
     public void downloadVolumeToStorage(DataObject volume, AsyncCompletionCallback<DownloadAnswer> callback) {
         boolean downloadJobExists = false;
-        VolumeDataStoreVO volumeHost = null;
+        VolumeDataStoreVO volumeHost;
         DataStore store = volume.getDataStore();
         VolumeInfo volInfo = (VolumeInfo)volume;
         RegisterVolumePayload payload = (RegisterVolumePayload)volInfo.getpayload();
@@ -214,7 +205,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         volumeHost = _volumeStoreDao.findByStoreVolume(store.getId(), volume.getId());
         if (volumeHost == null) {
             volumeHost = new VolumeDataStoreVO(store.getId(), volume.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, "jobid0000", null, url, checkSum);
-            _volumeStoreDao.persist(volumeHost);
+            volumeHost = _volumeStoreDao.persist(volumeHost);
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
             downloadJobExists = true;
         } else {
@@ -225,35 +216,32 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         }
 
         Long maxVolumeSizeInBytes = getMaxVolumeSizeInBytes();
-        if (volumeHost != null) {
-            start();
-            Volume vol = _volumeDao.findById(volume.getId());
-            DownloadCommand dcmd = new DownloadCommand((VolumeObjectTO)(volume.getTO()), maxVolumeSizeInBytes, checkSum, url, format);
-            dcmd.setProxy(getHttpProxy());
-            if (downloadJobExists) {
-                dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
-                dcmd.setResourceType(ResourceType.VOLUME);
-            }
+        start();
+        DownloadCommand dcmd = new DownloadCommand((VolumeObjectTO)(volume.getTO()), maxVolumeSizeInBytes, checkSum, url, format);
+        dcmd.setProxy(getHttpProxy());
+        if (downloadJobExists) {
+            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
+            dcmd.setResourceType(ResourceType.VOLUME);
+        }
 
-            EndPoint ep = _epSelector.select(volume);
-            if (ep == null) {
-                s_logger.warn("There is no secondary storage VM for image store " + store.getName());
-                return;
-            }
-            DownloadListener dl = new DownloadListener(ep, store, volume, _timer, this, dcmd, callback);
-            ComponentContext.inject(dl); // auto-wired those injected fields in DownloadListener
+        EndPoint ep = _epSelector.select(volume);
+        if (ep == null) {
+            LOGGER.warn("There is no secondary storage VM for image store " + store.getName());
+            return;
+        }
+        DownloadListener dl = new DownloadListener(ep, store, volume, _timer, this, dcmd, callback);
+        ComponentContext.inject(dl); // auto-wired those injected fields in DownloadListener
 
-            if (downloadJobExists) {
-                dl.setCurrState(volumeHost.getDownloadState());
-            }
+        if (downloadJobExists) {
+            dl.setCurrState(volumeHost.getDownloadState());
+        }
 
-            try {
-                ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
-            } catch (Exception e) {
-                s_logger.warn("Unable to start /resume download of volume " + volume.getId() + " to " + store.getName(), e);
-                dl.setDisconnected();
-                dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
-            }
+        try {
+            ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
+        } catch (Exception e) {
+            LOGGER.warn("Unable to start /resume download of volume " + volume.getId() + " to " + store.getName(), e);
+            dl.setDisconnected();
+            dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
         }
     }
 
@@ -279,8 +267,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         }
         try {
             URI uri = new URI(_proxy);
-            Proxy prx = new Proxy(uri);
-            return prx;
+            return new Proxy(uri);
         } catch (URISyntaxException e) {
             return null;
         }

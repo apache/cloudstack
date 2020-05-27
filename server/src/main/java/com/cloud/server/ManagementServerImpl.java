@@ -166,11 +166,13 @@ import org.apache.cloudstack.api.command.admin.resource.CleanVMReservationsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
+import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.DestroyRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
@@ -264,9 +266,11 @@ import org.apache.cloudstack.api.command.admin.vm.UpgradeVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vmsnapshot.RevertToVMSnapshotCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.AttachVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.CreateVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.DestroyVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.DetachVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.RecoverVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.ResizeVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.UpdateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.UploadVolumeCmdByAdmin;
@@ -422,6 +426,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.DeleteSecurityGroupC
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.UpdateSecurityGroupCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ArchiveSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotFromVMSnapshotCmd;
@@ -482,12 +487,14 @@ import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.RecoverVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.RemoveResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
@@ -642,6 +649,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -701,6 +709,8 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -719,6 +729,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyDao _consoleProxyDao;
     @Inject
     private ClusterDao _clusterDao;
+    @Inject
+    private UserVmDetailsDao _UserVmDetailsDao;
     @Inject
     private SecondaryStorageVmDao _secStorageVmDao;
     @Inject
@@ -1183,6 +1195,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
+        UserVmDetailVO userVmDetailVO = _UserVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString());
+        if (userVmDetailVO != null) {
+            s_logger.info(" Live Migration of UEFI enabled VM : " + vm.getInstanceName() + " is not supported");
+            if ("legacy".equalsIgnoreCase(userVmDetailVO.getValue()) || "secure".equalsIgnoreCase(userVmDetailVO.getValue())) {
+                // Return empty list.
+                return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<List<? extends Host>,
+                        Integer>(new ArrayList<HostVO>(), new Integer(0)), new ArrayList<Host>(), new HashMap<Host, Boolean>());
+            }
+        }
+
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
             s_logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
             // Return empty list.
@@ -1303,7 +1325,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         }
 
-        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<List<? extends Host>, Integer>(allHosts, new Integer(allHosts.size()));
+        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<List<? extends Host>, Integer>(allHosts, allHostsPair.second());
         List<Host> suitableHosts = new ArrayList<Host>();
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
@@ -2889,6 +2911,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListSecurityGroupsCmd.class);
         cmdList.add(RevokeSecurityGroupEgressCmd.class);
         cmdList.add(RevokeSecurityGroupIngressCmd.class);
+        cmdList.add(UpdateSecurityGroupCmd.class);
         cmdList.add(CreateSnapshotCmd.class);
         cmdList.add(CreateSnapshotFromVMSnapshotCmd.class);
         cmdList.add(DeleteSnapshotCmd.class);
@@ -2947,6 +2970,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(MigrateVolumeCmd.class);
         cmdList.add(ResizeVolumeCmd.class);
         cmdList.add(UploadVolumeCmd.class);
+        cmdList.add(DestroyVolumeCmd.class);
+        cmdList.add(RecoverVolumeCmd.class);
         cmdList.add(CreateStaticRouteCmd.class);
         cmdList.add(CreateVPCCmd.class);
         cmdList.add(DeleteStaticRouteCmd.class);
@@ -3092,6 +3117,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateVolumeCmdByAdmin.class);
         cmdList.add(UploadVolumeCmdByAdmin.class);
         cmdList.add(ListVolumesCmdByAdmin.class);
+        cmdList.add(DestroyVolumeCmdByAdmin.class);
+        cmdList.add(RecoverVolumeCmdByAdmin.class);
         cmdList.add(AssociateIPAddrCmdByAdmin.class);
         cmdList.add(ListPublicIpAddressesCmdByAdmin.class);
         cmdList.add(CreateNetworkCmdByAdmin.class);
@@ -3115,6 +3142,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListMgmtsCmd.class);
         cmdList.add(GetUploadParamsForIsoCmd.class);
         cmdList.add(ListTemplateOVFProperties.class);
+        cmdList.add(GetRouterHealthCheckResultsCmd.class);
+        cmdList.add(StartRollingMaintenanceCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3499,8 +3528,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
         final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
+        final boolean allowUserExpungeRecoverVolume = (VolumeApiServiceImpl.AllowUserExpungeRecoverVolume.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
 
         final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
+
+        final boolean kubernetesServiceEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.service.enabled"));
+        final boolean kubernetesClusterExperimentalFeaturesEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.cluster.experimental.features.enabled"));
 
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
@@ -3521,7 +3554,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
+        capabilities.put("allowUserExpungeRecoverVolume", allowUserExpungeRecoverVolume);
         capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
+        capabilities.put("kubernetesServiceEnabled", kubernetesServiceEnabled);
+        capabilities.put("kubernetesClusterExperimentalFeaturesEnabled", kubernetesClusterExperimentalFeaturesEnabled);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
@@ -3665,6 +3701,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long domainId = cmd.getDomainId();
         final Long projectId = cmd.getProjectId();
 
+        final String name = cmd.getName();
+
+        if (StringUtils.isBlank(name)) {
+            throw new InvalidParameterValueException("Please specify a valid name for the key pair. The key name can't be empty");
+        }
+
         final Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
         final SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
@@ -3673,8 +3715,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final SSHKeysHelper keys = new SSHKeysHelper(sshKeyLength.value());
-
-        final String name = cmd.getName();
         final String publicKey = keys.getPublicKey();
         final String fingerprint = keys.getPublicKeyFingerPrint();
         final String privateKey = keys.getPrivateKey();
@@ -3747,8 +3787,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (keyword != null) {
-            sc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addOr("fingerprint", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            final SearchCriteria<SSHKeyPairVO> ssc = _sshKeyPairDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("fingerprint", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
         final Pair<List<SSHKeyPairVO>, Integer> result = _sshKeyPairDao.searchAndCount(sc, searchFilter);
@@ -4080,7 +4122,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (newServiceOffering.isDynamic()) {
             newServiceOffering.setDynamicFlag(true);
             _userVmMgr.validateCustomParameters(newServiceOffering, customparameters);
-            newServiceOffering = _offeringDao.getcomputeOffering(newServiceOffering, customparameters);
+            newServiceOffering = _offeringDao.getComputeOffering(newServiceOffering, customparameters);
         }
         _itMgr.checkIfCanUpgrade(systemVm, newServiceOffering);
 

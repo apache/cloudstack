@@ -21,14 +21,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.org.Cluster;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Cluster.class)
 public class ClusterResponse extends BaseResponse {
@@ -215,5 +214,9 @@ public class ClusterResponse extends BaseResponse {
         if (resourceDetails.containsKey("password")) {
             resourceDetails.remove("password");
         }
+    }
+
+    public Map<String, String> getResourceDetails() {
+        return resourceDetails;
     }
 }

@@ -58,11 +58,22 @@ class CsPassword(CsDataBag):
         except IOError:
             logging.debug("File %s does not exist" % self.TOKEN_FILE)
 
-        ips_cmd = "ip addr show | grep inet | awk '{print $2}'"
-        ips = CsHelper.execute(ips_cmd)
-        for ip in ips:
-            server_ip = ip.split('/')[0]
-            proc = CsProcess(['/opt/cloud/bin/passwd_server_ip.py', server_ip])
+        server_ip = None
+        guest_ip = None
+        for interface in self.config.address().get_interfaces():
+            if interface.ip_in_subnet(vm_ip) and interface.is_added():
+                if self.config.cl.is_redundant():
+                    server_ip = interface.get_gateway()
+                    guest_ip = interface.get_ip()
+                else:
+                    server_ip = interface.get_ip()
+                break
+
+        if server_ip is not None:
+            if guest_ip is None:
+                proc = CsProcess(['/opt/cloud/bin/passwd_server_ip.py', server_ip])
+            else:
+                proc = CsProcess(['/opt/cloud/bin/passwd_server_ip.py', server_ip + "," + guest_ip])
             if proc.find():
                 url = "http://%s:8080/" % server_ip
                 payload = {"ip": vm_ip, "password": password, "token": token}
@@ -782,6 +793,12 @@ class CsForwardingRules(CsDataBag):
 
         return None
 
+    def getGuestIpByIp(self, ipa):
+        for interface in self.config.address().get_interfaces():
+            if interface.ip_in_subnet(ipa):
+                return interface.get_ip()
+        return None
+
     def getDeviceByIp(self, ipa):
         for interface in self.config.address().get_interfaces():
             if interface.ip_in_subnet(ipa):
@@ -919,8 +936,20 @@ class CsForwardingRules(CsDataBag):
         if not rule["internal_ports"] == "any":
             fw_output_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
+        fw_postrout_rule2 = "-j SNAT --to-source %s -A POSTROUTING -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
+            (
+                self.getGuestIpByIp(rule['internal_ip']),
+                self.getNetworkByIp(rule['internal_ip']),
+                rule['internal_ip'],
+                self.getDeviceByIp(rule['internal_ip']),
+                rule['protocol'],
+                rule['protocol'],
+                self.portsToString(rule['internal_ports'], ':')
+            )
+
         self.fw.append(["nat", "", fw_prerout_rule])
         self.fw.append(["nat", "", fw_postrout_rule])
+        self.fw.append(["nat", "", fw_postrout_rule2])
         self.fw.append(["nat", "", fw_output_rule])
 
     def processStaticNatRule(self, rule):
@@ -930,11 +959,11 @@ class CsForwardingRules(CsDataBag):
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
 
         self.fw.append(["mangle", "front",
-                        "-A PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
-                        rule["internal_ip"]])
+                        "-A PREROUTING -d %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
+                        rule["public_ip"]])
         self.fw.append(["mangle", "front",
-                        "-A PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
-                        (rule["internal_ip"], hex(100 + int(device[len("eth"):])))])
+                        "-A PREROUTING -d %s/32 -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
+                        (rule["public_ip"], hex(100 + int(device[len("eth"):])))])
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",

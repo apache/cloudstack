@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyFloat;
@@ -32,6 +33,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -69,7 +71,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.ConfigurationManager;
@@ -233,11 +235,11 @@ public class UserVmManagerTest {
         doReturn(3L).when(_account).getId();
         doReturn(8L).when(_vmMock).getAccountId();
         when(_accountDao.findById(anyLong())).thenReturn(_accountMock);
-        when(_userDao.findById(anyLong())).thenReturn(_userMock);
-        doReturn(Account.State.enabled).when(_account).getState();
-        when(_vmMock.getId()).thenReturn(314L);
-        when(_vmInstance.getId()).thenReturn(1L);
-        when(_vmInstance.getServiceOfferingId()).thenReturn(2L);
+        lenient().when(_userDao.findById(anyLong())).thenReturn(_userMock);
+        lenient().doReturn(Account.State.enabled).when(_account).getState();
+        lenient().when(_vmMock.getId()).thenReturn(314L);
+        lenient().when(_vmInstance.getId()).thenReturn(1L);
+        lenient().when(_vmInstance.getServiceOfferingId()).thenReturn(2L);
 
         List<VMSnapshotVO> mockList = new ArrayList<>();
         when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
@@ -296,8 +298,8 @@ public class UserVmManagerTest {
     @Test(expected = CloudRuntimeException.class)
     public void testRestoreVMF1() throws ResourceAllocationException, InsufficientCapacityException, ResourceUnavailableException {
 
-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
-        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
+        lenient().when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+        lenient().when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
         doReturn(VirtualMachine.State.Error).when(_vmMock).getState();
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -315,7 +317,7 @@ public class UserVmManagerTest {
     public void testRestoreVMF2() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
 
         doReturn(VirtualMachine.State.Stopped).when(_vmMock).getState();
-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+        lenient().when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
         doReturn(false).when(_rootVols).isEmpty();
         when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
@@ -326,7 +328,7 @@ public class UserVmManagerTest {
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
 
-        when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
+        lenient().when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -362,7 +364,7 @@ public class UserVmManagerTest {
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
 
-        when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
+        lenient().when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -397,16 +399,16 @@ public class UserVmManagerTest {
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, 14L)).thenReturn(_volumeMock);
         when(_templateMock.getGuestOSId()).thenReturn(5L);
         doNothing().when(_vmMock).setGuestOSId(anyLong());
-        doNothing().when(_vmMock).setTemplateId(3L);
+        lenient().doNothing().when(_vmMock).setTemplateId(3L);
         when(_vmDao.update(314L, _vmMock)).thenReturn(true);
-        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
+        lenient().when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
 
         List<VMSnapshotVO> mockList = new ArrayList<>();
         when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
-        when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
+        lenient().when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -443,7 +445,7 @@ public class UserVmManagerTest {
         doNothing().when(_vmMock).setIsoId(14L);
         when(_templateMock.getGuestOSId()).thenReturn(5L);
         doNothing().when(_vmMock).setGuestOSId(anyLong());
-        doNothing().when(_vmMock).setTemplateId(3L);
+        lenient().doNothing().when(_vmMock).setTemplateId(3L);
         when(_vmDao.update(314L, _vmMock)).thenReturn(true);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
@@ -452,7 +454,7 @@ public class UserVmManagerTest {
         List<VMSnapshotVO> mockList = new ArrayList<>();
         when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
 
-        when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
+        lenient().when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -489,13 +491,13 @@ public class UserVmManagerTest {
         serviceOfferingIdField.setAccessible(true);
         serviceOfferingIdField.set(cmd, 1L);
 
-        when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
+        lenient().when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
         // UserContext.current().setEventDetails("Vm Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
-        doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
+        lenient().doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
         CallContext.register(user, account);
         try {
@@ -521,18 +523,18 @@ public class UserVmManagerTest {
         serviceOfferingIdField.setAccessible(true);
         serviceOfferingIdField.set(cmd, 1L);
 
-        when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
-        doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
+        lenient().when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
+        lenient().doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
 
-        doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
+        lenient().doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
-        doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
+        lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
 
-        doNothing().when(_itMgr).checkIfCanUpgrade(_vmMock, _offeringVo);
+        lenient().doNothing().when(_itMgr).checkIfCanUpgrade(_vmMock, _offeringVo);
 
         ServiceOffering so1 = getSvcoffering(512);
-        when(_offeringDao.findById(anyLong())).thenReturn((ServiceOfferingVO)so1);
-        when(_offeringDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn((ServiceOfferingVO)so1);
+        lenient().when(_offeringDao.findById(anyLong())).thenReturn((ServiceOfferingVO)so1);
+        lenient().when(_offeringDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn((ServiceOfferingVO)so1);
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -685,6 +687,7 @@ public class UserVmManagerTest {
     // Test Move VM b/w accounts where caller doesn't have access to the old or new account
     @Test(expected = PermissionDeniedException.class)
     public void testMoveVmToUser2() throws Exception {
+
         AssignVMCmd cmd = new AssignVMCmd();
         Class<?> _class = cmd.getClass();
 
@@ -704,8 +707,11 @@ public class UserVmManagerTest {
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short)1, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
-        Account oldAccount = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        Account newAccount = new AccountVO("testaccount", 1, "networkdomain", (short)1, UUID.randomUUID().toString());
+        AccountVO oldAccount = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        oldAccount.setId(1L);
+
+        AccountVO newAccount = new AccountVO("testaccount", 1, "networkdomain", (short)1, UUID.randomUUID().toString());
+        newAccount.setId(2L);
 
         UserVmVO vm = new UserVmVO(10L, "test", "test", 1L, HypervisorType.Any, 1L, false, false, 1L, 1L, 1, 5L, "test", "test", 1L);
         vm.setState(VirtualMachine.State.Stopped);
@@ -713,9 +719,9 @@ public class UserVmManagerTest {
 
         when(_accountService.getActiveAccountById(anyLong())).thenReturn(oldAccount);
 
-        when(_accountMgr.finalizeOwner(any(Account.class), anyString(), anyLong(), anyLong())).thenReturn(newAccount);
+        when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(newAccount);
 
-        doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+        doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(nullable(Account.class), nullable(AccessType.class), nullable(Boolean.class), nullable(ControlledEntity.class));
 
         CallContext.register(user, caller);
 
@@ -753,7 +759,7 @@ public class UserVmManagerTest {
         services.add(Service.Dhcp);
         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
         when(_vmMock.getState()).thenReturn(State.Stopped);
-        doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
+        lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
 
         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
@@ -800,8 +806,8 @@ public class UserVmManagerTest {
 
         List<Service> services = new ArrayList<Service>();
         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
-        when(_vmMock.getState()).thenReturn(State.Running);
-        doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
+        lenient().when(_vmMock.getState()).thenReturn(State.Running);
+        lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
 
         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
@@ -817,8 +823,8 @@ public class UserVmManagerTest {
         when(vlan.getVlanGateway()).thenReturn("10.10.10.1");
         when(vlan.getVlanNetmask()).thenReturn("255.255.255.0");
 
-        when(_ipAddrMgr.allocatePublicIpForGuestNic(Mockito.eq(_networkMock), anyLong(), Mockito.eq(_accountMock), anyString())).thenReturn("10.10.10.10");
-        when(_ipAddressDao.findByIpAndSourceNetworkId(anyLong(), anyString())).thenReturn(null);
+        when(_ipAddrMgr.allocatePublicIpForGuestNic(Mockito.eq(_networkMock), nullable(Long.class), Mockito.eq(_accountMock), anyString())).thenReturn("10.10.10.10");
+        lenient().when(_ipAddressDao.findByIpAndSourceNetworkId(anyLong(), anyString())).thenReturn(null);
         when(_nicDao.persist(any(NicVO.class))).thenReturn(nic);
         when(_ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(newIp);
         when(_vlanDao.findById(anyLong())).thenReturn(vlan);
@@ -897,7 +903,7 @@ public class UserVmManagerTest {
         services.add(Service.Dhcp);
         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
         when(_vmMock.getState()).thenReturn(State.Stopped);
-        doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
+        lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
 
         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
@@ -944,7 +950,7 @@ public class UserVmManagerTest {
         services.add(Service.Dhcp);
         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
         when(_vmMock.getState()).thenReturn(State.Stopped);
-        doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
+        lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
 
         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
@@ -953,7 +959,7 @@ public class UserVmManagerTest {
         when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
         when(_dcMock.getNetworkType()).thenReturn(NetworkType.Advanced);
 
-        when(_ipAddrMgr.allocatePublicIpForGuestNic(Mockito.eq(_networkMock), anyLong(), Mockito.eq(_accountMock), anyString())).thenReturn(null);
+        lenient().when(_ipAddrMgr.allocatePublicIpForGuestNic(Mockito.eq(_networkMock), anyLong(), Mockito.eq(_accountMock), anyString())).thenReturn(null);
 
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -981,14 +987,14 @@ public class UserVmManagerTest {
     @Test(expected = CloudRuntimeException.class)
     public void testApplyUserDataInNetworkWithoutElement() throws Exception {
         UserVm userVm = mock(UserVm.class);
-        when(userVm.getId()).thenReturn(1L);
+        lenient().when(userVm.getId()).thenReturn(1L);
 
         when(_nicMock.getNetworkId()).thenReturn(2L);
         when(_networkMock.getNetworkOfferingId()).thenReturn(3L);
         when(_networkDao.findById(2L)).thenReturn(_networkMock);
 
         UserDataServiceProvider userDataServiceProvider = mock(UserDataServiceProvider.class);
-        when(userDataServiceProvider.saveUserData(any(Network.class), any(NicProfile.class), any(VirtualMachineProfile.class))).thenReturn(true);
+        lenient().when(userDataServiceProvider.saveUserData(any(Network.class), any(NicProfile.class), any(VirtualMachineProfile.class))).thenReturn(true);
 
         // Userdata support, but no implementing element
         when(_networkModel.areServicesSupportedByNetworkOffering(3L, Service.UserData)).thenReturn(true);
@@ -998,7 +1004,7 @@ public class UserVmManagerTest {
     @Test
     public void testApplyUserDataSuccessful() throws Exception {
         UserVm userVm = mock(UserVm.class);
-        when(userVm.getId()).thenReturn(1L);
+        lenient().when(userVm.getId()).thenReturn(1L);
 
         when(_nicMock.getNetworkId()).thenReturn(2L);
         when(_networkMock.getNetworkOfferingId()).thenReturn(3L);

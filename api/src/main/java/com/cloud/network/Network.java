@@ -21,6 +21,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.exception.InvalidParameterValueException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
@@ -42,6 +44,24 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     enum GuestType {
         Shared, Isolated, L2
+    }
+
+    enum PVlanType {
+        Community, Isolated, Promiscuous;
+
+        static PVlanType fromValue(String type) {
+            if (StringUtils.isBlank(type)) {
+                return null;
+            } else if (type.equalsIgnoreCase("promiscuous") || type.equalsIgnoreCase("p")) {
+                return Promiscuous;
+            } else if (type.equalsIgnoreCase("community") || type.equalsIgnoreCase("c")) {
+                return Community;
+            } else if (type.equalsIgnoreCase("isolated") || type.equalsIgnoreCase("i")) {
+                return Isolated;
+            } else {
+                throw new InvalidParameterValueException("Unexpected Private VLAN type: " + type);
+            }
+        }
     }
 
     String updatingInSequence = "updatingInSequence";
@@ -416,4 +436,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     boolean isStrechedL2Network();
 
     String getExternalId();
+
+    PVlanType getPvlanType();
 }

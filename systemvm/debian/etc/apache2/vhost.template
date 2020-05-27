@@ -1,4 +1,4 @@
-<VirtualHost 10.1.1.1:80>
+<VirtualHost 10.1.1.1:8180>
 	ServerAdmin webmaster@localhost
 
 	DocumentRoot /var/www/html
@@ -42,7 +42,7 @@
 </VirtualHost>
 
 <IfModule mod_ssl.c>
-<VirtualHost 10.1.1.1:443>
+<VirtualHost 10.1.1.1:8443>
 	ServerAdmin webmaster@localhost
 
 	DocumentRoot /var/www/html
@@ -227,14 +227,14 @@
 # Debian etch). See /usr/share/doc/apache2.2-common/NEWS.Debian.gz and
 # README.Debian.gz
 
-Listen 10.1.1.1:80
+Listen 10.1.1.1:8180
 
 <IfModule mod_ssl.c>
     # Server Name Indication for SSL named virtual hosts is currently not
     # supported by MSIE on Windows XP.
-    Listen 10.1.1.1:443
+    Listen 10.1.1.1:8443
 </IfModule>
 
 <IfModule mod_gnutls.c>
-    Listen 10.1.1.1:443
+    Listen 10.1.1.1:8443
 </IfModule>

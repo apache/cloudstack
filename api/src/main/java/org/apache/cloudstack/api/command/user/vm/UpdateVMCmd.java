@@ -98,7 +98,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     @Parameter(name = ApiConstants.INSTANCE_NAME, type = CommandType.STRING, description = "instance name of the user vm", since = "4.4", authorized = {RoleType.Admin})
     private String instanceName;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs.")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs. 'extraconfig' is not allowed to be passed in details.")
     protected Map<String, String> details;
 
     @ACL

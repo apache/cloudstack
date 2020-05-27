@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
@@ -92,8 +91,8 @@ public class CreateSnapshotCmdTest extends TestCase {
         VolumeApiService volumeApiService = Mockito.mock(VolumeApiService.class);
         Snapshot snapshot = Mockito.mock(Snapshot.class);
         try {
-            Mockito.when(volumeApiService.takeSnapshot(anyLong(), anyLong(), anyLong(),
-                    any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class), anyBoolean(), anyObject())).thenReturn(snapshot);
+            Mockito.when(volumeApiService.takeSnapshot(nullable(Long.class), nullable(Long.class), isNull(),
+                    nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), nullable(Map.class))).thenReturn(snapshot);
 
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
@@ -125,8 +124,8 @@ public class CreateSnapshotCmdTest extends TestCase {
         VolumeApiService volumeApiService = Mockito.mock(VolumeApiService.class);
 
         try {
-                Mockito.when(volumeApiService.takeSnapshot(anyLong(), anyLong(), anyLong(),
-                        any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class), anyBoolean(), anyObject())).thenReturn(null);
+                Mockito.when(volumeApiService.takeSnapshot(nullable(Long.class), nullable(Long.class), nullable(Long.class),
+                        nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), anyObject())).thenReturn(null);
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
         }

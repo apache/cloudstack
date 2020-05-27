@@ -92,6 +92,7 @@ public class VmwareHelper {
     public static final int MAX_IDE_CONTROLLER_COUNT = 2;
     public static final int MAX_ALLOWED_DEVICES_IDE_CONTROLLER = 2;
     public static final int MAX_ALLOWED_DEVICES_SCSI_CONTROLLER = 15;
+    public static final String MIN_VERSION_UEFI_LEGACY = "5.5";
 
     public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
         return deviceNumber == 7;

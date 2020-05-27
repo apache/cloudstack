@@ -19,6 +19,13 @@ package com.cloud.event;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.usage.Usage;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -69,12 +76,10 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.annotation.Annotation;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.ha.HAConfig;
-import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 public class EventTypes {
 
@@ -96,6 +101,7 @@ public class EventTypes {
     public static final String EVENT_VM_MOVE = "VM.MOVE";
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
     public static final String EVENT_VM_EXPUNGE = "VM.EXPUNGE";
+    public static final String EVENT_VM_IMPORT = "VM.IMPORT";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -106,6 +112,7 @@ public class EventTypes {
     public static final String EVENT_ROUTER_HA = "ROUTER.HA";
     public static final String EVENT_ROUTER_UPGRADE = "ROUTER.UPGRADE";
     public static final String EVENT_ROUTER_DIAGNOSTICS = "ROUTER.DIAGNOSTICS";
+    public static final String EVENT_ROUTER_HEALTH_CHECKS = "ROUTER.HEALTH.CHECKS";
 
     // Console proxy
     public static final String EVENT_PROXY_CREATE = "PROXY.CREATE";
@@ -236,6 +243,8 @@ public class EventTypes {
     public static final String EVENT_VOLUME_DETAIL_ADD = "VOLUME.DETAIL.ADD";
     public static final String EVENT_VOLUME_DETAIL_REMOVE = "VOLUME.DETAIL.REMOVE";
     public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
+    public static final String EVENT_VOLUME_DESTROY = "VOLUME.DESTROY";
+    public static final String EVENT_VOLUME_RECOVER = "VOLUME.RECOVER";
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -322,6 +331,7 @@ public class EventTypes {
     public static final String EVENT_SECURITY_GROUP_DELETE = "SG.DELETE";
     public static final String EVENT_SECURITY_GROUP_ASSIGN = "SG.ASSIGN";
     public static final String EVENT_SECURITY_GROUP_REMOVE = "SG.REMOVE";
+    public static final String EVENT_SECURITY_GROUP_UPDATE = "SG.UPDATE";
 
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";
@@ -472,6 +482,17 @@ public class EventTypes {
     public static final String EVENT_VM_SNAPSHOT_OFF_PRIMARY = "VMSNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_VM_SNAPSHOT_REVERT = "VMSNAPSHOT.REVERTTO";
 
+    // Backup and Recovery events
+    public static final String EVENT_VM_BACKUP_IMPORT_OFFERING = "BACKUP.IMPORT.OFFERING";
+    public static final String EVENT_VM_BACKUP_OFFERING_ASSIGN = "BACKUP.OFFERING.ASSIGN";
+    public static final String EVENT_VM_BACKUP_OFFERING_REMOVE = "BACKUP.OFFERING.REMOVE";
+    public static final String EVENT_VM_BACKUP_CREATE = "BACKUP.CREATE";
+    public static final String EVENT_VM_BACKUP_RESTORE = "BACKUP.RESTORE";
+    public static final String EVENT_VM_BACKUP_DELETE = "BACKUP.DELETE";
+    public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "BACKUP.RESTORE.VOLUME.TO.VM";
+    public static final String EVENT_VM_BACKUP_SCHEDULE_CONFIGURE = "BACKUP.SCHEDULE.CONFIGURE";
+    public static final String EVENT_VM_BACKUP_SCHEDULE_DELETE = "BACKUP.SCHEDULE.DELETE";
+
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_DELETE = "PHYSICAL.NVPCONTROLLER.DELETE";
@@ -574,6 +595,13 @@ public class EventTypes {
     // Diagnostics Events
     public static final String EVENT_SYSTEM_VM_DIAGNOSTICS = "SYSTEM.VM.DIAGNOSTICS";
 
+    // Rolling Maintenance
+    public static final String EVENT_START_ROLLING_MAINTENANCE = "SYSTEM.ROLLING.MAINTENANCE";
+    public static final String EVENT_HOST_ROLLING_MAINTENANCE = "HOST.ROLLING.MAINTENANCE";
+    public static final String EVENT_CLUSTER_ROLLING_MAINTENANCE = "CLUSTER.ROLLING.MAINTENANCE";
+    public static final String EVENT_POD_ROLLING_MAINTENANCE = "POD.ROLLING.MAINTENANCE";
+    public static final String EVENT_ZONE_ROLLING_MAINTENANCE = "ZONE.ROLLING.MAINTENANCE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -594,6 +622,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_MOVE, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_RESTORE, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_EXPUNGE, VirtualMachine.class);
+        entityEventDetails.put(EVENT_VM_IMPORT, VirtualMachine.class);
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class);
@@ -603,6 +632,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROUTER_HA, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_UPGRADE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DIAGNOSTICS, VirtualRouter.class);
+        entityEventDetails.put(EVENT_ROUTER_HEALTH_CHECKS, VirtualRouter.class);
 
         entityEventDetails.put(EVENT_PROXY_CREATE, VirtualMachine.class);
         entityEventDetails.put(EVENT_PROXY_DESTROY, VirtualMachine.class);
@@ -701,6 +731,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VOLUME_UPLOAD, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_MIGRATE, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_RESIZE, Volume.class);
+        entityEventDetails.put(EVENT_VOLUME_DESTROY, Volume.class);
+        entityEventDetails.put(EVENT_VOLUME_RECOVER, Volume.class);
 
         // Domains
         entityEventDetails.put(EVENT_DOMAIN_CREATE, Domain.class);
@@ -969,6 +1001,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE, VirtualMachineTemplate.class);
         entityEventDetails.put(EVENT_ISO_DIRECT_DOWNLOAD_FAILURE, "Iso");
         entityEventDetails.put(EVENT_SYSTEM_VM_DIAGNOSTICS, VirtualMachine.class);
+
+        entityEventDetails.put(EVENT_ZONE_ROLLING_MAINTENANCE, ZoneResponse.class);
+        entityEventDetails.put(EVENT_POD_ROLLING_MAINTENANCE, PodResponse.class);
+        entityEventDetails.put(EVENT_CLUSTER_ROLLING_MAINTENANCE, ClusterResponse.class);
+        entityEventDetails.put(EVENT_HOST_ROLLING_MAINTENANCE, HostResponse.class);
     }
 
     public static String getEntityForEvent(String eventName) {

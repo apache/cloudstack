@@ -57,6 +57,7 @@ import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.usage.dao.UsageNetworkOfferingDao;
 import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
+import com.cloud.usage.dao.UsageBackupDao;
 import com.cloud.usage.dao.UsageVMSnapshotOnPrimaryDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
@@ -71,12 +72,13 @@ import com.cloud.usage.parser.NetworkUsageParser;
 import com.cloud.usage.parser.PortForwardingUsageParser;
 import com.cloud.usage.parser.SecurityGroupUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
+import com.cloud.usage.parser.BackupUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
+import com.cloud.usage.parser.VMSanpshotOnPrimaryParser;
 import com.cloud.usage.parser.VMSnapshotUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
 import com.cloud.usage.parser.VmDiskUsageParser;
 import com.cloud.usage.parser.VolumeUsageParser;
-import com.cloud.usage.parser.VMSanpshotOnPrimaryParser;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -149,6 +151,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private UsageVMSnapshotDao _usageVMSnapshotDao;
     @Inject
     private UsageVMSnapshotOnPrimaryDao _usageSnapshotOnPrimaryDao;
+    @Inject
+    private UsageBackupDao usageBackupDao;
     @Inject
     private QuotaManager _quotaManager;
     @Inject
@@ -956,6 +960,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("VM Snapshot on primary usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
+        parsed = BackupUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("VM Backup usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
         return parsed;
     }
 
@@ -987,6 +997,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             createVMSnapshotEvent(event);
         } else if (isVmSnapshotOnPrimaryEvent(eventType)) {
             createVmSnapshotOnPrimaryEvent(event);
+        } else if (isBackupEvent(eventType)) {
+            createBackupEvent(event);
         }
     }
 
@@ -1066,6 +1078,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (eventType == null)
             return false;
         return (eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY) || eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY));
+    }
+
+    private boolean isBackupEvent(String eventType) {
+        return eventType != null && (eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN) || eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE));
     }
 
     private void createVMHelperEvent(UsageEventVO event) {
@@ -1881,6 +1897,23 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 vmsnap.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
                 _usageSnapshotOnPrimaryDao.updateDeleted(vmsnap);
             }
+        }
+    }
+
+    private void createBackupEvent(final UsageEventVO event) {
+        Long vmId = event.getResourceId();
+        Long zoneId = event.getZoneId();
+        Long accountId = event.getAccountId();
+        Long backupOfferingId = event.getOfferingId();
+        Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        Long domainId = account.getDomainId();
+        Date created = event.getCreateDate();
+
+        if (EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN.equals(event.getType())) {
+            final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, vmId, backupOfferingId, created);
+            usageBackupDao.persist(backupVO);
+        } else if (EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE.equals(event.getType())) {
+            usageBackupDao.removeUsage(accountId, zoneId, vmId);
         }
     }
 

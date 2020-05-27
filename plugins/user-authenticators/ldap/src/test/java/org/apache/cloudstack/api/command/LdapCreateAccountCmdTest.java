@@ -27,11 +27,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -56,7 +56,7 @@ public class LdapCreateAccountCmdTest implements LdapConfigurationChanger {
     @Test(expected = ServerApiException.class)
     public void failureToRetrieveLdapUser() throws Exception {
         // We have an LdapManager, AccountService and LdapCreateAccountCmd and LDAP user that doesn't exist
-        when(ldapManager.getUser(anyString(), isNull(Long.class))).thenThrow(NoLdapUserMatchingQueryException.class);
+        when(ldapManager.getUser(nullable(String.class), isNull())).thenThrow(NoLdapUserMatchingQueryException.class);
         ldapCreateAccountCmd.execute();
         fail("An exception should have been thrown: " + ServerApiException.class);
     }
@@ -65,7 +65,7 @@ public class LdapCreateAccountCmdTest implements LdapConfigurationChanger {
     public void failedCreationDueToANullResponseFromCloudstackAccountCreator() throws Exception {
         // We have an LdapManager, AccountService and LdapCreateAccountCmd
         LdapUser mrMurphy = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false, null);
-        when(ldapManager.getUser(anyString(), isNull(Long.class))).thenReturn(mrMurphy).thenReturn(mrMurphy);
+        when(ldapManager.getUser(nullable(String.class), isNull())).thenReturn(mrMurphy).thenReturn(mrMurphy);
         ldapCreateAccountCmd.execute();
         fail("An exception should have been thrown: " + ServerApiException.class);
     }

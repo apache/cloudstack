@@ -17,6 +17,7 @@
 package com.cloud.network.router;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -68,9 +69,9 @@ public class RouterControlHelperTest {
         NicVO nic3 = mock(NicVO.class);
         when(nic1.getNetworkId()).thenReturn(NW_ID_1);
         when(nic2.getNetworkId()).thenReturn(NW_ID_2);
-        when(nic2.getIPv4Address()).thenReturn(IP4_ADDRES1);
-        when(nic3.getNetworkId()).thenReturn(NW_ID_3);
-        when(nic3.getIPv4Address()).thenReturn(IP4_ADDRES2);
+        lenient().when(nic2.getIPv4Address()).thenReturn(IP4_ADDRES1);
+        lenient().when(nic3.getNetworkId()).thenReturn(NW_ID_3);
+        lenient().when(nic3.getIPv4Address()).thenReturn(IP4_ADDRES2);
         nics.add(nic1);
         nics.add(nic2);
         nics.add(nic3);
@@ -81,10 +82,10 @@ public class RouterControlHelperTest {
         NetworkVO nw2 = mock(NetworkVO.class);
         when(nw2.getTrafficType()).thenReturn(TrafficType.Control);
         NetworkVO nw3 = mock(NetworkVO.class);
-        when(nw3.getTrafficType()).thenReturn(TrafficType.Control);
+        lenient().when(nw3.getTrafficType()).thenReturn(TrafficType.Control);
         when(this.nwDao.findById(NW_ID_1)).thenReturn(nw1);
         when(this.nwDao.findById(NW_ID_2)).thenReturn(nw2);
-        when(this.nwDao.findById(NW_ID_3)).thenReturn(nw3);
+        lenient().when(this.nwDao.findById(NW_ID_3)).thenReturn(nw3);
 
         // Execute
         final String ip4address = this.routerControlHelper.getRouterControlIp(ROUTER_ID);
@@ -99,7 +100,7 @@ public class RouterControlHelperTest {
         List<NicVO> nics = new ArrayList<>();
         NicVO nic1 = mock(NicVO.class);
         when(nic1.getNetworkId()).thenReturn(NW_ID_1);
-        when(nic1.getIPv4Address()).thenReturn(null);
+        lenient().when(nic1.getIPv4Address()).thenReturn(null);
         nics.add(nic1);
         when(this.nicDao.listByVmId(ROUTER_ID)).thenReturn(nics);
 

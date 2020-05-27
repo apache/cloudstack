@@ -80,7 +80,8 @@ public class ChecksumValue {
             if (s == 0 && e > s+1) { // we have an algorithm name of at least 1 char
                 return digest.substring(s+1,e);
             } // else if no algoritm
+            return "MD5";
         } // or if no digest at all
-        return "MD5";
+        return "SHA-512";
     }
 }

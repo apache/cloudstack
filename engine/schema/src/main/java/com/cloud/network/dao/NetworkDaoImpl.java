@@ -26,7 +26,9 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Network;
@@ -38,6 +40,8 @@ import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.vpc.VpcGatewayVO;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -77,6 +81,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     SearchBuilder<NetworkVO> OfferingAccountNetworkSearch;
 
     GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
+    SearchBuilder<NetworkVO> PrivateNetworkSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -92,6 +97,10 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     NetworkOfferingDao _ntwkOffDao;
     @Inject
     NetworkOpDao _ntwkOpDao;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
 
     TableGenerator _tgMacAddress;
 
@@ -104,6 +113,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     @PostConstruct
     protected void init() {
         AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
         AllFieldsSearch.and("cidr", AllFieldsSearch.entity().getCidr(), Op.EQ);
         AllFieldsSearch.and("broadcastType", AllFieldsSearch.entity().getBroadcastDomainType(), Op.EQ);
@@ -246,6 +256,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         GarbageCollectedSearch.join("ntwkOffGC", join8, GarbageCollectedSearch.entity().getNetworkOfferingId(), join8.entity().getId(), JoinBuilder.JoinType.INNER);
         GarbageCollectedSearch.done();
 
+        PrivateNetworkSearch = createSearchBuilder();
+        PrivateNetworkSearch.and("cidr", PrivateNetworkSearch.entity().getCidr(), Op.EQ);
+        PrivateNetworkSearch.and("offering", PrivateNetworkSearch.entity().getNetworkOfferingId(), Op.EQ);
+        PrivateNetworkSearch.and("datacenter", PrivateNetworkSearch.entity().getDataCenterId(), Op.EQ);
+        PrivateNetworkSearch.and("broadcastUri", PrivateNetworkSearch.entity().getBroadcastUri(), Op.EQ);
+        final SearchBuilder<VpcGatewayVO> join10 = _vpcGatewayDao.createSearchBuilder();
+        join10.and("vpc", join10.entity().getVpcId(), Op.EQ);
+        PrivateNetworkSearch.join("vpcgateways", join10, PrivateNetworkSearch.entity().getId(), join10.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        PrivateNetworkSearch.done();
     }
 
     @Override
@@ -592,16 +611,17 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public NetworkVO getPrivateNetwork(final String broadcastUri, final String cidr, final long accountId, final long zoneId, Long networkOfferingId) {
+    public NetworkVO getPrivateNetwork(final String broadcastUri, final String cidr, final long accountId, final long zoneId, Long networkOfferingId, Long vpcId) {
         if (networkOfferingId == null) {
             networkOfferingId = _ntwkOffDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOffering).getId();
         }
-        final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        final SearchCriteria<NetworkVO> sc = PrivateNetworkSearch.create();
         sc.setParameters("datacenter", zoneId);
         sc.setParameters("broadcastUri", broadcastUri);
         sc.setParameters("cidr", cidr);
         sc.setParameters("account", accountId);
         sc.setParameters("offering", networkOfferingId);
+        sc.setJoinParameters("vpcgateways", "vpc", vpcId);
         return findOneBy(sc);
     }
 
@@ -696,5 +716,90 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         sc_2.addAnd("networkOfferingId", SearchCriteria.Op.IN, idset);
         sc_2.addAnd("removed", SearchCriteria.Op.EQ, null);
         return this.search(sc_2, searchFilter_2);
+    }
+
+    @Override
+    public NetworkVO findByVlan(String vlan) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("broadcastType", BroadcastDomainType.Vlan);
+        sc.setParameters("broadcastUri", BroadcastDomainType.Vlan.toUri(vlan));
+        return findOneBy(sc);
+    }
+
+    @Override
+    public List<NetworkVO> listByAccountIdNetworkName(final long accountId, final String name) {
+        final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("name", name);
+
+        return listBy(sc, null);
+    }
+
+    /**
+     * True when a requested PVLAN pair overlaps with any existing PVLAN pair within the same physical network, i.e when:
+     *      - The requested exact PVLAN pair exists
+     *      - The requested secondary VLAN ID is secondary VLAN ID of an existing PVLAN pair
+     *      - The requested secondary VLAN ID is primary VLAN ID of an existing PVLAN pair
+     */
+    protected boolean isNetworkOverlappingRequestedPvlan(Integer existingPrimaryVlan, Integer existingSecondaryVlan, Network.PVlanType existingPvlanType,
+                                                         Integer requestedPrimaryVlan, Integer requestedSecondaryVlan, Network.PVlanType requestedPvlanType) {
+        if (existingPrimaryVlan == null || existingSecondaryVlan == null || requestedPrimaryVlan == null || requestedSecondaryVlan == null) {
+            throw new CloudRuntimeException(String.format("Missing VLAN ID while checking PVLAN pair (%s, %s)" +
+                    " against existing pair (%s, %s)", existingPrimaryVlan, existingSecondaryVlan, requestedPrimaryVlan, requestedSecondaryVlan));
+        }
+        boolean exactMatch = existingPrimaryVlan.equals(requestedPrimaryVlan) && existingSecondaryVlan.equals(requestedSecondaryVlan);
+        boolean secondaryVlanUsed = requestedPvlanType != Network.PVlanType.Promiscuous && requestedSecondaryVlan.equals(existingPrimaryVlan) || requestedSecondaryVlan.equals(existingSecondaryVlan);
+        boolean isolatedMax = false;
+        boolean promiscuousMax = false;
+        if (requestedPvlanType == Network.PVlanType.Isolated && existingPrimaryVlan.equals(requestedPrimaryVlan) && existingPvlanType.equals(Network.PVlanType.Isolated)) {
+            isolatedMax = true;
+        } else if (requestedPvlanType == Network.PVlanType.Promiscuous && existingPrimaryVlan.equals(requestedPrimaryVlan) && existingPvlanType == Network.PVlanType.Promiscuous) {
+            promiscuousMax = true;
+        }
+        return exactMatch || secondaryVlanUsed || isolatedMax || promiscuousMax;
+    }
+
+    protected Network.PVlanType getNetworkPvlanType(long networkId, List<Integer> existingPvlan) {
+        Network.PVlanType existingPvlanType = null;
+        NetworkDetailVO pvlanTypeDetail = networkDetailsDao.findDetail(networkId, ApiConstants.ISOLATED_PVLAN_TYPE);
+        if (pvlanTypeDetail != null) {
+            existingPvlanType = Network.PVlanType.valueOf(pvlanTypeDetail.getValue());
+        } else {
+            existingPvlanType = existingPvlan.get(0).equals(existingPvlan.get(1)) ? Network.PVlanType.Promiscuous : Network.PVlanType.Isolated;
+        }
+        return existingPvlanType;
+    }
+
+    @Override
+    public List<NetworkVO> listByPhysicalNetworkPvlan(long physicalNetworkId, String broadcastUri, Network.PVlanType pVlanType) {
+        final URI searchUri = BroadcastDomainType.fromString(broadcastUri);
+        if (!searchUri.getScheme().equalsIgnoreCase("pvlan")) {
+            throw new CloudRuntimeException("PVLAN requested but URI is not in the expected format: " + searchUri.toString());
+        }
+        final String searchRange = BroadcastDomainType.getValue(searchUri);
+        final List<Integer> searchVlans = UriUtils.expandPvlanUri(searchRange);
+        final List<NetworkVO> overlappingNetworks = new ArrayList<>();
+
+        final SearchCriteria<NetworkVO> sc = PhysicalNetworkSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+
+        for (final NetworkVO network : listBy(sc)) {
+            if (network.getBroadcastUri() == null || !network.getBroadcastUri().getScheme().equalsIgnoreCase("pvlan")) {
+                continue;
+            }
+            final String networkVlanRange = BroadcastDomainType.getValue(network.getBroadcastUri());
+            if (networkVlanRange == null || networkVlanRange.isEmpty()) {
+                continue;
+            }
+            List<Integer> existingPvlan = UriUtils.expandPvlanUri(networkVlanRange);
+            Network.PVlanType existingPvlanType = getNetworkPvlanType(network.getId(), existingPvlan);
+            if (isNetworkOverlappingRequestedPvlan(existingPvlan.get(0), existingPvlan.get(1), existingPvlanType,
+                    searchVlans.get(0), searchVlans.get(1), pVlanType)) {
+                overlappingNetworks.add(network);
+                break;
+            }
+        }
+
+        return overlappingNetworks;
     }
 }

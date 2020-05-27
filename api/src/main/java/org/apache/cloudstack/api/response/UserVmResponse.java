@@ -156,6 +156,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the name of the disk offering of the virtual machine", since = "4.4")
     private String diskOfferingName;
 
+    @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
+    @Param(description = "the ID of the backup offering of the virtual machine", since = "4.14")
+    private String backupOfferingId;
+
+    @SerializedName(ApiConstants.BACKUP_OFFERING_NAME)
+    @Param(description = "the name of the backup offering of the virtual machine", since = "4.14")
+    private String backupOfferingName;
+
     @SerializedName("forvirtualnetwork")
     @Param(description = "the virtual network for the service offering")
     private Boolean forVirtualNetwork;
@@ -289,6 +297,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.OS_TYPE_ID)
     @Param(description = "OS type id of the vm", since = "4.4")
     private String osTypeId;
+
+    @SerializedName(ApiConstants.BOOT_MODE)
+    @Param(description = "Guest vm Boot Mode")
+    private String bootMode;
+
+    @SerializedName(ApiConstants.BOOT_TYPE)
+    @Param(description = "Guest vm Boot Type")
+    private String bootType;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -437,6 +453,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getDiskOfferingName() {
         return diskOfferingName;
+    }
+
+    public String getBackupOfferingId() {
+        return backupOfferingId;
+    }
+
+    public String getBackupOfferingName() {
+        return backupOfferingName;
     }
 
     public Boolean getForVirtualNetwork() {
@@ -697,6 +721,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.diskOfferingName = diskOfferingName;
     }
 
+    public void setBackupOfferingId(String backupOfferingId) {
+        this.backupOfferingId = backupOfferingId;
+    }
+
+    public void setBackupOfferingName(String backupOfferingName) {
+        this.backupOfferingName = backupOfferingName;
+    }
+
     public void setCpuNumber(Integer cpuNumber) {
         this.cpuNumber = cpuNumber;
     }
@@ -849,4 +881,13 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public String getOsTypeId() {
         return osTypeId;
     }
+
+    public String getBootType() { return bootType; }
+
+    public void setBootType(String bootType) { this.bootType = bootType; }
+
+    public String getBootMode() { return bootMode; }
+
+    public void setBootMode(String bootMode) { this.bootMode = bootMode; }
+
 }

@@ -16,20 +16,19 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
-
-import java.util.ArrayList;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -51,14 +50,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.vmware.vim25.HostCapability;
-import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.VimPortType;
-import com.vmware.vim25.VirtualDevice;
-import com.vmware.vim25.VirtualDeviceConfigSpec;
-import com.vmware.vim25.VirtualMachineConfigSpec;
-import com.vmware.vim25.VirtualMachineVideoCard;
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
@@ -67,19 +58,25 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.storage.resource.VmwareStorageProcessor;
-import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
-
+import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VmDetailConstants;
+import com.vmware.vim25.HostCapability;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VimPortType;
+import com.vmware.vim25.VirtualDevice;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineVideoCard;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({CopyCommand.class, DatacenterMO.class, VmwareResource.class})
@@ -399,7 +396,7 @@ public class VmwareResourceTest {
         verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(Matchers.eq(storageCmd), any(EnumMap.class));
     }
 
-    @Test(expected=CloudRuntimeException.class)
+    @Test(expected= CloudRuntimeException.class)
     public void testFindVmOnDatacenterNullHyperHostReference() throws Exception {
         when(hyperHost.getMor()).thenReturn(null);
         _resource.findVmOnDatacenter(context, hyperHost, volume);

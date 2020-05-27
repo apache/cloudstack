@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -23,12 +24,12 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import com.cloud.configuration.ManagementServiceConfiguration;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
+import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -137,13 +138,14 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 }
 
                 if (s_logger.isInfoEnabled()) {
+                    String lastTime = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss.SSS'Z'").format(vmStateUpdateTime);
                     s_logger.info(
-                            String.format("Detected missing VM. host: %l, vm id: %l(%s), power state: %s, last state update: %l"
+                            String.format("Detected missing VM. host: %d, vm id: %d(%s), power state: %s, last state update: %s"
                                     , hostId
                                     , instance.getId()
                                     , instance.getUuid()
                                     , VirtualMachine.PowerState.PowerReportMissing
-                                    , vmStateUpdateTime.getTime()));
+                                    , lastTime));
                 }
 
                 long milliSecondsSinceLastStateUpdate = currentTime.getTime() - vmStateUpdateTime.getTime();

@@ -224,7 +224,7 @@ public class VirtualMachineModel extends ModelObjectBase {
             case Migrating:
             case Starting:
             case Running:
-            case Shutdowned:
+            case Shutdown:
             case Stopped:
             case Stopping:
                 return true;

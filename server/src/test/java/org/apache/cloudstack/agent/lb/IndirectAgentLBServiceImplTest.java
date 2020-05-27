@@ -95,7 +95,6 @@ public class IndirectAgentLBServiceImplTest {
             id++;
         }
         addField(agentMSLB, "hostDao", hostDao);
-        addField(agentMSLB, "messageBus", messageBus);
         addField(agentMSLB, "agentManager", agentManager);
 
         when(hostDao.listAll()).thenReturn(Arrays.asList(host4, host2, host1, host3));

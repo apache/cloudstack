@@ -258,6 +258,100 @@
         return allowedActions;
     };
 
+    var rollingMaintenanceAction = function(args) {
+        var isCluster = args.entity === 'clusters';
+        var isZone = args.entity === 'zones';
+        var isPod = args.entity === 'pods';
+        var isHost = args.entity === 'hosts';
+        var action = {
+            messages: {
+                notification: function(args) {
+                    return 'label.start.rolling.maintenance';
+                }
+            },
+            label: 'label.start.rolling.maintenance',
+            addRow: 'false',
+            createForm: {
+                title: 'label.start.rolling.maintenance',
+                fields: {
+                    timeout: {
+                        label: 'label.timeout',
+                    },
+                    force: {
+                        isBoolean: true,
+                        label: 'label.start.rolling.maintenance.force'
+                    },
+                    payload: {
+                        label: 'label.start.rolling.maintenance.payload'
+                    }
+                }
+            },
+            action: function(args) {
+                var selectedIds;
+                if (isCluster) {
+                    selectedIds = args.context.clusters.map(x => x.id);
+                } else if (isZone) {
+                    selectedIds = args.context.physicalResources.map(x => x.id);
+                } else if (isPod) {
+                    selectedIds = args.context.pods.map(x => x.id);
+                } else if (isHost) {
+                    selectedIds = args.context.hosts.map(x => x.id);
+                }
+                var ids = selectedIds.join(',');
+                var data = {
+                    force: args.data.force,
+                    timeout: args.data.timeout,
+                    payload: args.data.payload
+                };
+                if (isCluster) {
+                    $.extend(data, {
+                        clusterids : ids
+                    });
+                } else if (isZone) {
+                    $.extend(data, {
+                        zoneids : ids
+                    });
+                } else if (isPod) {
+                    $.extend(data, {
+                        podids : ids
+                    });
+                } else if (isHost) {
+                    $.extend(data, {
+                        hostids : ids
+                    });
+                }
+
+                $.ajax({
+                    url: createURL("startRollingMaintenance"),
+                    dataType: "json",
+                    data: data,
+                    async: true,
+                    success: function (json) {
+                        var item = json.startrollingmaintenanceresponse;
+                        var jid = item.jobid;
+                        args.response.success({
+                            _custom: {
+                                jobId: jid
+                            }
+                        });
+                    }
+                });
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+
+        if (args && args.listView) {
+            $.extend(action, {
+                isHeader: true,
+                isMultiSelectAction: true
+            });
+        }
+
+        return action;
+    };
+
     cloudStack.sections.system = {
         title: 'label.menu.infrastructure',
         id: 'system',
@@ -2455,7 +2549,7 @@
                                                  */
                                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
-                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     data: data2,
                                                         async: false,
                                                     success: function (json) {
@@ -3039,7 +3133,7 @@
 
                                                 // Get project routers
                                                 $.ajax({
-                                                    url: createURL("listInternalLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listInternalLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     success: function (json) {
                                                         var items = json.listinternallbvmsresponse.internalloadbalancervm ?
                                                         json.listinternallbvmsresponse.internalloadbalancervm:[];
@@ -3592,7 +3686,7 @@
                                                  */
                                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
-                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     dataType: 'json',
                                                     data: data2,
                                                         async: false,
@@ -3912,6 +4006,56 @@
                                                         async: true,
                                                         success: function(json) {
                                                             var jid = json.rundiagnosticsresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId : jid,
+                                                                    getUpdatedItem: function (json) {
+                                                                        return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                                    },
+                                                                    getActionFilter: function(){
+                                                                        return systemvmActionfilter;
+                                                                   }
+                                                                }
+
+                                                            });
+                                                        }
+                                                    }); //end ajax
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
+                                            retrieveDiagnostics: {
+                                                label: 'label.action.get.diagnostics',
+                                                messages: {
+                                                    notification: function (args) {
+                                                        return 'label.action.get.diagnostics';
+                                                    },
+                                                    complete: function(args) {
+                                                        var url = args.url;
+                                                        var htmlMsg = _l('message.download.diagnostics');
+                                                        var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
+                                                        return htmlMsg2;
+                                                    }
+                                                },
+                                                createForm: {
+                                                    title: 'label.action.get.diagnostics',
+                                                    desc: 'label.get.diagnostics.desc',
+                                                    fields: {
+                                                        files: {
+                                                            label: 'label.get.diagnostics.files'
+                                                        }
+                                                    }
+                                                },
+                                                action: function (args) {
+                                                    $.ajax({
+                                                        url: createURL("getDiagnosticsData&targetid=" + args.context.routers[0].id + "&files=" + args.data.files),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.getdiagnosticsdataresponse.jobid;
                                                             args.response.success({
                                                                 _custom: {
                                                                     jobId : jid,
@@ -6521,7 +6665,7 @@
 
                                                 // Get project routers
                                                 $.ajax({
-                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     data: data2,
                                                     success: function (json) {
                                                         var items = json.listroutersresponse.router ?
@@ -7616,6 +7760,7 @@
                         zones: {
                             id: 'physicalResources',
                             label: 'label.menu.physical.resources',
+                            multiSelect: true,
                             fields: {
                                 name: {
                                     label: 'label.zone'
@@ -7705,12 +7850,65 @@
                                             return 'label.metrics';
                                         }
                                     }
-                                }
+                                },
+                                startRollingMaintenance: rollingMaintenanceAction({ listView: true, entity: 'zones' })
                             },
 
                             detailView: {
                                 isMaximized: true,
                                 actions: {
+
+                                    startRollingMaintenance: {
+                                        label: 'label.start.rolling.maintenance',
+                                        textLabel: 'label.start.rolling.maintenance',
+                                        messages: {
+                                            notification: function (args) {
+                                                return 'label.start.rolling.maintenance';
+                                            }
+                                        },
+                                        createForm: {
+                                            title: 'label.start.rolling.maintenance',
+                                            fields: {
+                                                timeout: {
+                                                    label: 'label.timeout',
+                                                },
+                                                force: {
+                                                    isBoolean: true,
+                                                    label: 'label.start.rolling.maintenance.force'
+                                                },
+                                                payload: {
+                                                    label: 'label.start.rolling.maintenance.payload'
+                                                }
+                                            }
+                                        },
+                                        action: function (args) {
+                                            var data = {
+                                                zoneids: args.context.physicalResources[0].id,
+                                                force: args.data.force,
+                                                timeout: args.data.timeout,
+                                                payload: args.data.payload
+                                            };
+                                            $.ajax({
+                                                url: createURL("startRollingMaintenance"),
+                                                dataType: "json",
+                                                data: data,
+                                                async: true,
+                                                success: function (json) {
+                                                    var item = json.rollingmaintenance;
+                                                    args.response.success({
+                                                        actionFilter: zoneActionfilter,
+                                                        data: item
+                                                    });
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: function (args) {
+                                                args.complete();
+                                            }
+                                        }
+                                    },
+
                                     addVmwareDc: {
                                         label: 'label.add.vmware.datacenter',
                                         textLabel: 'label.add.vmware.datacenter',
@@ -8847,6 +9045,56 @@
                                                         }
                                                     },
 
+                                                    retrieveDiagnostics: {
+                                                        label: 'label.action.get.diagnostics',
+                                                        messages: {
+                                                            notification: function (args) {
+                                                                return 'label.action.get.diagnostics';
+                                                            },
+                                                            complete: function(args) {
+                                                                var url = args.url;
+                                                                var htmlMsg = _l('message.download.diagnostics');
+                                                                var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
+                                                                return htmlMsg2;
+                                                            }
+                                                        },
+                                                        createForm: {
+                                                            title: 'label.action.get.diagnostics',
+                                                            desc: '',
+                                                            fields: {
+                                                                files: {
+                                                                    label: 'label.get.diagnostics.files'
+                                                                }
+                                                            }
+                                                        },
+                                                        action: function (args) {
+                                                            $.ajax({
+                                                                url: createURL("getDiagnosticsData&targetid=" + args.context.systemVMs[0].id + "&files=" + args.data.files),
+                                                                dataType: "json",
+                                                                async: true,
+                                                                success: function(json) {
+                                                                    var jid = json.getdiagnosticsdataresponse.jobid;
+                                                                    args.response.success({
+                                                                        _custom: {
+                                                                            jobId : jid,
+                                                                            getUpdatedItem: function (json) {
+                                                                                return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                                            },
+                                                                            getActionFilter: function(){
+                                                                                return systemvmActionfilter;
+                                                                           }
+                                                                        }
+
+                                                                    });
+                                                                }
+                                                            }); //end ajax
+                                                        },
+                                                        notification: {
+                                                            poll: pollAsyncJobResult
+                                                        }
+                                                    },
+
                                                     scaleUp: {
                                                         label: 'label.change.service.offering',
                                                         createForm: {
@@ -9368,7 +9616,7 @@
                                         url: createURL('listSystemVms'),
                                         data: data,
                                         success: function (json) {
-                                            var systemvmObjs = json.listsystemvmsresponse.systemvm;
+                                            var systemvmObjs = json.listsystemvmsresponse.systemvm || [];
                                             $(systemvmObjs).each(function(idx, item) {
                                                 var controlIp = item.linklocalip;
                                                 if (item.hypervisor == "VMware") {
@@ -9377,32 +9625,9 @@
                                                 item.controlip = controlIp;
                                             });
 
-                                            if (systemvmObjs != undefined) {
-                                                $.ajax({
-                                                    url: createURL('listHosts'),
-                                                    data: {
-                                                        details: 'min'
-                                                    },
-                                                    success: function (json) {
-                                                        var hostObjs = json.listhostsresponse.host;
-                                                        for (var i = 0; i < systemvmObjs.length; i++) {
-                                                            for (var k = 0; k < hostObjs.length; k++) {
-                                                                if (hostObjs[k].name == systemvmObjs[i].name) {
-                                                                    systemvmObjs[i].agentstate = hostObjs[k].state;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                        args.response.success({
-                                                            data: systemvmObjs
-                                                        });
-                                                    }
-                                                });
-                                            } else {
-                                                args.response.success({
-                                                    data:[]
-                                                });
-                                            }
+                                            args.response.success({
+                                                data: systemvmObjs
+                                            });
                                         }
                                     });
                                 },
@@ -9477,7 +9702,7 @@
                                                              */
                                                             if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                             $.ajax({
-                                                                    url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
+                                                                    url: createURL("listRouters&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
                                                                 async: false,
                                                                 success: function (json) {
                                                                     var items = json.listroutersresponse.router ? json.listroutersresponse.router:[];
@@ -9786,6 +10011,7 @@
                         listView: {
                             id: 'routers',
                             label: 'label.virtual.appliances',
+                            horizontalOverflow: true,
                             fields: {
                                 name: {
                                     label: 'label.name'
@@ -9814,13 +10040,31 @@
                                     indicator: {
                                         'Running': 'on',
                                         'Stopped': 'off',
-                                        'Error': 'off'
+                                        'Error': 'off',
+                                        'Alert': 'warning'
+                                    }
+                                },
+                                healthchecksfailed: {
+                                    converter: function (str) {
+                                        if (str) return 'Failed'
+                                        return 'Passed';
+                                    },
+                                    label: 'label.health.check',
+                                    indicator: {
+                                        false: 'on',
+                                        true: 'warning'
                                     }
                                 },
                                 requiresupgrade: {
                                     label: 'label.requires.upgrade',
                                     converter: cloudStack.converters.toBooleanText
                                 }
+                            },
+                            preFilter: function () {
+                                if (!g_routerHealthChecksEnabled) {
+                                    return ['healthchecksfailed']
+                                }
+                                return []
                             },
                             dataProvider: function (args) {
                                 var array1 =[];
@@ -9882,44 +10126,47 @@
                                             routers.push(item);
                                         });
 
-                                /*
-                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
-                                 * because in project view, all API calls are appended with projectid=[projectID].
-                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
-                                 */
-                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
-                                    /*
-                                     * account parameter(account+domainid) and project parameter(projectid) are not allowed to be passed together to listXXXXXXX API.
-                                     * So, remove account parameter(account+domainid) from data2
-                                     */
-                                    if ("account" in data2) {
-                                        delete data2.account;
-                                    }
-                                    if ("domainid" in data2) {
-                                        delete data2.domainid;
-                                    }
-
-                                    $.ajax({
-                                            url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                                            data: data2,
-                                        async: false,
-                                            success: function (json) {
-                                                var items = json.listroutersresponse.router ?
-                                                json.listroutersresponse.router:[];
-
-                                                $(items).map(function (index, item) {
-                                                    routers.push(item);
-                                                });
-                                        }
-                                    });
-                                }
-
-                                                args.response.success({
-                                                    actionFilter: routerActionfilter,
-                                                    data: $(routers).map(mapRouterType)
-                                                });
+                                        /*
+                                         * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                         * because in project view, all API calls are appended with projectid=[projectID].
+                                         * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                         */
+                                        if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
+                                            /*
+                                             * account parameter(account+domainid) and project parameter(projectid) are not allowed to be passed together to listXXXXXXX API.
+                                             * So, remove account parameter(account+domainid) from data2
+                                             */
+                                            if ("account" in data2) {
+                                                delete data2.account;
                                             }
+                                            if ("domainid" in data2) {
+                                                delete data2.domainid;
+                                            }
+
+                                            $.ajax({
+                                                url: createURL("listRouters&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                data: data2,
+                                                async: false,
+                                                success: function (json) {
+                                                    var items = json.listroutersresponse.router ?
+                                                    json.listroutersresponse.router:[];
+
+                                                    var items = json.listroutersresponse.router ?
+                                                    json.listroutersresponse.router:[];
+
+                                                    $(items).map(function (index, item) {
+                                                        routers.push(item);
+                                                    });
+                                                }
+                                            });
+                                        }
+
+                                        args.response.success({
+                                            actionFilter: routerActionfilter,
+                                            data: $(routers).map(mapRouterType)
                                         });
+                                    }
+                                });
                             },
                             detailView: {
                                 name: 'label.virtual.appliance.details',
@@ -10293,6 +10540,56 @@
                                         }
                                     },
 
+                                    retrieveDiagnostics: {
+                                        label: 'label.action.get.diagnostics',
+                                        messages: {
+                                            notification: function (args) {
+                                                return 'label.action.get.diagnostics';
+                                            },
+                                            complete: function(args) {
+                                                var url = args.url;
+                                                var htmlMsg = _l('message.download.diagnostics');
+                                                var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
+                                                return htmlMsg2;
+                                            }
+                                        },
+                                        createForm: {
+                                            title: 'label.action.get.diagnostics',
+                                            desc: 'label.get.diagnostics.desc',
+                                            fields: {
+                                                files: {
+                                                    label: 'label.get.diagnostics.files'
+                                                }
+                                            }
+                                        },
+                                        action: function (args) {
+                                            $.ajax({
+                                                url: createURL("getDiagnosticsData&targetid=" + args.context.routers[0].id + "&files=" + args.data.files),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var jid = json.getdiagnosticsdataresponse.jobid;
+                                                    args.response.success({
+                                                        _custom: {
+                                                            jobId : jid,
+                                                            getUpdatedItem: function (json) {
+                                                                return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                            },
+                                                            getActionFilter: function(){
+                                                                return systemvmActionfilter;
+                                                           }
+                                                        }
+
+                                                    });
+                                                }
+                                            }); //end ajax
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                    },
+
                                     scaleUp: { //*** Infrastructure > Virtual Routers > change service offering ***
                                         label: 'label.change.service.offering',
                                         createForm: {
@@ -10390,6 +10687,56 @@
                                                 },
                                                 width: 820,
                                                 height: 640
+                                            }
+                                        }
+                                    },
+
+                                    healthChecks: {
+                                        label: 'label.action.router.health.checks',
+                                        createForm: {
+                                            title: 'label.action.router.health.checks',
+                                            desc: 'message.action.router.health.checks',
+                                            fields: {
+                                                performfreshchecks: {
+                                                    label: 'label.perform.fresh.checks',
+                                                    isBoolean: true
+                                                }
+                                            }
+                                        },
+                                        action: function (args) {
+                                            if (!g_routerHealthChecksEnabled) {
+                                                cloudStack.dialog.notice({
+                                                    message: 'Router health checks are disabled. Please enable router.health.checks.enabled to execute this action'
+                                                })
+                                                args.response.success()
+                                                return
+                                            }
+                                            var data = {
+                                                'routerid': args.context.routers[0].id,
+                                                'performfreshchecks': (args.data.performfreshchecks === 'on')
+                                            };
+                                            $.ajax({
+                                                url: createURL('getRouterHealthCheckResults'),
+                                                dataType: 'json',
+                                                data: data,
+                                                async: true,
+                                                success: function (json) {
+                                                    var healthChecks = json.getrouterhealthcheckresultsresponse.routerhealthchecks.healthchecks
+                                                    var numChecks = healthChecks.length
+                                                    var failedChecks = 0
+                                                    $.each(healthChecks, function(idx, check) {
+                                                        if (!check.success) failedChecks = failedChecks + 1
+                                                    })
+                                                    cloudStack.dialog.notice({
+                                                        message: 'Found ' + numChecks + ' checks for router, with ' + failedChecks + ' failing checks. Please visit router > Health Checks tab to see details'
+                                                    })
+                                                    args.response.success();
+                                                }
+                                            });
+                                        },
+                                        messages: {
+                                            notification: function(args) {
+                                                return 'label.action.router.health.checks'
                                             }
                                         }
                                     }
@@ -10580,6 +10927,78 @@
                                                     });
                                                 }
                                             });
+                                        }
+                                    },
+                                    healthCheckResults: {
+                                        title: 'label.router.health.checks',
+                                        listView: {
+                                            id: 'routerHealthCheckResults',
+                                            label: 'label.router.health.checks',
+                                            hideToolbar: true,
+                                            fields: {
+                                                checkname: {
+                                                    label: 'label.router.health.check.name'
+                                                },
+                                                checktype: {
+                                                    label: 'label.router.health.check.type'
+                                                },
+                                                success: {
+                                                    label: 'label.router.health.check.success',
+                                                    converter: function (args) {
+                                                        if (args) {
+                                                            return _l('True');
+                                                        } else {
+                                                            return _l('False');
+                                                        }
+                                                    },
+                                                    indicator: {
+                                                        true: 'on',
+                                                        false: 'off'
+                                                    }
+                                                },
+                                                lastupdated: {
+                                                    label: 'label.router.health.check.last.updated'
+                                                }
+                                            },
+                                            actions: {
+                                                details: {
+                                                    label: 'label.router.health.check.details',
+                                                    action: {
+                                                        custom: function (args) {
+                                                            cloudStack.dialog.notice({
+                                                                message: args.context.routerHealthCheckResults[0].details
+                                                            })
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            dataProvider: function(args) {
+                                                if (!g_routerHealthChecksEnabled) {
+                                                    cloudStack.dialog.notice({
+                                                        message: 'Router health checks are disabled. Please enable router.health.checks.enabled to get data'
+                                                    })
+                                                    args.response.success({})
+                                                    return
+                                                }
+                                                if (args.page > 1) {
+                                                    // Only one page is supported as it's not list command.
+                                                    args.response.success({});
+                                                    return
+                                                }
+
+                                                $.ajax({
+                                                    url: createURL('getRouterHealthCheckResults'),
+                                                    data: {
+                                                        'routerid': args.context.routers[0].id
+                                                    },
+                                                    success: function (json) {
+                                                        var hcData = json.getrouterhealthcheckresultsresponse.routerhealthchecks.healthchecks
+                                                        args.response.success({
+                                                            data: hcData
+                                                        });
+                                                    }
+                                                });
+                                            }
                                         }
                                     }
                                 }
@@ -11622,6 +12041,56 @@
                                         async: true,
                                         success: function(json) {
                                             var jid = json.rundiagnosticsresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId : jid,
+                                                    getUpdatedItem: function (json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                    },
+                                                    getActionFilter: function(){
+                                                        return systemvmActionfilter;
+                                                   }
+                                                }
+
+                                            });
+                                        }
+                                    }); //end ajax
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            retrieveDiagnostics: {
+                                label: 'label.action.get.diagnostics',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.action.get.diagnostics';
+                                    },
+                                    complete: function(args) {
+                                        var url = args.url;
+                                        var htmlMsg = _l('message.download.diagnostics');
+                                        var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
+                                        return htmlMsg2;
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.action.get.diagnostics',
+                                    desc: 'label.get.diagnostics.desc',
+                                    fields: {
+                                        files: {
+                                            label: 'label.get.diagnostics.files'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("getDiagnosticsData&targetid=" + args.context.systemVMs[0].id + "&files=" + args.data.files),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.getdiagnosticsdataresponse.jobid;
                                             args.response.success({
                                                 _custom: {
                                                     jobId : jid,
@@ -13471,6 +13940,7 @@
                 listView: {
                     id: 'pods',
                     section: 'pods',
+                    multiSelect: true,
                     fields: {
                         name: {
                             label: 'label.name'
@@ -13732,7 +14202,8 @@
                                     return 'label.add.pod';
                                 }
                             }
-                        }
+                        },
+                        startRollingMaintenance: rollingMaintenanceAction({ listView: true, entity: 'pods' })
                     },
 
                     detailView: {
@@ -13754,6 +14225,57 @@
                             return hiddenTabs;
                         },
                         actions: {
+                            startRollingMaintenance: {
+                                label: 'label.start.rolling.maintenance',
+                                textLabel: 'label.start.rolling.maintenance',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.start.rolling.maintenance';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.start.rolling.maintenance',
+                                    fields: {
+                                        timeout: {
+                                            label: 'label.timeout',
+                                        },
+                                        force: {
+                                            isBoolean: true,
+                                            label: 'label.start.rolling.maintenance.force'
+                                        },
+                                        payload: {
+                                            label: 'label.start.rolling.maintenance.payload'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    var data = {
+                                        podids: args.context.pods[0].id,
+                                        force: args.data.force,
+                                        timeout: args.data.timeout,
+                                        payload: args.data.payload
+                                    };
+                                    $.ajax({
+                                        url: createURL("startRollingMaintenance"),
+                                        dataType: "json",
+                                        data: data,
+                                        async: true,
+                                        success: function (json) {
+                                            var item = json.rollingmaintenance;
+                                            args.response.success({
+                                                actionFilter: zoneActionfilter,
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: function (args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
+
                             edit: {
                                 label: 'label.edit',
                                 action: function (args) {
@@ -14125,6 +14647,7 @@
                 listView: {
                     id: 'clusters',
                     section: 'clusters',
+                    multiSelect: true,
                     fields: {
                         name: {
                             label: 'label.name'
@@ -14863,7 +15386,8 @@
                                     return 'label.metrics';
                                 }
                             }
-                        }
+                        },
+                        startRollingMaintenance: rollingMaintenanceAction({ listView: true, entity: 'clusters' })
                     },
 
                     detailView: {
@@ -14894,6 +15418,56 @@
 
                         actions: {
 
+                            startRollingMaintenance: {
+                                label: 'label.start.rolling.maintenance',
+                                textLabel: 'label.start.rolling.maintenance',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.start.rolling.maintenance';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.start.rolling.maintenance',
+                                    fields: {
+                                        timeout: {
+                                            label: 'label.timeout',
+                                        },
+                                        force: {
+                                            isBoolean: true,
+                                            label: 'label.start.rolling.maintenance.force'
+                                        },
+                                        payload: {
+                                            label: 'label.start.rolling.maintenance.payload'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    var data = {
+                                        clusterids: args.context.clusters[0].id,
+                                        force: args.data.force,
+                                        timeout: args.data.timeout,
+                                        payload: args.data.payload
+                                    };
+                                    $.ajax({
+                                        url: createURL("startRollingMaintenance"),
+                                        dataType: "json",
+                                        data: data,
+                                        async: true,
+                                        success: function (json) {
+                                            var item = json.rollingmaintenance;
+                                            args.response.success({
+                                                actionFilter: zoneActionfilter,
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: function (args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
                             edit: {
                                 label: 'label.edit',
                                 action: function (args) {
@@ -15681,6 +16255,7 @@
                 listView: {
                     section: 'hosts',
                     id: 'hosts',
+                    multiSelect: true,
                     fields: {
                         name: {
                             label: 'label.name'
@@ -16376,7 +16951,8 @@
                                     return 'label.metrics';
                                 }
                             }
-                        }
+                        },
+                        startRollingMaintenance: rollingMaintenanceAction({ listView: true, entity: 'hosts' })
                     },
                     detailView: {
                         name: "Host details",
@@ -16385,6 +16961,56 @@
                             path: 'instances'
                         },
                         actions: {
+                            startRollingMaintenance: {
+                                label: 'label.start.rolling.maintenance',
+                                textLabel: 'label.start.rolling.maintenance',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.start.rolling.maintenance';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.start.rolling.maintenance',
+                                    fields: {
+                                        timeout: {
+                                            label: 'label.timeout',
+                                        },
+                                        force: {
+                                            isBoolean: true,
+                                            label: 'label.start.rolling.maintenance.force'
+                                        },
+                                        payload: {
+                                            label: 'label.start.rolling.maintenance.payload'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    var data = {
+                                        hostids: args.context.hosts[0].id,
+                                        force: args.data.force,
+                                        timeout: args.data.timeout,
+                                        payload: args.data.payload
+                                    };
+                                    $.ajax({
+                                        url: createURL("startRollingMaintenance"),
+                                        dataType: "json",
+                                        data: data,
+                                        async: true,
+                                        success: function (json) {
+                                            var item = json.rollingmaintenance;
+                                            args.response.success({
+                                                actionFilter: zoneActionfilter,
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: function (args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
                             edit: {
                                 label: 'label.edit',
                                 action: function (args) {
@@ -17397,6 +18023,10 @@
                                                 }
                                             });
                                         }
+                                    },
+                                    ueficapability: {
+                                        label:'label.host.ueficapability',
+                                        converter: cloudStack.converters.toBooleanText
                                     },
                                     hahost: {
                                         label: 'label.ha.enabled',
@@ -21852,6 +22482,7 @@
             allowedActions.push("disableHA");
         }
 
+        allowedActions.push("startRollingMaintenance");
         return allowedActions;
     }
 
@@ -21903,6 +22534,7 @@
             //$("#tab_ipallocation, #add_iprange_button, #tab_network_device, #add_network_device_button").hide();
         }
 
+        allowedActions.push("startRollingMaintenance");
         return allowedActions;
     }
 
@@ -21949,6 +22581,7 @@
             allowedActions.push("disableHA");
         }
 
+        allowedActions.push("startRollingMaintenance");
         return allowedActions;
     }
 
@@ -21971,12 +22604,16 @@
 
             if (jsonObj.hypervisor == "KVM") {
                 allowedActions.push("secureKVMHost");
+                allowedActions.push("startRollingMaintenance");
             }
 
         } else if (jsonObj.resourcestate == "ErrorInMaintenance") {
             allowedActions.push("edit");
             allowedActions.push("enableMaintenanceMode");
             allowedActions.push("cancelMaintenanceMode");
+            if (jsonObj.hypervisor == "KVM") {
+                allowedActions.push("startRollingMaintenance");
+            }
         } else if (jsonObj.resourcestate == "PrepareForMaintenance" || jsonObj.resourcestate == 'ErrorInPrepareForMaintenance') {
             allowedActions.push("edit");
             allowedActions.push("cancelMaintenanceMode");
@@ -22072,6 +22709,8 @@
             if (isAdmin()) {
                 allowedActions.push("migrate");
                 allowedActions.push("diagnostics");
+                allowedActions.push("retrieveDiagnostics");
+                allowedActions.push("healthChecks");
             }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
@@ -22123,6 +22762,7 @@
             if (isAdmin()) {
                 allowedActions.push("migrate");
                 allowedActions.push("diagnostics");
+                allowedActions.push("retrieveDiagnostics");
             }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");

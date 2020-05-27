@@ -16,15 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -38,6 +29,14 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * @deprecated use the more dynamic ConfigKey
@@ -558,15 +557,6 @@ public enum Config {
             "The interval (in milliseconds) when host stats are retrieved from agents.",
             null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
-    InvestigateRetryInterval(
-            "Advanced",
-            HighAvailabilityManager.class,
-            Integer.class,
-            "investigate.retry.interval",
-            "60",
-            "Time (in seconds) between VM pings when agent is disconnected",
-            null),
-    MigrateRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "migrate.retry.interval", "120", "Time (in seconds) between migration retries", null),
     RouterCpuMHz(
             "Advanced",
             NetworkOrchestrationService.class,
@@ -574,14 +564,6 @@ public enum Config {
             "router.cpu.mhz",
             String.valueOf(VpcVirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ),
             "Default CPU speed (MHz) for router VM.",
-            null),
-    RestartRetryInterval(
-            "Advanced",
-            HighAvailabilityManager.class,
-            Integer.class,
-            "restart.retry.interval",
-            "600",
-            "Time (in seconds) between retries to restart a vm",
             null),
     RouterStatsInterval(
             "Advanced",
@@ -624,18 +606,9 @@ public enum Config {
             "specify extra public nics used for virtual router(up to 5)",
             "0-5"),
     ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
-    StopRetryInterval(
-            "Advanced",
-            HighAvailabilityManager.class,
-            Integer.class,
-            "stop.retry.interval",
-            "600",
-            "Time in seconds between retries to stop or destroy a vm",
-            null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
     XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "60", "Time (in seconds) to wait for XAPI to return", null),
     MigrateWait("Advanced", AgentManager.class, Integer.class, "migratewait", "3600", "Time (in seconds) to wait for VM migrate finish", null),
-    HAWorkers("Advanced", AgentManager.class, Integer.class, "ha.workers", "5", "Number of ha worker threads.", null),
     MountParent(
             "Advanced",
             ManagementServer.class,

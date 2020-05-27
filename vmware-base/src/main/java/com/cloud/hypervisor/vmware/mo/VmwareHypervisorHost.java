@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import java.util.List;
+
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.ManagedObjectReference;
@@ -50,6 +52,8 @@ public interface VmwareHypervisorHost {
     boolean isHyperHostConnected() throws Exception;
 
     String getHyperHostDefaultGateway() throws Exception;
+
+    List<VirtualMachineMO> listVmsOnHyperHost(String name) throws Exception;
 
     VirtualMachineMO findVmOnHyperHost(String name) throws Exception;
 

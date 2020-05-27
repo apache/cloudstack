@@ -148,4 +148,8 @@ public interface VolumeApiService {
      *   </table>
      */
     boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, String diskOfferingTags);
+
+    Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
+
+    Volume recoverVolume(long volumeId);
 }

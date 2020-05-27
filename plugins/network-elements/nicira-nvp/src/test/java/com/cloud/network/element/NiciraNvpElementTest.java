@@ -259,11 +259,8 @@ public class NiciraNvpElementTest {
 
         verify(agentManager, atLeast(1)).easySend(eq(NETWORK_ID), argThat(new ArgumentMatcher<ConfigurePublicIpsOnLogicalRouterCommand>() {
             @Override
-            public boolean matches(final Object argument) {
-                final ConfigurePublicIpsOnLogicalRouterCommand command = (ConfigurePublicIpsOnLogicalRouterCommand)argument;
-                if (command.getPublicCidrs().size() == 1)
-                    return true;
-                return false;
+            public boolean matches(final ConfigurePublicIpsOnLogicalRouterCommand command) {
+                return command.getPublicCidrs().size() == 1;
             }
         }));
     }

@@ -59,6 +59,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     protected final SearchBuilder<VMTemplateStoragePoolVO> TemplateStatesSearch;
     protected final SearchBuilder<VMTemplateStoragePoolVO> TemplatePoolStateSearch;
     protected final SearchBuilder<VMTemplateStoragePoolVO> updateStateSearch;
+    protected final SearchBuilder<VMTemplateStoragePoolVO> templatePathSearch;
 
     protected static final String UPDATE_TEMPLATE_HOST_REF = "UPDATE template_spool_ref SET download_state = ?, download_pct= ?, last_updated = ? "
         + ", error_str = ?, local_path = ?, job_id = ? " + "WHERE pool_id = ? and template_id = ?";
@@ -114,6 +115,12 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
         updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
         updateStateSearch.done();
+
+        templatePathSearch = createSearchBuilder();
+        templatePathSearch.and("pool_id", templatePathSearch.entity().getPoolId(), Op.EQ);
+        templatePathSearch.and("local_path", templatePathSearch.entity().getLocalDownloadPath(), Op.EQ);
+        templatePathSearch.and("install_path", templatePathSearch.entity().getInstallPath(), Op.EQ);
+        templatePathSearch.done();
     }
 
     @Override
@@ -258,6 +265,23 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     public VMTemplateStoragePoolVO findByHostTemplate(Long hostId, Long templateId) {
         List<VMTemplateStoragePoolVO> result = listByHostTemplate(hostId, templateId);
         return (result.size() == 0) ? null : result.get(1);
+    }
+
+    @Override
+    public VMTemplateStoragePoolVO findByPoolPath(Long poolId, String path) {
+        SearchCriteria<VMTemplateStoragePoolVO> sc = templatePathSearch.create();
+        sc.setParameters("local_path", path);
+        sc.setParameters("install_path", path);
+        sc.setParameters("pool_id", poolId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateStoragePoolVO> listByTemplatePath(String templatePath) {
+        SearchCriteria<VMTemplateStoragePoolVO> sc = templatePathSearch.create();
+        sc.setParameters("local_path", templatePath);
+        sc.setParameters("install_path", templatePath);
+        return listBy(sc);
     }
 
     @Override

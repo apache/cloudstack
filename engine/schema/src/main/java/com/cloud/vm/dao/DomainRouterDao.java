@@ -96,6 +96,13 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      */
     public List<DomainRouterVO> listRunningByDomain(Long id);
 
+    /**
+     * gets the total count by role
+     * @Param role Router role
+     * @return count of resources
+     */
+    Integer countAllByRole(Role role);
+
     List<DomainRouterVO> findBy(long accountId, long dcId, Role role);
 
     List<DomainRouterVO> findByNetwork(long networkId);

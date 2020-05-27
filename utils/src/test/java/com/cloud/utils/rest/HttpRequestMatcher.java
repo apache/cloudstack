@@ -34,7 +34,7 @@ import org.hamcrest.Description;
 import org.hamcrest.SelfDescribing;
 import org.mockito.ArgumentMatcher;
 
-public class HttpRequestMatcher extends ArgumentMatcher<HttpRequest> {
+public class HttpRequestMatcher implements ArgumentMatcher<HttpRequest> {
     private final HttpRequest wanted;
 
     public HttpRequestMatcher(final HttpRequest wanted) {
@@ -46,7 +46,7 @@ public class HttpRequestMatcher extends ArgumentMatcher<HttpRequest> {
     }
 
     @Override
-    public boolean matches(final Object actual) {
+    public boolean matches(HttpRequest actual) {
         if (actual instanceof HttpUriRequest) {
             final HttpUriRequest converted = (HttpUriRequest) actual;
             return checkMethod(converted) && checkUri(converted) && checkPayload(converted);
@@ -99,11 +99,6 @@ public class HttpRequestMatcher extends ArgumentMatcher<HttpRequest> {
         return a == b || a != null && a.equals(b);
     }
 
-    @Override
-    public void describeTo(final Description description) {
-        description.appendText(describe(wanted));
-    }
-
     public String describe(final HttpRequest object) {
         final StringBuilder sb = new StringBuilder();
         if (object instanceof HttpUriRequest) {
@@ -137,5 +132,4 @@ public class HttpRequestMatcher extends ArgumentMatcher<HttpRequest> {
     public boolean typeMatches(final Object object) {
         return wanted != null && object != null && object.getClass() == wanted.getClass();
     }
-
 }

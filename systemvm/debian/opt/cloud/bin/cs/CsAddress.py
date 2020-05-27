@@ -412,9 +412,9 @@ class CsIP:
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
-                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -m state --state NEW -j ACCEPT" % self.dev])
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
-                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -m state --state NEW -j ACCEPT" % self.dev])
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
                 ["filter", "", "-A FORWARD -i %s -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
             self.fw.append(
@@ -464,9 +464,9 @@ class CsIP:
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
 
             self.fw.append(
-                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -m state --state NEW -j ACCEPT" % self.dev])
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
-                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -m state --state NEW -j ACCEPT" % self.dev])
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
                             (self.dev, guestNetworkCidr, self.address['gateway'], self.dev)])
@@ -566,9 +566,12 @@ class CsIP:
                 logging.error(
                     "Not able to setup source-nat for a regular router yet")
 
-            if self.config.has_dns() or self.config.is_dhcp():
+            if (self.config.has_dns() or self.config.is_dhcp()) and self.config.expose_dns():
+                logging.info("Making dns publicly available")
                 dns = CsDnsmasq(self)
                 dns.add_firewall_rules()
+            else:
+                logging.info("Not making dns publicly available")
 
             if self.config.has_metadata():
                 app = CsApache(self)
@@ -581,6 +584,11 @@ class CsIP:
                         CsPasswdSvc(self.address['public_ip']).start()
                     elif method == "delete":
                         CsPasswdSvc(self.address['public_ip']).stop()
+                elif cmdline.is_master():
+                    if method == "add":
+                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).start()
+                    elif method == "delete":
+                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).stop()
 
         if self.get_type() == "public" and self.config.is_vpc() and method == "add":
             if self.address["source_nat"]:
@@ -660,6 +668,10 @@ class CsIP:
                         found = True
             if not found:
                 self.delete(ip)
+
+    def get_gateway(self):
+        interface = CsInterface(self.address, self.config)
+        return interface.get_gateway()
 
     def is_guest_gateway(self, bag, ip):
         """ Exclude the vrrp maintained addresses on a redundant router """

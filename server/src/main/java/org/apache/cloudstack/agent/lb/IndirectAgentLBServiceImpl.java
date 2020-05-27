@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,13 +34,10 @@ import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBStaticAlgorithm;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -67,8 +65,6 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     @Inject
     private HostDao hostDao;
     @Inject
-    private MessageBus messageBus;
-    @Inject
     private AgentManager agentManager;
 
     //////////////////////////////////////////////////////
@@ -86,6 +82,14 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         List<Long> hostIdList = orderedHostIdList;
         if (hostIdList == null) {
             hostIdList = getOrderedHostIdList(dcId);
+        }
+
+        // just in case we have a host in creating state make sure it is in the list:
+        if (null != hostId && ! hostIdList.contains(hostId)) {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("adding requested host to host list as it does not seem to be there; " + hostId);
+            }
+            hostIdList.add(hostId);
         }
 
         final org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm algorithm = getAgentMSLBAlgorithm();
@@ -136,17 +140,54 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         }
         final List <Host> agentBasedHosts = new ArrayList<>();
         for (final Host host : allHosts) {
-            if (host == null || host.getResourceState() == ResourceState.Creating || host.getResourceState() == ResourceState.Error) {
-                continue;
-            }
-            if (host.getType() == Host.Type.Routing || host.getType() == Host.Type.ConsoleProxy || host.getType() == Host.Type.SecondaryStorage || host.getType() == Host.Type.SecondaryStorageVM) {
-                if (host.getHypervisorType() != null && host.getHypervisorType() != Hypervisor.HypervisorType.KVM && host.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
-                    continue;
-                }
-                agentBasedHosts.add(host);
-            }
+            conditionallyAddHost(agentBasedHosts, host);
         }
         return agentBasedHosts;
+    }
+
+    private void conditionallyAddHost(List<Host> agentBasedHosts, Host host) {
+        if (host == null) {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("trying to add no host to a list");
+            }
+            return;
+        }
+
+        EnumSet<ResourceState> allowedStates = EnumSet.of(
+                ResourceState.Enabled,
+                ResourceState.Maintenance,
+                ResourceState.Disabled,
+                ResourceState.ErrorInMaintenance,
+                ResourceState.PrepareForMaintenance);
+        // so the remaining EnumSet<ResourceState> disallowedStates = EnumSet.complementOf(allowedStates)
+        // would be {ResourceState.Creating, ResourceState.Error};
+        if (!allowedStates.contains(host.getResourceState())) {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace(String.format("host is in '%s' state, not adding to the host list, (id = %s)", host.getResourceState(), host.getUuid()));
+            }
+            return;
+        }
+
+        if (host.getType() != Host.Type.Routing
+                && host.getType() != Host.Type.ConsoleProxy
+                && host.getType() != Host.Type.SecondaryStorage
+                && host.getType() != Host.Type.SecondaryStorageVM) {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace(String.format("host is of wrong type, not adding to the host list, (id = %s, type = %s)", host.getUuid(), host.getType()));
+            }
+            return;
+        }
+
+        if (host.getHypervisorType() != null
+                && ! (host.getHypervisorType() == Hypervisor.HypervisorType.KVM || host.getHypervisorType() == Hypervisor.HypervisorType.LXC)) {
+
+            if (LOG.isTraceEnabled()) {
+                LOG.trace(String.format("hypervisor is not the right type, not adding to the host list, (id = %s, hypervisortype = %s)", host.getUuid(), host.getHypervisorType()));
+            }
+            return;
+        }
+
+        agentBasedHosts.add(host);
     }
 
     private org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm getAgentMSLBAlgorithm() {
@@ -162,7 +203,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     /////////////// Agent MSLB Configuration ///////////////////
     ////////////////////////////////////////////////////////////
 
-    private void propagateMSListToAgents() {
+    @Override
+    public void propagateMSListToAgents() {
         LOG.debug("Propagating management server list update to agents");
         final String lbAlgorithm = getLBAlgorithmName();
         final Map<Long, List<Long>> dcOrderedHostsMap = new HashMap<>();
@@ -181,22 +223,6 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         }
     }
 
-    private void configureMessageBusListener() {
-        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
-            @Override
-            public void onPublishMessage(final String senderAddress, String subject, Object args) {
-                final String globalSettingUpdated = (String) args;
-                if (Strings.isNullOrEmpty(globalSettingUpdated)) {
-                    return;
-                }
-                if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
-                        globalSettingUpdated.equals(IndirectAgentLBAlgorithm.key())) {
-                    propagateMSListToAgents();
-                }
-            }
-        });
-    }
-
     private void configureAlgorithmMap() {
         final List<org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm> algorithms = new ArrayList<>();
         algorithms.add(new IndirectAgentLBStaticAlgorithm());
@@ -212,7 +238,6 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         configureAlgorithmMap();
-        configureMessageBusListener();
         return true;
     }
 

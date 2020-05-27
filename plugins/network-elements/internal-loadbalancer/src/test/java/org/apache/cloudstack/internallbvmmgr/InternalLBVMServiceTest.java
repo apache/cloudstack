@@ -16,13 +16,13 @@
 // under the License.
 package org.apache.cloudstack.internallbvmmgr;
 
+import static org.mockito.ArgumentMatchers.nullable;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
-
-import junit.framework.TestCase;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
@@ -56,6 +56,8 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
+
+import junit.framework.TestCase;
 
 /**
  * Set of unittests for InternalLoadBalancerVMService
@@ -96,9 +98,9 @@ public class InternalLBVMServiceTest extends TestCase {
         List<ServiceOfferingVO> list = new ArrayList<ServiceOfferingVO>();
         list.add(off);
         list.add(off);
-        Mockito.when(_svcOffDao.createSystemServiceOfferings(Matchers.anyString(), Matchers.anyString(), Matchers.anyInt(), Matchers.anyInt(), Matchers.anyInt(),
-                Matchers.anyInt(), Matchers.anyInt(), Matchers.anyBoolean(), Matchers.anyString(), Matchers.any(ProvisioningType.class), Matchers.anyBoolean(),
-                Matchers.anyString(), Matchers.anyBoolean(), Matchers.any(VirtualMachine.Type.class), Matchers.anyBoolean())).thenReturn(list);
+        Mockito.when(_svcOffDao.createSystemServiceOfferings(nullable(String.class), nullable(String.class), nullable(Integer.class), nullable(Integer.class), nullable(Integer.class),
+                nullable(Integer.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(ProvisioningType.class), nullable(Boolean.class),
+                nullable(String.class), nullable(Boolean.class), nullable(VirtualMachine.Type.class), nullable(Boolean.class))).thenReturn(list);
 
         ComponentContext.initComponentsLifeCycle();
 

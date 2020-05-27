@@ -97,6 +97,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.ISOLATED_PVLAN, type = CommandType.STRING, description = "the isolated private VLAN for this network")
     private String isolatedPvlan;
 
+    @Parameter(name = ApiConstants.ISOLATED_PVLAN_TYPE, type = CommandType.STRING,
+            description = "the isolated private VLAN type for this network")
+    private String isolatedPvlanType;
+
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "network domain")
     private String networkDomain;
 
@@ -215,6 +219,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getExternalId() {
         return externalId;
+    }
+
+    public String getIsolatedPvlanType() {
+        return isolatedPvlanType;
     }
 
     @Override

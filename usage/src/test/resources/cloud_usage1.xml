@@ -9,18 +9,18 @@
   governing permissions and limitations under the License. -->
 <!-- cloud_usage -->
 <dataset>
-<cloud_usage usage_type="1" raw_usage="11" usage_id="8" id="8" start_date="1" zone_id="1"/>
-<cloud_usage usage_type="1" raw_usage="13" usage_id="6" id="6" start_date="1" zone_id="1"/>
+<cloud_usage usage_type="1" account_id="1" domain_id="1" description="test" usage_display=" " raw_usage="11" usage_id="8" id="8" start_date="2019-01-01 00:00:01" end_date="2019-01-01 00:00:01" zone_id="1"/>
+<cloud_usage usage_type="1" account_id="1" domain_id="1" description="test" usage_display=" "  raw_usage="13" usage_id="6" id="6" start_date="2019-01-01 00:00:01" end_date="2019-01-01 00:00:01" zone_id="1"/>
 
-<cloud_usage usage_type="6" usage_id="16" id="7" start_date="1" zone_id="1"/>
-<cloud_usage usage_type="8" usage_id="14" id="7" start_date="1" zone_id="1" />
+<cloud_usage usage_type="6" account_id="1" domain_id="1" description="test" usage_display=" "  raw_usage="2" usage_id="16" id="7" start_date="2019-01-01 00:00:01" end_date="2019-01-01 00:00:01" zone_id="1"/>
+<cloud_usage usage_type="8" account_id="1" domain_id="1" description="test" usage_display=" "  raw_usage="4" usage_id="14" id="9" start_date="2019-01-01 00:00:01" end_date="2019-01-01 00:00:01" zone_id="1" />
 
-<cloud_usage usage_type="9" usage_id="18" id="7" start_date="1" zone_id="1" />
+<cloud_usage usage_type="9" account_id="1" domain_id="1" description="test" usage_display=" "  raw_usage="5" usage_id="18" id="10" start_date="2019-01-01 00:00:01" end_date="2019-01-01 00:00:01" zone_id="1" />
 
-<usage_volume id="2" />
-<usage_volume id="4" />
+<usage_volume id="2" zone_id="1" account_id="1" domain_id="1" created="2019-01-01 00:00:01"/>
+<usage_volume id="4" zone_id="1" account_id="1" domain_id="1" created="2019-01-01 00:00:01"/>
 
-<usage_vm_instance usage_type="1" vm_instance_id="1" />
-<usage_vm_instance usage_type="2" vm_instance_id="2" />
-<usage_vm_instance usage_type="2" vm_instance_id="2" />
+<usage_vm_instance usage_type="1" vm_instance_id="1" zone_id="1" account_id="1" vm_name="test" service_offering_id="1" template_id="1" start_date="2019-01-01 00:00:01"/>
+<usage_vm_instance usage_type="2" vm_instance_id="2" zone_id="1" account_id="1" vm_name="test" service_offering_id="1" template_id="1" start_date="2019-01-01 00:00:01"/>
+<usage_vm_instance usage_type="2" vm_instance_id="2" zone_id="1" account_id="1" vm_name="test" service_offering_id="1" template_id="1" start_date="2019-01-01 00:00:02"/>
 </dataset>

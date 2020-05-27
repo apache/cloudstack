@@ -154,6 +154,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected IpAddressManager _ipAddrMgr;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    VpcVirtualNetworkApplianceManager _vpcRouterMgr;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -258,7 +260,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     @Override
     public boolean checkRouterVersion(final VirtualRouter router) {
-        if (!VirtualNetworkApplianceManagerImpl.routerVersionCheckEnabled.value()) {
+        if (!VirtualNetworkApplianceManager.RouterVersionCheckEnabled.value()) {
             // Router version check is disabled.
             return true;
         }
@@ -288,7 +290,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         // only after router start successfully
         final Long vpcId = router.getVpcId();
         if (vpcId != null) {
-            _s2sVpnMgr.reconnectDisconnectedVpnByVpc(vpcId);
+            _vpcRouterMgr.startSite2SiteVpn(_routerDao.findById(router.getId()));
         }
         return _routerDao.findById(router.getId());
     }
@@ -747,7 +749,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
             if (routerDeploymentDefinition.isPublicNetwork()) {
                 if (routerDeploymentDefinition.isRedundant()) {
-                    gatewayNic.setIPv4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
+                    gatewayNic.setIPv4Address(this.acquireGuestIpAddressForVrouterRedundant(guestNetwork));
                 } else {
                     gatewayNic.setIPv4Address(guestNetwork.getGateway());
                 }
@@ -882,5 +884,9 @@ public class NetworkHelperImpl implements NetworkHelper {
             return false;
         }
         return true;
+    }
+
+    public String acquireGuestIpAddressForVrouterRedundant(Network network) {
+        return _ipAddrMgr.acquireGuestIpAddressByPlacement(network, null);
     }
 }

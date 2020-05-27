@@ -16,17 +16,42 @@
 // under the License.
 package com.cloud.network.router;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
 import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.dao.Site2SiteVpnConnectionVO;
-import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -36,39 +61,27 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.OpRouterMonitorServiceDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
-import com.cloud.network.vpn.Site2SiteVpnManager;
-import com.cloud.storage.Storage;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.VlanDao;
-import com.cloud.host.dao.HostDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.Storage;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -76,16 +89,6 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.junit.Assert.assertEquals;
 
 
 
@@ -289,12 +292,12 @@ public class VirtualNetworkApplianceManagerImplTest {
         when(_s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId())).thenReturn(gw);
         when(_hostDao.findById(router.getHostId())).thenReturn(hostVo);
         when(_routerControlHelper.getRouterControlIp(router.getId())).thenReturn("192.168.50.15");
-        doReturn(_s2sVpnAnswer).when(_agentMgr).easySend(anyLong(), any(CheckS2SVpnConnectionsCommand.class));
+        doReturn(_s2sVpnAnswer).when(_agentMgr).easySend(nullable(Long.class), nullable(CheckS2SVpnConnectionsCommand.class));
         when(_s2sVpnAnswer.getResult()).thenReturn(true);
         when(_s2sVpnConnectionDao.acquireInLockTable(conn.getId())).thenReturn(conn);
         when(_s2sVpnAnswer.isIPPresent("192.168.50.15")).thenReturn(true);
         when(_s2sVpnAnswer.isConnected("192.168.50.15")).thenReturn(true);
-        doNothing().when(_alertMgr).sendAlert(any(AlertManager.AlertType.class), anyLong(), anyLong(), anyString(), anyString());
+        lenient().doNothing().when(_alertMgr).sendAlert(any(AlertManager.AlertType.class), anyLong(), anyLong(), anyString(), anyString());
 
         virtualNetworkApplianceManagerImpl.updateSite2SiteVpnConnectionState(routers);
 

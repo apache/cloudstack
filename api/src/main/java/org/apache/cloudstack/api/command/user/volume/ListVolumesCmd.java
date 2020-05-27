@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -88,6 +89,9 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
             RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
+    private String state;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -138,6 +142,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
             return display;
         }
         return super.getDisplay();
+    }
+
+    public String getState() {
+        return state;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

@@ -213,11 +213,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return false;
     }
 
+    @Override
+    public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#restartNetwork(com.cloud.api.commands.RestartNetworkCmd, boolean)
      */
     @Override
-    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup, boolean makeRedundant) throws ConcurrentOperationException, ResourceUnavailableException,
+    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
@@ -501,7 +506,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      */
     @Override
     public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan, String startIp, String endIP, String gateway,
-        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId) throws ResourceAllocationException, ConcurrentOperationException,
+        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck) throws ResourceAllocationException, ConcurrentOperationException,
         InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
@@ -630,13 +635,18 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return false;
     }
 
+    public Network createPrivateNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, final String vlanId, final boolean bypassVlanOverlapCheck, final Account owner, final PhysicalNetwork pNtwk, final Long vpcId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#createGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
      */
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain,
                                       Account owner, Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String gatewayv6,
-                                      String cidrv6, Boolean displayNetworkEnabled, String isolatedPvlan, String externalId) throws ConcurrentOperationException, InsufficientCapacityException,
+                                      String cidrv6, Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId) throws ConcurrentOperationException, InsufficientCapacityException,
         ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
@@ -971,6 +981,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     @Override
     public AcquirePodIpCmdResponse allocatePodIp(Account account, String zoneId, String podId) throws ResourceAllocationException, ConcurrentOperationException {
+        return null;
+    }
+
+    @Override
+    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses) {
         return null;
     }
 }

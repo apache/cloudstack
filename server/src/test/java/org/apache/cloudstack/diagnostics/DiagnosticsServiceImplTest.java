@@ -18,15 +18,9 @@
 //
 package org.apache.cloudstack.diagnostics;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.VMInstanceDao;
-import junit.framework.TestCase;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -39,8 +33,16 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
+
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DiagnosticsServiceImplTest extends TestCase {
@@ -50,40 +52,39 @@ public class DiagnosticsServiceImplTest extends TestCase {
     @Mock
     private VMInstanceDao instanceDao;
     @Mock
-    private RunDiagnosticsCmd diagnosticsCmd;
+    private RunDiagnosticsCmd runDiagnosticsCmd;
     @Mock
     private DiagnosticsCommand command;
     @Mock
-    private VMInstanceVO instanceVO;
+    private VMInstanceVO vmInstanceVO;
     @Mock
     private VirtualMachineManager vmManager;
     @Mock
     private NetworkOrchestrationService networkManager;
 
     @InjectMocks
-    private DiagnosticsServiceImpl diagnosticsService = new DiagnosticsServiceImpl();
+    private DiagnosticsServiceImpl serviceImpl = new DiagnosticsServiceImpl();
 
     @Before
     public void setUp() throws Exception {
-        Mockito.when(diagnosticsCmd.getId()).thenReturn(1L);
-        Mockito.when(diagnosticsCmd.getType()).thenReturn(DiagnosticsType.PING);
+        Mockito.when(runDiagnosticsCmd.getId()).thenReturn(1L);
+        Mockito.when(runDiagnosticsCmd.getType()).thenReturn(DiagnosticsType.PING);
         Mockito.when(instanceDao.findByIdTypes(Mockito.anyLong(), Mockito.any(VirtualMachine.Type.class),
-                Mockito.any(VirtualMachine.Type.class), Mockito.any(VirtualMachine.Type.class))).thenReturn(instanceVO);
-
+                Mockito.any(VirtualMachine.Type.class), Mockito.any(VirtualMachine.Type.class))).thenReturn(vmInstanceVO);
     }
 
     @After
     public void tearDown() throws Exception {
-        Mockito.reset(diagnosticsCmd);
+        Mockito.reset(runDiagnosticsCmd);
         Mockito.reset(agentManager);
         Mockito.reset(instanceDao);
-        Mockito.reset(instanceVO);
+        Mockito.reset(vmInstanceVO);
         Mockito.reset(command);
     }
 
     @Test
     public void testRunDiagnosticsCommandTrue() throws Exception {
-        Mockito.when(diagnosticsCmd.getAddress()).thenReturn("8.8.8.8");
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn("8.8.8.8");
         Map<String, String> accessDetailsMap = new HashMap<>();
         accessDetailsMap.put(NetworkElementCommand.ROUTER_IP, "169.20.175.10");
         Mockito.when(networkManager.getSystemVMAccessDetails(Mockito.any(VMInstanceVO.class))).thenReturn(accessDetailsMap);
@@ -102,7 +103,7 @@ public class DiagnosticsServiceImplTest extends TestCase {
 
         Mockito.when(agentManager.easySend(Mockito.anyLong(), Mockito.any(DiagnosticsCommand.class))).thenReturn(new DiagnosticsAnswer(command, true, details));
 
-        Map<String, String> detailsMap = diagnosticsService.runDiagnosticsCommand(diagnosticsCmd);
+        Map<String, String> detailsMap = serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
 
         String stdout = "PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.\n" +
                 "64 bytes from 8.8.8.8: icmp_seq=1 ttl=125 time=7.88 ms\n" +
@@ -123,7 +124,7 @@ public class DiagnosticsServiceImplTest extends TestCase {
 
     @Test
     public void testRunDiagnosticsCommandFalse() throws Exception {
-        Mockito.when(diagnosticsCmd.getAddress()).thenReturn("192.0.2.2");
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn("192.0.2.2");
 
         Map<String, String> accessDetailsMap = new HashMap<>();
         accessDetailsMap.put(NetworkElementCommand.ROUTER_IP, "169.20.175.10");
@@ -141,7 +142,7 @@ public class DiagnosticsServiceImplTest extends TestCase {
                 "4 packets transmitted, 0 packets received, 100% packet loss";
         Mockito.when(agentManager.easySend(Mockito.anyLong(), Mockito.any(DiagnosticsCommand.class))).thenReturn(new DiagnosticsAnswer(command, true, details));
 
-        Map<String, String> detailsMap = diagnosticsService.runDiagnosticsCommand(diagnosticsCmd);
+        Map<String, String> detailsMap = serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
 
         assertEquals(3, detailsMap.size());
         assertEquals("Mismatch between actual and expected STDERR", "", detailsMap.get(ApiConstants.STDERR));
@@ -151,46 +152,47 @@ public class DiagnosticsServiceImplTest extends TestCase {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testRunDiagnosticsThrowsInvalidParamException() throws Exception {
-        Mockito.when(diagnosticsCmd.getAddress()).thenReturn("");
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn("");
         Mockito.when(instanceDao.findByIdTypes(Mockito.anyLong(), Mockito.any(VirtualMachine.Type.class),
                 Mockito.any(VirtualMachine.Type.class), Mockito.any(VirtualMachine.Type.class))).thenReturn(null);
 
-        diagnosticsService.runDiagnosticsCommand(diagnosticsCmd);
+        serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testVMControlIPisNull() throws Exception {
-        Mockito.when(diagnosticsCmd.getAddress()).thenReturn("0.42.42.42");
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn("0.42.42.42");
 
         Map<String, String> accessDetailsMap = new HashMap<>();
         accessDetailsMap.put(NetworkElementCommand.ROUTER_IP, null);
         Mockito.when(networkManager.getSystemVMAccessDetails(Mockito.any(VMInstanceVO.class))).thenReturn(accessDetailsMap);
 
-        diagnosticsService.runDiagnosticsCommand(diagnosticsCmd);
+        serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
     }
 
     @Test
     public void testInvalidCharsInParams() throws Exception {
-        assertFalse(diagnosticsService.hasValidChars("'\\''"));
-        assertFalse(diagnosticsService.hasValidChars("-I eth0 &"));
-        assertFalse(diagnosticsService.hasValidChars("-I eth0 ;"));
-        assertFalse(diagnosticsService.hasValidChars(" &2 > "));
-        assertFalse(diagnosticsService.hasValidChars(" &2 >> "));
-        assertFalse(diagnosticsService.hasValidChars(" | "));
-        assertFalse(diagnosticsService.hasValidChars("|"));
-        assertFalse(diagnosticsService.hasValidChars(","));
+        assertFalse(serviceImpl.hasValidChars("'\\''"));
+        assertFalse(serviceImpl.hasValidChars("-I eth0 &"));
+        assertFalse(serviceImpl.hasValidChars("-I eth0 ;"));
+        assertFalse(serviceImpl.hasValidChars(" &2 > "));
+        assertFalse(serviceImpl.hasValidChars(" &2 >> "));
+        assertFalse(serviceImpl.hasValidChars(" | "));
+        assertFalse(serviceImpl.hasValidChars("|"));
+        assertFalse(serviceImpl.hasValidChars(","));
     }
 
     @Test
     public void testValidCharsInParams() throws Exception {
-        assertTrue(diagnosticsService.hasValidChars(""));
-        assertTrue(diagnosticsService.hasValidChars("."));
-        assertTrue(diagnosticsService.hasValidChars(" "));
-        assertTrue(diagnosticsService.hasValidChars("-I eth0 www.google.com"));
-        assertTrue(diagnosticsService.hasValidChars(" "));
-        assertTrue(diagnosticsService.hasValidChars(" -I cloudbr0 --sport "));
-        assertTrue(diagnosticsService.hasValidChars(" --back -m20 "));
-        assertTrue(diagnosticsService.hasValidChars("-c 5 -4"));
-        assertTrue(diagnosticsService.hasValidChars("-c 5 -4 -AbDfhqUV"));
+        assertTrue(serviceImpl.hasValidChars(""));
+        assertTrue(serviceImpl.hasValidChars("."));
+        assertTrue(serviceImpl.hasValidChars(" "));
+        assertTrue(serviceImpl.hasValidChars("-I eth0 www.google.com"));
+        assertTrue(serviceImpl.hasValidChars(" "));
+        assertTrue(serviceImpl.hasValidChars(" -I cloudbr0 --sport "));
+        assertTrue(serviceImpl.hasValidChars(" --back -m20 "));
+        assertTrue(serviceImpl.hasValidChars("-c 5 -4"));
+        assertTrue(serviceImpl.hasValidChars("-c 5 -4 -AbDfhqUV"));
     }
+
 }

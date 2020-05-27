@@ -217,7 +217,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         entry.setCreditBalance(new BigDecimal(100));
         quotaBalance.add(entry);
         quotaBalance.add(entry);
-        Mockito.when(quotaService.computeAdjustedTime(Mockito.any(Date.class))).thenReturn(new Date());
+        Mockito.lenient().when(quotaService.computeAdjustedTime(Mockito.any(Date.class))).thenReturn(new Date());
         QuotaBalanceResponse resp = quotaResponseBuilder.createQuotaLastBalanceResponse(quotaBalance, null);
         assertTrue(resp.getStartQuota().compareTo(new BigDecimal(200)) == 0);
     }

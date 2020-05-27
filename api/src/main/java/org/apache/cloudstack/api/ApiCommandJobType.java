@@ -23,6 +23,7 @@ public enum ApiCommandJobType {
     Volume,
     ConsoleProxy,
     Snapshot,
+    Backup,
     Template,
     Iso,
     SystemVm,

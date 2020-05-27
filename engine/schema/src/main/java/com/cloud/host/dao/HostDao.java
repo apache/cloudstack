@@ -37,6 +37,8 @@ import com.cloud.utils.fsm.StateDao;
 public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Status.Event, Host> {
     long countBy(long clusterId, ResourceState... states);
 
+    Integer countAllByType(final Host.Type type);
+
     /**
      * Mark all hosts associated with a certain management server
      * as disconnected.
@@ -109,4 +111,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     HostVO findHostInZoneToExecuteCommand(long zoneId, HypervisorType hypervisorType);
 
     List<HostVO> listAllHostsUpByZoneAndHypervisor(long zoneId, HypervisorType hypervisorType);
+
+    List<HostVO> listByHostCapability(Host.Type type, Long clusterId, Long podId, long dcId, String hostCapabilty);
+
+    List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType);
 }

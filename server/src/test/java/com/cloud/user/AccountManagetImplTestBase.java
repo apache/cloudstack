@@ -31,11 +31,12 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -208,6 +209,12 @@ public class AccountManagetImplTestBase {
     @After
     public void cleanup() {
         CallContext.unregister();
+    }
+
+    @Test
+    public void test()
+    {
+        return;
     }
 
     public static Map<String, Field> getInheritedFields(Class<?> type) {

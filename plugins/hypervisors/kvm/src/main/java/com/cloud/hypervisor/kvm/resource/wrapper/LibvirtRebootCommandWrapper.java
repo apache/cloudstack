@@ -26,6 +26,7 @@ import org.libvirt.LibvirtException;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -38,6 +39,7 @@ public final class LibvirtRebootCommandWrapper extends CommandWrapper<RebootComm
     @Override
     public Answer execute(final RebootCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
+        final VirtualMachineTO vmSpec = command.getVirtualMachine();
 
         try {
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
@@ -49,7 +51,9 @@ public final class LibvirtRebootCommandWrapper extends CommandWrapper<RebootComm
                 } catch (final LibvirtException e) {
                     s_logger.trace("Ignoring libvirt error.", e);
                 }
-                libvirtComputingResource.getRuleLogsForVms();
+                if (vmSpec != null) {
+                    libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
+                }
                 return new RebootAnswer(command, null, vncPort);
             } else {
                 return new RebootAnswer(command, result, false);

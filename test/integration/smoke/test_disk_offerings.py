@@ -223,6 +223,78 @@ class TestCreateDiskOffering(cloudstackTestCase):
             )
         return
 
+    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    def test_06_create_disk_offering_with_cache_mode_type(self):
+        """Test to create disk offering with each one of the valid cache mode types : none, writeback and writethrough
+
+        # Validate the following:
+        # 1. createDiskOfferings should return valid info for new offering
+        # 2. The Cloud Database contains the valid information
+        """
+        cache_mode_types=["none", "writeback", "writethrough"]
+        for i in range(3):
+            disk_offering = DiskOffering.create(
+                self.apiclient,
+                self.services["disk_offering"],
+                cacheMode=cache_mode_types[i]
+            )
+            self.cleanup.append(disk_offering)
+
+            self.debug("Created Disk offering with valid cacheMode param with ID: %s" % disk_offering.id)
+
+            list_disk_response = list_disk_offering(
+                self.apiclient,
+                id=disk_offering.id
+            )
+            self.assertEqual(
+                isinstance(list_disk_response, list),
+                True,
+                "Check list response returns a valid list"
+            )
+            self.assertNotEqual(
+                len(list_disk_response),
+                0,
+                "Check Disk offering is created"
+            )
+            disk_response = list_disk_response[0]
+
+            self.assertEqual(
+                disk_response.displaytext,
+                self.services["disk_offering"]["displaytext"],
+                "Check server id in createServiceOffering"
+            )
+            self.assertEqual(
+                disk_response.name,
+                self.services["disk_offering"]["name"],
+                "Check name in createServiceOffering"
+            )
+            self.assertEqual(
+                disk_response.cacheMode,
+                cache_mode_types[i],
+                "Check cacheMode in createServiceOffering"
+            )
+
+        return
+
+    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    def test_07_create_disk_offering_with_invalid_cache_mode_type(self):
+        """Test to create disk offering with invalid cacheMode type
+
+        # Validate the following:
+        # 1. createDiskOfferings should return valid info for new offering
+        # 2. The Cloud Database contains the valid information
+        """
+
+        with self.assertRaises(Exception):
+            disk_offering = DiskOffering.create(
+                self.apiclient,
+                self.services["disk_offering"],
+                cacheMode="invalid_cache_mode_type"
+            )
+
+
+        return
+
 class TestDiskOfferings(cloudstackTestCase):
 
     def setUp(self):

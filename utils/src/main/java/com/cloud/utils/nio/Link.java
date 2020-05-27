@@ -608,8 +608,8 @@ public class Link {
         while (handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED
                 && handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
             final long timeTaken = System.currentTimeMillis() - startTimeMills;
-            if (timeTaken > 15000L) {
-                s_logger.warn("SSL Handshake has taken more than 15s to connect to: " + socketChannel.getRemoteAddress() +
+            if (timeTaken > 30000L) {
+                s_logger.warn("SSL Handshake has taken more than 30s to connect to: " + socketChannel.getRemoteAddress() +
                         ". Please investigate this connection.");
                 return false;
             }

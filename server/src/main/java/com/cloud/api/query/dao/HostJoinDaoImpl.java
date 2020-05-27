@@ -138,7 +138,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 }
                 gpus.add(gpuResponse);
             }
-            hostResponse.setGpuGroups(gpus);
+            hostResponse.setGpuGroup(gpus);
         }
         if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
 

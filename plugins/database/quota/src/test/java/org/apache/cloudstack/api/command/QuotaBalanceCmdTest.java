@@ -16,7 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import junit.framework.TestCase;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import org.apache.cloudstack.api.response.QuotaBalanceResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
@@ -26,10 +30,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaBalanceCmdTest extends TestCase {
@@ -48,7 +49,7 @@ public class QuotaBalanceCmdTest extends TestCase {
         Mockito.when(responseBuilder.getQuotaBalance(Mockito.any(cmd.getClass()))).thenReturn(quotaBalanceVOList);
         Mockito.when(responseBuilder.createQuotaLastBalanceResponse(Mockito.eq(quotaBalanceVOList), Mockito.any(Date.class))).thenReturn(new QuotaBalanceResponse());
         Mockito.when(responseBuilder.createQuotaBalanceResponse(Mockito.eq(quotaBalanceVOList), Mockito.any(Date.class), Mockito.any(Date.class))).thenReturn(new QuotaBalanceResponse());
-        Mockito.when(responseBuilder.startOfNextDay(Mockito.any(Date.class))).thenReturn(new Date());
+        Mockito.lenient().when(responseBuilder.startOfNextDay(Mockito.any(Date.class))).thenReturn(new Date());
 
         // end date not specified
         cmd.setStartDate(new Date());

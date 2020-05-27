@@ -16,6 +16,31 @@
 // under the License.
 package com.cloud.test;
 
+import com.cloud.host.Status;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDaoImpl;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.dao.DiskOfferingDaoImpl;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.net.NfsUtils;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -36,32 +61,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import com.cloud.host.Status;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDaoImpl;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.dao.DiskOfferingDaoImpl;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.net.NfsUtils;
 
 public class DatabaseConfig {
     private static final Logger s_logger = Logger.getLogger(DatabaseConfig.class.getName());
@@ -288,10 +287,6 @@ public class DatabaseConfig {
         s_configurationComponents.put("consoleproxy.session.timeout", "AgentManager");
         s_configurationComponents.put("expunge.workers", "UserVmManager");
         s_configurationComponents.put("extract.url.cleanup.interval", "management-server");
-        s_configurationComponents.put("stop.retry.interval", "HighAvailabilityManager");
-        s_configurationComponents.put("restart.retry.interval", "HighAvailabilityManager");
-        s_configurationComponents.put("investigate.retry.interval", "HighAvailabilityManager");
-        s_configurationComponents.put("migrate.retry.interval", "HighAvailabilityManager");
         s_configurationComponents.put("storage.overwrite.provisioning", "UserVmManager");
         s_configurationComponents.put("init", "none");
         s_configurationComponents.put("system.vm.use.local.storage", "ManagementServer");
@@ -345,10 +340,6 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("extract.url.cleanup.interval", "120");
         s_defaultConfigurationValues.put("instance.name", "VM");
         s_defaultConfigurationValues.put("expunge.workers", "1");
-        s_defaultConfigurationValues.put("stop.retry.interval", "600");
-        s_defaultConfigurationValues.put("restart.retry.interval", "600");
-        s_defaultConfigurationValues.put("investigate.retry.interval", "60");
-        s_defaultConfigurationValues.put("migrate.retry.interval", "120");
         s_defaultConfigurationValues.put("event.purge.interval", "86400");
         s_defaultConfigurationValues.put("account.cleanup.interval", "86400");
         s_defaultConfigurationValues.put("system.vm.use.local.storage", "false");

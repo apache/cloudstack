@@ -77,15 +77,25 @@ class CsDhcp(CsDataBag):
     def configure_server(self):
         # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
         idx = 0
+        listen_address = ["127.0.0.1"]
         for i in self.devinfo:
             if not i['dnsmasq']:
                 continue
             device = i['dev']
             ip = i['ip'].split('/')[0]
-            sline = "dhcp-range=set:interface-%s-%s" % (device, idx)
-            line = "dhcp-range=set:interface-%s-%s,%s,static" % (device, idx, ip)
-            self.conf.search(sline, line)
             gn = CsGuestNetwork(device, self.config)
+            # Gateway
+            gateway = ''
+            if self.config.is_vpc():
+                gateway = gn.get_gateway()
+            else:
+                gateway = i['gateway']
+            sline = "dhcp-range=set:interface-%s-%s" % (device, idx)
+            if self.cl.is_redundant():
+                line = "dhcp-range=set:interface-%s-%s,%s,static" % (device, idx, gateway)
+            else:
+                line = "dhcp-range=set:interface-%s-%s,%s,static" % (device, idx, ip)
+            self.conf.search(sline, line)
             sline = "dhcp-option=tag:interface-%s-%s,15" % (device, idx)
             line = "dhcp-option=tag:interface-%s-%s,15,%s" % (device, idx, gn.get_domain())
             self.conf.search(sline, line)
@@ -95,12 +105,6 @@ class CsDhcp(CsDataBag):
                 dns_list = [x for x in gn.get_dns() if x]
                 line = "dhcp-option=tag:interface-%s-%s,6,%s" % (device, idx, ','.join(dns_list))
                 self.conf.search(sline, line)
-            # Gateway
-            gateway = ''
-            if self.config.is_vpc():
-                gateway = gn.get_gateway()
-            else:
-                gateway = i['gateway']
             if gateway != '0.0.0.0':
                 sline = "dhcp-option=tag:interface-%s-%s,3," % (device, idx)
                 line = "dhcp-option=tag:interface-%s-%s,3,%s" % (device, idx, gateway)
@@ -114,7 +118,17 @@ class CsDhcp(CsDataBag):
             sline = "dhcp-option=tag:interface-%s-%s,1," % (device, idx)
             line = "dhcp-option=tag:interface-%s-%s,1,%s" % (device, idx, netmask)
             self.conf.search(sline, line)
+            # Listen Address
+            if self.cl.is_redundant():
+                listen_address.append(gateway)
+            else:
+                listen_address.append(ip)
             idx += 1
+
+        # Listen Address
+        sline = "listen-address="
+        line = "listen-address=%s" % (','.join(listen_address))
+        self.conf.search(sline, line)
 
     def delete_leases(self):
         macs_dhcphosts = []
@@ -160,28 +174,25 @@ class CsDhcp(CsDataBag):
 
     def add(self, entry):
         self.add_host(entry['ipv4_address'], entry['host_name'])
-        # Lease time set to effectively infinite (36000+ days) since we properly control all DHCP/DNS config via CloudStack.
+        # Lease time set to "infinite" since we properly control all DHCP/DNS config via CloudStack.
         # Infinite time helps avoid some edge cases which could cause DHCPNAK being sent to VMs since
         # (RHEL) system lose routes when they receive DHCPNAK.
         # When VM is expunged, its active lease and DHCP/DNS config is properly removed from related files in VR,
         # so the infinite duration of lease does not cause any issues or garbage.
-        # There will be soon a PR which also regenerates the /var/lib/misc/dnsmasq.leases (active lease DB file)
-        # in the new VR (when restarting network with cleanup), which will help around RHEL edge cases (described above)
-        # for the VMs who are already running in productions systems with 30d lease time.
-        lease = randint(870000, 870010)
+        lease = 'infinite'
 
         if entry['default_entry']:
-            self.cloud.add("%s,%s,%s,%sh" % (entry['mac_address'],
-                                             entry['ipv4_address'],
-                                             entry['host_name'],
-                                             lease))
+            self.cloud.add("%s,%s,%s,%s" % (entry['mac_address'],
+                                            entry['ipv4_address'],
+                                            entry['host_name'],
+                                            lease))
         else:
             tag = entry['ipv4_address'].replace(".", "_")
-            self.cloud.add("%s,set:%s,%s,%s,%sh" % (entry['mac_address'],
-                                                    tag,
-                                                    entry['ipv4_address'],
-                                                    entry['host_name'],
-                                                    lease))
+            self.cloud.add("%s,set:%s,%s,%s,%s" % (entry['mac_address'],
+                                                   tag,
+                                                   entry['ipv4_address'],
+                                                   entry['host_name'],
+                                                   lease))
             self.dhcp_opts.add("%s,%s" % (tag, 3))
             self.dhcp_opts.add("%s,%s" % (tag, 6))
             self.dhcp_opts.add("%s,%s" % (tag, 15))

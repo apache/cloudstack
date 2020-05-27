@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-engine</artifactId>
-        <version>4.14.0.0-SNAPSHOT</version>
+        <version>4.15.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -47,6 +47,10 @@
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-framework-db</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
         </dependency>
     </dependencies>
 </project>

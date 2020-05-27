@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -57,6 +56,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
@@ -173,6 +173,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (details.contains(VMDetails.all) || details.contains(VMDetails.diskoff)) {
             userVmResponse.setDiskOfferingId(userVm.getDiskOfferingUuid());
             userVmResponse.setDiskOfferingName(userVm.getDiskOfferingName());
+        }
+        if (details.contains(VMDetails.all) || details.contains(VMDetails.backoff)) {
+            userVmResponse.setBackupOfferingId(userVm.getBackupOfferingUuid());
+            userVmResponse.setBackupOfferingName(userVm.getBackupOfferingName());
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff) || details.contains(VMDetails.stats)) {
             userVmResponse.setCpuNumber(userVm.getCpu());
@@ -317,6 +321,15 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                         (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES))) {
                     resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
                 }
+                if ((ApiConstants.BootType.UEFI.toString()).equalsIgnoreCase(userVmDetailVO.getName())) {
+                    userVmResponse.setBootType("Uefi");
+                    userVmResponse.setBootMode(userVmDetailVO.getValue().toLowerCase());
+
+                }
+            }
+            if (vmDetails.size() == 0) {
+                userVmResponse.setBootType("Bios");
+                userVmResponse.setBootMode("legacy");
             }
             // Remove blacklisted settings if user is not admin
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {

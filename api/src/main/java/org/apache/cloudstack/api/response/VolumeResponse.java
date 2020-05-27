@@ -262,19 +262,19 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName(ApiConstants.CLUSTER_ID)
     @Param(description = "cluster id of the volume")
-    private String clusterid;
+    private String clusterId;
 
     @SerializedName(ApiConstants.CLUSTER_NAME)
     @Param(description = "cluster name where the volume is allocated")
-    private String clustername;
+    private String clusterName;
 
     @SerializedName(ApiConstants.POD_ID)
     @Param(description = "pod id of the volume")
-    private String podid;
+    private String podId;
 
     @SerializedName(ApiConstants.POD_NAME)
     @Param(description = "pod name of the volume")
-    private String podname;
+    private String podName;
 
     public String getPath() {
         return path;
@@ -751,35 +751,34 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     }
 
     public String getClusterId() {
-        return clusterid;
+        return clusterId;
     }
 
-    public void setClusterId(String clusterid) {
-        this.clusterid = clusterid;
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
     }
 
     public String getClusterName() {
-        return clustername;
+        return clusterName;
     }
 
-    public void setClusterName(String clustername) {
-        this.clustername = clustername;
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
     }
 
     public String getPodId() {
-        return podid;
+        return podId;
     }
 
-    public void setPodId(String podid) {
-        this.podid = podid;
+    public void setPodId(String podId) {
+        this.podId = podId;
     }
 
     public String getPodName() {
-        return podname;
+        return podName;
     }
 
-    public void setPodName(String podname) {
-        this.podname = podname;
+    public void setPodName(String podName) {
+        this.podName = podName;
     }
-
 }

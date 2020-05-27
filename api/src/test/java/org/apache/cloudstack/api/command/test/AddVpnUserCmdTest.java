@@ -16,24 +16,25 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
 
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.vpn.AddVpnUserCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
-
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.vpn.AddVpnUserCmd;
 
 import com.cloud.network.VpnUser;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
 public class AddVpnUserCmdTest extends TestCase {
 
     private AddVpnUserCmd addVpnUserCmd;
@@ -76,14 +77,15 @@ public class AddVpnUserCmdTest extends TestCase {
         AccountService accountService = Mockito.mock(AccountService.class);
 
         Account account = Mockito.mock(Account.class);
-        Mockito.when(accountService.getAccount(Matchers.anyLong())).thenReturn(account);
+        Mockito.when(accountService.getAccount(nullable(Long.class))).thenReturn(account);
 
         addVpnUserCmd._accountService = accountService;
 
         RemoteAccessVpnService ravService = Mockito.mock(RemoteAccessVpnService.class);
 
         VpnUser vpnUser = Mockito.mock(VpnUser.class);
-        Mockito.when(ravService.addVpnUser(Matchers.anyLong(), Matchers.anyString(), Matchers.anyString())).thenReturn(vpnUser);
+
+        Mockito.when(ravService.addVpnUser(anyLong(), isNull(), isNull())).thenReturn(vpnUser);
 
         addVpnUserCmd._ravService = ravService;
 
@@ -96,12 +98,13 @@ public class AddVpnUserCmdTest extends TestCase {
 
         AccountService accountService = Mockito.mock(AccountService.class);
         Account account = Mockito.mock(Account.class);
-        Mockito.when(accountService.getAccount(Matchers.anyLong())).thenReturn(account);
+        Mockito.when(accountService.getAccount(nullable(Long.class))).thenReturn(account);
 
         addVpnUserCmd._accountService = accountService;
 
         RemoteAccessVpnService ravService = Mockito.mock(RemoteAccessVpnService.class);
-        Mockito.when(ravService.addVpnUser(Matchers.anyLong(), Matchers.anyString(), Matchers.anyString())).thenReturn(null);
+
+        Mockito.when(ravService.addVpnUser(anyLong(), isNull(), isNull())).thenReturn(null);
 
         addVpnUserCmd._ravService = ravService;
 

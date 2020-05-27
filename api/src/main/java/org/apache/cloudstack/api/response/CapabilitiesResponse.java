@@ -84,9 +84,21 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if the user can recover and expunge virtualmachines, false otherwise", since = "4.6.0")
     private boolean allowUserExpungeRecoverVM;
 
+    @SerializedName("allowuserexpungerecovervolume")
+    @Param(description = "true if the user can recover and expunge volumes, false otherwise", since = "4.14.0")
+    private boolean allowUserExpungeRecoverVolume;
+
     @SerializedName("allowuserviewalldomainaccounts")
     @Param(description = "true if users can see all accounts within the same domain, false otherwise")
     private boolean allowUserViewAllDomainAccounts;
+
+    @SerializedName("kubernetesserviceenabled")
+    @Param(description = "true if Kubernetes Service plugin is enabled, false otherwise")
+    private boolean kubernetesServiceEnabled;
+
+    @SerializedName("kubernetesclusterexperimentalfeaturesenabled")
+    @Param(description = "true if experimental features for Kubernetes cluster such as Docker private registry are enabled, false otherwise")
+    private boolean kubernetesClusterExperimentalFeaturesEnabled;
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
@@ -148,7 +160,19 @@ public class CapabilitiesResponse extends BaseResponse {
         this.allowUserExpungeRecoverVM = allowUserExpungeRecoverVM;
     }
 
+    public void setAllowUserExpungeRecoverVolume(boolean allowUserExpungeRecoverVolume) {
+        this.allowUserExpungeRecoverVolume = allowUserExpungeRecoverVolume;
+    }
+
     public void setAllowUserViewAllDomainAccounts(boolean allowUserViewAllDomainAccounts) {
         this.allowUserViewAllDomainAccounts = allowUserViewAllDomainAccounts;
+    }
+
+    public void setKubernetesServiceEnabled(boolean kubernetesServiceEnabled) {
+        this.kubernetesServiceEnabled = kubernetesServiceEnabled;
+    }
+
+    public void setKubernetesClusterExperimentalFeaturesEnabled(boolean kubernetesClusterExperimentalFeaturesEnabled) {
+        this.kubernetesClusterExperimentalFeaturesEnabled = kubernetesClusterExperimentalFeaturesEnabled;
     }
 }

@@ -345,7 +345,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         readySystemTemplateSearch.and("state", readySystemTemplateSearch.entity().getState(), SearchCriteria.Op.EQ);
         readySystemTemplateSearch.and("templateType", readySystemTemplateSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         SearchBuilder<TemplateDataStoreVO> templateDownloadSearch = _templateDataStoreDao.createSearchBuilder();
-        templateDownloadSearch.and("downloadState", templateDownloadSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
+        templateDownloadSearch.and("downloadState", templateDownloadSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
         readySystemTemplateSearch.join("vmTemplateJoinTemplateStoreRef", templateDownloadSearch, templateDownloadSearch.entity().getTemplateId(),
             readySystemTemplateSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         SearchBuilder<HostVO> hostHyperSearch2 = _hostDao.createSearchBuilder();
@@ -860,7 +860,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         sc.setParameters("state", VirtualMachineTemplate.State.Active);
         sc.setJoinParameters("tmplHyper", "type", Host.Type.Routing);
         sc.setJoinParameters("tmplHyper", "zoneId", zoneId);
-        sc.setJoinParameters("vmTemplateJoinTemplateStoreRef", "downloadState", VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        sc.setJoinParameters("vmTemplateJoinTemplateStoreRef", "downloadState", new VMTemplateStorageResourceAssoc.Status[] {VMTemplateStorageResourceAssoc.Status.DOWNLOADED, VMTemplateStorageResourceAssoc.Status.BYPASSED});
 
         // order by descending order of id
         List<VMTemplateVO> tmplts = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, null));

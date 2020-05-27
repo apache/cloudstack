@@ -29,6 +29,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         ISO(true, false),
         Volume(true, true),
         Snapshot(true, false),
+        Backup(true, false),
         Network(true, true),
         Nic(false, true),
         LoadBalancer(true, true),

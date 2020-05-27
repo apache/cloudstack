@@ -20,13 +20,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.directory.SearchControls;
 import javax.naming.ldap.LdapContext;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -78,9 +79,9 @@ public class ADLdapUserManagerImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void testGetUsersInGroupUsingNullGroup() throws Exception {
         String[] returnAttributes = {"username", "firstname", "lastname", "email"};
-        when(ldapConfiguration.getScope()).thenReturn(SearchControls.SUBTREE_SCOPE);
-        when(ldapConfiguration.getReturnAttributes(null)).thenReturn(returnAttributes);
-        when(ldapConfiguration.getBaseDn(any())).thenReturn(null).thenReturn(null).thenReturn("DC=cloud,DC=citrix,DC=com");
+        lenient().when(ldapConfiguration.getScope()).thenReturn(SearchControls.SUBTREE_SCOPE);
+        lenient().when(ldapConfiguration.getReturnAttributes(null)).thenReturn(returnAttributes);
+        lenient().when(ldapConfiguration.getBaseDn(any())).thenReturn(null).thenReturn(null).thenReturn("DC=cloud,DC=citrix,DC=com");
 
         LdapContext context = ldapContext;
         String [] groups = {null, "group", null};

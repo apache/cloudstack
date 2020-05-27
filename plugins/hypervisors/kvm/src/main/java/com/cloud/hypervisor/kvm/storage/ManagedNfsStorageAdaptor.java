@@ -319,6 +319,11 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+        return null;
+    }
+
+    @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, PhysicalDiskFormat format, ProvisioningType provisioningType, long size) {
         return null;
     }

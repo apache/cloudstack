@@ -88,9 +88,9 @@
 
                 // Make sure the master checkbox is unselected
                 if (multiSelect) {
-                    var $listView = $instanceRow.closest('.list-view');
-                    $listView.find('input.multiSelectMasterCheckbox').prop('checked', false);
-                    toggleMultiSelectActions($listView, false);
+                    var $listView2 = $instanceRow.closest('.list-view');
+                    $listView2.find('input.multiSelectMasterCheckbox').prop('checked', false);
+                    toggleMultiSelectActions($listView2, false);
                 }
 
                 var externalLinkAction = action.externalLink;
@@ -168,8 +168,11 @@
                 } else {
                     if (needsRefresh) {
                         var $loading = $('<div>').addClass('loading-overlay');
-
-                        $listView.prepend($loading);
+                        if ($listView) {
+                            $listView.prepend($loading);
+                        } else {
+                            $instanceRow.closest('.list-view').prepend($loading)
+                        }
                     }
 
                     var actionArgs = {

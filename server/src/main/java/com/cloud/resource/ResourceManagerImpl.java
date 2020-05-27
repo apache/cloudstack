@@ -2485,7 +2485,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
     }
 
-    private boolean cancelMaintenance(final long hostId) {
+    public boolean cancelMaintenance(final long hostId) {
         try {
             final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.AdminCancelMaintenance);
 

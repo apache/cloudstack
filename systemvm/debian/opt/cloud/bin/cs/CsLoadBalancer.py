@@ -45,7 +45,7 @@ class CsLoadBalancer(CsDataBag):
         if not file2.compare(file1):
             CsHelper.copy(HAPROXY_CONF_T, HAPROXY_CONF_P)
 
-            proc = CsProcess(['/var/run/haproxy.pid'])
+            proc = CsProcess(['/run/haproxy.pid'])
             if not proc.find():
                 logging.debug("CsLoadBalancer:: will restart HAproxy!")
                 CsHelper.service("haproxy", "restart")

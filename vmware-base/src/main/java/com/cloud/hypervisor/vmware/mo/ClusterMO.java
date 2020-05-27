@@ -217,6 +217,19 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
     }
 
     @Override
+    public synchronized List<VirtualMachineMO> listVmsOnHyperHost(String vmName) throws Exception {
+        List<VirtualMachineMO> vms = new ArrayList<>();
+        List<ManagedObjectReference> hosts = _context.getVimClient().getDynamicProperty(_mor, "host");
+        if (hosts != null && hosts.size() > 0) {
+            for (ManagedObjectReference morHost : hosts) {
+                HostMO hostMo = new HostMO(_context, morHost);
+                vms.addAll(hostMo.listVmsOnHyperHost(vmName));
+            }
+        }
+        return vms;
+    }
+
+    @Override
     public VirtualMachineMO findVmOnHyperHost(String name) throws Exception {
 
         int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);

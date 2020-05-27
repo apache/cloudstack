@@ -20,6 +20,7 @@ public interface VmDetailConstants {
     String KEYBOARD = "keyboard";
     String CPU_CORE_PER_SOCKET = "cpu.corespersocket";
     String ROOT_DISK_SIZE = "rootdisksize";
+    String BOOT_MODE = "boot.mode";
 
     // VMware specific
     String NIC_ADAPTER = "nicAdapter";
@@ -54,4 +55,12 @@ public interface VmDetailConstants {
     String SSH_PUBLIC_KEY = "SSH.PublicKey";
     String PASSWORD = "password";
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
+
+    // VM import with nic, disk and custom params for custom compute offering
+    String NIC = "nic";
+    String NETWORK = "network";
+    String IP4_ADDRESS = "ip4Address";
+    String IP6_ADDRESS = "ip6Address";
+    String DISK = "disk";
+    String DISK_OFFERING = "diskOffering";
 }

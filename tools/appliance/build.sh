@@ -354,6 +354,7 @@ function main() {
   vmware_export
   hyperv_export
   rm -f "dist/${appliance}"
+  cd dist && chmod +r * && cd ..
   cd dist && md5sum * > md5sum.txt && cd ..
   cd dist && sha512sum * > sha512sum.txt && cd ..
   add_on_exit log INFO "BUILD SUCCESSFUL"

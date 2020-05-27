@@ -16,14 +16,14 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.db.Encrypt;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.StateMachine;
-import com.cloud.utils.fsm.FiniteStateObject;
-import com.cloud.vm.VirtualMachine.State;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -39,11 +39,19 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+
+import org.apache.cloudstack.backup.Backup;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.db.Encrypt;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.StateMachine;
+import com.cloud.utils.fsm.FiniteStateObject;
+import com.cloud.vm.VirtualMachine.State;
+import com.google.common.base.Strings;
+import com.google.gson.Gson;
 
 @Entity
 @Table(name = "vm_instance")
@@ -185,6 +193,15 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Column(name = "power_host", updatable = true)
     protected Long powerHostId;
+
+    @Column(name = "backup_offering_id")
+    protected Long backupOfferingId;
+
+    @Column(name = "backup_external_id")
+    protected String backupExternalId;
+
+    @Column(name = "backup_volumes")
+    protected String backupVolumes;
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
                         long domainId, long accountId, long userId, boolean haEnabled) {
@@ -483,6 +500,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.details = details;
     }
 
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
     transient String toString;
 
     @Override
@@ -572,5 +593,39 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Override
     public PartitionType partitionType() {
         return PartitionType.VM;
+    }
+
+    public long getUserId() {
+        return userId;
+    }
+
+    @Override
+    public Long getBackupOfferingId() {
+        return backupOfferingId;
+    }
+
+    public void setBackupOfferingId(Long backupOfferingId) {
+        this.backupOfferingId = backupOfferingId;
+    }
+
+    @Override
+    public String getBackupExternalId() {
+        return backupExternalId;
+    }
+
+    public void setBackupExternalId(String backupExternalId) {
+        this.backupExternalId = backupExternalId;
+    }
+
+    @Override
+    public List<Backup.VolumeInfo> getBackupVolumeList() {
+        if (Strings.isNullOrEmpty(this.backupVolumes)) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
+    }
+
+    public void setBackupVolumes(String backupVolumes) {
+        this.backupVolumes = backupVolumes;
     }
 }

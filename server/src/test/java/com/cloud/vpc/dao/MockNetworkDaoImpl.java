@@ -192,7 +192,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     }
 
     @Override
-    public NetworkVO getPrivateNetwork(final String broadcastUri, final String cidr, final long accountId, final long zoneId, final Long netofferid) {
+    public NetworkVO getPrivateNetwork(final String broadcastUri, final String cidr, final long accountId, final long zoneId, final Long netofferid, final Long vpcId) {
         return null;
     }
 
@@ -233,6 +233,21 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
 
     @Override
     public List<NetworkVO> listNetworkVO(List<Long> idset) {
+        return null;
+    }
+
+    @Override
+    public NetworkVO findByVlan(String vlan) {
+        return null;
+    }
+
+    @Override
+    public List<NetworkVO> listByAccountIdNetworkName(final long accountId, final String name) {
+        return null;
+    }
+
+    @Override
+    public List<NetworkVO> listByPhysicalNetworkPvlan(long physicalNetworkId, String broadcastUri, Network.PVlanType pVlanType) {
         return null;
     }
 }

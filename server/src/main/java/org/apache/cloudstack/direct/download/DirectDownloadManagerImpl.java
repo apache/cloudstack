@@ -35,6 +35,8 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
@@ -51,26 +53,25 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.security.CertificateHelper;
-import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand.DownloadProtocol;
 import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.RevokeDirectDownloadCertificateCommand;
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
 import org.apache.cloudstack.context.CallContext;
@@ -79,6 +80,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -89,6 +91,9 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+
+import com.cloud.utils.security.CertificateHelper;
+
 import sun.security.x509.X509CertImpl;
 
 public class DirectDownloadManagerImpl extends ManagerBase implements DirectDownloadManager {
@@ -119,6 +124,8 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     private BackgroundPollManager backgroundPollManager;
     @Inject
     private DataCenterDao dataCenterDao;
+    @Inject
+    private ConfigurationDao configDao;
 
     protected ScheduledExecutorService executorService;
 
@@ -197,7 +204,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
      */
     protected Long[] createHostIdsList(List<Long> hostIds, long hostId) {
         if (CollectionUtils.isEmpty(hostIds)) {
-            return Arrays.asList(hostId).toArray(new Long[1]);
+            return Collections.singletonList(hostId).toArray(new Long[1]);
         }
         Long[] ids = new Long[hostIds.size() + 1];
         ids[0] = hostId;
@@ -210,11 +217,15 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     }
 
     /**
-     * Get hosts to retry download having hostId as the first element
+     * Get alternative hosts to retry downloading a template. The planner have previously selected a host and a storage pool
+     * @return array of host ids which can access the storage pool
      */
-    protected Long[] getHostsToRetryOn(Long clusterId, long dataCenterId, HypervisorType hypervisorType, long hostId) {
-        List<Long> hostIds = getRunningHostIdsInTheSameCluster(clusterId, dataCenterId, hypervisorType, hostId);
-        return createHostIdsList(hostIds, hostId);
+    protected Long[] getHostsToRetryOn(Host host, StoragePoolVO storagePool) {
+        List<Long> clusterHostIds = new ArrayList<>();
+        if (storagePool.getPoolType() != Storage.StoragePoolType.Filesystem || storagePool.getScope() != ScopeType.HOST) {
+            clusterHostIds = getRunningHostIdsInTheSameCluster(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType(), host.getId());
+        }
+        return createHostIdsList(clusterHostIds, host.getId());
     }
 
     @Override
@@ -247,6 +258,8 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
 
         DownloadProtocol protocol = getProtocolFromUrl(url);
         DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum, headers);
+        cmd.setTemplateSize(template.getSize());
+        cmd.setIso(template.getFormat() == ImageFormat.ISO);
 
         Answer answer = sendDirectDownloadCommand(cmd, template, poolId, host);
 
@@ -279,7 +292,9 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     private Answer sendDirectDownloadCommand(DirectDownloadCommand cmd, VMTemplateVO template, long poolId, HostVO host) {
         boolean downloaded = false;
         int retry = 3;
-        Long[] hostsToRetry = getHostsToRetryOn(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType(), host.getId());
+
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
+        Long[] hostsToRetry = getHostsToRetryOn(host, storagePoolVO);
         int hostIndex = 0;
         Answer answer = null;
         Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
@@ -320,14 +335,17 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
      */
     private DirectDownloadCommand getDirectDownloadCommandFromProtocol(DownloadProtocol protocol, String url, Long templateId, PrimaryDataStoreTO destPool,
                                                                        String checksum, Map<String, String> httpHeaders) {
+        int connectTimeout = DirectDownloadConnectTimeout.value();
+        int soTimeout = DirectDownloadSocketTimeout.value();
+        int connectionRequestTimeout = DirectDownloadConnectionRequestTimeout.value();
         if (protocol.equals(DownloadProtocol.HTTP)) {
-            return new HttpDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
+            return new HttpDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout);
         } else if (protocol.equals(DownloadProtocol.HTTPS)) {
-            return new HttpsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
+            return new HttpsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout, connectionRequestTimeout);
         } else if (protocol.equals(DownloadProtocol.NFS)) {
             return new NfsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else if (protocol.equals(DownloadProtocol.METALINK)) {
-            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
+            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout);
         } else {
             return null;
         }
@@ -549,7 +567,10 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{
-                DirectDownloadCertificateUploadInterval
+                DirectDownloadCertificateUploadInterval,
+                DirectDownloadConnectTimeout,
+                DirectDownloadSocketTimeout,
+                DirectDownloadConnectionRequestTimeout
         };
     }
 

@@ -26,8 +26,10 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -39,7 +41,10 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 import org.mockito.BDDMockito;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -48,6 +53,7 @@ import com.cloud.agent.api.ReplugNicCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.hypervisor.kvm.resource.BridgeVifDriver;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.OvsVifDriver;
 import com.cloud.network.Networks;
 import com.cloud.utils.script.Script;
@@ -55,7 +61,11 @@ import com.cloud.vm.VirtualMachine;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {Script.class, MemStat.class})
+@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
 public class LibvirtReplugNicCommandWrapperTest {
+
+    @Mock
+    private LibvirtComputingResource libvirtComputingResource;
 
     private static final String part_1 =
             "<domain type='kvm' id='143'>\n"
@@ -276,6 +286,13 @@ public class LibvirtReplugNicCommandWrapperTest {
                         + "<address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>\n"
                         + "</interface>\n";
 
+        final LibvirtVMDef.InterfaceDef interfaceDef = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        final List<LibvirtVMDef.InterfaceDef> ifaces = new ArrayList<LibvirtVMDef.InterfaceDef>();
+        ifaces.add(interfaceDef);
+
+        final Connect conn = Mockito.mock(Connect.class);
+
+        when(libvirtComputingResource.getInterfaces(conn, "")).thenReturn(ifaces);
         final LibvirtReplugNicCommandWrapper wrapper = new LibvirtReplugNicCommandWrapper();
         final NicTO nic = new NicTO();
         nic.setType(Networks.TrafficType.Guest);

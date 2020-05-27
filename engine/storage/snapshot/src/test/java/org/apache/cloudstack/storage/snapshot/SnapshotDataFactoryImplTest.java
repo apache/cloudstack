@@ -104,7 +104,7 @@ public class SnapshotDataFactoryImplTest {
         Assert.assertEquals(dataStoreMock, snapshotInfo.getDataStore());
         Assert.assertEquals(snapshotVoMock, ((SnapshotObject)snapshotInfo).getSnapshotVO());
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(ComponentContext.class);
         ComponentContext.inject(SnapshotObject.class);
     }
 }

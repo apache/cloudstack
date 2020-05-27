@@ -18,7 +18,15 @@
  */
 package org.apache.cloudstack.storage.resource;
 
-import com.cloud.test.TestAppender;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.StringWriter;
+
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Level;
@@ -28,19 +36,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.StringWriter;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
+import com.cloud.test.TestAppender;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({ "javax.xml.*", "org.xml.*"})
 public class NfsSecondaryStorageResourceTest {
 
     private NfsSecondaryStorageResource resource;

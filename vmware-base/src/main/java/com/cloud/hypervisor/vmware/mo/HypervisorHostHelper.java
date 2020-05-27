@@ -38,6 +38,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -579,8 +580,9 @@ public class HypervisorHostHelper {
                 // First, if both vlan id and pvlan id are provided, we need to
                 // reconfigure the DVSwitch to have a tuple <vlan id, pvlan id> of
                 // type isolated.
+                String pvlanType = MapUtils.isNotEmpty(details) ? details.get(NetworkOffering.Detail.pvlanType) : null;
                 if (vid != null && spvlanid != null) {
-                    setupPVlanPair(dvSwitchMo, morDvSwitch, vid, spvlanid);
+                    setupPVlanPair(dvSwitchMo, morDvSwitch, vid, spvlanid, pvlanType);
                 }
 
                 VMwareDVSPortgroupPolicy portGroupPolicy = null;
@@ -660,7 +662,8 @@ public class HypervisorHostHelper {
         return vCenterApiVersion.compareTo(minVcenterApiVersionForFeature) >= 0 ? true : false;
     }
 
-    private static void setupPVlanPair(DistributedVirtualSwitchMO dvSwitchMo, ManagedObjectReference morDvSwitch, Integer vid, Integer spvlanid) throws Exception {
+    private static void setupPVlanPair(DistributedVirtualSwitchMO dvSwitchMo, ManagedObjectReference morDvSwitch, Integer vid, Integer spvlanid, String pvlanType) throws Exception {
+        s_logger.debug(String.format("Setting up PVLAN on dvSwitch %s with the following information: %s %s %s", dvSwitchMo.getName(), vid, spvlanid, pvlanType));
         Map<Integer, HypervisorHostHelper.PvlanType> vlanmap = dvSwitchMo.retrieveVlanPvlan(vid, spvlanid, morDvSwitch);
         if (!vlanmap.isEmpty()) {
             // Then either vid or pvlanid or both are already being used. Check how.
@@ -678,25 +681,20 @@ public class HypervisorHostHelper {
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
-            } else {
-                if (vlanmap.containsKey(spvlanid) && !vlanmap.get(spvlanid).equals(HypervisorHostHelper.PvlanType.isolated)) {
-                    // This PVLAN ID is already setup as a non-isolated vlan id on the DVS. Throw an exception.
-                    String msg = "Specified secondary PVLAN ID " + spvlanid + " is already in use as a " + vlanmap.get(spvlanid).toString() + " VLAN in the DVSwitch";
-                    s_logger.error(msg);
-                    throw new Exception(msg);
-                }
             }
         }
 
         // First create a DVSconfig spec.
         VMwareDVSConfigSpec dvsSpec = new VMwareDVSConfigSpec();
         // Next, add the required primary and secondary vlan config specs to the dvs config spec.
+
         if (!vlanmap.containsKey(vid)) {
             VMwareDVSPvlanConfigSpec ppvlanConfigSpec = createDVPortPvlanConfigSpec(vid, vid, PvlanType.promiscuous, PvlanOperation.add);
             dvsSpec.getPvlanConfigSpec().add(ppvlanConfigSpec);
         }
         if (!vid.equals(spvlanid) && !vlanmap.containsKey(spvlanid)) {
-            VMwareDVSPvlanConfigSpec spvlanConfigSpec = createDVPortPvlanConfigSpec(vid, spvlanid, PvlanType.isolated, PvlanOperation.add);
+            PvlanType selectedType = StringUtils.isNotBlank(pvlanType) ? PvlanType.fromStr(pvlanType) : PvlanType.isolated;
+            VMwareDVSPvlanConfigSpec spvlanConfigSpec = createDVPortPvlanConfigSpec(vid, spvlanid, selectedType, PvlanOperation.add);
             dvsSpec.getPvlanConfigSpec().add(spvlanConfigSpec);
         }
 
@@ -1046,7 +1044,20 @@ public class HypervisorHostHelper {
     }
 
     public enum PvlanType {
-        promiscuous, isolated, community,  // We don't use Community
+        promiscuous, isolated, community;
+
+        public static PvlanType fromStr(String val) {
+            if (StringUtils.isBlank(val)) {
+                return null;
+            } else if (val.equalsIgnoreCase("promiscuous")) {
+                return promiscuous;
+            } else if (val.equalsIgnoreCase("community")) {
+                return community;
+            } else if (val.equalsIgnoreCase("isolated")) {
+                return isolated;
+            }
+            return null;
+        }
     }
 
     public static VMwareDVSPvlanConfigSpec createDVPortPvlanConfigSpec(int vlanId, int secondaryVlanId, PvlanType pvlantype, PvlanOperation operation) {

@@ -234,6 +234,8 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     void expunge();
 
+    boolean unremove(ID id);
+
     public <K> K getNextInSequence(Class<K> clazz, String name);
 
     /**
@@ -278,4 +280,6 @@ public interface GenericDao<T, ID extends Serializable> {
     Map<String, Attribute> getAllAttributes();
 
     Pair<List<T>, Integer> searchAndDistinctCount(final SearchCriteria<T> sc, final Filter filter, final String[] distinctColumns);
+
+    Integer countAll();
 }

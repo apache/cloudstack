@@ -2055,6 +2055,10 @@
                             },
                             docID: 'helpVPCGatewayVLAN'
                         },
+                        bypassVlanOverlapCheck: {
+                            label: 'label.bypass.vlan.overlap.check',
+                            isBoolean: true
+                        },
                         ipaddress: {
                             label: 'label.ip.address',
                             validation: {
@@ -2124,6 +2128,9 @@
                     } else
                         array1.push("&sourcenatsupported=false");
 
+                    if (args.$form.find('.form-item[rel=bypassVlanOverlapCheck]').css("display") != "none") {
+                        array1.push("&bypassVlanOverlapCheck=" + encodeURIComponent((args.data.bypassVlanOverlapCheck == "on")));
+                    }
 
                     $.ajax({
                         url: createURL('createPrivateGateway' + array1.join("")),
@@ -2233,6 +2240,10 @@
                                             },
                                             docID: 'helpVPCGatewayVLAN'
                                         },
+                                        bypassVlanOverlapCheck: {
+                                            label: 'label.bypass.vlan.overlap.check',
+                                            isBoolean: true
+                                        },
                                         ipaddress: {
                                             label: 'label.ip.address',
                                             validation: {
@@ -2307,6 +2318,9 @@
                                     } else
                                         array1.push("&sourcenatsupported=false");
 
+                                    if (args.$form.find('.form-item[rel=bypassVlanOverlapCheck]').css("display") != "none") {
+                                        array1.push("&bypassVlanOverlapCheck=" + encodeURIComponent((args.data.bypassVlanOverlapCheck == "on")));
+                                    }
 
                                     $.ajax({
                                         url: createURL('createPrivateGateway' + array1.join("")),

@@ -16,6 +16,7 @@
 // under the License.
 package org.cloud.network.router.deployment;
 
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -23,11 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.network.dao.NetworkDetailsDao;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.HostPodVO;
@@ -37,6 +38,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
@@ -134,11 +136,17 @@ public class RouterDeploymentDefinitionTestBase {
 
     protected void initMocks() {
         when(mockDestination.getDataCenter()).thenReturn(mockDataCenter);
-        when(mockDataCenter.getId()).thenReturn(DATA_CENTER_ID);
-        when(mockPod.getId()).thenReturn(POD_ID1);
-        when(mockHostPodVO1.getId()).thenReturn(POD_ID1);
-        when(mockHostPodVO2.getId()).thenReturn(POD_ID2);
-        when(mockHostPodVO3.getId()).thenReturn(POD_ID3);
-        when(mockNw.getId()).thenReturn(NW_ID_1);
+        lenient().when(mockDataCenter.getId()).thenReturn(DATA_CENTER_ID);
+        lenient().when(mockPod.getId()).thenReturn(POD_ID1);
+        lenient().when(mockHostPodVO1.getId()).thenReturn(POD_ID1);
+        lenient().when(mockHostPodVO2.getId()).thenReturn(POD_ID2);
+        lenient().when(mockHostPodVO3.getId()).thenReturn(POD_ID3);
+        lenient().when(mockNw.getId()).thenReturn(NW_ID_1);
     }
+
+    @Test
+    public void mockTest() {
+        return;
+    }
+
 }

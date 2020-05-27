@@ -300,4 +300,21 @@
     <bean id="directDownloadManager" class="org.apache.cloudstack.direct.download.DirectDownloadManagerImpl" />
 
     <bean id="DiagnosticsService" class="org.apache.cloudstack.diagnostics.DiagnosticsServiceImpl" />
+
+    <bean id="backupManager" class="org.apache.cloudstack.backup.BackupManagerImpl">
+        <property name="backupProviders" value="#{backupProvidersRegistry.registered}" />
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
+
+    <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
+
+    <bean id="nfsMountManager" class="org.apache.cloudstack.storage.NfsMountManagerImpl" >
+        <constructor-arg name="storage" ref="storageLayer" />
+        <constructor-arg name="timeout" value="10000" />
+    </bean>
+
+    <bean id="rollingMaintenanceManager" class="com.cloud.resource.RollingMaintenanceManagerImpl">
+        <property name="affinityGroupProcessors"
+                  value="#{affinityProcessorsRegistry.registered}" />
+    </bean>
 </beans>

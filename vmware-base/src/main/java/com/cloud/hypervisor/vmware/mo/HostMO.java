@@ -497,6 +497,18 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     }
 
     @Override
+    public synchronized List<VirtualMachineMO> listVmsOnHyperHost(String vmName) throws Exception {
+        List<VirtualMachineMO> vms = new ArrayList<>();
+        if (vmName != null && !vmName.isEmpty()) {
+            vms.add(findVmOnHyperHost(vmName));
+        } else {
+            loadVmCache();
+            vms.addAll(_vmCache.values());
+        }
+        return vms;
+    }
+
+    @Override
     public synchronized VirtualMachineMO findVmOnHyperHost(String vmName) throws Exception {
         if (s_logger.isDebugEnabled())
             s_logger.debug("find VM " + vmName + " on host");
@@ -1184,4 +1196,17 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
         return morNetwork;
     }
+
+    public String getProductVersion() throws Exception {
+        return getHostAboutInfo().getVersion();
+    }
+
+    public boolean isUefiLegacySupported() throws Exception {
+        String hostVersion = getProductVersion();
+        if (hostVersion.compareTo(VmwareHelper.MIN_VERSION_UEFI_LEGACY) >= 0) {
+            return true;
+        }
+        return false;
+    }
+
 }

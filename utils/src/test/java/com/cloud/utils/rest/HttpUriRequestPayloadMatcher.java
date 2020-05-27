@@ -20,7 +20,7 @@
 package com.cloud.utils.rest;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
 import java.io.IOException;
 

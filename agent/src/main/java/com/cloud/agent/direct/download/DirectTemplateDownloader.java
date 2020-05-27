@@ -19,49 +19,15 @@
 
 package com.cloud.agent.direct.download;
 
+import com.cloud.utils.Pair;
+
 public interface DirectTemplateDownloader {
-
-    class DirectTemplateInformation {
-        private String installPath;
-        private Long size;
-        private String checksum;
-
-        public DirectTemplateInformation(String installPath, Long size, String checksum) {
-            this.installPath = installPath;
-            this.size = size;
-            this.checksum = checksum;
-        }
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public Long getSize() {
-            return size;
-        }
-
-        public String getChecksum() {
-            return checksum;
-        }
-    }
 
     /**
      * Perform template download to pool specified on downloader creation
-     * @return true if successful, false if not
+     * @return (true if successful, false if not, download file path)
      */
-    boolean downloadTemplate();
-
-    /**
-     * Perform extraction (if necessary) and installation of previously downloaded template
-     * @return true if successful, false if not
-     */
-    boolean extractAndInstallDownloadedTemplate();
-
-    /**
-     * Get template information after it is properly installed on pool
-     * @return template information
-     */
-    DirectTemplateInformation getTemplateInformation();
+    Pair<Boolean, String> downloadTemplate();
 
     /**
      * Perform checksum validation of previously downloadeed template

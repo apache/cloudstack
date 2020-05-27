@@ -116,6 +116,20 @@ class CsFile:
         logging.debug("Searching for %s and replacing with %s" % (search, replace))
         self.new_config = [w.replace(search, replace) for w in self.new_config]
 
+    def replaceIfFound(self, search, replace):
+        found = False
+        replace_filtered = replace
+        if re.search("PSK \"", replace):
+            replace_filtered = re.sub(r'".*"', '"****"', replace)
+        logging.debug("Searching for %s and replacing with %s if found" % (search, replace_filtered))
+        for index, line in enumerate(self.new_config):
+            if line.lstrip().startswith("#"):
+                continue
+            if re.search(search, line):
+                if replace not in line:
+                    self.new_config[index] = replace + "\n"
+        return False
+
     def search(self, search, replace):
         found = False
         replace_filtered = replace

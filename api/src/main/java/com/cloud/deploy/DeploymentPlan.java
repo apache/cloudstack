@@ -71,4 +71,6 @@ public interface DeploymentPlan {
     void setPreferredHosts(List<Long> hostIds);
 
     List<Long> getPreferredHosts();
+
+    boolean isMigrationPlan();
 }

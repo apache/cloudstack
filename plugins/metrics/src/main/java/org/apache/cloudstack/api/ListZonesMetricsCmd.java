@@ -20,6 +20,7 @@ package org.apache.cloudstack.api;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.ZoneMetricsResponse;
 
@@ -42,9 +43,10 @@ public class ListZonesMetricsCmd extends ListZonesCmd {
 
     @Override
     public void execute() {
-        final List<ZoneMetricsResponse> metricsResponses = metricsService.listZoneMetrics(_queryService.listDataCenters(this).getResponses());
+        ListResponse<ZoneResponse> zones = _queryService.listDataCenters(this);
+        final List<ZoneMetricsResponse> metricsResponses = metricsService.listZoneMetrics(zones.getResponses());
         ListResponse<ZoneMetricsResponse> response = new ListResponse<>();
-        response.setResponses(metricsResponses, metricsResponses.size());
+        response.setResponses(metricsResponses, zones.getCount());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

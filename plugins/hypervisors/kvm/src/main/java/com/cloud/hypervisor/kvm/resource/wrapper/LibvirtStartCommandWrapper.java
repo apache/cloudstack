@@ -20,7 +20,6 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.net.URISyntaxException;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -36,8 +35,8 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
-import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -81,34 +80,17 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             libvirtComputingResource.createVifs(vmSpec, vm);
 
             s_logger.debug("starting " + vmName + ": " + vm.toString());
-            libvirtComputingResource.startVM(conn, vmName, vm.toString());
+            String vmInitialSpecification = vm.toString();
+            String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
+            libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification);
+            performAgentStartHook(vmName, libvirtComputingResource);
 
-            for (final NicTO nic : nics) {
-                if (nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
-                    if (vmSpec.getType() != VirtualMachine.Type.User) {
-                        libvirtComputingResource.configureDefaultNetworkRulesForSystemVm(conn, vmName);
-                        break;
-                    } else {
-                        final List<String> nicSecIps = nic.getNicSecIps();
-                        String secIpsStr;
-                        final StringBuilder sb = new StringBuilder();
-                        if (nicSecIps != null) {
-                            for (final String ip : nicSecIps) {
-                                sb.append(ip).append(";");
-                            }
-                            secIpsStr = sb.toString();
-                        } else {
-                            secIpsStr = "0;";
-                        }
-                        libvirtComputingResource.defaultNetworkRules(conn, vmName, nic, vmSpec.getId(), secIpsStr);
-                    }
-                }
-            }
+            libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
             // pass cmdline info to system vms
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 String controlIp = null;
-                for (final NicTO nic : nics) {
+                for (final NicTO nic : vmSpec.getNics()) {
                     if (nic.getType() == TrafficType.Control) {
                         controlIp = nic.getIp();
                         break;
@@ -157,5 +139,31 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
             }
         }
+    }
+
+    private void performAgentStartHook(String vmName, LibvirtComputingResource libvirtComputingResource) {
+        try {
+            LibvirtKvmAgentHook onStartHook = libvirtComputingResource.getStartHook();
+            onStartHook.handle(vmName);
+        } catch (Exception e) {
+            s_logger.warn("Exception occurred when handling LibVirt VM onStart hook: {}", e);
+        }
+    }
+
+    private String performXmlTransformHook(String vmInitialSpecification, final LibvirtComputingResource libvirtComputingResource) {
+        String vmFinalSpecification;
+        try {
+            // if transformer fails, everything must go as it's just skipped.
+            LibvirtKvmAgentHook t = libvirtComputingResource.getTransformer();
+            vmFinalSpecification = (String) t.handle(vmInitialSpecification);
+            if (null == vmFinalSpecification) {
+                s_logger.warn("Libvirt XML transformer returned NULL, will use XML specification unchanged.");
+                vmFinalSpecification = vmInitialSpecification;
+            }
+        } catch(Exception e) {
+            s_logger.warn("Exception occurred when handling LibVirt XML transformer hook: {}", e);
+            vmFinalSpecification = vmInitialSpecification;
+        }
+        return vmFinalSpecification;
     }
 }

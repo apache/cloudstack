@@ -21,6 +21,7 @@ package org.apache.cloudstack.api;
 import com.cloud.host.Host;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.HostMetricsResponse;
@@ -45,9 +46,10 @@ public class ListHostsMetricsCmd extends ListHostsCmd {
     @Override
     public void execute() {
         setType(Host.Type.Routing.toString());
-        final List<HostMetricsResponse> metricsResponses = metricsService.listHostMetrics(getHostResponses().getResponses());
+        ListResponse<HostResponse> hosts = getHostResponses();
+        final List<HostMetricsResponse> metricsResponses = metricsService.listHostMetrics(hosts.getResponses());
         ListResponse<HostMetricsResponse> response = new ListResponse<>();
-        response.setResponses(metricsResponses, metricsResponses.size());
+        response.setResponses(metricsResponses, hosts.getCount());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

@@ -29,6 +29,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.vm.VirtualMachine;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -45,6 +46,7 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
     public Answer execute(final PlugNicCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final NicTO nic = command.getNic();
         final String vmName = command.getVmName();
+        final VirtualMachine.Type vmType = command.getVMType();
         Domain vm = null;
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -63,6 +65,12 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
             final VifDriver vifDriver = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName());
             final InterfaceDef interfaceDef = vifDriver.plug(nic, "Other PV", "", null);
             vm.attachDevice(interfaceDef.toString());
+
+            // apply default network rules on new nic
+            if (vmType == VirtualMachine.Type.User && nic.isSecurityGroupEnabled()) {
+                final Long vmId = Long.valueOf(vmName.split("-")[2]);
+                libvirtComputingResource.applyDefaultNetworkRulesOnNic(conn, vmName, vmId, nic, false, false);
+            }
 
             return new PlugNicAnswer(command, true, "success");
         } catch (final LibvirtException e) {

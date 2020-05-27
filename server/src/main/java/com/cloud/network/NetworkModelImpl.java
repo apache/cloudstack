@@ -94,7 +94,9 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -158,6 +160,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     NicDao _nicDao = null;
     @Inject
     PodVlanMapDao _podVlanMapDao;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
 
     private List<NetworkElement> networkElements;
 
@@ -1780,8 +1784,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public boolean isPrivateGateway(long ntwkId) {
-        Network network = getNetwork(ntwkId);
-        if (network.getTrafficType() != TrafficType.Guest || network.getNetworkOfferingId() != s_privateOfferingId.longValue()) {
+        final VpcGatewayVO gateway = _vpcGatewayDao.getVpcGatewayByNetworkId(ntwkId);
+        if (gateway == null) {
             return false;
         }
         return true;
@@ -2297,6 +2301,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                         ip = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), nic.getIPv4Address());
                     } else {
                         ipv6 = _ipv6Dao.findByNetworkIdAndIp(network.getId(), nic.getIPv6Address());
+                    }
+
+                    if (vlans.isEmpty()) {
+                        return nic;
                     }
                     //return nic only when its ip address belong to the pod range (for the Basic zone case)
                     for (Vlan vlan : vlans) {

@@ -199,7 +199,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject
     private PrimaryDataStoreDao primaryStorageDao;
     @Inject
-    private VMTemplatePoolDao templateDataStoreDao;
+    private VMTemplatePoolDao templateStoragePoolDao;
     @Inject
     private TemplateJoinDao templateDao;
     @Inject
@@ -1443,7 +1443,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
      */
     private Runnable getCleanupFullyClonedTemplatesTask() {
         return new CleanupFullyClonedTemplatesTask(primaryStorageDao,
-                templateDataStoreDao,
+                templateStoragePoolDao,
                 templateDao,
                 vmInstanceDao,
                 cloneSettingDao,
