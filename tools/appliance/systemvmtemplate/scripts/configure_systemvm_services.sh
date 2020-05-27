@@ -41,7 +41,7 @@ function configure_issue() {
 
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
- (___(_)   Debian GNU/Linux 10.2 \n \l
+ (___(_)   Debian GNU/Linux 10 \n \l
 
 EOF
 }
