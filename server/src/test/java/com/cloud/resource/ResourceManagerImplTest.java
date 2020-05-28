@@ -27,13 +27,17 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.storage.StorageManager;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDeadCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDeadCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -44,9 +48,9 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -62,6 +66,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -72,11 +77,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ActionEventUtils.class, ResourceManagerImpl.class, SSHCmdHelper.class})
@@ -489,7 +489,7 @@ public class ResourceManagerImplTest {
         DeclareHostAsDeadCmd declareHostAsDeadCmd = Mockito.spy(new DeclareHostAsDeadCmd());
         HostVO hostVo = createDummyHost(hostStatus);
         hostVo.setResourceState(originalState);
-        when(declareHostAsDeadCmd.getHostId()).thenReturn(0l);
+        when(declareHostAsDeadCmd.getId()).thenReturn(0l);
         when(hostDao.findById(0l)).thenReturn(hostVo);
 
         Host result = resourceManager.declareHostAsDead(declareHostAsDeadCmd);
@@ -511,7 +511,7 @@ public class ResourceManagerImplTest {
         CancelHostAsDeadCmd cancelHostAsDeadCmd = Mockito.spy(new CancelHostAsDeadCmd());
         HostVO hostVo = createDummyHost(hostStatus);
         hostVo.setResourceState(originalState);
-        when(cancelHostAsDeadCmd.getHostId()).thenReturn(0l);
+        when(cancelHostAsDeadCmd.getId()).thenReturn(0l);
         when(hostDao.findById(0l)).thenReturn(hostVo);
 
         Host result = resourceManager.cancelHostAsDead(cancelHostAsDeadCmd);

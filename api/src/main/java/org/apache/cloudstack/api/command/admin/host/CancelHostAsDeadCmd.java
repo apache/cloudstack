@@ -32,25 +32,29 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = "cancelHostAsDead", description = "Cancels host status from Dead. Host is set back to status of Enabled.", responseObject = HostResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.15", authorized = {RoleType.Admin})
+@APICommand(name = "cancelHostAsDead",
+        description = "Cancel host status from 'Dead'. Host will transit back to status 'Enabled'.",
+        responseObject = HostResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin})
 public class CancelHostAsDeadCmd extends BaseAsyncCmd {
 
-    private static final String S_NAME = "cancelhostasdead";
+    private static final String S_NAME = "cancelhostasdeadresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID, type = BaseCmd.CommandType.UUID, entityType = HostResponse.class, description = "ID of the host", required = true, validations = {ApiArgValidator.PositiveNumber})
-    private Long hostId;
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = HostResponse.class, description = "host ID", required = true, validations = {ApiArgValidator.PositiveNumber})
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getHostId() {
-        return hostId;
+    public Long getId() {
+        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -78,7 +82,7 @@ public class CancelHostAsDeadCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "declaring host: " + getHostId() + " as dead";
+        return "declaring host: " + getId() + " as dead";
     }
 
     @Override
@@ -88,7 +92,7 @@ public class CancelHostAsDeadCmd extends BaseAsyncCmd {
 
     @Override
     public Long getInstanceId() {
-        return getHostId();
+        return getId();
     }
 
     @Override
