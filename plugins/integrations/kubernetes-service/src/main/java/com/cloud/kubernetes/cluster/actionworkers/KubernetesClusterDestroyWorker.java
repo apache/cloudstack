@@ -37,7 +37,6 @@ import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMap;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.network.IpAddress;
-import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
@@ -48,6 +47,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceModifierActionWorker {
 
@@ -129,7 +130,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
 
     private void deleteKubernetesClusterNetworkRules() throws ManagementServerException {
         NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
-        if (network == null || !Network.GuestType.Isolated.equals(network.getGuestType())) {
+        if (network == null) {
             return;
         }
         List<Long> removedVmIds = new ArrayList<>();
@@ -189,17 +190,39 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
     public boolean destroy() throws CloudRuntimeException {
         init();
         validateClusterSate();
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Destroying Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
-        }
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.DestroyRequested);
         this.clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        boolean vmsDestroyed = destroyClusterVMs();
         boolean cleanupNetwork = true;
         final KubernetesClusterDetailsVO clusterDetails = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), "networkCleanup");
         if (clusterDetails != null) {
             cleanupNetwork = Boolean.parseBoolean(clusterDetails.getValue());
         }
+        if (cleanupNetwork) { // if network has additional VM, cannot proceed with cluster destroy
+            NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
+            if (network == null) {
+                logAndThrow(Level.ERROR, String.format("Failed to find network for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            }
+            List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.User);
+            if (networkVMs.size() > clusterVMs.size()) {
+                logAndThrow(Level.ERROR, String.format("Network ID: %s for Kubernetes cluster ID: %s has instances using it which are not part of the Kubernetes cluster", network.getUuid(), kubernetesCluster.getUuid()));
+            }
+            for (VMInstanceVO vm : networkVMs) {
+                boolean vmFoundInKubernetesCluster = false;
+                for (KubernetesClusterVmMap clusterVM : clusterVMs) {
+                    if (vm.getId() == clusterVM.getVmId()) {
+                        vmFoundInKubernetesCluster = true;
+                        break;
+                    }
+                }
+                if (!vmFoundInKubernetesCluster) {
+                    logAndThrow(Level.ERROR, String.format("VM ID: %s which is not a part of Kubernetes cluster ID: %s is using Kubernetes cluster network ID: %s", vm.getUuid(), kubernetesCluster.getUuid(), network.getUuid()));
+                }
+            }
+        }
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(String.format("Destroying Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+        }
+        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.DestroyRequested);
+        boolean vmsDestroyed = destroyClusterVMs();
         // if there are VM's that were not expunged, we can not delete the network
         if (vmsDestroyed) {
             if (cleanupNetwork) {

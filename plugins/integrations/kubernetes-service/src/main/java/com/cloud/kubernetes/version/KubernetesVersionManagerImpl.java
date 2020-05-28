@@ -52,6 +52,9 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
 
@@ -246,19 +249,25 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             }
             minimumSemanticVersion = minVersion.getSemanticVersion();
         }
-        List <KubernetesSupportedVersionVO> versions = new ArrayList<>();
+        Filter searchFilter = new Filter(KubernetesSupportedVersionVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<KubernetesSupportedVersionVO> sb = kubernetesSupportedVersionDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        SearchCriteria<KubernetesSupportedVersionVO> sc = sb.create();
+        String keyword = cmd.getKeyword();
         if (versionId != null) {
-            KubernetesSupportedVersionVO version = kubernetesSupportedVersionDao.findById(versionId);
-            if (version != null && (zoneId == null || version.getZoneId() == null || version.getZoneId().equals(zoneId))) {
-                versions.add(version);
-            }
-        } else {
-            if (zoneId == null) {
-                versions = kubernetesSupportedVersionDao.listAll();
-            } else {
-                versions = kubernetesSupportedVersionDao.listAllInZone(zoneId);
-            }
+            sc.setParameters("id", versionId);
         }
+        if (zoneId != null) {
+            SearchCriteria<KubernetesSupportedVersionVO> scc = kubernetesSupportedVersionDao.createSearchCriteria();
+            scc.addOr("zoneId", SearchCriteria.Op.EQ, zoneId);
+            scc.addOr("zoneId", SearchCriteria.Op.NULL);
+            sc.addAnd("zoneId", SearchCriteria.Op.SC, scc);
+        }
+        if(keyword != null){
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
+        List <KubernetesSupportedVersionVO> versions = kubernetesSupportedVersionDao.search(sc, searchFilter);
         versions = filterKubernetesSupportedVersions(versions, minimumSemanticVersion);
 
         return createKubernetesSupportedVersionListResponse(versions);
