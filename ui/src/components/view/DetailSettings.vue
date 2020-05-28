@@ -69,9 +69,7 @@
           <a-button shape="circle" size="default" @click="hideEditDetail(index)" v-if="item.edit">
             <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
           </a-button>
-          <a-button shape="circle" @click="showEditDetail(index)" v-if="!item.edit">
-            <a-icon type="edit" />
-          </a-button>
+          <a-button shape="circle" @click="showEditDetail(index)" v-if="!item.edit" icon="edit" />
         </div>
         <div slot="actions" v-if="!disableSettings">
           <a-popconfirm
@@ -81,9 +79,7 @@
             cancelText="No"
             placement="left"
           >
-            <a-button shape="circle">
-              <a-icon type="delete" theme="twoTone" twoToneColor="#f5222d" />
-            </a-button>
+            <a-button shape="circle" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </a-list-item>

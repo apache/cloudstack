@@ -34,7 +34,7 @@
           cancelText="No"
           placement="top"
         >
-          <a-button icon="delete" type="danger" shape="round"></a-button>
+          <a-button icon="delete" type="danger" shape="circle"></a-button>
         </a-popconfirm>
       </template>
     </a-table>

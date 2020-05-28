@@ -38,7 +38,7 @@
           :icon="action.icon"
           :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
           shape="circle"
-          style="margin-right: 5px"
+          style="margin-left: 5px"
           @click="execAction(action)" />
       </a-badge>
       <a-button

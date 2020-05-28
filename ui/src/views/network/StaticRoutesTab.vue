@@ -29,8 +29,8 @@
           <div>{{ route.cidr }}</div>
         </div>
         <div class="actions">
-          <a-button shape="round" icon="tag" @click="() => openTagsModal(route)"></a-button>
-          <a-button shape="round" icon="delete" type="danger" @click="() => handleDelete(route)"></a-button>
+          <a-button shape="circle" icon="tag" @click="() => openTagsModal(route)"></a-button>
+          <a-button shape="circle" icon="delete" type="danger" @click="() => handleDelete(route)"></a-button>
         </div>
       </div>
     </div>

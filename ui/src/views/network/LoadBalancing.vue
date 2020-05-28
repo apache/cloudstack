@@ -88,16 +88,15 @@
           <div v-for="instance in record.ruleInstances" :key="instance.loadbalancerruleinstance.id">
             <div v-for="ip in instance.lbvmipaddresses" :key="ip" class="rule-instance-list__item">
               <div>
+                <status :text="instance.loadbalancerruleinstance.state" />
                 <a-icon type="desktop" />
                 <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
                   {{ instance.loadbalancerruleinstance.displayname }}
                 </router-link>
               </div>
               <div>{{ ip }}</div>
-              <div><status :text="instance.loadbalancerruleinstance.state" displayText /></div>
               <a-button
-                size="small"
-                shape="round"
+                shape="circle"
                 type="danger"
                 icon="delete"
                 @click="() => handleDeleteInstanceFromRule(instance, record, ip)" />
@@ -107,15 +106,15 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-button size="small" shape="circle" icon="edit" @click="() => openEditRuleModal(record)"></a-button>
-          <a-button size="small" shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
+          <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(record)"></a-button>
+          <a-button shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
             okText="Yes"
             cancelText="No"
           >
-            <a-button size="small" shape="circle" type="danger" icon="delete" />
+            <a-button shape="circle" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </template>

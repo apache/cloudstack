@@ -82,9 +82,9 @@
               </div>
             </div>
             <div class="list__actions">
-              <a-button shape="round" icon="tag" @click="() => openTagsModal(acl)"></a-button>
-              <a-button shape="round" icon="edit" @click="() => openEditRuleModal(acl)"></a-button>
-              <a-button shape="round" icon="delete" type="danger" @click="() => handleDeleteRule(acl.id)"></a-button>
+              <a-button shape="circle" icon="tag" @click="() => openTagsModal(acl)"></a-button>
+              <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(acl)"></a-button>
+              <a-button shape="circle" icon="delete" type="danger" @click="() => handleDeleteRule(acl.id)"></a-button>
             </div>
           </div>
         </transition-group>

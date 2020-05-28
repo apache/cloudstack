@@ -57,6 +57,7 @@ import DetailsTab from '@/components/view/DetailsTab'
 import InfoCard from '@/components/view/InfoCard'
 import ResourceLayout from '@/layouts/ResourceLayout'
 import { api } from '@/api'
+import { mixinDevice } from '@/utils/mixin.js'
 
 export default {
   name: 'ResourceView',
@@ -64,6 +65,7 @@ export default {
     InfoCard,
     ResourceLayout
   },
+  mixins: [mixinDevice],
   props: {
     resource: {
       type: Object,

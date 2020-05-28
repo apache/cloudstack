@@ -66,7 +66,7 @@
           <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
         </span>
         <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
-        <console :resource="record" size="small" />
+        <console :resource="record" size="small" style="margin-right: 5px" />
         <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
         <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
       </div>
@@ -147,25 +147,31 @@
         <template slot="title">Move to top</template>
         <a-button
           shape="round"
-          icon="double-left"
           @click="moveItemTop(record)"
-          class="shift-btn shift-btn--rotated"></a-button>
+          class="shift-btn">
+          <a-icon type="double-left" class="shift-btn shift-btn--rotated" />
+        </a-button>
       </a-tooltip>
       <a-tooltip placement="top">
         <template slot="title">Move to bottom</template>
         <a-button
           shape="round"
-          icon="double-right"
           @click="moveItemBottom(record)"
-          class="shift-btn shift-btn--rotated"></a-button>
+          class="shift-btn">
+          <a-icon type="double-right" class="shift-btn shift-btn--rotated" />
+        </a-button>
       </a-tooltip>
       <a-tooltip placement="top">
         <template slot="title">Move up one row</template>
-        <a-button shape="round" icon="caret-up" @click="moveItemUp(record)" class="shift-btn"></a-button>
+        <a-button shape="round" @click="moveItemUp(record)" class="shift-btn">
+          <a-icon type="caret-up" class="shift-btn" />
+        </a-button>
       </a-tooltip>
       <a-tooltip placement="top">
         <template slot="title">Move down one row</template>
-        <a-button shape="round" icon="caret-down" @click="moveItemDown(record)" class="shift-btn"></a-button>
+        <a-button shape="round" @click="moveItemDown(record)" class="shift-btn">
+          <a-icon type="caret-down" class="shift-btn" />
+        </a-button>
       </a-tooltip>
     </div>
 

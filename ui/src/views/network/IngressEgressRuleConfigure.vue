@@ -85,14 +85,14 @@
         </div>
       </template>
       <template slot="actions" slot-scope="record">
-        <a-button shape="round" icon="tag" class="rule-action" @click="() => openTagsModal(record)" />
+        <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record)" />
         <a-popconfirm
           :title="$t('label.delete') + '?'"
           @confirm="handleDeleteRule(record)"
           okText="Yes"
           cancelText="No"
         >
-          <a-button shape="round" type="danger" icon="delete" class="rule-action" />
+          <a-button shape="circle" type="danger" icon="delete" class="rule-action" />
         </a-popconfirm>
       </template>
     </a-table>

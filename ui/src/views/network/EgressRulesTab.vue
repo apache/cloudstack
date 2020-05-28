@@ -78,7 +78,7 @@
         {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
       </template>
       <template slot="actions" slot-scope="record">
-        <a-button shape="round" type="danger" icon="delete" @click="deleteRule(record)" />
+        <a-button shape="circle" type="danger" icon="delete" @click="deleteRule(record)" />
       </template>
     </a-table>
     <a-pagination

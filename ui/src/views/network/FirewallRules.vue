@@ -74,8 +74,8 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-button shape="round" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
-          <a-button shape="round" type="danger" icon="delete" class="rule-action" @click="deleteRule(record)" />
+          <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
+          <a-button shape="circle" type="danger" icon="delete" class="rule-action" @click="deleteRule(record)" />
         </div>
       </template>
     </a-table>

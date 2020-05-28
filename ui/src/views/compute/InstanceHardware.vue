@@ -120,8 +120,7 @@
                     >
                       <a-button
                         icon="check-square"
-                        size="small"
-                        shape="round" />
+                        shape="circle" />
                     </a-popconfirm>
                     <a-tooltip placement="bottom" v-if="item.type !== 'L2'">
                       <template slot="title">
@@ -129,8 +128,7 @@
                       </template>
                       <a-button
                         icon="swap"
-                        size="small"
-                        shape="round"
+                        shape="circle"
                         @click="editIpAddressNic = item.id; showUpdateIpModal = true" />
                     </a-tooltip>
                     <a-tooltip placement="bottom" v-if="item.type !== 'L2'">
@@ -139,8 +137,7 @@
                       </template>
                       <a-button
                         icon="environment"
-                        size="small"
-                        shape="round"
+                        shape="circle"
                         @click="fetchSecondaryIPs(item.id)" />
                     </a-tooltip>
                     <a-popconfirm
@@ -153,8 +150,7 @@
                       <a-button
                         type="danger"
                         icon="delete"
-                        size="small"
-                        shape="round" />
+                        shape="circle" />
                     </a-popconfirm>
                   </div>
                   <div class="tags">
@@ -273,7 +269,6 @@
             <a-button
               type="danger"
               shape="circle"
-              size="small"
               icon="delete" />
             {{ ip.ipaddress }}
           </a-popconfirm>

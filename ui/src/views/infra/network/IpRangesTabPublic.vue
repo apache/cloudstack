@@ -42,8 +42,7 @@
             <template slot="content">{{ $t('label.add.account') }}</template>
             <a-button
               icon="user-add"
-              shape="round"
-              type="primary"
+              shape="circle"
               @click="() => handleOpenAddAccountModal(record)"></a-button>
           </a-popover>
           <a-popover
@@ -52,13 +51,13 @@
             <template slot="content">{{ $t('label.release.account') }}</template>
             <a-button
               icon="user-delete"
-              shape="round"
+              shape="circle"
               type="danger"
               @click="() => handleRemoveAccount(record.id)"></a-button>
           </a-popover>
           <a-popover placement="bottom">
             <template slot="content">{{ $t('label.remove.ip.range') }}</template>
-            <a-button icon="delete" shape="round" type="danger" @click="handleDeleteIpRange(record.id)"></a-button>
+            <a-button icon="delete" shape="circle" type="danger" @click="handleDeleteIpRange(record.id)"></a-button>
           </a-popover>
         </div>
       </template>

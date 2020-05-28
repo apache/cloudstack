@@ -42,9 +42,8 @@
             <template slot="content">{{ $t('label.remove.ip.range') }}</template>
             <a-button
               icon="delete"
-              shape="round"
+              shape="circle"
               type="danger"
-              size="small"
               @click="handleDeleteIpRange(record)"></a-button>
           </a-popover>
         </div>

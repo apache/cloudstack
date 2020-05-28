@@ -17,9 +17,9 @@ Install node: (CentOS/Fedora/RHEL)
     curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
     sudo yum install nodejs
 
-For development, install tools and dependencies system-wide:
+Optionally, you may also install system-wide dev tools:
 
-    sudo npm install -g @vue/cli webpack eslint npm-check-updates
+    sudo npm install -g @vue/cli npm-check-updates
 
 ## Development
 
