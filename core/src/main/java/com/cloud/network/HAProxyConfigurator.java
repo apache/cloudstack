@@ -618,6 +618,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         String cfgLbHttpKeepalive = lbConfigsMap.get(LoadBalancerConfigKey.LbHttpKeepalive.key());
         if (cfgLbHttpKeepalive != null && cfgLbHttpKeepalive.equalsIgnoreCase("true")) {
             keepAliveEnabled = true;
+        } else if (cfgLbHttpKeepalive != null && cfgLbHttpKeepalive.equalsIgnoreCase("false")) {
+            keepAliveEnabled = false;
         }
 
         if ((http && !keepAliveEnabled) || httpbasedStickiness) {
