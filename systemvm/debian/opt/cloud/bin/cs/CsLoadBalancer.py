@@ -42,7 +42,7 @@ class CsLoadBalancer(CsDataBag):
 
         file1.commit()
         file2 = CsFile(HAPROXY_CONF_P)
-        if not file2.compare(file1):
+        if not file2.compareOrder(file1):
             CsHelper.copy(HAPROXY_CONF_T, HAPROXY_CONF_P)
 
             proc = CsProcess(['/run/haproxy.pid'])
