@@ -20,11 +20,13 @@
 package com.cloud.storage.template;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
 import org.apache.commons.collections.CollectionUtils;
@@ -32,6 +34,7 @@ import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.storage.OVFHelper;
 import com.cloud.agent.api.to.DatadiskTO;
@@ -42,6 +45,9 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.script.Script;
 
+/**
+ * processes the content of an OVA for registration of a template
+ */
 public class OVAProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(OVAProcessor.class);
     StorageLayer _storage;
@@ -113,7 +119,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
                 s_logger.info("Found " + ovfProperties.size() + " configurable OVF properties");
                 info.ovfProperties = ovfProperties;
             }
-        } catch (Exception e) {
+        } catch (ParserConfigurationException | IOException | SAXException e) {
             s_logger.info("The ovf file " + ovfFile + " is invalid ", e);
             throw new InternalErrorException("OVA package has bad ovf file " + e.getMessage(), e);
         }
