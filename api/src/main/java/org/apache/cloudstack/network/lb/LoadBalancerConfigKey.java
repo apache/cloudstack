@@ -41,9 +41,19 @@ public enum LoadBalancerConfigKey {
 
     LbHttpKeepalive(Category.LoadBalancer, "lb.http.keepalive", "LB http keepalive enabled/disabled", Boolean.class, "false", "If LB http is enabled, default is 'false'", Scope.LoadBalancerRule),
 
-    LbMaxConn(Category.LoadBalancer, "lb.max.conn", "LB max connection", Long.class, "", "LB max connection, default is ''", Scope.LoadBalancerRule),
+    GlobalMaxConn(Category.LoadBalancer, "global.maxconn", "LB max connection", Long.class, "4096", "Maximum per process number of concurrent connections, default is '4096'", Scope.Network, Scope.Vpc),
 
-    LbFullConn(Category.LoadBalancer, "lb.full.conn", "LB full connection", Long.class, "", "LB full connection, default is 'maxconn/10'", Scope.LoadBalancerRule);
+    GlobalMaxPipes(Category.LoadBalancer, "global.maxpipes", "LB max pipes", Long.class, "", "Maximum number of per process pipes, default is 'maxconn/4'", Scope.Network, Scope.Vpc),
+
+    LbMaxConn(Category.LoadBalancer, "lb.maxconn", "LB max connection", Long.class, "", "Maximum per process number of concurrent connections per site/vm", Scope.LoadBalancerRule),
+
+    LbFullConn(Category.LoadBalancer, "lb.fullconn", "LB full connection", Long.class, "", "Specify at what backend load the servers will reach their maxconn, default is 'maxconn/10'", Scope.LoadBalancerRule),
+
+    LbServerMaxConn(Category.LoadBalancer, "lb.server.maxconn", "LB max connection per site/vm", Long.class, "", "LB max connection per site/vm, default is ''", Scope.LoadBalancerRule),
+
+    LbServerMinConn(Category.LoadBalancer, "lb.server.minconn", "LB minimum connection", Long.class, "", "LB minimum connection per site/vm, default is ''", Scope.LoadBalancerRule),
+
+    LbServerMaxQueue(Category.LoadBalancer, "lb.server.maxqueue", "LB max queue", Long.class, "", "Maximum number of connections which will wait in queue for this server, default is ''", Scope.LoadBalancerRule);
 
     public static enum Category {
         General, Advanced, Stats, LoadBalancer

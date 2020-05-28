@@ -515,6 +515,23 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             result.add(sb.toString());
         }
 
+        if (lbConfigsMap.get(LoadBalancerConfigKey.LbMaxConn.key()) != null) {
+            long maxConnValue = Long.parseLong(lbConfigsMap.get(LoadBalancerConfigKey.LbMaxConn.key()));
+            if (maxConnValue > 0) {
+                sb = new StringBuilder();
+                sb.append("\tmaxconn ").append(maxConnValue);
+                result.add(sb.toString());
+            }
+        }
+        if (lbConfigsMap.get(LoadBalancerConfigKey.LbFullConn.key()) != null) {
+            long fullConnValue = Long.parseLong(lbConfigsMap.get(LoadBalancerConfigKey.LbFullConn.key()));
+            if (fullConnValue > 0) {
+                sb = new StringBuilder();
+                sb.append("\tfullconn ").append(fullConnValue);
+                result.add(sb.toString());
+            }
+        }
+
         int i = 0;
         Boolean destsAvailable = false;
         final String stickinessSubRule = getLbSubRuleForStickiness(lbTO);
@@ -536,6 +553,25 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             .append(":")
             .append(dest.getDestPort())
             .append(" check");
+
+            if (lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()) != null) {
+                long maxConnEach = Long.parseLong(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()));
+                if (maxConnEach > 0) {
+                    sb.append(" maxconn ").append(maxConnEach);
+                }
+            }
+            if (lbConfigsMap.get(LoadBalancerConfigKey.LbServerMinConn.key()) != null) {
+                long minConnEach = Long.parseLong(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMinConn.key()));
+                if (minConnEach > 0) {
+                    sb.append(" minconn ").append(minConnEach);
+                }
+            }
+            if (lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxQueue.key()) != null) {
+                long maxQueueEach = Long.parseLong(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxQueue.key()));
+                if (maxQueueEach > 0) {
+                    sb.append(" maxqueue ").append(maxQueueEach);
+                }
+            }
             if(lbTO.getLbProtocol() != null && lbTO.getLbProtocol().equals("tcp-proxy")) {
                 sb.append(" send-proxy");
             }
@@ -620,10 +656,15 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final List<String> result = new ArrayList<String>();
         final List<String> gSection = Arrays.asList(globalSection);
         //        note that this is overwritten on the String in the static ArrayList<String>
-        gSection.set(2, "\tmaxconn " + lbCmd.maxconn);
+        String maxconn = networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxConn.key()) != null ?
+                            networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxConn.key()) :
+                            lbCmd.maxconn;
+        gSection.set(2, "\tmaxconn " + maxconn);
         // TODO DH: write test for this function
-        final String pipesLine = "\tmaxpipes " + Long.toString(Long.parseLong(lbCmd.maxconn) / 4);
-        gSection.set(3, pipesLine);
+        final String maxPipes = networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxPipes.key()) != null ?
+                                    networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxPipes.key()) :
+                                    Long.toString(Long.parseLong(maxconn) / 4);
+        gSection.set(3, "\tmaxpipes " + maxPipes);
         if (s_logger.isDebugEnabled()) {
             for (final String s : gSection) {
                 s_logger.debug("global section: " + s);
