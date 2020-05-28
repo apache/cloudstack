@@ -79,6 +79,8 @@ Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
 Requires: python3-dns
+Requires: python3-setuptools
+Requires: mysql-connector-python3
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -366,7 +368,6 @@ pip3 install argparse
 /usr/bin/systemctl off cloudstack-management || true
 
 %pre management
-pip3 install mysql-connector-python setuptools
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
