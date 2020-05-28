@@ -469,7 +469,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         return sb.toString();
     }
 
-    private List<String> getRulesForPool(final LoadBalancerTO lbTO, final boolean keepAliveEnabled, HashMap<String, String> networkLbConfigsMap) {
+    private List<String> getRulesForPool(final LoadBalancerTO lbTO, boolean keepAliveEnabled, HashMap<String, String> networkLbConfigsMap) {
         StringBuilder sb = new StringBuilder();
         final String poolName = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
         final String publicIP = lbTO.getSrcIp();
@@ -607,22 +607,23 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if (stickinessSubRule != null && !destsAvailable) {
             s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() + ": Not Applied, cause:  backends are unavailable");
         }
-        Boolean http = false;
-        String cfgHttp = lbConfigsMap.get(LoadBalancerConfigKey.LbHttp.key());
-        if (publicPort == NetUtils.HTTP_PORT && cfgHttp == null) {
+        boolean http = false;
+        String cfgLbHttp = lbConfigsMap.get(LoadBalancerConfigKey.LbHttp.key());
+        if (publicPort == NetUtils.HTTP_PORT && cfgLbHttp == null) {
             http = true;
-        } else if (cfgHttp != null && cfgHttp.equalsIgnoreCase("true")) {
+        } else if (cfgLbHttp != null && cfgLbHttp.equalsIgnoreCase("true")) {
             http = true;
         }
-        if (http || httpbasedStickiness) {
+
+        String cfgLbHttpKeepalive = lbConfigsMap.get(LoadBalancerConfigKey.LbHttpKeepalive.key());
+        if (cfgLbHttpKeepalive != null && cfgLbHttpKeepalive.equalsIgnoreCase("true")) {
+            keepAliveEnabled = true;
+        }
+
+        if ((http && !keepAliveEnabled) || httpbasedStickiness) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             result.add(sb.toString());
-        }
-
-        String cfgKeepalive = lbConfigsMap.get(LoadBalancerConfigKey.LbHttpKeepalive.key());
-        Boolean keepalive = cfgKeepalive != null && cfgKeepalive.equalsIgnoreCase("true");
-        if ((http && !keepalive) || httpbasedStickiness) {
             sb = new StringBuilder();
             sb.append("\t").append("option httpclose");
             result.add(sb.toString());
