@@ -4913,8 +4913,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             assert (morDatastore != null);
 
-            DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
+            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
+            HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost);
 
+            DatastoreSummary summary = dsMo.getSummary();
             long capacity = summary.getCapacity();
             long available = summary.getFreeSpace();
 

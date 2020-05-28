@@ -839,6 +839,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             s_logger.trace("vCenter API trace - mountDatastore(). target MOR: " + _mor.getValue() + ", vmfs: " + vmfsDatastore + ", poolHost: " + poolHostAddress +
                     ", poolHostPort: " + poolHostPort + ", poolPath: " + poolPath + ", poolUuid: " + poolUuid);
 
+        DatastoreMO dsMo = null;
         HostDatastoreSystemMO hostDatastoreSystemMo = getHostDatastoreSystemMO();
         ManagedObjectReference morDatastore = hostDatastoreSystemMo.findDatastore(poolUuid);
         if (morDatastore == null) {
@@ -865,6 +866,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
                         s_logger.trace("vCenter API trace - mountDatastore() done(failed)");
                     throw new Exception(msg);
                 }
+                dsMo = new DatastoreMO(_context, morDatastore);
             } else {
                 morDatastore = _context.getDatastoreMorByPath(poolPath);
                 if (morDatastore == null) {
@@ -876,10 +878,12 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
                     throw new Exception(msg);
                 }
 
-                DatastoreMO dsMo = new DatastoreMO(_context, morDatastore);
+                dsMo = new DatastoreMO(_context, morDatastore);
                 dsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, poolUuid);
             }
         }
+
+        HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this);
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - mountDatastore() done(successfully)");
