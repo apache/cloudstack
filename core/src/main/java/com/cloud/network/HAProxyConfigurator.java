@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Optional;
 
 import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
 import org.apache.log4j.Logger;
@@ -636,21 +637,28 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     }
 
     private String generateStatsRule(final LoadBalancerConfigCommand lbCmd, final String ruleName, final String statsIp, HashMap<String, String> networkLbConfigsMap) {
-        String haproxyStatsEnabled = networkLbConfigsMap.get(LoadBalancerConfigKey.HAproxyStatsEnable.key());
-        if (haproxyStatsEnabled != null && ! haproxyStatsEnabled.equalsIgnoreCase("true")) {
+        String lbStatsEnable = networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsEnable.key());
+        if ( lbStatsEnable != null && !  lbStatsEnable.equalsIgnoreCase("true")) {
             return "";
         }
+
         final StringBuilder rule = new StringBuilder("\nlisten ").append(ruleName).append("\n\tbind ").append(statsIp).append(":").append(lbCmd.lbStatsPort);
+
         // TODO DH: write test for this in both cases
         if (!lbCmd.keepAliveEnabled) {
             s_logger.info("Haproxy mode http enabled");
             rule.append("\n\tmode http\n\toption httpclose");
         }
+
+        Optional<String> lbStatsUri = Optional.of(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsUri.key()));
+        Optional<String> lbStatsAuth = Optional.of(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsAuth.key()));
+
         rule.append("\n\tstats enable\n\tstats uri     ")
-        .append(lbCmd.lbStatsUri)
-        .append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ")
-        .append(lbCmd.lbStatsAuth);
-        rule.append("\n");
+                .append(lbStatsUri.orElse(lbCmd.lbStatsUri))
+                .append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ")
+                .append(lbStatsAuth.orElse(lbCmd.lbStatsAuth))
+                .append("\n");
+
         final String result = rule.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Haproxystats rule: " + result);
@@ -732,10 +740,14 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                  * stats will be available on the default http serving port, no
                  * special stats port
                  */
-                final StringBuilder subRule =
-                        new StringBuilder("\tstats enable\n\tstats uri     ").append(lbCmd.lbStatsUri)
+
+                Optional<String> lbStatsUri = Optional.of(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsUri.key()));
+                Optional<String> lbStatsAuth = Optional.of(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsAuth.key()));
+
+                final StringBuilder subRule = new StringBuilder("\tstats enable\n\tstats uri     ")
+                        .append(lbStatsUri.orElse(lbCmd.lbStatsUri))
                         .append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ")
-                        .append(lbCmd.lbStatsAuth);
+                        .append(lbStatsAuth.orElse(lbCmd.lbStatsAuth));
                 result.add(subRule.toString());
             }
 

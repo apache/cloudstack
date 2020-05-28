@@ -25,11 +25,11 @@ import com.cloud.utils.Pair;
 
 public enum LoadBalancerConfigKey {
 
-    HAproxyStatsEnable(Category.Stats, "haproxy.stats.enable", "HAProxy stats enable", Boolean.class, "true", "Enable or Disable HAProxy stats. To access the dashboard, please add firewall rule", Scope.Network, Scope.Vpc),
+    LbStatsEnable(Category.Stats, "lb.stats.enable", "LB stats enable", Boolean.class, "true", "Enable statistics reporting with default settings, default is 'true'", Scope.Network, Scope.Vpc),
 
-    HAproxyStatsUri(Category.Stats, "haproxy.stats.uri", "HAProxy stats URI", String.class, "/admin?stats", "URI of HAProxy stats, default is '/admin?stats'", Scope.Network, Scope.Vpc),
+    LbStatsUri(Category.Stats, "lb.stats.uri", "LB stats URI", String.class, "/admin?stats", "Enable statistics and define the URI prefix to access them, default is '/admin?stats'", Scope.Network, Scope.Vpc),
 
-    HAproxyStatsAuth(Category.Stats, "haproxy.stats.auth", "HAProxy stats auth", String.class, "admin1:AdMiN123", "HAproxy stats username and password, default is 'admin1:AdMiN123'", Scope.Network, Scope.Vpc),
+    LbStatsAuth(Category.Stats, "lb.stats.auth", "LB stats auth", String.class, "admin1:AdMiN123", "Enable statistics with authentication and grant access to an account, default is 'admin1:AdMiN123'", Scope.Network, Scope.Vpc),
 
     TimeoutConnect(Category.General, "timeout.connect", "Maximum time (in ms) to wait for a connection to succeed", Long.class, "5000", "Set the maximum time to wait for a connection attempt to a server to succeed.", Scope.Network, Scope.Vpc, Scope.LoadBalancerRule),
 
