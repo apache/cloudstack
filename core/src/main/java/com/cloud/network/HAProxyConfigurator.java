@@ -650,8 +650,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             rule.append("\n\tmode http\n\toption httpclose");
         }
 
-        Optional<String> lbStatsUri = Optional.of(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsUri.key()));
-        Optional<String> lbStatsAuth = Optional.of(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsAuth.key()));
+        Optional<String> lbStatsUri = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsUri.key()));
+        Optional<String> lbStatsAuth = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsAuth.key()));
 
         rule.append("\n\tstats enable\n\tstats uri     ")
                 .append(lbStatsUri.orElse(lbCmd.lbStatsUri))
@@ -741,8 +741,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                  * special stats port
                  */
 
-                Optional<String> lbStatsUri = Optional.of(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsUri.key()));
-                Optional<String> lbStatsAuth = Optional.of(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsAuth.key()));
+                Optional<String> lbStatsUri = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsUri.key()));
+                Optional<String> lbStatsAuth = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsAuth.key()));
 
                 final StringBuilder subRule = new StringBuilder("\tstats enable\n\tstats uri     ")
                         .append(lbStatsUri.orElse(lbCmd.lbStatsUri))
