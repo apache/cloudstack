@@ -82,6 +82,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterDestroyWorker;
@@ -180,6 +181,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected ClusterDao clusterDao;
     @Inject
     protected ClusterDetailsDao clusterDetailsDao;
+    @Inject
+    protected HostDao hostDao;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -523,6 +526,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
                 HostVO h = hp.first();
+                hostDao.loadHostTags(h);
+                if (!(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
+                    continue;
+                }
                 int reserved = hp.second();
                 reserved++;
                 ClusterVO cluster = clusterDao.findById(h.getClusterId());
