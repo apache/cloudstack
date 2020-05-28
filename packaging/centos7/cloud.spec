@@ -369,12 +369,12 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 pip3 install argparse netaddr
 
 %preun management
-# TODO
-pip3 install mysql-connector-python
 /usr/bin/systemctl stop cloudstack-management || true
 /usr/bin/systemctl off cloudstack-management || true
 
 %pre management
+# TODO
+pip3 install mysql-connector-python
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
