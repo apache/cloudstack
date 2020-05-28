@@ -45,9 +45,8 @@ BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
 BuildRequires: /usr/bin/mkisofs
-#BuildRequires: mysql-connector-python
 BuildRequires: maven => 3.0.0
-#BuildRequires: python-setuptools
+BuildRequires: python3-setuptools
 
 %description
 CloudStack is a highly-scalable elastic, open source,
@@ -89,7 +88,7 @@ management, and intelligence in CloudStack.
 Summary: Apache CloudStack common files and scripts
 Requires: python2
 Requires: python3
-#Requires: python-argparse
+Requires: python3-pip
 Requires: python3-netaddr
 Group:   System Environment/Libraries
 %description common
@@ -359,11 +358,15 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
+%post common
+pip3 install argparse
+
 %preun management
 /usr/bin/systemctl stop cloudstack-management || true
 /usr/bin/systemctl off cloudstack-management || true
 
 %pre management
+pip3 install mysql-connector-python setuptools
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 

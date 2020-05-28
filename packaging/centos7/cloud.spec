@@ -89,8 +89,8 @@ management, and intelligence in CloudStack.
 Summary: Apache CloudStack common files and scripts
 Requires: python
 Requires: python3
-#Requires: python-argparse
-#Requires: python3-netaddr
+Requires: python3-pip
+Requires: python3-netaddr
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -110,7 +110,7 @@ Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
-#Requires: python3-libvirt
+Requires: python3-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
@@ -360,11 +360,15 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
+%post common
+pip3 install argparse
+
 %preun management
 /usr/bin/systemctl stop cloudstack-management || true
 /usr/bin/systemctl off cloudstack-management || true
 
 %pre management
+pip3 install mysql-connector-python setuptools
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
