@@ -260,6 +260,12 @@ public class DatastoreMO extends BaseMO {
         if (!DatastoreFile.isFullDatastorePath(destFullPath))
             destFullPath = String.format("[%s] %s", destDsName, destFilePath);
 
+        DatastoreMO srcDsMo = new DatastoreMO(_context, morDestDs);
+        if (!srcDsMo.fileExists(srcFullPath)) {
+            s_logger.error(String.format("Cannot move file to destination datastore due to file %s does not exists", srcFullPath));
+            return false;
+        }
+
         ManagedObjectReference morTask = _context.getService().moveDatastoreFileTask(morFileManager, srcFullPath, morSrcDc, destFullPath, morDestDc, forceOverwrite);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
@@ -267,7 +273,7 @@ public class DatastoreMO extends BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            s_logger.error("VMware moveDatgastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            s_logger.error("VMware moveDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }

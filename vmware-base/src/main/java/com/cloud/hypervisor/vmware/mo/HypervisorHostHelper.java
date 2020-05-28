@@ -138,6 +138,7 @@ public class HypervisorHostHelper {
     private static final String UNTAGGED_VLAN_NAME = "untagged";
     private static final String VMDK_PACK_DIR = "ova";
     private static final String OVA_OPTION_KEY_BOOTDISK = "cloud.ova.bootdisk";
+    public static final String VSPHERE_DATASTORE_BASE_FOLDER = ".cloudstack.base.folder";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
@@ -171,6 +172,7 @@ public class HypervisorHostHelper {
         if (morDs == null)
             morDs = hyperHost.findDatastore(uuidName);
 
+        DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
         return morDs;
     }
 
@@ -2084,4 +2086,13 @@ public class HypervisorHostHelper {
         return DiskControllerType.getType(controller) == DiskControllerType.ide;
     }
 
+    public static void createBaseFolderInDatastore(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
+        String dsPath = String.format("[%s]", dsMo.getName());
+        String folderPath = String.format("[%s] %s", dsMo.getName(), VSPHERE_DATASTORE_BASE_FOLDER);
+
+        if (!dsMo.folderExists(dsPath, VSPHERE_DATASTORE_BASE_FOLDER)) {
+            s_logger.info(String.format("vSphere datastore base folder: %s does not exist, now creating on datastore: %s", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
+            dsMo.makeDirectory(folderPath, hyperHost.getHyperHostDatacenter());
+        }
+    }
 }
