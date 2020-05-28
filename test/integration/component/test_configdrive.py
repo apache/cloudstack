@@ -535,7 +535,7 @@ class ConfigDriveUtils:
         # Verify hostname if the appropriate settings are true
         configs = Configurations.list(
             self.api_client,
-            name="general.allow.expose.host.hostname",
+            name="global.allow.expose.host.hostname",
             listall=True
         )
         exposeHypevisorHostnameGS = configs[0].value
@@ -2304,7 +2304,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         #    which has userdata provided ConfigDrive, create
         #    an Isolated network using that network offering.
         #    Verify network is successfully created and in the Allocated state
-        #    Set the "general.allow.expose.host.hostname" and "account.allow.expose.host.hostname" flags to true
+        #    Set the "global.allow.expose.host.hostname" and "account.allow.expose.host.hostname" flags to true
         #    to enable viewing hypevisor host name in the metadata file
         #    Deploy VM in the network created, verify metadata in the configdrive
         #    my mounting the configdrive ISO and verify the respective files
@@ -2336,7 +2336,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Update global setting for "allow.expose.host.hostname"
         Configurations.update(self.api_client,
-                              name="general.allow.expose.host.hostname",
+                              name="global.allow.expose.host.hostname",
                               value="true"
                               )
 
@@ -2349,9 +2349,9 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='general.allow.expose.host.hostname',
+                name='global.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
+            self.skipTest('global.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.api_client,
@@ -2398,7 +2398,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Reset configuration values to default values i.e., false
         Configurations.update(self.api_client,
-                              name="general.allow.expose.host.hostname",
+                              name="global.allow.expose.host.hostname",
                               value="false"
                               )
 
@@ -2450,7 +2450,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Update global setting for "allow.expose.host.hostname"
         Configurations.update(self.api_client,
-                              name="general.allow.expose.host.hostname",
+                              name="global.allow.expose.host.hostname",
                               value="true"
                               )
 
@@ -2463,9 +2463,9 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.api_client,
-                name='general.allow.expose.host.hostname',
+                name='global.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
+            self.skipTest('global.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.api_client,
@@ -2520,7 +2520,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
         # Reset configuration values to default values i.e., false
         Configurations.update(self.api_client,
-                              name="general.allow.expose.host.hostname",
+                              name="global.allow.expose.host.hostname",
                               value="false"
                               )
 

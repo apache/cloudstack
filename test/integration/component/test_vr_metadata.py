@@ -141,9 +141,9 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         4. From the VM, curl the gateway of the VR to verify the corresponding metadata - hypervisor host name
             if the respective Global level and account level flags are set to true
         """
-        # Update global setting for "general.allow.expose.host.hostname"
+        # Update global setting for "global.allow.expose.host.hostname"
         Configurations.update(self.apiclient,
-                              name="general.allow.expose.host.hostname",
+                              name="global.allow.expose.host.hostname",
                               value="true"
                               )
 
@@ -156,9 +156,9 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.apiclient,
-                name='general.allow.expose.host.hostname',
+                name='global.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
+            self.skipTest('global.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.apiclient,
@@ -220,7 +220,7 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         )
         # Reset configuration values to default values i.e., false
         Configurations.update(self.apiclient,
-                              name="general.allow.expose.host.hostname",
+                              name="global.allow.expose.host.hostname",
                               value="false"
                               )
 
@@ -241,9 +241,9 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         4. After migration, from the VM, curl the gateway to verify the corresponding metadata - hypervisor host name
             if the respective Global level and account level flags are set to true
         """
-        # Update global setting for "general.allow.expose.host.hostname"
+        # Update global setting for "global.allow.expose.host.hostname"
         Configurations.update(self.apiclient,
-                              name="general.allow.expose.host.hostname",
+                              name="global.allow.expose.host.hostname",
                               value="true"
                               )
 
@@ -256,9 +256,9 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         # Verify that the above mentioned settings are set to true before proceeding
         if not is_config_suitable(
                 apiclient=self.apiclient,
-                name='general.allow.expose.host.hostname',
+                name='global.allow.expose.host.hostname',
                 value='true'):
-            self.skipTest('general.allow.expose.host.hostname should be true. skipping')
+            self.skipTest('global.allow.expose.host.hostname should be true. skipping')
 
         if not is_config_suitable(
                 apiclient=self.apiclient,
@@ -323,7 +323,7 @@ class TestDeployVmWithMetaData(cloudstackTestCase):
         )
         # Reset configuration values to default values i.e., false
         Configurations.update(self.apiclient,
-                              name="general.allow.expose.host.hostname",
+                              name="global.allow.expose.host.hostname",
                               value="false"
                               )
 
