@@ -81,7 +81,8 @@ Requires: iptables-services
 Requires: qemu-img
 Requires: python3-dns
 Requires: python3-setuptools
-Requires: mysql-connector-python3
+# TODO
+# Requires: mysql-connector-python3
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -92,7 +93,8 @@ Summary: Apache CloudStack common files and scripts
 Requires: python
 Requires: python3
 Requires: python3-pip
-Requires: python3-netaddr
+# TODO
+# Requires: python3-netaddr
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -112,7 +114,8 @@ Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
-Requires: python3-libvirt
+# TODO
+# Requires: python3-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
@@ -363,9 +366,11 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
 %post common
-pip3 install argparse
+pip3 install argparse netaddr
 
 %preun management
+# TODO
+pip3 install mysql-connector-python
 /usr/bin/systemctl stop cloudstack-management || true
 /usr/bin/systemctl off cloudstack-management || true
 
@@ -419,6 +424,8 @@ if [ "$1" == "0" ] ; then
 fi
 
 %pre agent
+# TODO
+pip3 install libvirt-python
 
 # save old configs if they exist (for upgrade). Otherwise we may lose them
 # when the old packages are erased. There are a lot of properties files here.
