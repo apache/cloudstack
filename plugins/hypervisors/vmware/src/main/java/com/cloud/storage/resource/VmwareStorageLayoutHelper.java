@@ -23,6 +23,8 @@ import org.apache.log4j.Logger;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+
 import com.cloud.utils.Pair;
 
 /**
@@ -309,6 +311,10 @@ public class VmwareStorageLayoutHelper {
     }
 
     public static String getLegacyDatastorePathFromVmdkFileName(DatastoreMO dsMo, String vmdkFileName) throws Exception {
+        return String.format("[%s] %s/%s", dsMo.getName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, vmdkFileName);
+    }
+
+    public static String getDeprecatedLegacyDatastorePathFromVmdkFileName(DatastoreMO dsMo, String vmdkFileName) throws Exception {
         return String.format("[%s] %s", dsMo.getName(), vmdkFileName);
     }
 
