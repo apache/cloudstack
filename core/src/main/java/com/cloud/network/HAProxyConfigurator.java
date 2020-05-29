@@ -699,7 +699,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         //        result.add("\tnopoll");
 
         result.add(blankLine);
-        final List<String> dSection = Arrays.asList(defaultsSection);
+        final List<String> dSection = new ArrayList(Arrays.asList(defaultsSection));
         if (lbCmd.keepAliveEnabled) {
             dSection.set(7, "\tno option forceclose");
         }
