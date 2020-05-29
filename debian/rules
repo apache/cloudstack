@@ -17,7 +17,6 @@ override_dh_auto_build:
 	mvn clean package -Psystemvm,developer -Dsystemvm \
 	    -Dcs.replace.properties=replace.properties.tmp \
 	    -Dmaven.repo.local=$(HOME)/.m2/repository \
-		-DskipTests -T8 -Dcheckstyle.skip \
 	     ${ACS_BUILD_OPTS}
 
 override_dh_auto_clean:
