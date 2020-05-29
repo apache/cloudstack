@@ -122,8 +122,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.projects.ProjectAccount;
-import com.cloud.projects.ProjectAccountVO;
 import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
@@ -500,35 +498,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkAccess(caller, accessType, sameOwner, null, entities);
     }
 
-    private void checkProjectAccess(Account caller) {
-        User user = CallContext.current().getCallingUser();
-        Project project = CallContext.current().getProject();
-        if (project == null) {
-            return;
-        }
-        ProjectAccountVO projectAccountVO = _projectAccountDao.findByProjectIdUserId(project.getId(), caller.getAccountId(), user.getId());
-        if (projectAccountVO != null) {
-            if (isProjectAdmin(projectAccountVO)) {
-                return;
-            }
-            throw new PermissionDeniedException(String.format("User %s of account %s doesn't have permission in project %s", user.getId(), caller.getId(), project.getId()));
-        }
-        projectAccountVO = _projectAccountDao.findByProjectIdAccountId(project.getId(), caller.getAccountId());
-        if (projectAccountVO != null) {
-            if (isProjectAdmin(projectAccountVO)) {
-                return;
-            }
-            throw new PermissionDeniedException(String.format("Account %s doesn't have permission in project %s", caller.getId(), project.getId()));
-        }
-    }
-
-    private boolean isProjectAdmin(ProjectAccountVO projectAccount) {
-        if (projectAccount.getAccountRole() != ProjectAccount.Role.Admin) {
-            throw new PermissionDeniedException("Current user is not permitted to perform the operation in the project");
-        }
-        return true;
-    }
-
     @Override
     public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) {
 
@@ -552,7 +521,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
             }
 
-            //checkProjectAccess(caller);
             return;
         }
 
@@ -2066,7 +2034,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return caller;
             }
         } else {
-            if ((accountName == null && domainId != null) || (accountName != null && domainId == null)) {
+            if (accountName != null && domainId == null) {
                 throw new InvalidParameterValueException("AccountName and domainId must be specified together");
             }
             // regular user can't create/list resources for other people

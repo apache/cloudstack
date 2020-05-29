@@ -47,6 +47,10 @@ public class ProjectInvitationVO implements ProjectInvitation {
     @Column(name = "domain_id")
     private Long inDomainId;
 
+    @Column(name = "account_role")
+    @Enumerated(value = EnumType.STRING)
+    private ProjectAccount.Role accountRole = ProjectAccount.Role.Regular;
+
     @Column(name = "token")
     private String token;
 
@@ -62,6 +66,9 @@ public class ProjectInvitationVO implements ProjectInvitation {
 
     @Column(name = "uuid")
     private String uuid;
+
+    @Column(name = "user_id")
+    private Long forUserId;
 
     protected ProjectInvitationVO() {
         uuid = UUID.randomUUID().toString();
@@ -128,6 +135,15 @@ public class ProjectInvitationVO implements ProjectInvitation {
     }
 
     @Override
+    public ProjectAccount.Role getAccountRole() {
+        return accountRole;
+    }
+
+    public void setAccountRole(ProjectAccount.Role accountRole) {
+        this.accountRole = accountRole;
+    }
+
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -144,6 +160,15 @@ public class ProjectInvitationVO implements ProjectInvitation {
     @Override
     public long getAccountId() {
         return forAccountId == null ? -1 : forAccountId;
+    }
+
+    @Override
+    public Long getForUserId() {
+        return forUserId == null ? -1 : forUserId;
+    }
+
+    public void setForUserId(Long forUserId) {
+        this.forUserId = forUserId;
     }
 
     @Override

@@ -99,3 +99,10 @@ ALTER TABLE `cloud`.`project_account`
     ADD CONSTRAINT `fk_project_account__project_role_id` FOREIGN KEY (`project_role_id`) REFERENCES `project_role` (`id`),
     -- DROP INDEX `account_id`,
     ADD UNIQUE (`user_id`, `account_id`, `project_id`);
+
+-- Alter project invitations table to include user_id for invites sent to specific users of an account
+ALTER TABLE `cloud`.`project_invitations`
+    ADD COLUMN `user_id` bigint unsigned COMMENT 'ID of user to be added to the project' AFTER `account_id`,
+    ADD COLUMN `account_role` varchar(255) NOT NULL DEFAULT 'Regular' COMMENT 'Account role in the project (Owner or Regular)' AFTER `domain_id`,
+    ADD CONSTRAINT `fk_project_invitations__user_id` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+    ADD UNIQUE (`project_id`, `user_id`);

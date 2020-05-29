@@ -88,7 +88,7 @@ public interface ProjectService {
 
     boolean deleteUserFromProject(long projectId, long userId);
 
-    boolean updateInvitation(long projectId, String accountName, String token, boolean accept);
+    boolean updateInvitation(long projectId, String accountName, Long userId, String token, boolean accept);
 
     Project activateProject(long projectId);
 
@@ -100,5 +100,5 @@ public interface ProjectService {
 
     Project findByProjectAccountIdIncludingRemoved(long projectAccountId);
 
-    boolean addUserToProject(Long projectId, Long userId, Long projectRoleId, Role projectRole);
+    boolean addUserToProject(Long projectId, Long userId, String email, Long projectRoleId, Role projectRole);
 }

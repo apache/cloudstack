@@ -19,7 +19,6 @@ package com.cloud.projects.dao;
 import java.sql.Date;
 import java.util.List;
 
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -40,6 +39,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getForAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectId", AllFieldsSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("userId", AllFieldsSearch.entity().getForUserId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("created", AllFieldsSearch.entity().getCreated(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectAccountId", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.IN);
@@ -60,6 +60,19 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
     @Override
     public ProjectInvitationVO findByAccountIdProjectId(long accountId, long projectId, State... inviteState) {
         SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("projectId", projectId);
+        if (inviteState != null && inviteState.length > 0) {
+            sc.setParameters("state", (Object[])inviteState);
+        }
+
+        return findOneBy(sc);
+    }
+
+    @Override
+    public ProjectInvitationVO findByUserIdProjectId(long userId, long accountId, long projectId, State... inviteState) {
+        SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
+        sc.setParameters("userId", userId);
         sc.setParameters("accountId", accountId);
         sc.setParameters("projectId", projectId);
         if (inviteState != null && inviteState.length > 0) {

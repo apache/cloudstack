@@ -135,6 +135,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     return true;
                 }
 
+                // TODO: verify??
+                checkProjectAccess(owner);
+
                 // since the current account is not the owner of the template, check the launch permissions table to see if the
                 // account can launch a VM from this template
                 LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(template.getId(), caller.getId());
@@ -425,7 +428,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         if (project == null) {
             return;
         }
-        ProjectAccountVO projectAccountVO = _projectAccountDao.findByProjectIdUserId(project.getId(), caller.getAccountId(), user.getId());
+        ProjectAccountVO projectAccountVO = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
         if (projectAccountVO != null) {
             if (isProjectAdmin(projectAccountVO)) {
                 return;

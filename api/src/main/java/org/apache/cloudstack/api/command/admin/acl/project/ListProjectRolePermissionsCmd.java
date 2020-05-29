@@ -95,7 +95,7 @@ public class ListProjectRolePermissionsCmd extends BaseCmd {
         rolePermissionResponse.setRule(rolePermission.getRule());
         rolePermissionResponse.setRulePermission(rolePermission.getPermission());
         rolePermissionResponse.setDescription(rolePermission.getDescription());
-        rolePermissionResponse.setObjectName("rolepermission");
+        rolePermissionResponse.setObjectName("projectrolepermission");
        return rolePermissionResponse;
     }
 

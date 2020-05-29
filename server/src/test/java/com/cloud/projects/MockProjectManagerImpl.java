@@ -109,7 +109,7 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public boolean updateInvitation(long projectId, String accountName, String token, boolean accept) {
+    public boolean updateInvitation(long projectId, String accountName, Long userId, String token, boolean accept) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -216,7 +216,7 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public boolean addUserToProject(Long projectId, Long userId, Long projectRoleId, Role projectRole) {
+    public boolean addUserToProject(Long projectId, Long userId, String email, Long projectRoleId, Role projectRole) {
         // TODO Auto-generated method stub
         return false;
     }

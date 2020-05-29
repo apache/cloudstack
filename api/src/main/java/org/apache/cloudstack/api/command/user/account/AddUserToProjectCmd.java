@@ -52,15 +52,18 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
             description = "ID of the project to add the user to")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.USER_ID, type = BaseCmd.CommandType.UUID, required = true, entityType = UserResponse.class,
+    @Parameter(name = ApiConstants.USER_ID, type = BaseCmd.CommandType.UUID, entityType = UserResponse.class,
             description = "User UUID, required for adding account from external provisioning system")
     private Long userId;
+
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "email ID of user to which invitation to the project is going to be sent")
+    private String email;
 
     @Parameter(name = ApiConstants.PROJECT_ROLE_ID, type = BaseCmd.CommandType.UUID, required = true, entityType = ProjectRoleResponse.class,
             description = "ID of the project role", validations = {ApiArgValidator.PositiveNumber})
     private Long projectRoleId;
 
-    @Parameter(name = ApiConstants.ROLE_TYPE, type = BaseCmd.CommandType.STRING, required = true,
+    @Parameter(name = ApiConstants.ROLE_TYPE, type = BaseCmd.CommandType.STRING,
             description = "Project role type to be assigned to the user - Admin/Regular")
     private String roleType;
 
@@ -76,16 +79,21 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
         return userId;
     }
 
+    public String getEmail() { return email; }
+
     public Long getProjectRoleId() {
         return projectRoleId;
     }
 
     public ProjectAccount.Role getRoleType() {
-        String role = roleType.substring(0,1).toUpperCase()+ roleType.substring(1).toLowerCase();
-        if (!EnumUtils.isValidEnum(ProjectAccount.Role.class, role )){
-            throw new InvalidParameterValueException("Only Admin or Regular project role types are valid");
+        if (roleType != null) {
+            String role = roleType.substring(0, 1).toUpperCase() + roleType.substring(1).toLowerCase();
+            if (!EnumUtils.isValidEnum(ProjectAccount.Role.class, role)) {
+                throw new InvalidParameterValueException("Only Admin or Regular project role types are valid");
+            }
+            return Enum.valueOf(ProjectAccount.Role.class, role);
         }
-        return Enum.valueOf(ProjectAccount.Role.class, role);
+        return null;
     }
 
     @Override
@@ -105,7 +113,7 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
     @Override
     public void execute()  {
         validateInput();
-        boolean result = _projectService.addUserToProject(getProjectId(),  getUserId(), getProjectRoleId(), getRoleType());
+        boolean result = _projectService.addUserToProject(getProjectId(),  getUserId(), getEmail(), getProjectRoleId(), getRoleType());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -116,6 +124,9 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
     }
 
     private void validateInput() {
+        if (email != null && userId == null) {
+            throw new InvalidParameterValueException("Must specify userID for given email ID");
+        }
         if (getProjectId() < 1L) {
             throw new InvalidParameterValueException("Invalid Project ID provided");
         }

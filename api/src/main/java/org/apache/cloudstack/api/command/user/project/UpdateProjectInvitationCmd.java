@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -29,6 +31,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateProjectInvitation", description = "Accepts or declines project invitation", responseObject = SuccessResponse.class, since = "3.0.0",
@@ -45,6 +48,10 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that is joining the project")
     private String accountName;
+
+    @Parameter(name = ApiConstants.USER_ID, type = BaseCmd.CommandType.UUID, entityType = UserResponse.class,
+            description = "User UUID, required for adding account from external provisioning system")
+    private Long userId;
 
     @Parameter(name = ApiConstants.TOKEN,
                type = CommandType.STRING,
@@ -64,6 +71,8 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
     public String getAccountName() {
         return accountName;
     }
+
+    public Long getUserId() { return userId; }
 
     @Override
     public String getCommandName() {
@@ -93,8 +102,18 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Project id: " + projectId + "; accountName " + accountName + "; accept " + getAccept());
-        boolean result = _projectService.updateInvitation(projectId, accountName, token, getAccept());
+        if (accountName != null && userId != null) {
+            throw new InvalidParameterValueException("Provide either accountName or User ID to updating the invite");
+        }
+        String eventDetails = "Project id: " + projectId + ";";
+        if (accountName != null) {
+            eventDetails +=  " accountName: " + accountName + ";";
+        } else if (userId != null) {
+            eventDetails += " userId: " + userId + ";";
+        }
+        eventDetails += " accept " + getAccept();
+        CallContext.current().setEventDetails(eventDetails);
+        boolean result = _projectService.updateInvitation(projectId, accountName, userId, token, getAccept());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

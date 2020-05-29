@@ -112,10 +112,13 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Account caller = CallContext.current().getCallingAccount();
 
-        if ((accountName != null && domainId == null) || (domainId != null && accountName == null)) {
+        if ((accountName != null && domainId == null)) {
             throw new InvalidParameterValueException("Account name and domain id must be specified together");
         }
 
+        if (userId != null && (accountId == null && domainId == null)) {
+            throw new InvalidParameterValueException("Account ID and Domain ID must be specified with userID");
+        }
         if (accountName != null) {
             return _accountService.finalizeOwner(caller, accountName, domainId, null).getId();
         }
