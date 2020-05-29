@@ -29,9 +29,11 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.storage.Upload;
+import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.google.gson.Gson;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -97,7 +99,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     AlertManager _alertMgr;
     @Inject
-    VMTemplateDetailsDao _templateDetailsDao;
+    VMTemplateDetailsDao templateDetailsDao;
     @Inject
     DefaultEndPointSelector _defaultEpSelector;
     @Inject
@@ -108,6 +110,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     TemplateOVFPropertiesDao templateOvfPropertiesDao;
 
     protected String _proxy = null;
+
+    private static Gson gson;
 
     protected Proxy getHttpProxy() {
         if (_proxy == null) {
@@ -173,8 +177,17 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
      * Persist OVF properties as template details for template with id = templateId
      */
     private void persistOVFProperties(List<OVFPropertyTO> ovfProperties, long templateId) {
+        List<VMTemplateDetailVO> templateDetailsList = new ArrayList<>();
+        for (OVFPropertyTO property : ovfProperties) {
+            persistOvfPropertyAsTemplateDetail(templateId, property);
+        }
+        persistOvfPropertiesInDedicatedTable(ovfProperties, templateId);
+    }
+
+    private void persistOvfPropertiesInDedicatedTable(List<OVFPropertyTO> ovfProperties, long templateId) {
         List<TemplateOVFPropertyVO> listToPersist = new ArrayList<>();
         for (OVFPropertyTO property : ovfProperties) {
+            persistOvfPropertyAsTemplateDetail(templateId, property);
             if (!templateOvfPropertiesDao.existsOption(templateId, property.getKey())) {
                 TemplateOVFPropertyVO option = new TemplateOVFPropertyVO(templateId, property.getKey(), property.getType(),
                         property.getValue(), property.getQualifiers(), property.isUserConfigurable(),
@@ -190,6 +203,15 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             s_logger.debug("Persisting " + listToPersist.size() + " OVF properties for template " + templateId);
             templateOvfPropertiesDao.saveOptions(listToPersist);
         }
+    }
+
+    private void persistOvfPropertyAsTemplateDetail(long templateId, OVFPropertyTO property) {
+        String key = "ovfProperty-" + property.getKey();
+        templateDetailsDao.removeDetail(templateId,key);
+        String json =  gson.toJson(property);
+        VMTemplateDetailVO detailVO = new VMTemplateDetailVO(templateId, key, json, property.isUserConfigurable());
+        s_logger.debug("Persisting template details " + detailVO.getName() + " from OVF properties for template " + templateId);
+        templateDetailsDao.persist(detailVO);
     }
 
     protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
