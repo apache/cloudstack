@@ -30,7 +30,6 @@ import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.storage.ImageStoreService;
-import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.commons.lang3.EnumUtils;
@@ -69,6 +68,7 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
     @Override
     public MigrationResponse migrateData(MigrateSecondaryStorageDataCmd cmd) {
         Long srcImgStoreId = cmd.getId();
+        String errorMessage = "";
         ImageStoreVO srcImageVO = imageStoreDao.findById(srcImgStoreId);
         List<Long> destImgStoreIds = cmd.getMigrateTo();
         String migrationType = cmd.getMigrationType();
@@ -106,14 +106,15 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
                 continue;
             }
             if (imageStoreDao.findById(id).isReadonly()) {
-                s_logger.warn("Secondary storage: "+ id + " cannot be considered for migration as has read-only permission, Skipping it...");
+                errorMessage = "Secondary storage: "+ id + " cannot be considered for migration as has read-only permission, Skipping it... ";
+                s_logger.warn(errorMessage);
                 continue;
             }
             destDatastores.add(id);
         }
 
         if (destDatastores.size() < 1) {
-            throw new CloudRuntimeException("Invalid destination image store(s) provided. Terminating Migration of data");
+            throw new CloudRuntimeException(errorMessage + "No destination store(s) available to migrate. Terminating Migration of data");
         }
 
         if (isMigrateJobRunning()){
