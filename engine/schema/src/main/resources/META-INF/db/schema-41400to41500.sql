@@ -20,4 +20,4 @@
 --;
 
 -- mysql8 nics table fix for newer distributions
-ALTER TABLE nics MODIFY COLUMN update_time timestamp NULL;
+ALTER TABLE nics MODIFY COLUMN update_time timestamp DEFAULT CURRENT_TIMESTAMP;
