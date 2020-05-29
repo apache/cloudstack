@@ -9,13 +9,13 @@ Homepage: http://www.cloudstack.org/
 
 Package: cloudstack-common
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}, genisoimage, nfs-common, python3-distutils
+Depends: ${misc:Depends}, ${python3:Depends}, genisoimage, nfs-common, python3-pip, python3-distutils, python3-netaddr
 Conflicts: cloud-scripts, cloud-utils, cloud-system-iso, cloud-console-proxy, cloud-daemonize, cloud-deps, cloud-python, cloud-setup
 Description: A common package which contains files which are shared by several CloudStack packages
 
 Package: cloudstack-management
 Architecture: all
-Depends: ${python3:Depends}, openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | openjdk-11-jre-headless | zulu-11, cloudstack-common (= ${source:Version}), sudo, python-mysql.connector, augeas-tools, mysql-client | mariadb-client, adduser, bzip2, ipmitool, file, gawk, iproute2, qemu-utils, python-dnspython, lsb-release, init-system-helpers (>= 1.14~)
+Depends: ${python3:Depends}, openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | openjdk-11-jre-headless | zulu-11, cloudstack-common (= ${source:Version}), sudo, python-mysql.connector, augeas-tools, mysql-client | mariadb-client, adduser, bzip2, ipmitool, file, gawk, iproute2, qemu-utils, python3-dnspython, lsb-release, init-system-helpers (>= 1.14~), python3-setuptools
 Conflicts: cloud-server, cloud-client, cloud-client-ui
 Description: CloudStack server library
  The CloudStack management server
