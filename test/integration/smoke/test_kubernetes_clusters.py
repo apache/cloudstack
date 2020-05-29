@@ -72,32 +72,32 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.kubernetes_version_ids = []
         if cls.setup_failed == False:
             try:
-                cls.kuberetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso')
-                cls.kubernetes_version_ids.append(cls.kuberetes_version_1.id)
+                cls.kubernetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://download.cloudstack.org/cks/setup-1.14.9.iso')
+                cls.kubernetes_version_ids.append(cls.kubernetes_version_1.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.14.9.iso, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.14.9.iso, %s" % e)
         if cls.setup_failed == False:
             try:
-                cls.kuberetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso')
-                cls.kubernetes_version_ids.append(cls.kuberetes_version_2.id)
+                cls.kubernetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://download.cloudstack.org/cks/setup-1.15.0.iso')
+                cls.kubernetes_version_ids.append(cls.kubernetes_version_2.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.15.0.iso, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.15.0.iso, %s" % e)
         if cls.setup_failed == False:
             try:
-                cls.kuberetes_version_3 = cls.addKubernetesSupportedVersion('1.16.0', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.0.iso')
-                cls.kubernetes_version_ids.append(cls.kuberetes_version_3.id)
+                cls.kubernetes_version_3 = cls.addKubernetesSupportedVersion('1.16.0', 'http://download.cloudstack.org/cks/setup-1.16.0.iso')
+                cls.kubernetes_version_ids.append(cls.kubernetes_version_3.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.0.is, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.16.0.iso, %s" % e)
         if cls.setup_failed == False:
             try:
-                cls.kuberetes_version_4 = cls.addKubernetesSupportedVersion('1.16.3', 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso')
-                cls.kubernetes_version_ids.append(cls.kuberetes_version_4.id)
+                cls.kubernetes_version_4 = cls.addKubernetesSupportedVersion('1.16.3', 'http://download.cloudstack.org/cks/setup-1.16.3.iso')
+                cls.kubernetes_version_ids.append(cls.kubernetes_version_4.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.is, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.16.3.iso, %s" % e)
 
         cks_template_data = {
             "name": "Kubernetes-Service-Template",
@@ -105,18 +105,17 @@ class TestKubernetesCluster(cloudstackTestCase):
             "format": "qcow2",
             "hypervisor": "kvm",
             "ostype": "CoreOS",
-            "url": "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-kvm.qcow2.bz2",
+            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
             "ispublic": "True",
             "isextractable": "True"
         }
-        # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2"
         cks_template_data_details = []
         if cls.hypervisor.lower() == "vmware":
-            cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-vmware.ova" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova"
+            cks_template_data["url"] = "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova"
             cks_template_data["format"] = "OVA"
             cks_template_data_details = [{"keyboard":"us","nicAdapter":"Vmxnet3","rootDiskController":"pvscsi"}]
         elif cls.hypervisor.lower() == "xenserver":
-            cks_template_data["url"] = "http://staging.yadav.xyz/cks/templates/coreos_production_cloudstack_image-xen.vhd.bz2" # "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2"
+            cks_template_data["url"] = "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2"
             cks_template_data["format"] = "VHD"
         elif cls.hypervisor.lower() == "kvm":
             cks_template_data["requireshvm"] = "True"
@@ -232,9 +231,9 @@ class TestKubernetesCluster(cloudstackTestCase):
             return False
 
     @classmethod
-    def waitForTemplateReadyState(cls, template_id, retries=30, interval=30):
+    def waitForTemplateReadyState(cls, template_id, retries=30, interval=60):
         """Check if template download will finish"""
-        while retries > -1:
+        while retries > 0:
             time.sleep(interval)
             template_response = Template.list(
                 cls.apiclient,
@@ -256,25 +255,20 @@ class TestKubernetesCluster(cloudstackTestCase):
         raise Exception("Template download timed out")
 
     @classmethod
-    def waitForKubernetesSupportedVersionIsoReadyState(cls, version_id, retries=20, interval=30):
+    def waitForKubernetesSupportedVersionIsoReadyState(cls, version_id, retries=30, interval=60):
         """Check if Kubernetes supported version ISO is in Ready state"""
 
-        while retries > -1:
+        while retries > 0:
             time.sleep(interval)
             list_versions_response = cls.listKubernetesSupportedVersion(version_id)
             if not hasattr(list_versions_response, 'isostate') or not list_versions_response or not list_versions_response.isostate:
                 retries = retries - 1
                 continue
-            if 'Creating' == list_versions_response.isostate:
-                retries = retries - 1
-            elif 'Ready' == list_versions_response.isostate:
+            if 'Ready' == list_versions_response.isostate:
                 return
             elif 'Failed' == list_versions_response.isostate:
                 raise Exception( "Failed to download template: status - %s" % template.status)
-            else:
-                raise Exception(
-                    "Failed to download Kubernetes supported version ISO: status - %s" %
-                    list_versions_response.isostate)
+            retries = retries - 1
         raise Exception("Kubernetes supported version Ready state timed out")
 
     @classmethod
@@ -337,9 +331,9 @@ class TestKubernetesCluster(cloudstackTestCase):
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id)
+        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id)
+        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_2.id)
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now stopping it" % cluster_response.id)
 
@@ -368,9 +362,9 @@ class TestKubernetesCluster(cloudstackTestCase):
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_3.id, 1, 2)
+        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_3.id, 1, 2)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_3.id, 1, 2)
+        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_3.id, 1, 2)
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now deleting it" % cluster_response.id)
 
@@ -396,7 +390,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
         try:
-            cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id, 1, 2)
+            cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id, 1, 2)
             self.debug("Invslid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % cluster_response.id)
             self.deleteKubernetesCluster(cluster_response.id)
             self.fail("HA Kubernetes cluster deployed with Kubernetes supported version below version 1.16.0. Must be an error.")
@@ -421,19 +415,19 @@ class TestKubernetesCluster(cloudstackTestCase):
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id)
+        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id)
+        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_2.id)
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
 
         try:
-            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_3.id)
+            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kubernetes_version_3.id)
         except Exception as e:
             self.deleteKubernetesCluster(cluster_response.id)
             self.fail("Failed to upgrade Kubernetes cluster due to: %s" % e)
 
-        self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_3.id)
+        self.verifyKubernetesClusterUpgrade(cluster_response, self.kubernetes_version_3.id)
 
         self.debug("Kubernetes cluster with ID: %s successfully upgraded, now deleting it" % cluster_response.id)
 
@@ -460,19 +454,19 @@ class TestKubernetesCluster(cloudstackTestCase):
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_3.id, 1, 2)
+        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_3.id, 1, 2)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_3.id, 1, 2)
+        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_3.id, 1, 2)
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
 
         try:
-            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_4.id)
+            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kubernetes_version_4.id)
         except Exception as e:
             self.deleteKubernetesCluster(cluster_response.id)
             self.fail("Failed to upgrade Kubernetes HA cluster due to: %s" % e)
 
-        self.verifyKubernetesClusterUpgrade(cluster_response, self.kuberetes_version_4.id)
+        self.verifyKubernetesClusterUpgrade(cluster_response, self.kubernetes_version_4.id)
 
         self.debug("Kubernetes cluster with ID: %s successfully upgraded, now deleting it" % cluster_response.id)
 
@@ -498,15 +492,15 @@ class TestKubernetesCluster(cloudstackTestCase):
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id)
+        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id)
+        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_2.id)
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now scaling it" % cluster_response.id)
 
         try:
-            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kuberetes_version_1.id)
-            self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % kuberetes_version_1.id)
+            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kubernetes_version_1.id)
+            self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % kubernetes_version_1.id)
             self.deleteKubernetesCluster(cluster_response.id)
             self.fail("Kubernetes cluster upgraded to a lower Kubernetes supported version. Must be an error.")
         except Exception as e:
@@ -537,9 +531,9 @@ class TestKubernetesCluster(cloudstackTestCase):
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
 
-        cluster_response = self.createKubernetesCluster(name, self.kuberetes_version_2.id)
+        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kuberetes_version_2.id)
+        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_2.id)
 
         self.debug("Kubernetes cluster with ID: %s successfully deployed, now upscaling it" % cluster_response.id)
 

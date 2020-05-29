@@ -68,7 +68,6 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
     @Override
     public MigrationResponse migrateData(MigrateSecondaryStorageDataCmd cmd) {
         Long srcImgStoreId = cmd.getId();
-        String errorMessage = "";
         ImageStoreVO srcImageVO = imageStoreDao.findById(srcImgStoreId);
         List<Long> destImgStoreIds = cmd.getMigrateTo();
         String migrationType = cmd.getMigrationType();
@@ -106,15 +105,15 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
                 continue;
             }
             if (imageStoreDao.findById(id).isReadonly()) {
-                errorMessage = "Secondary storage: "+ id + " cannot be considered for migration as has read-only permission, Skipping it... ";
-                s_logger.warn(errorMessage);
+                s_logger.warn("Secondary storage: "+ id + " cannot be considered for migration as has read-only permission, Skipping it... ");
                 continue;
             }
             destDatastores.add(id);
         }
 
         if (destDatastores.size() < 1) {
-            throw new CloudRuntimeException(errorMessage + "No destination store(s) available to migrate. Terminating Migration of data");
+            throw new CloudRuntimeException("No destination valid store(s) available to migrate. Could" +
+                    "be due to invalid store ID(s) or store(s) are read-only. Terminating Migration of data");
         }
 
         if (isMigrateJobRunning()){

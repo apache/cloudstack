@@ -44,7 +44,7 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         cls.services = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
-        cls.kubernetes_version_iso_url = 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso'
+        cls.kubernetes_version_iso_url = 'http://download.cloudstack.org/cks/setup-1.16.3.iso'
 
         cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient,
                                                                     name="cloud.kubernetes.service.enabled")[0].value
@@ -258,21 +258,18 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         response = self.apiclient.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
         return response
 
-    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=20, interval=30):
+    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=30, interval=60):
         """Check if Kubernetes supported version ISO is in Ready state"""
 
-        while retries > -1:
+        while retries > 0:
             time.sleep(interval)
             list_versions_response = self.listKubernetesSupportedVersion(version_id)
             if not hasattr(list_versions_response, 'isostate') or not list_versions_response or not list_versions_response.isostate:
                 retries = retries - 1
                 continue
-            if 'Creating' == list_versions_response.isostate:
-                retries = retries - 1
-            elif 'Ready' == list_versions_response.isostate:
+            if 'Ready' == list_versions_response.isostate:
                 return
-            else:
-                raise Exception(
-                    "Failed to download Kubernetes supported version ISO: status - %s" %
-                    list_versions_response.isostate)
+            elif 'Failed' == list_versions_response.isostate:
+                raise Exception( "Failed to download template: status - %s" % template.status)
+            retries = retries - 1
         raise Exception("Kubernetes supported version Ready state timed out")
