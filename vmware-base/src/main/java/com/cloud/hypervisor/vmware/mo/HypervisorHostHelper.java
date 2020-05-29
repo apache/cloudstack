@@ -73,6 +73,8 @@ import com.vmware.vim25.OvfCreateDescriptorResult;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.CustomFieldStringValue;
+import com.vmware.vim25.ClusterConfigInfoEx;
+import com.vmware.vim25.DatacenterConfigInfo;
 import com.vmware.vim25.DVPortSetting;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigSpec;
@@ -1520,6 +1522,10 @@ public class HypervisorHostHelper {
 
         vmConfig.getDeviceChange().add(videoDeviceSpec);
 
+        ClusterMO clusterMo = new ClusterMO(host.getContext(), host.getHyperHostCluster());
+        DatacenterMO dataCenterMo = new DatacenterMO(host.getContext(), host.getHyperHostDatacenter());
+        setVMHardwareVersion(vmConfig, clusterMo, dataCenterMo);
+
         if (host.createVm(vmConfig)) {
             // Here, when attempting to find the VM, we need to use the name
             // with which we created it. This is the only such place where
@@ -1546,6 +1552,28 @@ public class HypervisorHostHelper {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Set the VM hardware version based on the information retrieved by the cluster and datacenter:
+     * - If the cluster hardware version is set, then it is set to this hardware version on vmConfig
+     * - If the cluster hardware version is not set, check datacenter hardware version. If it is set, then it is set to vmConfig
+     * - In case both cluster and datacenter hardware version are not set, hardware version is not set to vmConfig
+     */
+    protected static void setVMHardwareVersion(VirtualMachineConfigSpec vmConfig, ClusterMO clusterMO, DatacenterMO datacenterMO) throws Exception {
+        ClusterConfigInfoEx clusterConfigInfo = clusterMO != null ? clusterMO.getClusterConfigInfo() : null;
+        String clusterHardwareVersion = clusterConfigInfo != null ? clusterConfigInfo.getDefaultHardwareVersionKey() : null;
+        if (StringUtils.isNotBlank(clusterHardwareVersion)) {
+            s_logger.debug("Cluster hardware version found: " + clusterHardwareVersion + ". Creating VM with this hardware version");
+            vmConfig.setVersion(clusterHardwareVersion);
+        } else {
+            DatacenterConfigInfo datacenterConfigInfo = datacenterMO != null ? datacenterMO.getDatacenterConfigInfo() : null;
+            String datacenterHardwareVersion = datacenterConfigInfo != null ? datacenterConfigInfo.getDefaultHardwareVersionKey() : null;
+            if (StringUtils.isNotBlank(datacenterHardwareVersion)) {
+                s_logger.debug("Datacenter hardware version found: " + datacenterHardwareVersion + ". Creating VM with this hardware version");
+                vmConfig.setVersion(datacenterHardwareVersion);
+            }
+        }
     }
 
     private static VirtualDeviceConfigSpec getControllerSpec(String diskController, int busNum) {

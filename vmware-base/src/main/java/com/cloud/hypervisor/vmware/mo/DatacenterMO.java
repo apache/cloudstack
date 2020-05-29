@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.vmware.vim25.CustomFieldStringValue;
+import com.vmware.vim25.DatacenterConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
@@ -507,5 +508,10 @@ public class DatacenterMO extends BaseMO {
     public boolean ensureCustomFieldDef(String fieldName) throws Exception {
         CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, _context.getServiceContent().getCustomFieldsManager());
         return cfmMo.ensureCustomFieldDef("Datacenter", fieldName) > 0;
+    }
+
+    public DatacenterConfigInfo getDatacenterConfigInfo() throws Exception {
+        DatacenterConfigInfo configInfo = (DatacenterConfigInfo)_context.getVimClient().getDynamicProperty(_mor, "configuration");
+        return configInfo;
     }
 }
