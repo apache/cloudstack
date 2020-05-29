@@ -497,19 +497,19 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         sb.append("\t").append("balance ").append(algorithm);
         result.add(sb.toString());
 
-        String timeoutConnect = lbConfigsMap.get(LoadBalancerConfigKey.TimeoutConnect.key());
+        String timeoutConnect = lbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutConnect.key());
         if (timeoutConnect != null) {
             sb = new StringBuilder();
             sb.append("\t").append("timeout connect    " + timeoutConnect);
             result.add(sb.toString());
         }
-        String timeoutClient = lbConfigsMap.get(LoadBalancerConfigKey.TimeoutClient.key());
+        String timeoutClient = lbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutClient.key());
         if (timeoutClient != null) {
             sb = new StringBuilder();
             sb.append("\t").append("timeout client     " + timeoutClient);
             result.add(sb.toString());
         }
-        String timeoutServer = lbConfigsMap.get(LoadBalancerConfigKey.TimeoutServer.key());
+        String timeoutServer = lbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutServer.key());
         if (timeoutServer != null) {
             sb = new StringBuilder();
             sb.append("\t").append("timeout server     " + timeoutServer);
@@ -704,15 +704,15 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             dSection.set(7, "\tno option forceclose");
         }
 
-        String timeoutConnect = networkLbConfigsMap.get(LoadBalancerConfigKey.TimeoutConnect.key());
+        String timeoutConnect = networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutConnect.key());
         if (timeoutConnect != null) {
             dSection.set(8, "\ttimeout connect    " + timeoutConnect);
         }
-        String timeoutClient = networkLbConfigsMap.get(LoadBalancerConfigKey.TimeoutClient.key());
+        String timeoutClient = networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutClient.key());
         if (timeoutClient != null) {
             dSection.set(9, "\ttimeout client     " + timeoutClient);
         }
-        String timeoutServer = networkLbConfigsMap.get(LoadBalancerConfigKey.TimeoutServer.key());
+        String timeoutServer = networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutServer.key());
         if (timeoutServer != null) {
             dSection.set(10, "\ttimeout server     " + timeoutServer);
         }
