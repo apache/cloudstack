@@ -29,6 +29,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.storage.Storage;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -59,10 +60,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException {
-        if (format != null) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("We currently don't handle conversion from " + format + " to OVA.");
-            }
+        if (! conversionChecks(format)){
             return null;
         }
 
@@ -75,19 +73,56 @@ public class OVAProcessor extends AdapterBase implements Processor {
             return null;
         }
 
-        s_logger.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
-        String templateFileFullPath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
-        File templateFile = new File(templateFileFullPath);
-        Script command = new Script("tar", processTimeout, s_logger);
-        command.add("--no-same-owner");
-        command.add("--no-same-permissions");
-        command.add("-xf", templateFileFullPath);
-        command.setWorkDir(templateFile.getParent());
-        String result = command.execute();
-        if (result != null) {
-            s_logger.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
-            throw new InternalErrorException("failed to untar OVA package");
+        String templateFileFullPath = unpackOva(templatePath, templateName, processTimeout);
+
+        setFileSystemAccessRights(templatePath);
+
+        FormatInfo info = createFormatInfo(templatePath, templateName, templateFilePath, templateFileFullPath);
+        // The intention is to use the ova file as is for deployment and use done processing only for
+        // - property assessment and
+        // - reconsiliation of
+        // - - disks,
+        // - - networks and
+        // - - compute dimensions.
+        return info;
+    }
+
+    private FormatInfo createFormatInfo(String templatePath, String templateName, String templateFilePath, String templateFileFullPath) throws InternalErrorException {
+        FormatInfo info = new FormatInfo();
+        info.format = ImageFormat.OVA;
+        info.filename = templateName + "." + ImageFormat.OVA.getFileExtension();
+        info.size = _storage.getSize(templateFilePath);
+        info.virtualSize = getTemplateVirtualSize(templatePath, info.filename);
+        validateOva(templateFileFullPath, info);
+
+        return info;
+    }
+
+    /**
+     * side effect; properties are added to the info
+     *
+     * @throws InternalErrorException on an invalid ova contents
+     */
+    private void validateOva(String templateFileFullPath, FormatInfo info) throws InternalErrorException {
+        String ovfFile = getOVFFilePath(templateFileFullPath);
+        try {
+            OVFHelper ovfHelper = new OVFHelper();
+            // TDOD assess side effects of this call, remove capture of return value and optionally remove or simplify called method
+            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFile);
+            List<OVFPropertyTO> ovfProperties = ovfHelper.getOVFPropertiesFromFile(ovfFile);
+            if (CollectionUtils.isNotEmpty(ovfProperties)) {
+                s_logger.info("Found " + ovfProperties.size() + " configurable OVF properties");
+                info.ovfProperties = ovfProperties;
+            }
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            s_logger.info("The ovf file " + ovfFile + " is invalid ", e);
+            throw new InternalErrorException("OVA package has bad ovf file " + e.getMessage(), e);
         }
+    }
+
+    private void setFileSystemAccessRights(String templatePath) {
+        Script command;
+        String result;
 
         command = new Script("chmod", 0, s_logger);
         command.add("-R");
@@ -102,30 +137,33 @@ public class OVAProcessor extends AdapterBase implements Processor {
         if (result != null) {
             s_logger.warn("Unable to set permissions for " + templatePath + " due to " + result);
         }
+    }
 
-        FormatInfo info = new FormatInfo();
-        info.format = ImageFormat.OVA;
-        info.filename = templateName + "." + ImageFormat.OVA.getFileExtension();
-        info.size = _storage.getSize(templateFilePath);
-        info.virtualSize = getTemplateVirtualSize(templatePath, info.filename);
-
-        //vaidate ova
-        String ovfFile = getOVFFilePath(templateFileFullPath);
-        try {
-            OVFHelper ovfHelper = new OVFHelper();
-            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFile);
-            List<OVFPropertyTO> ovfProperties = ovfHelper.getOVFPropertiesFromFile(ovfFile);
-            if (CollectionUtils.isNotEmpty(ovfProperties)) {
-                s_logger.info("Found " + ovfProperties.size() + " configurable OVF properties");
-                info.ovfProperties = ovfProperties;
-            }
-        } catch (ParserConfigurationException | IOException | SAXException e) {
-            s_logger.info("The ovf file " + ovfFile + " is invalid ", e);
-            throw new InternalErrorException("OVA package has bad ovf file " + e.getMessage(), e);
+    private String unpackOva(String templatePath, String templateName, long processTimeout) throws InternalErrorException {
+        s_logger.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
+        String templateFileFullPath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
+        File templateFile = new File(templateFileFullPath);
+        Script command = new Script("tar", processTimeout, s_logger);
+        command.add("--no-same-owner");
+        command.add("--no-same-permissions");
+        command.add("-xf", templateFileFullPath);
+        command.setWorkDir(templateFile.getParent());
+        String result = command.execute();
+        if (result != null) {
+            s_logger.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
+            throw new InternalErrorException("failed to untar OVA package");
         }
-        // delete original OVA file
-        // templateFile.delete();
-        return info;
+        return templateFileFullPath;
+    }
+
+    private boolean conversionChecks(ImageFormat format) {
+        if (format != null) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("We currently don't handle conversion from " + format + " to OVA.");
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
