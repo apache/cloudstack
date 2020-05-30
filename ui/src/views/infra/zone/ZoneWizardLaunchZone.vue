@@ -72,7 +72,7 @@
         icon="play-circle"
         :loading="loading"
         @click="enableZoneAction"
-      >{{ $t('label.enable.zone') }}</a-button>
+      >{{ $t('label.action.enable.zone') }}</a-button>
       <a-button
         v-if="processStatus==='error'"
         class="button-next"

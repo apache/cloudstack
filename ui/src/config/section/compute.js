@@ -19,12 +19,12 @@ import kubernetes from '@/assets/icons/kubernetes.svg?inline'
 
 export default {
   name: 'compute',
-  title: 'Compute',
+  title: 'label.compute',
   icon: 'cloud',
   children: [
     {
       name: 'vm',
-      title: 'Instances',
+      title: 'label.instances',
       icon: 'desktop',
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
@@ -41,19 +41,19 @@ export default {
       ],
       related: [{
         name: 'volume',
-        title: 'Volumes',
+        title: 'label.volumes',
         param: 'virtualmachineid'
       }, {
         name: 'vmsnapshot',
-        title: 'VM Snapshots',
+        title: 'label.vm.snapshots',
         param: 'virtualmachineid'
       }, {
         name: 'backup',
-        title: 'Backups',
+        title: 'label.backups',
         param: 'virtualmachineid'
       }, {
         name: 'affinitygroup',
-        title: 'Affinity Groups',
+        title: 'label.affinity.groups',
         param: 'virtualmachineid'
       }],
       tabs: [{
@@ -408,7 +408,7 @@ export default {
       details: ['name', 'id', 'account', 'domain', 'created'],
       related: [{
         name: 'vm',
-        title: 'Instances',
+        title: 'label.instances',
         param: 'groupid'
       }],
       actions: [

@@ -19,12 +19,12 @@ import store from '@/store'
 
 export default {
   name: 'network',
-  title: 'Network',
+  title: 'label.network',
   icon: 'wifi',
   children: [
     {
       name: 'guestnetwork',
-      title: 'Guest Networks',
+      title: 'label.guest.networks',
       icon: 'gateway',
       permission: ['listNetworks'],
       resourceType: 'Network',
@@ -32,7 +32,7 @@ export default {
       details: ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain'],
       related: [{
         name: 'vm',
-        title: 'Instances',
+        title: 'label.instances',
         param: 'networkid'
       }],
       tabs: [{
@@ -101,7 +101,7 @@ export default {
     },
     {
       name: 'vpc',
-      title: 'VPC',
+      title: 'label.vpc',
       icon: 'deployment-unit',
       permission: ['listVPCs'],
       resourceType: 'Vpc',

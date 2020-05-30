@@ -17,12 +17,12 @@
 
 export default {
   name: 'storage',
-  title: 'Storage',
+  title: 'label.storage',
   icon: 'database',
   children: [
     {
       name: 'volume',
-      title: 'Volumes',
+      title: 'label.volumes',
       icon: 'hdd',
       permission: ['listVolumesMetrics'],
       resourceType: 'Volume',
@@ -30,7 +30,7 @@ export default {
       details: ['name', 'id', 'type', 'storagetype', 'diskofferingdisplaytext', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'miniops', 'maxiops', 'path'],
       related: [{
         name: 'snapshot',
-        title: 'Snapshots',
+        title: 'label.snapshots',
         param: 'volumeid'
       }],
       actions: [
@@ -196,7 +196,7 @@ export default {
     },
     {
       name: 'snapshot',
-      title: 'Snapshots',
+      title: 'label.snapshots',
       icon: 'build',
       permission: ['listSnapshots'],
       resourceType: 'Snapshot',
@@ -246,7 +246,7 @@ export default {
     },
     {
       name: 'vmsnapshot',
-      title: 'VM Snapshots',
+      title: 'label.vm.snapshots',
       icon: 'camera',
       permission: ['listVMSnapshot'],
       resourceType: 'VMSnapshot',
@@ -282,7 +282,7 @@ export default {
     },
     {
       name: 'backup',
-      title: 'Backups',
+      title: 'label.backup',
       icon: 'cloud-upload',
       permission: ['listBackups'],
       columns: [{ name: (record) => { return record.virtualmachinename } }, 'status', 'type', 'created', 'account', 'zone'],

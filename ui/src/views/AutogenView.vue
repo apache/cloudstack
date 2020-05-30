@@ -126,7 +126,7 @@
               v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
             >
               <span slot="label">
-                {{ $t(field.name) }}
+                {{ $t('label.' + field.name) }}
                 <a-tooltip :title="field.description">
                   <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
@@ -479,7 +479,7 @@ export default {
           customRender[key] = columnKey[key]
         }
         this.columns.push({
-          title: this.$t(key),
+          title: this.$t('label.' + key),
           dataIndex: key,
           scopedSlots: { customRender: key },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }

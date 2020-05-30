@@ -27,7 +27,7 @@
         :key="index"
         v-if="item.resourcetypename !== 'project'"
         :v-bind="item.resourcetypename"
-        :label="$t('max' + item.resourcetypename.replace('_', ''))">
+        :label="$t('label.max' + item.resourcetypename.replace('_', ''))">
         <a-input-number
           style="width: 100%;"
           v-decorator="[item.resourcetype, {
