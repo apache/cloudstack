@@ -34,6 +34,7 @@ export default {
       api: 'stopSystemVm',
       icon: 'stop',
       label: 'label.action.stop.systemvm',
+      message: 'message.action.stop.systemvm',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
       args: ['forced']

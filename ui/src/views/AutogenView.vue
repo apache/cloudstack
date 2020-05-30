@@ -115,6 +115,10 @@
           </a>
         </span>
         <a-spin :spinning="currentAction.loading">
+          <span v-if="currentAction.message">
+            <a-alert :message="$t(currentAction.message)" type="warning" />
+            <br v-if="currentAction.paramFields.length > 0"/>
+          </span>
           <a-form
             :form="form"
             @submit="handleSubmit"

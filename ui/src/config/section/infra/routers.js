@@ -35,6 +35,7 @@ export default {
       api: 'stopRouter',
       icon: 'stop',
       label: 'label.action.stop.router',
+      message: 'message.action.stop.router',
       dataView: true,
       args: ['forced'],
       show: (record) => { return record.state === 'Running' }

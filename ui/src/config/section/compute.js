@@ -94,6 +94,7 @@ export default {
           api: 'stopVirtualMachine',
           icon: 'stop',
           label: 'label.action.stop.instance',
+          message: 'message.action.stop.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           groupAction: true,
@@ -104,6 +105,7 @@ export default {
           api: 'rebootVirtualMachine',
           icon: 'reload',
           label: 'label.action.reboot.instance',
+          message: 'message.action.reboot.instance',
           dataView: true,
           show: (record) => { return ['Running'].includes(record.state) }
         },
