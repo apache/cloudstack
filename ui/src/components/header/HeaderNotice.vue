@@ -88,9 +88,12 @@ export default {
             var result = json.queryasyncjobresultresponse
             if (result.jobstatus === 1 && this.jobs[i].status !== 'done') {
               hasUpdated = true
-              this.$notification.success({
-                message: this.jobs[i].title,
-                description: this.jobs[i].description
+              const title = this.jobs[i].title
+              const description = this.jobs[i].description
+              this.$message.success({
+                content: title + (description ? ' - ' + description : ''),
+                key: this.jobs[i].jobid,
+                duration: 2
               })
               this.jobs[i].status = 'done'
             } else if (result.jobstatus === 2 && this.jobs[i].status !== 'failed') {
@@ -101,7 +104,8 @@ export default {
               }
               this.$notification.error({
                 message: this.jobs[i].title,
-                description: this.jobs[i].description
+                description: this.jobs[i].description,
+                duration: 0
               })
             }
           }).catch(function (e) {

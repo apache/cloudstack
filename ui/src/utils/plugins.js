@@ -16,6 +16,7 @@
 // under the License.
 
 import _ from 'lodash'
+import i18n from '@/locales'
 import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 
@@ -25,6 +26,7 @@ export const pollJobPlugin = {
     Vue.prototype.$pollJob = function (options) {
       /**
        * @param {String} jobId
+       * @param {String} [name='']
        * @param {String} [successMessage=Success]
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
@@ -32,11 +34,11 @@ export const pollJobPlugin = {
        * @param {String} [loadingMessage=Loading...]
        * @param {String} [catchMessage=Error caught]
        * @param {Function} [catchMethod=() => {}]
-       * @param {Number} [loadingDuration=3]
        * @param {Object} [action=null]
        */
       const {
         jobId,
+        name = '',
         successMessage = 'Success',
         successMethod = () => {},
         errorMessage = 'Error',
@@ -44,26 +46,41 @@ export const pollJobPlugin = {
         loadingMessage = 'Loading...',
         catchMessage = 'Error caught',
         catchMethod = () => {},
-        loadingDuration = 3,
         action = null
       } = options
 
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
-
         if (result.jobstatus === 1) {
-          message.success(successMessage)
+          var content = successMessage
+          if (successMessage === 'Success' && action && action.label) {
+            content = i18n.t(action.label)
+          }
+          if (name) {
+            content = content + ' - ' + name
+          }
+          message.success({
+            content: content,
+            key: jobId,
+            duration: 2
+          })
           successMethod(result)
         } else if (result.jobstatus === 2) {
           notification.error({
             message: errorMessage,
-            description: result.jobresult.errortext
+            description: result.jobresult.errortext,
+            duration: 0
           })
           errorMethod(result)
         } else if (result.jobstatus === 0) {
-          message
-            .loading(loadingMessage, loadingDuration)
-            .then(() => this.$pollJob(options, action))
+          message.loading({
+            content: loadingMessage,
+            key: jobId,
+            duration: 0
+          })
+          setTimeout(() => {
+            this.$pollJob(options, action)
+          }, 3000)
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)

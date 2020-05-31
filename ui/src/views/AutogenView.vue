@@ -701,6 +701,7 @@ export default {
     pollActionCompletion (jobId, action, resourceName) {
       this.$pollJob({
         jobId,
+        name: resourceName,
         successMethod: result => {
           this.fetchData()
           if (action.response) {
@@ -715,7 +716,7 @@ export default {
           }
         },
         errorMethod: () => this.fetchData(),
-        loadingMessage: `${this.$t(action.label)} in progress for ${resourceName}`,
+        loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
         catchMessage: 'Error encountered while fetching async job result',
         action
       })
@@ -808,10 +809,7 @@ export default {
                     hasJobId = true
                     break
                   } else {
-                    this.$notification.success({
-                      message: this.$t(this.currentAction.label),
-                      description: resourceName
-                    })
+                    this.$message.success(this.$t(this.currentAction.label) + (resourceName ? ' - ' + resourceName : ''))
                   }
                 }
                 break
