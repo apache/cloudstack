@@ -105,6 +105,7 @@ export default {
               this.$notification.error({
                 message: this.jobs[i].title,
                 description: this.jobs[i].description,
+                key: this.jobs[i].jobid,
                 duration: 0
               })
             }

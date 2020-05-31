@@ -66,9 +66,23 @@ export const pollJobPlugin = {
           })
           successMethod(result)
         } else if (result.jobstatus === 2) {
+          message.error({
+            content: errorMessage,
+            key: jobId,
+            duration: 1
+          })
+          var title = errorMessage
+          if (action && action.label) {
+            title = i18n.t(action.label)
+          }
+          var desc = result.jobresult.errortext
+          if (name) {
+            desc = `(${name}) ${desc}`
+          }
           notification.error({
-            message: errorMessage,
-            description: result.jobresult.errortext,
+            message: title,
+            description: desc,
+            key: jobId,
             duration: 0
           })
           errorMethod(result)
