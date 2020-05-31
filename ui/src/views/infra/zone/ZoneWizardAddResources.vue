@@ -748,7 +748,7 @@ export default {
       if (['KVM', 'VMware', 'Hyperv'].includes(hypervisor)) {
         scope.push({
           id: 'zone',
-          description: this.$t('zone')
+          description: this.$t('label.zone')
         })
         scope.push({
           id: 'cluster',

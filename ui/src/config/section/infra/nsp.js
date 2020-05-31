@@ -17,7 +17,7 @@
 
 export default {
   name: 'nsp',
-  title: 'Network Service Providers',
+  title: 'label.network.service.providers',
   icon: 'compass',
   hidden: true,
   permission: ['listNetworkServiceProviders'],

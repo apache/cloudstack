@@ -19,7 +19,7 @@
   <a-spin :spinning="loading">
     <a-form :form="form" layout="vertical" class="form">
 
-      <a-form-item class="form__item" :label="$t('zone')">
+      <a-form-item class="form__item" :label="$t('label.zone')">
         <a-select
           v-decorator="['zoneid', {
             initialValue: this.zoneId,
@@ -34,7 +34,7 @@
         </a-select>
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('podname')">
+      <a-form-item class="form__item" :label="$t('label.podname')">
         <a-input
           :placeholder="placeholder.name"
           v-decorator="[
@@ -45,7 +45,7 @@
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('reservedSystemGateway')">
+      <a-form-item class="form__item" :label="$t('label.reservedsystemgateway')">
         <a-input
           :placeholder="placeholder.gateway"
           v-decorator="[
@@ -56,7 +56,7 @@
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('reservedSystemNetmask')">
+      <a-form-item class="form__item" :label="$t('label.reservedsystemnetmask')">
         <a-input
           :placeholder="placeholder.netmask"
           v-decorator="[
@@ -67,7 +67,7 @@
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('reservedSystemStartIp')">
+      <a-form-item class="form__item" :label="$t('label.reservedsystemstartip')">
         <a-input
           :placeholder="placeholder.startip"
           v-decorator="[
@@ -78,7 +78,7 @@
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('reservedSystemEndIp')">
+      <a-form-item class="form__item" :label="$t('label.reservedsystemendip')">
         <a-input
           :placeholder="placeholder.endip"
           v-decorator="['endip']"
@@ -86,7 +86,7 @@
       </a-form-item>
 
       <div class="form__item">
-        <div class="form__label">{{ $t('isDedicated') }}</div>
+        <div class="form__label">{{ $t('label.isdedicated') }}</div>
         <a-checkbox @change="toggleDedicate" />
       </div>
 
@@ -100,8 +100,8 @@
       <a-divider></a-divider>
 
       <div class="actions">
-        <a-button @click="() => this.$parent.$parent.close()">{{ $t('cancel') }}</a-button>
-        <a-button @click="handleSubmit" type="primary">{{ $t('ok') }}</a-button>
+        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="handleSubmit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-form>

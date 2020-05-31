@@ -19,14 +19,14 @@
   <a-spin :spinning="fetchLoading">
     <div>
       <div class="vm-modal__header">
-        <span style="min-width: 200px;">{{ $t('name') }}</span>
-        <span>{{ $t('state') }}</span>
-        <span>{{ $t('instancename') }}</span>
-        <span>{{ $t('displayname') }}</span>
-        <span>{{ $t('ip') }}</span>
-        <span>{{ $t('account') }}</span>
-        <span>{{ $t('zonenamelabel') }}</span>
-        <span>{{ $t('select') }}</span>
+        <span style="min-width: 200px;">{{ $t('label.name') }}</span>
+        <span>{{ $t('label.state') }}</span>
+        <span>{{ $t('label.instancename') }}</span>
+        <span>{{ $t('label.displayname') }}</span>
+        <span>{{ $t('label.ip') }}</span>
+        <span>{{ $t('label.account') }}</span>
+        <span>{{ $t('label.zonenamelabel') }}</span>
+        <span>{{ $t('label.select') }}</span>
       </div>
 
       <a-checkbox-group style="width: 100%;">
@@ -70,10 +70,10 @@
     </div>
     <div class="actions">
       <a-button @click="closeModal">
-        {{ $t('Cancel') }}
+        {{ $t('label.cancel') }}
       </a-button>
       <a-button type="primary" @click="handleSubmit">
-        {{ $t('OK') }}
+        {{ $t('label.ok') }}
       </a-button>
     </div>
   </a-spin>

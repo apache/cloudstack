@@ -26,7 +26,7 @@
             @change="onTabChange">
             <a-tab-pane
               v-for="tab in $route.meta.tabs"
-              :tab="$t(tab.name)"
+              :tab="$t('label.' + tab.name)"
               :key="tab.name"
               v-if="'show' in tab ? tab.show(project, $route, $store.getters.userInfo) : true">
               <component

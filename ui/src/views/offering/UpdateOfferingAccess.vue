@@ -23,11 +23,11 @@
         @submit="handleSubmit"
         layout="vertical">
 
-        <a-form-item :label="$t('ispublic')" v-show="this.isAdmin()">
+        <a-form-item :label="$t('label.ispublic')" v-show="this.isAdmin()">
           <a-switch v-decorator="['ispublic', { initialValue: this.offeringIsPublic }]" :checked="this.offeringIsPublic" @change="val => { this.offeringIsPublic = val }" />
         </a-form-item>
 
-        <a-form-item :label="$t('domainid')" v-if="!this.offeringIsPublic">
+        <a-form-item :label="$t('label.domainid')" v-if="!this.offeringIsPublic">
           <a-select
             mode="multiple"
             v-decorator="['domainid', {
@@ -52,7 +52,7 @@
           </a-select>
         </a-form-item>
 
-        <a-form-item :label="$t('zoneid')">
+        <a-form-item :label="$t('label.zoneid')">
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -82,8 +82,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
 
       </a-form>

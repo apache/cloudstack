@@ -23,23 +23,23 @@
           <div class="list__item-container">
             <div class="list__col">
               <div class="list__label">
-                {{ $t('name') }}
+                {{ $t('label.name') }}
               </div>
               <div>
                 <router-link :to="{ path: '/systemvm/' + vm.id }">{{ vm.name }}</router-link>
               </div>
             </div>
             <div class="list__col">
-              <div class="list__label">{{ $t('vmstate') }}</div>
+              <div class="list__label">{{ $t('label.vmstate') }}</div>
               <div><status :text="vm.state" displayText></status></div>
             </div>
             <div class="list__col">
-              <div class="list__label">{{ $t('agentstate') }}</div>
+              <div class="list__label">{{ $t('label.agentstate') }}</div>
               <div><status :text="vm.agentstate || 'Unknown'" displayText></status></div>
             </div>
             <div class="list__col">
               <div class="list__label">
-                {{ $t('type') }}
+                {{ $t('label.type') }}
               </div>
               <div>
                 {{ vm.systemvmtype == 'consoleproxy' ? 'Console Proxy VM' : 'Secondary Storage VM' }}
@@ -47,7 +47,7 @@
             </div>
             <div class="list__col">
               <div class="list__label">
-                {{ $t('publicip') }}
+                {{ $t('label.publicip') }}
               </div>
               <div>
                 {{ vm.publicip }}
@@ -55,7 +55,7 @@
             </div>
             <div class="list__col">
               <div class="list__label">
-                {{ $t('hostname') }}
+                {{ $t('label.hostname') }}
               </div>
               <div>
                 <router-link :to="{ path: '/host/' + vm.hostid }">{{ vm.hostname }}</router-link>

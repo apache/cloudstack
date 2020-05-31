@@ -17,13 +17,13 @@
 
 export default {
   name: 'offering',
-  title: 'Offerings',
+  title: 'label.menu.service.offerings',
   icon: 'shopping',
   permission: ['listServiceOfferings', 'listDiskOfferings', 'listDomains'],
   children: [
     {
       name: 'computeoffering',
-      title: 'Compute Offerings',
+      title: 'label.compute.offerings',
       icon: 'cloud',
       permission: ['listServiceOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
@@ -31,7 +31,7 @@ export default {
       details: ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone', 'created'],
       related: [{
         name: 'vm',
-        title: 'Instances',
+        title: 'label.instances',
         param: 'serviceofferingid'
       }],
       actions: [{
@@ -63,7 +63,7 @@ export default {
     },
     {
       name: 'systemoffering',
-      title: 'System Offerings',
+      title: 'label.system.offerings',
       icon: 'setting',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
@@ -94,7 +94,7 @@ export default {
     },
     {
       name: 'diskoffering',
-      title: 'Disk Offerings',
+      title: 'label.disk.offerings',
       icon: 'hdd',
       permission: ['listDiskOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
@@ -102,7 +102,7 @@ export default {
       details: ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'tags', 'domain', 'zone', 'created'],
       related: [{
         name: 'volume',
-        title: 'Volumes',
+        title: 'label.volumes',
         param: 'diskofferingid'
       }],
       actions: [{
@@ -134,7 +134,7 @@ export default {
     },
     {
       name: 'backupoffering',
-      title: 'Backup Offerings',
+      title: 'label.backup.offerings',
       icon: 'cloud-upload',
       permission: ['listBackupOfferings', 'listInfrastructure'],
       columns: ['name', 'description', 'zoneid'],
@@ -155,7 +155,7 @@ export default {
     },
     {
       name: 'networkoffering',
-      title: 'Network Offerings',
+      title: 'label.network.offerings',
       icon: 'wifi',
       permission: ['listNetworkOfferings', 'listInfrastructure'],
       params: { isrecursive: 'true' },
@@ -219,7 +219,7 @@ export default {
     },
     {
       name: 'vpcoffering',
-      title: 'VPC Offerings',
+      title: 'label.vpc.offerings',
       icon: 'deployment-unit',
       permission: ['listVPCOfferings', 'listInfrastructure'],
       params: { isrecursive: 'true' },
@@ -228,7 +228,7 @@ export default {
       details: ['name', 'id', 'displaytext', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
-        title: 'VPCs',
+        title: 'label.vpcs',
         param: 'vpcofferingid'
       }],
       actions: [{

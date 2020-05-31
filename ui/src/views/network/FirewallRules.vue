@@ -20,35 +20,35 @@
     <div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('sourcecidr') }}</div>
+          <div class="form__label">{{ $t('label.sourcecidr') }}</div>
           <a-input v-model="newRule.cidrlist"></a-input>
         </div>
         <div class="form__item">
-          <div class="form__label">{{ $t('protocol') }}</div>
+          <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select v-model="newRule.protocol" style="width: 100%;" @change="resetRulePorts">
-            <a-select-option value="tcp">{{ $t('tcp') }}</a-select-option>
-            <a-select-option value="udp">{{ $t('udp') }}</a-select-option>
-            <a-select-option value="icmp">{{ $t('icmp') }}</a-select-option>
+            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="icmp">{{ $t('label.icmp') }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
-          <div class="form__label">{{ $t('startport') }}</div>
+          <div class="form__label">{{ $t('label.startport') }}</div>
           <a-input v-model="newRule.startport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
-          <div class="form__label">{{ $t('endport') }}</div>
+          <div class="form__label">{{ $t('label.endport') }}</div>
           <a-input v-model="newRule.endport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
-          <div class="form__label">{{ $t('icmptype') }}</div>
+          <div class="form__label">{{ $t('label.icmptype') }}</div>
           <a-input v-model="newRule.icmptype"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
-          <div class="form__label">{{ $t('icmpcode') }}</div>
+          <div class="form__label">{{ $t('label.icmpcode') }}</div>
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item" style="margin-left: auto;">
-          <a-button type="primary" @click="addRule">{{ $t('add') }}</a-button>
+          <a-button type="primary" @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
@@ -67,10 +67,10 @@
         {{ record.protocol | capitalise }}
       </template>
       <template slot="startport" slot-scope="record">
-        {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('all') }}
+        {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
       </template>
       <template slot="endport" slot-scope="record">
-        {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('all') }}
+        {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
@@ -94,14 +94,14 @@
     <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal">
       <div class="add-tags">
         <div class="add-tags__input">
-          <p class="add-tags__label">{{ $t('key') }}</p>
+          <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-input v-model="newTag.key"></a-input>
         </div>
         <div class="add-tags__input">
-          <p class="add-tags__label">{{ $t('value') }}</p>
+          <p class="add-tags__label">{{ $t('label.value') }}</p>
           <a-input v-model="newTag.value"></a-input>
         </div>
-        <a-button type="primary" @click="() => handleAddTag()" :loading="addTagLoading">{{ $t('add') }}</a-button>
+        <a-button type="primary" @click="() => handleAddTag()" :loading="addTagLoading">{{ $t('label.add') }}</a-button>
       </div>
 
       <a-divider></a-divider>
@@ -114,7 +114,7 @@
         </div>
       </div>
 
-      <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('done') }}</a-button>
+      <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('label.done') }}</a-button>
     </a-modal>
 
   </div>
@@ -157,27 +157,27 @@ export default {
       pageSize: 10,
       columns: [
         {
-          title: this.$t('sourcecidr'),
+          title: this.$t('label.sourcecidr'),
           dataIndex: 'cidrlist'
         },
         {
-          title: this.$t('protocol'),
+          title: this.$t('label.protocol'),
           scopedSlots: { customRender: 'protocol' }
         },
         {
-          title: `${this.$t('startport')}/${this.$t('icmptype')}`,
+          title: `${this.$t('label.startport')}/${this.$t('label.icmptype')}`,
           scopedSlots: { customRender: 'startport' }
         },
         {
-          title: `${this.$t('endport')}/${this.$t('icmpcode')}`,
+          title: `${this.$t('label.endport')}/${this.$t('label.icmpcode')}`,
           scopedSlots: { customRender: 'endport' }
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state'
         },
         {
-          title: this.$t('action'),
+          title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
       ]

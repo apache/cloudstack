@@ -17,7 +17,7 @@
 
 export default {
   name: 'project',
-  title: 'Projects',
+  title: 'label.projects',
   icon: 'project',
   permission: ['listProjects'],
   resourceType: 'Project',

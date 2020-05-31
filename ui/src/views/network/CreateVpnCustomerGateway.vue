@@ -17,7 +17,7 @@
 <template>
   <div>
     <a-form class="form-layout" :form="form" layout="vertical">
-      <a-form-item :label="$t('name')">
+      <a-form-item :label="$t('label.name')">
         <a-input
           v-decorator="[
             'name',
@@ -25,9 +25,9 @@
               rules: [{ required: true, message: 'required' }],
             }
           ]"
-          :placeholder="$t('vpncustomergatewayname')" />
+          :placeholder="$t('label.vpncustomergatewayname')" />
       </a-form-item>
-      <a-form-item :label="$t('gateway')">
+      <a-form-item :label="$t('label.gateway')">
         <a-input
           v-decorator="[
             'gateway',
@@ -35,9 +35,9 @@
               rules: [{ required: true, message: 'required'}],
             }
           ]"
-          :placeholder="$t('vpncustomergateway')" />
+          :placeholder="$t('label.vpncustomergateway')" />
       </a-form-item>
-      <a-form-item :label="$t('cidrlist')">
+      <a-form-item :label="$t('label.cidrlist')">
         <a-input
           v-decorator="[
             'cidrlist',
@@ -45,10 +45,10 @@
               rules: [{ required: true, message: 'required'}],
             }
           ]"
-          :placeholder="$t('vpncustomergateway_cidrlist')" />
+          :placeholder="$t('label.vpncustomergateway.cidrlist')" />
       </a-form-item>
       <a-form-item
-        :label="$t('ipsecpsk')">
+        :label="$t('label.ipsecpsk')">
         <a-input
           v-decorator="[
             'ipsecpsk',
@@ -56,10 +56,10 @@
               rules: [{ required: true, message: 'required'}],
             }
           ]"
-          :placeholder="$t('vpncustomergateway_secretkey')" />
+          :placeholder="$t('label.vpncustomergateway.secretkey')" />
       </a-form-item>
       <a-form-item
-        :label="$t('ikeEncryption')">
+        :label="$t('label.ikeencryption')">
         <a-select
           v-decorator="[
             'ikeEncryption',
@@ -73,7 +73,7 @@
         </a-select>
       </a-form-item>
       <a-form-item
-        :label="$t('ikeHash')">
+        :label="$t('label.ikehash')">
         <a-select
           v-decorator="[
             'ikeHash',
@@ -87,7 +87,7 @@
         </a-select>
       </a-form-item>
       <a-form-item
-        :label="$t('ikeDh')">
+        :label="$t('label.ikedh')">
         <a-select
           v-decorator="[
             'ikeDh',
@@ -103,7 +103,7 @@
         </a-select>
       </a-form-item>
       <a-form-item
-        :label="$t('espEncryption')">
+        :label="$t('label.espencryption')">
         <a-select
           v-decorator="[
             'espEncryption',
@@ -117,7 +117,7 @@
         </a-select>
       </a-form-item>
       <a-form-item
-        :label="$t('espHash')">
+        :label="$t('label.esphash')">
         <a-select
           v-decorator="[
             'espHash',
@@ -131,7 +131,7 @@
         </a-select>
       </a-form-item>
       <a-form-item
-        :label="$t('perfectForwardSecrecy')">
+        :label="$t('label.perfectforwardsecrecy')">
         <a-select
           v-decorator="[
             'perfectForwardSecrecy',
@@ -150,7 +150,7 @@
         </a-select>
       </a-form-item>
       <a-form-item
-        :label="$t('ikelifetime')">
+        :label="$t('label.ikelifetime')">
         <a-input
           v-decorator="[
             'ikelifetime',
@@ -158,10 +158,10 @@
               initialValue: '86400',
             },
           ]"
-          :placeholder="$t('vpncustomergateway_ikelifetime')"/>
+          :placeholder="$t('label.vpncustomergateway.ikelifetime')"/>
       </a-form-item>
       <a-form-item
-        :label="$t('esplifetime')">
+        :label="$t('label.esplifetime')">
         <a-input
           v-decorator="[
             'esplifetime',
@@ -169,9 +169,9 @@
               initialValue: '3600',
             },
           ]"
-          :placeholder="$t('vpncustomergateway_esplifetime')"/>
+          :placeholder="$t('label.vpncustomergateway.esplifetime')"/>
       </a-form-item>
-      <a-form-item :label="$t('dpd')">
+      <a-form-item :label="$t('label.dpd')">
         <a-switch
           v-decorator="[
             'dpd',
@@ -180,7 +180,7 @@
             },
           ]"/>
       </a-form-item>
-      <a-form-item :label="$t('forceencap')">
+      <a-form-item :label="$t('label.forceencap')">
         <a-switch
           v-decorator="[
             'forceencap',
@@ -191,10 +191,10 @@
       </a-form-item>
       <div class="actions">
         <a-button @click="closeModal">
-          {{ $t('Cancel') }}
+          {{ $t('label.cancel') }}
         </a-button>
         <a-button type="primary" @click="handleSubmit">
-          {{ $t('OK') }}
+          {{ $t('label.ok') }}
         </a-button>
       </div>
     </a-form>

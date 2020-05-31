@@ -23,21 +23,21 @@
           :form="form"
           layout="vertical"
           @submit="handleSubmit">
-          <a-form-item :label="$t('name')">
+          <a-form-item :label="$t('label.name')">
             <a-input
               v-decorator="['name', {
                 rules: [{ required: true, message: 'Please enter name' }]
               }]"
-              :placeholder="this.$t('Name')"/>
+              :placeholder="this.$t('label.name')"/>
           </a-form-item>
-          <a-form-item :label="$t('displaytext')">
+          <a-form-item :label="$t('label.displaytext')">
             <a-input
               v-decorator="['displaytext', {
                 rules: [{ required: true, message: 'Please enter display text' }]
               }]"
-              :placeholder="this.$t('Display text')"/>
+              :placeholder="this.$t('label.display.text')"/>
           </a-form-item>
-          <a-form-item :label="$t('zoneid')">
+          <a-form-item :label="$t('label.zoneid')">
             <a-select
               v-decorator="['zoneid', {
                 rules: [
@@ -53,14 +53,14 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              :placeholder="this.$t('.zoneid')"
+              :placeholder="this.$t('label..zoneid')"
               @change="val => { this.handleZoneChange(this.zones[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('domain')" v-if="this.isAdminOrDomainAdmin()">
+          <a-form-item :label="$t('label.domain')" v-if="this.isAdminOrDomainAdmin()">
             <a-select
               v-decorator="['domainid', {}]"
               showSearch
@@ -69,14 +69,14 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="domainLoading"
-              :placeholder="this.$t('domainid')"
+              :placeholder="this.$t('label.domainid')"
               @change="val => { this.handleDomainChange(this.domains[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('networkofferingid')">
+          <a-form-item :label="$t('label.networkofferingid')">
             <a-select
               v-decorator="['networkofferingid', {
                 rules: [
@@ -92,21 +92,21 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
-              :placeholder="this.$t('networkofferingid')"
+              :placeholder="this.$t('label.networkofferingid')"
               @change="val => { this.handleNetworkOfferingChange(this.networkOfferings[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.networkOfferings" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('vlan')" v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
+          <a-form-item :label="$t('label.vlan')" v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
             <a-input
               v-decorator="['vlanid', {
                 rules: [{ required: true, message: 'Please enter value' }]
               }]"
-              :placeholder="this.$t('vlanid')"/>
+              :placeholder="this.$t('label.vlanid')"/>
           </a-form-item>
-          <a-form-item :label="$t('vpcid')" v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.forvpc">
+          <a-form-item :label="$t('label.vpcid')" v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.forvpc">
             <a-select
               v-decorator="['vpcid', {
                 rules: [
@@ -122,53 +122,53 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="vpcLoading"
-              :placeholder="this.$t('vpcid')"
+              :placeholder="this.$t('label.vpcid')"
               @change="val => { this.selectedVpc = this.vpcs[val] }">
               <a-select-option v-for="(opt, optIndex) in this.vpcs" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('externalid')">
+          <a-form-item :label="$t('label.externalid')">
             <a-input
               v-decorator="['externalid', {}]"
-              :placeholder="$t('externalid')"/>
+              :placeholder="$t('label.externalid')"/>
           </a-form-item>
-          <a-form-item :label="$t('gateway')">
+          <a-form-item :label="$t('label.gateway')">
             <a-input
               v-decorator="['gateway', {}]"
-              :placeholder="this.$t('gateway')"/>
+              :placeholder="this.$t('label.gateway')"/>
           </a-form-item>
-          <a-form-item :label="$t('netmask')">
+          <a-form-item :label="$t('label.netmask')">
             <a-input
               v-decorator="['netmask', {}]"
-              :placeholder="this.$t('netmask')"/>
+              :placeholder="this.$t('label.netmask')"/>
           </a-form-item>
-          <a-form-item :label="$t('networkdomain')" v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && !this.selectedNetworkOffering.forvpc">
+          <a-form-item :label="$t('label.networkdomain')" v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && !this.selectedNetworkOffering.forvpc">
             <a-input
               v-decorator="['networkdomain', {}]"
-              :placeholder="this.$t('networkdomain')"/>
+              :placeholder="this.$t('label.networkdomain')"/>
           </a-form-item>
-          <a-form-item :label="$t('account')" v-if="this.accountVisible">
+          <a-form-item :label="$t('label.account')" v-if="this.accountVisible">
             <a-input
               v-decorator="['account', {
                 rules: [
-                  { required: true, message: this.$t('required') }
+                  { required: true, message: this.$t('label.required') }
                 ]
               }]"
-              :placeholder="this.$t('account')"/>
+              :placeholder="this.$t('label.account')"/>
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
               @click="closeAction">
-              {{ this.$t('Cancel') }}
+              {{ this.$t('label.cancel') }}
             </a-button>
             <a-button
               :loading="actionLoading"
               type="primary"
               @click="handleSubmit">
-              {{ this.$t('OK') }}
+              {{ this.$t('label.ok') }}
             </a-button>
           </div>
         </a-form>

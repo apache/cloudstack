@@ -20,7 +20,7 @@
     <div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('privateport') }}</div>
+          <div class="form__label">{{ $t('label.privateport') }}</div>
           <a-input-group class="form__item__input-container" compact>
             <a-input
               v-model="newRule.privateport"
@@ -38,7 +38,7 @@
           </a-input-group>
         </div>
         <div class="form__item">
-          <div class="form__label">{{ $t('publicport') }}</div>
+          <div class="form__label">{{ $t('label.publicport') }}</div>
           <a-input-group class="form__item__input-container" compact>
             <a-input
               v-model="newRule.publicport"
@@ -56,15 +56,15 @@
           </a-input-group>
         </div>
         <div class="form__item">
-          <div class="form__label">{{ $t('protocol') }}</div>
+          <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select v-model="newRule.protocol" style="width: 100%;">
-            <a-select-option value="tcp">{{ $t('tcp') }}</a-select-option>
-            <a-select-option value="udp">{{ $t('udp') }}</a-select-option>
+            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item" style="margin-left: auto;">
           <div class="form__label">{{ $t('label.add.VM') }}</div>
-          <a-button type="primary" @click="openAddVMModal">{{ $t('add') }}</a-button>
+          <a-button type="primary" @click="openAddVMModal">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
@@ -120,11 +120,11 @@
 
       <div class="add-tags">
         <div class="add-tags__input">
-          <p class="add-tags__label">{{ $t('key') }}</p>
+          <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-input v-model="newTag.key"></a-input>
         </div>
         <div class="add-tags__input">
-          <p class="add-tags__label">{{ $t('value') }}</p>
+          <p class="add-tags__label">{{ $t('label.value') }}</p>
           <a-input v-model="newTag.value"></a-input>
         </div>
         <a-button type="primary" @click="() => handleAddTag()">{{ $t('label.add') }}</a-button>
@@ -140,7 +140,7 @@
         </div>
       </div>
 
-      <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('done') }}</a-button>
+      <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('label.done') }}</a-button>
     </a-modal>
 
     <a-modal
@@ -158,14 +158,14 @@
 
       <div v-else>
         <div class="vm-modal__header">
-          <span style="min-width: 200px;">{{ $t('name') }}</span>
-          <span>{{ $t('instancename') }}</span>
-          <span>{{ $t('displayname') }}</span>
-          <span>{{ $t('ip') }}</span>
-          <span>{{ $t('account') }}</span>
-          <span>{{ $t('zone') }}</span>
-          <span>{{ $t('state') }}</span>
-          <span>{{ $t('select') }}</span>
+          <span style="min-width: 200px;">{{ $t('label.name') }}</span>
+          <span>{{ $t('label.instancename') }}</span>
+          <span>{{ $t('label.displayname') }}</span>
+          <span>{{ $t('label.ip') }}</span>
+          <span>{{ $t('label.account') }}</span>
+          <span>{{ $t('label.zone') }}</span>
+          <span>{{ $t('label.state') }}</span>
+          <span>{{ $t('label.select') }}</span>
         </div>
 
         <a-radio-group v-model="newRule.virtualmachineid" style="width: 100%;" @change="fetchNics">
@@ -243,27 +243,27 @@ export default {
       pageSize: 10,
       columns: [
         {
-          title: this.$t('privateport'),
+          title: this.$t('label.privateport'),
           scopedSlots: { customRender: 'privateport' }
         },
         {
-          title: this.$t('publicport'),
+          title: this.$t('label.publicport'),
           scopedSlots: { customRender: 'publicport' }
         },
         {
-          title: this.$t('protocol'),
+          title: this.$t('label.protocol'),
           scopedSlots: { customRender: 'protocol' }
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state'
         },
         {
-          title: this.$t('vm'),
+          title: this.$t('label.vm'),
           scopedSlots: { customRender: 'vm' }
         },
         {
-          title: this.$t('action'),
+          title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
       ]

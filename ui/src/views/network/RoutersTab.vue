@@ -32,7 +32,7 @@
       <status class="status" :text="item.state" displayText />
     </template>
     <template slot="requiresupgrade" slot-scope="text, item">
-      {{ item.requiresupgrade ? $t('Yes') : $t('No') }}
+      {{ item.requiresupgrade ? $t('label.yes') : $t('label.no') }}
     </template>
     <template slot="isredundantrouter" slot-scope="text, record">
       {{ record.isredundantrouter ? record.redundantstate : record.isredundantrouter }}
@@ -68,35 +68,35 @@ export default {
       routers: [],
       columns: [
         {
-          title: this.$t('name'),
+          title: this.$t('label.name'),
           dataIndex: 'name',
           scopedSlots: { customRender: 'name' }
         },
         {
-          title: this.$t('status'),
+          title: this.$t('label.status'),
           dataIndex: 'state',
           scopedSlots: { customRender: 'status' }
         },
         {
-          title: this.$t('ip'),
+          title: this.$t('label.ip'),
           dataIndex: 'publicip'
         },
         {
-          title: this.$t('version'),
+          title: this.$t('label.version'),
           dataIndex: 'version'
         },
         {
-          title: this.$t('requiresupgrade'),
+          title: this.$t('label.requiresupgrade'),
           dataIndex: 'requiresupgrade',
           scopedSlots: { customRender: 'requiresupgrade' }
         },
         {
-          title: this.$t('isredundantrouter'),
+          title: this.$t('label.isredundantrouter'),
           dataIndex: 'isredundantrouter',
           scopedSlots: { customRender: 'isredundantrouter' }
         },
         {
-          title: this.$t('hostname'),
+          title: this.$t('label.hostname'),
           dataIndex: 'hostname',
           scopedSlots: { customRender: 'hostname' }
         }

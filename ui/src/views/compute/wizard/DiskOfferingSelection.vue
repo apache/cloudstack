@@ -32,10 +32,10 @@
       @change="handleTableChange"
       :scroll="{ y: 225 }"
     >
-      <span slot="diskSizeTitle"><a-icon type="hdd" /> {{ $t('disksize') }}</span>
-      <span slot="iopsTitle"><a-icon type="rocket" /> {{ $t('minMaxIops') }}</span>
+      <span slot="diskSizeTitle"><a-icon type="hdd" /> {{ $t('label.disksize') }}</span>
+      <span slot="iopsTitle"><a-icon type="rocket" /> {{ $t('label.minmaxiops') }}</span>
       <template slot="diskSize" slot-scope="text, record">
-        <div v-if="record.isCustomized">{{ $t('isCustomized') }}</div>
+        <div v-if="record.isCustomized">{{ $t('label.iscustomized') }}</div>
         <div v-else-if="record.diskSize">{{ record.diskSize }} GB</div>
         <div v-else>-</div>
       </template>
@@ -76,7 +76,7 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('diskoffering'),
+          title: this.$t('label.diskoffering'),
           width: '40%'
         },
         {
@@ -156,7 +156,7 @@ export default {
       this.dataItems = []
       this.dataItems.push({
         id: '0',
-        name: this.$t('noselect'),
+        name: this.$t('label.noselect'),
         diskSize: undefined,
         miniops: undefined,
         maxiops: undefined,

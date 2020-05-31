@@ -28,13 +28,13 @@
     <template slot="ipAddress" slot-scope="text, record">
       <a-input
         style="width: 150px;"
-        :placeholder="$t('ipaddress')"
+        :placeholder="$t('label.ipaddress')"
         @change="($event) => updateNetworkData('ipAddress', record.id, $event.target.value)" />
     </template>
     <template slot="macAddress" slot-scope="text, record">
       <a-input
         style="width: 150px;"
-        :placeholder="$t('macaddress')"
+        :placeholder="$t('label.macaddress')"
         @change="($event) => updateNetworkData('macAddress', record.id, $event.target.value)" />
     </template>
   </a-table>
@@ -63,18 +63,18 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('defaultNetwork'),
+          title: this.$t('label.defaultnetwork'),
           width: '30%'
         },
         {
           dataIndex: 'ip',
-          title: this.$t('ip'),
+          title: this.$t('label.ip'),
           width: '30%',
           scopedSlots: { customRender: 'ipAddress' }
         },
         {
           dataIndex: 'mac',
-          title: this.$t('macaddress'),
+          title: this.$t('label.macaddress'),
           width: '30%',
           scopedSlots: { customRender: 'macAddress' }
         }

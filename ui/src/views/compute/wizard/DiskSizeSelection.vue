@@ -17,7 +17,7 @@
 
 <template>
   <a-form-item
-    :label="this.$t('diskSize')"
+    :label="this.$t('label.disksize')"
     class="form-item">
     <a-row :gutter="12">
       <a-col :md="10" :lg="10">

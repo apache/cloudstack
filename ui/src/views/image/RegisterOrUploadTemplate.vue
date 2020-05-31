@@ -29,7 +29,7 @@
         layout="vertical">
         <div v-if="currentForm === 'Create'">
           <a-row :gutter="12">
-            <a-form-item :label="$t('url')">
+            <a-form-item :label="$t('label.url')">
               <a-input
                 v-decorator="['url', {
                   rules: [{ required: true, message: 'Please enter input' }]
@@ -39,7 +39,7 @@
           </a-row>
         </div>
         <div v-if="currentForm === 'Upload'">
-          <a-form-item :label="$t('templateFileUpload')">
+          <a-form-item :label="$t('label.templatefileupload')">
             <a-upload-dragger
               :multiple="false"
               :fileList="fileList"
@@ -58,7 +58,7 @@
           </a-form-item>
         </div>
         <a-row :gutter="12">
-          <a-form-item :label="$t('name')">
+          <a-form-item :label="$t('label.name')">
             <a-input
               v-decorator="['name', {
                 rules: [{ required: true, message: 'Please upload a template ' }]
@@ -67,7 +67,7 @@
           </a-form-item>
         </a-row>
         <a-row :gutter="12">
-          <a-form-item :label="$t('displaytext')">
+          <a-form-item :label="$t('label.displaytext')">
             <a-input
               v-decorator="['displaytext', {
                 rules: [{ required: true, message: 'Please enter input' }]
@@ -79,7 +79,7 @@
           <a-row :gutter="12">
             <a-col :md="24" :lg="24">
               <a-form-item
-                :label="$t('zone')"
+                :label="$t('label.zone')"
                 :validate-status="zoneError"
                 :help="zoneErrorMessage">
                 <a-select
@@ -108,7 +108,7 @@
           <a-row :gutter="12">
             <a-col :md="24" :lg="24">
               <a-form-item
-                :label="$t('zoneid')"
+                :label="$t('label.zoneid')"
                 :validate-status="zoneError"
                 :help="zoneErrorMessage">
                 <a-select
@@ -129,7 +129,7 @@
         </div>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
-            <a-form-item :label="$t('hypervisor')">
+            <a-form-item :label="$t('label.hypervisor')">
               <a-select
                 v-decorator="['hypervisor', {
                   rules: [
@@ -149,7 +149,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12">
-            <a-form-item :label="$t('format')">
+            <a-form-item :label="$t('label.format')">
               <a-select
                 v-decorator="['format', {
                   rules: [
@@ -169,12 +169,12 @@
         </a-row>
         <a-row :gutter="12" v-if="allowed && hyperKVMShow && currentForm !== 'Upload'">
           <a-col :md="24" :lg="12">
-            <a-form-item :label="$t('directdownload')">
+            <a-form-item :label="$t('label.directdownload')">
               <a-switch v-decorator="['directdownload']" @change="handleChangeDirect" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12" v-if="allowDirectDownload">
-            <a-form-item :label="$t('checksum')">
+            <a-form-item :label="$t('label.checksum')">
               <a-input
                 v-decorator="['checksum', {
                   rules: [{ required: false, message: 'Please enter input' }]
@@ -184,7 +184,7 @@
           </a-col>
         </a-row>
         <a-row :gutter="12" v-if="allowed && hyperXenServerShow">
-          <a-form-item v-if="hyperXenServerShow" :label="$t('xenserverToolsVersion61plus')">
+          <a-form-item v-if="hyperXenServerShow" :label="$t('label.xenservertoolsversion61plus')">
             <a-switch
               v-decorator="['xenserverToolsVersion61plus',{
                 initialValue: xenServerProvider
@@ -194,7 +194,7 @@
         </a-row>
         <a-row :gutter="12" v-if="hyperKVMShow || hyperVMWShow">
           <a-col :md="24" :lg="24" v-if="hyperKVMShow">
-            <a-form-item :label="$t('rootDiskControllerType')">
+            <a-form-item :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-decorator="['rootDiskControllerType', {
                   rules: [
@@ -205,7 +205,7 @@
                   ]
                 }]"
                 :loading="rootDisk.loading"
-                :placeholder="$t('rootdiskcontroller')">
+                :placeholder="$t('label.rootdiskcontroller')">
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -213,7 +213,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12" v-if="hyperVMWShow">
-            <a-form-item :label="$t('rootDiskControllerType')">
+            <a-form-item :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-decorator="['rootDiskControllerType', {
                   rules: [
@@ -224,7 +224,7 @@
                   ]
                 }]"
                 :loading="rootDisk.loading"
-                :placeholder="$t('rootdiskcontroller')">
+                :placeholder="$t('label.rootdiskcontroller')">
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -232,7 +232,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12" v-if="hyperVMWShow">
-            <a-form-item :label="$t('nicAdapterType')">
+            <a-form-item :label="$t('label.nicadaptertype')">
               <a-select
                 v-decorator="['nicAdapterType', {
                   rules: [
@@ -242,7 +242,7 @@
                     }
                   ]
                 }]"
-                :placeholder="$t('nicadaptertype')">
+                :placeholder="$t('label.nicadaptertype')">
                 <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -250,7 +250,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24">
-            <a-form-item v-if="hyperVMWShow" :label="$t('keyboardType')">
+            <a-form-item v-if="hyperVMWShow" :label="$t('label.keyboardtype')">
               <a-select
                 v-decorator="['keyboardType', {
                   rules: [
@@ -260,7 +260,7 @@
                     }
                   ]
                 }]"
-                :placeholder="$t('keyboard')">
+                :placeholder="$t('label.keyboard')">
                 <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -270,7 +270,7 @@
         </a-row>
         <a-row :gutter="12">
           <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('ostypeid')">
+            <a-form-item :label="$t('label.ostypeid')">
               <a-select
                 showSearch
                 v-decorator="['ostypeid', {
@@ -301,48 +301,48 @@
                 <a-row>
                   <a-col :span="12">
                     <a-checkbox value="isextractable">
-                      {{ $t('isextractable') }}
+                      {{ $t('label.isextractable') }}
                     </a-checkbox>
                   </a-col>
                   <a-col :span="12">
                     <a-checkbox value="passwordenabled">
-                      {{ $t('passwordenabled') }}
+                      {{ $t('label.passwordenabled') }}
                     </a-checkbox>
                   </a-col>
                 </a-row>
                 <a-row>
                   <a-col :span="12">
                     <a-checkbox value="isdynamicallyscalable">
-                      {{ $t('isdynamicallyscalable') }}
+                      {{ $t('label.isdynamicallyscalable') }}
                     </a-checkbox>
                   </a-col>
                   <a-col :span="12">
                     <a-checkbox value="sshkeyenabled">
-                      {{ $t('sshkeyenabled') }}
+                      {{ $t('label.sshkeyenabled') }}
                     </a-checkbox>
                   </a-col>
                 </a-row>
                 <a-row>
                   <a-col :span="12">
                     <a-checkbox value="isrouting">
-                      {{ $t('isrouting') }}
+                      {{ $t('label.isrouting') }}
                     </a-checkbox>
                   </a-col>
                   <a-col :span="12">
                     <a-checkbox value="ispublic">
-                      {{ $t('ispublic') }}
+                      {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
                 </a-row>
                 <a-row>
                   <a-col :span="12">
                     <a-checkbox value="requireshvm">
-                      {{ $t('requireshvm') }}
+                      {{ $t('label.requireshvm') }}
                     </a-checkbox>
                   </a-col>
                   <a-col :span="12">
                     <a-checkbox value="isfeatured">
-                      {{ $t('isfeatured') }}
+                      {{ $t('label.isfeatured') }}
                     </a-checkbox>
                   </a-col>
                 </a-row>
@@ -352,8 +352,8 @@
         </a-row>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>

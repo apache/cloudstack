@@ -17,7 +17,7 @@
 
 export default {
   name: 'systemvm',
-  title: 'System VMs',
+  title: 'label.system.vms',
   icon: 'thunderbolt',
   permission: ['listSystemVms'],
   columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename'],

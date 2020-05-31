@@ -22,21 +22,21 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('name')">
+        <a-form-item :label="$t('label.name')">
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: 'Please enter name' }]
             }]"
-            :placeholder="this.$t('Name')"/>
+            :placeholder="this.$t('label.name')"/>
         </a-form-item>
-        <a-form-item :label="$t('displaytext')">
+        <a-form-item :label="$t('label.displaytext')">
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: 'Please enter description' }]
             }]"
-            :placeholder="this.$t('displaytext')"/>
+            :placeholder="this.$t('label.displaytext')"/>
         </a-form-item>
-        <a-form-item :label="$t('supportedservices')">
+        <a-form-item :label="$t('label.supportedservices')">
           <div class="supported-services-container" scroll-to="last-child">
             <a-list itemLayout="horizontal" :dataSource="this.supportedServices">
               <a-list-item slot="renderItem" slot-scope="item">
@@ -52,19 +52,19 @@
             </a-list>
           </div>
         </a-form-item>
-        <a-form-item :label="$t('regionlevelvpc')" v-if="this.connectivityServiceChecked">
+        <a-form-item :label="$t('label.regionlevelvpc')" v-if="this.connectivityServiceChecked">
           <a-switch v-decorator="['regionlevelvpc', {initialValue: true}]" defaultChecked />
         </a-form-item>
-        <a-form-item :label="$t('distributedrouter')" v-if="this.connectivityServiceChecked">
+        <a-form-item :label="$t('label.distributedrouter')" v-if="this.connectivityServiceChecked">
           <a-switch v-decorator="['distributedrouter', {initialValue: true}]" defaultChecked />
         </a-form-item>
-        <a-form-item :label="$t('redundantrouter')" v-if="this.sourceNatServiceChecked">
+        <a-form-item :label="$t('label.redundantrouter')" v-if="this.sourceNatServiceChecked">
           <a-switch v-decorator="['redundantrouter', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('ispublic')" v-if="this.isAdmin()">
+        <a-form-item :label="$t('label.ispublic')" v-if="this.isAdmin()">
           <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :defaultChecked="this.isPublic" @change="val => { this.isPublic = val }" />
         </a-form-item>
-        <a-form-item :label="$t('domainid')" v-if="!this.isPublic">
+        <a-form-item :label="$t('label.domainid')" v-if="!this.isPublic">
           <a-select
             mode="multiple"
             v-decorator="['domainid', {
@@ -81,13 +81,13 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('domain')">
+            :placeholder="this.$t('label.domain')">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('zoneid')">
+        <a-form-item :label="$t('label.zoneid')">
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -109,7 +109,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.$t('zone')">
+            :placeholder="this.$t('label.zone')">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -117,8 +117,8 @@
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>

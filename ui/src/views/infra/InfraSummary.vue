@@ -28,7 +28,7 @@
             size="small"
             shape="round"
             @click="fetchData()" >
-            {{ $t('refresh') }}
+            {{ $t('label.refresh') }}
           </a-button>
           <a-button
             style="margin-left: 12px; margin-top: 4px"
@@ -36,10 +36,10 @@
             size="small"
             shape="round"
             @click="sslFormVisible = true">
-            {{ $t('Setup SSL Certificate') }}
+            {{ $t('label.setup.ssl.certificate') }}
           </a-button>
           <a-modal
-            :title="$t('SSL Certificate')"
+            :title="$t('label.ssl.certificate')"
             :visible="sslFormVisible"
             :footer="null"
             @cancel="sslModalClose">

@@ -24,7 +24,7 @@
         layout="vertical">
         <a-form-item v-if="!this.isAdminOrDomainAdmin()">
           <span slot="label">
-            {{ $t('currentpassword') }}
+            {{ $t('label.currentpassword') }}
             <a-tooltip :title="apiParams.currentpassword.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
@@ -37,7 +37,7 @@
         </a-form-item>
         <a-form-item>
           <span slot="label">
-            {{ $t('password') }}
+            {{ $t('label.password') }}
             <a-tooltip :title="apiParams.password.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
@@ -50,7 +50,7 @@
         </a-form-item>
         <a-form-item>
           <span slot="label">
-            {{ $t('confirmpassword') }}
+            {{ $t('label.confirmpassword') }}
             <a-tooltip :title="apiParams.password.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
@@ -71,8 +71,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>

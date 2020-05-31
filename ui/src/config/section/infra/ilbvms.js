@@ -17,7 +17,7 @@
 
 export default {
   name: 'ilbvm',
-  title: 'Internal LB VMs',
+  title: 'label.internal.lb',
   icon: 'share-alt',
   permission: ['listInternalLoadBalancerVMs'],
   params: { projectid: '-1' },

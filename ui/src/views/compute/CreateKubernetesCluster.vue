@@ -22,21 +22,21 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('name')">
+        <a-form-item :label="$t('label.name')">
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: 'Please enter Kubernetes cluster name' }]
             }]"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
-        <a-form-item :label="$t('description')">
+        <a-form-item :label="$t('label.description')">
           <a-input
             v-decorator="['description', {
               rules: [{ required: true, message: 'Please enter Kubernetes cluster description' }]
             }]"
             :placeholder="apiParams.description.description"/>
         </a-form-item>
-        <a-form-item :label="$t('zoneid')">
+        <a-form-item :label="$t('label.zoneid')">
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
@@ -55,7 +55,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('kubernetesversionid')">
+        <a-form-item :label="$t('label.kubernetesversionid')">
           <a-select
             id="version-selection"
             v-decorator="['kubernetesversionid', {
@@ -74,7 +74,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('serviceofferingid')">
+        <a-form-item :label="$t('label.serviceofferingid')">
           <a-select
             id="offering-selection"
             v-decorator="['serviceofferingid', {
@@ -92,7 +92,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('noderootdisksize')">
+        <a-form-item :label="$t('label.noderootdisksize')">
           <a-input
             v-decorator="['noderootdisksize', {
               rules: [{
@@ -106,7 +106,7 @@
             }]"
             :placeholder="apiParams.noderootdisksize.description"/>
         </a-form-item>
-        <a-form-item :label="$t('networkid')">
+        <a-form-item :label="$t('label.networkid')">
           <a-select
             id="network-selection"
             v-decorator="['networkid', {}]"
@@ -122,10 +122,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('haenable')" v-if="this.selectedKubernetesVersion != null && this.selectedKubernetesVersion != undefined && this.selectedKubernetesVersion.supportsha === true">
+        <a-form-item :label="$t('label.haenable')" v-if="this.selectedKubernetesVersion != null && this.selectedKubernetesVersion != undefined && this.selectedKubernetesVersion.supportsha === true">
           <a-switch v-decorator="['haenable', {initialValue: this.haEnabled}]" :checked="this.haEnabled" @change="val => { this.haEnabled = val }" />
         </a-form-item>
-        <a-form-item :label="$t('masternodes')" v-if="this.haEnabled">
+        <a-form-item :label="$t('label.masternodes')" v-if="this.haEnabled">
           <a-input
             v-decorator="['masternodes', {
               initialValue: '1',
@@ -142,12 +142,12 @@
             }]"
             :placeholder="apiParams.masternodes.description"/>
         </a-form-item>
-        <a-form-item :label="$t('externalloadbalanceripaddress')" v-if="this.haEnabled">
+        <a-form-item :label="$t('label.externalloadbalanceripaddress')" v-if="this.haEnabled">
           <a-input
             v-decorator="['externalloadbalanceripaddress', {}]"
             :placeholder="apiParams.externalloadbalanceripaddress.description"/>
         </a-form-item>
-        <a-form-item :label="$t('cks.cluster.size')">
+        <a-form-item :label="$t('label.cks.cluster.size')">
           <a-input
             v-decorator="['size', {
               initialValue: '1',
@@ -164,7 +164,7 @@
             }]"
             :placeholder="apiParams.size.description"/>
         </a-form-item>
-        <a-form-item :label="$t('keypair')">
+        <a-form-item :label="$t('label.keypair')">
           <a-select
             id="keypair-selection"
             v-decorator="['keypair', {}]"
@@ -182,8 +182,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>

@@ -26,15 +26,15 @@
       </div>
 
       <div class="form__item">
-        <p class="form__label">{{ $t('accounttype') }}</p>
+        <p class="form__label">{{ $t('label.accounttype') }}</p>
         <a-select v-model="selectedAccountType" defaultValue="account">
-          <a-select-option :value="$t('account')">{{ $t('account') }}</a-select-option>
-          <a-select-option :value="$t('project')">{{ $t('project') }}</a-select-option>
+          <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
+          <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
       </div>
 
       <div class="form__item">
-        <p class="form__label"><span class="required">*</span>{{ $t('domain') }}</p>
+        <p class="form__label"><span class="required">*</span>{{ $t('label.domain') }}</p>
         <a-select @change="changeDomain" v-model="selectedDomain" :defaultValue="selectedDomain">
           <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id">
             {{ domain.path }}
@@ -44,30 +44,30 @@
 
       <template v-if="selectedAccountType === 'Account'">
         <div class="form__item">
-          <p class="form__label"><span class="required">*</span>{{ $t('account') }}</p>
+          <p class="form__label"><span class="required">*</span>{{ $t('label.account') }}</p>
           <a-select @change="changeAccount" v-model="selectedAccount">
             <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
               {{ account.name }}
             </a-select-option>
           </a-select>
-          <span v-if="accountError" class="required">{{ $t('required') }}</span>
+          <span v-if="accountError" class="required">{{ $t('label.required') }}</span>
         </div>
       </template>
 
       <template v-else>
         <div class="form__item">
-          <p class="form__label"><span class="required">*</span>{{ $t('project') }}</p>
+          <p class="form__label"><span class="required">*</span>{{ $t('label.project') }}</p>
           <a-select @change="changeProject" v-model="selectedProject">
             <a-select-option v-for="project in projects" :key="project.id" :value="project.id">
               {{ project.name }}
             </a-select-option>
           </a-select>
-          <span v-if="projectError" class="required">{{ $t('required') }}</span>
+          <span v-if="projectError" class="required">{{ $t('label.required') }}</span>
         </div>
       </template>
 
       <div class="form__item">
-        <p class="form__label">{{ $t('network') }}</p>
+        <p class="form__label">{{ $t('label.network') }}</p>
         <a-select v-model="selectedNetwork">
           <a-select-option v-for="network in networks" :key="network.id" :value="network.id">
             {{ network.name ? network.name : '-' }}
@@ -76,7 +76,7 @@
       </div>
 
       <a-button type="primary" class="submit-btn" @click="submitData">
-        {{ $t('submit') }}
+        {{ $t('label.submit') }}
       </a-button>
 
     </div>

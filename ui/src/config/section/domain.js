@@ -17,7 +17,7 @@
 
 export default {
   name: 'domain',
-  title: 'Domains',
+  title: 'label.domains',
   icon: 'block',
   permission: ['listDomains', 'listDomainChildren'],
   resourceType: 'Domain',
@@ -25,12 +25,12 @@ export default {
   details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
   related: [{
     name: 'account',
-    title: 'Accounts',
+    title: 'label.accounts',
     param: 'domainid'
   }],
   tabs: [
     {
-      name: 'Domain',
+      name: 'domain',
       component: () => import('@/components/view/InfoCard.vue'),
       show: (record, route) => { return route.path === '/domain' }
     },
@@ -44,7 +44,7 @@ export default {
       component: () => import('@/components/view/ResourceLimitTab.vue')
     },
     {
-      name: 'Settings',
+      name: 'settings',
       component: () => import('@/components/view/SettingsTab.vue'),
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
     }

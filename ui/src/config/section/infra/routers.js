@@ -17,7 +17,7 @@
 
 export default {
   name: 'router',
-  title: 'Virtual Routers',
+  title: 'label.virtual.routers',
   icon: 'fork',
   permission: ['listRouters'],
   params: { projectid: '-1' },

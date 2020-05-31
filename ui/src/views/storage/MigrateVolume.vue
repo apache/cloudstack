@@ -19,7 +19,7 @@
   <div class="migrate-volume-container">
 
     <div class="modal-form">
-      <p class="modal-form__label">{{ $t('storagePool') }}</p>
+      <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
       <a-select v-model="selectedStoragePool" style="width: 100%;">
         <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
           {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? '(Suitable)' : '(Not Suitable)' }}</span>
@@ -27,12 +27,12 @@
       </a-select>
       <template v-if="this.resource.virtualmachineid">
         <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
-          {{ $t('useNewDiskOffering') }}
+          {{ $t('label.usenewdiskoffering') }}
         </p>
         <a-checkbox v-model="replaceDiskOffering" />
 
         <template v-if="replaceDiskOffering">
-          <p class="modal-form__label">{{ $t('newDiskOffering') }}</p>
+          <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
           <a-select v-model="selectedDiskOffering" style="width: 100%;">
             <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
               {{ diskOffering.displaytext }}
@@ -47,10 +47,10 @@
 
     <div class="actions">
       <a-button @click="closeModal">
-        {{ $t('Cancel') }}
+        {{ $t('label.cancel') }}
       </a-button>
       <a-button type="primary" @click="submitMigrateVolume">
-        {{ $t('OK') }}
+        {{ $t('label.ok') }}
       </a-button>
     </div>
 

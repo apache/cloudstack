@@ -37,22 +37,22 @@
               :visible="os.ispublic && !os.isfeatured"
               color="blue"
               @click="onFilterTag('is: public')"
-            >{{ $t('isPublic') }}</a-tag>
+            >{{ $t('label.ispublic') }}</a-tag>
             <a-tag
               :visible="os.isfeatured"
               color="green"
               @click="onFilterTag('is: featured')"
-            >{{ $t('isFeatured') }}</a-tag>
+            >{{ $t('label.isfeatured') }}</a-tag>
             <a-tag
               :visible="isSelf(os)"
               color="orange"
               @click="onFilterTag('is: self')"
-            >{{ $t('isSelf') }}</a-tag>
+            >{{ $t('label.isself') }}</a-tag>
             <a-tag
               :visible="isShared(os)"
               color="cyan"
               @click="onFilterTag('is: shared')"
-            >{{ $t('isShared') }}</a-tag>
+            >{{ $t('label.isshared') }}</a-tag>
           </a-radio>
         </a-radio-group>
       </a-list-item>

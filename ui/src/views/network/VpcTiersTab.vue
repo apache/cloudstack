@@ -24,7 +24,7 @@
           <div class="list__item-container">
             <div class="list__col">
               <div class="list__label">
-                {{ $t('name') }}
+                {{ $t('label.name') }}
               </div>
               <div>
                 <router-link :to="{ path: '/guestnetwork/' + network.id }">{{ network.name }} </router-link>
@@ -32,18 +32,18 @@
               </div>
             </div>
             <div class="list__col">
-              <div class="list__label">{{ $t('state') }}</div>
+              <div class="list__label">{{ $t('label.state') }}</div>
               <div><status :text="network.state" displayText></status></div>
             </div>
             <div class="list__col">
               <div class="list__label">
-                {{ $t('CIDR') }}
+                {{ $t('label.cidr') }}
               </div>
               <div>{{ network.cidr }}</div>
             </div>
             <div class="list__col">
               <div class="list__label">
-                {{ $t('aclid') }}
+                {{ $t('label.aclid') }}
               </div>
               <div>
                 <router-link :to="{ path: '/acllist/' + network.aclid }">
@@ -56,9 +56,9 @@
             <template v-slot:expandIcon="props">
               <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
             </template>
-            <a-collapse-panel :header="$t('Instances')" key="vm" :style="customStyle">
+            <a-collapse-panel :header="$t('label.instances')" key="vm" :style="customStyle">
               <a-button icon="plus" type="dashed" style="margin-bottom: 15px; width: 100%" @click="$router.push({ path: '/action/deployVirtualMachine?networkid=' + network.id })">
-                {{ $t('Add Instance') }}
+                {{ $t('label.add.instance') }}
               </a-button>
               <a-table
                 class="table"
@@ -92,7 +92,7 @@
                 @showSizeChange="changePageSize"
                 showSizeChanger/>
             </a-collapse-panel>
-            <a-collapse-panel :header="$t('Internal LB')" key="ilb" :style="customStyle" :disabled="!showIlb(network)" >
+            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :disabled="!showIlb(network)" >
               <a-button icon="plus" type="dashed" style="margin-bottom: 15px; width: 100%" @click="handleAddInternalLB(network.id)">
                 {{ $t('label.add.internal.lb') }}
               </a-button>
@@ -131,12 +131,12 @@
     <a-modal v-model="showCreateNetworkModal" :title="$t('label.add.new.tier')" @ok="handleAddNetworkSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
-          <a-form-item :label="$t('name')">
+          <a-form-item :label="$t('label.name')">
             <a-input
               placeholder="A unique name of the tier"
               v-decorator="['name',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('networkOfferingId')">
+          <a-form-item :label="$t('label.networkofferingid')">
             <a-select
               v-decorator="['networkOffering',{rules: [{ required: true, message: 'Required' }]}]">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
@@ -144,21 +144,21 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('gateway')">
+          <a-form-item :label="$t('label.gateway')">
             <a-input
               placeholder="The gateway of the tier in the super CIDR range and not overlapping the CIDR of any other tier in this VPC."
               v-decorator="['gateway',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('netmask')">
+          <a-form-item :label="$t('label.netmask')">
             <a-input
               placeholder="Netmask of the tier. For example, with VPC CIDR of 10.0.0.0/16 and network tier CIDR of 10.1.1.0/24, gateway is 10.1.1.1 and netmask is 255.255.255.0"
               v-decorator="['netmask',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('externalid')">
+          <a-form-item :label="$t('label.externalid')">
             <a-input
               v-decorator="['externalId']"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('aclid')">
+          <a-form-item :label="$t('label.aclid')">
             <a-select v-decorator="['acl']">
               <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
                 {{ item.name }}
@@ -172,30 +172,30 @@
     <a-modal v-model="showAddInternalLB" :title="$t('label.add.internal.lb')" @ok="handleAddInternalLBSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
-          <a-form-item :label="$t('name')">
+          <a-form-item :label="$t('label.name')">
             <a-input
               placeholder="Unique name for Internal LB"
               v-decorator="['name', { rules: [{ required: true, message: 'Please specify a name for the Internal LB'}] }]"/>
           </a-form-item>
-          <a-form-item :label="$t('description')">
+          <a-form-item :label="$t('label.description')">
             <a-input
               placeholder="Brief description of the Internal LB"
               v-decorator="['description']"/>
           </a-form-item>
-          <a-form-item :label="$t('sourceipaddress')">
+          <a-form-item :label="$t('label.sourceipaddress')">
             <a-input
               placeholder="Brief description of the Internal LB"
               v-decorator="['sourceIP']"/>
           </a-form-item>
-          <a-form-item :label="$t('sourceport')">
+          <a-form-item :label="$t('label.sourceport')">
             <a-input
               v-decorator="['sourcePort', { rules: [{ required: true, message: 'Please specify a Source Port'}] }]"/>
           </a-form-item>
-          <a-form-item :label="$t('instanceport')">
+          <a-form-item :label="$t('label.instanceport')">
             <a-input
               v-decorator="['instancePort', { rules: [{ required: true, message: 'Please specify a Instance Port'}] }]"/>
           </a-form-item>
-          <a-form-item :label="$t('algorithm')">
+          <a-form-item :label="$t('label.algorithm')">
             <a-select
               v-decorator="[
                 'algorithm',
@@ -254,69 +254,69 @@ export default {
       },
       internalLbCols: [
         {
-          title: this.$t('name'),
+          title: this.$t('label.name'),
           dataIndex: 'name',
           scopedSlots: { customRender: 'name' }
         },
         {
-          title: this.$t('sourceipaddress'),
+          title: this.$t('label.sourceipaddress'),
           dataIndex: 'sourceipaddress'
         },
         {
-          title: this.$t('algorithm'),
+          title: this.$t('label.algorithm'),
           dataIndex: 'algorithm'
         },
         {
-          title: this.$t('account'),
+          title: this.$t('label.account'),
           dataIndex: 'account'
         }
       ],
       LBPublicIPCols: [
         {
-          title: this.$t('ip'),
+          title: this.$t('label.ip'),
           dataIndex: 'ipaddress',
           scopedSlots: { customRender: 'ipaddress' }
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state'
         },
         {
-          title: this.$t('networkid'),
+          title: this.$t('label.networkid'),
           dataIndex: 'associatedNetworkName'
         },
         {
-          title: this.$t('vm'),
+          title: this.$t('label.vm'),
           dataIndex: 'virtualmachinename'
         }
       ],
       StaticNatCols: [
         {
-          title: this.$t('ips'),
+          title: this.$t('label.ips'),
           dataIndex: 'ipaddress',
           scopedSlots: { customRender: 'ipaddress' }
         },
         {
-          title: this.$t('zoneid'),
+          title: this.$t('label.zoneid'),
           dataIndex: 'zonename'
         },
         {
-          title: this.$t('networkid'),
+          title: this.$t('label.networkid'),
           dataIndex: 'associatedNetworkName'
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state'
         }
       ],
       vmCols: [
         {
-          title: this.$t('name'),
+          title: this.$t('label.name'),
           dataIndex: 'name',
           scopedSlots: { customRender: 'name' }
         },
         {
-          title: this.$t('ip'),
+          title: this.$t('label.ip'),
           scopedSlots: { customRender: 'ip' }
         }
       ],

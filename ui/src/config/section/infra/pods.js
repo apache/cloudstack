@@ -17,18 +17,18 @@
 
 export default {
   name: 'pod',
-  title: 'Pods',
+  title: 'label.pods',
   icon: 'appstore',
   permission: ['listPods'],
   columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename'],
   related: [{
     name: 'cluster',
-    title: 'Clusters',
+    title: 'label.clusters',
     param: 'podid'
   }, {
     name: 'host',
-    title: 'Hosts',
+    title: 'label.hosts',
     param: 'podid'
   }],
   actions: [

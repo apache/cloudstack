@@ -18,21 +18,21 @@
 <template>
   <div class="form-layout">
     <a-tabs defaultActiveKey="1" :animated="false">
-      <a-tab-pane :tab="$t('Isolated')" key="1" v-if="this.isAdvancedZoneWithoutSGAvailable()">
+      <a-tab-pane :tab="$t('label.isolated')" key="1" v-if="this.isAdvancedZoneWithoutSGAvailable()">
         <CreateIsolatedNetworkForm
           :loading="loading"
           @close-action="closeAction"
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('L2')" key="2">
+      <a-tab-pane :tab="$t('label.l2')" key="2">
         <CreateL2NetworkForm
           :loading="loading"
           @close-action="closeAction"
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('Shared')" key="3" v-if="this.isAdmin()">
+      <a-tab-pane :tab="$t('label.shared')" key="3" v-if="this.isAdmin()">
         <CreateSharedNetworkForm
           :loading="loading"
           @close-action="closeAction"

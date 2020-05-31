@@ -18,7 +18,7 @@
 <template>
   <div class="form-layout">
     <a-form layout="vertical" :form="form">
-      <a-form-item :label="$t('volume')">
+      <a-form-item :label="$t('label.volume')">
         <a-select
           allowClear
           v-decorator="['volumeid', {
@@ -32,7 +32,7 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item :label="$t('vm')">
+      <a-form-item :label="$t('label.vm')">
         <a-select
           showSearch
           allowClear
@@ -48,8 +48,8 @@
         </a-select>
       </a-form-item>
       <div :span="24" class="action-button">
-        <a-button :loading="loading || actionLoading" @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-        <a-button :loading="loading || actionLoading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+        <a-button :loading="loading || actionLoading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+        <a-button :loading="loading || actionLoading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>

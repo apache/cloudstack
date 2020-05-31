@@ -19,15 +19,15 @@
   <a-list-item v-if="dedicatedDomainId">
     <div>
       <div style="margin-bottom: 10px;">
-        <strong>{{ $t('dedicated') }}</strong>
+        <strong>{{ $t('label.dedicated') }}</strong>
         <div>Yes</div>
       </div>
       <p>
-        <strong>{{ $t('domainid') }}</strong><br/>
+        <strong>{{ $t('label.domainid') }}</strong><br/>
         <router-link :to="{ path: '/domain/' + dedicatedDomainId }">{{ dedicatedDomainId }}</router-link>
       </p>
       <p v-if="dedicatedAccountId">
-        <strong>{{ $t('account') }}</strong><br/>
+        <strong>{{ $t('label.account') }}</strong><br/>
         <router-link :to="{ path: '/account/' + dedicatedAccountId }">{{ dedicatedAccountId }}</router-link>
       </p>
       <a-button style="margin-top: 10px; margin-bottom: 10px;" type="danger" @click="handleRelease">
@@ -37,7 +37,7 @@
   </a-list-item>
   <a-list-item v-else>
     <div>
-      <strong>{{ $t('dedicated') }}</strong>
+      <strong>{{ $t('label.dedicated') }}</strong>
       <div>No</div>
       <a-button type="primary" style="margin-top: 10px; margin-bottom: 10px;" @click="modalActive = true">
         {{ dedicatedButtonLabel }}

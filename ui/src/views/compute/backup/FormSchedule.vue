@@ -28,7 +28,7 @@
           @submit="handleSubmit">
           <a-row :gutter="12">
             <a-col :md="24" :lg="24">
-              <a-form-item :label="$t('intervaltype')">
+              <a-form-item :label="$t('label.intervaltype')">
                 <a-radio-group
                   v-decorator="['intervaltype', {
                     initialValue: intervalType
@@ -36,22 +36,22 @@
                   buttonStyle="solid"
                   @change="handleChangeIntervalType">
                   <a-radio-button value="hourly">
-                    {{ $t('HOURLY') }}
+                    {{ $t('label.hourly') }}
                   </a-radio-button>
                   <a-radio-button value="daily">
-                    {{ $t('DAILY') }}
+                    {{ $t('label.daily') }}
                   </a-radio-button>
                   <a-radio-button value="weekly">
-                    {{ $t('WEEKLY') }}
+                    {{ $t('label.weekly') }}
                   </a-radio-button>
                   <a-radio-button value="monthly">
-                    {{ $t('MONTHLY') }}
+                    {{ $t('label.monthly') }}
                   </a-radio-button>
                 </a-radio-group>
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="12" v-if="intervalType==='hourly'">
-              <a-form-item :label="$t('time')">
+              <a-form-item :label="$t('label.time')">
                 <a-tooltip
                   placement="right"
                   :title="$t('label.minute.past.hour')">
@@ -68,7 +68,7 @@
             <a-col :md="24" :lg="12" v-if="['daily', 'weekly', 'monthly'].includes(intervalType)">
               <a-form-item
                 class="custom-time-select"
-                :label="$t('time')">
+                :label="$t('label.time')">
                 <a-time-picker
                   use12Hours
                   format="h:mm A"
@@ -112,7 +112,7 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="24">
-              <a-form-item :label="$t('timezone')">
+              <a-form-item :label="$t('label.timezone')">
                 <a-select
                   showSearch
                   v-decorator="['timezone', {
@@ -133,13 +133,13 @@
             <a-button
               :loading="actionLoading"
               @click="closeAction">
-              {{ this.$t('Cancel') }}
+              {{ this.$t('label.cancel') }}
             </a-button>
             <a-button
               :loading="actionLoading"
               type="primary"
               @click="handleSubmit">
-              {{ this.$t('OK') }}
+              {{ this.$t('label.ok') }}
             </a-button>
           </div>
         </a-form>
@@ -207,7 +207,7 @@ export default {
         const dayName = this.listDayOfWeek[index]
         this.dayOfWeek.push({
           id: dayName,
-          name: this.$t(dayName)
+          name: this.$t('label.' + dayName)
         })
       }
     },

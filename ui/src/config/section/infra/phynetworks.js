@@ -17,7 +17,7 @@
 
 export default {
   name: 'physicalnetwork',
-  title: 'Physical Networks',
+  title: 'label.physical.networks',
   icon: 'api',
   hidden: true,
   permission: ['listPhysicalNetworks'],
@@ -27,18 +27,18 @@ export default {
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
-    name: 'Traffic Types',
+    name: 'traffic.types',
     component: () => import('@/views/infra/network/TrafficTypesTab.vue')
   }, {
-    name: 'Service Providers',
+    name: 'network.service.providers',
     component: () => import('@/views/infra/network/ServiceProvidersTab.vue')
   }, {
-    name: 'Dedicated VLAN/VNI Ranges',
+    name: 'dedicated.vlan.vni.ranges',
     component: () => import('@/views/infra/network/DedicatedVLANTab.vue')
   }],
   related: [{
     name: 'guestnetwork',
-    title: 'Networks',
+    title: 'label.networks',
     param: 'physicalnetworkid'
   }],
   actions: [

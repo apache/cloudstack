@@ -17,21 +17,21 @@
 
 export default {
   name: 'cluster',
-  title: 'Clusters',
+  title: 'label.clusters',
   icon: 'cluster',
   permission: ['listClustersMetrics'],
   columns: ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'podname', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename'],
   related: [{
     name: 'host',
-    title: 'Hosts',
+    title: 'label.hosts',
     param: 'clusterid'
   }],
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
-    name: 'Settings',
+    name: 'settings',
     component: () => import('@/components/view/SettingsTab.vue')
   }],
   actions: [

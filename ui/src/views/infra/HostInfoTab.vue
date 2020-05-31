@@ -20,7 +20,7 @@
     <a-list size="small">
       <a-list-item>
         <div>
-          <strong>{{ $t('hypervisorversion') }}</strong>
+          <strong>{{ $t('label.hypervisorversion') }}</strong>
           <div v-if="host.details">
             {{ host.hypervisor }}
             {{ host.details['Host.OS'] + ' ' + host.details['Host.OS.Version'] }}
@@ -29,7 +29,7 @@
       </a-list-item>
       <a-list-item v-if="host.details && host.details.secured">
         <div>
-          <strong>{{ $t('Secured') }}</strong>
+          <strong>{{ $t('label.secured') }}</strong>
           <div>
             {{ host.details.secured }}
           </div>
@@ -37,7 +37,7 @@
       </a-list-item>
       <a-list-item>
         <div>
-          <strong>{{ $t('hosttags') }}</strong>
+          <strong>{{ $t('label.hosttags') }}</strong>
           <div>
             {{ host.hosttags }}
           </div>
@@ -45,7 +45,7 @@
       </a-list-item>
       <a-list-item>
         <div>
-          <strong>{{ $t('oscategoryid') }}</strong>
+          <strong>{{ $t('label.oscategoryid') }}</strong>
           <div>
             {{ host.oscategoryname }}
           </div>
@@ -53,7 +53,7 @@
       </a-list-item>
       <a-list-item v-if="host.outofbandmanagement">
         <div>
-          <strong>{{ $t('OOBM') }}</strong>
+          <strong>{{ $t('label.oobm') }}</strong>
           <div>
             {{ host.outofbandmanagement.enabled }}
           </div>
@@ -61,7 +61,7 @@
       </a-list-item>
       <a-list-item v-if="host.outofbandmanagement">
         <div>
-          <strong>{{ $t('powerstate') }}</strong>
+          <strong>{{ $t('label.powerstate') }}</strong>
           <div>
             {{ host.outofbandmanagement.powerstate }}
           </div>
@@ -69,7 +69,7 @@
       </a-list-item>
       <a-list-item v-if="host.hostha">
         <div>
-          <strong>{{ $t('haenable') }}</strong>
+          <strong>{{ $t('label.haenable') }}</strong>
           <div>
             {{ host.hostha.haenable }}
           </div>
@@ -77,7 +77,7 @@
       </a-list-item>
       <a-list-item v-if="host.hostha">
         <div>
-          <strong>{{ $t('hastate') }}</strong>
+          <strong>{{ $t('label.hastate') }}</strong>
           <div>
             {{ host.hostha.hastate }}
           </div>
@@ -85,7 +85,7 @@
       </a-list-item>
       <a-list-item v-if="host.hostha">
         <div>
-          <strong>{{ $t('haprovider') }}</strong>
+          <strong>{{ $t('label.haprovider') }}</strong>
           <div>
             {{ host.hostha.haprovider }}
           </div>

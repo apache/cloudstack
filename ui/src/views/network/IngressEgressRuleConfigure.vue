@@ -29,27 +29,27 @@
 
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('protocol') }}</div>
+          <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select v-model="newRule.protocol" style="width: 100%;" @change="resetRulePorts">
-            <a-select-option value="tcp">{{ $t('tcp') | capitalise }}</a-select-option>
-            <a-select-option value="udp">{{ $t('udp') | capitalise }}</a-select-option>
-            <a-select-option value="icmp">{{ $t('icmp') | capitalise }}</a-select-option>
+            <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
+            <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
+            <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
-          <div class="form__label">{{ $t('startport') }}</div>
+          <div class="form__label">{{ $t('label.startport') }}</div>
           <a-input v-model="newRule.startport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
-          <div class="form__label">{{ $t('endport') }}</div>
+          <div class="form__label">{{ $t('label.endport') }}</div>
           <a-input v-model="newRule.endport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
-          <div class="form__label">{{ $t('icmptype') }}</div>
+          <div class="form__label">{{ $t('label.icmptype') }}</div>
           <a-input v-model="newRule.icmptype"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
-          <div class="form__label">{{ $t('icmpcode') }}</div>
+          <div class="form__label">{{ $t('label.icmpcode') }}</div>
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item" v-if="addType === 'cidr'">
@@ -103,13 +103,13 @@
       <div v-else>
         <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
           <div class="add-tags__input">
-            <p class="add-tags__label">{{ $t('key') }}</p>
+            <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
               <a-input v-decorator="['key', { rules: [{ required: true, message: 'Please specify a tag key'}] }]" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
-            <p class="add-tags__label">{{ $t('value') }}</p>
+            <p class="add-tags__label">{{ $t('label.value') }}</p>
             <a-form-item>
               <a-input v-decorator="['value', { rules: [{ required: true, message: 'Please specify a tag value'}] }]" />
             </a-form-item>
@@ -127,7 +127,7 @@
           </div>
         </div>
 
-        <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('OK') }}</a-button>
+        <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-modal>
@@ -174,15 +174,15 @@ export default {
       tabType: null,
       columns: [
         {
-          title: this.$t('protocol'),
+          title: this.$t('label.protocol'),
           scopedSlots: { customRender: 'protocol' }
         },
         {
-          title: this.$t('startport'),
+          title: this.$t('label.startport'),
           dataIndex: 'startport'
         },
         {
-          title: this.$t('endport'),
+          title: this.$t('label.endport'),
           dataIndex: 'endport'
         },
         {
@@ -202,7 +202,7 @@ export default {
           scopedSlots: { customRender: 'account' }
         },
         {
-          title: this.$t('action'),
+          title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
       ]

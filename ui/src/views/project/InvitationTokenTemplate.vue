@@ -22,26 +22,26 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('projectid')">
+        <a-form-item :label="$t('label.projectid')">
           <a-input
             v-decorator="['projectid', {
               rules: [{ required: true, message: 'Please enter input' }]
             }]"
-            :placeholder="$t('project.projectid.description')"
+            :placeholder="$t('label.project.projectid.description')"
           />
         </a-form-item>
-        <a-form-item :label="$t('token')">
+        <a-form-item :label="$t('label.token')">
           <a-input
             v-decorator="['token', {
               rules: [{ required: true, message: 'Please enter input' }]
             }]"
-            :placeholder="$t('project.token.description')"
+            :placeholder="$t('label.project.token.description')"
           />
         </a-form-item>
         <div class="card-footer">
           <!-- ToDo extract as component -->
-          <a-button @click="() => $emit('close-action')">{{ this.$t('cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="() => $emit('close-action')">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -71,7 +71,7 @@ export default {
         }
 
         const title = this.$t('label.accept.project.invitation')
-        const description = this.$t('projectid') + ' ' + values.projectid
+        const description = this.$t('label.projectid') + ' ' + values.projectid
         const loading = this.$message.loading(title + 'in progress for ' + description, 0)
 
         this.loading = true

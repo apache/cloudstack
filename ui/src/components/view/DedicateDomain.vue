@@ -19,8 +19,8 @@
   <div class="form">
     <div class="form__item" :class="{'error': domainError}">
       <a-spin :spinning="domainsLoading">
-        <p class="form__label">{{ $t('domain') }}<span class="required">*</span></p>
-        <p class="required required-label">{{ $t('required') }}</p>
+        <p class="form__label">{{ $t('label.domain') }}<span class="required">*</span></p>
+        <p class="required required-label">{{ $t('label.required') }}</p>
         <a-select style="width: 100%" @change="handleChangeDomain" v-model="domainId">
           <a-select-option v-for="(domain, index) in domainsList" :value="domain.id" :key="index">
             {{ domain.name }}

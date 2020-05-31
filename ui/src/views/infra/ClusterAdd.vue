@@ -19,7 +19,7 @@
   <a-spin :spinning="loading">
     <div class="form">
       <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('zonenamelabel') }}</div>
+        <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
         <a-select v-model="zoneId" @change="fetchPods">
           <a-select-option
             v-for="zone in zonesList"
@@ -31,7 +31,7 @@
       </div>
 
       <div class="form__item">
-        <div class="form__label">{{ $t('hypervisor') }}</div>
+        <div class="form__label">{{ $t('label.hypervisor') }}</div>
         <a-select v-model="hypervisor" @change="resetAllFields">
           <a-select-option
             v-for="hv in hypervisorsList"
@@ -43,7 +43,7 @@
       </div>
 
       <div class="form__item">
-        <div class="form__label">{{ $t('podname') }}</div>
+        <div class="form__label">{{ $t('label.podname') }}</div>
         <a-select v-model="podId">
           <a-select-option
             v-for="pod in podsList"
@@ -55,35 +55,35 @@
       </div>
 
       <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('clusternamelabel') }}</div>
+        <div class="form__label"><span class="required">* </span>{{ $t('label.clusternamelabel') }}</div>
         <span class="required required-label" ref="requiredCluster">Required</span>
         <a-input :placeholder="placeholder.clustername" v-model="clustername"></a-input>
       </div>
 
       <template v-if="hypervisor === 'VMware'">
         <div class="form__item">
-          <div class="form__label">{{ $t('vCenterHost') }}</div>
+          <div class="form__label">{{ $t('label.vcenterhost') }}</div>
           <a-input v-model="host"></a-input>
         </div>
 
         <div class="form__item">
-          <div class="form__label">{{ $t('vCenterUsername') }}</div>
+          <div class="form__label">{{ $t('label.vcenterusername') }}</div>
           <a-input v-model="username"></a-input>
         </div>
 
         <div class="form__item">
-          <div class="form__label">{{ $t('vCenterPassword') }}</div>
+          <div class="form__label">{{ $t('label.vcenterpassword') }}</div>
           <a-input v-model="password"></a-input>
         </div>
 
         <div class="form__item">
-          <div class="form__label">{{ $t('vCenterDataCenter') }}</div>
+          <div class="form__label">{{ $t('label.vcenterdatacenter') }}</div>
           <a-input v-model="dataCenter"></a-input>
         </div>
       </template>
 
       <div class="form__item">
-        <div class="form__label">{{ $t('isDedicated') }}</div>
+        <div class="form__label">{{ $t('label.isdedicated') }}</div>
         <a-checkbox @change="toggleDedicated" />
       </div>
 
@@ -97,8 +97,8 @@
       <a-divider></a-divider>
 
       <div class="actions">
-        <a-button @click="() => this.$parent.$parent.close()">{{ $t('cancel') }}</a-button>
-        <a-button @click="handleSubmitForm" type="primary">{{ $t('ok') }}</a-button>
+        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="handleSubmitForm" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </div>

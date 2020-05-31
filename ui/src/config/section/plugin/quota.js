@@ -17,13 +17,13 @@
 
 export default {
   name: 'quota',
-  title: 'Quota',
+  title: 'label.quota',
   icon: 'pie-chart',
   permission: ['quotaSummary'],
   children: [
     {
       name: 'quotasummary',
-      title: 'Summary',
+      title: 'label.summary',
       icon: 'bars',
       permission: ['quotaSummary'],
       columns: ['account', 'domain', 'state', 'currency', 'balance', 'quota'],
@@ -31,7 +31,7 @@ export default {
     },
     {
       name: 'quotatariff',
-      title: 'Tariff',
+      title: 'label.tariff',
       icon: 'credit-card',
       permission: ['quotaTariffList'],
       columns: ['usageName', 'description', 'usageUnit', 'tariffValue'],
@@ -39,7 +39,7 @@ export default {
     },
     {
       name: 'quotaemailtemplate',
-      title: 'Email Template',
+      title: 'label.email.template',
       icon: 'mail',
       permission: ['quotaEmailTemplateList'],
       columns: ['templatetype', 'templatesubject', 'templatebody'],

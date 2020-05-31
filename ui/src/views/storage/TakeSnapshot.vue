@@ -28,25 +28,25 @@
         @submit="handleSubmit">
         <a-row :gutter="12">
           <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('name')">
+            <a-form-item :label="$t('label.name')">
               <a-input
                 v-decorator="['name']"
                 :placeholder="apiParams.name.description" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('asyncbackup')">
+            <a-form-item :label="$t('label.asyncbackup')">
               <a-switch v-decorator="['asyncbackup']" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24" v-if="quiescevm">
-            <a-form-item :label="$t('quiescevm')">
+            <a-form-item :label="$t('label.quiescevm')">
               <a-switch v-decorator="['quiescevm']" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-divider/>
-        <div class="tagsTitle">{{ $t('tags') }}</div>
+        <div class="tagsTitle">{{ $t('label.tags') }}</div>
         <div>
           <template v-for="(tag, index) in tags">
             <a-tag :key="index" :closable="true">
@@ -79,14 +79,14 @@
           <a-button
             :loading="actionLoading"
             @click="closeAction">
-            {{ this.$t('Cancel') }}
+            {{ this.$t('label.cancel') }}
           </a-button>
           <a-button
             v-if="handleShowButton()"
             :loading="actionLoading"
             type="primary"
             @click="handleSubmit">
-            {{ this.$t('OK') }}
+            {{ this.$t('label.ok') }}
           </a-button>
         </div>
       </a-form>
@@ -162,7 +162,7 @@ export default {
 
         this.actionLoading = true
         const title = this.$t('label.action.take.snapshot')
-        const description = this.$t('volume') + ' ' + this.resource.id
+        const description = this.$t('label.volume') + ' ' + this.resource.id
         api('createSnapshot', params).then(json => {
           const jobId = json.createsnapshotresponse.jobid
           if (jobId) {

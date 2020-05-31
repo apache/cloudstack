@@ -27,14 +27,14 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item v-if="currentForm === 'Create'" :label="$t('url')">
+        <a-form-item v-if="currentForm === 'Create'" :label="$t('label.url')">
           <a-input
             v-decorator="['url', {
               rules: [{ required: true, message: 'Please upload an ISO' }]
             }]"
-            :placeholder="$t('iso.url.description')" />
+            :placeholder="$t('label.iso.url.description')" />
         </a-form-item>
-        <a-form-item v-if="currentForm === 'Upload'" :label="$t('templateFileUpload')">
+        <a-form-item v-if="currentForm === 'Upload'" :label="$t('label.templatefileupload')">
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
@@ -51,27 +51,27 @@
             </p>
           </a-upload-dragger>
         </a-form-item>
-        <a-form-item :label="$t('name')">
+        <a-form-item :label="$t('label.name')">
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: 'Please enter input' }]
             }]"
-            :placeholder="$t('iso.name.description')" />
+            :placeholder="$t('label.iso.name.description')" />
         </a-form-item>
 
-        <a-form-item :label="$t('displaytext')">
+        <a-form-item :label="$t('label.displaytext')">
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: 'Please enter input' }]
             }]"
-            :placeholder="$t('iso.displaytext.description')" />
+            :placeholder="$t('label.iso.displaytext.description')" />
         </a-form-item>
 
-        <a-form-item v-if="allowed && currentForm !== 'Upload'" :label="$t('directdownload')">
+        <a-form-item v-if="allowed && currentForm !== 'Upload'" :label="$t('label.directdownload')">
           <a-switch v-decorator="['directdownload']"/>
         </a-form-item>
 
-        <a-form-item :label="$t('zoneid')">
+        <a-form-item :label="$t('label.zoneid')">
           <a-select
             v-decorator="['zoneid', {
               initialValue: this.selectedZone,
@@ -88,7 +88,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="$t('iso.zoneid.description')">
+            :placeholder="$t('label.iso.zoneid.description')">
             <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id">
               <div v-if="currentForm === 'Upload'">
                 <div v-if="opt.name !== $t('label.all.zone')">
@@ -102,7 +102,7 @@
           </a-select>
         </a-form-item>
 
-        <a-form-item :label="$t('bootable')">
+        <a-form-item :label="$t('label.bootable')">
           <a-switch
             v-decorator="['bootable', {
               initialValue: true,
@@ -111,7 +111,7 @@
             @change="val => bootable = val"/>
         </a-form-item>
 
-        <a-form-item v-if="bootable" :label="$t('ostypeid')">
+        <a-form-item v-if="bootable" :label="$t('label.ostypeid')">
           <a-select
             v-decorator="['ostypeid', {
               initialValue: defaultOsType,
@@ -123,28 +123,28 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="osTypeLoading"
-            :placeholder="$t('iso.ostypeid.description')">
+            :placeholder="$t('label.iso.ostypeid.description')">
             <a-select-option :value="opt.description" v-for="(opt, optIndex) in osTypes" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
 
-        <a-form-item :label="$t('isextractable')">
+        <a-form-item :label="$t('label.isextractable')">
           <a-switch
             v-decorator="['isextractable', {
               initialValue: false
             }]" />
         </a-form-item>
 
-        <a-form-item :label="$t('ispublic')">
+        <a-form-item :label="$t('label.ispublic')">
           <a-switch
             v-decorator="['ispublic', {
               initialValue: false
             }]" />
         </a-form-item>
 
-        <a-form-item :label="$t('isfeatured')">
+        <a-form-item :label="$t('label.isfeatured')">
           <a-switch
             v-decorator="['isfeatured', {
               initialValue: false
@@ -152,8 +152,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>

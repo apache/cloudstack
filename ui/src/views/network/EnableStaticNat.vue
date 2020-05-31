@@ -81,8 +81,8 @@
       showSizeChanger/>
 
     <div class="list__footer">
-      <a-button @click="handleClose">{{ $t('cancel') }}</a-button>
-      <a-button @click="handleSubmit" type="primary" :disabled="!selectedVm || !selectedNic">{{ $t('OK') }}</a-button>
+      <a-button @click="handleClose">{{ $t('label.cancel') }}</a-button>
+      <a-button @click="handleSubmit" type="primary" :disabled="!selectedVm || !selectedNic">{{ $t('label.ok') }}</a-button>
     </div>
 
   </div>
@@ -113,27 +113,27 @@ export default {
       selectedNic: null,
       columns: [
         {
-          title: this.$t('name'),
+          title: this.$t('label.name'),
           scopedSlots: { customRender: 'name' }
         },
         {
-          title: this.$t('instancename'),
+          title: this.$t('label.instancename'),
           dataIndex: 'instancename'
         },
         {
-          title: this.$t('displayname'),
+          title: this.$t('label.displayname'),
           dataIndex: 'displayname'
         },
         {
-          title: this.$t('account'),
+          title: this.$t('label.account'),
           dataIndex: 'account'
         },
         {
-          title: this.$t('zonenamelabel'),
+          title: this.$t('label.zonenamelabel'),
           dataIndex: 'zonename'
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state',
           scopedSlots: { customRender: 'state' }
         },

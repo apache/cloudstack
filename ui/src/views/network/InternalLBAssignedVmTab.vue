@@ -76,12 +76,12 @@ export default {
       totalInstances: 0,
       columns: [
         {
-          title: this.$t('name'),
+          title: this.$t('label.name'),
           dataIndex: 'displayname',
           scopedSlots: { customRender: 'displayname' }
         },
         {
-          title: this.$t('ipaddress'),
+          title: this.$t('label.ipaddress'),
           dataIndex: 'ipaddress',
           scopedSlots: { customRender: 'ipaddress' }
         },

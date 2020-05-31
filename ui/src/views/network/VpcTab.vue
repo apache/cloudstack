@@ -22,10 +22,10 @@
       :tabPosition="device === 'mobile' ? 'top' : 'left'"
       :animated="false"
       @change="handleChangeTab">
-      <a-tab-pane :tab="$t('details')" key="details">
+      <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('networks')" key="tier">
+      <a-tab-pane :tab="$t('label.networks')" key="tier">
         <VpcTiersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane tab="Public IP Addresses" key="ip" v-if="'listPublicIpAddresses' in $store.getters.apis">
@@ -72,7 +72,7 @@
             <a-form-item :label="$t('label.add.list.name')">
               <a-input v-decorator="['name', {rules: [{ required: true, message: 'Required' }]}]"></a-input>
             </a-form-item>
-            <a-form-item :label="$t('description')">
+            <a-form-item :label="$t('label.description')">
               <a-input v-decorator="['description', {rules: [{ required: true, message: 'Required' }]}]"></a-input>
             </a-form-item>
           </a-form>
@@ -115,7 +115,7 @@
           <a-spin :spinning="modals.gatewayLoading">
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
-              <a-form-item :label="$t('physicalnetworkid')">
+              <a-form-item :label="$t('label.physicalnetworkid')">
                 <a-select v-decorator="['physicalnetwork']">
                   <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
                     {{ item.name }}
@@ -128,28 +128,28 @@
                   v-decorator="['vlan', {rules: [{ required: true, message: 'Required' }]}]"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('publicip')" :required="true">
+              <a-form-item :label="$t('label.publicip')" :required="true">
                 <a-input
                   :placeholder="placeholders.ipaddress"
                   v-decorator="['ipaddress', {rules: [{ required: true, message: 'Required' }]}]"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('gateway')" :required="true">
+              <a-form-item :label="$t('label.gateway')" :required="true">
                 <a-input
                   :placeholder="placeholders.gateway"
                   v-decorator="['gateway', {rules: [{ required: true, message: 'Required' }]}]"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('netmask')" :required="true">
+              <a-form-item :label="$t('label.netmask')" :required="true">
                 <a-input
                   :placeholder="placeholders.netmask"
                   v-decorator="['netmask', {rules: [{ required: true, message: 'Required' }]}]"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('sourceNat')">
+              <a-form-item :label="$t('label.sourcenat')">
                 <a-checkbox v-decorator="['nat']"></a-checkbox>
               </a-form-item>
-              <a-form-item :label="$t('aclid')">
+              <a-form-item :label="$t('label.aclid')">
                 <a-select v-decorator="['acl']">
                   <a-select-option v-for="item in networkAcls" :key="item.id" :value="item.id">
                     {{ item.name }}
@@ -173,7 +173,7 @@
           <a-list-item v-for="item in vpnGateways" :key="item.id">
             <div class="list__item">
               <div class="list__col">
-                <div class="list__label">{{ $t('ip') }}</div>
+                <div class="list__label">{{ $t('label.ip') }}</div>
                 <div>
                   <router-link :to="{ path: '/s2svpn/' + item.id }">
                     {{ item.publicip }}
@@ -222,14 +222,14 @@
         <a-modal v-model="modals.vpnConnection" :title="$t('label.create.VPN.connection')" @ok="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
-              <a-form-item :label="$t('vpncustomergatewayid')">
+              <a-form-item :label="$t('label.vpncustomergatewayid')">
                 <a-select v-decorator="['vpncustomergateway']">
                   <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('passive')">
+              <a-form-item :label="$t('label.passive')">
                 <a-checkbox v-decorator="['passive']"></a-checkbox>
               </a-form-item>
             </a-form>
@@ -296,56 +296,56 @@ export default {
       vpncustomergateways: [],
       privateGatewaysColumns: [
         {
-          title: this.$t('ip'),
+          title: this.$t('label.ip'),
           dataIndex: 'ipaddress',
           scopedSlots: { customRender: 'ipaddress' }
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state',
           scopedSlots: { customRender: 'state' }
         },
         {
-          title: this.$t('gateway'),
+          title: this.$t('label.gateway'),
           dataIndex: 'gateway'
         },
         {
-          title: this.$t('netmask'),
+          title: this.$t('label.netmask'),
           dataIndex: 'netmask'
         },
         {
-          title: this.$t('vlan'),
+          title: this.$t('label.vlan'),
           dataIndex: 'vlan'
         }
       ],
       vpnConnectionsColumns: [
         {
-          title: this.$t('ip'),
+          title: this.$t('label.ip'),
           dataIndex: 'publicip',
           scopedSlots: { customRender: 'publicip' }
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state',
           scopedSlots: { customRender: 'state' }
         },
         {
-          title: this.$t('gateway'),
+          title: this.$t('label.gateway'),
           dataIndex: 'gateway'
         },
         {
-          title: this.$t('ipsecpsk'),
+          title: this.$t('label.ipsecpsk'),
           dataIndex: 'ipsecpsk'
         }
       ],
       networkAclsColumns: [
         {
-          title: this.$t('name'),
+          title: this.$t('label.name'),
           dataIndex: 'name',
           scopedSlots: { customRender: 'name' }
         },
         {
-          title: this.$t('description'),
+          title: this.$t('label.description'),
           dataIndex: 'description'
         }
       ],

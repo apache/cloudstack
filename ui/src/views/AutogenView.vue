@@ -50,12 +50,12 @@
             <a-select
               v-if="filters && filters.length > 0"
               placeholder="Filter By"
-              :value="$t(selectedFilter)"
+              :value="$t('label.' + selectedFilter)"
               style="min-width: 100px; margin-left: 10px"
               @change="changeFilter">
               <a-icon slot="suffixIcon" type="filter" />
               <a-select-option v-for="filter in filters" :key="filter">
-                {{ $t(filter) }}
+                {{ $t('label.' + filter) }}
               </a-select-option>
             </a-select>
             <a-input-search

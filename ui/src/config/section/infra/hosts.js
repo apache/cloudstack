@@ -17,7 +17,7 @@
 
 export default {
   name: 'host',
-  title: 'Hosts',
+  title: 'label.hosts',
   icon: 'desktop',
   permission: ['listHostsMetrics'],
   resourceType: 'Host',
@@ -28,12 +28,12 @@ export default {
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
-    name: 'Config',
+    name: 'config',
     component: () => import('@/views/infra/HostInfoTab.vue')
   }],
   related: [{
     name: 'vm',
-    title: 'Instances',
+    title: 'label.instances',
     param: 'hostid'
   }],
   actions: [

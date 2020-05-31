@@ -19,7 +19,7 @@
   <a-spin :spinning="fetchLoading">
     <div style="width: 100%; display: flex">
       <a-button type="dashed" icon="plus" style="width: 100%; margin-right: 10px" @click="openAddRuleModal">
-        {{ $t('add') }} {{ $t('aclid') }}
+        {{ $t('label.add') }} {{ $t('label.aclid') }}
       </a-button>
 
       <a-button type="dashed" @click="exportAclList" style="width: 100%" icon="download">
@@ -41,43 +41,43 @@
             </div>
             <div class="list__container">
               <div class="list__col">
-                <div class="list__label">{{ $t('number') }}</div>
+                <div class="list__label">{{ $t('label.number') }}</div>
                 <div>{{ acl.number }}</div>
               </div>
               <div class="list__col">
-                <div class="list__label">{{ $t('cidrlist') }}</div>
+                <div class="list__label">{{ $t('label.cidrlist') }}</div>
                 <div>{{ acl.cidrlist }}</div>
               </div>
               <div class="list__col">
-                <div class="list__label">{{ $t('action') }}</div>
+                <div class="list__label">{{ $t('label.action') }}</div>
                 <div>{{ acl.action }}</div>
               </div>
               <div class="list__col">
-                <div class="list__label">{{ $t('protocol') }}</div>
+                <div class="list__label">{{ $t('label.protocol') }}</div>
                 <div>{{ acl.protocol }}</div>
               </div>
               <div class="list__col" v-if="acl.startport">
-                <div class="list__label">{{ $t('startport') }}</div>
+                <div class="list__label">{{ $t('label.startport') }}</div>
                 <div>{{ acl.startport }}</div>
               </div>
               <div class="list__col" v-if="acl.endport">
-                <div class="list__label">{{ $t('endport') }}</div>
+                <div class="list__label">{{ $t('label.endport') }}</div>
                 <div>{{ acl.endport }}</div>
               </div>
               <div class="list__col" v-if="acl.icmpcode">
-                <div class="list__label">{{ $t('icmpcode') }}</div>
+                <div class="list__label">{{ $t('label.icmpcode') }}</div>
                 <div>{{ acl.icmpcode }}</div>
               </div>
               <div class="list__col" v-if="acl.icmptype">
-                <div class="list__label">{{ $t('icmptype') }}</div>
+                <div class="list__label">{{ $t('label.icmptype') }}</div>
                 <div>{{ acl.icmptype }}</div>
               </div>
               <div class="list__col">
-                <div class="list__label">{{ $t('traffictype') }}</div>
+                <div class="list__label">{{ $t('label.traffictype') }}</div>
                 <div>{{ acl.traffictype }}</div>
               </div>
               <div class="list__col">
-                <div class="list__label">{{ $t('reason') }}</div>
+                <div class="list__label">{{ $t('label.reason') }}</div>
                 <div>{{ acl.reason }}</div>
               </div>
             </div>
@@ -97,13 +97,13 @@
       <div v-else>
         <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
           <div class="add-tags__input">
-            <p class="add-tags__label">{{ $t('key') }}</p>
+            <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
               <a-input v-decorator="['key', { rules: [{ required: true, message: 'Please specify a tag key'}] }]" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
-            <p class="add-tags__label">{{ $t('value') }}</p>
+            <p class="add-tags__label">{{ $t('label.value') }}</p>
             <a-form-item>
               <a-input v-decorator="['value', { rules: [{ required: true, message: 'Please specify a tag value'}] }]" />
             </a-form-item>
@@ -121,25 +121,25 @@
           </div>
         </div>
 
-        <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('OK') }}</a-button>
+        <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-modal>
     <a-modal :title="ruleModalTitle" v-model="ruleModalVisible" @ok="handleRuleModalForm">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
-        <a-form-item :label="$t('number')">
+        <a-form-item :label="$t('label.number')">
           <a-input v-decorator="['number']" />
         </a-form-item>
-        <a-form-item :label="$t('cidrlist')">
+        <a-form-item :label="$t('label.cidrlist')">
           <a-input v-decorator="['cidr']" />
         </a-form-item>
-        <a-form-item :label="$t('action')">
+        <a-form-item :label="$t('label.action')">
           <a-select v-decorator="['action']">
             <a-select-option value="allow">Allow</a-select-option>
             <a-select-option value="deny">Deny</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('protocol')">
+        <a-form-item :label="$t('label.protocol')">
           <a-select v-decorator="['protocol']">
             <a-select-option value="tcp">TCP</a-select-option>
             <a-select-option value="udp">UDP</a-select-option>
@@ -149,35 +149,35 @@
           </a-select>
         </a-form-item>
 
-        <a-form-item v-if="ruleForm.getFieldValue('protocol') === 'protocolnumber'" :label="$t('protocolnumber')">
+        <a-form-item v-if="ruleForm.getFieldValue('protocol') === 'protocolnumber'" :label="$t('label.protocolnumber')">
           <a-input v-decorator="['protocolnumber' , { rules: [{ required: true, message: 'required' }]}]" />
         </a-form-item>
 
         <div v-if="ruleForm.getFieldValue('protocol') === 'icmp' || ruleForm.getFieldValue('protocol') === 'protocolnumber'">
-          <a-form-item :label="$t('icmptype')">
+          <a-form-item :label="$t('label.icmptype')">
             <a-input v-decorator="['icmptype']" placeholder="Please specify -1 if you want to allow all ICMP types." />
           </a-form-item>
-          <a-form-item :label="$t('icmpcode')">
+          <a-form-item :label="$t('label.icmpcode')">
             <a-input v-decorator="['icmpcode']" placeholder="Please specify -1 if you want to allow all ICMP types." />
           </a-form-item>
         </div>
 
         <div v-if="ruleForm.getFieldValue('protocol') === 'tcp' || ruleForm.getFieldValue('protocol') === 'udp' || ruleForm.getFieldValue('protocol') === 'protocolnumber'">
-          <a-form-item :label="$t('startport')">
+          <a-form-item :label="$t('label.startport')">
             <a-input v-decorator="['startport']" />
           </a-form-item>
-          <a-form-item :label="$t('endport')">
+          <a-form-item :label="$t('label.endport')">
             <a-input v-decorator="['endport']" />
           </a-form-item>
         </div>
 
-        <a-form-item :label="$t('traffictype')">
+        <a-form-item :label="$t('label.traffictype')">
           <a-select v-decorator="['traffictype']">
             <a-select-option value="ingress">Ingress</a-select-option>
             <a-select-option value="egress">Egress</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('reason')">
+        <a-form-item :label="$t('label.reason')">
           <a-textarea
             v-decorator="['reason']"
             :autosize="{ minRows: 2 }"

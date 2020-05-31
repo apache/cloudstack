@@ -59,7 +59,7 @@
           @change="onTabChange" >
           <a-tab-pane
             v-for="tab in tabs"
-            :tab="$t(tab.name)"
+            :tab="$t('label.' + tab.name)"
             :key="tab.name"
             v-if="checkShowTabDetail(tab)">
             <component

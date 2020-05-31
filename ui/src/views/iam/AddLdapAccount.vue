@@ -50,7 +50,7 @@
             @submit="handleSubmit"
             layout="vertical"
           >
-            <a-form-item :label="$t('domain')">
+            <a-form-item :label="$t('label.domain')">
               <a-select
                 showSearch
                 v-decorator="['domainid', {
@@ -63,13 +63,13 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item :label="$t('account')">
+            <a-form-item :label="$t('label.account')">
               <a-input
                 v-decorator="['account']"
                 :placeholder="apiParams.account.description"
               />
             </a-form-item>
-            <a-form-item :label="$t('role')">
+            <a-form-item :label="$t('label.role')">
               <a-select
                 showSearch
                 v-decorator="['roleid', {
@@ -82,7 +82,7 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item :label="$t('timezone')">
+            <a-form-item :label="$t('label.timezone')">
               <a-select
                 showSearch
                 v-decorator="['timezone']"
@@ -93,21 +93,21 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item :label="$t('networkdomain')">
+            <a-form-item :label="$t('label.networkdomain')">
               <a-input
                 v-decorator="['networkdomain']"
                 :placeholder="apiParams.networkdomain.description"
               />
             </a-form-item>
-            <a-form-item :label="$t('group')">
+            <a-form-item :label="$t('label.group')">
               <a-input
                 v-decorator="['group']"
                 :placeholder="apiParams.group.description"
               />
             </a-form-item>
             <div class="card-footer">
-              <a-button @click="handleClose">{{ $t('Close') }}</a-button>
-              <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('add') }}</a-button>
+              <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
+              <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
             </div>
           </a-form>
         </a-card>
@@ -160,19 +160,19 @@ export default {
     this.listRoles = []
     this.columns = [
       {
-        title: this.$t('name'),
+        title: this.$t('label.name'),
         dataIndex: 'name',
         width: 120,
         scopedSlots: { customRender: 'name' }
       },
       {
-        title: this.$t('username'),
+        title: this.$t('label.username'),
         dataIndex: 'username',
         width: 120,
         scopedSlots: { customRender: 'username' }
       },
       {
-        title: this.$t('email'),
+        title: this.$t('label.email'),
         dataIndex: 'email',
         scopedSlots: { customRender: 'email' }
       }

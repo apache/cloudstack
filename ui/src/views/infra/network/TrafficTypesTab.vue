@@ -28,11 +28,11 @@
         </div>
         <div v-if="item.traffictype === 'Public'">
           <div style="margin-bottom: 10px;">
-            <div><strong>{{ $t('traffictype') }}</strong></div>
+            <div><strong>{{ $t('label.traffictype') }}</strong></div>
             <div>{{ publicNetwork.traffictype }}</div>
           </div>
           <div style="margin-bottom: 10px;">
-            <div><strong>{{ $t('broadcastdomaintype') }}</strong></div>
+            <div><strong>{{ $t('label.broadcastdomaintype') }}</strong></div>
             <div>{{ publicNetwork.broadcastdomaintype }}</div>
           </div>
           <a-divider />

@@ -22,7 +22,7 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('cks.cluster.size')">
+        <a-form-item :label="$t('label.cks.cluster.size')">
           <a-input
             v-decorator="['size', {
               initialValue: originalSize,
@@ -37,7 +37,7 @@
             }]"
             :placeholder="apiParams.size.description"/>
         </a-form-item>
-        <a-form-item :label="$t('serviceofferingid')">
+        <a-form-item :label="$t('label.serviceofferingid')">
           <a-select
             id="offering-selection"
             v-decorator="['serviceofferingid', {}]"
@@ -55,8 +55,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>

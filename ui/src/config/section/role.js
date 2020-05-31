@@ -17,7 +17,7 @@
 
 export default {
   name: 'role',
-  title: 'Roles',
+  title: 'label.roles',
   icon: 'idcard',
   permission: ['listRoles', 'listRolePermissions'],
   columns: ['name', 'type', 'description'],
@@ -26,7 +26,7 @@ export default {
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
-    name: 'Rules',
+    name: 'rules',
     component: () => import('@/views/iam/RolePermissionTab.vue')
   }],
   actions: [

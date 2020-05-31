@@ -135,17 +135,17 @@ export default {
       return [
         {
           dataIndex: 'name',
-          title: this.$t('networks'),
+          title: this.$t('label.networks'),
           width: '40%'
         },
         {
           dataIndex: 'type',
-          title: this.$t('guestIpType'),
+          title: this.$t('label.guestiptype'),
           width: '30%'
         },
         {
           dataIndex: 'vpcName',
-          title: this.$t('VPC'),
+          title: this.$t('label.vpc'),
           width: '30%',
           filters: vpcFilter,
           filteredValue: _.get(this.filteredInfo, 'id'),
@@ -214,11 +214,11 @@ export default {
     getDetails (network) {
       return [
         {
-          title: this.$t('description'),
+          title: this.$t('label.description'),
           description: network.displaytext
         },
         {
-          title: this.$t('networkOfferingId'),
+          title: this.$t('label.networkofferingid'),
           description: network.networkofferingdisplaytext
         }
       ]

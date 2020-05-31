@@ -56,7 +56,7 @@
           :form="form"
           @submit="handleSubmit"
           layout="vertical" >
-          <a-form-item :label="$t('vlanRange')">
+          <a-form-item :label="$t('label.vlanrange')">
             <a-input
               v-decorator="['range', {
                 rules: [{ required: true, message: 'Required' }]
@@ -64,14 +64,14 @@
             ></a-input>
           </a-form-item>
 
-          <a-form-item :label="$t('scope')">
+          <a-form-item :label="$t('label.scope')">
             <a-select defaultValue="account" v-model="selectedScope" @change="handleScopeChange">
-              <a-select-option value="account">{{ $t('account') }}</a-select-option>
-              <a-select-option value="project">{{ $t('project') }}</a-select-option>
+              <a-select-option value="account">{{ $t('label.account') }}</a-select-option>
+              <a-select-option value="project">{{ $t('label.project') }}</a-select-option>
             </a-select>
           </a-form-item>
 
-          <a-form-item :label="$t('domain')">
+          <a-form-item :label="$t('label.domain')">
             <a-select
               @change="handleDomainChange"
               v-decorator="['domain', {
@@ -82,7 +82,7 @@
             </a-select>
           </a-form-item>
 
-          <a-form-item :label="$t('account')" v-if="selectedScope === 'account'">
+          <a-form-item :label="$t('label.account')" v-if="selectedScope === 'account'">
             <a-select
               v-decorator="['account', {
                 rules: [{ required: true, message: 'Required' }]
@@ -97,7 +97,7 @@
             </a-select>
           </a-form-item>
 
-          <a-form-item :label="$t('project')" v-if="selectedScope === 'project'">
+          <a-form-item :label="$t('label.project')" v-if="selectedScope === 'project'">
             <a-select
               v-decorator="['project', {
                 rules: [{ required: true, message: 'Required' }]
@@ -149,19 +149,19 @@ export default {
       pageSize: 10,
       columns: [
         {
-          title: this.$t('vlanrange'),
+          title: this.$t('label.vlanrange'),
           dataIndex: 'guestvlanrange'
         },
         {
-          title: this.$t('domain'),
+          title: this.$t('label.domain'),
           dataIndex: 'domain'
         },
         {
-          title: this.$t('account'),
+          title: this.$t('label.account'),
           dataIndex: 'account'
         },
         {
-          title: this.$t('action'),
+          title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
       ]

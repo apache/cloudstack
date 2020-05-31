@@ -22,15 +22,15 @@
       :tabPosition="device === 'mobile' ? 'top' : 'left'"
       :animated="false"
       @change="handleChangeTab">
-      <a-tab-pane :tab="$t('details')" key="details">
+      <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('access')" key="access">
+      <a-tab-pane :tab="$t('label.access')" key="access">
         <a-card title="Kubernetes Cluster Config" :loading="this.versionLoading">
           <div v-if="this.clusterConfig !== ''">
             <a-textarea :value="this.clusterConfig" :rows="5" readonly />
             <div :span="24" class="action-button">
-              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ this.$t('Download') }}</a-button>
+              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ this.$t('label.download') }}</a-button>
             </div>
           </div>
           <div v-else>
@@ -92,7 +92,7 @@
           <p>More about accessing dashboard UI, <a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui">https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui</a></p>
         </a-card>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('instances')" key="instances">
+      <a-tab-pane :tab="$t('label.instances')" key="instances">
         <a-table
           class="table"
           size="small"
@@ -109,13 +109,13 @@
           </template>
         </a-table>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('firewall')" key="firewall">
+      <a-tab-pane :tab="$t('label.firewall')" key="firewall">
         <FirewallRules :resource="this.publicIpAddress" :loading="this.networkLoading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('portforwarding')" key="portforwarding">
+      <a-tab-pane :tab="$t('label.portforwarding')" key="portforwarding">
         <PortForwarding :resource="this.publicIpAddress" :loading="this.networkLoading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('loadbalancing')" key="loadbalancing">
+      <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing">
         <LoadBalancing :resource="this.publicIpAddress" :loading="this.networkLoading" />
       </a-tab-pane>
     </a-tabs>
@@ -173,48 +173,48 @@ export default {
     if (this.isAdminOrDomainAdmin()) {
       this.vmColumns = [
         {
-          title: this.$t('name'),
+          title: this.$t('label.name'),
           dataIndex: 'name',
           scopedSlots: { customRender: 'name' }
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state',
           scopedSlots: { customRender: 'state' }
         },
         {
-          title: this.$t('instancename'),
+          title: this.$t('label.instancename'),
           dataIndex: 'instancename'
         },
         {
-          title: this.$t('ipaddress'),
+          title: this.$t('label.ipaddress'),
           dataIndex: 'ipaddress'
         },
         {
-          title: this.$t('zonename'),
+          title: this.$t('label.zonename'),
           dataIndex: 'zonename'
         }
       ]
     } else {
       this.vmColumns = [
         {
-          title: this.$t('name'),
+          title: this.$t('label.name'),
           dataIndex: 'name'
         },
         {
-          title: this.$t('displayname'),
+          title: this.$t('label.displayname'),
           dataIndex: 'displayname'
         },
         {
-          title: this.$t('ipaddress'),
+          title: this.$t('label.ipaddress'),
           dataIndex: 'ipaddress'
         },
         {
-          title: this.$t('zonename'),
+          title: this.$t('label.zonename'),
           dataIndex: 'zonename'
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state'
         }
       ]

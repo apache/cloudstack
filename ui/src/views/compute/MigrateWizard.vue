@@ -69,7 +69,7 @@
 
     <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
       <a-button type="primary" :disabled="!selectedHost.id" @click="submitForm">
-        {{ $t('ok') }}
+        {{ $t('label.ok') }}
       </a-button>
     </div>
   </div>
@@ -98,23 +98,23 @@ export default {
       pageSize: 10,
       columns: [
         {
-          title: this.$t('name'),
+          title: this.$t('label.name'),
           dataIndex: 'name'
         },
         {
-          title: this.$t('Suitability'),
+          title: this.$t('label.suitability'),
           scopedSlots: { customRender: 'suitability' }
         },
         {
-          title: this.$t('cpuused'),
+          title: this.$t('label.cpuused'),
           dataIndex: 'cpuused'
         },
         {
-          title: this.$t('memused'),
+          title: this.$t('label.memused'),
           scopedSlots: { customRender: 'memused' }
         },
         {
-          title: this.$t('select'),
+          title: this.$t('label.select'),
           scopedSlots: { customRender: 'select' }
         }
       ]

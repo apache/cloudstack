@@ -23,21 +23,21 @@
           :form="form"
           layout="vertical"
           @submit="handleSubmit">
-          <a-form-item :label="$t('name')">
+          <a-form-item :label="$t('label.name')">
             <a-input
               v-decorator="['name', {
                 rules: [{ required: true, message: 'Please enter name' }]
               }]"
-              :placeholder="this.$t('Name')"/>
+              :placeholder="this.$t('label.name')"/>
           </a-form-item>
-          <a-form-item :label="$t('displaytext')">
+          <a-form-item :label="$t('label.displaytext')">
             <a-input
               v-decorator="['displaytext', {
                 rules: [{ required: true, message: 'Please enter display text' }]
               }]"
-              :placeholder="this.$t('Display text')"/>
+              :placeholder="this.$t('label.display.text')"/>
           </a-form-item>
-          <a-form-item :label="$t('zoneid')" v-if="this.isObjectEmpty(this.zone)">
+          <a-form-item :label="$t('label.zoneid')" v-if="this.isObjectEmpty(this.zone)">
             <a-select
               v-decorator="['zoneid', {
                 rules: [
@@ -53,14 +53,14 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              :placeholder="this.$t('zoneid')"
+              :placeholder="this.$t('label.zoneid')"
               @change="val => { this.handleZoneChange(this.zones[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('physicalnetworkid')" v-if="this.isObjectEmpty(this.zone)">
+          <a-form-item :label="$t('label.physicalnetworkid')" v-if="this.isObjectEmpty(this.zone)">
             <a-select
               v-decorator="['physicalnetworkid', {}]"
               showSearch
@@ -69,24 +69,24 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              :placeholder="this.$t('physicalnetworkid')"
+              :placeholder="this.$t('label.physicalnetworkid')"
               @change="val => { this.handleZoneChange(this.formPhysicalNetworks[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.formPhysicalNetworks" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('vlan')">
+          <a-form-item :label="$t('label.vlan')">
             <a-input
               v-decorator="['vlanid', {
                 rules: [{ required: true, message: 'Please enter value' }]
               }]"
-              :placeholder="this.$t('vlanid')"/>
+              :placeholder="this.$t('label.vlanid')"/>
           </a-form-item>
-          <a-form-item :label="$t('bypassvlanoverlapcheck')">
+          <a-form-item :label="$t('label.bypassvlanoverlapcheck')">
             <a-switch v-decorator="['bypassvlanoverlapcheck']" />
           </a-form-item>
-          <a-form-item :label="$t('isolatedpvlantype')">
+          <a-form-item :label="$t('label.isolatedpvlantype')">
             <a-radio-group
               v-decorator="['isolatedpvlantype', {
                 initialValue: this.isolatePvlanType
@@ -94,25 +94,25 @@
               buttonStyle="solid"
               @change="selected => { this.handleIsolatedPvlanTypeChange(selected.target.value) }">
               <a-radio-button value="none">
-                {{ $t('None') }}
+                {{ $t('label.none') }}
               </a-radio-button>
               <a-radio-button value="community">
-                {{ $t('Community') }}
+                {{ $t('label.community') }}
               </a-radio-button>
               <a-radio-button value="isolated">
-                {{ $t('Isolated') }}
+                {{ $t('label.isolated') }}
               </a-radio-button>
               <a-radio-button value="promiscuous">
-                {{ $t('Promiscuous') }}
+                {{ $t('label.promiscuous') }}
               </a-radio-button>
             </a-radio-group>
           </a-form-item>
-          <a-form-item :label="$t('isolatedpvlan')" v-if="this.isolatePvlanType=='community' || this.isolatePvlanType=='isolated'">
+          <a-form-item :label="$t('label.isolatedpvlan')" v-if="this.isolatePvlanType=='community' || this.isolatePvlanType=='isolated'">
             <a-input
               v-decorator="['isolatedpvlan', {}]"
-              :placeholder="this.$t('isolatedpvlan')"/>
+              :placeholder="this.$t('label.isolatedpvlan')"/>
           </a-form-item>
-          <a-form-item :label="$t('scope')">
+          <a-form-item :label="$t('label.scope')">
             <a-radio-group
               v-decorator="['scope', {
                 initialValue: this.scopeType
@@ -120,20 +120,20 @@
               buttonStyle="solid"
               @change="selected => { this.handleScopeTypeChange(selected.target.value) }">
               <a-radio-button value="all">
-                {{ $t('All') }}
+                {{ $t('label.all') }}
               </a-radio-button>
               <a-radio-button value="domain" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
-                {{ $t('Domain') }}
+                {{ $t('label.domain') }}
               </a-radio-button>
               <a-radio-button value="account" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
-                {{ $t('Account') }}
+                {{ $t('label.account') }}
               </a-radio-button>
               <a-radio-button value="project" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
-                {{ $t('Project') }}
+                {{ $t('label.project') }}
               </a-radio-button>
             </a-radio-group>
           </a-form-item>
-          <a-form-item :label="$t('domain')" v-if="this.scopeType !== 'all'">
+          <a-form-item :label="$t('label.domain')" v-if="this.scopeType !== 'all'">
             <a-select
               v-decorator="['domainid', {
                 rules: [
@@ -149,22 +149,22 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="domainLoading"
-              :placeholder="this.$t('domainid')"
+              :placeholder="this.$t('label.domainid')"
               @change="val => { this.handleDomainChange(this.domains[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('subdomainaccess')" v-if="this.scopeType === 'domain'">
+          <a-form-item :label="$t('label.subdomainaccess')" v-if="this.scopeType === 'domain'">
             <a-switch v-decorator="['subdomainaccess']" />
           </a-form-item>
-          <a-form-item :label="$t('account')" v-if="this.scopeType === 'account'">
+          <a-form-item :label="$t('label.account')" v-if="this.scopeType === 'account'">
             <a-input
               v-decorator="['account', {}]"
-              :placeholder="this.$t('account')"/>
+              :placeholder="this.$t('label.account')"/>
           </a-form-item>
-          <a-form-item :label="$t('projectid')" v-if="this.scopeType === 'project'">
+          <a-form-item :label="$t('label.projectid')" v-if="this.scopeType === 'project'">
             <a-select
               v-decorator="['projectid', {
                 rules: [
@@ -180,14 +180,14 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="projectLoading"
-              :placeholder="this.$t('projectid')"
+              :placeholder="this.$t('label.projectid')"
               @change="val => { this.handleProjectChange(this.projects[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.projects" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('networkofferingid')">
+          <a-form-item :label="$t('label.networkofferingid')">
             <a-select
               v-decorator="['networkofferingid', {
                 rules: [
@@ -203,72 +203,72 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
-              :placeholder="this.$t('networkofferingid')"
+              :placeholder="this.$t('label.networkofferingid')"
               @change="val => { this.handleNetworkOfferingChange(this.networkOfferings[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.networkOfferings" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('ip4gateway')">
+          <a-form-item :label="$t('label.ip4gateway')">
             <a-input
               v-decorator="['ip4gateway', {}]"
-              :placeholder="this.$t('ip4gateway')"/>
+              :placeholder="this.$t('label.ip4gateway')"/>
           </a-form-item>
-          <a-form-item :label="$t('ip4Netmask')">
+          <a-form-item :label="$t('label.ip4netmask')">
             <a-input
               v-decorator="['netmask', {}]"
-              :placeholder="this.$t('netmask')"/>
+              :placeholder="this.$t('label.netmask')"/>
           </a-form-item>
-          <a-form-item :label="$t('startipv4')">
+          <a-form-item :label="$t('label.startipv4')">
             <a-input
               v-decorator="['startipv4', {}]"
-              :placeholder="this.$t('startipv4')"/>
+              :placeholder="this.$t('label.startipv4')"/>
           </a-form-item>
-          <a-form-item :label="$t('endipv4')">
+          <a-form-item :label="$t('label.endipv4')">
             <a-input
               v-decorator="['endipv4', {}]"
-              :placeholder="this.$t('endipv4')"/>
+              :placeholder="this.$t('label.endipv4')"/>
           </a-form-item>
-          <a-form-item :label="$t('ip6gateway')">
+          <a-form-item :label="$t('label.ip6gateway')">
             <a-input
               v-decorator="['ip6gateway', {}]"
-              :placeholder="this.$t('ip6gateway')"/>
+              :placeholder="this.$t('label.ip6gateway')"/>
           </a-form-item>
-          <a-form-item :label="$t('ip6cidr')">
+          <a-form-item :label="$t('label.ip6cidr')">
             <a-input
               v-decorator="['ip6cidr', {}]"
-              :placeholder="this.$t('ip6cidr')"/>
+              :placeholder="this.$t('label.ip6cidr')"/>
           </a-form-item>
-          <a-form-item :label="$t('startipv6')">
+          <a-form-item :label="$t('label.startipv6')">
             <a-input
               v-decorator="['startipv6', {}]"
-              :placeholder="this.$t('startipv6')"/>
+              :placeholder="this.$t('label.startipv6')"/>
           </a-form-item>
-          <a-form-item :label="$t('endipv6')">
+          <a-form-item :label="$t('label.endipv6')">
             <a-input
               v-decorator="['endipv6', {}]"
-              :placeholder="this.$t('endipv6')"/>
+              :placeholder="this.$t('label.endipv6')"/>
           </a-form-item>
-          <a-form-item :label="$t('networkdomain')">
+          <a-form-item :label="$t('label.networkdomain')">
             <a-input
               v-decorator="['networkdomain', {}]"
-              :placeholder="this.$t('networkdomain')"/>
+              :placeholder="this.$t('label.networkdomain')"/>
           </a-form-item>
-          <a-form-item :label="$t('hideipaddressusage')">
+          <a-form-item :label="$t('label.hideipaddressusage')">
             <a-switch v-decorator="['hideipaddressusage']" />
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
               @click="closeAction">
-              {{ this.$t('Cancel') }}
+              {{ this.$t('label.cancel') }}
             </a-button>
             <a-button
               :loading="actionLoading"
               type="primary"
               @click="handleSubmit">
-              {{ this.$t('OK') }}
+              {{ this.$t('label.ok') }}
             </a-button>
           </div>
         </a-form>

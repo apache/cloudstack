@@ -27,7 +27,7 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('templateFileUpload')">
+        <a-form-item :label="$t('label.templatefileupload')">
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
@@ -44,14 +44,14 @@
             </p>
           </a-upload-dragger>
         </a-form-item>
-        <a-form-item :label="$t('name')">
+        <a-form-item :label="$t('label.name')">
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: 'Please enter Volume name' }]
             }]"
-            :placeholder="$t('volumename')" />
+            :placeholder="$t('label.volumename')" />
         </a-form-item>
-        <a-form-item :label="$t('zone')">
+        <a-form-item :label="$t('label.zone')">
           <a-select
             v-decorator="['zoneId', {
               initialValue: zoneSelected,
@@ -67,7 +67,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('format')">
+        <a-form-item :label="$t('label.format')">
           <a-select
             v-decorator="['format', {
               initialValue: formats[0],
@@ -83,15 +83,15 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('volumeChecksum')">
+        <a-form-item :label="$t('label.volumechecksum')">
           <a-input
             v-decorator="['checksum']"
             placeholder="Use the hash that you created at the start of the volume upload procedure"
           />
         </a-form-item>
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>

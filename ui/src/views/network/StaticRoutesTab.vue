@@ -41,13 +41,13 @@
       <div v-else>
         <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
           <div class="add-tags__input">
-            <p class="add-tags__label">{{ $t('key') }}</p>
+            <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
               <a-input v-decorator="['key', { rules: [{ required: true, message: 'Please specify a tag key'}] }]" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
-            <p class="add-tags__label">{{ $t('value') }}</p>
+            <p class="add-tags__label">{{ $t('label.value') }}</p>
             <a-form-item>
               <a-input v-decorator="['value', { rules: [{ required: true, message: 'Please specify a tag value'}] }]" />
             </a-form-item>
@@ -65,7 +65,7 @@
           </div>
         </div>
 
-        <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('OK') }}</a-button>
+        <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-modal>

@@ -17,14 +17,14 @@
 
 export default {
   name: 'account',
-  title: 'Accounts',
+  title: 'label.accounts',
   icon: 'team',
   permission: ['listAccounts'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domain'],
   details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
   related: [{
     name: 'accountuser',
-    title: 'Users',
+    title: 'label.users',
     param: 'account'
   }],
   tabs: [
@@ -42,7 +42,7 @@ export default {
       component: () => import('@/components/view/ResourceLimitTab.vue')
     },
     {
-      name: 'Settings',
+      name: 'settings',
       component: () => import('@/components/view/SettingsTab.vue'),
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
     }

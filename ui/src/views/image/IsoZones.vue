@@ -26,8 +26,8 @@
       :pagination="false"
       :rowKey="record => record.zoneid">
       <div slot="isready" slot-scope="text, record">
-        <span v-if="record.isready">{{ $t('Yes') }}</span>
-        <span v-else>{{ $t('No') }}</span>
+        <span v-if="record.isready">{{ $t('label.yes') }}</span>
+        <span v-else>{{ $t('label.no') }}</span>
       </div>
       <template slot="action" slot-scope="text, record">
         <span style="margin-right: 5px">
@@ -43,8 +43,8 @@
             v-if="'deleteIso' in $store.getters.apis"
             placement="topRight"
             title="Delete the ISO for this zone?"
-            :ok-text="$t('Yes')"
-            :cancel-text="$t('No')"
+            :ok-text="$t('label.yes')"
+            :cancel-text="$t('label.no')"
             :loading="deleteLoading"
             @confirm="deleteIso(record)"
           >
@@ -83,7 +83,7 @@
           :form="form"
           @submit="handleCopyIsoSubmit"
           layout="vertical">
-          <a-form-item :label="$t('zoneid')">
+          <a-form-item :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"
               mode="multiple"
@@ -155,15 +155,15 @@ export default {
   created () {
     this.columns = [
       {
-        title: this.$t('zonename'),
+        title: this.$t('label.zonename'),
         dataIndex: 'zonename'
       },
       {
-        title: this.$t('status'),
+        title: this.$t('label.status'),
         dataIndex: 'status'
       },
       {
-        title: this.$t('isready'),
+        title: this.$t('label.isready'),
         dataIndex: 'isready',
         scopedSlots: { customRender: 'isready' }
       },

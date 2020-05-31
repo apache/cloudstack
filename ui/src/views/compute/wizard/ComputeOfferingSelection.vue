@@ -32,8 +32,8 @@
       @change="handleTableChange"
       :scroll="{ y: 225 }"
     >
-      <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('cpu') }}</span>
-      <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('memory') }}</span>
+      <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('label.cpu') }}</span>
+      <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('label.memory') }}</span>
     </a-table>
   </div>
 </template>
@@ -65,7 +65,7 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('serviceOfferingId'),
+          title: this.$t('label.serviceofferingid'),
           width: '40%'
         },
         {

@@ -22,21 +22,21 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('name')">
+        <a-form-item :label="$t('label.name')">
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="this.$t('Name')"/>
+            :placeholder="this.$t('label.name')"/>
         </a-form-item>
-        <a-form-item :label="$t('displaytext')">
+        <a-form-item :label="$t('label.displaytext')">
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="this.$t('displaytext')"/>
+            :placeholder="this.$t('label.displaytext')"/>
         </a-form-item>
-        <a-form-item :label="$t('storagetype')">
+        <a-form-item :label="$t('label.storagetype')">
           <a-radio-group
             v-decorator="['storagetype', {
               initialValue: this.storageType
@@ -44,14 +44,14 @@
             buttonStyle="solid"
             @change="selected => { this.handleStorageTypeChange(selected.target.value) }">
             <a-radio-button value="shared">
-              {{ $t('shared') }}
+              {{ $t('label.shared') }}
             </a-radio-button>
             <a-radio-button value="local">
-              {{ $t('local') }}
+              {{ $t('label.local') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('provisioningtype')">
+        <a-form-item :label="$t('label.provisioningtype')">
           <a-radio-group
             v-decorator="['provisioningtype', {
               initialValue: this.provisioningType
@@ -59,20 +59,20 @@
             buttonStyle="solid"
             @change="selected => { this.handleProvisioningTypeChange(selected.target.value) }">
             <a-radio-button value="thin">
-              {{ $t('thin') }}
+              {{ $t('label.thin') }}
             </a-radio-button>
             <a-radio-button value="sparse">
-              {{ $t('sparse') }}
+              {{ $t('label.sparse') }}
             </a-radio-button>
             <a-radio-button value="fat">
-              {{ $t('fat') }}
+              {{ $t('label.fat') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('customdisksize')">
+        <a-form-item :label="$t('label.customdisksize')">
           <a-switch v-decorator="['customdisksize', { initialValue: this.isCustomDiskSize }]" :checked="this.isCustomDiskSize" @change="val => { this.isCustomDiskSize = val }" />
         </a-form-item>
-        <a-form-item :label="$t('disksize')" v-if="!this.isCustomDiskSize">
+        <a-form-item :label="$t('label.disksize')" v-if="!this.isCustomDiskSize">
           <a-input
             v-decorator="['disksize', {
               rules: [
@@ -87,9 +87,9 @@
                 }
               ]
             }]"
-            :placeholder="this.$t('disksize')"/>
+            :placeholder="this.$t('label.disksize')"/>
         </a-form-item>
-        <a-form-item :label="$t('qostype')">
+        <a-form-item :label="$t('label.qostype')">
           <a-radio-group
             v-decorator="['qostype', {
               initialValue: this.qosType
@@ -97,17 +97,17 @@
             buttonStyle="solid"
             @change="selected => { this.handleQosTypeChange(selected.target.value) }">
             <a-radio-button value="">
-              {{ $t('none') }}
+              {{ $t('label.none') }}
             </a-radio-button>
             <a-radio-button value="hypervisor">
-              {{ $t('hypervisor') }}
+              {{ $t('label.hypervisor') }}
             </a-radio-button>
             <a-radio-button value="storage">
-              {{ $t('storage') }}
+              {{ $t('label.storage') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('diskbytesreadrate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('label.diskbytesreadrate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskbytesreadrate', {
               rules: [{
@@ -119,9 +119,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('diskbytesreadrate')"/>
+            :placeholder="this.$t('label.diskbytesreadrate')"/>
         </a-form-item>
-        <a-form-item :label="$t('diskbyteswriterate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('label.diskbyteswriterate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskbyteswriterate', {
               rules: [{
@@ -133,9 +133,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('diskbyteswriterate')"/>
+            :placeholder="this.$t('label.diskbyteswriterate')"/>
         </a-form-item>
-        <a-form-item :label="$t('diskiopsreadrate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('label.diskiopsreadrate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskiopsreadrate', {
               rules: [{
@@ -147,9 +147,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('diskiopsreadrate')"/>
+            :placeholder="this.$t('label.diskiopsreadrate')"/>
         </a-form-item>
-        <a-form-item :label="$t('diskiopswriterate')" v-if="this.qosType === 'hypervisor'">
+        <a-form-item :label="$t('label.diskiopswriterate')" v-if="this.qosType === 'hypervisor'">
           <a-input
             v-decorator="['diskiopswriterate', {
               rules: [{
@@ -161,12 +161,12 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('diskiopswriterate')"/>
+            :placeholder="this.$t('label.diskiopswriterate')"/>
         </a-form-item>
-        <a-form-item :label="$t('iscustomizeddiskiops')" v-if="this.qosType === 'storage'">
+        <a-form-item :label="$t('label.iscustomizeddiskiops')" v-if="this.qosType === 'storage'">
           <a-switch v-decorator="['iscustomizeddiskiops']" :checked="this.isCustomizedDiskIops" @change="val => { this.isCustomizedDiskIops = val }" />
         </a-form-item>
-        <a-form-item :label="$t('diskiopsmin')" v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
+        <a-form-item :label="$t('label.diskiopsmin')" v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
           <a-input
             v-decorator="['diskiopsmin', {
               rules: [{
@@ -178,9 +178,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('diskiopsmin')"/>
+            :placeholder="this.$t('label.diskiopsmin')"/>
         </a-form-item>
-        <a-form-item :label="$t('diskiopsmax')" v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
+        <a-form-item :label="$t('label.diskiopsmax')" v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
           <a-input
             v-decorator="['diskiopsmax', {
               rules: [{
@@ -192,9 +192,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('diskiopsmax')"/>
+            :placeholder="this.$t('label.diskiopsmax')"/>
         </a-form-item>
-        <a-form-item :label="$t('hypervisorsnapshotreserve')" v-if="this.qosType === 'storage'">
+        <a-form-item :label="$t('label.hypervisorsnapshotreserve')" v-if="this.qosType === 'storage'">
           <a-input
             v-decorator="['hypervisorsnapshotreserve', {
               rules: [{
@@ -206,9 +206,9 @@
                 }
               }]
             }]"
-            :placeholder="this.$t('hypervisorsnapshotreserve')"/>
+            :placeholder="this.$t('label.hypervisorsnapshotreserve')"/>
         </a-form-item>
-        <a-form-item :label="$t('writecachetype')">
+        <a-form-item :label="$t('label.writecachetype')">
           <a-radio-group
             v-decorator="['writecachetype', {
               initialValue: this.writeCacheType
@@ -216,17 +216,17 @@
             buttonStyle="solid"
             @change="selected => { this.handleWriteCacheTypeChange(selected.target.value) }">
             <a-radio-button value="none">
-              {{ $t('nodiskcache') }}
+              {{ $t('label.nodiskcache') }}
             </a-radio-button>
             <a-radio-button value="writeback">
-              {{ $t('writeback') }}
+              {{ $t('label.writeback') }}
             </a-radio-button>
             <a-radio-button value="writethrough">
-              {{ $t('writethrough') }}
+              {{ $t('label.writethrough') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('storagetags')" v-if="this.isAdmin()">
+        <a-form-item :label="$t('label.storagetags')" v-if="this.isAdmin()">
           <a-select
             mode="tags"
             v-decorator="['tags', {}]"
@@ -236,17 +236,17 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
-            :placeholder="this.$t('tags')"
+            :placeholder="this.$t('label.tags')"
             v-if="this.isAdmin()">
             <a-select-option v-for="(opt) in this.storageTags" :key="opt.name">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('ispublic')" v-show="this.isAdmin()">
+        <a-form-item :label="$t('label.ispublic')" v-show="this.isAdmin()">
           <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :checked="this.isPublic" @change="val => { this.isPublic = val }" />
         </a-form-item>
-        <a-form-item :label="$t('domainid')" v-if="!this.isPublic">
+        <a-form-item :label="$t('label.domainid')" v-if="!this.isPublic">
           <a-select
             mode="multiple"
             v-decorator="['domainid', {
@@ -263,13 +263,13 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('domainid')">
+            :placeholder="this.$t('label.domainid')">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('zoneid')">
+        <a-form-item :label="$t('label.zoneid')">
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -291,7 +291,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.$t('zoneid')">
+            :placeholder="this.$t('label.zoneid')">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -299,8 +299,8 @@
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>

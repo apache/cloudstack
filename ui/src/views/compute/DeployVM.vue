@@ -19,22 +19,22 @@
   <div>
     <a-row :gutter="12">
       <a-col :md="24" :lg="17">
-        <a-card :bordered="true" :title="this.$t('newInstance')">
+        <a-card :bordered="true" :title="this.$t('label.newinstance')">
           <a-form
             :form="form"
             @submit="handleSubmit"
             layout="vertical"
           >
             <a-steps direction="vertical" size="small">
-              <a-step :title="this.$t('details')" status="process">
+              <a-step :title="this.$t('label.details')" status="process">
                 <template slot="description">
                   <div style="margin-top: 15px">
-                    <a-form-item :label="this.$t('name')">
+                    <a-form-item :label="this.$t('label.name')">
                       <a-input
                         v-decorator="['name']"
                       />
                     </a-form-item>
-                    <a-form-item :label="this.$t('zoneid')">
+                    <a-form-item :label="this.$t('label.zoneid')">
                       <a-select
                         v-decorator="['zoneid', {
                           rules: [{ required: true, message: 'Please select option' }]
@@ -46,7 +46,7 @@
                     </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
-                      :label="this.$t('podId')">
+                      :label="this.$t('label.podid')">
                       <a-select
                         v-decorator="['podid']"
                         :options="podSelectOptions"
@@ -55,7 +55,7 @@
                     </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
-                      :label="this.$t('clusterid')">
+                      :label="this.$t('label.clusterid')">
                       <a-select
                         v-decorator="['clusterid']"
                         :options="clusterSelectOptions"
@@ -64,23 +64,23 @@
                     </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
-                      :label="this.$t('hostId')">
+                      :label="this.$t('label.hostid')">
                       <a-select
                         v-decorator="['hostid']"
                         :options="hostSelectOptions"
                         :loading="loading.hosts"
                       ></a-select>
                     </a-form-item>
-                    <a-form-item :label="this.$t('group')">
+                    <a-form-item :label="this.$t('label.group')">
                       <a-input v-decorator="['group']" />
                     </a-form-item>
-                    <a-form-item :label="this.$t('keyboard')">
+                    <a-form-item :label="this.$t('label.keyboard')">
                       <a-select
                         v-decorator="['keyboard']"
                         :options="keyboardSelectOptions"
                       ></a-select>
                     </a-form-item>
-                    <a-form-item :label="this.$t('userdata')">
+                    <a-form-item :label="this.$t('label.userdata')">
                       <a-textarea
                         v-decorator="['userdata']">
                       </a-textarea>
@@ -89,7 +89,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="this.$t('templateIso')"
+                :title="this.$t('label.templateiso')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
                   <div v-if="zoneSelected" style="margin-top: 15px">
@@ -119,7 +119,7 @@
                           :loading="loading.isos"
                           :preFillContent="dataPreFill"
                           @update-template-iso="updateFieldValue" />
-                        <a-form-item :label="this.$t('hypervisor')">
+                        <a-form-item :label="this.$t('label.hypervisor')">
                           <a-select
                             v-decorator="['hypervisor', {
                               initialValue: hypervisorSelectOptions && hypervisorSelectOptions.length > 0
@@ -145,7 +145,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="this.$t('serviceOfferingId')"
+                :title="this.$t('label.serviceofferingid')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
                   <div v-if="zoneSelected">
@@ -189,7 +189,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="this.$t('diskofferingid')"
+                :title="this.$t('label.diskofferingid')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
                   <div v-if="zoneSelected">
@@ -213,7 +213,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="this.$t('Affinity Groups')"
+                :title="this.$t('label.affinity.groups')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
                   <div v-if="zoneSelected">
@@ -229,7 +229,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="this.$t('networks')"
+                :title="this.$t('label.networks')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
                   <div v-if="zoneSelected">
@@ -253,7 +253,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="this.$t('sshKeyPairs')"
+                :title="this.$t('label.sshkeypairs')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
                   <div v-if="zoneSelected">
@@ -272,11 +272,11 @@
             <div class="card-footer">
               <!-- ToDo extract as component -->
               <a-button @click="() => this.$router.back()" :loading="loading.deploy">
-                {{ this.$t('cancel') }}
+                {{ this.$t('label.cancel') }}
               </a-button>
               <a-button type="primary" @click="handleSubmit" :loading="loading.deploy">
                 <a-icon type="rocket" />
-                {{ this.$t('Launch VM') }}
+                {{ this.$t('label.launch.vm') }}
               </a-button>
             </div>
           </a-form>
@@ -284,7 +284,7 @@
       </a-col>
       <a-col :md="24" :lg="7" v-if="!isMobile()">
         <a-affix :offsetTop="75">
-          <info-card class="vm-info-card" :resource="vm" :title="this.$t('yourInstance')">
+          <info-card class="vm-info-card" :resource="vm" :title="this.$t('label.yourinstance')">
             <!-- ToDo: Refactor this, maybe move everything to the info-card component -->
             <div slot="details" v-if="diskSize" style="margin-bottom: 12px;">
               <a-icon type="hdd"></a-icon>
@@ -421,11 +421,11 @@ export default {
       tabList: [
         {
           key: 'templateid',
-          tab: this.$t('Templates')
+          tab: this.$t('label.templates')
         },
         {
           key: 'isoid',
-          tab: this.$t('ISOs')
+          tab: this.$t('label.isos')
         }
       ],
       tabKey: 'templateid',
@@ -816,7 +816,7 @@ export default {
       this.networkConfig = networks
     },
     updateSshKeyPairs (name) {
-      if (name === this.$t('noselect')) {
+      if (name === this.$t('label.noselect')) {
         this.form.setFieldsValue({
           keypair: undefined
         })
@@ -926,7 +926,7 @@ export default {
         deployVmData.displayname = values.name
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
-        const password = this.$t('password')
+        const password = this.$t('label.password')
         api('deployVirtualMachine', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {

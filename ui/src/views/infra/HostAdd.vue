@@ -20,7 +20,7 @@
     <div class="form">
 
       <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('zonenamelabel') }}</div>
+        <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
         <a-select v-model="zoneId" @change="fetchPods">
           <a-select-option
             v-for="zone in zonesList"
@@ -32,7 +32,7 @@
       </div>
 
       <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('podname') }}</div>
+        <div class="form__label"><span class="required">* </span>{{ $t('label.podname') }}</div>
         <a-select v-model="podId" @change="fetchClusters">
           <a-select-option
             v-for="pod in podsList"
@@ -44,7 +44,7 @@
       </div>
 
       <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('clustername') }}</div>
+        <div class="form__label"><span class="required">* </span>{{ $t('label.clustername') }}</div>
         <a-select v-model="clusterId" @change="handleChangeCluster">
           <a-select-option
             v-for="cluster in clustersList"
@@ -56,41 +56,41 @@
       </div>
 
       <div class="form__item required-field">
-        <div class="form__label"><span class="required">* </span>{{ selectedClusterHyperVisorType === 'VMware' ? $t('vcenterHost') : $t('hostnamelabel') }}</div>
+        <div class="form__label"><span class="required">* </span>{{ selectedClusterHyperVisorType === 'VMware' ? $t('label.vcenterhost') : $t('label.hostnamelabel') }}</div>
         <span class="required required-label">Required</span>
         <a-input v-model="hostname"></a-input>
       </div>
 
       <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
-        <div class="form__label"><span class="required">* </span>{{ $t('username') }}</div>
+        <div class="form__label"><span class="required">* </span>{{ $t('label.username') }}</div>
         <span class="required required-label">Required</span>
         <a-input :placeholder="placeholder.username" v-model="username"></a-input>
       </div>
 
       <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
-        <div class="form__label"><span class="required">* </span>{{ $t('password') }}</div>
+        <div class="form__label"><span class="required">* </span>{{ $t('label.password') }}</div>
         <span class="required required-label">Required</span>
         <a-input :placeholder="placeholder.password" type="password" v-model="password"></a-input>
       </div>
 
       <template v-if="selectedClusterHyperVisorType === 'Ovm3'">
         <div class="form__item">
-          <div class="form__label">{{ $t('agentUsername') }}</div>
+          <div class="form__label">{{ $t('label.agentusername') }}</div>
           <a-input v-model="agentusername"></a-input>
         </div>
         <div class="form__item required-field">
-          <div class="form__label"><span class="required">* </span>{{ $t('agentPassword') }}</div>
+          <div class="form__label"><span class="required">* </span>{{ $t('label.agentpassword') }}</div>
           <span class="required required-label">Required</span>
           <a-input type="password" v-model="agentpassword"></a-input>
         </div>
         <div class="form__item">
-          <div class="form__label">{{ $t('agentPort') }}</div>
+          <div class="form__label">{{ $t('label.agentport') }}</div>
           <a-input v-model="agentport"></a-input>
         </div>
       </template>
 
       <div class="form__item">
-        <div class="form__label">{{ $t('hostTags') }}</div>
+        <div class="form__label">{{ $t('label.hosttags') }}</div>
         <a-select
           mode="tags"
           :placeholder="placeholder.hosttags"
@@ -101,7 +101,7 @@
       </div>
 
       <div class="form__item">
-        <div class="form__label">{{ $t('isDedicated') }}</div>
+        <div class="form__label">{{ $t('label.isdedicated') }}</div>
         <a-checkbox @change="toggleDedicated" />
       </div>
 
@@ -115,8 +115,8 @@
       <a-divider></a-divider>
 
       <div class="actions">
-        <a-button @click="() => this.$parent.$parent.close()">{{ $t('cancel') }}</a-button>
-        <a-button @click="handleSubmitForm" type="primary">{{ $t('ok') }}</a-button>
+        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="handleSubmitForm" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </div>

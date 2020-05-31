@@ -18,14 +18,14 @@
 <template>
   <a-spin :spinning="loading">
     <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
-      <a-form-item :label="$t('name')">
+      <a-form-item :label="$t('label.name')">
         <a-input
           v-decorator="['name', {
             rules: [{ required: true, message: 'Please enter volume name' }]
           }]"
-          :placeholder="$t('volumename')"/>
+          :placeholder="$t('label.volumename')"/>
       </a-form-item>
-      <a-form-item :label="$t('zoneid')">
+      <a-form-item :label="$t('label.zoneid')">
         <a-select
           v-decorator="['zoneid', {
             initialValue: selectedZoneId,
@@ -40,7 +40,7 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item :label="$t('diskoffering')">
+      <a-form-item :label="$t('label.diskoffering')">
         <a-select
           v-decorator="['diskofferingid', {
             initialValue: selectedDiskOfferingId,
@@ -57,16 +57,16 @@
         </a-select>
       </a-form-item>
       <span v-if="customDiskOffering">
-        <a-form-item :label="$t('Size (GB)')">
+        <a-form-item :label="$t('label.sizegb')">
           <a-input
             v-decorator="['size', {
               rules: [{ required: true, message: 'Please enter custom disk size' }]}]"
-            :placeholder="$t('Enter Size in GB')"/>
+            :placeholder="$t('label.enter.size.in.gb')"/>
         </a-form-item>
       </span>
       <div :span="24" class="action-button">
-        <a-button @click="closeModal">{{ $t('cancel') }}</a-button>
-        <a-button type="primary" @click="handleSubmit">{{ $t('ok') }}</a-button>
+        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>

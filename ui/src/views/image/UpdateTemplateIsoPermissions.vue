@@ -22,11 +22,11 @@
     </div>
 
     <div class="form__item">
-      <p class="form__label">{{ $t('operation') }}</p>
+      <p class="form__label">{{ $t('label.operation') }}</p>
       <a-select v-model="selectedOperation" defaultValue="Add" @change="fetchData">
-        <a-select-option :value="$t('add')">{{ $t('add') }}</a-select-option>
-        <a-select-option :value="$t('remove')">{{ $t('remove') }}</a-select-option>
-        <a-select-option :value="$t('reset')">{{ $t('reset') }}</a-select-option>
+        <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
+        <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
+        <a-select-option :value="$t('label.reset')">{{ $t('label.reset') }}</a-select-option>
       </a-select>
     </div>
 
@@ -34,18 +34,18 @@
       <div class="form__item">
         <p class="form__label">
           <span class="required">*</span>
-          {{ $t('shareWith') }}
+          {{ $t('label.sharewith') }}
         </p>
         <a-select v-model="selectedShareWith" defaultValue="Account" @change="fetchData">
-          <a-select-option :value="$t('account')">{{ $t('account') }}</a-select-option>
-          <a-select-option :value="$t('project')">{{ $t('project') }}</a-select-option>
+          <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
+          <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
       </div>
 
       <template v-if="selectedShareWith === 'Account'">
         <div class="form__item">
           <p class="form__label">
-            {{ $t('account') }}
+            {{ $t('label.account') }}
           </p>
           <div v-if="showAccountSelect">
             <a-select
@@ -67,7 +67,7 @@
       <template v-else>
         <div class="form__item">
           <p class="form__label">
-            {{ $t('project') }}
+            {{ $t('label.project') }}
           </p>
           <a-select
             mode="multiple"
@@ -83,10 +83,10 @@
     </template>
     <div class="actions">
       <a-button @click="closeModal">
-        {{ $t('Cancel') }}
+        {{ $t('label.cancel') }}
       </a-button>
       <a-button type="primary" @click="submitData">
-        {{ $t('OK') }}
+        {{ $t('label.ok') }}
       </a-button>
     </div>
   </div>
@@ -113,7 +113,7 @@ export default {
       selectedProjects: [],
       selectedAccountsList: '',
       selectedOperation: 'Add',
-      selectedShareWith: this.$t('account'),
+      selectedShareWith: this.$t('label.account'),
       accountError: false,
       projectError: false,
       showAccountSelect: true,

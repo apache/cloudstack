@@ -17,13 +17,13 @@
 
 export default {
   name: 'config',
-  title: 'Configuration',
+  title: 'label.configuration',
   icon: 'setting',
   permission: ['listConfigurations'],
   children: [
     {
       name: 'globalsetting',
-      title: 'Global Settings',
+      title: 'label.global.settings',
       icon: 'setting',
       permission: ['listConfigurations'],
       columns: ['name', 'description', 'category', 'value', 'actions'],
@@ -31,7 +31,7 @@ export default {
     },
     {
       name: 'ldapsetting',
-      title: 'LDAP Configuration',
+      title: 'label.ldap.configuration',
       icon: 'team',
       permission: ['listLdapConfigurations'],
       columns: ['hostname', 'port', 'domainid'],
@@ -62,7 +62,7 @@ export default {
     },
     {
       name: 'hypervisorcapability',
-      title: 'Hypervisor Capabilities',
+      title: 'label.hypervisor.capabilities',
       icon: 'database',
       permission: ['listHypervisorCapabilities'],
       columns: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxdatavolumeslimit', 'maxhostspercluster'],

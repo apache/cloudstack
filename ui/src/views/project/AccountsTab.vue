@@ -88,18 +88,18 @@ export default {
   created () {
     this.columns = [
       {
-        title: this.$t('account'),
+        title: this.$t('label.account'),
         dataIndex: 'account',
         width: '35%',
         scopedSlots: { customRender: 'account' }
       },
       {
-        title: this.$t('role'),
+        title: this.$t('label.role'),
         dataIndex: 'role',
         scopedSlots: { customRender: 'role' }
       },
       {
-        title: this.$t('action'),
+        title: this.$t('label.action'),
         dataIndex: 'action',
         fixed: 'right',
         width: 100,
@@ -182,8 +182,8 @@ export default {
     },
     onShowConfirmDelete (record) {
       const self = this
-      let title = this.$t('deleteconfirm')
-      title = title.replace('{name}', this.$t('account'))
+      let title = this.$t('label.deleteconfirm')
+      title = title.replace('{name}', this.$t('label.account'))
 
       this.$confirm({
         title: title,

@@ -18,7 +18,7 @@
 <template>
   <a-spin :spinning="fetchLoading">
     <a-button type="dashed" icon="plus" style="width: 100%; margin-bottom: 15px" @click="acquireIpAddress">
-      {{ $t("label.acquire.new.ip") }}
+      {{ $t('label.acquire.new.ip') }}
     </a-button>
     <div v-if="$route.path.startsWith('/vpc')">
       Select Tier:
@@ -30,7 +30,7 @@
         @change="handleTierSelect"
       >
         <a-select-option key="all" value="">
-          {{ $t('Show All') }}
+          {{ $t('label.show.all') }}
         </a-select-option>
         <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
           {{ network.name }}
@@ -118,22 +118,22 @@ export default {
       tiersSelect: false,
       columns: [
         {
-          title: this.$t('ipaddress'),
+          title: this.$t('label.ipaddress'),
           dataIndex: 'ipaddress',
           scopedSlots: { customRender: 'ipaddress' }
         },
         {
-          title: this.$t('state'),
+          title: this.$t('label.state'),
           dataIndex: 'state',
           scopedSlots: { customRender: 'state' }
         },
         {
-          title: this.$t('vm'),
+          title: this.$t('label.vm'),
           dataIndex: 'virtualmachineid',
           scopedSlots: { customRender: 'virtualmachineid' }
         },
         {
-          title: this.$t('Network'),
+          title: this.$t('label.network'),
           dataIndex: 'associatednetworkname',
           scopedSlots: { customRender: 'associatednetworkname' }
         },

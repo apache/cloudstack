@@ -32,8 +32,8 @@
       @change="handleTableChange"
       :scroll="{ y: 225 }"
     >
-      <template v-slot:account><a-icon type="user" /> {{ $t('account') }}</template>
-      <template v-slot:domain><a-icon type="block" /> {{ $t('domain') }}</template>
+      <template v-slot:account><a-icon type="user" /> {{ $t('label.account') }}</template>
+      <template v-slot:domain><a-icon type="block" /> {{ $t('label.domain') }}</template>
     </a-table>
   </div>
 </template>
@@ -65,7 +65,7 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('sshKeyPairs'),
+          title: this.$t('label.sshkeypairs'),
           width: '40%'
         },
         {
@@ -79,7 +79,7 @@ export default {
           width: '30%'
         }
       ],
-      selectedRowKeys: [this.$t('noselect')],
+      selectedRowKeys: [this.$t('label.noselect')],
       dataItems: []
     }
   },
@@ -130,8 +130,8 @@ export default {
           this.selectedRowKeys = [this.preFillContent.keypair]
           this.$emit('select-ssh-key-pair-item', this.preFillContent.keypair)
         } else {
-          this.selectedRowKeys = [this.$t('noselect')]
-          this.$emit('select-ssh-key-pair-item', this.$t('noselect'))
+          this.selectedRowKeys = [this.$t('label.noselect')]
+          this.$emit('select-ssh-key-pair-item', this.$t('label.noselect'))
         }
       }
     }
@@ -140,7 +140,7 @@ export default {
     initDataItem () {
       this.dataItems = []
       this.dataItems.push({
-        name: this.$t('noselect'),
+        name: this.$t('label.noselect'),
         account: '-',
         domain: '-'
       })

@@ -17,7 +17,7 @@
 
 export default {
   name: 'accountuser',
-  title: 'Users',
+  title: 'label.users',
   icon: 'user',
   hidden: true,
   permission: ['listUsers'],

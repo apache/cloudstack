@@ -21,7 +21,7 @@
       <a-row>
         <a-col :md="colContraned" :lg="colContraned">
           <a-form-item
-            :label="this.$t('cpunumber')"
+            :label="this.$t('label.cpunumber')"
             :validate-status="errors.cpu.status"
             :help="errors.cpu.message">
             <a-row :gutter="12">
@@ -45,7 +45,7 @@
         </a-col>
         <a-col :md="8" :lg="8" v-show="!isConstrained">
           <a-form-item
-            :label="this.$t('cpuspeed')"
+            :label="this.$t('label.cpuspeed')"
             :validate-status="errors.cpuspeed.status"
             :help="errors.cpuspeed.message">
             <a-input-number
@@ -56,7 +56,7 @@
         </a-col>
         <a-col :md="colContraned" :lg="colContraned">
           <a-form-item
-            :label="this.$t('memory')"
+            :label="this.$t('label.memory')"
             :validate-status="errors.memory.status"
             :help="errors.memory.message">
             <a-row :gutter="12">

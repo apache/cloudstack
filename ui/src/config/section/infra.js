@@ -29,13 +29,13 @@ import ilbvms from '@/config/section/infra/ilbvms'
 
 export default {
   name: 'infra',
-  title: 'Infrastructure',
+  title: 'label.infrastructure',
   icon: 'bank',
   permission: ['listInfrastructure'],
   children: [
     {
       name: 'infrasummary',
-      title: 'Summary',
+      title: 'label.summary',
       icon: 'read',
       permission: ['listInfrastructure'],
       component: () => import('@/views/infra/InfraSummary.vue')
@@ -53,7 +53,7 @@ export default {
     ilbvms,
     {
       name: 'cpusocket',
-      title: 'CPU Sockets',
+      title: 'label.cpu.sockets',
       icon: 'inbox',
       permission: ['listHosts'],
       params: { type: 'routing' },
@@ -61,14 +61,14 @@ export default {
     },
     {
       name: 'managementserver',
-      title: 'Management Servers',
+      title: 'label.management.servers',
       icon: 'rocket',
       permission: ['listManagementServers'],
       columns: ['name', 'state', 'version']
     },
     {
       name: 'alert',
-      title: 'Alerts',
+      title: 'label.alerts',
       icon: 'flag',
       permission: ['listAlerts'],
       columns: ['name', 'description', 'type', 'sent'],

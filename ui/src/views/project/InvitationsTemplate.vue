@@ -107,38 +107,38 @@ export default {
   created () {
     this.columns = [
       {
-        title: this.$t('project'),
+        title: this.$t('label.project'),
         dataIndex: 'project',
         scopedSlots: { customRender: 'project' }
       },
       {
-        title: this.$t('domain'),
+        title: this.$t('label.domain'),
         dataIndex: 'domain',
         scopedSlots: { customRender: 'domain' }
       },
       {
-        title: this.$t('state'),
+        title: this.$t('label.state'),
         dataIndex: 'state',
         width: 130,
         scopedSlots: { customRender: 'state' },
         filters: [
           {
-            text: this.$t('Pending'),
+            text: this.$t('label.pending'),
             value: 'Pending'
           },
           {
-            text: this.$t('Completed'),
+            text: this.$t('label.completed'),
             value: 'Completed'
           },
           {
-            text: this.$t('Declined'),
+            text: this.$t('label.declined'),
             value: 'Declined'
           }
         ],
         filterMultiple: false
       },
       {
-        title: this.$t('action'),
+        title: this.$t('label.action'),
         dataIndex: 'action',
         width: 80,
         scopedSlots: { customRender: 'action' }
@@ -196,7 +196,7 @@ export default {
     },
     onShowConfirmAcceptInvitation (record) {
       const self = this
-      const title = this.$t('confirmacceptinvitation')
+      const title = this.$t('label.confirmacceptinvitation')
 
       this.$confirm({
         title: title,
@@ -241,7 +241,7 @@ export default {
     },
     onShowConfirmRevokeInvitation (record) {
       const self = this
-      const title = this.$t('confirmdeclineinvitation')
+      const title = this.$t('label.confirmdeclineinvitation')
 
       this.$confirm({
         title: title,

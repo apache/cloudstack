@@ -341,7 +341,7 @@ export default {
     },
     {
       name: 'kubernetes',
-      title: 'Kubernetes',
+      title: 'label.kubernetes',
       icon: kubernetes,
       permission: ['listKubernetesClusters'],
       columns: ['name', 'state', 'size', 'cpunumber', 'memory', 'account', 'zonename'],
@@ -402,7 +402,7 @@ export default {
     },
     {
       name: 'vmgroup',
-      title: 'Instance Groups',
+      title: 'label.instance.groups',
       icon: 'gold',
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       permission: ['listInstanceGroups'],
@@ -438,7 +438,7 @@ export default {
     },
     {
       name: 'ssh',
-      title: 'SSH Key Pairs',
+      title: 'label.ssh.key.pairs',
       icon: 'key',
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listSSHKeyPairs'],
@@ -446,7 +446,7 @@ export default {
       details: ['name', 'fingerprint', 'account', 'domain'],
       related: [{
         name: 'vm',
-        title: 'Instances',
+        title: 'label.instances',
         param: 'keypair'
       }],
       actions: [
@@ -480,7 +480,7 @@ export default {
     },
     {
       name: 'affinitygroup',
-      title: 'Affinity Groups',
+      title: 'label.affinity.groups',
       icon: 'swap',
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
@@ -488,7 +488,7 @@ export default {
       details: ['name', 'id', 'description', 'type', 'account', 'domain'],
       related: [{
         name: 'vm',
-        title: 'Instances',
+        title: 'label.instances',
         param: 'affinitygroupid'
       }],
       actions: [

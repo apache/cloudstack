@@ -65,12 +65,12 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('Affinity Groups'),
+          title: this.$t('label.affinity.groups'),
           width: '40%'
         },
         {
           dataIndex: 'description',
-          title: this.$t('description'),
+          title: this.$t('label.description'),
           width: '60%'
         }
       ],

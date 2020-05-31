@@ -34,14 +34,14 @@
               :form="form"
               layout="vertical"
               @submit="handleSubmit">
-              <a-form-item :label="$t('filter')">
+              <a-form-item :label="$t('label.filter')">
                 <a-select
                   allowClear
                   mode="multiple"
                   v-decorator="['filter']">
                   <a-select-option
                     v-for="(opt) in filterOpts"
-                    :key="opt.id">{{ $t(opt.name) }}</a-select-option>
+                    :key="opt.id">{{ $t('label.' + opt.name) }}</a-select-option>
                 </a-select>
               </a-form-item>
               <div class="filter-group-button">

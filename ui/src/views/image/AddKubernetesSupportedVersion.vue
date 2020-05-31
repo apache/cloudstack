@@ -22,21 +22,21 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('semanticversion')">
+        <a-form-item :label="$t('label.semanticversion')">
           <a-input
             v-decorator="['semanticversion', {
               rules: [{ required: true, message: 'Please enter Kubernetes semantic version' }]
             }]"
             :placeholder="apiParams.semanticversion.description"/>
         </a-form-item>
-        <a-form-item :label="$t('name')">
+        <a-form-item :label="$t('label.name')">
           <a-input
             v-decorator="['name', {
               rules: [{ message: 'Please enter name' }]
             }]"
-            :placeholder="$t('name')"/>
+            :placeholder="$t('label.name')"/>
         </a-form-item>
-        <a-form-item :label="$t('zoneid')">
+        <a-form-item :label="$t('label.zoneid')">
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
@@ -63,21 +63,21 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('url')">
+        <a-form-item :label="$t('label.url')">
           <a-input
             v-decorator="['url', {
               rules: [{ required: true, message: 'Please enter binaries ISO URL' }]
             }]"
             :placeholder="apiParams.url.description" />
         </a-form-item>
-        <a-form-item :label="$t('checksum')">
+        <a-form-item :label="$t('label.checksum')">
           <a-input
             v-decorator="['checksum', {
               rules: [{ required: false, message: 'Please enter input' }]
             }]"
             :placeholder="apiParams.checksum.description" />
         </a-form-item>
-        <a-form-item :label="$t('mincpunumber')">
+        <a-form-item :label="$t('label.mincpunumber')">
           <a-input
             v-decorator="['mincpunumber', {
               rules: [{ required: true, message: 'Please enter value' },
@@ -93,7 +93,7 @@
             }]"
             :placeholder="apiParams.mincpunumber.description"/>
         </a-form-item>
-        <a-form-item :label="$t('minmemory')">
+        <a-form-item :label="$t('label.minmemory')">
           <a-input
             v-decorator="['minmemory', {
               rules: [{ required: true, message: 'Please enter value' },
@@ -111,8 +111,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
