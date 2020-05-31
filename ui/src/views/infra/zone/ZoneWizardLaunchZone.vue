@@ -58,7 +58,7 @@
             class="step-error"
             v-if="step.status===status.FAILED"
           >
-            <div><strong>{{ $t('error.something.went.wrong.please.correct.the.following') }}:</strong></div>
+            <div><strong>{{ $t('label.error.something.went.wrong.please.correct.the.following') }}:</strong></div>
             <div>{{ messageError }}</div>
           </a-card>
         </a-step>

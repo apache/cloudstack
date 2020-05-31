@@ -63,7 +63,7 @@
           </a-select>
         </div>
         <div class="form__item" style="margin-left: auto;">
-          <div class="form__label">{{ $t('label.add.VM') }}</div>
+          <div class="form__label">{{ $t('label.add.vm') }}</div>
           <a-button type="primary" @click="openAddVMModal">{{ $t('label.add') }}</a-button>
         </div>
       </div>

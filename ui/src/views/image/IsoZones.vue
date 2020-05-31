@@ -71,7 +71,7 @@
     <a-modal
       v-if="'copyIso' in $store.getters.apis"
       style="top: 20px;"
-      :title="$t('label.action.copy.ISO')"
+      :title="$t('label.action.copy.iso')"
       :visible="showCopyActionForm"
       :closable="true"
       @ok="handleCopyIsoSubmit"
@@ -226,7 +226,7 @@ export default {
       api('deleteIso', params).then(json => {
         const jobId = json.deleteisoresponse.jobid
         this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.ISO'),
+          title: this.$t('label.action.delete.iso'),
           jobid: jobId,
           description: this.resource.name,
           status: 'progress'
@@ -289,7 +289,7 @@ export default {
         api('copyIso', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
           this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.copy.ISO'),
+            title: this.$t('label.action.copy.iso'),
             jobid: jobId,
             description: this.resource.name,
             status: 'progress'

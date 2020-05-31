@@ -219,7 +219,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger/>
-        <a-modal v-model="modals.vpnConnection" :title="$t('label.create.VPN.connection')" @ok="handleVpnConnectionFormSubmit">
+        <a-modal v-model="modals.vpnConnection" :title="$t('label.create.vpn.connection')" @ok="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
               <a-form-item :label="$t('label.vpncustomergatewayid')">

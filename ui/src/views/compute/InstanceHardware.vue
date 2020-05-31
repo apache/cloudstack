@@ -90,7 +90,7 @@
 
       <a-collapse-panel :header="'Network Adapter(s): ' + (vm && vm.nic ? vm.nic.length : 0)" key="3" >
         <a-button type="primary" @click="showAddModal" :loading="loadingNic">
-          <a-icon type="plus"></a-icon> {{ $t('label.network.addVM') }}
+          <a-icon type="plus"></a-icon> {{ $t('label.network.addvm') }}
         </a-button>
         <a-divider class="divider-small" />
         <a-list
@@ -141,7 +141,7 @@
                         @click="fetchSecondaryIPs(item.id)" />
                     </a-tooltip>
                     <a-popconfirm
-                      :title="$t('message.network.removeNIC')"
+                      :title="$t('message.network.removenic')"
                       @confirm="removeNIC(item)"
                       okText="Yes"
                       cancelText="No"
@@ -204,10 +204,10 @@
 
     <a-modal
       :visible="showAddNetworkModal"
-      :title="$t('label.network.addVM')"
+      :title="$t('label.network.addvm')"
       @cancel="closeModals"
       @ok="submitAddNetwork">
-      {{ $t('message.network.addVM.desc') }}
+      {{ $t('message.network.addvm.desc') }}
 
       <div class="modal-form">
         <p class="modal-form__label">{{ $t('label.network') }}:</p>
@@ -231,7 +231,7 @@
       @cancel="closeModals"
       @ok="submitUpdateIP"
     >
-      {{ $t('message.network.updateIp') }}
+      {{ $t('message.network.updateip') }}
 
       <div class="modal-form">
         <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
@@ -248,7 +248,7 @@
       class="wide-modal"
     >
       <p>
-        {{ $t('message.network.secondaryIP') }}
+        {{ $t('message.network.secondaryip') }}
       </p>
       <a-divider />
       <a-input placeholder="Enter new secondary IP address" v-model="newSecondaryIp"></a-input>

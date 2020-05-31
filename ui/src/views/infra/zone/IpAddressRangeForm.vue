@@ -73,7 +73,7 @@
                   }
                 ]
               }]"
-              :placeholder="$t('label.start.IP')"
+              :placeholder="$t('label.start.ip')"
             />
           </a-form-item>
           <a-form-item :style="{ display: 'inline-block', width: '14%' }">
@@ -90,7 +90,7 @@
                     message: 'Please enter a valid IPv4 address.'
                   }]
               }]"
-              :placeholder="$t('label.end.IP')"
+              :placeholder="$t('label.end.ip')"
             />
           </a-form-item>
           <a-form-item :style="{ display: 'inline-block', width: '14%' }">
@@ -117,7 +117,7 @@
       @cancel="() => { showError = false }"
       centered
     >
-      <span>{{ $t('message.required.add.least.IP') }}</span>
+      <span>{{ $t('message.required.add.least.ip') }}</span>
     </a-modal>
   </div>
 </template>
@@ -166,12 +166,12 @@ export default {
           width: 120
         },
         {
-          title: this.$t('label.start.IP'),
+          title: this.$t('label.start.ip'),
           dataIndex: 'startIp',
           width: 130
         },
         {
-          title: this.$t('label.end.IP'),
+          title: this.$t('label.end.ip'),
           dataIndex: 'endIp',
           width: 130
         },

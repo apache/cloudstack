@@ -51,7 +51,7 @@
           </a-select>
         </div>
         <div class="form__item">
-          <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.VMs') }}</div>
+          <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
           <a-button type="primary" @click="handleOpenAddVMModal">Add</a-button>
         </div>
       </div>
@@ -414,7 +414,7 @@ export default {
           scopedSlots: { customRender: 'stickiness' }
         },
         {
-          title: this.$t('label.add.VMs'),
+          title: this.$t('label.add.vms'),
           scopedSlots: { customRender: 'add' }
         },
         {
