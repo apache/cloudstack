@@ -18,11 +18,11 @@
 <template>
   <div class="page-header-index-wide page-header-wrapper-grid-content-main">
     <a-row :gutter="12">
-      <a-col :md="24" :lg="7" style="margin-bottom: 12px">
+      <a-col :md="24" :lg="device === 'desktop' ? 7 : 8" style="margin-bottom: 12px">
         <slot name="left">
         </slot>
       </a-col>
-      <a-col :md="24" :lg="17">
+      <a-col :md="24" :lg="device === 'desktop' ? 17 : 16">
         <slot name="right">
         </slot>
       </a-col>
@@ -31,8 +31,11 @@
 </template>
 
 <script>
+import { mixinDevice } from '@/utils/mixin.js'
+
 export default {
-  name: 'ResourceLayout'
+  name: 'ResourceLayout',
+  mixins: [mixinDevice]
 }
 </script>
 

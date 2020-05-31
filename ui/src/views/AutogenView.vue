@@ -19,11 +19,11 @@
   <div>
     <a-card class="breadcrumb-card">
       <a-row>
-        <a-col :span="12" style="padding-left: 6px">
+        <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
           <breadcrumb :resource="resource">
             <a-tooltip placement="bottom" slot="end">
               <template slot="title">
-                {{ "Refresh" }}
+                {{ $t('label.refresh') }}
               </template>
               <a-button
                 style="margin-top: 4px"
@@ -32,13 +32,15 @@
                 size="small"
                 icon="reload"
                 @click="fetchData()">
-                {{ "Refresh" }}
+                {{ $t('label.refresh') }}
               </a-button>
             </a-tooltip>
           </breadcrumb>
         </a-col>
-        <a-col :span="12">
-          <span style="float: right">
+        <a-col
+          :span="device === 'mobile' ? 24 : 12"
+          :style="device !== 'mobile' ? { 'margin-bottom': '-6px' } : { 'margin-top': '12px', 'margin-bottom': '-6px' }">
+          <span :style="device !== 'mobile' ? { float: 'right' } : {}">
             <action-button
               style="margin-bottom: 5px"
               :loading="loading"
@@ -896,7 +898,7 @@ export default {
 .breadcrumb-card {
   margin-left: -24px;
   margin-right: -24px;
-  margin-top: -16px;
+  margin-top: -18px;
   margin-bottom: 12px;
 }
 

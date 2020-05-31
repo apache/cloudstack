@@ -97,7 +97,7 @@ export default {
 <style lang="less" scoped>
 .project {
   &-select {
-    width: 30vw;
+    width: 40vw;
   }
 
   &-icon {
