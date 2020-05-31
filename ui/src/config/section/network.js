@@ -117,7 +117,7 @@ export default {
         param: 'vpcid'
       }, {
         name: 'ilbvm',
-        title: 'label.internal.lb.vms',
+        title: 'label.internal.lb',
         param: 'vpcid'
       }],
       tabs: [{

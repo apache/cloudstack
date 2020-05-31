@@ -49,7 +49,7 @@ export default {
         param: 'virtualmachineid'
       }, {
         name: 'backup',
-        title: 'label.backups',
+        title: 'label.backup',
         param: 'virtualmachineid'
       }, {
         name: 'affinitygroup',

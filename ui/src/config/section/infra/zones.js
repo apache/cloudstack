@@ -36,7 +36,7 @@ export default {
     param: 'zoneid'
   }, {
     name: 'storagepool',
-    title: 'label.primate.storage',
+    title: 'label.primary.storage',
     param: 'zoneid'
   }, {
     name: 'imagestore',
@@ -47,7 +47,7 @@ export default {
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
-    name: 'physical.networks',
+    name: 'physical.network',
     component: () => import('@/views/infra/zone/PhysicalNetworksTab.vue')
   }, {
     name: 'system.vms',

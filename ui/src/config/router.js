@@ -183,7 +183,7 @@ export function asyncRouterMap () {
           icon: 'dashboard',
           tabs: [
             {
-              name: 'Dashboard',
+              name: 'dashboard',
               component: () => import('@/views/dashboard/UsageDashboardChart')
             },
             {

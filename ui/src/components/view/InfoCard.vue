@@ -96,9 +96,13 @@
               <template slot="title">
                 <span>Copy ID</span>
               </template>
-              <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="resource.id" style="margin-left: -5px">
-                <a-icon type="barcode" style="padding-left: 4px; margin-top: 4px"/>
-              </a-button>
+              <a-button
+                style="margin-left: -5px"
+                shape="circle"
+                icon="barcode"
+                type="dashed"
+                size="small"
+                v-clipboard:copy="resource.id" />
             </a-tooltip>
             <span style="margin-left: 10px;">{{ resource.id }}</span>
           </div>

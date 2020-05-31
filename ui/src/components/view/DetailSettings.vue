@@ -23,7 +23,7 @@
       message="Please stop the virtual machine to access settings" />
     <div v-else>
       <div v-show="!showAddDetail">
-        <a-button type="dashed" style="width: 100%" icon="plus" @click="showAddDetail = true">Add Setting</a-button>
+        <a-button type="dashed" style="width: 100%" icon="plus" @click="showAddDetail = true">{{ $t('label.add.setting') }}</a-button>
       </div>
       <div v-show="showAddDetail">
         <a-auto-complete
@@ -40,8 +40,8 @@
           :dataSource="detailOptions[newKey]"
           placeholder="Value"
           @change="e => onAddInputChange(e, 'newValue')" />
-        <a-button type="primary" style="width: 25%" icon="plus" @click="addDetail">Add Setting</a-button>
-        <a-button type="dashed" style="width: 25%" icon="close" @click="showAddDetail = false">Cancel</a-button>
+        <a-button type="primary" style="width: 25%" icon="plus" @click="addDetail">{{ $t('label.add.setting') }}</a-button>
+        <a-button type="dashed" style="width: 25%" icon="close" @click="showAddDetail = false">{{ $t('label.cancel') }}</a-button>
       </div>
     </div>
     <a-list size="large">
@@ -59,7 +59,7 @@
                 @change="val => handleInputChange(val, index)"
                 @pressEnter="e => updateDetail(index)" />
             </span>
-            <span v-else @click="showEditDetail(index)">{{ item.value }}</span>
+            <span v-else>{{ item.value }}</span>
           </span>
         </a-list-item-meta>
         <div slot="actions" v-if="!disableSettings">

@@ -15,7 +15,7 @@
           @keydown.esc="editableValueKey = null"
           @pressEnter="updateData(item)">
         </a-input>
-        <span v-else class="value" @click="setEditableSetting(item, index)">
+        <span v-else class="value">
           {{ item.value }}
         </span>
       </div>

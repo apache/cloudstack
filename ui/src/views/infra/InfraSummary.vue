@@ -36,10 +36,10 @@
             size="small"
             shape="round"
             @click="sslFormVisible = true">
-            {{ $t('label.setup.ssl.certificate') }}
+            {{ $t('label.sslcertificates') }}
           </a-button>
           <a-modal
-            :title="$t('label.ssl.certificate')"
+            :title="$t('label.sslcertificates')"
             :visible="sslFormVisible"
             :footer="null"
             @cancel="sslModalClose">
@@ -127,11 +127,11 @@
               </a-form-item>
 
               <a-form-item class="controls">
-                <a-button @click="this.sslModalClose" type="danger" class="close-button">
-                  Cancel
+                <a-button @click="this.sslModalClose" class="close-button">
+                  {{ $t('label.cancel' ) }}
                 </a-button>
                 <a-button type="primary" htmlType="submit" :loading="sslFormSubmitting">
-                  Submit
+                  {{ $t('label.submit' ) }}
                 </a-button>
               </a-form-item>
             </a-form>

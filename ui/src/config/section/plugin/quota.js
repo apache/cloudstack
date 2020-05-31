@@ -31,7 +31,7 @@ export default {
     },
     {
       name: 'quotatariff',
-      title: 'label.tariff',
+      title: 'label.quota.tariff',
       icon: 'credit-card',
       permission: ['quotaTariffList'],
       columns: ['usageName', 'description', 'usageUnit', 'tariffValue'],
@@ -39,7 +39,7 @@ export default {
     },
     {
       name: 'quotaemailtemplate',
-      title: 'label.email.template',
+      title: 'label.templatetype',
       icon: 'mail',
       permission: ['quotaEmailTemplateList'],
       columns: ['templatetype', 'templatesubject', 'templatebody'],
