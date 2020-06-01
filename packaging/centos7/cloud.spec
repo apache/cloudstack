@@ -74,12 +74,10 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
 Requires: genisoimage
-Requires: mysql-connector-python
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
-Requires: python3-dns
 Requires: python3-setuptools
 # TODO
 # Requires: mysql-connector-python3
@@ -93,8 +91,6 @@ Summary: Apache CloudStack common files and scripts
 Requires: python
 Requires: python3
 Requires: python3-pip
-# TODO
-# Requires: python3-netaddr
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -115,7 +111,7 @@ Requires: iproute
 Requires: ipset
 Requires: perl
 # TODO
-# Requires: python3-libvirt
+# Requires: python36-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
@@ -364,9 +360,6 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
-
-%post common
-pip3 install argparse netaddr
 
 %preun management
 /usr/bin/systemctl stop cloudstack-management || true

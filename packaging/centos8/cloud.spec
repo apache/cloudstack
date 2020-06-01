@@ -78,7 +78,6 @@ Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
-Requires: python3-dns
 Requires: python3-setuptools
 Requires: mysql-connector-python3
 Group:     System Environment/Libraries
@@ -91,7 +90,6 @@ Summary: Apache CloudStack common files and scripts
 Requires: python2
 Requires: python3
 Requires: python3-pip
-Requires: python3-netaddr
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -359,9 +357,6 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
-
-%post common
-pip3 install argparse
 
 %preun management
 /usr/bin/systemctl stop cloudstack-management || true
