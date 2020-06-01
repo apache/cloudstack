@@ -20,6 +20,7 @@ package com.cloud.hypervisor.vmware;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
@@ -38,4 +39,6 @@ public interface VmwareDatacenterService extends PluggableService {
     boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws IllegalArgumentException, ResourceInUseException;
 
     List<? extends VmwareDatacenter> listVmwareDatacenters(ListVmwareDcsCmd cmd) throws IllegalArgumentException, CloudRuntimeException;
+
+    List<? extends VsphereStoragePolicy> importVsphereStoragePolicies(ImportVsphereStoragePoliciesCmd cmd);
 }

@@ -195,6 +195,72 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hype
 -- Copy XenServer 8.0 hypervisor guest OS mappings to XenServer8.1
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '8.1.0', guest_os_name, guest_os_id, utc_timestamp(), 0 FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='8.0.0';
 
+CREATE TABLE IF NOT EXISTS `cloud`.`vsphere_storage_policy` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) UNIQUE,
+  `zone_id` bigint(20) unsigned NOT NULL COMMENT 'id of the zone',
+  `policy_id` varchar(255) NOT NULL COMMENT 'the identifier of the Storage Policy in vSphere DataCenter',
+  `name` varchar(255) NOT NULL COMMENT 'name of the storage policy',
+  `description` text COMMENT 'description of the storage policy',
+  `update_time` datetime COMMENT 'last updated when policy imported',
+  `removed` datetime COMMENT 'date removed',
+  PRIMARY KEY (`id`),
+  KEY `fk_vsphere_storage_policy__zone_id` (`zone_id`),
+  UNIQUE KEY (`zone_id`, `policy_id`),
+  CONSTRAINT `fk_vsphere_storage_policy__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`storage_pool` ADD COLUMN `parent` BIGINT(20) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'ID of the Datastore cluster (storage pool) if this is a child in that Datastore cluster';
+
+-- Added parent column to support datastore clusters in vmware vsphere
+DROP VIEW IF EXISTS `cloud`.`storage_pool_view`;
+CREATE VIEW `cloud`.`storage_pool_view` AS
+    SELECT
+        `storage_pool`.`id` AS `id`,
+        `storage_pool`.`uuid` AS `uuid`,
+        `storage_pool`.`name` AS `name`,
+        `storage_pool`.`status` AS `status`,
+        `storage_pool`.`path` AS `path`,
+        `storage_pool`.`pool_type` AS `pool_type`,
+        `storage_pool`.`host_address` AS `host_address`,
+        `storage_pool`.`created` AS `created`,
+        `storage_pool`.`removed` AS `removed`,
+        `storage_pool`.`capacity_bytes` AS `capacity_bytes`,
+        `storage_pool`.`capacity_iops` AS `capacity_iops`,
+        `storage_pool`.`scope` AS `scope`,
+        `storage_pool`.`hypervisor` AS `hypervisor`,
+        `storage_pool`.`storage_provider_name` AS `storage_provider_name`,
+        `storage_pool`.`parent` AS `parent`,
+        `cluster`.`id` AS `cluster_id`,
+        `cluster`.`uuid` AS `cluster_uuid`,
+        `cluster`.`name` AS `cluster_name`,
+        `cluster`.`cluster_type` AS `cluster_type`,
+        `data_center`.`id` AS `data_center_id`,
+        `data_center`.`uuid` AS `data_center_uuid`,
+        `data_center`.`name` AS `data_center_name`,
+        `data_center`.`networktype` AS `data_center_type`,
+        `host_pod_ref`.`id` AS `pod_id`,
+        `host_pod_ref`.`uuid` AS `pod_uuid`,
+        `host_pod_ref`.`name` AS `pod_name`,
+        `storage_pool_tags`.`tag` AS `tag`,
+        `op_host_capacity`.`used_capacity` AS `disk_used_capacity`,
+        `op_host_capacity`.`reserved_capacity` AS `disk_reserved_capacity`,
+        `async_job`.`id` AS `job_id`,
+        `async_job`.`uuid` AS `job_uuid`,
+        `async_job`.`job_status` AS `job_status`,
+        `async_job`.`account_id` AS `job_account_id`
+    FROM
+        ((((((`storage_pool`
+        LEFT JOIN `cluster` ON ((`storage_pool`.`cluster_id` = `cluster`.`id`)))
+        LEFT JOIN `data_center` ON ((`storage_pool`.`data_center_id` = `data_center`.`id`)))
+        LEFT JOIN `host_pod_ref` ON ((`storage_pool`.`pod_id` = `host_pod_ref`.`id`)))
+        LEFT JOIN `storage_pool_tags` ON (((`storage_pool_tags`.`pool_id` = `storage_pool`.`id`))))
+        LEFT JOIN `op_host_capacity` ON (((`storage_pool`.`id` = `op_host_capacity`.`host_id`)
+            AND (`op_host_capacity`.`capacity_type` IN (3 , 9)))))
+        LEFT JOIN `async_job` ON (((`async_job`.`instance_id` = `storage_pool`.`id`)
+            AND (`async_job`.`instance_type` = 'StoragePool')
+            AND (`async_job`.`job_status` = 0))));
+
 ALTER TABLE `cloud`.`image_store` ADD COLUMN `readonly` boolean DEFAULT false COMMENT 'defines status of image store';
 
 ALTER VIEW `cloud`.`image_store_view` AS

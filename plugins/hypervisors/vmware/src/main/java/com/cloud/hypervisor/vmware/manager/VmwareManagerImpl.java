@@ -38,7 +38,13 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.vmware.VsphereStoragePolicy;
+import com.cloud.hypervisor.vmware.VsphereStoragePolicyVO;
+import com.cloud.hypervisor.vmware.dao.VsphereStoragePolicyDao;
+import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
+import com.vmware.pbm.PbmProfile;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
@@ -208,6 +214,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private UserVmCloneSettingDao cloneSettingDao;
     @Inject
     private TemplateManager templateManager;
+    @Inject
+    private VsphereStoragePolicyDao vsphereStoragePolicyDao;
 
     private String _mountParent;
     private StorageLayer _storage;
@@ -1381,6 +1389,51 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Zone with id:[" + zoneId + "] exists.");
         }
+    }
+
+    @Override
+    public List<? extends VsphereStoragePolicy> importVsphereStoragePolicies(ImportVsphereStoragePoliciesCmd cmd) {
+        Long zoneId = cmd.getZoneId();
+        // Validate Id of zone
+        doesZoneExist(zoneId);
+
+        // Get DC associated with this zone
+        VmwareDatacenterVO vmwareDatacenter;
+        String vmwareDcName;
+        String vCenterHost;
+        String userName;
+        String password;
+        DatacenterMO dcMo = null;
+        final VmwareDatacenterZoneMapVO vmwareDcZoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
+        // Check if zone is associated with VMware DC
+        if (vmwareDcZoneMap == null) {
+            throw new CloudRuntimeException("Zone " + zoneId + " is not associated with any VMware datacenter.");
+        }
+
+        final long vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
+        vmwareDatacenter = vmwareDcDao.findById(vmwareDcId);
+        vmwareDcName = vmwareDatacenter.getVmwareDatacenterName();
+        vCenterHost = vmwareDatacenter.getVcenterHost();
+        userName = vmwareDatacenter.getUser();
+        password = vmwareDatacenter.getPassword();
+        List<PbmProfile> storageProfiles = null;
+        try {
+            VmwareContext context = VmwareContextFactory.getContext(vCenterHost, userName, password);
+            PbmProfileManagerMO profileManagerMO = new PbmProfileManagerMO(context);
+            storageProfiles = profileManagerMO.getStorageProfiles();
+        } catch (Exception e) {
+            String msg = String.format("Unable to list storage profiles from DC %s due to : %s", vmwareDcName, VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        for (PbmProfile storageProfile : storageProfiles) {
+            VsphereStoragePolicyVO StoragePolicyVO = new VsphereStoragePolicyVO(zoneId, storageProfile.getProfileId().toString(), storageProfile.getName(), storageProfile.getDescription());
+            vsphereStoragePolicyDao.persist(StoragePolicyVO);
+        }
+
+        List<VsphereStoragePolicyVO> storagePolicies = vsphereStoragePolicyDao.listAll();
+        return storagePolicies;
     }
 
     @Override
