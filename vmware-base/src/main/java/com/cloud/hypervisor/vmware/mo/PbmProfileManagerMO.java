@@ -44,7 +44,7 @@ public class PbmProfileManagerMO extends BaseMO {
         super(context, morType, morValue);
     }
 
-    public List<PbmProfileId> getProfileIds() throws Exception {
+    public List<PbmProfileId> getStorageProfileIds() throws Exception {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Querying vCenter " + _context.getServerAddress() + " for profiles");
         }
@@ -52,8 +52,8 @@ public class PbmProfileManagerMO extends BaseMO {
         return profileIds;
     }
 
-    public List<PbmProfile> getProfiles(PbmProfileResourceType pbmResourceType) throws Exception {
-        List<PbmProfileId> profileIds = getProfileIds();
+    public List<PbmProfile> getStorageProfiles() throws Exception {
+        List<PbmProfileId> profileIds = getStorageProfileIds();
         List<PbmProfile> profiles = _context.getPbmService().pbmRetrieveContent(_mor, profileIds);
         return profiles;
     }
