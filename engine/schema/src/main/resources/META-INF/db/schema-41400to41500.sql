@@ -19,6 +19,8 @@
 -- Schema upgrade from 4.14.0.0 to 4.15.0.0
 --;
 
+-- Change guest OS name to support default CentOS 5 template in XenServer8.0
+UPDATE `cloud`.`guest_os_hypervisor` SET guest_os_name='CentOS 7' where guest_os_id=(SELECT guest_os_id from `cloud`.`vm_template` WHERE unique_name='centos56-x86_64-xen') AND hypervisor_type='Xenserver' AND hypervisor_version='8.0.0';
 
 -- Add XenServer 8.1 hypervisor capabilities
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported) values (UUID(), 'XenServer', '8.1.0', 1000, 253, 64, 1);
