@@ -1054,6 +1054,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(UpdateVmwareDcCmd.class);
         cmdList.add(RemoveVmwareDcCmd.class);
         cmdList.add(ListVmwareDcsCmd.class);
+        cmdList.add(ImportVsphereStoragePoliciesCmd.class);
         return cmdList;
     }
 
@@ -1422,7 +1423,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             PbmProfileManagerMO profileManagerMO = new PbmProfileManagerMO(context);
             storageProfiles = profileManagerMO.getStorageProfiles();
         } catch (Exception e) {
-            String msg = String.format("Unable to list storage profiles from DC %s due to : %s", vmwareDcName, VmwareHelper.getExceptionMessage(e);
+            String msg = String.format("Unable to list storage profiles from DC %s due to : %s", vmwareDcName, VmwareHelper.getExceptionMessage(e));
             s_logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
