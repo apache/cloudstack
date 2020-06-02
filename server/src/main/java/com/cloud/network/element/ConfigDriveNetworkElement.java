@@ -476,7 +476,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return true;
     }
 
-    public static void addConfigDriveDisk(final VirtualMachineProfile profile, final DataStore dataStore) throws ResourceUnavailableException {
+    private void addConfigDriveDisk(final VirtualMachineProfile profile, final DataStore dataStore) throws ResourceUnavailableException {
         boolean isoAvailable = false;
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
         for (DiskTO dataTo : profile.getDisks()) {
