@@ -214,7 +214,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     continue;
                 }
                 hostDao.loadHostTags(h);
-                if (!(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
+                if (!Strings.isNullOrEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
                     continue;
                 }
                 int reserved = hp.second();
@@ -238,7 +238,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             if (!suitable_host_found) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Suitable hosts not found in datacenter ID: %s for node %d", zone.getUuid(), i));
+                    LOGGER.info(String.format("Suitable hosts not found in datacenter ID: %s for node %d, with offering ID: %s and hypervisor: %s", zone.getUuid(), i, offering.getUuid(), clusterTemplate.getHypervisorType().toString()));
                 }
                 break;
             }
@@ -249,8 +249,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             return new DeployDestination(zone, null, null, null);
         }
-        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%1$s memory=%2$s)",
-                cpu_requested * nodesCount, ram_requested * nodesCount);
+        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%d) with offering ID: %s and hypervisor: %s",
+                cpu_requested * nodesCount, ram_requested * nodesCount, offering.getUuid(), clusterTemplate.getHypervisorType().toString());
         LOGGER.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }

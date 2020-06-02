@@ -527,7 +527,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
                 HostVO h = hp.first();
                 hostDao.loadHostTags(h);
-                if (!(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
+                if (!Strings.isNullOrEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
                     continue;
                 }
                 int reserved = hp.second();
@@ -552,7 +552,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             if (!suitable_host_found) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Suitable hosts not found in datacenter ID: %s for node %d", zone.getUuid(), i));
+                    LOGGER.info(String.format("Suitable hosts not found in datacenter ID: %s for node %d with offering ID: %s", zone.getUuid(), i, offering.getUuid()));
                 }
                 break;
             }
@@ -563,8 +563,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             return new DeployDestination(zone, null, planCluster, null);
         }
-        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%1$s memory=%2$s)",
-                cpu_requested * nodesCount, ram_requested * nodesCount);
+        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%d) with offering ID: %s",
+                cpu_requested * nodesCount, ram_requested * nodesCount, offering.getUuid());
         LOGGER.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }
