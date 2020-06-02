@@ -79,8 +79,7 @@ Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
 Requires: python3-setuptools
-# TODO
-# Requires: mysql-connector-python3
+Requires: mysql-connector-python3
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -110,8 +109,7 @@ Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
-# TODO
-# Requires: python36-libvirt
+Requires: python36-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
@@ -195,9 +193,7 @@ if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
    FLAGS="$FLAGS -Dsimulator"
 fi
 
-# TODO : Revert
-# mvn -Psystemvm,developer $FLAGS clean package
-mvn -Psystemvm,developer $FLAGS clean package  -DskipTests -T4 -Dcheckstyle.skip
+mvn -Psystemvm,developer $FLAGS clean package
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -366,8 +362,6 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 /usr/bin/systemctl off cloudstack-management || true
 
 %pre management
-# TODO
-pip3 install mysql-connector-python
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
@@ -417,8 +411,6 @@ if [ "$1" == "0" ] ; then
 fi
 
 %pre agent
-# TODO
-pip3 install libvirt-python
 
 # save old configs if they exist (for upgrade). Otherwise we may lose them
 # when the old packages are erased. There are a lot of properties files here.
