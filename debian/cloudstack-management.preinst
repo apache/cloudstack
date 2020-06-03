@@ -19,8 +19,6 @@
 
 set -e
 
-pip3 install mysql-connector-python
-
 if [ "$1" = upgrade ]; then
     # Remove old tomcat symlinks and old env file
     if [ -L "/usr/share/cloudstack-management/lib" ]
