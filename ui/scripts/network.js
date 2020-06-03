@@ -1805,9 +1805,9 @@
                                                     args.$select.change(function() {
                                                         var name = $(this).children(':selected').val();
                                                         var desc = config_list[name].desc;
-                                                        $(this).parent().parent().find('.description').html(desc);
+                                                        $(this).parent().parent().find('.description').text(desc);
                                                         var dvalue = config_list[name].defaultvalue;
-                                                        $(this).parent().parent().find('.defaultvalue').html(dvalue);
+                                                        $(this).parent().parent().find('.defaultvalue').text(dvalue);
                                                     });
                                                 }
                                             },
@@ -1921,7 +1921,7 @@
                                                             });
                                                             if (this.defaultvalue == "") {
                                                                 $.extend(config, {
-                                                                    defaultvalue: "<null>"
+                                                                    defaultvalue: "<Not set>"
                                                                 });
                                                             }
                                                             return config;
@@ -6075,7 +6075,7 @@
                                                             });
                                                             if (this.defaultvalue == "") {
                                                                 $.extend(config, {
-                                                                    defaultvalue: "<null>"
+                                                                    defaultvalue: "<Not set>"
                                                                 });
                                                             }
                                                             return config;
