@@ -623,13 +623,19 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             keepAliveEnabled = false;
         }
 
-        if ((http && !keepAliveEnabled) || httpbasedStickiness) {
+        if (http || httpbasedStickiness) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             result.add(sb.toString());
-            sb = new StringBuilder();
-            sb.append("\t").append("option httpclose");
-            result.add(sb.toString());
+            if (keepAliveEnabled) {
+                sb = new StringBuilder();
+                sb.append("\t").append("option http-keep-alive");
+                result.add(sb.toString());
+            } else {
+                sb = new StringBuilder();
+                sb.append("\t").append("option httpclose");
+                result.add(sb.toString());
+            }
         }
 
         result.add(blankLine);
@@ -645,9 +651,13 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final StringBuilder rule = new StringBuilder("\nlisten ").append(ruleName).append("\n\tbind ").append(statsIp).append(":").append(lbCmd.lbStatsPort);
 
         // TODO DH: write test for this in both cases
-        if (!lbCmd.keepAliveEnabled) {
-            s_logger.info("Haproxy mode http enabled");
-            rule.append("\n\tmode http\n\toption httpclose");
+        rule.append("\n\tmode http");
+        if (lbCmd.keepAliveEnabled) {
+            s_logger.info("Haproxy option http-keep-alive enabled");
+            rule.append("\n\toption http-keep-alive");
+        } else {
+            s_logger.info("Haproxy option httpclose enabled");
+            rule.append("\n\toption httpclose");
         }
 
         Optional<String> lbStatsUri = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbStatsUri.key()));
