@@ -29,7 +29,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
-import com.cloud.storage.Storage;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
