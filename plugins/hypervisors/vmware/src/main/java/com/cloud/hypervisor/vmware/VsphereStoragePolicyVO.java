@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.vmware;
 
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
@@ -66,6 +67,15 @@ public class VsphereStoragePolicyVO implements VsphereStoragePolicy {
         this.policyId = policyId;
         this.name = name;
         this.description = description;
+        this.updateTime = DateUtil.currentGMTTime();
+    }
+
+    public VsphereStoragePolicyVO() {
+        uuid = UUID.randomUUID().toString();
+    }
+    public VsphereStoragePolicyVO(long id) {
+        this.id = id;
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
