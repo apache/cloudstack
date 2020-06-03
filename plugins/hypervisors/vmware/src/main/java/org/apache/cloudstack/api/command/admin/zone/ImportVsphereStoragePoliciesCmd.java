@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.api.command.admin.zone;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -29,6 +30,7 @@ import com.cloud.hypervisor.vmware.VsphereStoragePolicy;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -72,15 +74,23 @@ public class ImportVsphereStoragePoliciesCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        final DataCenter dataCenter = _resourceService.getZone(getZoneId());
+        if (dataCenter == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find zone by ID: " + getZoneId());
+        }
+
         List<? extends VsphereStoragePolicy> storagePolicies = _vmwareDatacenterService.importVsphereStoragePolicies(this);
         final ListResponse<ImportVsphereStoragePoliciesResponse> responseList = new ListResponse<>();
         final List<ImportVsphereStoragePoliciesResponse> storagePoliciesResponseList = new ArrayList<>();
         for (VsphereStoragePolicy storagePolicy :  storagePolicies) {
             final ImportVsphereStoragePoliciesResponse storagePoliciesResponse = new ImportVsphereStoragePoliciesResponse();
+            storagePoliciesResponse.setZoneId(dataCenter.getUuid());
             storagePoliciesResponse.setId(storagePolicy.getUuid());
             storagePoliciesResponse.setName(storagePolicy.getName());
             storagePoliciesResponse.setPolicyId(storagePolicy.getPolicyId());
             storagePoliciesResponse.setDescription(storagePolicy.getDescription());
+            storagePoliciesResponse.setObjectName("StoragePolicy");
+
             storagePoliciesResponseList.add(storagePoliciesResponse);
         }
         responseList.setResponses(storagePoliciesResponseList);
