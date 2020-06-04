@@ -45,8 +45,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
 
     @Override
     public void updateMetrics(final Long vmId, final Long size, final Long virtualSize) {
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        try {
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             SearchCriteria<UsageBackupVO> sc = this.createSearchCriteria();
             sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
             UsageBackupVO vo = findOneBy(sc);
@@ -57,8 +56,6 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
             }
         } catch (final Exception e) {
             LOGGER.error("Error updating backup metrics: " + e.getMessage(), e);
-        } finally {
-            txn.close();
         }
     }
 
