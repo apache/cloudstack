@@ -125,7 +125,7 @@ public class CertServiceImpl implements CertService {
         final String chain = certCmd.getChain();
         final String name = certCmd.getName();
 
-        validate(cert, key, password, chain);
+        validate(cert, key, password, chain, certCmd.getEnabledRevocationCheck());
         s_logger.debug("Certificate Validation succeeded");
 
         final String fingerPrint = CertificateHelper.generateFingerPrint(parseCertificate(cert));
@@ -278,7 +278,7 @@ public class CertServiceImpl implements CertService {
         return certResponseList;
     }
 
-    private void validate(final String certInput, final String keyInput, final String password, final String chainInput) {
+    private void validate(final String certInput, final String keyInput, final String password, final String chainInput, boolean revocationEnabled) {
         try {
             List<Certificate> chain = null;
             final Certificate cert = parseCertificate(certInput);
@@ -292,7 +292,7 @@ public class CertServiceImpl implements CertService {
             validateKeys(cert.getPublicKey(), key);
 
             if (chainInput != null) {
-                validateChain(chain, cert);
+                validateChain(chain, cert, revocationEnabled);
             }
         } catch (final IOException | CertificateException e) {
             throw new IllegalStateException("Parsing certificate/key failed: " + e.getMessage(), e);
@@ -388,7 +388,7 @@ public class CertServiceImpl implements CertService {
         }
     }
 
-    private void validateChain(final List<Certificate> chain, final Certificate cert) {
+    private void validateChain(final List<Certificate> chain, final Certificate cert, boolean revocationEnabled) {
 
         final List<Certificate> certs = new ArrayList<Certificate>();
         final Set<TrustAnchor> anchors = new HashSet<TrustAnchor>();
@@ -410,7 +410,7 @@ public class CertServiceImpl implements CertService {
         PKIXBuilderParameters params = null;
         try {
             params = new PKIXBuilderParameters(anchors, target);
-            params.setRevocationEnabled(false);
+            params.setRevocationEnabled(revocationEnabled);
             params.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(certs)));
             final CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
             builder.build(params);
