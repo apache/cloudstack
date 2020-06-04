@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.vmware;
+package com.cloud.dc;;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDao;

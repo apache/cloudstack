@@ -14,9 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.vmware.dao;
+package com.cloud.dc.dao;
 
-import com.cloud.hypervisor.vmware.VsphereStoragePolicyVO;
+import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
