@@ -51,6 +51,7 @@
                         v-decorator="['podid']"
                         :options="podSelectOptions"
                         :loading="loading.pods"
+                        @change="onSelectPodId"
                       ></a-select>
                     </a-form-item>
                     <a-form-item
@@ -60,6 +61,7 @@
                         v-decorator="['clusterid']"
                         :options="clusterSelectOptions"
                         :loading="loading.clusters"
+                        @change="onSelectClusterId"
                       ></a-select>
                     </a-form-item>
                     <a-form-item
@@ -348,6 +350,8 @@ export default {
   data () {
     return {
       zoneId: '',
+      podId: null,
+      clusterId: null,
       zoneSelected: false,
       vm: {},
       options: {
@@ -529,7 +533,8 @@ export default {
           list: 'listClusters',
           isLoad: !this.isNormalAndDomainUser,
           options: {
-            zoneid: _.get(this.zone, 'id')
+            zoneid: _.get(this.zone, 'id'),
+            podid: this.podId
           },
           field: 'clusterid'
         },
@@ -538,6 +543,8 @@ export default {
           isLoad: !this.isNormalAndDomainUser,
           options: {
             zoneid: _.get(this.zone, 'id'),
+            podid: this.podId,
+            clusterid: this.clusterId,
             state: 'Up',
             type: 'Routing'
           },
@@ -1092,6 +1099,8 @@ export default {
     onSelectZoneId (value) {
       this.dataPreFill = {}
       this.zoneId = value
+      this.podId = null
+      this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
       this.form.setFieldsValue({
@@ -1108,6 +1117,17 @@ export default {
         }
       })
       this.fetchAllTemplates()
+    },
+    onSelectPodId (value) {
+      this.podId = value
+
+      this.fetchOptions(this.params.clusters, 'clusters')
+      this.fetchOptions(this.params.hosts, 'hosts')
+    },
+    onSelectClusterId (value) {
+      this.clusterId = value
+
+      this.fetchOptions(this.params.hosts, 'hosts')
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
