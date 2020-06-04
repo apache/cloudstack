@@ -31,6 +31,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -484,6 +485,11 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public TemplateManager templateManager() {
             return Mockito.mock(TemplateManager.class);
+        }
+
+        @Bean
+        public VsphereStoragePolicyDao vsphereStoragePolicyDao() {
+            return Mockito.mock(VsphereStoragePolicyDao.class);
         }
 
         public static class Library implements TypeFilter {
