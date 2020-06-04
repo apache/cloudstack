@@ -629,7 +629,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             result.add(sb.toString());
             if (keepAliveEnabled) {
                 sb = new StringBuilder();
-                sb.append("\t").append("option http-keep-alive");
+                sb.append("\t").append("no option forceclose");
                 result.add(sb.toString());
             } else {
                 sb = new StringBuilder();
@@ -654,7 +654,6 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         rule.append("\n\tmode http");
         if (lbCmd.keepAliveEnabled) {
             s_logger.info("Haproxy option http-keep-alive enabled");
-            rule.append("\n\toption http-keep-alive");
         } else {
             s_logger.info("Haproxy option httpclose enabled");
             rule.append("\n\toption httpclose");
