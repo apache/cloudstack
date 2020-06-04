@@ -38,9 +38,9 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.hypervisor.vmware.VsphereStoragePolicy;
-import com.cloud.hypervisor.vmware.VsphereStoragePolicyVO;
-import com.cloud.hypervisor.vmware.dao.VsphereStoragePolicyDao;
+import com.cloud.dc.VsphereStoragePolicy;
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
 import com.vmware.pbm.PbmProfile;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;

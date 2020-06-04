@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.admin.zone;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.VsphereStoragePolicy;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -25,7 +26,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
-import com.cloud.hypervisor.vmware.VsphereStoragePolicy;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;

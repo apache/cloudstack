@@ -295,4 +295,5 @@
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />
   <bean id="templateOVFPropertiesDaoImpl" class="com.cloud.storage.dao.TemplateOVFPropertiesDaoImpl" />
   <bean id="routerHealthCheckResultsDaoImpl" class="com.cloud.network.dao.RouterHealthCheckResultDaoImpl" />
+  <bean id="VsphereStoragePolicyDaoImpl" class="com.cloud.dc.dao.VsphereStoragePolicyDaoImpl" />
 </beans>

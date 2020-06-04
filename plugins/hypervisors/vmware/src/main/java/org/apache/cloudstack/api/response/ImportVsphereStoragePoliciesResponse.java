@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.hypervisor.vmware.VsphereStoragePolicy;
+import com.cloud.dc.VsphereStoragePolicy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;

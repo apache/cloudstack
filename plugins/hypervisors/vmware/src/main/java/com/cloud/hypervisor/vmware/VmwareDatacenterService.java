@@ -19,6 +19,7 @@ package com.cloud.hypervisor.vmware;
 
 import java.util.List;
 
+import com.cloud.dc.VsphereStoragePolicy;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;

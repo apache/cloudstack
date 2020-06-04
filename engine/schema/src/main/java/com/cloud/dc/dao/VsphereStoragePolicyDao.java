@@ -14,18 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.vmware;
+package com.cloud.dc.dao;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.utils.db.GenericDao;
 
-public interface VsphereStoragePolicy extends Identity, InternalIdentity {
-
-    long getZoneId();
-
-    String getPolicyId();
-
-    String getName();
-
-    String getDescription();
+public interface VsphereStoragePolicyDao extends GenericDao<VsphereStoragePolicyVO, Long> {
 }
