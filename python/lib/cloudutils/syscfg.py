@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from .utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7,serviceOpsRedhat8
+from .utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7Later
 from .serviceConfig import *
 class sysConfigFactory:
     @staticmethod
@@ -146,12 +146,12 @@ class sysConfigAgentRedhatBase(sysConfigAgent):
 
 class sysConfigAgentRedhat7Base(sysConfigAgent):
     def __init__(self, env):
-        self.svo = serviceOpsRedhat7()
+        self.svo = serviceOpsRedhat7Later()
         super(sysConfigAgentRedhat7Base, self).__init__(env)
 
 class sysConfigAgentRedhat8Base(sysConfigAgent):
     def __init__(self, env):
-        self.svo = serviceOpsRedhat8()
+        self.svo = serviceOpsRedhat7Later()
         super(sysConfigAgentRedhat8Base, self).__init__(env)
 
 class sysConfigAgentUbuntu(sysConfigAgent):

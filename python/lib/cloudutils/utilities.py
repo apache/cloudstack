@@ -213,18 +213,9 @@ class serviceOpsUbuntu(serviceOps):
         return self.startService(servicename,force=forcestart)
 
     def isKVMEnabled(self):
-        return bash("kvm-ok").isSuccess() 
+        return bash("kvm-ok").isSuccess()
 
-class serviceOpsRedhat7(serviceOps):
-    def isServiceRunning(self, servicename):
-        try:
-            o = bash("systemctl is-active " + servicename)
-            textout = o.getStdout()
-            return "inactive" not in textout and "failed" not in textout
-        except:
-            return False
-
-class serviceOpsRedhat8(serviceOps):
+class serviceOpsRedhat7Later(serviceOps):
     def isServiceRunning(self, servicename):
         try:
             o = bash("systemctl is-active " + servicename)
