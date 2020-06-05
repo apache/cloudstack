@@ -54,7 +54,7 @@
           :key="stat.type">
           <chart-card :loading="loading">
             <div class="capacity-dashboard-chart-card-inner">
-              <h4>{{ $t(stat.name) }}</h4>
+              <h4>{{ $t(ts[stat.name]) }}</h4>
               <a-progress
                 type="dashboard"
                 :status="getStatus(parseFloat(stat.percentused))"
@@ -138,7 +138,20 @@ export default {
       events: [],
       zones: [],
       zoneSelected: {},
-      stats: []
+      stats: [],
+      ts: {
+        CPU: 'label.cpu',
+        CPU_CORE: 'label.cpunumber',
+        GPU: 'label.gpu',
+        LOCAL_STORAGE: 'label.local.storage',
+        MEMORY: 'label.memory',
+        PRIVATE_IP: 'label.management.ips',
+        SECONDARY_STORAGE: 'label.secondary.storage',
+        STORAGE: 'label.storage',
+        STORAGE_ALLOCATED: 'label.primary.storage',
+        VIRTUAL_NETWORK_PUBLIC_IP: 'label.public.ips',
+        VLAN: 'label.vlan'
+      }
     }
   },
   mounted () {
@@ -181,7 +194,7 @@ export default {
         case 'STORAGE':
         case 'STORAGE_ALLOCATED':
         case 'SECONDARY_STORAGE':
-        case 'CAPACITY_TYPE_LOCAL_STORAGE':
+        case 'LOCAL_STORAGE':
           value = parseFloat(value / (1024 * 1024 * 1024.0), 10).toFixed(2)
           if (value >= 1024.0) {
             value = parseFloat(value / 1024.0).toFixed(2) + ' TB'

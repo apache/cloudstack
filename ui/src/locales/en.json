@@ -1166,7 +1166,7 @@
 "label.maxvpc": "Max. VPCs",
 "label.may.continue": "You may now continue.",
 "label.memallocated": "Mem Allocation",
-"label.memory": "Memory (in MB)",
+"label.memory": "Memory",
 "label.memory.maximum.mb": "Max Memory (in MB)",
 "label.memory.total": "Memory Total",
 "label.memory.used": "Memory Used",

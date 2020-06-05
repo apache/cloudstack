@@ -136,27 +136,27 @@
           }]"
         />
       </a-form-item>
-            <a-form-item
-              :label="$t('label.ip6gateway')"
-              v-bind="formItemLayout"
-              v-if="isAdvancedZone && securityGroupsEnabled"
-              has-feedback>
-              <a-input
-                v-decorator="['ip6gateway', {
-                  rules: [
-                    {
-                      message: 'Please enter IpV6 Gateway',
-                      initialValue: ip6gateway
-                    },
-                    {
-                      validator: checkIpFormat,
-                      ipV6: true,
-                      message: 'Please enter a valid IPv6 Gatweay.'
-                    }
-                  ]
-                }]"
-              />
-            </a-form-item>
+      <a-form-item
+        :label="$t('label.ip6gateway')"
+        v-bind="formItemLayout"
+        v-if="isAdvancedZone && securityGroupsEnabled"
+        has-feedback>
+        <a-input
+          v-decorator="['ip6gateway', {
+            rules: [
+              {
+                message: 'Please enter IpV6 Gateway',
+                initialValue: ip6gateway
+              },
+              {
+                validator: checkIpFormat,
+                ipV6: true,
+                message: 'Please enter a valid IPv6 Gatweay.'
+              }
+            ]
+          }]"
+        />
+      </a-form-item>
       <a-form-item
         :label="$t('label.internal.dns.1')"
         v-bind="formItemLayout"
