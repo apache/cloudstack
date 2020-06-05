@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ImportVsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -151,6 +152,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
             since = "4.14")
     private String cacheMode;
 
+    @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = ImportVsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware")
+    private Long storagePolicy;
+
 /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -273,6 +277,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return cacheMode;
     }
 
+    public Long getStoragePolicy() {
+        return storagePolicy;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
