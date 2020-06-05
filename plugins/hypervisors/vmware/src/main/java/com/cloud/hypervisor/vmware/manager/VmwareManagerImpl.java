@@ -1429,8 +1429,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         for (PbmProfile storageProfile : storageProfiles) {
-            VsphereStoragePolicyVO StoragePolicyVO = new VsphereStoragePolicyVO(zoneId, storageProfile.getProfileId().getUniqueId(), storageProfile.getName(), storageProfile.getDescription());
-            vsphereStoragePolicyDao.persist(StoragePolicyVO);
+            VsphereStoragePolicyVO storagePolicyVO = vsphereStoragePolicyDao.findByPolicyId(zoneId, storageProfile.getProfileId().getUniqueId());
+            if (storagePolicyVO == null) {
+                storagePolicyVO = new VsphereStoragePolicyVO(zoneId, storageProfile.getProfileId().getUniqueId(), storageProfile.getName(), storageProfile.getDescription());
+                vsphereStoragePolicyDao.persist(storagePolicyVO);
+            } else {
+                storagePolicyVO.setDescription(storageProfile.getDescription());
+                storagePolicyVO.setName(storageProfile.getName());
+                vsphereStoragePolicyDao.update(storagePolicyVO.getId(), storagePolicyVO);
+            }
         }
 
         List<VsphereStoragePolicyVO> storagePolicies = vsphereStoragePolicyDao.listAll();
