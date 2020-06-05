@@ -69,7 +69,7 @@ export default {
     {
       api: 'updateAccount',
       icon: 'edit',
-      label: 'Update Account',
+      label: 'label.action.edit.account',
       dataView: true,
       args: ['newname', 'account', 'domainid', 'networkdomain'],
       mapping: {
@@ -84,7 +84,7 @@ export default {
     {
       api: 'updateResourceCount',
       icon: 'sync',
-      label: 'Update Resource Count',
+      label: 'label.action.update.resource.count',
       dataView: true,
       args: ['account', 'domainid'],
       mapping: {
@@ -99,7 +99,7 @@ export default {
     {
       api: 'enableAccount',
       icon: 'play-circle',
-      label: 'Enable Account',
+      label: 'label.action.enable.account',
       dataView: true,
       show: (record) => { return record.state === 'disabled' || record.state === 'locked' },
       params: { lock: 'false' }
@@ -107,7 +107,7 @@ export default {
     {
       api: 'disableAccount',
       icon: 'pause-circle',
-      label: 'Disable Account',
+      label: 'label.action.disable.account',
       dataView: true,
       show: (record) => { return record.state === 'enabled' },
       args: ['lock'],
@@ -120,7 +120,7 @@ export default {
     {
       api: 'disableAccount',
       icon: 'lock',
-      label: 'Lock account',
+      label: 'label.action.lock.account',
       dataView: true,
       show: (record) => { return record.state === 'enabled' },
       args: ['lock'],
@@ -133,7 +133,7 @@ export default {
     {
       api: 'uploadSslCert',
       icon: 'safety-certificate',
-      label: 'Add certificate',
+      label: 'label.add.certificate',
       dataView: true,
       args: ['name', 'certificate', 'privatekey', 'certchain', 'password', 'account', 'domainid'],
       show: (record) => { return record.state === 'enabled' },
@@ -149,7 +149,7 @@ export default {
     {
       api: 'deleteAccount',
       icon: 'delete',
-      label: 'Delete account',
+      label: 'label.action.delete.account',
       dataView: true,
       hidden: (record) => { return record.name === 'admin' }
     }

@@ -31,7 +31,7 @@ export default {
     {
       api: 'archiveEvents',
       icon: 'book',
-      label: 'Archive Event',
+      label: 'label.archive.events',
       listView: false,
       dataView: true,
       args: ['ids'],
@@ -44,7 +44,7 @@ export default {
     {
       api: 'deleteEvents',
       icon: 'delete',
-      label: 'Delete Event',
+      label: 'label.delete.events',
       listView: false,
       dataView: true,
       args: ['ids'],

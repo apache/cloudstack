@@ -51,7 +51,7 @@ export default {
         {
           api: 'registerTemplate',
           icon: 'plus',
-          label: 'Register Template',
+          label: 'label.action.register.template',
           listView: true,
           popup: true,
           component: () => import('@/views/image/RegisterOrUploadTemplate.vue')
@@ -59,7 +59,7 @@ export default {
         {
           api: 'getUploadParamsForTemplate',
           icon: 'cloud-upload',
-          label: 'Upload Local Template',
+          label: 'label.upload.template.from.local',
           listView: true,
           popup: true,
           component: () => import('@/views/image/RegisterOrUploadTemplate.vue')
@@ -74,7 +74,7 @@ export default {
         {
           api: 'extractTemplate',
           icon: 'cloud-download',
-          label: 'Download Template',
+          label: 'label.action.download.template',
           dataView: true,
           show: (record) => { return record && record.isextractable },
           args: ['zoneid', 'mode'],
@@ -91,7 +91,7 @@ export default {
         {
           api: 'updateTemplatePermissions',
           icon: 'reconciliation',
-          label: 'Update Template Permissions',
+          label: 'label.action.share.template',
           dataView: true,
           popup: true,
           show: (record, store) => { return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) || record.templatetype !== 'BUILTIN') },
@@ -125,7 +125,7 @@ export default {
         {
           api: 'registerIso',
           icon: 'plus',
-          label: 'Register ISO',
+          label: 'label.action.register.iso',
           listView: true,
           popup: true,
           component: () => import('@/views/image/RegisterOrUploadIso.vue')
@@ -133,7 +133,7 @@ export default {
         {
           api: 'getUploadParamsForIso',
           icon: 'cloud-upload',
-          label: 'Upload Local ISO',
+          label: 'label.upload.iso.from.local',
           listView: true,
           popup: true,
           component: () => import('@/views/image/RegisterOrUploadIso.vue')
@@ -148,7 +148,7 @@ export default {
         {
           api: 'extractIso',
           icon: 'cloud-download',
-          label: 'Download ISO',
+          label: 'label.action.download.iso',
           dataView: true,
           show: (record) => { return record && record.isextractable },
           args: ['zoneid', 'mode'],
@@ -165,7 +165,7 @@ export default {
         {
           api: 'updateIsoPermissions',
           icon: 'reconciliation',
-          label: 'Update ISO Permissions',
+          label: 'label.action.edit.iso',
           dataView: true,
           args: ['op', 'accounts', 'projectids'],
           popup: true,

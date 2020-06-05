@@ -80,7 +80,7 @@ export default {
     {
       api: 'updateHost',
       icon: 'pause-circle',
-      label: 'Disable Host',
+      label: 'label.disable.host',
       dataView: true,
       defaultArgs: { allocationstate: 'Disable' },
       show: (record) => { return record.resourcestate === 'Enabled' }
@@ -88,7 +88,7 @@ export default {
     {
       api: 'updateHost',
       icon: 'play-circle',
-      label: 'Enable Host',
+      label: 'label.enable.host',
       dataView: true,
       defaultArgs: { allocationstate: 'Enable' },
       show: (record) => { return record.resourcestate === 'Disabled' }
@@ -235,7 +235,7 @@ export default {
     {
       api: 'deleteHost',
       icon: 'delete',
-      label: 'Remove Host',
+      label: 'label.action.remove.host',
       dataView: true,
       args: ['forced'],
       show: (record) => { return ['Maintenance', 'Disabled', 'Down', 'Alert', 'Disconnected'].includes(record.resourcestate) }

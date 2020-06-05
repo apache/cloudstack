@@ -33,7 +33,7 @@ export default {
     {
       api: 'createRole',
       icon: 'plus',
-      label: 'Create Role',
+      label: 'label.add.role',
       listView: true,
       args: ['name', 'description', 'type'],
       mapping: {
@@ -45,7 +45,7 @@ export default {
     {
       api: 'updateRole',
       icon: 'edit',
-      label: 'Edit Role',
+      label: 'label.edit.role',
       dataView: true,
       args: ['name', 'description', 'type'],
       mapping: {

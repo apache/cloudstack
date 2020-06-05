@@ -45,7 +45,7 @@ export default {
     {
       api: 'createPhysicalNetwork',
       icon: 'plus',
-      label: 'Create Physical Network',
+      label: 'label.add.physical.network',
       listView: true,
       args: ['name', 'zoneid', 'isolationmethods', 'vlan', 'tags', 'networkspeed', 'broadcastdomainrange'],
       mapping: {
@@ -57,7 +57,7 @@ export default {
     {
       api: 'updatePhysicalNetwork',
       icon: 'play-circle',
-      label: 'Enable Physical Network',
+      label: 'label.action.enable.physical.network',
       dataView: true,
       args: ['state'],
       show: (record) => { return record.state === 'Disabled' },
@@ -70,7 +70,7 @@ export default {
     {
       api: 'updatePhysicalNetwork',
       icon: 'stop',
-      label: 'Disable Physical Network',
+      label: 'label.action.disable.physical.network',
       dataView: true,
       args: ['state'],
       show: (record) => { return record.state === 'Enabled' },
@@ -121,7 +121,7 @@ export default {
     {
       api: 'deletePhysicalNetwork',
       icon: 'delete',
-      label: 'Delete Physical Network',
+      label: 'label.action.delete.physical.network',
       dataView: true
     }
   ]

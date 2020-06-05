@@ -63,7 +63,7 @@ export default {
     {
       api: 'createZone',
       icon: 'plus',
-      label: 'Add Zone',
+      label: 'label.add.zone',
       listView: true,
       popup: true,
       component: () => import('@/views/infra/zone/ZoneWizard.vue')
@@ -71,7 +71,7 @@ export default {
     {
       api: 'updateZone',
       icon: 'edit',
-      label: 'Edit Zone',
+      label: 'label.action.edit.zone',
       dataView: true,
       args: ['name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'guestcidraddress', 'domain', 'localstorageenabled'],
       show: (record) => { return record.networktype === 'Advanced' }
@@ -79,7 +79,7 @@ export default {
     {
       api: 'updateZone',
       icon: 'edit',
-      label: 'Edit Zone',
+      label: 'label.action.edit.zone',
       dataView: true,
       args: ['name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'domain', 'localstorageenabled'],
       show: (record) => { return record.networktype === 'Basic' }

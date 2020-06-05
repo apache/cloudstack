@@ -88,7 +88,7 @@ export default {
     {
       api: 'linkDomainToLdap',
       icon: 'link',
-      label: 'Link Domain to LDAP Group/OU',
+      label: 'label.link.domain.to.ldap',
       listView: true,
       dataView: true,
       args: ['type', 'domainid', 'name', 'accounttype', 'admin'],
@@ -107,7 +107,7 @@ export default {
     {
       api: 'deleteDomain',
       icon: 'delete',
-      label: 'label.delete.domain',
+      label: 'label.action.delete.domain',
       listView: true,
       dataView: true,
       show: (record) => { return record.level !== 0 },

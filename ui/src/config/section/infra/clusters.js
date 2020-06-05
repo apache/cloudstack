@@ -62,7 +62,7 @@ export default {
     {
       api: 'updateCluster',
       icon: 'plus-square',
-      label: 'Manage Cluster',
+      label: 'label.action.manage.cluster',
       dataView: true,
       defaultArgs: { managedstate: 'Managed' },
       show: (record) => { return record.clustertype === 'CloudManaged' && ['PrepareUnmanaged', 'Unmanaged'].includes(record.state) }
@@ -70,7 +70,7 @@ export default {
     {
       api: 'updateCluster',
       icon: 'minus-square',
-      label: 'Unmanage Cluster',
+      label: 'label.action.unmanage.cluster',
       dataView: true,
       defaultArgs: { managedstate: 'Unmanaged' },
       show: (record) => { return record.clustertype === 'CloudManaged' && record.state === 'Enabled' }

@@ -55,7 +55,7 @@ export default {
         {
           api: 'createNetwork',
           icon: 'plus',
-          label: 'Add Network',
+          label: 'label.add.network',
           listView: true,
           popup: true,
           component: () => import('@/views/network/CreateNetwork.vue')
@@ -63,21 +63,21 @@ export default {
         {
           api: 'updateNetwork',
           icon: 'edit',
-          label: 'Update Network',
+          label: 'label.edit',
           dataView: true,
           args: ['name', 'displaytext', 'guestvmcidr']
         },
         {
           api: 'restartNetwork',
           icon: 'sync',
-          label: 'Restart Network',
+          label: 'label.restart.network',
           dataView: true,
           args: ['makeredundant', 'cleanup']
         },
         {
           api: 'replaceNetworkACLList',
           icon: 'swap',
-          label: 'Replace ACL List',
+          label: 'label.replace.acl.list',
           dataView: true,
           show: (record) => { return record.vpcid },
           args: ['aclid', 'networkid'],
@@ -94,7 +94,7 @@ export default {
         {
           api: 'deleteNetwork',
           icon: 'delete',
-          label: 'Delete Network',
+          label: 'label.action.delete.network',
           dataView: true
         }
       ]
@@ -128,28 +128,28 @@ export default {
         {
           api: 'createVPC',
           icon: 'plus',
-          label: 'Add VPC',
+          label: 'label.add.vpc',
           listView: true,
           args: ['name', 'displaytext', 'zoneid', 'cidr', 'networkdomain', 'vpcofferingid', 'start']
         },
         {
           api: 'updateVPC',
           icon: 'edit',
-          label: 'Update VPC',
+          label: 'label.edit',
           dataView: true,
           args: ['name', 'displaytext']
         },
         {
           api: 'restartVPC',
           icon: 'sync',
-          label: 'Restart VPC',
+          label: 'label.restart.vpc',
           dataView: true,
           args: ['makeredundant', 'cleanup']
         },
         {
           api: 'deleteVPC',
           icon: 'delete',
-          label: 'Delete VPC',
+          label: 'label.remove.vpc',
           dataView: true
         }
       ]
@@ -176,14 +176,14 @@ export default {
         {
           api: 'createSecurityGroup',
           icon: 'plus',
-          label: 'Add Security Group',
+          label: 'label.add.security.group',
           listView: true,
           args: ['name', 'description']
         },
         {
           api: 'deleteSecurityGroup',
           icon: 'delete',
-          label: 'Delete Security Group',
+          label: 'label.action.delete.security.group',
           dataView: true,
           show: (record) => { return record.name !== 'default' }
         }
@@ -221,14 +221,14 @@ export default {
         {
           api: 'associateIpAddress',
           icon: 'plus',
-          label: 'Acquire New IP',
+          label: 'label.acquire.new.ip',
           listView: true,
           args: ['networkid']
         },
         {
           api: 'enableStaticNat',
           icon: 'plus-circle',
-          label: 'Enable Static NAT',
+          label: 'label.action.enable.static.nat',
           dataView: true,
           show: (record) => { return !record.virtualmachineid && !record.issourcenat },
           popup: true,
@@ -237,7 +237,7 @@ export default {
         {
           api: 'disableStaticNat',
           icon: 'minus-circle',
-          label: 'Disable Static NAT',
+          label: 'label.action.disable.static.nat',
           dataView: true,
           show: (record) => { return record.virtualmachineid },
           args: ['ipaddressid'],
@@ -250,7 +250,7 @@ export default {
         {
           api: 'disassociateIpAddress',
           icon: 'delete',
-          label: 'Release IP',
+          label: 'label.action.release.ip',
           dataView: true,
           show: (record) => { return !record.issourcenat }
         }
@@ -276,7 +276,7 @@ export default {
         {
           api: 'createPrivateGateway',
           icon: 'plus',
-          label: 'Add Private Gateway',
+          label: 'label.add.private.gateway',
           listView: true,
           args: ['physicalnetworkid', 'vlan', 'ipaddress', 'gateway', 'netmask', 'sourcenatsupported', 'aclid'],
           mapping: {
@@ -288,7 +288,7 @@ export default {
         {
           api: 'replaceNetworkACLList',
           icon: 'swap',
-          label: 'Replace ACL List',
+          label: 'label.replace.acl.list',
           dataView: true,
           args: ['aclid', 'gatewayid'],
           mapping: {
@@ -304,7 +304,7 @@ export default {
         {
           api: 'deletePrivateGateway',
           icon: 'delete',
-          label: 'Delete Private Gateway',
+          label: 'label.delete.gateway',
           dataView: true
         }
       ]
@@ -321,14 +321,14 @@ export default {
         {
           api: 'createVpnGateway',
           icon: 'plus',
-          label: 'Create VPN Gateway',
+          label: 'label.add.vpn.gateway',
           listView: true,
           args: ['vpcid']
         },
         {
           api: 'deleteVpnGateway',
           icon: 'delete',
-          label: 'Delete VPN Gateway',
+          label: 'label.delete.vpn.gateway',
           dataView: true
         }
       ]
@@ -345,7 +345,7 @@ export default {
         {
           api: 'createVpnConnection',
           icon: 'plus',
-          label: 'Create VPN Connection',
+          label: 'label.create.vpn.connection',
           listView: true,
           args: ['s2scustomergatewayid', 's2svpngatewayid', 'passive'],
           mapping: {
@@ -360,13 +360,13 @@ export default {
         {
           api: 'resetVpnConnection',
           icon: 'reload',
-          label: 'Reset VPN Connection',
+          label: 'label.reset.vpn.connection',
           dataView: true
         },
         {
           api: 'deleteVpnConnection',
           icon: 'delete',
-          label: 'Delete VPN Connection',
+          label: 'label.delete.vpn.connection',
           dataView: true
         }
       ]
@@ -391,21 +391,21 @@ export default {
         {
           api: 'createNetworkACLList',
           icon: 'plus',
-          label: 'Add ACL List',
+          label: 'label.add.acl.list',
           listView: true,
           args: ['name', 'description', 'vpcid']
         },
         {
           api: 'updateNetworkACLList',
           icon: 'edit',
-          label: 'Edit ACL List',
+          label: 'label.edit.acl.list',
           dataView: true,
           args: ['name', 'description']
         },
         {
           api: 'deleteNetworkACLList',
           icon: 'delete',
-          label: 'Delete ACL List',
+          label: 'label.delete.acl.list',
           dataView: true
         }
       ]
@@ -430,7 +430,7 @@ export default {
         {
           api: 'createLoadBalancer',
           icon: 'plus',
-          label: 'Add Internal LB',
+          label: 'label.add.internal.lb',
           listView: true,
           args: ['name', 'description', 'sourceipaddress', 'sourceport', 'instanceport', 'algorithm', 'networkid', 'sourceipaddressnetworkid', 'scheme'],
           mapping: {
@@ -453,7 +453,7 @@ export default {
         {
           api: 'assignToLoadBalancerRule',
           icon: 'plus',
-          label: 'Assign VMs',
+          label: 'label.assign.vms',
           dataView: true,
           popup: true,
           component: () => import('@/views/network/InternalLBAssignVmForm.vue')
@@ -461,7 +461,7 @@ export default {
         {
           api: 'deleteLoadBalancer',
           icon: 'delete',
-          label: 'Delete LB',
+          label: 'label.delete.internal.lb',
           dataView: true
         }
       ]
@@ -477,14 +477,14 @@ export default {
         {
           api: 'addVpnUser',
           icon: 'plus',
-          label: 'Add VPN User',
+          label: 'label.add.vpn.user',
           listView: true,
           args: ['username', 'password', 'domainid', 'account']
         },
         {
           api: 'removeVpnUser',
           icon: 'delete',
-          label: 'Delete VPN User',
+          label: 'label.delete.vpn.user',
           dataView: true,
           args: ['username', 'domainid', 'account'],
           mapping: {
@@ -512,7 +512,7 @@ export default {
         {
           api: 'createVpnCustomerGateway',
           icon: 'plus',
-          label: 'Add VPN Customer Gateway',
+          label: 'label.add.vpn.customer.gateway',
           listView: true,
           popup: true,
           component: () => import('@/views/network/CreateVpnCustomerGateway.vue')
@@ -520,14 +520,14 @@ export default {
         {
           api: 'updateVpnCustomerGateway',
           icon: 'edit',
-          label: 'Edit VPN Customer Gateway',
+          label: 'label.edit',
           dataView: true,
           args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'esppolicy', 'esplifetime', 'dpd', 'forceencap']
         },
         {
           api: 'deleteVpnCustomerGateway',
           icon: 'delete',
-          label: 'Delete VPN Customer Gateway',
+          label: 'label.delete.vpn.customer.gateway',
           dataView: true
         }
       ]
