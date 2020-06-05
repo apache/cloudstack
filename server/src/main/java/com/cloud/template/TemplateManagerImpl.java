@@ -339,6 +339,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Template adapter: " + adapter);
+        }
         TemplateProfile profile = adapter.prepare(cmd);
         VMTemplateVO template = adapter.create(profile);
 

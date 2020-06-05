@@ -28,6 +28,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "template_ovf_properties")
+@Deprecated(since = "now" , forRemoval = true)
 public class TemplateOVFPropertyVO implements OVFProperty {
 
     @Id

@@ -317,10 +317,15 @@ class VmwareVmImplementer {
         }
     }
 
+    // TODO FR37 phase out ovf properties in favor of template details
     private List<OVFPropertyTO> getOvfPropertyList(VirtualMachineProfile vm, Map<String, String> details) {
         List<OVFPropertyTO> ovfProperties = new ArrayList<OVFPropertyTO>();
         for (String detailKey : details.keySet()) {
             if (detailKey.startsWith(ApiConstants.OVF_PROPERTIES)) {
+                // get value from template details using key including ApiConstants.OVF_PROPERTIES prefix
+                // put the resulting json in a OVFPropertyTO named propertyTO
+                // setValue(details.get(detailKey)) on the resulting propTO
+                // skipp all upto ovfProperties.add(propertyTO);
                 String ovfPropKey = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
                 TemplateOVFPropertyVO templateOVFPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), ovfPropKey);
                 if (templateOVFPropertyVO == null) {
