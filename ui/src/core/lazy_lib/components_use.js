@@ -18,7 +18,7 @@
 /* eslint-disable */
 import Vue from 'vue'
 import {
-  LocaleProvider,
+  ConfigProvider,
   Layout,
   Input,
   InputNumber,
@@ -59,7 +59,7 @@ import {
   notification
 } from 'ant-design-vue'
 
-Vue.use(LocaleProvider)
+Vue.use(ConfigProvider)
 Vue.use(Layout)
 Vue.use(Input)
 Vue.use(InputNumber)
