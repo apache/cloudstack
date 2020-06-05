@@ -81,7 +81,7 @@
       <a-form-item
         :label="$t('label.ipv6.dns1')"
         v-bind="formItemLayout"
-        v-if="isAdvancedZone && !securityGroupsEnabled"
+        v-if="isAdvancedZone"
         has-feedback>
         <a-input
           v-decorator="['ipv6Dns1', {
@@ -102,7 +102,7 @@
       <a-form-item
         :label="$t('label.ipv6.dns2')"
         v-bind="formItemLayout"
-        v-if="isAdvancedZone && !securityGroupsEnabled"
+        v-if="isAdvancedZone"
         has-feedback>
         <a-input
           v-decorator="['ipv6Dns2', {
@@ -120,6 +120,43 @@
           }]"
         />
       </a-form-item>
+      <a-form-item
+        :label="$t('label.ip6cidr')"
+        v-bind="formItemLayout"
+        v-if="isAdvancedZone && securityGroupsEnabled"
+        has-feedback>
+        <a-input
+          v-decorator="['ipv6Cidr', {
+            rules: [
+              {
+                message: 'Please enter IpV6 CIDR',
+                initialValue: ip6cidr
+              }
+            ]
+          }]"
+        />
+      </a-form-item>
+            <a-form-item
+              :label="$t('label.ip6gateway')"
+              v-bind="formItemLayout"
+              v-if="isAdvancedZone && securityGroupsEnabled"
+              has-feedback>
+              <a-input
+                v-decorator="['ip6gateway', {
+                  rules: [
+                    {
+                      message: 'Please enter IpV6 Gateway',
+                      initialValue: ip6gateway
+                    },
+                    {
+                      validator: checkIpFormat,
+                      ipV6: true,
+                      message: 'Please enter a valid IPv6 Gatweay.'
+                    }
+                  ]
+                }]"
+              />
+            </a-form-item>
       <a-form-item
         :label="$t('label.internal.dns.1')"
         v-bind="formItemLayout"
