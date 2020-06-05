@@ -31,6 +31,8 @@ public enum LoadBalancerConfigKey {
 
     LbStatsAuth(Category.Stats, "lb.stats.auth", "LB stats auth", String.class, "admin1:AdMiN123", "Enable statistics with authentication and grant access to an account, default is 'admin1:AdMiN123'", Scope.Network, Scope.Vpc),
 
+    GlobalStatsSocket(Category.Stats, "global.stats.socket", "Stats socket enabled/disabled", Boolean.class, "false", "Binds a UNIX socket to /var/run/haproxy.socket, default is 'false'", Scope.Network, Scope.Vpc),
+
     LbTimeoutConnect(Category.General, "lb.timeout.connect", "Maximum time (in ms) to wait for a connection to succeed", Long.class, "5000", "Set the maximum time to wait for a connection attempt to a server to succeed.", Scope.Network, Scope.Vpc, Scope.LoadBalancerRule),
 
     LbTimeoutServer(Category.General, "lb.timeout.server", "Maximum inactivity time (in ms) on server side", Long.class, "50000", "Set the maximum inactivity time on the server side.", Scope.Network, Scope.Vpc, Scope.LoadBalancerRule),

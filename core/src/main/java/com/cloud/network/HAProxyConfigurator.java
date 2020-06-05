@@ -686,7 +686,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         }
 
         final List<String> result = new ArrayList<String>();
-        final List<String> gSection = Arrays.asList(globalSection);
+        List<String> gSection = new ArrayList(Arrays.asList(globalSection));
         //        note that this is overwritten on the String in the static ArrayList<String>
         String maxconn = networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxConn.key()) != null ?
                             networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxConn.key()) :
@@ -697,6 +697,12 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                                     networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxPipes.key()) :
                                     Long.toString(Long.parseLong(maxconn) / 4);
         gSection.set(3, "\tmaxpipes " + maxPipes);
+
+        String statsSocket = networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalStatsSocket.key());
+        if (statsSocket != null && statsSocket.equalsIgnoreCase("true")) {
+            gSection.add("\tstats socket /var/run/haproxy.socket");
+        }
+
         if (s_logger.isDebugEnabled()) {
             for (final String s : gSection) {
                 s_logger.debug("global section: " + s);
