@@ -20,22 +20,7 @@ package org.apache.cloudstack.acl;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-import com.google.common.base.Enums;
-import com.google.common.base.Strings;
-
 public interface ProjectRole extends RoleEntity, InternalIdentity, Identity {
 
     Long getProjectId();
-
-    public enum ProjectRoleType {
-        Admin, Regular;
-
-        public static ProjectRoleType fromString(final String name) {
-            if (!Strings.isNullOrEmpty(name)
-                    && Enums.getIfPresent(RoleType.class, name).isPresent()) {
-                return ProjectRoleType.valueOf(name);
-            }
-            throw new IllegalStateException("Illegal ProjectRoleType name provided");
-        }
-    }
 }

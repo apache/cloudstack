@@ -67,7 +67,11 @@ public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
 
     public ProjectAccountVO(Project project, long accountId, Role accountRole, Long userId, Long projectRoleId) {
         this.accountId = accountId;
-        this.accountRole = accountRole;
+        if (accountRole != null) {
+            this.accountRole = accountRole;
+        } else {
+            this.accountRole = Role.Regular;
+        }
         this.projectId = project.getId();
         this.projectAccountId = project.getProjectAccountId();
         this.userId = userId;

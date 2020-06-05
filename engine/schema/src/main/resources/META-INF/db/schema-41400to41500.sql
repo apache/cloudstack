@@ -106,3 +106,63 @@ ALTER TABLE `cloud`.`project_invitations`
     ADD COLUMN `account_role` varchar(255) NOT NULL DEFAULT 'Regular' COMMENT 'Account role in the project (Owner or Regular)' AFTER `domain_id`,
     ADD CONSTRAINT `fk_project_invitations__user_id` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
     ADD UNIQUE (`project_id`, `user_id`);
+
+-- Alter project_invitation_view to incroporate user_id as a field
+ALTER VIEW `cloud`.`project_invitation_view` AS
+    select
+        project_invitations.id,
+        project_invitations.uuid,
+        project_invitations.email,
+        project_invitations.created,
+        project_invitations.state,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name,
+        account.type account_type,
+        user.id user_id,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path
+    from
+        `cloud`.`project_invitations`
+            left join
+        `cloud`.`account` ON project_invitations.account_id = account.id
+            left join
+        `cloud`.`domain` ON project_invitations.domain_id = domain.id
+            left join
+        `cloud`.`projects` ON projects.id = project_invitations.project_id
+            left join
+        `cloud`.`user` ON project_invitations.user_id = user.id;
+
+-- Alter project_account_view to incorporate user id
+ALTER VIEW `cloud`.`project_account_view` AS
+    select
+        project_account.id,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name,
+        account.type account_type,
+        user.id user_id,
+        user.uuid user_uuid,
+        project_account.account_role,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path
+    from
+        `cloud`.`project_account`
+            inner join
+        `cloud`.`account` ON project_account.account_id = account.id
+            inner join
+        `cloud`.`domain` ON account.domain_id = domain.id
+            inner join
+        `cloud`.`projects` ON projects.id = project_account.project_id
+            left join
+        `cloud`.`user` ON (project_account.user_id = user.id);

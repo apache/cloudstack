@@ -1525,6 +1525,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean activeOnly = cmd.isActiveOnly();
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
+        Long userId = cmd.getUserId();
         boolean isRecursive = cmd.isRecursive();
         boolean listAll = cmd.listAll();
 
@@ -1551,6 +1552,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (projectId != null) {
             sc.setParameters("projectId", projectId);
+        }
+
+        if (userId != null) {
+            sc.setParameters("userId", userId);
         }
 
         if (state != null) {
@@ -1582,6 +1587,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public Pair<List<ProjectAccountJoinVO>, Integer> listProjectAccountsInternal(ListProjectAccountsCmd cmd) {
         long projectId = cmd.getProjectId();
         String accountName = cmd.getAccountName();
+        Long userId = cmd.getUserId();
         String role = cmd.getRole();
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
@@ -1622,6 +1628,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (accountName != null) {
             sc.setParameters("accountName", accountName);
+        }
+
+        if (userId != null) {
+            sc.setParameters("userId", userId);
         }
 
         return _projectAccountJoinDao.searchAndCount(sc, searchFilter);

@@ -18,14 +18,13 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.projects.ProjectAccount;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ProjectAccount.class)
 @SuppressWarnings("unused")
@@ -49,6 +48,10 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     @SerializedName(ApiConstants.ACCOUNT_TYPE)
     @Param(description = "account type (admin, domain-admin, user)")
     private Short accountType;
+
+    @SerializedName(ApiConstants.USER_ID)
+    @Param(description = "aId of the user")
+    private String userId;
 
     @SerializedName(ApiConstants.ROLE)
     @Param(description = "account role in the project (regular,owner)")
@@ -98,6 +101,8 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
+
+    public void setUserId(String userId) { this.userId = userId; }
 
     public void setUsers(List<UserResponse> users) {
         this.users = users;

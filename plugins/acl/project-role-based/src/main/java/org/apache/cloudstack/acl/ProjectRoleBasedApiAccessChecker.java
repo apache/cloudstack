@@ -114,7 +114,8 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
                 }
             }
         }
-        throw new UnavailableCommandException("The API " + apiCommandName + " does not exist or is not available for this account.");
+
+        throw new UnavailableCommandException("The API " + apiCommandName + " cidrs.");
     }
 
     @Override

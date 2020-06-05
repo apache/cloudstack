@@ -695,7 +695,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         ProjectRole projectRole = null;
         if (projectRoleId != null) {
             projectRole = projectRoleDao.findById(projectRoleId);
-            if (projectRole == null || (projectRole != null && projectRole.getProjectId() != projectId)) {
+            if (projectRole == null || projectRole.getProjectId() != projectId) {
                 throw new InvalidParameterValueException("Invalid project role ID for the given project");
             }
         }
@@ -1039,7 +1039,6 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 expireInvitation(invite);
                 throw new InvalidParameterValueException("Invitation is expired for account id=" + accountName + " to the project id=" + projectId);
             } else {
-
                 final ProjectInvitationVO inviteFinal = invite;
                 final Long accountIdFinal = accountId;
                 final String accountNameFinal = accountName;
@@ -1071,7 +1070,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                         if (projectAccount != null) {
                             s_logger.debug("Account " + accountNameFinal + " already added to the project id=" + projectId);
                         } else {
-                            assignUserToProject(project, userId, finalUser.getAccountId(), finalInvite.getAccountRole(), null);
+                            assignUserToProject(project, finalInvite.getForUserId(), finalUser.getAccountId(), finalInvite.getAccountRole(), null);
                         }
                     }
                 } else {

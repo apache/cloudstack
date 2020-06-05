@@ -59,7 +59,7 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "email ID of user to which invitation to the project is going to be sent")
     private String email;
 
-    @Parameter(name = ApiConstants.PROJECT_ROLE_ID, type = BaseCmd.CommandType.UUID, required = true, entityType = ProjectRoleResponse.class,
+    @Parameter(name = ApiConstants.PROJECT_ROLE_ID, type = BaseCmd.CommandType.UUID, entityType = ProjectRoleResponse.class,
             description = "ID of the project role", validations = {ApiArgValidator.PositiveNumber})
     private Long projectRoleId;
 
@@ -133,7 +133,7 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
         if (getUserId() < 1L) {
             throw new InvalidParameterValueException("Invalid User ID provided");
         }
-        if (getProjectRoleId() < 1L) {
+        if (projectRoleId != null && projectRoleId < 1L) {
             throw new InvalidParameterValueException("Invalid Project role ID provided");
         }
     }
