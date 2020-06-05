@@ -20,4 +20,7 @@ import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface VsphereStoragePolicyDao extends GenericDao<VsphereStoragePolicyVO, Long> {
+
+    public VsphereStoragePolicyVO findByPolicyId(Long zoneId, String policyId);
+
 }

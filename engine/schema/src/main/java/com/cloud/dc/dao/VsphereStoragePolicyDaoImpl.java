@@ -39,7 +39,16 @@ public class VsphereStoragePolicyDaoImpl extends GenericDaoBase<VsphereStoragePo
         zoneSearch.done();
 
         policySearch = createSearchBuilder();
+        policySearch.and("zoneId", policySearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         policySearch.and("policyId", policySearch.entity().getPolicyId(), SearchCriteria.Op.EQ);
         policySearch.done();
+    }
+
+    @Override
+    public VsphereStoragePolicyVO findByPolicyId(Long zoneId, String policyId) {
+        SearchCriteria<VsphereStoragePolicyVO> sc = policySearch.create();
+        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("policyId", policyId);
+        return findOneBy(sc);
     }
 }
