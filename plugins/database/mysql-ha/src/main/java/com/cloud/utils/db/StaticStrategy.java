@@ -47,9 +47,9 @@ public class StaticStrategy implements BalanceStrategy {
         List<String> whiteList = new ArrayList<String>(numHosts);
         whiteList.addAll(configuredHosts);
 
-        Map<String, Long> blackList = ((LoadBalancedConnectionProxy) proxy).getGlobalBlacklist();
+        Map<String, Long> denylist = ((LoadBalancedConnectionProxy) proxy).getGlobalDenylist();
 
-        whiteList.removeAll(blackList.keySet());
+        whiteList.removeAll(denylist.keySet());
 
         Map<String, Integer> whiteListMap = this.getArrayIndexMap(whiteList);
 
@@ -77,7 +77,7 @@ public class StaticStrategy implements BalanceStrategy {
                             whiteList.remove(whiteListIndex.intValue());
                             whiteListMap = this.getArrayIndexMap(whiteList);
                         }
-                        ((LoadBalancedConnectionProxy) proxy).addToGlobalBlacklist(hostPortSpec);
+                        ((LoadBalancedConnectionProxy) proxy).addToGlobalDenylist(hostPortSpec);
 
                         if (whiteList.size() == 0) {
                             attempts++;
@@ -90,9 +90,9 @@ public class StaticStrategy implements BalanceStrategy {
                             // start fresh
                             whiteListMap = new HashMap<String, Integer>(numHosts);
                             whiteList.addAll(configuredHosts);
-                            blackList = ((LoadBalancedConnectionProxy) proxy).getGlobalBlacklist();
+                            denylist = ((LoadBalancedConnectionProxy) proxy).getGlobalDenylist();
 
-                            whiteList.removeAll(blackList.keySet());
+                            whiteList.removeAll(denylist.keySet());
                             whiteListMap = this.getArrayIndexMap(whiteList);
                         }
 
