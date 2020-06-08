@@ -213,7 +213,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                     }
                 }
                 if (!vmFoundInKubernetesCluster) {
-                    logAndThrow(Level.ERROR, String.format("VM ID: %s which is not a part of Kubernetes cluster ID: %s is using its network ID: %s", vm.getUuid(), kubernetesCluster.getUuid(), network.getUuid()));
+                    logAndThrow(Level.ERROR, String.format("VM ID: %s which is not a part of Kubernetes cluster ID: %s is using Kubernetes cluster network ID: %s", vm.getUuid(), kubernetesCluster.getUuid(), network.getUuid()));
                 }
             }
         }
