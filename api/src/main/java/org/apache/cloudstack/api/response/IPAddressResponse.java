@@ -150,7 +150,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @Param(description = "is public ip for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
-    @SerializedName("networkname")
+    @SerializedName(ApiConstants.NETWORK_NAME)
     @Param(description="the name of the Network where ip belongs to")
     private String networkName;
 
