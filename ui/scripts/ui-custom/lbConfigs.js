@@ -190,8 +190,6 @@
                                         $.extend(config, {
                                             displayname: config.name
                                         });
-console.log(config.name);
-console.log(config.defaultvalue);
                                         if (config.defaultvalue == "") {
                                             $.extend(config, {
                                                 defaultvalue: "<Not set>"
