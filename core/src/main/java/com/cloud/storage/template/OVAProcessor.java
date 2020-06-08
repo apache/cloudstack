@@ -162,6 +162,9 @@ public class OVAProcessor extends AdapterBase implements Processor {
             }
             return false;
         }
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("We are handling format " + format + ".");
+        }
         return true;
     }
 

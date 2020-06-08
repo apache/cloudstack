@@ -177,14 +177,22 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
      * Persist OVF properties as template details for template with id = templateId
      */
     private void persistOVFProperties(List<OVFPropertyTO> ovfProperties, long templateId) {
-        List<VMTemplateDetailVO> templateDetailsList = new ArrayList<>();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("saving properts for template %d as details", templateId));
+        }
         for (OVFPropertyTO property : ovfProperties) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("saving property %s for template %d as detail", property.getKey(), templateId));
+            }
             persistOvfPropertyAsTemplateDetail(templateId, property);
         }
         persistOvfPropertiesInDedicatedTable(ovfProperties, templateId);
     }
 
     private void persistOvfPropertiesInDedicatedTable(List<OVFPropertyTO> ovfProperties, long templateId) {
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("saving properties for template %d in dedicated table", templateId));
+        }
         List<TemplateOVFPropertyVO> listToPersist = new ArrayList<>();
         for (OVFPropertyTO property : ovfProperties) {
             persistOvfPropertyAsTemplateDetail(templateId, property);
@@ -207,7 +215,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private void persistOvfPropertyAsTemplateDetail(long templateId, OVFPropertyTO property) {
         String key = "ovfProperty-" + property.getKey();
-        templateDetailsDao.removeDetail(templateId,key);
+        if ( templateDetailsDao.findDetail(templateId,key) != null) {
+            s_logger.debug(String.format("detail '%s' existed for template %d, deleting.", key, templateId));
+            templateDetailsDao.removeDetail(templateId,key);
+        }
         String json =  gson.toJson(property);
         VMTemplateDetailVO detailVO = new VMTemplateDetailVO(templateId, key, json, property.isUserConfigurable());
         s_logger.debug("Persisting template details " + detailVO.getName() + " from OVF properties for template " + templateId);
