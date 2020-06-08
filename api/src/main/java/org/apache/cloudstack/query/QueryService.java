@@ -93,7 +93,7 @@ public interface QueryService {
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
 
     static final ConfigKey<String> UserVMDenyListedDetails = new ConfigKey<String>("Advanced", String.class,
-            "user.vm.DenyListed.details", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
+            "user.vm.denylisted.details", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
             "Determines whether users can view certain VM settings. When set to empty, default value used is: rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag.", true);
 
     static final ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<String>("Advanced", String.class,
