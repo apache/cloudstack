@@ -142,6 +142,7 @@ export default {
       ts: {
         CPU: 'label.cpu',
         CPU_CORE: 'label.cpunumber',
+        DIRECT_ATTACHED_PUBLIC_IP: 'label.direct.ips',
         GPU: 'label.gpu',
         LOCAL_STORAGE: 'label.local.storage',
         MEMORY: 'label.memory',
