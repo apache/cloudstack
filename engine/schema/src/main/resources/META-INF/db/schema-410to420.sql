@@ -2065,7 +2065,7 @@ alter table `cloud`.`vpc_gateways` add column network_acl_id bigint unsigned def
 update `cloud`.`vpc_gateways` set network_acl_id = 2;
 
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'VpcManager', 'blacklisted.routes', NULL, 'Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'VpcManager', 'blacklisted.routes', NULL, 'Routes that are denied, can not be used for Static Routes creation for the VPC Private Gateway');
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.dynamic.scale.vm', 'false', 'Enables/Diables dynamically scaling a vm');
 
