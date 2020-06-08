@@ -54,7 +54,7 @@
           :key="stat.type">
           <chart-card :loading="loading">
             <div class="capacity-dashboard-chart-card-inner">
-              <h4>{{ $t(ts[stat.name]) }}</h4>
+              <h3>{{ $t(ts[stat.name]) }}</h3>
               <a-progress
                 type="dashboard"
                 :status="getStatus(parseFloat(stat.percentused))"

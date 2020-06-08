@@ -20,8 +20,8 @@ export default {
   title: 'label.accounts',
   icon: 'team',
   permission: ['listAccounts'],
-  columns: ['name', 'state', 'rolename', 'roletype', 'domain'],
-  details: ['name', 'id', 'rolename', 'roletype', 'domain', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
+  columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
+  details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
   related: [{
     name: 'accountuser',
     title: 'label.users',
@@ -33,13 +33,13 @@ export default {
       component: () => import('@/components/view/DetailsTab.vue')
     },
     {
-      name: 'certificate',
-      component: () => import('@/views/iam/SSLCertificateTab.vue')
-    },
-    {
       name: 'limits',
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
       component: () => import('@/components/view/ResourceLimitTab.vue')
+    },
+    {
+      name: 'certificate',
+      component: () => import('@/views/iam/SSLCertificateTab.vue')
     },
     {
       name: 'settings',

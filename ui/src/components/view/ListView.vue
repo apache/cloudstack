@@ -133,6 +133,10 @@
       <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).route.name !== '404'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
+    <span slot="domainpath" slot-scope="text, record" href="javascript:;">
+      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).route.name !== '404'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
+    </span>
     <a slot="zone" slot-scope="text, record" href="javascript:;">
       <router-link v-if="record.zoneid && !record.zoneid.includes(',') && $router.resolve('/zone/' + record.zoneid).route.name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>

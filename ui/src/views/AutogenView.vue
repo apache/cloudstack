@@ -459,6 +459,8 @@ export default {
           params.name = this.searchQuery
         } else if (this.apiName === 'quotaEmailTemplateList') {
           params.templatetype = this.searchQuery
+        } else if (this.apiName === 'listConfigurations') {
+          params.name = this.searchQuery
         } else {
           params.keyword = this.searchQuery
         }

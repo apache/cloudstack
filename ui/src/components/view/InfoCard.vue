@@ -43,6 +43,9 @@
               <a-tag v-if="resource.type">
                 {{ resource.type }}
               </a-tag>
+              <a-tag v-if="resource.issourcenat">
+                {{ $t('label.issourcenat') }}
+              </a-tag>
               <a-tag v-if="resource.broadcasturi">
                 {{ resource.broadcasturi }}
               </a-tag>

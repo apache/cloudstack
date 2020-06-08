@@ -149,7 +149,7 @@
         <div class="chart-card-inner">
           <router-link :to="{ name: section.substring(0, section.length - 1) }">
             <h2>{{ $t(routes[section].title) }}</h2>
-            <h1><a-icon :type="routes[section].icon" /> {{ stats[section] }}</h1>
+            <h2><a-icon :type="routes[section].icon" /> {{ stats[section] }}</h2>
           </router-link>
         </div>
       </chart-card>
