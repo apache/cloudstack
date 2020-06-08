@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.storage.StorageStats;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -74,6 +76,12 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
         osResponse.setScope(ids.getScope());
         osResponse.setZoneId(ids.getZoneUuid());
         osResponse.setZoneName(ids.getZoneName());
+
+        StorageStats secStorageStats = ApiDBUtils.getSecondaryStorageStatistics(ids.getId());
+        if (secStorageStats != null) {
+            osResponse.setDiskSizeTotal(secStorageStats.getCapacityBytes());
+            osResponse.setDiskSizeUsed(secStorageStats.getByteUsed());
+        }
 
         osResponse.setObjectName("imagestore");
         return osResponse;

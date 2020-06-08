@@ -110,6 +110,7 @@ Requires: iproute
 Requires: ipset
 Requires: perl
 Requires: libvirt-python
+Requires: python36-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent

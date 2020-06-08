@@ -1106,7 +1106,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (hosts != null && !hosts.isEmpty()) {
                 HostVO host = hosts.get(0);
                 if (!hostSupportSnapsthotForVolume(host, volume)) {
-                    throw new CloudRuntimeException("KVM Snapshot is not supported: " + host.getId());
+                    throw new CloudRuntimeException(
+                            "KVM Snapshot is not supported for Running VMs. It is disabled by default due to a possible volume corruption in certain cases. To enable it set global settings kvm.snapshot.enabled to True. See the documentation for more details.");
                 }
             }
         }
