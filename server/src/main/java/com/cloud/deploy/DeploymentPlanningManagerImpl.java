@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.StringUtils;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
 
@@ -1290,6 +1291,18 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             else
                                 requestVolumes = new ArrayList<Volume>();
                             requestVolumes.add(vol);
+
+                            if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
+                                try {
+                                    boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, potentialSPool);
+                                    if (!isStoragePoolStoragepolicyComplaince) {
+                                        continue;
+                                    }
+                                } catch (StorageUnavailableException e) {
+                                    s_logger.warn(String.format("Could not verify storage policy complaince against storage pool %s due to exception %s", potentialSPool.getUuid(), e.getMessage()));
+                                    continue;
+                                }
+                            }
 
                             if (!_storageMgr.storagePoolHasEnoughIops(requestVolumes, potentialSPool) ||
                                 !_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool, potentialHost.getClusterId()))

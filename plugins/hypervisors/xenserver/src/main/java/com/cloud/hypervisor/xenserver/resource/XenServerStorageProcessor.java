@@ -35,6 +35,7 @@ import java.util.UUID;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -213,6 +214,12 @@ public class XenServerStorageProcessor implements StorageProcessor {
     @Override
     public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
         return null;
+    }
+
+    @Override
+    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+        s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for XenServerStorageProcessor");
+        return new Answer(cmd,false,"Not applicable used for XenServerStorageProcessor");
     }
 
     @Override

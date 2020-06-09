@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.StorageUnavailableException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -215,6 +216,17 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Volume volume = volumeDao.findById(dskCh.getVolumeId());
         List<Volume> requestVolumes = new ArrayList<>();
         requestVolumes.add(volume);
+        if (dskCh.getHypervisorType() == HypervisorType.VMware) {
+            try {
+                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, pool);
+                if (!isStoragePoolStoragepolicyComplaince) {
+                    return false;
+                }
+            } catch (StorageUnavailableException e) {
+                s_logger.warn(String.format("Could not verify storage policy complaince against storage pool %s due to exception %s", pool.getUuid(), e.getMessage()));
+                return false;
+            }
+        }
         return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool, plan.getClusterId());
     }
 

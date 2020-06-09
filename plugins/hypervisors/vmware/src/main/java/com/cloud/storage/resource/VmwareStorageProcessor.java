@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -3578,6 +3579,38 @@ public class VmwareStorageProcessor implements StorageProcessor {
     @Override
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         return null;
+    }
+
+    @Override
+    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+        String primaryStorageNameLabel = cmd.getStoragePool().getUuid();
+        String storagePolicyId = cmd.getStoragePolicyId();
+        VmwareContext context = hostService.getServiceContext(cmd);
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+            ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStorageNameLabel);
+            if (morPrimaryDs == null) {
+                String msg = "Unable to find datastore: " + primaryStorageNameLabel;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
+            boolean isDatastoreStoragePolicyComplaint = primaryDsMo.isDatastoreStoragePolicyComplaint(storagePolicyId);
+
+            String failedMessage = String.format("DataStore %s is not complaince with storage policy id %s", primaryStorageNameLabel, storagePolicyId);
+            if (!isDatastoreStoragePolicyComplaint)
+                return new Answer(cmd, isDatastoreStoragePolicyComplaint, failedMessage);
+            else
+                return new Answer(cmd, isDatastoreStoragePolicyComplaint, null);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                hostService.invalidateServiceContext(context);
+            }
+            String details = String.format("Exception while checking if datastore %s is storage policy %s complaince : %s", primaryStorageNameLabel, storagePolicyId,  VmwareHelper.getExceptionMessage(e));
+            s_logger.error(details, e);
+            return new Answer(cmd, false, details);
+        }
     }
 
     @Override
