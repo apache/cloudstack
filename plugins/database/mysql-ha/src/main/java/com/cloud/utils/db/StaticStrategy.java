@@ -47,7 +47,7 @@ public class StaticStrategy implements BalanceStrategy {
         List<String> allowList = new ArrayList<String>(numHosts);
         allowList.addAll(configuredHosts);
 
-        Map<String, Long> denylist = ((LoadBalancedConnectionProxy) proxy).getGlobalBlackist();
+        Map<String, Long> denylist = ((LoadBalancedConnectionProxy) proxy).getGlobalBlacklist();
 
         allowList.removeAll(denylist.keySet());
 
