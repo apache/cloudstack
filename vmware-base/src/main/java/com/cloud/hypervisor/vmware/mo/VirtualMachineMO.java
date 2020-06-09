@@ -60,11 +60,12 @@ import com.vmware.vim25.ParaVirtualSCSIController;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VirtualAHCIController;
 import com.vmware.vim25.VirtualBusLogicController;
+import com.vmware.vim25.VirtualController;
 import com.vmware.vim25.VirtualCdrom;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;
 import com.vmware.vim25.VirtualCdromRemotePassthroughBackingInfo;
-import com.vmware.vim25.VirtualController;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
@@ -102,6 +103,7 @@ import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineSnapshotInfo;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
+import com.vmware.vim25.VirtualSATAController;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
 
@@ -1253,6 +1255,9 @@ public class VirtualMachineMO extends BaseMO {
             }
             controllerKey = getIDEControllerKey(ideDeviceCount);
             unitNumber = getFreeUnitNumberOnIDEController(controllerKey);
+        } else if (DiskControllerType.getType(diskController) == DiskControllerType.ahci){
+            controllerKey = getSataDiskControllerKey(diskController);
+            unitNumber = -1;
         } else {
             controllerKey = getScsiDiskControllerKey(diskController);
             unitNumber = -1;
@@ -2249,6 +2254,23 @@ public class VirtualMachineMO extends BaseMO {
         throw new IllegalStateException("Scsi disk controller of type " + diskController + " not found among configured devices.");
     }
 
+    public int getSataDiskControllerKey(String diskController) throws Exception {
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
+                getDynamicProperty(_mor, "config.hardware.device");
+
+        if (devices != null && devices.size() > 0) {
+            for (VirtualDevice device : devices) {
+                if ((DiskControllerType.getType(diskController) == DiskControllerType.ahci || DiskControllerType.getType(diskController) == DiskControllerType.sata)
+                        && device instanceof VirtualAHCIController) {
+                    return ((VirtualAHCIController) device).getKey();
+                }
+            }
+        }
+
+        assert (false);
+        throw new IllegalStateException("Scsi disk controller of type " + diskController + " not found among configured devices.");
+    }
+
     public int getScsiDiskControllerKeyNoException(String diskController) throws Exception {
         List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
                 getDynamicProperty(_mor, "config.hardware.device");
@@ -2267,6 +2289,21 @@ public class VirtualMachineMO extends BaseMO {
                 } else if ((DiskControllerType.getType(diskController) == DiskControllerType.buslogic || DiskControllerType.getType(diskController) == DiskControllerType.scsi)
                         && device instanceof VirtualBusLogicController) {
                     return ((VirtualBusLogicController)device).getKey();
+                }
+            }
+        }
+        return -1;
+    }
+
+    public int getSataDiskControllerKeyNoException(String diskController) throws Exception {
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
+                getDynamicProperty(_mor, "config.hardware.device");
+
+        if (devices != null && devices.size() > 0) {
+            for (VirtualDevice device : devices) {
+                if ((DiskControllerType.getType(diskController) == DiskControllerType.ahci || DiskControllerType.getType(diskController) == DiskControllerType.sata)
+                        && device instanceof VirtualAHCIController) {
+                    return ((VirtualAHCIController)device).getKey();
                 }
             }
         }
@@ -2301,6 +2338,20 @@ public class VirtualMachineMO extends BaseMO {
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
                 if (device instanceof VirtualSCSIController) {
+                    return device.getKey();
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    public int getGenericSataDeviceControllerKeyNoException() throws Exception {
+        List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+
+        if (devices != null && devices.size() > 0) {
+            for (VirtualDevice device : devices) {
+                if (device instanceof VirtualSATAController) {
                     return device.getKey();
                 }
             }
@@ -2382,6 +2433,27 @@ public class VirtualMachineMO extends BaseMO {
             vmConfig.getDeviceChange().add(scsiControllerSpec);
             if (configureVm(vmConfig)) {
                 throw new Exception("Unable to add Scsi controller");
+            }
+        }
+    }
+
+    public void ensureSataDeviceController() throws Exception {
+        int sataControllerKey = getGenericSataDeviceControllerKeyNoException();
+        if (sataControllerKey < 0) {
+            VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
+
+            // Scsi controller
+            VirtualLsiLogicController sataController = new VirtualLsiLogicController();
+            sataController.setSharedBus(VirtualSCSISharing.NO_SHARING);
+            sataController.setBusNumber(0);
+            sataController.setKey(1);
+            VirtualDeviceConfigSpec sataControllerSpec = new VirtualDeviceConfigSpec();
+            sataControllerSpec.setDevice(sataController);
+            sataControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+
+            vmConfig.getDeviceChange().add(sataControllerSpec);
+            if (configureVm(vmConfig)) {
+                throw new Exception("Unable to add SATA controller");
             }
         }
     }
@@ -2715,6 +2787,8 @@ public class VirtualMachineMO extends BaseMO {
                     return String.format("ide%d:%d", ((VirtualIDEController)device).getBusNumber(), theDevice.getUnitNumber());
                 } else if (device instanceof VirtualSCSIController) {
                     return String.format("scsi%d:%d", ((VirtualSCSIController)device).getBusNumber(), theDevice.getUnitNumber());
+                } else if (device instanceof VirtualSATAController) {
+                    return String.format("sata%d:%d", ((VirtualSATAController)device).getBusNumber(), theDevice.getUnitNumber());
                 } else {
                     throw new Exception("Device controller is not supported yet");
                 }
@@ -2888,6 +2962,28 @@ public class VirtualMachineMO extends BaseMO {
 
         assert(false);
         throw new Exception("IDE Controller Not Found");
+    }
+
+    public int getSATAControllerKey(int sataUnitNumber) throws Exception {
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
+                getDynamicProperty(_mor, "config.hardware.device");
+
+        int requiredSataController = sataUnitNumber / VmwareHelper.MAX_SATA_CONTROLLER_COUNT;
+
+        int sataControllerCount = 0;
+        if(devices != null && devices.size() > 0) {
+            for(VirtualDevice device : devices) {
+                if(device instanceof VirtualSATAController) {
+                    if (sataControllerCount == requiredSataController) {
+                        return ((VirtualSATAController)device).getKey();
+                    }
+                    sataControllerCount++;
+                }
+            }
+        }
+
+        assert(false);
+        throw new Exception("SATA Controller Not Found");
     }
 
     public int getNumberOfIDEDevices() throws Exception {
@@ -3397,6 +3493,48 @@ public class VirtualMachineMO extends BaseMO {
         return -1;
     }
 
+    public void ensureAhciDeviceControllers(int count, int availableBusNum) throws Exception {
+        int sataControllerKey = getAhciDeviceControllerKeyNoException();
+        if(sataControllerKey < 0) {
+            VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
+
+            int busNum = availableBusNum;
+            while (busNum < count) {
+                VirtualAHCIController sataController = new VirtualAHCIController();
+
+                sataController.setBusNumber(busNum);
+                sataController.setKey(busNum - VmwareHelper.MAX_SATA_CONTROLLER_COUNT);
+                VirtualDeviceConfigSpec sataControllerSpec = new VirtualDeviceConfigSpec();
+                sataControllerSpec.setDevice(sataController);
+                sataControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+
+                vmConfig.getDeviceChange().add(sataControllerSpec);
+                busNum++;
+            }
+
+            if (configureVm(vmConfig)) {
+                throw new Exception("Unable to add Sata AHCI controllers to the VM " + getName());
+            } else {
+                s_logger.info("Successfully added " + count + " SATA AHCI controllers.");
+            }
+        }
+    }
+
+    private int getAhciDeviceControllerKeyNoException() throws Exception {
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
+                getDynamicProperty(_mor, "config.hardware.device");
+
+        if (devices != null && devices.size() > 0) {
+            for (VirtualDevice device : devices) {
+                if (device instanceof VirtualAHCIController) {
+                    return device.getKey();
+                }
+            }
+        }
+
+        return -1;
+    }
+
     public Ternary<Integer, Integer, DiskControllerType> getScsiControllerInfo() throws Exception {
         List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
                 getDynamicProperty(_mor, "config.hardware.device");
@@ -3420,12 +3558,39 @@ public class VirtualMachineMO extends BaseMO {
                         controllerType = DiskControllerType.buslogic;
                     } else if (device instanceof ParaVirtualSCSIController) {
                         controllerType = DiskControllerType.pvscsi;
+                    } else if (device instanceof VirtualSATAController) {
+                        controllerType = DiskControllerType.sata;
                     }
                 }
             }
         }
 
         return new Ternary<Integer, Integer, DiskControllerType>(scsiControllerCount, busNum, controllerType);
+    }
+
+    public Ternary<Integer, Integer, DiskControllerType> getSataControllerInfo() throws Exception {
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
+                getDynamicProperty(_mor, "config.hardware.device");
+
+        int sataControllerCount = 0;
+        int busNum = -1;
+        DiskControllerType controllerType = DiskControllerType.ahci;
+        if (devices != null && devices.size() > 0) {
+            for (VirtualDevice device : devices) {
+                if (device instanceof VirtualSATAController) {
+                    sataControllerCount++;
+                    int deviceBus = ((VirtualSATAController)device).getBusNumber();
+                    if (busNum < deviceBus) {
+                        busNum = deviceBus;
+                    }
+                    if (device instanceof VirtualAHCIController) {
+                        controllerType = DiskControllerType.ahci;
+                    }
+                }
+            }
+        }
+
+        return new Ternary<Integer, Integer, DiskControllerType>(sataControllerCount, busNum, controllerType);
     }
 
     public int getNumberOfVirtualDisks() throws Exception {

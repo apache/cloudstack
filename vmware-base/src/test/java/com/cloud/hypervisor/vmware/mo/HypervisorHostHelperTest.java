@@ -18,8 +18,10 @@ package com.cloud.hypervisor.vmware.mo;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -32,11 +34,14 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.Pair;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.DVPortgroupConfigInfo;
@@ -45,8 +50,12 @@ import com.vmware.vim25.DVSSecurityPolicy;
 import com.vmware.vim25.DVSTrafficShapingPolicy;
 import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.LongPolicy;
+import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ServiceContent;
 import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualSATAController;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchTrunkVlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
@@ -882,5 +891,47 @@ public class HypervisorHostHelperTest {
         assertTrue(spec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec);
         assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getStart() == 0);
         assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getEnd() == 0);
+    }
+
+    protected void assertVirtualMachineConfigurationContainsSataControllerForDarwinGuestOs(VirtualMachineConfigSpec vmConfig){
+        VirtualDeviceConfigSpec result;
+
+        result = vmConfig.getDeviceChange().stream()
+            .filter(deviceConfig -> deviceConfig.getDevice() instanceof VirtualSATAController)
+            .findAny()
+            .orElse(null);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testCreateBlankVmWithDarwinGuestOs() throws Exception {
+        ManagedObjectReference morDs = mock(ManagedObjectReference.class);
+        HostMO hostMock = mock(HostMO.class);
+        VmwareContext localVmwareContext = mock(VmwareContext.class, Mockito.RETURNS_DEEP_STUBS);
+
+        String vmName = "darwinVm";
+        String vmInternalCSName = "darwinVmCS";
+        int cpuCount = 1;
+        int cpuSpeedMHz = 1000, cpuReservedMHz = 1000;
+        boolean limitCpuUse = false;
+        int memoryMB = 5000, memoryReserveMB = 5000;
+        String guestOsIdentifier = "darwin";
+        boolean snapshotDirToParent = false;
+        Pair<String, String> controllerInfo = new Pair<>(DiskControllerType.ahci.toString(), DiskControllerType.ahci.toString());
+        Boolean systemVm = false;
+
+        when(hostMock.getContext()).thenReturn(localVmwareContext);
+        when(localVmwareContext.getVimClient().getDynamicProperty(morDs, "name")).thenReturn("datastore");
+
+        HypervisorHostHelper.createBlankVm(hostMock, vmName, vmInternalCSName, cpuCount,
+                cpuSpeedMHz, cpuReservedMHz, limitCpuUse, memoryMB, memoryReserveMB, guestOsIdentifier, morDs, snapshotDirToParent,
+                controllerInfo, systemVm);
+
+        ArgumentCaptor<VirtualMachineConfigSpec> vmConfigCaptor = ArgumentCaptor.forClass(VirtualMachineConfigSpec.class);
+        verify(hostMock).createVm(vmConfigCaptor.capture());
+        VirtualMachineConfigSpec vmConfigCaptured = vmConfigCaptor.getValue();
+        assertVirtualMachineConfigurationContainsSataControllerForDarwinGuestOs(vmConfigCaptured);
+        // We should also check the presence of the network card E1000E but it implies to mock a lot of private functions (thus lot of changes in the code base)
+        // We assume the SATA controller test to be enough for now
     }
 }

@@ -29,13 +29,12 @@
 #
 #
 
+  * After testing Mac OS last versions (above 10.12) with Vmware Hypervisor,
+    it seems that this OS has some compatibility issues with default Cloudstack hardware 
+    profile (that is to say, with LSI Logic Parallel SCSI Disk Controller and E1000 Network card). 
+    To make it work, we set up a different profil for Mac OS virtual machines.
+  * One SATA Controller is now defined as default hardware profil when using 
+    Vmware VSphere Hypervisor, instead of usual 4 SCSI controllers. Also, 
+    instead of E1000 Nic Adapter, Mac OS virtual machine are now set up 
+    with E1000E network adapter by default. 
 
-example.ver.1 > example.ver.2:
-  * VirtualRouters are now deployed with the latest version of ExampleLinux
-    and wil also use a new MyFirstDHCPServer instead of dnsmasq to provide
-    faster and more robust deployment of new Instances
-
-  * ISOs are no longer supported and will be replaced by 2.88MB Floppy Drives
-    which can now be attached to Instances. This is to prevent the Secondary
-    Storage to grow to enormous sizes as Linux Distributions keep growing in
-    size while a stripped down Linux should fit on a 2.88MB floppy.

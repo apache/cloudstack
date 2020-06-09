@@ -19,11 +19,13 @@ package com.cloud.hypervisor.vmware.mo;
 public enum DiskControllerType {
     ide,
     scsi,
+    sata,
     osdefault,
     lsilogic,
     lsisas1068,
     buslogic,
     pvscsi,
+    ahci,
     none;
     public static DiskControllerType getType(String diskController) {
         if (diskController == null || diskController.equalsIgnoreCase("osdefault")) {
@@ -43,6 +45,9 @@ public enum DiskControllerType {
         } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualBusLogicController") || diskController.equalsIgnoreCase("VirtualBusLogicController")
                 || diskController.equalsIgnoreCase(ScsiDiskControllerType.BUSLOGIC)) {
             return DiskControllerType.buslogic;
+        } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualAHCIController") || diskController.equalsIgnoreCase("VirtualAHCIController")
+                || diskController.equalsIgnoreCase(SataDiskControllerType.AHCI)) {
+            return DiskControllerType.ahci;
         } else {
             return DiskControllerType.none;
         }

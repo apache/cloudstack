@@ -20,9 +20,11 @@ package com.cloud.hypervisor.vmware.mo;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VirtualAHCIController;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualLsiLogicSASController;
+import com.vmware.vim25.VirtualSATAController;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
 import org.junit.After;
@@ -43,6 +45,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
+
 public class VirtualMachineMOTest {
 
     @Mock
@@ -68,6 +71,20 @@ public class VirtualMachineMOTest {
         catch (Exception ex) {
 
         }
+        return deviceList;
+    }
+
+    private List<VirtualDevice> getVirtualSataDeviceList(Class<?> cls) {
+
+        List<VirtualDevice> deviceList = new ArrayList<>();
+        try {
+
+            VirtualSATAController sataController = (VirtualSATAController)cls.newInstance();
+            sataController.setBusNumber(0);
+            sataController.setKey(0);
+            deviceList.add(sataController);
+        }
+        catch (Exception ex) {}
         return deviceList;
     }
 
@@ -111,6 +128,30 @@ public class VirtualMachineMOTest {
         try {
             when(client.getDynamicProperty(any(ManagedObjectReference.class), any(String.class))).thenReturn(getVirtualScSiDeviceList(VirtualLsiLogicController.class));
             vmMo.ensureLsiLogicDeviceControllers(1, 0);
+        }
+        catch (Exception e) {
+            fail("Received exception when success expected: " + e.getMessage());
+        }
+
+    }
+
+    @Test
+    public void testEnsureSataDeviceController() {
+        try {
+            when(client.getDynamicProperty(any(ManagedObjectReference.class), any(String.class))).thenReturn(getVirtualSataDeviceList(VirtualAHCIController.class));
+            vmMo.ensureSataDeviceController();
+        }
+        catch (Exception e) {
+            fail("Received exception when success expected: " + e.getMessage());
+        }
+
+    }
+
+    @Test
+    public void testEnsureAhciDeviceControllers() {
+        try {
+            when(client.getDynamicProperty(any(ManagedObjectReference.class), any(String.class))).thenReturn(getVirtualSataDeviceList(VirtualAHCIController.class));
+            vmMo.ensureAhciDeviceControllers(1, 0);
         }
         catch (Exception e) {
             fail("Received exception when success expected: " + e.getMessage());

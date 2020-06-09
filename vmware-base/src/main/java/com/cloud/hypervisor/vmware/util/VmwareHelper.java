@@ -64,6 +64,7 @@ import com.vmware.vim25.VirtualDiskRawDiskMappingVer1BackingInfo;
 import com.vmware.vim25.VirtualDiskSparseVer1BackingInfo;
 import com.vmware.vim25.VirtualDiskSparseVer2BackingInfo;
 import com.vmware.vim25.VirtualE1000;
+import com.vmware.vim25.VirtualE1000E;
 import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
@@ -89,6 +90,7 @@ public class VmwareHelper {
     private static final Logger s_logger = Logger.getLogger(VmwareHelper.class);
 
     public static final int MAX_SCSI_CONTROLLER_COUNT = 4;
+    public static final int MAX_SATA_CONTROLLER_COUNT = 4;
     public static final int MAX_IDE_CONTROLLER_COUNT = 2;
     public static final int MAX_ALLOWED_DEVICES_IDE_CONTROLLER = 2;
     public static final int MAX_ALLOWED_DEVICES_SCSI_CONTROLLER = 15;
@@ -115,6 +117,10 @@ public class VmwareHelper {
                 nic = new VirtualE1000();
                 break;
 
+            case E1000E:
+                nic = new VirtualE1000E();
+                break;
+
             case PCNet32:
                 nic = new VirtualPCNet32();
                 break;
@@ -130,6 +136,7 @@ public class VmwareHelper {
             default:
                 assert (false);
                 nic = new VirtualE1000();
+
         }
         return nic;
     }

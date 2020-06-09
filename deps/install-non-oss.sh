@@ -18,7 +18,8 @@
 
 # From https://devcentral.f5.com
 # Version: unknown
-mvn install:install-file -Dfile=cloud-iControl.jar      -DgroupId=com.cloud.com.f5     -DartifactId=icontrol        -Dversion=1.0   -Dpackaging=jar
+mvn install:install-file -Dfile=cloud-iControl.jar -DgroupId=com.cloud.com.f5 -DartifactId=icontrol -Dversion=1.0 -Dpackaging=jar
+mvn install:install-file -Dfile=iControl-12.1.0.jar -DgroupId=com.cloud.com.f5 -DartifactId=icontrol -Dversion=12.1 -Dpackaging=jar
 
 # From Citrix
 # Version: unknown

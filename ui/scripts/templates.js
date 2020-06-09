@@ -408,6 +408,10 @@
                                                 id: "buslogic",
                                                 description: "buslogic"
                                             });
+                                            items.push({
+                                                id: "sata",
+                                                description: "sata"
+                                            });
                                             args.response.success({
                                                 data: items
                                             });
@@ -425,6 +429,10 @@
                                             items.push({
                                                 id: "E1000",
                                                 description: "E1000"
+                                            });
+                                            items.push({
+                                                id: "E1000E",
+                                                description: "E1000E"
                                             });
                                             items.push({
                                                 id: "PCNet32",
