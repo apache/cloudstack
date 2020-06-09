@@ -39,6 +39,11 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.utils.StringUtils;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
@@ -81,6 +86,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -175,7 +182,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -298,6 +304,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     SnapshotService _snapshotService;
     @Inject
     StoragePoolTagsDao _storagePoolTagsDao;
+    @Inject
+    DiskOfferingDetailsDao _diskOfferingDetailsDao;
+    @Inject
+    VsphereStoragePolicyDao _vsphereStoragePolicyDao;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -1870,6 +1880,48 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             final long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
             return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize);
         }
+    }
+
+    @Override
+    public boolean isStoragePoolComplaintWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException {
+        if (volumes == null || volumes.isEmpty()) {
+            return false;
+        }
+        List<Pair<Volume, Answer>> answers = new ArrayList<Pair<Volume, Answer>>();
+
+        for (Volume volume : volumes) {
+            String storagePolicyId = _diskOfferingDetailsDao.getDetail(volume.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
+            if (org.apache.commons.lang.StringUtils.isNotEmpty(storagePolicyId)) {
+                VsphereStoragePolicyVO storagePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyId));
+                List<Long> hostIds = getUpHostsInPool(pool.getId());
+                Collections.shuffle(hostIds);
+
+                if (hostIds == null || hostIds.isEmpty()) {
+                    throw new StorageUnavailableException("Unable to send command to the pool " + pool.getName() + " due to there is no enabled hosts up in this cluster", pool.getId());
+                }
+                try {
+                    StorageFilerTO storageFilerTO = new StorageFilerTO(pool);
+                    CheckDataStoreStoragePolicyComplainceCommand cmd = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicyVO.getPolicyId(), storageFilerTO);
+                    long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostIds.get(0), cmd);
+                    Answer answer = _agentMgr.send(targetHostId, cmd);
+                    answers.add(new Pair<>(volume, answer));
+                } catch (AgentUnavailableException e) {
+                    s_logger.debug("Unable to send storage pool command to " + pool + " via " + hostIds.get(0), e);
+                    throw new StorageUnavailableException("Unable to send command to the pool ", pool.getId());
+                } catch (OperationTimedoutException e) {
+                    s_logger.debug("Failed to process storage pool command to " + pool + " via " + hostIds.get(0), e);
+                    throw new StorageUnavailableException("Failed to process storage command to the pool ", pool.getId());
+                }
+            }
+        }
+        // check cummilative result for all volumes
+        for (Pair<Volume, Answer> answer : answers) {
+            if (!answer.second().getResult()) {
+                s_logger.debug(String.format("Storage pool %s is not complaince with storage policy for volume %s", pool.getName(), answer.first().getName()));
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean checkPoolforSpace(StoragePool pool, long allocatedSizeWithTemplate, long totalAskingSize) {

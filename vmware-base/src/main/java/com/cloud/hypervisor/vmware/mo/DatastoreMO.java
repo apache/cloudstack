@@ -19,6 +19,7 @@ package com.cloud.hypervisor.vmware.mo;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.vmware.pbm.PbmProfile;
 import org.apache.log4j.Logger;
 
 import com.vmware.vim25.DatastoreHostMount;
@@ -470,5 +471,15 @@ public class DatastoreMO extends BaseMO {
             }
         }
         return isAccessible;
+    }
+
+    public boolean isDatastoreStoragePolicyComplaint(String storagePolicyId) throws Exception {
+        PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(_context);
+        PbmProfile profile = profMgrMo.getStorageProfile(storagePolicyId);
+
+        PbmPlacementSolverMO placementSolverMo = new PbmPlacementSolverMO(_context);
+        boolean isDatastoreCompatible = placementSolverMo.isDatastoreCompatibleWithStorageProfile(_mor, profile);
+
+        return isDatastoreCompatible;
     }
 }

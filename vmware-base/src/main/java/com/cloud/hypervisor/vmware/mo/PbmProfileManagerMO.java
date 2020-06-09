@@ -18,6 +18,7 @@ package com.cloud.hypervisor.vmware.mo;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.pbm.PbmProfile;
 import com.vmware.pbm.PbmProfileId;
 import com.vmware.pbm.PbmProfileResourceType;
@@ -26,6 +27,7 @@ import com.vmware.vim25.ManagedObjectReference;
 
 import org.apache.log4j.Logger;
 
+import java.util.Collections;
 import java.util.List;
 
 public class PbmProfileManagerMO extends BaseMO {
@@ -56,6 +58,19 @@ public class PbmProfileManagerMO extends BaseMO {
         List<PbmProfileId> profileIds = getStorageProfileIds();
         List<PbmProfile> profiles = _context.getPbmService().pbmRetrieveContent(_mor, profileIds);
         return profiles;
+    }
+
+    public PbmProfile getStorageProfile(String storageProfileId) throws Exception {
+        List<PbmProfileId> profileIds = getStorageProfileIds();
+        for (PbmProfileId profileId : profileIds) {
+            if (storageProfileId.equals(profileId.getUniqueId())) {
+                List<PbmProfile> profile = _context.getPbmService().pbmRetrieveContent(_mor, Collections.singletonList(profileId));
+                return profile.get(0);
+            }
+        }
+        String errMsg = String.format("Storage profile with id %s not found", storageProfileId);
+        s_logger.debug(errMsg);
+        throw new CloudRuntimeException(errMsg);
     }
 
     private PbmProfileResourceType getStorageResourceType() {
