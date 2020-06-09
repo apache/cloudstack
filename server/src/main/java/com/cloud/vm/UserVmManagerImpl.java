@@ -2563,7 +2563,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             updateDisplayVmFlag(isDisplayVm, id, vmInstance);
         }
         final Account caller = CallContext.current().getCallingAccount();
-        final List<String> userDenyListedSettings = Stream.of(QueryService.UserVMDenylistedDetails.value().split(","))
+        final List<String> userDenyListedSettings = Stream.of(QueryService.UserVMDenyListedDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
         final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyDetails.value().split(","))
