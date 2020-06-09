@@ -210,7 +210,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
                 HostVO h = hp.first();
-                if (h.getHypervisorType().equals(clusterTemplate.getHypervisorType())) {
+                if (!h.getHypervisorType().equals(clusterTemplate.getHypervisorType())) {
                     continue;
                 }
                 hostDao.loadHostTags(h);
