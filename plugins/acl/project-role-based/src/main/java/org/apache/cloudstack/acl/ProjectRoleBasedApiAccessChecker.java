@@ -92,7 +92,7 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
             }
         }
         // Default deny all
-        throw new UnavailableCommandException("The API " + apiCommandName + " does not exist or is not available for this account.");
+        throw new UnavailableCommandException("The API " + apiCommandName + " does not exist or is not available for this account in project "+project.getUuid());
     }
 
     private boolean isPermitted(Project project, ProjectAccount projectUser, String apiCommandName) {

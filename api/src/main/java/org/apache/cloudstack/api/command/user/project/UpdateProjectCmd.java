@@ -49,7 +49,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be modified")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be modified")
     private Long id;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "new Admin account for the project")
