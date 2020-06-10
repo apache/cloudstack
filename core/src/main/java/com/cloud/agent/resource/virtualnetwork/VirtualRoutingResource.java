@@ -522,7 +522,6 @@ public class VirtualRoutingResource {
                         sb.append(c.getAggregateCommand());
                     }
                 }
-                s_logger.debug("AggregationControlCommand configuration is :\n" + sb.toString());
 
                 // TODO replace with applyConfig with a stop on fail
                 String cfgFileName = "VR-"+ UUID.randomUUID().toString() + ".cfg";

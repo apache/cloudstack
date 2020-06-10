@@ -25,6 +25,7 @@ public class LoadBalancerRule {
     private String[] configuration;
     private String tmpCfgFilePath;
     private String tmpCfgFileName;
+    private Boolean isTransparent;
 
     private String[] addRules;
     private String[] removeRules;
@@ -68,6 +69,14 @@ public class LoadBalancerRule {
 
     public void setTmpCfgFileName(final String tmpCfgFileName) {
         this.tmpCfgFileName = tmpCfgFileName;
+    }
+
+    public void setIsTransparent(final Boolean isTransparent) {
+        this.isTransparent = isTransparent;
+    }
+
+    public Boolean isTransparent() {
+        return isTransparent;
     }
 
     public String[] getAddRules() {

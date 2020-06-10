@@ -57,6 +57,7 @@ class CsLoadBalancer(CsDataBag):
         remove_rules = self.dbag['config'][0]['remove_rules']
         stat_rules = self.dbag['config'][0]['stat_rules']
         self._configure_firewall(add_rules, remove_rules, stat_rules)
+        self._configure_firewall_for_transparent(self.dbag['config'][0]['is_transparent'])
 
     def _configure_firewall(self, add_rules, remove_rules, stat_rules):
         firewall = self.config.get_fw()
@@ -82,3 +83,25 @@ class CsLoadBalancer(CsDataBag):
             ip = path[0]
             port = path[1]
             firewall.append(["filter", "", "-A INPUT -p tcp -m tcp -d %s --dport %s -m state --state NEW -j ACCEPT" % (ip, port)])
+
+    def _configure_firewall_for_transparent(self, is_transparent):
+        tableNo = 99
+        firewall = self.config.get_fw()
+        if is_transparent is None or is_transparent == False:
+            if ["mangle", "", "-A PREROUTING -p tcp -m socket -j DIVERT"] in firewall:
+                firewall.remove(["mangle", "", "-A PREROUTING -p tcp -m socket -j DIVERT"])
+                firewall.remove(["mangle", "", "-A DIVERT -j MARK --set-xmark %s/0xffffffff" % hex(tableNo)])
+                firewall.remove(["mangle", "", "-A DIVERT -j ACCEPT"])
+                firewall.remove(["mangle", "", "-N DIVERT"])
+            if CsHelper.execute("ip rule show fwmark %s lookup %s" % (tableNo, tableNo)):
+                CsHelper.execute("ip route del local 0.0.0.0/0 dev lo table %s" % tableNo)
+                CsHelper.execute("ip rule del fwmark %s lookup %s" % (tableNo, tableNo))
+        elif is_transparent == True:
+            if ["mangle", "", "-A PREROUTING -p tcp -m socket -j DIVERT"] not in firewall:
+                firewall.append(["mangle", "", "-N DIVERT"])
+                firewall.append(["mangle", "", "-A PREROUTING -p tcp -m socket -j DIVERT"])
+                firewall.append(["mangle", "", "-A DIVERT -j MARK --set-xmark %s/0xffffffff" % hex(tableNo)])
+                firewall.append(["mangle", "", "-A DIVERT -j ACCEPT"])
+            if not CsHelper.execute("ip rule show fwmark %s lookup %s" % (tableNo, tableNo)):
+                CsHelper.execute("ip rule add fwmark %s lookup %s" % (tableNo, tableNo))
+                CsHelper.execute("ip route add local 0.0.0.0/0 dev lo table %s" % tableNo)

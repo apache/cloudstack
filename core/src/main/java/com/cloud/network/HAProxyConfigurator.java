@@ -638,6 +638,13 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
         }
 
+        if ("true".equalsIgnoreCase(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))
+                    && "true".equalsIgnoreCase(lbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))) {
+            sb = new StringBuilder();
+            sb.append("\t").append("source 0.0.0.0 usesrc clientip");
+            result.add(sb.toString());
+        }
+
         result.add(blankLine);
         return result;
     }
@@ -701,6 +708,11 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         String statsSocket = networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalStatsSocket.key());
         if (statsSocket != null && statsSocket.equalsIgnoreCase("true")) {
             gSection.add("\tstats socket /var/run/haproxy.socket");
+        }
+
+        if ("true".equalsIgnoreCase(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))) {
+            gSection.set(5, "\tuser root");
+            gSection.set(6, "\tgroup root");
         }
 
         if (s_logger.isDebugEnabled()) {
