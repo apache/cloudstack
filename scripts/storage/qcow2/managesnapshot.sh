@@ -225,11 +225,11 @@ backup_snapshot() {
     fi
   elif [ -f ${disk} ]; then
     # Does the snapshot exist?
-    qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk 2>&1 > /dev/null)
+    qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk 2>&1)
     if [ $? -gt 0 ] && [[ $qemuimg_ret == *"snapshot: invalid option -- 'U'"* ]]
     then
       forceShareFlag=""
-      qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk 2>&1)
+      qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk)
     fi
     if [ $? -gt 0 ] || [[ ! $qemuimg_ret == *"$snapshotname"* ]]
     then
