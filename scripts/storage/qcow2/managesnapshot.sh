@@ -211,19 +211,19 @@ backup_snapshot() {
       return 1
     fi
 
-    ${qemu_img} convert -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}" || \
+    ${qemu_img} convert -U -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}" || \
      ( printf "${qemu_img} failed to create backup of snapshot ${snapshotname} for disk ${disk} to ${destPath}.\n" >&2; return 2 )
 
   elif [ -f ${disk} ]; then
     # Does the snapshot exist?
-    $qemu_img snapshot -l $disk|grep -w "$snapshotname" >& /dev/null
+    $qemu_img snapshot -U -l $disk|grep -w "$snapshotname" >& /dev/null
     if [ $? -gt 0 ]
     then
       printf "there is no $snapshotname on disk $disk\n" >&2
       return 1
     fi
 
-    $qemu_img convert -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
+    $qemu_img convert -U -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
     if [ $? -gt 0 ]
     then
       printf "Failed to backup $snapshotname for disk $disk to $destPath\n" >&2
