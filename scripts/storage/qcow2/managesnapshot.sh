@@ -212,15 +212,24 @@ backup_snapshot() {
       return 1
     fi
 
-    ${qemu_img} convert -U -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}" || \
-     ( printf "${qemu_img} failed to create backup of snapshot ${snapshotname} for disk ${disk} to ${destPath}.\n" >&2; return 2 )
-
-  elif [ -f ${disk} ]; then
-    # Does the snapshot exist?
-    qemuimg_ret=$($qemu_img snapshot -U -l $disk 2>&1 > /dev/null)
+    qemuimg_ret=$($qemu_img $forceShareFlag -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}")
     if [ $? -gt 0 ] && [[ $qemuimg_ret == *"snapshot: invalid option -- 'U'"* ]]
     then
-      qemuimg_ret=$($qemu_img snapshot -l $disk 2>&1)
+      forceShareFlag=""
+      $qemu_img $forceShareFlag -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}"
+    fi
+    if [ $? -gt 0 ]
+    then
+      printf "${qemu_img} failed to create backup of snapshot ${snapshotname} for disk ${disk} to ${destPath}.\n" >&2
+      return 2
+    fi
+  elif [ -f ${disk} ]; then
+    # Does the snapshot exist?
+    qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk 2>&1 > /dev/null)
+    if [ $? -gt 0 ] && [[ $qemuimg_ret == *"snapshot: invalid option -- 'U'"* ]]
+    then
+      forceShareFlag=""
+      qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk 2>&1)
     fi
     if [ $? -gt 0 ] || [[ ! $qemuimg_ret == *"$snapshotname"* ]]
     then
