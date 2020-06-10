@@ -73,6 +73,7 @@ public class LoadBalancerConfigItem extends AbstractConfigItemFacade {
             }
         }
         loadBalancerRule.setIsTransparent(isTransparent);
+        loadBalancerRule.setNetworkCidr(command.getNetworkCidr());
 
         final List<LoadBalancerRule> rules = new LinkedList<LoadBalancerRule>();
         rules.add(loadBalancerRule);

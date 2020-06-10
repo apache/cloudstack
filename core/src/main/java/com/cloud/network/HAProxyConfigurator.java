@@ -470,7 +470,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         return sb.toString();
     }
 
-    private List<String> getRulesForPool(final LoadBalancerTO lbTO, boolean keepAliveEnabled, HashMap<String, String> networkLbConfigsMap) {
+    private List<String> getRulesForPool(final LoadBalancerTO lbTO, boolean keepAliveEnabled, final String networkCidr, HashMap<String, String> networkLbConfigsMap) {
         StringBuilder sb = new StringBuilder();
         final String poolName = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
         final String publicIP = lbTO.getSrcIp();
@@ -487,12 +487,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
         final List<String> frontendConfigs = new ArrayList<String>();
         final List<String> backendConfigs = new ArrayList<String>();
-
+        final List<String> backendConfigsForHttp = new ArrayList<String>();
         final List<String> result = new ArrayList<String>();
-        // add line like this: "listen  65_37_141_30-80\n\tbind 65.37.141.30:80"
-        sb = new StringBuilder();
-        sb.append("listen ").append(poolName);
-        result.add(sb.toString());
+
         sb = new StringBuilder();
         sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
         frontendConfigs.add(sb.toString());
@@ -630,26 +627,56 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             frontendConfigs.add(sb.toString());
+            backendConfigsForHttp.add(sb.toString());
             if (keepAliveEnabled) {
                 sb = new StringBuilder();
                 sb.append("\t").append("no option forceclose");
                 frontendConfigs.add(sb.toString());
+                backendConfigsForHttp.add(sb.toString());
             } else {
                 sb = new StringBuilder();
                 sb.append("\t").append("option httpclose");
                 frontendConfigs.add(sb.toString());
+                backendConfigsForHttp.add(sb.toString());
             }
         }
 
+        boolean isTransparent = false;
         if ("true".equalsIgnoreCase(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))
                     && "true".equalsIgnoreCase(lbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))) {
-            sb = new StringBuilder();
-            sb.append("\t").append("source 0.0.0.0 usesrc clientip");
-            backendConfigs.add(sb.toString());
+            isTransparent = true;
         }
 
-        result.addAll(frontendConfigs);
-        result.addAll(backendConfigs);
+        if (isTransparent) {
+            sb = new StringBuilder();
+            sb.append("frontend ").append(poolName);
+            result.add(sb.toString());
+            result.addAll(frontendConfigs);
+            sb = new StringBuilder();
+            sb.append("\tacl local_subnet src ").append(networkCidr);
+            sb.append("\n\tuse_backend ").append(poolName).append("-backend-local if local_subnet");
+            sb.append("\n\tdefault_backend ").append(poolName).append("-backend");
+            sb.append("\n\n");
+            sb.append("backend ").append(poolName).append("-backend");
+            result.add(sb.toString());
+            result.addAll(backendConfigsForHttp);
+            result.addAll(backendConfigs);
+            sb = new StringBuilder();
+            sb.append("\t").append("source 0.0.0.0 usesrc clientip");
+            sb.append("\n\n");
+            sb.append("backend ").append(poolName).append("-backend-local");
+            result.add(sb.toString());
+            result.addAll(backendConfigsForHttp);
+            result.addAll(backendConfigs);
+        } else {
+            // add line like this: "listen  65_37_141_30-80\n\tbind 65.37.141.30:80"
+            sb = new StringBuilder();
+            sb.append("listen ").append(poolName);
+            result.add(sb.toString());
+            result.addAll(frontendConfigs);
+            result.addAll(backendConfigs);
+        }
+
         result.add(blankLine);
         return result;
     }
@@ -790,7 +817,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             if (lbTO.isRevoked()) {
                 continue;
             }
-            final List<String> poolRules = getRulesForPool(lbTO, lbCmd.keepAliveEnabled, networkLbConfigsMap);
+            final List<String> poolRules = getRulesForPool(lbTO, lbCmd.keepAliveEnabled, lbCmd.getNetworkCidr(), networkLbConfigsMap);
             result.addAll(poolRules);
             has_listener = true;
         }
