@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.dao.TemplateOVFPropertiesDao;
@@ -111,7 +112,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     protected String _proxy = null;
 
-    private static Gson gson;
+    private static Gson gson = GsonHelper.getGson();
 
     protected Proxy getHttpProxy() {
         if (_proxy == null) {
@@ -178,7 +179,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
      */
     private void persistOVFProperties(List<OVFPropertyTO> ovfProperties, long templateId) {
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("saving properts for template %d as details", templateId));
+            s_logger.trace(String.format("saving properties for template %d as details", templateId));
         }
         for (OVFPropertyTO property : ovfProperties) {
             if (s_logger.isTraceEnabled()) {
@@ -195,7 +196,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
         List<TemplateOVFPropertyVO> listToPersist = new ArrayList<>();
         for (OVFPropertyTO property : ovfProperties) {
-            persistOvfPropertyAsTemplateDetail(templateId, property);
             if (!templateOvfPropertiesDao.existsOption(templateId, property.getKey())) {
                 TemplateOVFPropertyVO option = new TemplateOVFPropertyVO(templateId, property.getKey(), property.getType(),
                         property.getValue(), property.getQualifiers(), property.isUserConfigurable(),
@@ -215,12 +215,24 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private void persistOvfPropertyAsTemplateDetail(long templateId, OVFPropertyTO property) {
         String key = "ovfProperty-" + property.getKey();
+        // TODO save separate details for each of the properties of a property
+        //
+        savePropertyAttribute(templateId, key + "-default", property.getValue());
+        savePropertyAttribute(templateId, key + "-description", property.getDescription());
+        savePropertyAttribute(templateId, key + "-qualifiers", property.getQualifiers());
+        savePropertyAttribute(templateId, key + "-label", property.getLabel());
+        savePropertyAttribute(templateId, key + "-type", property.getType());
+        savePropertyAttribute(templateId, key + "-password", property.isPassword().toString());
+    }
+    void savePropertyAttribute(long templateId, String key, String value) {
         if ( templateDetailsDao.findDetail(templateId,key) != null) {
             s_logger.debug(String.format("detail '%s' existed for template %d, deleting.", key, templateId));
             templateDetailsDao.removeDetail(templateId,key);
         }
-        String json =  gson.toJson(property);
-        VMTemplateDetailVO detailVO = new VMTemplateDetailVO(templateId, key, json, property.isUserConfigurable());
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("template property for template %d to save is '%s': '%s'", templateId, key, value));
+        }
+        VMTemplateDetailVO detailVO = new VMTemplateDetailVO(templateId, key, value, false);
         s_logger.debug("Persisting template details " + detailVO.getName() + " from OVF properties for template " + templateId);
         templateDetailsDao.persist(detailVO);
     }
