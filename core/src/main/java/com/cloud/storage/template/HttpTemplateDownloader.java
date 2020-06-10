@@ -218,7 +218,10 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             errorString = hte.getMessage();
         } catch (IOException ioe) {
             status = TemplateDownloader.Status.UNRECOVERABLE_ERROR; //probably a file write error?
-            errorString = ioe.getMessage();
+            // Let's not overwrite the original error message.
+            if (errorString.isEmpty()){
+                errorString = ioe.getMessage();
+            }
         } finally {
             if (status == Status.UNRECOVERABLE_ERROR && file.exists() && !file.isDirectory()) {
                 file.delete();
