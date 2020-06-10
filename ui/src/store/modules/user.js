@@ -42,7 +42,7 @@ const user = {
     SET_TOKEN: (state, token) => {
       state.token = token
     },
-    SET_PROJECT: (state, project) => {
+    SET_PROJECT: (state, project = {}) => {
       Vue.ls.set(CURRENT_PROJECT, project)
       state.project = project
     },

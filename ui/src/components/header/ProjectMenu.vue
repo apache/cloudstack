@@ -20,7 +20,7 @@
     <a-select
       class="project-select"
       defaultValue="Default View"
-      :value="$store.getters.project.displaytext || $store.getters.project.name || 'Default View'"
+      :value="('id' in $store.getters.project) ? ($store.getters.project.displaytext || $store.getters.project.name) : 'Default View'"
       :disabled="isDisabled()"
       :filterOption="filterProject"
       @change="changeProject"
@@ -31,7 +31,10 @@
         <template slot="title">
           <span>{{ $t('label.projects') }}</span>
         </template>
-        <a-icon style="font-size: 20px; color: #999; margin-top: -5px" type="project" />
+        <span style="font-size: 20px; color: #999; margin-top: -5px">
+          <a-icon v-if="!loading" type="project" />
+          <a-icon v-else type="loading" />
+        </span>
       </a-tooltip>
 
       <a-select-option v-for="(project, index) in projects" :key="index">
@@ -49,7 +52,8 @@ export default {
   name: 'ProjectMenu',
   data () {
     return {
-      projects: []
+      projects: [],
+      loading: false
     }
   },
   mounted () {
@@ -62,6 +66,7 @@ export default {
       }
       var page = 1
       const getNextPage = () => {
+        this.loading = true
         api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500 }).then(json => {
           if (page === 1) {
             this.projects = [{ name: 'Default View' }]
@@ -73,6 +78,8 @@ export default {
             page++
             getNextPage()
           }
+        }).finally(() => {
+          this.loading = false
         })
       }
       getNextPage()
@@ -85,7 +92,9 @@ export default {
       this.$store.dispatch('SetProject', project)
       this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
       this.$message.success(`Switched to "${project.name}"`)
-      this.$router.push({ name: 'dashboard' })
+      if (this.$route.name !== 'dashboard') {
+        this.$router.push({ name: 'dashboard' })
+      }
     },
     filterProject (input, option) {
       return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0

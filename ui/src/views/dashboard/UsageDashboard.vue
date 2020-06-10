@@ -122,6 +122,14 @@ export default {
   mounted () {
     this.project = store.getters.project
     this.fetchData()
+    this.$store.watch(
+      (state, getters) => getters.project,
+      (newValue, oldValue) => {
+        if (newValue && newValue.id) {
+          this.fetchData()
+        }
+      }
+    )
   },
   watch: {
     '$route' (to, from) {
