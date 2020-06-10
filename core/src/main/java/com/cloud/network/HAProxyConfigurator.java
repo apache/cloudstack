@@ -485,6 +485,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
         }
 
+        final List<String> frontendConfigs = new ArrayList<String>();
+        final List<String> backendConfigs = new ArrayList<String>();
+
         final List<String> result = new ArrayList<String>();
         // add line like this: "listen  65_37_141_30-80\n\tbind 65.37.141.30:80"
         sb = new StringBuilder();
@@ -492,28 +495,28 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         result.add(sb.toString());
         sb = new StringBuilder();
         sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
-        result.add(sb.toString());
+        frontendConfigs.add(sb.toString());
         sb = new StringBuilder();
         sb.append("\t").append("balance ").append(algorithm);
-        result.add(sb.toString());
+        backendConfigs.add(sb.toString());
 
         String timeoutConnect = lbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutConnect.key());
         if (timeoutConnect != null) {
             sb = new StringBuilder();
             sb.append("\t").append("timeout connect    " + timeoutConnect);
-            result.add(sb.toString());
+            backendConfigs.add(sb.toString());
         }
         String timeoutClient = lbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutClient.key());
         if (timeoutClient != null) {
             sb = new StringBuilder();
             sb.append("\t").append("timeout client     " + timeoutClient);
-            result.add(sb.toString());
+            frontendConfigs.add(sb.toString());
         }
         String timeoutServer = lbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutServer.key());
         if (timeoutServer != null) {
             sb = new StringBuilder();
             sb.append("\t").append("timeout server     " + timeoutServer);
-            result.add(sb.toString());
+            backendConfigs.add(sb.toString());
         }
 
         if (lbConfigsMap.get(LoadBalancerConfigKey.LbMaxConn.key()) != null) {
@@ -521,7 +524,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             if (maxConnValue > 0) {
                 sb = new StringBuilder();
                 sb.append("\tmaxconn ").append(maxConnValue);
-                result.add(sb.toString());
+                frontendConfigs.add(sb.toString());
             }
         }
         if (lbConfigsMap.get(LoadBalancerConfigKey.LbFullConn.key()) != null) {
@@ -529,7 +532,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             if (fullConnValue > 0) {
                 sb = new StringBuilder();
                 sb.append("\tfullconn ").append(fullConnValue);
-                result.add(sb.toString());
+                backendConfigs.add(sb.toString());
             }
         }
 
@@ -597,13 +600,13 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 }
             }
             if (httpbasedStickiness) {
-                result.addAll(dstWithCookieSubRule);
+                backendConfigs.addAll(dstWithCookieSubRule);
             } else {
-                result.addAll(dstSubRule);
+                backendConfigs.addAll(dstSubRule);
             }
-            result.add(stickinessSubRule);
+            backendConfigs.add(stickinessSubRule);
         } else {
-            result.addAll(dstSubRule);
+            backendConfigs.addAll(dstSubRule);
         }
         if (stickinessSubRule != null && !destsAvailable) {
             s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() + ": Not Applied, cause:  backends are unavailable");
@@ -626,15 +629,15 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if (http || httpbasedStickiness) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
-            result.add(sb.toString());
+            frontendConfigs.add(sb.toString());
             if (keepAliveEnabled) {
                 sb = new StringBuilder();
                 sb.append("\t").append("no option forceclose");
-                result.add(sb.toString());
+                frontendConfigs.add(sb.toString());
             } else {
                 sb = new StringBuilder();
                 sb.append("\t").append("option httpclose");
-                result.add(sb.toString());
+                frontendConfigs.add(sb.toString());
             }
         }
 
@@ -642,9 +645,11 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     && "true".equalsIgnoreCase(lbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))) {
             sb = new StringBuilder();
             sb.append("\t").append("source 0.0.0.0 usesrc clientip");
-            result.add(sb.toString());
+            backendConfigs.add(sb.toString());
         }
 
+        result.addAll(frontendConfigs);
+        result.addAll(backendConfigs);
         result.add(blankLine);
         return result;
     }
