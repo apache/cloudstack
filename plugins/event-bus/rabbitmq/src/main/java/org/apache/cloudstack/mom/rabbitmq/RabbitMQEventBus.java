@@ -21,11 +21,14 @@ package org.apache.cloudstack.mom.rabbitmq;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 
 import javax.naming.ConfigurationException;
 
@@ -358,8 +361,8 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         if (s_connection == null) {
             try {
                 return createConnection();
-            } catch (Exception e) {
-                s_logger.error("Failed to create a connection to AMQP server due to " + e.getMessage());
+            } catch (KeyManagementException | NoSuchAlgorithmException | IOException  | TimeoutException e) {
+                s_logger.error(String.format("Failed to create a connection to AMQP server [AMQP host:%s, port:%d] due to: %s", amqpHost, port, e));
                 throw e;
             }
         } else {
@@ -367,8 +370,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         }
     }
 
-    private synchronized Connection createConnection() throws Exception {
-        try {
+    private synchronized Connection createConnection() throws KeyManagementException, NoSuchAlgorithmException, IOException, TimeoutException {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setUsername(username);
             factory.setPassword(password);
@@ -389,9 +391,6 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             connection.addBlockedListener(blockedConnectionHandler);
             s_connection = connection;
             return s_connection;
-        } catch (Exception e) {
-            throw e;
-        }
     }
 
     private synchronized void closeConnection() {

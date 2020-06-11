@@ -2961,7 +2961,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
 
         ResponseView respView = ResponseView.Restricted;
-        if (cmd instanceof ListZonesCmdByAdmin) {
+        if (cmd instanceof ListZonesCmdByAdmin || CallContext.current().getCallingAccount().getType() == Account.ACCOUNT_TYPE_ADMIN) {
             respView = ResponseView.Full;
         }
 
@@ -3706,7 +3706,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
         }
 
-        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, uniqueGroupsPair.second());
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, affinityGroups.size());
 
     }
 

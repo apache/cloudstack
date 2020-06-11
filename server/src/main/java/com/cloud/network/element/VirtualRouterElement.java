@@ -1272,8 +1272,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            final UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
-            _userVmMgr.setupVmForPvlan(false, userVm.getHostId(), nic);
+            _userVmMgr.setupVmForPvlan(false, vm.getVirtualMachine().getHostId(), nic);
         }
         return true;
     }
@@ -1297,8 +1296,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            final UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
-            _userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
+            _userVmMgr.setupVmForPvlan(true, vm.getVirtualMachine().getHostId(), nic);
         }
     }
 
@@ -1321,8 +1319,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            final UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
-            _userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
+            _userVmMgr.setupVmForPvlan(true, vm.getVirtualMachine().getHostId(), nic);
         }
     }
 

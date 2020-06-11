@@ -566,9 +566,12 @@ class CsIP:
                 logging.error(
                     "Not able to setup source-nat for a regular router yet")
 
-            if self.config.has_dns() or self.config.is_dhcp():
+            if (self.config.has_dns() or self.config.is_dhcp()) and self.config.expose_dns():
+                logging.info("Making dns publicly available")
                 dns = CsDnsmasq(self)
                 dns.add_firewall_rules()
+            else:
+                logging.info("Not making dns publicly available")
 
             if self.config.has_metadata():
                 app = CsApache(self)

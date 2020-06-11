@@ -371,6 +371,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
     // Reorder hosts in the decreasing order of free capacity.
     private List<? extends Host> reorderHostsByCapacity(DeploymentPlan plan, List<? extends Host> hosts) {
+        Long zoneId = plan.getDataCenterId();
         Long clusterId = plan.getClusterId();
         //Get capacity by which we should reorder
         String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
@@ -378,7 +379,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
             capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
         }
-        List<Long> hostIdsByFreeCapacity = _capacityDao.orderHostsByFreeCapacity(clusterId, capacityType);
+        List<Long> hostIdsByFreeCapacity = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("List of hosts in descending order of free capacity in the cluster: "+ hostIdsByFreeCapacity);
         }

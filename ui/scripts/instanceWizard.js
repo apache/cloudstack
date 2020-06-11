@@ -965,14 +965,16 @@
                     }
                 });
 
-                $.ajax({
-                    url: createURL("listTemplateOvfProperties&id=" + selectedTemplateObj.id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                        ovfProps = json.listtemplateovfpropertiesresponse.ovfproperty;
-                    }
-                });
+                if (selectedTemplateObj) {
+                    $.ajax({
+                        url: createURL("listTemplateOvfProperties&id=" + selectedTemplateObj.id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            ovfProps = json.listtemplateovfpropertiesresponse.ovfproperty;
+                        }
+                    });
+                }
 
                 var $step = $('.step.sshkeyPairs:visible');
                 if (ovfProps == null || ovfProps.length === 0) {

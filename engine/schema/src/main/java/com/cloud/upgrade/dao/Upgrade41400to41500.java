@@ -32,18 +32,18 @@ import org.apache.log4j.Logger;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade41300to41400 implements DbUpgrade {
+public class Upgrade41400to41500 implements DbUpgrade {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41300to41400.class);
+    final static Logger LOG = Logger.getLogger(Upgrade41400to41500.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.13.0.0", "4.14.0.0"};
+        return new String[] {"4.14.0.0", "4.15.0.0"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "4.14.0.0";
+        return "4.15.0.0";
     }
 
     @Override
@@ -53,7 +53,7 @@ public class Upgrade41300to41400 implements DbUpgrade {
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-41300to41400.sql";
+        final String scriptFile = "META-INF/db/schema-41400to41500.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -103,12 +103,12 @@ public class Upgrade41300to41400 implements DbUpgrade {
 
         final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-4.14.0");
-                put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-4.14.0");
-                put(Hypervisor.HypervisorType.XenServer, "systemvm-xenserver-4.14.0");
-                put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-4.14.0");
-                put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-4.14.0");
-                put(Hypervisor.HypervisorType.Ovm3, "systemvm-ovm3-4.14.0");
+                put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-4.15.0");
+                put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-4.15.0");
+                put(Hypervisor.HypervisorType.XenServer, "systemvm-xenserver-4.15.0");
+                put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-4.15.0");
+                put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-4.15.0");
+                put(Hypervisor.HypervisorType.Ovm3, "systemvm-ovm3-4.15.0");
             }
         };
 
@@ -125,30 +125,30 @@ public class Upgrade41300to41400 implements DbUpgrade {
 
         final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.14/systemvmtemplate-4.14.0-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.14/systemvmtemplate-4.14.0-vmware.ova");
-                put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.14/systemvmtemplate-4.14.0-xen.vhd.bz2");
-                put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.14/systemvmtemplate-4.14.0-hyperv.vhd.zip");
-                put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.14/systemvmtemplate-4.14.0-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.14/systemvmtemplate-4.14.0-ovm.raw.bz2");
+                put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.0-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.0-vmware.ova");
+                put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.0-xen.vhd.bz2");
+                put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.0-hyperv.vhd.zip");
+                put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.0-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.0-ovm.raw.bz2");
             }
         };
 
         final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "d15ed159be32151b07e3211caf9cb802");
-                put(Hypervisor.HypervisorType.XenServer, "fcaf1abc9aa62e7ed75f62b3092a01a2");
-                put(Hypervisor.HypervisorType.VMware, "eb39f8b5a556dfc93c6be23ae45f34e1");
-                put(Hypervisor.HypervisorType.Hyperv, "b4e91c14958e0fca9470695b0be05f99");
-                put(Hypervisor.HypervisorType.LXC, "d15ed159be32151b07e3211caf9cb802");
-                put(Hypervisor.HypervisorType.Ovm3, "1f97f4beb30af8cda886f1e977514704");
+                put(Hypervisor.HypervisorType.KVM, "81b3e48bb934784a13555a43c5ef5ffb");
+                put(Hypervisor.HypervisorType.XenServer, "1b178a5dbdbe090555515340144c6017");
+                put(Hypervisor.HypervisorType.VMware, "e6a88e518c57d6f36c096c4204c3417f");
+                put(Hypervisor.HypervisorType.Hyperv, "5c94da45337cf3e1910dcbe084d4b9ad");
+                put(Hypervisor.HypervisorType.LXC, "81b3e48bb934784a13555a43c5ef5ffb");
+                put(Hypervisor.HypervisorType.Ovm3, "875c5c65455fc06c4a012394410db375");
             }
         };
 
         for (final Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()) {
             LOG.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
             try (PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1")) {
-                // Get 4.11 systemvm template id for corresponding hypervisor
+                // Get systemvm template id for corresponding hypervisor
                 long templateId = -1;
                 pstmt.setString(1, hypervisorAndTemplateName.getValue());
                 try (ResultSet rs = pstmt.executeQuery()) {
@@ -198,12 +198,12 @@ public class Upgrade41300to41400 implements DbUpgrade {
                     // Change value of global configuration parameter
                     // minreq.sysvmtemplate.version for the ACS version
                     try (PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");) {
-                        update_pstmt.setString(1, "4.14.0");
+                        update_pstmt.setString(1, "4.15.0");
                         update_pstmt.setString(2, "minreq.sysvmtemplate.version");
                         update_pstmt.executeUpdate();
                     } catch (final SQLException e) {
-                        LOG.error("updateSystemVmTemplates:Exception while setting 'minreq.sysvmtemplate.version' to 4.14.0: " + e.getMessage());
-                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting 'minreq.sysvmtemplate.version' to 4.14.0", e);
+                        LOG.error("updateSystemVmTemplates:Exception while setting 'minreq.sysvmtemplate.version' to 4.15.0: " + e.getMessage());
+                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting 'minreq.sysvmtemplate.version' to 4.15.0", e);
                     }
                 } else {
                     if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())) {
@@ -237,7 +237,7 @@ public class Upgrade41300to41400 implements DbUpgrade {
 
     @Override
     public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-41300to41400-cleanup.sql";
+        final String scriptFile = "META-INF/db/schema-41400to41500-cleanup.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);

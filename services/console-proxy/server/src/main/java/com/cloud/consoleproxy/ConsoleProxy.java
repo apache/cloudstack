@@ -32,6 +32,7 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 import org.apache.log4j.xml.DOMConfigurator;
+import org.eclipse.jetty.websocket.api.Session;
 
 import com.cloud.consoleproxy.util.Logger;
 import com.cloud.utils.PropertiesUtil;
@@ -344,10 +345,20 @@ public class ConsoleProxy {
             server.createContext("/ajaximg", new ConsoleProxyAjaxImageHandler());
             server.setExecutor(new ThreadExecutor()); // creates a default executor
             server.start();
+
+            ConsoleProxyNoVNCServer noVNCServer = getNoVNCServer();
+            noVNCServer.start();
+
         } catch (Exception e) {
             s_logger.error(e.getMessage(), e);
             System.exit(1);
         }
+    }
+
+    private static ConsoleProxyNoVNCServer getNoVNCServer() {
+        if (httpListenPort == 443)
+            return new ConsoleProxyNoVNCServer(ksBits, ksPassword);
+        return new ConsoleProxyNoVNCServer();
     }
 
     private static void startupHttpCmdPort() {
@@ -395,7 +406,7 @@ public class ConsoleProxy {
         String clientKey = param.getClientMapKey();
         synchronized (connectionMap) {
             viewer = connectionMap.get(clientKey);
-            if (viewer == null) {
+            if (viewer == null || viewer.getClass() == ConsoleProxyNoVncClient.class) {
                 viewer = getClient(param);
                 viewer.initClient(param);
                 connectionMap.put(clientKey, viewer);
@@ -429,7 +440,7 @@ public class ConsoleProxy {
         String clientKey = param.getClientMapKey();
         synchronized (connectionMap) {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
-            if (viewer == null) {
+            if (viewer == null || viewer.getClass() == ConsoleProxyNoVncClient.class) {
                 authenticationExternally(param);
                 viewer = getClient(param);
                 viewer.initClient(param);
@@ -519,6 +530,42 @@ public class ConsoleProxy {
         @Override
         public void execute(Runnable r) {
             new Thread(r).start();
+        }
+    }
+
+    public static ConsoleProxyNoVncClient getNoVncViewer(ConsoleProxyClientParam param, String ajaxSession,
+            Session session) throws AuthenticationException {
+        boolean reportLoadChange = false;
+        String clientKey = param.getClientMapKey();
+        synchronized (connectionMap) {
+            ConsoleProxyClient viewer = connectionMap.get(clientKey);
+            if (viewer == null || viewer.getClass() != ConsoleProxyNoVncClient.class) {
+                authenticationExternally(param);
+                viewer = new ConsoleProxyNoVncClient(session);
+                viewer.initClient(param);
+
+                connectionMap.put(clientKey, viewer);
+                reportLoadChange = true;
+            } else {
+                if (param.getClientHostPassword() == null || param.getClientHostPassword().isEmpty() ||
+                        !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
+                    throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
+
+                if (!viewer.isFrontEndAlive()) {
+                    authenticationExternally(param);
+                    viewer.initClient(param);
+                    reportLoadChange = true;
+                }
+            }
+
+            if (reportLoadChange) {
+                ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();
+                String loadInfo = statsCollector.getStatsReport();
+                reportLoadInfo(loadInfo);
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Report load change : " + loadInfo);
+            }
+            return (ConsoleProxyNoVncClient)viewer;
         }
     }
 }

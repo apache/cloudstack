@@ -192,7 +192,6 @@ import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.InternalErrorException;
@@ -1724,7 +1723,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
         String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         DiskTO rootDiskTO = null;
-        String bootMode = ApiConstants.BootType.BIOS.toString();
+        String bootMode = "bios";
         if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
             bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
         }
@@ -2286,7 +2285,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            if (!bootMode.equalsIgnoreCase(ApiConstants.BootType.BIOS.toString())) {
+            if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")) {
                 vmConfigSpec.setFirmware("efi");
                 if (vmSpec.getDetails().containsKey(ApiConstants.BootType.UEFI.toString()) && "secure".equalsIgnoreCase(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()))) {
                     VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
@@ -6448,16 +6447,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private static String getRouterSshControlIp(NetworkElementCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String routerGuestIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
-        String zoneNetworkType = cmd.getAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE);
-
-        if (routerGuestIp != null && zoneNetworkType != null && NetworkType.valueOf(zoneNetworkType) == NetworkType.Basic) {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("In Basic zone mode, use router's guest IP for SSH control. guest IP : " + routerGuestIp);
-
-            return routerGuestIp;
-        }
-
         if (s_logger.isDebugEnabled())
             s_logger.debug("Use router's private IP for SSH control. IP : " + routerIp);
         return routerIp;
