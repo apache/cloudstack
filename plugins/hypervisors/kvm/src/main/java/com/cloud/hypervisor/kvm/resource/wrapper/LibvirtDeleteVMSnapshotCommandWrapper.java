@@ -24,7 +24,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
-import org.libvirt.DomainInfo;
+import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 
@@ -62,8 +62,8 @@ public final class LibvirtDeleteVMSnapshotCommandWrapper extends CommandWrapper<
 
             snapshot = dm.snapshotLookupByName(cmd.getTarget().getSnapshotName());
 
-            // Suspend the VM prior to deleting the snapshot to guard against corruption
-            dm.suspend();
+            s_logger.debug("Suspending domain " + vmName);
+            dm.suspend(); // suspend the vm to avoid image corruption
 
             snapshot.delete(0); // only remove this snapshot, not children
             didDelete = true;
@@ -129,6 +129,10 @@ public final class LibvirtDeleteVMSnapshotCommandWrapper extends CommandWrapper<
                 }
 
                 try {
+                    if (dm.getInfo().state == DomainState.VIR_DOMAIN_PAUSED) {
+                        s_logger.debug("Resuming domain " + vmName);
+                        dm.resume();
+                    }
                     dm.free();
                 } catch (LibvirtException l) {
                     s_logger.trace("Ignoring libvirt error.", l);

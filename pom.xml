@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.14.0.0-SNAPSHOT</version>
+    <version>4.15.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -146,7 +146,7 @@
         <cs.jersey-bundle.version>1.19.4</cs.jersey-bundle.version>
         <cs.jetty.version>9.4.26.v20200117</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.26.v20200117</cs.jetty-maven-plugin.version>
-        <cs.jna.version>4.0.0</cs.jna.version>
+        <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.10.5</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
         <cs.jsch.version>0.1.55</cs.jsch.version>
@@ -1000,6 +1000,7 @@
                             <exclude>systemvm/agent/conf/environment.properties</exclude>
                             <exclude>systemvm/agent/js/jquery.js</exclude>
                             <exclude>systemvm/agent/js/jquery.flot.navigate.js</exclude>
+                            <exclude>systemvm/agent/noVNC/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
                             <exclude>test/systemvm/README.md</exclude>

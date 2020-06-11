@@ -1006,9 +1006,10 @@ public class KVMStorageProcessor implements StorageProcessor {
                     if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
                         final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
                         try {
+                            s_logger.info(String.format("Suspending VM '%s' to delete snapshot,", vm.getName()));
                             vm.suspend();
-                        } catch(final Exception e) {
-                            s_logger.error("Failed to suspend the VM: " + e);
+                        } catch (final LibvirtException e) {
+                            s_logger.error("Failed to suspend the VM", e);
                             throw e;
                         }
                         snap.delete(0);
@@ -1666,8 +1667,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     rbd.close(image);
                     r.ioCtxDestroy(io);
                 }
-            } else if (primaryPool.getType() == StoragePoolType.NetworkFilesystem) {
-                s_logger.info(String.format("Attempting to remove snapshot (id=%s, name=%s, path=%s, storage type=%s) on primary storage", snapshotTO.getId(), snapshotTO.getName(), snapshotTO.getPath(), primaryPool.getType()));
+            } else if (primaryPool.getType() == StoragePoolType.NetworkFilesystem || primaryPool.getType() == StoragePoolType.Filesystem) {
+                s_logger.info(String.format("Deleting snapshot (id=%s, name=%s, path=%s, storage type=%s) on primary storage", snapshotTO.getId(), snapshotTO.getName(), snapshotTO.getPath(), primaryPool.getType()));
                 deleteSnapshotViaManageSnapshotScript(snapshotName, disk);
             } else {
                 s_logger.warn("Operation not implemented for storage pool type of " + primaryPool.getType().toString());

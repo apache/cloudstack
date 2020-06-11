@@ -55,6 +55,7 @@ public class ApiConstants {
     public static final String CERTIFICATE_CHAIN = "certchain";
     public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
     public static final String CERTIFICATE_ID = "certid";
+    public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
@@ -804,8 +805,9 @@ public class ApiConstants {
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
 
-    public static final String BOOT_TYPE ="boottype";
-    public static final String BOOT_MODE ="bootmode";
+    public static final String BOOT_TYPE = "boottype";
+    public static final String BOOT_MODE = "bootmode";
+    public static final String BOOT_INTO_SETUP = "bootintosetup";
 
     public enum BootType {
         UEFI, BIOS;

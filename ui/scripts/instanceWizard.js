@@ -1413,6 +1413,12 @@
                     bootmode : bootmode
                 });
             }
+            var bootintosetup = (args.data.bootintosetup == "on");
+            if (bootintosetup) {
+                $.extend(deployVmData, {
+                    bootintosetup : bootintosetup
+                });
+            }
 
             if (g_hostid != null) {
                 $.extend(deployVmData, {

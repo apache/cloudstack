@@ -188,11 +188,11 @@ class CsDhcp(CsDataBag):
                                             lease))
         else:
             tag = entry['ipv4_address'].replace(".", "_")
-            self.cloud.add("%s,set:%s,%s,%s,%sh" % (entry['mac_address'],
-                                                    tag,
-                                                    entry['ipv4_address'],
-                                                    entry['host_name'],
-                                                    lease))
+            self.cloud.add("%s,set:%s,%s,%s,%s" % (entry['mac_address'],
+                                                   tag,
+                                                   entry['ipv4_address'],
+                                                   entry['host_name'],
+                                                   lease))
             self.dhcp_opts.add("%s,%s" % (tag, 3))
             self.dhcp_opts.add("%s,%s" % (tag, 6))
             self.dhcp_opts.add("%s,%s" % (tag, 15))
