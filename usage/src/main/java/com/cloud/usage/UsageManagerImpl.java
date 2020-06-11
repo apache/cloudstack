@@ -33,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import java.lang.management.ManagementFactory;
+
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaStatement;
@@ -275,7 +277,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.error("Unhandled exception configuring UsageManger", e);
             throw new ConfigurationException("Unhandled exception configuring UsageManager " + e.toString());
         }
-        _pid = Integer.parseInt(System.getProperty("pid"));
+
+        try {
+            String processName = ManagementFactory.getRuntimeMXBean().getName();
+            _pid = Integer.parseInt(processName.split("@")[0]);
+        } catch (Exception e) {
+            s_logger.error("Unable to get process pid ", e);
+            throw new ConfigurationException("Unable to get process pid " + e.toString());
+        }
         return true;
     }
 
