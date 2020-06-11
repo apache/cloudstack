@@ -12458,6 +12458,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -165px -704px;
 }
 
+.shareISO .icon {
+  background-position: -165px -122px;
+}
+
+.shareISO:hover .icon {
+  background-position: -165px -704px;
+}
+
 .createVolume .icon {
   background-position: -70px -124px;
 }

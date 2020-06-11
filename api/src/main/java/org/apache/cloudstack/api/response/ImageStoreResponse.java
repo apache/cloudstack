@@ -63,6 +63,14 @@ public class ImageStoreResponse extends BaseResponse {
     @Param(description = "defines if store is read-only")
     private Boolean readonly;
 
+    @SerializedName("disksizetotal")
+    @Param(description = "the total disk size of the host")
+    private Long diskSizeTotal;
+
+    @SerializedName("disksizeused")
+    @Param(description = "the host's currently used disk size")
+    private Long diskSizeUsed;
+
     public ImageStoreResponse() {
     }
 
@@ -139,7 +147,13 @@ public class ImageStoreResponse extends BaseResponse {
         return readonly;
     }
 
-    public void setReadonly(Boolean readonly) {
-        this.readonly = readonly;
+    public void setReadonly(Boolean readonly) { this.readonly = readonly; }
+
+    public void setDiskSizeTotal(Long diskSizeTotal) {
+        this.diskSizeTotal = diskSizeTotal;
+    }
+
+    public void setDiskSizeUsed(Long diskSizeUsed) {
+        this.diskSizeUsed = diskSizeUsed;
     }
 }

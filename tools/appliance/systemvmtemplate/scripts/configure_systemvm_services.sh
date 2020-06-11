@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.14.0
+CLOUDSTACK_RELEASE=4.15.0
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -41,7 +41,7 @@ function configure_issue() {
 
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
- (___(_)   Debian GNU/Linux 9.12 \n \l
+ (___(_)   Debian GNU/Linux 10 \n \l
 
 EOF
 }

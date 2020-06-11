@@ -286,6 +286,7 @@ var dictionary = {
 "label.action.run.diagnostics":"Run Diagnostics",
 "label.action.secure.host":"Provision Host Security Keys",
 "label.action.start.instance":"Start Instance",
+"label.action.share.iso": "Update ISO Permissions",
 "label.action.share.template": "Update Template Permissions",
 "label.action.start.instance.processing":"Starting Instance....",
 "label.action.start.router":"Start Router",

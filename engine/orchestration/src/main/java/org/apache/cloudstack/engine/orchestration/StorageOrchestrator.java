@@ -216,13 +216,13 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy) {
         String message = "";
         boolean success = true;
-        if (destDatastoreId == srcDatastore.getId() && !files.isEmpty() ) {
+        if (destDatastoreId == srcDatastore.getId() && !files.isEmpty()) {
             if (migrationPolicy == MigrationPolicy.BALANCE) {
                 s_logger.debug("Migration completed : data stores have been balanced ");
                 message = "Image stores have been balanced";
                 success = true;
             } else {
-                message = "Files not completely migrated from "+ srcDatastore.getId() +
+                message = "Files not completely migrated from "+ srcDatastore.getId() + ". Datastore (source): " + srcDatastore.getId() + "has equal or more free space than destination."+
                         " If you want to continue using the Image Store, please change the read-only status using 'update imagestore' command";
                 success = false;
             }
