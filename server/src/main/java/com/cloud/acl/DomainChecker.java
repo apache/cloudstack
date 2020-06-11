@@ -122,7 +122,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
             throws PermissionDeniedException {
         if (entity instanceof VirtualMachineTemplate) {
-
             VirtualMachineTemplate template = (VirtualMachineTemplate)entity;
             Account owner = _accountDao.findById(template.getAccountId());
             // validate that the template is usable by the account

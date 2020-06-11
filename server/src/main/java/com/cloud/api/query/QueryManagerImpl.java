@@ -1618,6 +1618,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("accountName", sb.entity().getAccountName(), Op.EQ);
         }
 
+        if (userId != null) {
+            sb.and("userId", sb.entity().getUserId(), Op.EQ);
+        }
         SearchCriteria<ProjectAccountJoinVO> sc = sb.create();
 
         sc.setParameters("projectId", projectId);

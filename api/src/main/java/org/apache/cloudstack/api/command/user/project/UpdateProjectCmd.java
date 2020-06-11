@@ -67,8 +67,11 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account owning a project")
     private Long accountId;
 
-    @Parameter(name = ApiConstants.ROLE_TYPE, type = CommandType.STRING, required = true, description = "Account level role to be assigned to the user/account : Admin/Regular")
+    @Parameter(name = ApiConstants.ROLE_TYPE, type = CommandType.STRING, description = "Account level role to be assigned to the user/account : Admin/Regular")
     private String roleType;
+
+    @Parameter(name = ApiConstants.SWAP_OWNER, type = CommandType.BOOLEAN, description = "True by default; when true, makes provided account the owner")
+    private Boolean swapOwner;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,7 +109,10 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     }
 
     public ProjectAccount.Role getAccountRole() {
-        return getRoleType(roleType);
+        if (roleType != null) {
+            return getRoleType(roleType);
+        }
+        return ProjectAccount.Role.Regular;
     }
 
     public Long getAccountId() {
@@ -116,6 +122,14 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+
+    public Boolean isSwapOwner() {
+        if (swapOwner != null) {
+            return swapOwner;
+        } else {
+            return true;
+        }
     }
 
     @Override
@@ -155,7 +169,12 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
             }
         }
 
-        Project project = _projectService.updateProject(getId(), getDisplayText(), getAccountName(), getUserId(), getAccountId(), getDomainId(), getAccountRole());
+        Project project = null;
+        if (isSwapOwner()) {
+            project = _projectService.updateProject(getId(), getDisplayText(), getAccountName());
+        }  else {
+            project = _projectService.updateProject(getId(), getDisplayText(), getAccountName(), getUserId(), getAccountId(), getDomainId(), getAccountRole());
+        }
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
             response.setResponseName(getCommandName());

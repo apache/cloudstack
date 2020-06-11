@@ -569,7 +569,78 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId), ResourceType.project);
         futureOwner.setAccountRole(newAccRole);
         _projectAccountDao.update(futureOwner.getId(), futureOwner);
-        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.project);
+        if (newAccRole != null && Role.Admin == newAccRole) {
+            _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.project);
+        } else {
+            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.project);
+        }
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async = true)
+    public Project updateProject(final long projectId, final String displayText, final String newOwnerName) throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
+
+        //check that the project exists
+        final ProjectVO project = getProject(projectId);
+
+        if (project == null) {
+            throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
+        }
+
+        //verify permissions
+        _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
+
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
+                if (displayText != null) {
+                    project.setDisplayText(displayText);
+                    _projectDao.update(projectId, project);
+                }
+
+                if (newOwnerName != null) {
+                    //check that the new owner exists
+                    Account futureOwnerAccount = _accountMgr.getActiveAccountByName(newOwnerName, project.getDomainId());
+                    if (futureOwnerAccount == null) {
+                        throw new InvalidParameterValueException("Unable to find account name=" + newOwnerName + " in domain id=" + project.getDomainId());
+                    }
+                    Account currentOwnerAccount = getProjectOwner(projectId);
+                    if (currentOwnerAccount == null) {
+                        s_logger.error("Unable to find the current owner for the project id=" + projectId);
+                        throw new InvalidParameterValueException("Unable to find the current owner for the project id=" + projectId);
+                    }
+                    if (currentOwnerAccount.getId() != futureOwnerAccount.getId()) {
+                        ProjectAccountVO futureOwner = _projectAccountDao.findByProjectIdAccountId(projectId, futureOwnerAccount.getAccountId());
+                        if (futureOwner == null) {
+                            throw new InvalidParameterValueException("Account " + newOwnerName +
+                                    " doesn't belong to the project. Add it to the project first and then change the project's ownership");
+                        }
+
+                        //do resource limit check
+                        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(futureOwnerAccount.getId()), ResourceType.project);
+
+                        //unset the role for the old owner
+                        ProjectAccountVO currentOwner = _projectAccountDao.findByProjectIdAccountId(projectId, currentOwnerAccount.getId());
+                        currentOwner.setAccountRole(Role.Regular);
+                        _projectAccountDao.update(currentOwner.getId(), currentOwner);
+                        _resourceLimitMgr.decrementResourceCount(currentOwnerAccount.getId(), ResourceType.project);
+
+                        //set new owner
+                        futureOwner.setAccountRole(Role.Admin);
+                        _projectAccountDao.update(futureOwner.getId(), futureOwner);
+                        _resourceLimitMgr.incrementResourceCount(futureOwnerAccount.getId(), ResourceType.project);
+
+                    } else {
+                        s_logger.trace("Future owner " + newOwnerName + "is already the owner of the project id=" + projectId);
+                    }
+                }
+            }
+        });
+
+        return _projectDao.findById(projectId);
+
     }
 
     @Override

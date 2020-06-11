@@ -100,7 +100,6 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
                 throw new PermissionDeniedException("User/Account not part of project");
             }
         }
-       // if (ProjectAccount.Role.Admin != projectAccount.getAccountRole()) {
         if (ProjectAccount.Role.Admin != projectAccount.getAccountRole()) {
             throw new PermissionDeniedException("User unauthorized to perform operation in the project");
         }

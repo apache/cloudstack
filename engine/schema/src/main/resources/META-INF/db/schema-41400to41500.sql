@@ -92,13 +92,33 @@ CREATE TABLE IF NOT EXISTS `cloud`.`project_role_permissions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Alter project accounts table to include user_id and project_role_id for role based users in projects
-ALTER TABLE `cloud`.`project_account`
-    ADD COLUMN `user_id` bigint unsigned COMMENT 'ID of user to be added to the project' AFTER `account_id`,
-    ADD CONSTRAINT `fk_project_account__user_id` FOREIGN KEY `fk_project_account__user_id`(`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-    ADD COLUMN `project_role_id` bigint unsigned COMMENT 'Project role id' AFTER `project_account_id`,
-    ADD CONSTRAINT `fk_project_account__project_role_id` FOREIGN KEY (`project_role_id`) REFERENCES `project_role` (`id`),
-    -- DROP INDEX `account_id`,
-    ADD UNIQUE (`user_id`, `account_id`, `project_id`);
+DROP TABLE IF EXISTS `cloud`.`project_account`;
+CREATE TABLE  `cloud`.`project_account` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `account_id` bigint unsigned NOT NULL COMMENT'account id',
+  `user_id` bigint unsigned COMMENT 'ID of user to be added to the project',
+  `account_role` varchar(255) NOT NULL DEFAULT 'Regular' COMMENT 'Account role in the project (Owner or Regular)',
+  `project_id` bigint unsigned NOT NULL COMMENT 'project id',
+  `project_account_id` bigint unsigned NOT NULL,
+  `project_role_id` bigint unsigned COMMENT 'Project role id',
+  `created` datetime COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_project_account__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_project_account__user_id` FOREIGN KEY(`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_project_account__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_project_account__project_account_id` FOREIGN KEY(`project_account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_project_account__project_role_id` FOREIGN KEY (`project_role_id`) REFERENCES `project_role` (`id`),
+  UNIQUE (`account_id`, `user_id`, `project_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+--ALTER TABLE `cloud`.`project_account`
+--    ADD COLUMN `user_id` bigint unsigned COMMENT 'ID of user to be added to the project' AFTER `account_id`,
+--    ADD CONSTRAINT `fk_project_account__user_id` FOREIGN KEY `fk_project_account__user_id`(`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+--    ADD COLUMN `project_role_id` bigint unsigned COMMENT 'Project role id' AFTER `project_account_id`,
+--    ADD CONSTRAINT `fk_project_account__project_role_id` FOREIGN KEY (`project_role_id`) REFERENCES `project_role` (`id`),
+--    DROP FOREIGN KEY fk_project_account__account_id,
+--    DROP INDEX `account_id`,
+--    ADD UNIQUE (`user_id`, `account_id`, `project_id`),
+--    ADD CONSTRAINT `fk_project_account__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE;
 
 -- Alter project invitations table to include user_id for invites sent to specific users of an account
 ALTER TABLE `cloud`.`project_invitations`

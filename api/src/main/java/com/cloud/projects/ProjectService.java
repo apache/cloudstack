@@ -78,7 +78,7 @@ public interface ProjectService {
 
     Project findByNameAndDomainId(String name, long domainId);
 
-    //Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException;
+    Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException;
 
     Project updateProject(long id, String displayText, String newOwnerName, Long userId, Long accountId, Long domainId, Role newRole) throws ResourceAllocationException;
 
@@ -101,4 +101,5 @@ public interface ProjectService {
     Project findByProjectAccountIdIncludingRemoved(long projectAccountId);
 
     boolean addUserToProject(Long projectId, Long userId, String email, Long projectRoleId, Role projectRole);
+
 }
