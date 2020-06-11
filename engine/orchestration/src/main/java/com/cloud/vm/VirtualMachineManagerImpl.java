@@ -889,6 +889,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("start parameter value of %s == %s during dispatching",
+                        VirtualMachineProfile.Param.BootIntoSetup.getName(),
+                        (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
+            }
             // avoid re-entrance
             VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
@@ -901,6 +906,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
         } else {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("start parameter value of %s == %s during processing of queued job",
+                        VirtualMachineProfile.Param.BootIntoSetup.getName(),
+                        (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
+            }
             final Outcome<VirtualMachine> outcome = startVmThroughJobQueue(vmUuid, params, planToDeploy, planner);
 
             try {
@@ -1064,10 +1074,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
-                s_logger.info(" Uefi params " + "UefiFlag: " + params.get(VirtualMachineProfile.Param.UefiFlag)
-                        + " Boot Type: " + params.get(VirtualMachineProfile.Param.BootType)
-                        + " Boot Mode: " + params.get(VirtualMachineProfile.Param.BootMode)
-                );
+                logBootModeParameters(params);
                 DeployDestination dest = null;
                 try {
                     dest = _dpMgr.planDeployment(vmProfile, plan, avoids, planner);
@@ -1136,6 +1143,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
                     final VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+
+                    checkAndSetEnterSetupMode(vmTO, params);
 
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
 
@@ -1312,6 +1321,30 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
+        }
+    }
+
+    private void logBootModeParameters(Map<VirtualMachineProfile.Param, Object> params) {
+        StringBuffer msgBuf = new StringBuffer("Uefi params ");
+        boolean log = false;
+        if (params.get(VirtualMachineProfile.Param.UefiFlag) != null) {
+            msgBuf.append(String.format("UefiFlag: %s ", params.get(VirtualMachineProfile.Param.UefiFlag)));
+            log = true;
+        }
+        if (params.get(VirtualMachineProfile.Param.BootType) != null) {
+            msgBuf.append(String.format("Boot Type: %s ", params.get(VirtualMachineProfile.Param.BootType)));
+            log = true;
+        }
+        if (params.get(VirtualMachineProfile.Param.BootMode) != null) {
+            msgBuf.append(String.format("Boot Mode: %s ", params.get(VirtualMachineProfile.Param.BootMode)));
+            log = true;
+        }
+        if (params.get(VirtualMachineProfile.Param.BootIntoSetup) != null) {
+            msgBuf.append(String.format("Boot into Setup: %s ", params.get(VirtualMachineProfile.Param.BootIntoSetup)));
+            log = true;
+        }
+        if (log) {
+            s_logger.info(msgBuf.toString());
         }
     }
 
@@ -3094,6 +3127,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
             placeHolder = createPlaceHolderWork(vm.getId());
             try {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("reboot parameter value of %s == %s at orchestration", VirtualMachineProfile.Param.BootIntoSetup.getName(),
+                            (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
+                }
                 orchestrateReboot(vmUuid, params);
             } finally {
                 if (placeHolder != null) {
@@ -3101,6 +3138,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
         } else {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("reboot parameter value of %s == %s through job-queue", VirtualMachineProfile.Param.BootIntoSetup.getName(),
+                        (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
+            }
             final Outcome<VirtualMachine> outcome = rebootVmThroughJobQueue(vmUuid, params);
 
             try {
@@ -3150,7 +3191,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             final Commands cmds = new Commands(Command.OnError.Stop);
             RebootCommand rebootCmd = new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType()));
-            rebootCmd.setVirtualMachine(getVmTO(vm.getId()));
+            VirtualMachineTO vmTo = getVmTO(vm.getId());
+            checkAndSetEnterSetupMode(vmTo, params);
+            rebootCmd.setVirtualMachine(vmTo);
             cmds.addCommand(rebootCmd);
             _agentMgr.send(host.getId(), cmds);
 
@@ -3168,6 +3211,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.warn("Unable to send the reboot command to host " + dest.getHost() + " for the vm " + vm + " due to operation timeout", e);
             throw new CloudRuntimeException("Failed to reboot the vm on host " + dest.getHost());
         }
+    }
+
+    private void checkAndSetEnterSetupMode(VirtualMachineTO vmTo, Map<VirtualMachineProfile.Param, Object> params) {
+        Boolean enterSetup = (Boolean)params.get(VirtualMachineProfile.Param.BootIntoSetup);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("orchestrating VM reboot for '%s' %s set to %s", vmTo.getName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup));
+        }
+        vmTo.setEnterHardwareSetup(enterSetup == null ? false : enterSetup);
     }
 
     protected VirtualMachineTO getVmTO(Long vmId) {
@@ -5222,6 +5273,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.info("Unable to find vm " + work.getVmId());
         }
         assert vm != null;
+
+        Boolean enterSetup = (Boolean)work.getParams().get(VirtualMachineProfile.Param.BootIntoSetup);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("orchestrating VM start for '%s' %s set to %s", vm.getInstanceName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup));
+        }
 
         try{
             orchestrateStart(vm.getUuid(), work.getParams(), work.getPlan(), _dpMgr.getDeploymentPlannerByName(work.getDeploymentPlanner()));

@@ -113,11 +113,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
-    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]")
+    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]", since = "4.14.0.0")
     private String bootType;
 
-    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy By default for BIOS")
+    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy By default for BIOS", since = "4.14.0.0")
     private String bootMode;
+
+    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup or not (ignored if startVm = false, only valid for vmware)", since = "4.15.0.0")
+    private Boolean bootIntoSetup;
 
     //DataDisk information
     @ACL
@@ -281,15 +284,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 }
             }
         }
-        if(getBootType() != null){ // export to get
-            if(getBootType() == ApiConstants.BootType.UEFI) {
-                customparameterMap.put(getBootType().toString(), getBootMode().toString());
-            }
+        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+            customparameterMap.put(getBootType().toString(), getBootMode().toString());
         }
 
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
             customparameterMap.put("rootdisksize", rootdisksize.toString());
         }
+
         return customparameterMap;
     }
 
@@ -575,6 +577,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public boolean getCopyImageTags() {
         return copyImageTags == null ? false : copyImageTags;
+    }
+
+    public Boolean getBootIntoSetup() {
+        return bootIntoSetup;
     }
 
     /////////////////////////////////////////////////////
