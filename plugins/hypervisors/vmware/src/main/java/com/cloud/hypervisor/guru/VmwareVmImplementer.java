@@ -114,9 +114,17 @@ class VmwareVmImplementer {
         this.globalNestedVPerVMEnabled = globalNestedVPerVMEnabled;
     }
 
-    VirtualMachineTO implement(VirtualMachineProfile vm, VirtualMachineTO to, long clusterId) {
+    VirtualMachineTO implement(VirtualMachineProfile vm, VirtualMachineTO to, long clusterId, Boolean deployOvaAsIs) {
         to.setBootloader(VirtualMachineTemplate.BootloaderType.HVM);
 
+        // FR37 if VmwareImplementAsIsAndReconsiliate add secondary storage or some other encoding of the OVA file to the start command,
+        // FR37 so the url for the original OVA can be used for deployment
+        if (deployOvaAsIs) {
+            if (LOG.isTraceEnabled()) {
+                // FR37 TODO add usefull stuff in message
+                LOG.trace("deploying OVA as is.");
+            }
+        }
         Map<String, String> details = to.getDetails();
         if (details == null)
             details = new HashMap<String, String>();

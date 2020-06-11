@@ -197,6 +197,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     public static final ConfigKey<Boolean> VmwareEnableNestedVirtualizationPerVM = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization.perVM", "Advanced", "false",
             "When set to true this will enable nested virtualization per vm", true, ConfigKey.Scope.Global, null);
 
+    public static final ConfigKey<Boolean> VmwareImplementAsIsAndReconsiliate = new ConfigKey<Boolean>(Boolean.class, "vmware.dont.orchestrate.but.reconsiliate", "Advanced", "false",
+            "When set to true OVAs will be deployed as is to then discover disk.]/net/etc", true, ConfigKey.Scope.Global, null);
+
     @Override public HypervisorType getHypervisorType() {
         return HypervisorType.VMware;
     }
@@ -204,7 +207,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override public VirtualMachineTO implement(VirtualMachineProfile vm) {
         vmwareVmImplementer.setGlobalNestedVirtualisationEnabled(VmwareEnableNestedVirtualization.value());
         vmwareVmImplementer.setGlobalNestedVPerVMEnabled(VmwareEnableNestedVirtualizationPerVM.value());
-        return vmwareVmImplementer.implement(vm, toVirtualMachineTO(vm), getClusterId(vm.getId()));
+        return vmwareVmImplementer.implement(vm, toVirtualMachineTO(vm), getClusterId(vm.getId()), VmwareImplementAsIsAndReconsiliate.value());
     }
 
     long getClusterId(long vmId) {
@@ -373,7 +376,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {VmwareReserveCpu, VmwareReserveMemory, VmwareEnableNestedVirtualization, VmwareEnableNestedVirtualizationPerVM};
+        return new ConfigKey<?>[] {VmwareReserveCpu, VmwareReserveMemory, VmwareEnableNestedVirtualization, VmwareEnableNestedVirtualizationPerVM, VmwareImplementAsIsAndReconsiliate};
     }
 
     @Override public List<Command> finalizeExpungeVolumes(VirtualMachine vm) {
