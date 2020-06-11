@@ -197,6 +197,7 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
@@ -224,6 +225,7 @@ import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
@@ -410,6 +412,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private RouterHealthCheckResultDao routerHealthCheckResultDao;
+
+    @Inject
+    private ProjectInvitationDao projectInvitationDao;
 
     /*
      * (non-Javadoc)
@@ -1530,6 +1535,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean listAll = cmd.listAll();
 
         Account caller = CallContext.current().getCallingAccount();
+        User callingUser = CallContext.current().getCallingUser();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
@@ -1541,7 +1547,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Filter searchFilter = new Filter(ProjectInvitationJoinVO.class, "id", true, startIndex, pageSizeVal);
         SearchBuilder<ProjectInvitationJoinVO> sb = _projectInvitationJoinDao.createSearchBuilder();
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
+        ProjectInvitation invitation = projectInvitationDao.findByUserIdProjectId(callingUser.getId(), callingUser.getAccountId(), projectId == null ? -1 : projectId);
         sb.and("projectId", sb.entity().getProjectId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("created", sb.entity().getCreated(), SearchCriteria.Op.GT);
@@ -1554,7 +1560,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("projectId", projectId);
         }
 
-        if (userId != null) {
+        if (invitation != null) {
+            sc.setParameters("userId", invitation.getForUserId());
+        } else if (userId != null) {
             sc.setParameters("userId", userId);
         }
 
@@ -1571,7 +1579,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("created", new Date((DateUtil.currentGMTTime().getTime()) - _projectMgr.getInvitationTimeout()));
         }
 
-        return _projectInvitationJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<ProjectInvitationJoinVO>, Integer> projectInvitations = _projectInvitationJoinDao.searchAndCount(sc, searchFilter);
+        List<ProjectInvitationJoinVO> invitations = projectInvitations.first();
+        invitations = invitations.stream().filter(invite -> invite.getUserId() == null || Long.parseLong(invite.getUserId()) == callingUser.getId()).collect(Collectors.toList());
+        return new Pair<>(invitations, invitations.size());
+
 
     }
 
@@ -1595,7 +1607,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // long projectId, String accountName, String role, Long startIndex,
         // Long pageSizeVal) {
         Account caller = CallContext.current().getCallingAccount();
-
+        User callingUser = CallContext.current().getCallingUser();
         // check that the project exists
         Project project = _projectDao.findById(projectId);
 
@@ -1605,7 +1617,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // verify permissions - only accounts belonging to the project can list
         // project's account
-        if (!_accountMgr.isAdmin(caller.getId()) && _projectAccountDao.findByProjectIdAccountId(projectId, caller.getAccountId()) == null) {
+        if (!_accountMgr.isAdmin(caller.getId()) && _projectAccountDao.findByProjectIdUserId(projectId, callingUser.getAccountId(), callingUser.getId()) == null &&
+        _projectAccountDao.findByProjectIdAccountId(projectId, caller.getAccountId()) == null) {
             throw new PermissionDeniedException("Account " + caller + " is not authorized to list users of the project id=" + projectId);
         }
 

@@ -833,7 +833,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     private boolean isTheOnlyProjectOwnerOrOneself(Long projectId, ProjectAccount projectAccount, Account caller) {
         List<? extends  ProjectAccount> projectOwners = _projectAccountDao.getProjectOwners(projectId);
         if ((projectOwners.size() == 1 && projectOwners.get(0).getAccountId() == projectAccount.getAccountId()
-                && projectAccount.getAccountRole() == Role.Admin ) || (projectAccount.getAccountId() == caller.getAccountId())) {
+                && projectAccount.getAccountRole() == Role.Admin )) {
+            // || (projectAccount.getAccountId() == caller.getAccountId())
             return true;
         }
         return false;
@@ -1072,7 +1073,6 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
         }
-
         CallContext.current().setProject(project);
         if (accountName != null) {
             //check that account-to-remove exists
@@ -1083,7 +1083,6 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
             //verify permissions
             _accountMgr.checkAccess(caller, null, true, account);
-
             accountId = account.getId();
         } else {
             user = userDao.findById(userId);
@@ -1096,6 +1095,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         //check that invitation exists
         ProjectInvitationVO invite = null;
         if (token == null) {
+
             if (accountName != null) {
                 invite = _projectInvitationDao.findByAccountIdProjectId(accountId, projectId, ProjectInvitation.State.Pending);
             } else {

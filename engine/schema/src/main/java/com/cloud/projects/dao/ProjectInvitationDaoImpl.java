@@ -74,7 +74,9 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
         sc.setParameters("userId", userId);
         sc.setParameters("accountId", accountId);
-        sc.setParameters("projectId", projectId);
+        if (projectId != -1) {
+            sc.setParameters("projectId", projectId);
+        }
         if (inviteState != null && inviteState.length > 0) {
             sc.setParameters("state", (Object[])inviteState);
         }
