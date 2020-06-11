@@ -79,7 +79,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     private Boolean showRemoved;
 
     @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, "
-    + "list only unique resources despite being accross multiple zones")
+    + "list only unique isos across zones")
     private Boolean showUnique;
 
     /////////////////////////////////////////////////////
