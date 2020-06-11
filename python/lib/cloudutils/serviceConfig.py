@@ -349,8 +349,9 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
             cfo.addEntry("NOZEROCONF", "yes")
             cfo.save()
 
-            if not bash("systemctl restart NetworkManager.service").isSuccess():
-                raise CloudInternalException("Can't restart network")
+            if not bash("service network restart").isSuccess():
+                if not bash("systemctl restart NetworkManager.service").isSuccess():
+                    raise CloudInternalException("Can't restart network")
 
             self.syscfg.env.nics.append(self.brName)
             self.syscfg.env.nics.append(self.brName)
