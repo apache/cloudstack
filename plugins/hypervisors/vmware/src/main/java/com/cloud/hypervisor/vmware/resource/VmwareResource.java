@@ -1713,6 +1713,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource StartCommand: " + _gson.toJson(cmd));
         }
 
+        // FR37 if startcommand contains a secendary storage URL or some flag or other type of indicator, deploy OVA as is
+        String secStorUrl = cmd.getSecondaryStorage();
+        if (StringUtils.isNotEmpty(secStorUrl)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("deploying OVA as is from %s", secStorUrl));
+            }
+        }
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         boolean vmAlreadyExistsInVcenter = false;
 
@@ -1902,6 +1909,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             int totalChangeDevices = disks.length + nics.length;
+            // vApp cdrom device
+            // HACK ALERT: ovf properties might not be the only or defining feature of vApps; needs checking
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("adding divice tie device count for vApp config ISO");
+            }
+            if (vmSpec.getOvfProperties() != null) {
+                totalChangeDevices++;
+            }
 
             DiskTO volIso = null;
             if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -1955,6 +1970,30 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             // Setup ISO device
             //
+
+            // vAPP ISO
+            // FR37 the native deploy mechs should create this for us
+            if (vmSpec.getOvfProperties() != null) {
+                if (s_logger.isTraceEnabled()) {
+                    // FR37 TODO add more usefull info (if we keep this bit
+                    s_logger.trace("adding iso for properties for 'xxx'");
+                }
+                deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
+                Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, null, true, true, ideUnitNumber++, i + 1);
+                deviceConfigSpecArray[i].setDevice(isoInfo.first());
+                if (isoInfo.second()) {
+                    if (s_logger.isDebugEnabled())
+                        s_logger.debug("Prepare vApp ISO volume at existing device " + _gson.toJson(isoInfo.first()));
+
+                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+                } else {
+                    if (s_logger.isDebugEnabled())
+                        s_logger.debug("Prepare vApp ISO volume at existing device " + _gson.toJson(isoInfo.first()));
+
+                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+                }
+                i++;
+            }
 
             // prepare systemvm patch ISO
             if (vmSpec.getType() != VirtualMachine.Type.User) {
