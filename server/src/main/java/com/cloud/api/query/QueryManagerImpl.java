@@ -1307,7 +1307,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("networkName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("vpcName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
+            ssc.addOr("redundantState", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("instanceName", SearchCriteria.Op.SC, ssc);
         }
 
