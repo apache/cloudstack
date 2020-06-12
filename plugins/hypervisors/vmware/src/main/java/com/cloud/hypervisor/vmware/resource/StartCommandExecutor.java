@@ -122,7 +122,6 @@ class StartCommandExecutor {
             }
         }
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-        boolean vmAlreadyExistsInVcenter = false;
 
         String existingVmName = null;
         VirtualMachineFileInfo existingVmFileInfo = null;
@@ -132,38 +131,14 @@ class StartCommandExecutor {
         Pair<String, String> names = composeVmNames(vmSpec);
         String vmInternalCSName = names.first();
         String vmNameOnVcenter = names.second();
-        String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
-        String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+
         DiskTO rootDiskTO = null;
-        String bootMode = null;
-        if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
-            bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
-        }
-        if (null == bootMode) {
-            bootMode = ApiConstants.BootType.BIOS.toString();
-        }
 
-        // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
-        // This helps avoid mix of different scsi subtype controllers in instance.
-        if (DiskControllerType.osdefault == DiskControllerType.getType(dataDiskController) && DiskControllerType.lsilogic == DiskControllerType.getType(rootDiskController)) {
-            dataDiskController = DiskControllerType.scsi.toString();
-        }
-
-        // Validate the controller types
-        dataDiskController = DiskControllerType.getType(dataDiskController).toString();
-        rootDiskController = DiskControllerType.getType(rootDiskController).toString();
-
-        if (DiskControllerType.getType(rootDiskController) == DiskControllerType.none) {
-            throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskController);
-        }
-        if (DiskControllerType.getType(dataDiskController) == DiskControllerType.none) {
-            throw new CloudRuntimeException("Invalid data disk controller detected : " + dataDiskController);
-        }
-
-        Pair<String, String> controllerInfo = new Pair<>(rootDiskController, dataDiskController);
+        Pair<String, String> controllerInfo = getDiskControllerInfo(vmSpec);
 
         Boolean systemVm = vmSpec.getType().isUsedBySystem();
-        // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name.
+
+        // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name. FR37 this is an out of place comment
         VmwareContext context = vmwareResource.getServiceContext();
         DatacenterMO dcMo = null;
         try {
@@ -172,14 +147,8 @@ class StartCommandExecutor {
             VmwareHypervisorHost hyperHost = vmwareResource.getHyperHost(context);
             dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
 
-            // Validate VM name is unique in Datacenter
-            VirtualMachineMO vmInVcenter = dcMo.checkIfVmAlreadyExistsInVcenter(vmNameOnVcenter, vmInternalCSName);
-            if (vmInVcenter != null) {
-                vmAlreadyExistsInVcenter = true;
-                String msg = "VM with name: " + vmNameOnVcenter + " already exists in vCenter.";
-                LOGGER.error(msg);
-                throw new Exception(msg);
-            }
+            checkIfVmExistsInVcenter(vmInternalCSName, vmNameOnVcenter, dcMo);
+
             // FR37 disks should not yet be our concern
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
@@ -504,7 +473,7 @@ class StartCommandExecutor {
 
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
                 controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
-                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, new Pair<>(rootDiskController, dataDiskController));
+                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, controllerInfo);
 
                 if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
                     diskController = vmMo.getRecommendedDiskController(null);
@@ -736,7 +705,7 @@ class StartCommandExecutor {
                 }
             }
 
-            setBootOptions(vmSpec, bootMode, vmConfigSpec);
+            checkBootOptions(vmSpec, vmConfigSpec);
 
             //
             // Configure VM
@@ -803,22 +772,10 @@ class StartCommandExecutor {
             String msg = "StartCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             LOGGER.warn(msg, e);
             StartAnswer startAnswer = new StartAnswer(cmd, msg);
-            if (vmAlreadyExistsInVcenter) {
+            if ( e instanceof VmAlreadyExistsInVcenter) {
                 startAnswer.setContextParam("stopRetry", "true");
             }
-
-            // Since VM start failed, if there was an existing VM in a different cluster that was unregistered, register it back.
-            if (existingVmName != null && existingVmFileInfo != null) {
-                LOGGER.debug("Since VM start failed, registering back an existing VM: " + existingVmName + " that was unregistered");
-                try {
-                    DatastoreFile fileInDatastore = new DatastoreFile(existingVmFileInfo.getVmPathName());
-                    DatastoreMO existingVmDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
-                    registerVm(existingVmName, existingVmDsMo, vmwareResource);
-                } catch (Exception ex) {
-                    String message = "Failed to register an existing VM: " + existingVmName + " due to " + VmwareHelper.getExceptionMessage(ex);
-                    LOGGER.warn(message, ex);
-                }
-            }
+            reRegisterExistingVm(existingVmName, existingVmFileInfo, dcMo);
 
             return startAnswer;
         } finally {
@@ -826,6 +783,58 @@ class StartCommandExecutor {
                 LOGGER.trace(String.format("finally done with %s",  vmwareResource.getGson().toJson(cmd)));
             }
         }
+    }
+
+    /**
+     * Since VM start failed, if there was an existing VM in a different cluster that was unregistered, register it back.
+     *
+     * @param dcMo is guaranteed to be not null since we have noticed there is an existing VM in the dc (using that mo)
+     */
+    private void reRegisterExistingVm(String existingVmName, VirtualMachineFileInfo existingVmFileInfo, DatacenterMO dcMo) {
+        if (existingVmName != null && existingVmFileInfo != null) {
+            LOGGER.debug("Since VM start failed, registering back an existing VM: " + existingVmName + " that was unregistered");
+            try {
+                DatastoreFile fileInDatastore = new DatastoreFile(existingVmFileInfo.getVmPathName());
+                DatastoreMO existingVmDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
+                registerVm(existingVmName, existingVmDsMo, vmwareResource);
+            } catch (Exception ex) {
+                String message = "Failed to register an existing VM: " + existingVmName + " due to " + VmwareHelper.getExceptionMessage(ex);
+                LOGGER.warn(message, ex);
+            }
+        }
+    }
+
+    private void checkIfVmExistsInVcenter(String vmInternalCSName, String vmNameOnVcenter, DatacenterMO dcMo) throws VmAlreadyExistsInVcenter, Exception {
+        // Validate VM name is unique in Datacenter
+        VirtualMachineMO vmInVcenter = dcMo.checkIfVmAlreadyExistsInVcenter(vmNameOnVcenter, vmInternalCSName);
+        if (vmInVcenter != null) {
+            String msg = "VM with name: " + vmNameOnVcenter + " already exists in vCenter.";
+            LOGGER.error(msg);
+            throw new VmAlreadyExistsInVcenter(msg);
+        }
+    }
+
+    private Pair<String, String> getDiskControllerInfo(VirtualMachineTO vmSpec) {
+        String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
+        String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+        // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
+        // This helps avoid mix of different scsi subtype controllers in instance.
+        if (DiskControllerType.osdefault == DiskControllerType.getType(dataDiskController) && DiskControllerType.lsilogic == DiskControllerType.getType(rootDiskController)) {
+            dataDiskController = DiskControllerType.scsi.toString();
+        }
+
+        // Validate the controller types
+        dataDiskController = DiskControllerType.getType(dataDiskController).toString();
+        rootDiskController = DiskControllerType.getType(rootDiskController).toString();
+
+        if (DiskControllerType.getType(rootDiskController) == DiskControllerType.none) {
+            throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskController);
+        }
+        if (DiskControllerType.getType(dataDiskController) == DiskControllerType.none) {
+            throw new CloudRuntimeException("Invalid data disk controller detected : " + dataDiskController);
+        }
+
+        return new Pair<>(rootDiskController, dataDiskController);
     }
 
     /**
@@ -1316,6 +1325,18 @@ class StartCommandExecutor {
         }
     }
 
+    private void checkBootOptions(VirtualMachineTO vmSpec, VirtualMachineConfigSpec vmConfigSpec) {
+        String bootMode = null;
+        if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
+            bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
+        }
+        if (null == bootMode) {
+            bootMode = ApiConstants.BootType.BIOS.toString();
+        }
+
+        setBootOptions(vmSpec, bootMode, vmConfigSpec);
+    }
+
     private void setBootOptions(VirtualMachineTO vmSpec, String bootMode, VirtualMachineConfigSpec vmConfigSpec) {
         VirtualMachineBootOptions bootOptions = null;
         if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")) {
@@ -1725,4 +1746,8 @@ class StartCommandExecutor {
         }
     }
 
+    private class VmAlreadyExistsInVcenter extends Throwable {
+        public VmAlreadyExistsInVcenter(String msg) {
+        }
+    }
 }
