@@ -48,4 +48,6 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
     Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter);
 
+    List<TemplateJoinVO> findByIds(Long[] ids);
+
 }

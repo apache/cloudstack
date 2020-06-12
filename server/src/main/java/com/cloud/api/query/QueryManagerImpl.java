@@ -3176,7 +3176,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", SortKeyAscending.value());
 
         SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair
+        if (showUnique) {
+            sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct templateId
+        } else {
+            sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair
+        }
         if (ids != null && !ids.isEmpty()) {
             sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         }
@@ -3413,8 +3417,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
         } else {
             sc.addAnd("templateState", SearchCriteria.Op.IN, new State[] {State.Active, State.UploadAbandoned, State.UploadError, State.NotUploaded, State.UploadInProgress});
-            final String[] distinctColumns = {"temp_zone_pair"};
-            uniqueTmplPair = _templateJoinDao.searchAndDistinctCount(sc, searchFilter, distinctColumns);
+            if (showUnique) {
+                final String[] distinctColumns = {"id"};
+                uniqueTmplPair = _templateJoinDao.searchAndDistinctCount(sc, searchFilter, distinctColumns);
+            } else {
+                final String[] distinctColumns = {"temp_zone_pair"};
+                uniqueTmplPair = _templateJoinDao.searchAndDistinctCount(sc, searchFilter, distinctColumns);
+            }
         }
 
         Integer count = uniqueTmplPair.second();
@@ -3423,26 +3432,32 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             return uniqueTmplPair;
         }
         List<TemplateJoinVO> uniqueTmpls = uniqueTmplPair.first();
-        String[] tzIds = new String[uniqueTmpls.size()];
         int i = 0;
-
+        List<TemplateJoinVO> vrs = null;
         if (showUnique) {
-            // Get only one tempZonePair per template
-            Set<Long> tzSet = new HashSet<>();
+            Long[] tzIds = new Long[uniqueTmpls.size()];
             for (TemplateJoinVO v : uniqueTmpls) {
-                Long tzId = Long.parseLong(v.getTempZonePair().split("_")[0]);
-                if (!tzSet.contains(tzId)) {
-                    tzSet.add(tzId);
-                    tzIds[i++] = v.getTempZonePair();
-                }
+                tzIds[i++] = v.getId();
             }
-            count = tzSet.size();
+            vrs = _templateJoinDao.findByIds(tzIds);
+
+            // Get only unique id rows
+            Long lastId = null;
+            for(i = vrs.size() - 1; i >= 0; i--) {
+                if (new Long(vrs.get(i).getId()).equals(lastId)) {
+                    vrs.remove(i);
+                    continue;
+                }
+                lastId = vrs.get(i).getId();
+            }
         } else {
+            String[] tzIds = new String[uniqueTmpls.size()];
             for (TemplateJoinVO v : uniqueTmpls) {
                 tzIds[i++] = v.getTempZonePair();
             }
+            vrs = _templateJoinDao.searchByTemplateZonePair(showRemovedTmpl, tzIds);
         }
-        List<TemplateJoinVO> vrs = _templateJoinDao.searchByTemplateZonePair(showRemovedTmpl, tzIds);
+
         return new Pair<List<TemplateJoinVO>, Integer>(vrs, count);
 
         // TODO: revisit the special logic for iso search in
