@@ -406,6 +406,9 @@
 
                         args.$form.find('[rel=ip6dns1]').hide();
                         args.$form.find('[rel=ip6dns2]').hide();
+
+                        args.$form.find('[rel=ip6cidr]').hide();
+                        args.$form.find('[rel=ip6gateway]').hide();
                     } else { //Advanced zone
                         if (args.data["zone-advanced-sg-enabled"] != "on") { //Advanced SG-disabled zone
                             args.$form.find('[rel=networkOfferingId]').hide();
@@ -413,12 +416,18 @@
 
                             args.$form.find('[rel=ip6dns1]').show();
                             args.$form.find('[rel=ip6dns2]').show();
+
+                            args.$form.find('[rel=ip6cidr]').hide();
+                            args.$form.find('[rel=ip6gateway]').hide();
                         } else { //Advanced SG-enabled zone
                             args.$form.find('[rel=networkOfferingId]').show(); //will be used to create a guest network during zone creation
                             args.$form.find('[rel=guestcidraddress]').hide();
 
-                            args.$form.find('[rel=ip6dns1]').hide();
-                            args.$form.find('[rel=ip6dns2]').hide();
+                            args.$form.find('[rel=ip6dns1]').show();
+                            args.$form.find('[rel=ip6dns2]').show();
+
+                            args.$form.find('[rel=ip6cidr]').show();
+                            args.$form.find('[rel=ip6gateway]').show();
                         }
                     }
                 },
@@ -460,6 +469,21 @@
                             ipv6: true
                         }
                    },
+
+                    ip6cidr: {
+                        label: 'label.ipv6.CIDR',
+                        validation: {
+                            required: false,
+                            ipv6cidr: true
+                        }
+                    },
+                    ip6gateway: {
+                        label: 'label.ipv6.gateway',
+                        validation: {
+                            required: false,
+                            ipv6: true
+                        }
+                    },
 
                     internaldns1: {
                         label: 'label.internal.dns.1',
@@ -3876,6 +3900,16 @@
                         if (args.data.guestTraffic.guestEndIp != null && args.data.guestTraffic.guestEndIp.length > 0) {
                             $.extend(data, {
                                 endip: args.data.guestTraffic.guestEndIp
+                            });
+                        }
+                        if (args.data.zone.ip6cidr != null && args.data.zone.ip6cidr.length > 0) {
+                            $.extend(data, {
+                                ip6cidr: args.data.zone.ip6cidr
+                            });
+                        }
+                        if (args.data.zone.ip6gateway != null && args.data.zone.ip6gateway.length > 0) {
+                            $.extend(data, {
+                                ip6gateway: args.data.zone.ip6gateway
                             });
                         }
                     }
