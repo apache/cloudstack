@@ -16,11 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.guru;
 
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.inOrder;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,9 +27,9 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -43,19 +41,13 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.vm.VmDetailConstants;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ConfigKey.class, VMwareGuru.class})
+@PrepareForTest({ConfigKey.class, VmwareVmImplementer.class})
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
-public class VMwareGuruTest {
-
-    @Mock(name="VmwareEnableNestedVirtualization")
-    private ConfigKey<Boolean> vmwareNestedVirtualizationConfig;
-
-    @Mock(name="VmwareEnableNestedVirtualizationPerVM")
-    private ConfigKey<Boolean> vmwareNestedVirtualizationPerVmConfig;
+public class VmwareVmImplementerTest {
 
     @Spy
     @InjectMocks
-    private VMwareGuru _guru = new VMwareGuru();
+    private VmwareVmImplementer implementer = new VmwareVmImplementer();
 
     @Mock
     VirtualMachineTO vmTO;
@@ -68,26 +60,25 @@ public class VMwareGuruTest {
     }
 
     private void setConfigValues(Boolean globalNV, Boolean globalNVPVM, String localNV){
-        when(vmwareNestedVirtualizationConfig.value()).thenReturn(globalNV);
-        when(vmwareNestedVirtualizationPerVmConfig.value()).thenReturn(globalNVPVM);
+        implementer.setGlobalNestedVirtualisationEnabled(globalNV.booleanValue());
+        implementer.setGlobalNestedVPerVMEnabled(globalNVPVM.booleanValue());
         if (localNV != null) {
             vmDetails.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, localNV);
         }
     }
 
     private void executeAndVerifyTest(Boolean globalNV, Boolean globalNVPVM, String localNV, Boolean expectedResult){
-        Boolean result = _guru.shouldEnableNestedVirtualization(globalNV, globalNVPVM, localNV);
+        Boolean result = implementer.shouldEnableNestedVirtualization(globalNV, globalNVPVM, localNV);
         assertEquals(expectedResult, result);
     }
 
     @Test
     public void testConfigureNestedVirtualization(){
         setConfigValues(true, true, null);
-        _guru.configureNestedVirtualization(vmDetails, vmTO);
+        implementer.configureNestedVirtualization(vmDetails, vmTO);
+        Map<String,String> spyDetails = Mockito.spy(vmDetails);
 
-        InOrder inOrder = inOrder(_guru, vmTO);
-        inOrder.verify(_guru).shouldEnableNestedVirtualization(true, true, null);
-        inOrder.verify(vmTO).setDetails(vmDetails);
+        verify(implementer).shouldEnableNestedVirtualization(true, true, null);
 
         assertTrue(vmDetails.containsKey(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG));
         assertEquals(Boolean.toString(true), vmDetails.get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG));
