@@ -405,10 +405,10 @@ public class VmImportManagerImpl implements VmImportService {
         final Integer memory = instance.getMemory();
         Integer cpuSpeed = instance.getCpuSpeed() == null ? 0 : instance.getCpuSpeed();
         if (cpu == null || cpu == 0) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores for VM not valid"));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores for VM (%s) not valid", instance.getName()));
         }
         if (memory == null || memory == 0) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Memory for VM not valid", instance.getName()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Memory for VM (%s) not valid", instance.getName()));
         }
         if (serviceOffering.isDynamic()) {
             if (details.containsKey(VmDetailConstants.CPU_SPEED)) {
