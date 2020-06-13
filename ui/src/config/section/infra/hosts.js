@@ -27,9 +27,6 @@ export default {
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
-  }, {
-    name: 'config',
-    component: () => import('@/views/infra/HostInfoTab.vue')
   }],
   related: [{
     name: 'vm',

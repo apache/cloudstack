@@ -38,6 +38,7 @@
         </div>
       </div>
     </a-list-item>
+    <HostInfo :resource="resource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
     <DedicateData :resource="resource" v-if="dedicatedSectionActive" />
     <VmwareData :resource="resource" v-if="$route.meta.name === 'zone' && 'listVmwareDcs' in $store.getters.apis" />
   </a-list>
@@ -45,12 +46,14 @@
 
 <script>
 import DedicateData from './DedicateData'
+import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
 
 export default {
   name: 'DetailsTab',
   components: {
     DedicateData,
+    HostInfo,
     VmwareData
   },
   props: {

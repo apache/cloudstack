@@ -21,9 +21,14 @@
       <a-list-item>
         <div>
           <strong>{{ $t('label.hypervisorversion') }}</strong>
-          <div v-if="host.details">
+          <div>
             {{ host.hypervisor }}
-            {{ host.details['Host.OS'] + ' ' + host.details['Host.OS.Version'] }}
+            <span v-if="host.details">
+              {{ host.details['Host.OS'] + ' ' + host.details['Host.OS.Version'] }}
+            </span>
+            <span v-else>
+              {{ host.version }}
+            </span>
           </div>
         </div>
       </a-list-item>
@@ -100,7 +105,7 @@
 import { api } from '@/api'
 
 export default {
-  name: 'HostInfoTab',
+  name: 'HostInfo',
   props: {
     resource: {
       type: Object,
@@ -121,8 +126,8 @@ export default {
     this.fetchData()
   },
   watch: {
-    loading (newData, oldData) {
-      if (!newData && this.resource.id) {
+    resource (newItem, oldItem) {
+      if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
         this.fetchData()
       }
     }
