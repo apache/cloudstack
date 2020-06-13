@@ -242,6 +242,7 @@
 "label.action.take.snapshot.processing": "Taking Snapshot....",
 "label.action.unmanage.cluster": "Unmanage Cluster",
 "label.action.unmanage.cluster.processing": "Unmanaging Cluster....",
+"label.action.unmanage.virtualmachine": "Unmanage VM",
 "label.action.update.offering.access": "Update Offering Access",
 "label.action.update.os.preference": "Update OS Preference",
 "label.action.update.os.preference.processing": "Updating OS Preference....",

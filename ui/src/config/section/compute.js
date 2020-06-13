@@ -323,6 +323,14 @@ export default {
           show: (record, store) => { return ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm }
         },
         {
+          api: 'unmanageVirtualMachine',
+          icon: 'disconnect',
+          label: 'label.action.unmanage.virtualmachine',
+          dataView: true,
+          groupAction: true,
+          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && record.hypervisor === 'VMware' }
+        },
+        {
           api: 'expungeVirtualMachine',
           icon: 'delete',
           label: 'label.action.expunge.instance',
