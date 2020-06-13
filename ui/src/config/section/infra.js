@@ -56,8 +56,7 @@ export default {
       title: 'label.cpu.sockets',
       icon: 'inbox',
       permission: ['listHosts'],
-      params: { type: 'routing' },
-      columns: ['hypervisor', 'hosts', 'cpusockets']
+      component: () => import('@/views/infra/CpuSockets.vue')
     },
     {
       name: 'managementserver',
