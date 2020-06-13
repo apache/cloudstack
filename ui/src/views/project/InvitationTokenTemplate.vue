@@ -27,7 +27,7 @@
             v-decorator="['projectid', {
               rules: [{ required: true, message: 'Please enter input' }]
             }]"
-            :placeholder="$t('label.project.projectid.description')"
+            :placeholder="apiParams.projectid.description"
           />
         </a-form-item>
         <a-form-item :label="$t('label.token')">
@@ -35,7 +35,7 @@
             v-decorator="['token', {
               rules: [{ required: true, message: 'Please enter input' }]
             }]"
-            :placeholder="$t('label.project.token.description')"
+            :placeholder="apiParams.token.description"
           />
         </a-form-item>
         <div class="card-footer">
@@ -55,6 +55,11 @@ export default {
   name: 'InvitationTokenTemplate',
   beforeCreate () {
     this.form = this.$form.createForm(this)
+    this.apiConfig = this.$store.getters.apis.updateProjectInvitation || {}
+    this.apiParams = {}
+    this.apiConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
   },
   data () {
     return {

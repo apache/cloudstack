@@ -30,7 +30,7 @@
         @change="handleTierSelect"
       >
         <a-select-option key="all" value="">
-          {{ $t('label.show.all') }}
+          {{ $t('label.view.all') }}
         </a-select-option>
         <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
           {{ network.name }}

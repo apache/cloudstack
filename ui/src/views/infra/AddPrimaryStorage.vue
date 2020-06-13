@@ -152,15 +152,15 @@
           </a-form-item>
         </div>
         <div v-if="this.protocolSelected === 'RBD'">
-          <a-form-item :label="$t('label.radosmonitor')">
+          <a-form-item :label="$t('label.rados.monitor')">
             <a-input v-decorator="['radosmonitor']" />
-          </a-form-item><a-form-item :label="$t('label.radospool')">
+          </a-form-item><a-form-item :label="$t('label.rados.pool')">
             <a-input v-decorator="['radospool']" />
           </a-form-item>
-          <a-form-item :label="$t('label.radosuser')">
-            <a-input v-decorator="['radosuser']" />
+          <a-form-item :label="$t('label.rados.user')">
+            <a-input v-decorator="['rados.user']" />
           </a-form-item>
-          <a-form-item :label="$t('label.radossecret')">
+          <a-form-item :label="$t('label.rados.secret')">
             <a-input v-decorator="['radossecret']" />
           </a-form-item>
         </div>

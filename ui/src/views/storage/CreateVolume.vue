@@ -61,7 +61,7 @@
           <a-input
             v-decorator="['size', {
               rules: [{ required: true, message: 'Please enter custom disk size' }]}]"
-            :placeholder="$t('label.enter.size.in.gb')"/>
+            :placeholder="$t('label.disksize')"/>
         </a-form-item>
       </span>
       <div :span="24" class="action-button">

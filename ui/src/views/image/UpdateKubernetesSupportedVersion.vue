@@ -80,11 +80,11 @@ export default {
     this.states = [
       {
         id: 'Enabled',
-        name: this.$t('label.enabled')
+        name: this.$t('state.enabled')
       },
       {
         id: 'Disabled',
-        name: this.$t('label.disabled')
+        name: this.$t('state.disabled')
       }
     ]
   },

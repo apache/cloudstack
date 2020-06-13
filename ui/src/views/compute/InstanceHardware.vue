@@ -177,11 +177,11 @@
                 <div>{{ item.macaddress }}</div>
               </div>
               <div class="attribute" v-if="item.ipaddress">
-                <div class="label">{{ $t('label.ip.address') }}</div>
+                <div class="label">{{ $t('label.ipaddress') }}</div>
                 <div>{{ item.ipaddress }}</div>
               </div>
               <div class="attribute" v-if="item.secondaryip && item.secondaryip.length > 0 && item.type !== 'L2'">
-                <div class="label">{{ $t('label.secondary.ips') }}</div>
+                <div class="label">{{ $t('label.secondaryips') }}</div>
                 <div>{{ item.secondaryip.map(x => x.ipaddress).join(', ') }}</div>
               </div>
               <div class="attribute" v-if="item.netmask">

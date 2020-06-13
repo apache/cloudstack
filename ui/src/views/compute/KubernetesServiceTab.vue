@@ -30,7 +30,7 @@
           <div v-if="this.clusterConfig !== ''">
             <a-textarea :value="this.clusterConfig" :rows="5" readonly />
             <div :span="24" class="action-button">
-              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ this.$t('label.download') }}</a-button>
+              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ this.$t('label.download.kubernetes.cluster.config') }}</a-button>
             </div>
           </div>
           <div v-else>

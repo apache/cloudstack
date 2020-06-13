@@ -123,15 +123,15 @@ export default {
         scopedSlots: { customRender: 'state' },
         filters: [
           {
-            text: this.$t('label.pending'),
+            text: this.$t('state.pending'),
             value: 'Pending'
           },
           {
-            text: this.$t('label.completed'),
+            text: this.$t('state.completed'),
             value: 'Completed'
           },
           {
-            text: this.$t('label.declined'),
+            text: this.$t('state.declined'),
             value: 'Declined'
           }
         ],

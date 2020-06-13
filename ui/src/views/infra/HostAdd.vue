@@ -75,11 +75,11 @@
 
       <template v-if="selectedClusterHyperVisorType === 'Ovm3'">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.agentusername') }}</div>
+          <div class="form__label">{{ $t('label.agent.username') }}</div>
           <a-input v-model="agentusername"></a-input>
         </div>
         <div class="form__item required-field">
-          <div class="form__label"><span class="required">* </span>{{ $t('label.agentpassword') }}</div>
+          <div class="form__label"><span class="required">* </span>{{ $t('label.agent.password') }}</div>
           <span class="required required-label">Required</span>
           <a-input type="password" v-model="agentpassword"></a-input>
         </div>

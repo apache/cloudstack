@@ -100,17 +100,17 @@
                 {{ $t('label.community') }}
               </a-radio-button>
               <a-radio-button value="isolated">
-                {{ $t('label.isolated') }}
+                {{ $t('label.secondary.isolated.vlan.type.isolated') }}
               </a-radio-button>
               <a-radio-button value="promiscuous">
-                {{ $t('label.promiscuous') }}
+                {{ $t('label.secondary.isolated.vlan.type.promiscuous') }}
               </a-radio-button>
             </a-radio-group>
           </a-form-item>
-          <a-form-item :label="$t('label.isolatedpvlan')" v-if="this.isolatePvlanType=='community' || this.isolatePvlanType=='isolated'">
+          <a-form-item :label="$t('label.isolatedpvlanid')" v-if="this.isolatePvlanType=='community' || this.isolatePvlanType=='isolated'">
             <a-input
               v-decorator="['isolatedpvlan', {}]"
-              :placeholder="this.$t('label.isolatedpvlan')"/>
+              :placeholder="this.$t('label.isolatedpvlanid')"/>
           </a-form-item>
           <a-form-item :label="$t('label.scope')">
             <a-radio-group

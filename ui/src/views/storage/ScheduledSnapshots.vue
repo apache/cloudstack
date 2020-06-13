@@ -63,7 +63,7 @@
       <div slot="action" class="account-button-action" slot-scope="text, record">
         <a-tooltip placement="top">
           <template slot="title">
-            {{ $t('label.delete.schedule') }}
+            {{ $t('label.delete') }}
           </template>
           <a-button
             type="danger"

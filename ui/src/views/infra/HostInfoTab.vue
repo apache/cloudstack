@@ -53,7 +53,7 @@
       </a-list-item>
       <a-list-item v-if="host.outofbandmanagement">
         <div>
-          <strong>{{ $t('label.oobm') }}</strong>
+          <strong>{{ $t('label.outofbandmanagement') }}</strong>
           <div>
             {{ host.outofbandmanagement.enabled }}
           </div>

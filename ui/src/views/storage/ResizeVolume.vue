@@ -24,7 +24,7 @@
             initialValue: selectedDiskOfferingId,
             rules: [{ required: true, message: 'Please select an option' }]}]"
           :loading="loading"
-          :placeholder="$t('label.offering.type')"
+          :placeholder="$t('label.diskoffering')"
           @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
         >
           <a-select-option
@@ -39,7 +39,7 @@
           <a-input
             v-decorator="['size', {
               rules: [{ required: true, message: 'Please enter size in GB' }]}]"
-            :placeholder="$t('label.enter.size')"/>
+            :placeholder="$t('label.disksize')"/>
         </a-form-item>
       </div>
       <a-form-item :label="$t('label.shrinkok')">

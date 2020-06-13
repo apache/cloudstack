@@ -58,7 +58,7 @@
             </template>
             <a-collapse-panel :header="$t('label.instances')" key="vm" :style="customStyle">
               <a-button icon="plus" type="dashed" style="margin-bottom: 15px; width: 100%" @click="$router.push({ path: '/action/deployVirtualMachine?networkid=' + network.id })">
-                {{ $t('label.add.instance') }}
+                {{ $t('label.vm.add') }}
               </a-button>
               <a-table
                 class="table"

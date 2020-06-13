@@ -59,13 +59,13 @@
             buttonStyle="solid"
             @change="selected => { this.handleProvisioningTypeChange(selected.target.value) }">
             <a-radio-button value="thin">
-              {{ $t('label.thin') }}
+              {{ $t('label.provisioningtype.thin') }}
             </a-radio-button>
             <a-radio-button value="sparse">
-              {{ $t('label.sparse') }}
+              {{ $t('label.provisioningtype.sparse') }}
             </a-radio-button>
             <a-radio-button value="fat">
-              {{ $t('label.fat') }}
+              {{ $t('label.provisioningtype.fat') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>

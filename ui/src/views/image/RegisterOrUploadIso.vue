@@ -32,7 +32,7 @@
             v-decorator="['url', {
               rules: [{ required: true, message: 'Please upload an ISO' }]
             }]"
-            :placeholder="$t('label.iso.url.description')" />
+            :placeholder="apiParams.url.description" />
         </a-form-item>
         <a-form-item v-if="currentForm === 'Upload'" :label="$t('label.templatefileupload')">
           <a-upload-dragger
@@ -56,7 +56,7 @@
             v-decorator="['name', {
               rules: [{ required: true, message: 'Please enter input' }]
             }]"
-            :placeholder="$t('label.iso.name.description')" />
+            :placeholder="apiParams.name.description" />
         </a-form-item>
 
         <a-form-item :label="$t('label.displaytext')">
@@ -64,7 +64,7 @@
             v-decorator="['displaytext', {
               rules: [{ required: true, message: 'Please enter input' }]
             }]"
-            :placeholder="$t('label.iso.displaytext.description')" />
+            :placeholder="apiParams.displaytext.description" />
         </a-form-item>
 
         <a-form-item v-if="allowed && currentForm !== 'Upload'" :label="$t('label.directdownload')">
@@ -88,7 +88,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="$t('label.iso.zoneid.description')">
+            :placeholder="apiParams.zoneid.description">
             <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id">
               <div v-if="currentForm === 'Upload'">
                 <div v-if="opt.name !== $t('label.all.zone')">
@@ -123,7 +123,7 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="osTypeLoading"
-            :placeholder="$t('label.iso.ostypeid.description')">
+            :placeholder="apiParams.ostypeid.description">
             <a-select-option :value="opt.description" v-for="(opt, optIndex) in osTypes" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -196,6 +196,11 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+    this.apiConfig = this.$store.getters.apis.registerIso || {}
+    this.apiParams = {}
+    this.apiConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
   },
   created () {
     this.zones = [

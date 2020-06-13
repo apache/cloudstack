@@ -205,7 +205,7 @@
                   ]
                 }]"
                 :loading="rootDisk.loading"
-                :placeholder="$t('label.rootdiskcontroller')">
+                :placeholder="$t('label.rootdiskcontrollertype')">
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -224,7 +224,7 @@
                   ]
                 }]"
                 :loading="rootDisk.loading"
-                :placeholder="$t('label.rootdiskcontroller')">
+                :placeholder="$t('label.rootdiskcontrollertype')">
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>

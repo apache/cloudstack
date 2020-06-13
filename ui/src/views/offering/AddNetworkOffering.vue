@@ -197,31 +197,31 @@
             }]"
             buttonStyle="solid">
             <a-radio-button value="peraccount">
-              {{ $t('label.peraccount') }}
+              {{ $t('label.per.account') }}
             </a-radio-button>
             <a-radio-button value="perzone">
-              {{ $t('label.perzone') }}
+              {{ $t('label.per.zone') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.service.lb.elasticlb')" v-if="this.guestType == 'shared' && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
+        <a-form-item :label="$t('label.service.lb.elasticlbcheckbox')" v-if="this.guestType == 'shared' && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['elasticlb', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.service.lb.inlinemode')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.lbServiceChecked && this.firewallServiceChecked && this.lbServiceProvider === 'F5BigIp' && this.firewallServiceProvider === 'JuniperSRX'">
+        <a-form-item :label="$t('label.service.lb.inlinemodedropdown')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.lbServiceChecked && this.firewallServiceChecked && this.lbServiceProvider === 'F5BigIp' && this.firewallServiceProvider === 'JuniperSRX'">
           <a-radio-group
             v-decorator="['inlinemode', {
               initialValue: 'false'
             }]"
             buttonStyle="solid">
             <a-radio-button value="false">
-              {{ $t('label.side.by.side') }}
+              {{ $t('side.by.side') }}
             </a-radio-button>
             <a-radio-button value="true">
-              {{ $t('label.inline') }}
+              {{ $t('inline') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.service.lb.netscaler.service.packages')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
+        <a-form-item :label="$t('label.service.lb.netscaler.servicepackages')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
           <a-select
             v-decorator="['netscalerservicepackages', {}]"
             showSearch
@@ -230,18 +230,18 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="registeredServicePackageLoading"
-            :placeholder="this.$t('label.netscaler.service.packages')">
+            :placeholder="this.$t('label.service.lb.netscaler.servicepackages')">
             <a-select-option v-for="(opt, optIndex) in this.registeredServicePackages" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.service.lb.netscaler.service.packages.description')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
+        <a-form-item :label="$t('label.service.lb.netscaler.servicepackages.description')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && this.lbServiceChecked && this.lbServiceProvider === 'Netscaler'">
           <a-input
             v-decorator="['netscalerservicepackagesdescription', {}]"
-            :placeholder="this.$t('label.netscaler.service.packages.description')"/>
+            :placeholder="this.$t('label.service.lb.netscaler.servicepackages.description')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.service.lb.lbisolation')" v-show="false">
+        <a-form-item :label="$t('label.service.lb.lbisolationdropdown')" v-show="false">
           <a-radio-group
             v-decorator="['isolation', {
               initialValue: 'dedicated'
@@ -255,16 +255,16 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.service.staticnat.elasticip')" v-if="this.guestType == 'shared' && this.staticNatServiceChecked && this.staticNatServiceProvider === 'Netscaler'">
+        <a-form-item :label="$t('label.service.staticnat.elasticipcheckbox')" v-if="this.guestType == 'shared' && this.staticNatServiceChecked && this.staticNatServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['elasticip', {initialValue: this.isElasticIp}]" :defaultChecked="this.isElasticIp" @change="val => { this.isElasticIp = val }" />
         </a-form-item>
         <a-form-item :label="$t('label.service.staticnat.associatepublicip')" v-if="this.isElasticIp && this.staticNatServiceChecked && this.staticNatServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['associatepublicip', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.service.connectivity.supportsstrechedl2subnet')" v-if="this.connectivityServiceChecked">
+        <a-form-item :label="$t('label.supportsstrechedl2subnet')" v-if="this.connectivityServiceChecked">
           <a-switch v-decorator="['supportsstrechedl2subnet', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.service.connectivity.supportspublicaccess')" v-show="false">
+        <a-form-item :label="$t('label.supportspublicaccess')" v-show="false">
           <a-switch v-decorator="['supportspublicaccess', {initialValue: false}]" />
         </a-form-item>
         <a-form-item :label="$t('label.conservemode')" v-if="(this.guestType === 'shared' || this.guestType === 'isolated') && !this.isVpcVirtualRouterForAtLeastOneService">
@@ -273,7 +273,7 @@
         <a-form-item :label="$t('label.tags')">
           <a-input
             v-decorator="['tags', {}]"
-            :placeholder="this.$t('label.networktags')"/>
+            :placeholder="this.$t('label.tags')"/>
         </a-form-item>
         <a-form-item :label="$t('label.availability')" v-if="this.requiredNetworkOfferingExists && this.guestType === 'isolated' && this.sourceNatServiceChecked">
           <a-radio-group
