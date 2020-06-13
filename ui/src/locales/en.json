@@ -1884,6 +1884,7 @@
 "label.templatebody": "Body",
 "label.templatedn": "Select Template",
 "label.templatefileupload": "Local file",
+"label.templateid": "Select a template",
 "label.templateiso": "Template/ISO",
 "label.templatelimit": "Template Limits",
 "label.templatename": "Template",
