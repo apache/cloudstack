@@ -572,28 +572,43 @@ export default {
       })
     },
     podSelectOptions () {
-      return this.options.pods.map((pod) => {
+      const options = this.options.pods.map((pod) => {
         return {
           label: pod.name,
           value: pod.id
         }
       })
+      options.unshift({
+        label: this.$t('label.default'),
+        value: undefined
+      })
+      return options
     },
     clusterSelectOptions () {
-      return this.options.clusters.map((cluster) => {
+      const options = this.options.clusters.map((cluster) => {
         return {
           label: cluster.name,
           value: cluster.id
         }
       })
+      options.unshift({
+        label: this.$t('label.default'),
+        value: undefined
+      })
+      return options
     },
     hostSelectOptions () {
-      return this.options.hosts.map((host) => {
+      const options = this.options.hosts.map((host) => {
         return {
           label: host.name,
           value: host.id
         }
       })
+      options.unshift({
+        label: this.$t('label.default'),
+        value: undefined
+      })
+      return options
     },
     keyboardSelectOptions () {
       return this.options.keyboards.map((keyboard) => {
