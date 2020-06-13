@@ -22,7 +22,7 @@
         <a-select
           v-decorator="['diskofferingid', {
             initialValue: selectedDiskOfferingId,
-            rules: [{ required: true, message: 'Please select an option' }]}]"
+            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]}]"
           :loading="loading"
           :placeholder="$t('label.diskoffering')"
           @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"

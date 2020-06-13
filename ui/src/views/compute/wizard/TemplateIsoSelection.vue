@@ -20,7 +20,7 @@
     <span class="filter-group">
       <a-input-search
         class="search-input"
-        placeholder="Search"
+        :placeholder="$t('label.search')"
         v-model="filter"
         @search="filterDataSource">
         <a-popover

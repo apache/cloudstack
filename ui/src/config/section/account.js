@@ -85,6 +85,7 @@ export default {
       api: 'updateResourceCount',
       icon: 'sync',
       label: 'label.action.update.resource.count',
+      message: 'message.update.resource.count',
       dataView: true,
       args: ['account', 'domainid'],
       mapping: {
@@ -100,6 +101,7 @@ export default {
       api: 'enableAccount',
       icon: 'play-circle',
       label: 'label.action.enable.account',
+      message: 'message.enable.account',
       dataView: true,
       show: (record) => { return record.state === 'disabled' || record.state === 'locked' },
       params: { lock: 'false' }
@@ -108,6 +110,7 @@ export default {
       api: 'disableAccount',
       icon: 'pause-circle',
       label: 'label.action.disable.account',
+      message: 'message.disable.account',
       dataView: true,
       show: (record) => { return record.state === 'enabled' },
       args: ['lock'],
@@ -121,6 +124,7 @@ export default {
       api: 'disableAccount',
       icon: 'lock',
       label: 'label.action.lock.account',
+      message: 'message.lock.account',
       dataView: true,
       show: (record) => { return record.state === 'enabled' },
       args: ['lock'],
@@ -150,6 +154,7 @@ export default {
       api: 'deleteAccount',
       icon: 'delete',
       label: 'label.action.delete.account',
+      message: 'message.delete.account',
       dataView: true,
       hidden: (record) => { return record.name === 'admin' }
     }

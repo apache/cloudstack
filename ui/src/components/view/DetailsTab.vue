@@ -21,7 +21,7 @@
     :dataSource="$route.meta.details">
     <a-list-item slot="renderItem" slot-scope="item" v-if="item in resource">
       <div>
-        <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + item) }}</strong>
+        <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
         <br/>
         <div v-if="Array.isArray(resource[item]) && item === 'service'">
           <div v-for="(service, idx) in resource[item]" :key="idx">

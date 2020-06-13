@@ -60,7 +60,7 @@
           </a-tag>
         </div>
         <a-modal
-          title="Edit traffic type"
+          :title="$t('label.edit.traffic.type')"
           :visible="showEditTraffic"
           :closable="true"
           @ok="updateTrafficLabel(trafficInEdit)"
@@ -69,7 +69,7 @@
         >
           <a-form :form="form">
             <span class="ant-form-text"> Please specify the traffic label you want associated with this traffic type. </span>
-            <a-form-item v-bind="formItemLayout" style="margin-top:16px;" label="Traffic Label">
+            <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
               <a-input
                 v-decorator="['trafficLabel', {
                   rules: [{

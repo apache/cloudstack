@@ -59,6 +59,12 @@ export default {
     ListView,
     Breadcrumb
   },
+  provide: function () {
+    return {
+      parentFetchData: this.fetchData,
+      parentToggleLoading: () => { this.loading = !this.loading }
+    }
+  },
   data () {
     return {
       loading: false,

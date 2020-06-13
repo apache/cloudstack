@@ -23,7 +23,7 @@
         <a-select
           v-decorator="['zoneid', {
             initialValue: this.zoneId,
-            rules: [{ required: true, message: 'required' }] }
+            rules: [{ required: true, message: `${this.$t('label.required')}` }] }
           ]">
           <a-select-option
             v-for="zone in zonesList"
@@ -40,7 +40,7 @@
           v-decorator="[
             'name',
             {
-              rules: [{ required: true, message: 'required' }]
+              rules: [{ required: true, message: `${this.$t('label.required')}` }]
             }]"
         />
       </a-form-item>
@@ -51,7 +51,7 @@
           v-decorator="[
             'gateway',
             {
-              rules: [{ required: true, message: 'required' }]
+              rules: [{ required: true, message: `${this.$t('label.required')}` }]
             }]"
         />
       </a-form-item>
@@ -62,7 +62,7 @@
           v-decorator="[
             'netmask',
             {
-              rules: [{ required: true, message: 'required' }]
+              rules: [{ required: true, message: `${this.$t('label.required')}` }]
             }]"
         />
       </a-form-item>
@@ -73,7 +73,7 @@
           v-decorator="[
             'startip',
             {
-              rules: [{ required: true, message: 'required' }]
+              rules: [{ required: true, message: `${this.$t('label.required')}` }]
             }]"
         />
       </a-form-item>
@@ -213,11 +213,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatepodresponse.jobid,
-          successMessage: `Successfully dedicated pod`,
+          successMessage: this.$t('message.pod.dedicated'),
           successMethod: () => {
             this.loading = false
             this.$store.dispatch('AddAsyncJob', {
-              title: 'Successfully dedicated pod',
+              title: this.$t('message.pod.dedicated'),
               jobid: response.dedicatepodresponse.jobid,
               description: `Domain ID: ${this.dedicatedDomainId}`,
               status: 'progress'
@@ -227,7 +227,7 @@ export default {
           errorMethod: () => {
             this.loading = false
           },
-          loadingMessage: `Dedicating pod...`,
+          loadingMessage: this.$t('message.dedicate.pod'),
           catchMessage: 'Error encountered while fetching async job result',
           catchMethod: () => {
             this.loading = false

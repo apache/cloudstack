@@ -28,7 +28,7 @@
 
       <div class="list__header__col list__header__col--full">
         <a-input-search
-          placeholder="Search"
+          :placeholder="$t('label.search')"
           v-model="searchQuery"
           @search="fetchData" />
       </div>

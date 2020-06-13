@@ -78,6 +78,7 @@ export default {
           api: 'replaceNetworkACLList',
           icon: 'swap',
           label: 'label.replace.acl.list',
+          message: 'message.confirm.replace.acl.new.one',
           dataView: true,
           show: (record) => { return record.vpcid },
           args: ['aclid', 'networkid'],
@@ -95,6 +96,7 @@ export default {
           api: 'deleteNetwork',
           icon: 'delete',
           label: 'label.action.delete.network',
+          message: 'message.action.delete.network',
           dataView: true
         }
       ]
@@ -143,6 +145,7 @@ export default {
           api: 'restartVPC',
           icon: 'sync',
           label: 'label.restart.vpc',
+          message: 'message.restart.vpc',
           dataView: true,
           args: ['makeredundant', 'cleanup']
         },
@@ -150,6 +153,7 @@ export default {
           api: 'deleteVPC',
           icon: 'delete',
           label: 'label.remove.vpc',
+          message: 'message.remove.vpc',
           dataView: true
         }
       ]
@@ -184,6 +188,7 @@ export default {
           api: 'deleteSecurityGroup',
           icon: 'delete',
           label: 'label.action.delete.security.group',
+          message: 'message.action.delete.security.group',
           dataView: true,
           show: (record) => { return record.name !== 'default' }
         }
@@ -238,6 +243,7 @@ export default {
           api: 'disableStaticNat',
           icon: 'minus-circle',
           label: 'label.action.disable.static.nat',
+          message: 'message.action.disable.static.nat',
           dataView: true,
           show: (record) => { return record.virtualmachineid },
           args: ['ipaddressid'],
@@ -251,6 +257,7 @@ export default {
           api: 'disassociateIpAddress',
           icon: 'delete',
           label: 'label.action.release.ip',
+          message: 'message.action.release.ip',
           dataView: true,
           show: (record) => { return !record.issourcenat }
         }
@@ -289,6 +296,7 @@ export default {
           api: 'replaceNetworkACLList',
           icon: 'swap',
           label: 'label.replace.acl.list',
+          message: 'message.confirm.replace.acl.new.one',
           dataView: true,
           args: ['aclid', 'gatewayid'],
           mapping: {
@@ -305,13 +313,14 @@ export default {
           api: 'deletePrivateGateway',
           icon: 'delete',
           label: 'label.delete.gateway',
+          message: 'message.delete.gateway',
           dataView: true
         }
       ]
     },
     {
       name: 's2svpn',
-      title: 'label.site-to-site.vpns',
+      title: 'label.site.to.site.vpn',
       icon: 'lock',
       hidden: true,
       permission: ['listVpnGateways'],
@@ -329,13 +338,14 @@ export default {
           api: 'deleteVpnGateway',
           icon: 'delete',
           label: 'label.delete.vpn.gateway',
+          message: 'message.delete.vpn.gateway',
           dataView: true
         }
       ]
     },
     {
       name: 's2svpnconn',
-      title: 'label.site-to-site.vpn.connections',
+      title: 'label.site.to.site.vpn.connections',
       icon: 'sync',
       hidden: true,
       permission: ['listVpnConnections'],
@@ -361,12 +371,14 @@ export default {
           api: 'resetVpnConnection',
           icon: 'reload',
           label: 'label.reset.vpn.connection',
+          message: 'message.reset.vpn.connection',
           dataView: true
         },
         {
           api: 'deleteVpnConnection',
           icon: 'delete',
           label: 'label.delete.vpn.connection',
+          message: 'message.delete.vpn.connection',
           dataView: true
         }
       ]
@@ -406,6 +418,7 @@ export default {
           api: 'deleteNetworkACLList',
           icon: 'delete',
           label: 'label.delete.acl.list',
+          message: 'message.confirm.delete.acl.list',
           dataView: true
         }
       ]
@@ -462,6 +475,7 @@ export default {
           api: 'deleteLoadBalancer',
           icon: 'delete',
           label: 'label.delete.internal.lb',
+          message: 'message.confirm.delete.internal.lb',
           dataView: true
         }
       ]
@@ -485,6 +499,7 @@ export default {
           api: 'removeVpnUser',
           icon: 'delete',
           label: 'label.delete.vpn.user',
+          message: 'message.action.delete.vpn.user',
           dataView: true,
           args: ['username', 'domainid', 'account'],
           mapping: {
@@ -528,6 +543,7 @@ export default {
           api: 'deleteVpnCustomerGateway',
           icon: 'delete',
           label: 'label.delete.vpn.customer.gateway',
+          message: 'message.delete.vpn.customer.gateway',
           dataView: true
         }
       ]

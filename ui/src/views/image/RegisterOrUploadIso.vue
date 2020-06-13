@@ -30,7 +30,7 @@
         <a-form-item v-if="currentForm === 'Create'" :label="$t('label.url')">
           <a-input
             v-decorator="['url', {
-              rules: [{ required: true, message: 'Please upload an ISO' }]
+              rules: [{ required: true, message: `${this.$t('label.upload.iso.from.local')}` }]
             }]"
             :placeholder="apiParams.url.description" />
         </a-form-item>
@@ -41,7 +41,7 @@
             :remove="handleRemove"
             :beforeUpload="beforeUpload"
             v-decorator="['file', {
-              rules: [{ required: true, message: 'Please enter input' }]
+              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
             }]">
             <p class="ant-upload-drag-icon">
               <a-icon type="cloud-upload" />
@@ -54,7 +54,7 @@
         <a-form-item :label="$t('label.name')">
           <a-input
             v-decorator="['name', {
-              rules: [{ required: true, message: 'Please enter input' }]
+              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
             }]"
             :placeholder="apiParams.name.description" />
         </a-form-item>
@@ -62,7 +62,7 @@
         <a-form-item :label="$t('label.displaytext')">
           <a-input
             v-decorator="['displaytext', {
-              rules: [{ required: true, message: 'Please enter input' }]
+              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
             }]"
             :placeholder="apiParams.displaytext.description" />
         </a-form-item>
@@ -78,7 +78,7 @@
               rules: [
                 {
                   required: true,
-                  message: 'Please select option'
+                  message: `${this.$t('message.error.select')}`
                 }
               ]
             }]"
@@ -115,7 +115,7 @@
           <a-select
             v-decorator="['ostypeid', {
               initialValue: defaultOsType,
-              rules: [{ required: true, message: 'Please select option' }]
+              rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
             }]"
             showSearch
             optionFilterProp="children"
@@ -335,7 +335,7 @@ export default {
           api('registerIso', params).then(json => {
             this.$emit('refresh-data')
             this.$notification.success({
-              message: 'Register ISO',
+              message: 'label.action.register.iso',
               description: 'Sucessfully registered ISO ' + params.name
             })
           }).catch(error => {

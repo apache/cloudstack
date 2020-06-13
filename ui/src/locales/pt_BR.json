@@ -860,7 +860,7 @@
 "label.instanceport": "Instanciar Porta",
 "label.instances": "Inst\u00e2ncias",
 "label.instanciate.template.associate.profile.blade": "Instancia Template e Associa Perfil \u00e0 L\u00e2mina",
-"label.intermediate.certificate": "Certificado intermedi\u00e1rio {0}",
+"label.intermediate.certificate": "Certificado intermedi\u00e1rio",
 "label.internal.dns.1": "DNS 1 Interno",
 "label.internal.dns.2": "DNS 2 Interno",
 "label.internal.lb": "LB interno",

@@ -97,7 +97,7 @@
       </template>
     </a-table>
 
-    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal">
+    <a-modal :title="$t('label.edit.tags')" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>

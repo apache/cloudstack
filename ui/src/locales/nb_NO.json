@@ -861,7 +861,7 @@
 "label.instanceport": "Instansport",
 "label.instances": "Instanser",
 "label.instanciate.template.associate.profile.blade": "Instansier mal og assosier malen med Blade",
-"label.intermediate.certificate": "Intermediate sertifikat {0}",
+"label.intermediate.certificate": "Intermediate sertifikat",
 "label.internal.dns.1": "Intern DNS 1",
 "label.internal.dns.2": "Intern DNS 2",
 "label.internal.lb": "Intern LB",

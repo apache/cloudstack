@@ -32,7 +32,7 @@
             <a-form-item :label="$t('label.url')">
               <a-input
                 v-decorator="['url', {
-                  rules: [{ required: true, message: 'Please enter input' }]
+                  rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
                 }]"
                 :placeholder="apiParams.url.description" />
             </a-form-item>
@@ -46,7 +46,7 @@
               :remove="handleRemove"
               :beforeUpload="beforeUpload"
               v-decorator="['file', {
-                rules: [{ required: true, message: 'Please enter input' }]
+                rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
               }]">
               <p class="ant-upload-drag-icon">
                 <a-icon type="cloud-upload" />
@@ -61,7 +61,7 @@
           <a-form-item :label="$t('label.name')">
             <a-input
               v-decorator="['name', {
-                rules: [{ required: true, message: 'Please upload a template ' }]
+                rules: [{ required: true, message: `${this.$t('label.upload.template.from.local')}` }]
               }]"
               :placeholder="apiParams.name.description" />
           </a-form-item>
@@ -70,7 +70,7 @@
           <a-form-item :label="$t('label.displaytext')">
             <a-input
               v-decorator="['displaytext', {
-                rules: [{ required: true, message: 'Please enter input' }]
+                rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
               }]"
               :placeholder="apiParams.displaytext.description" />
           </a-form-item>
@@ -87,7 +87,7 @@
                     rules: [
                       {
                         required: true,
-                        message: 'Please select option',
+                        message: `${this.$t('message.error.select')}`,
                         type: 'array'
                       }
                     ]
@@ -135,7 +135,7 @@
                   rules: [
                     {
                       required: true,
-                      message: 'Please select option'
+                      message: `${this.$t('message.error.select')}`
                     }
                   ]
                 }]"
@@ -155,7 +155,7 @@
                   rules: [
                     {
                       required: true,
-                      message: 'Please select option'
+                      message: `${this.$t('message.error.select')}`
                     }
                   ]
                 }]"
@@ -177,7 +177,7 @@
             <a-form-item :label="$t('label.checksum')">
               <a-input
                 v-decorator="['checksum', {
-                  rules: [{ required: false, message: 'Please enter input' }]
+                  rules: [{ required: false, message: `${this.$t('message.error.required.input')}` }]
                 }]"
                 :placeholder="apiParams.checksum.description" />
             </a-form-item>
@@ -200,7 +200,7 @@
                   rules: [
                     {
                       required: true,
-                      message: 'Please select option'
+                      message: `${this.$t('message.error.select')}`
                     }
                   ]
                 }]"
@@ -219,7 +219,7 @@
                   rules: [
                     {
                       required: false,
-                      message: 'Please select option'
+                      message: `${this.$t('message.error.select')}`
                     }
                   ]
                 }]"
@@ -238,7 +238,7 @@
                   rules: [
                     {
                       required: false,
-                      message: 'Please select option'
+                      message: `${this.$t('message.error.select')}`
                     }
                   ]
                 }]"
@@ -256,7 +256,7 @@
                   rules: [
                     {
                       required: false,
-                      message: 'Please select option'
+                      message: `${this.$t('message.error.select')}`
                     }
                   ]
                 }]"
@@ -278,7 +278,7 @@
                   rules: [
                     {
                       required: true,
-                      message: 'Please select option'
+                      message: `${this.$t('message.error.select')}`
                     }
                   ]
                 }]"

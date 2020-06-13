@@ -22,7 +22,7 @@
           v-decorator="[
             'name',
             {
-              rules: [{ required: true, message: 'required' }],
+              rules: [{ required: true, message: `${this.$t('label.required')}` }],
             }
           ]"
           :placeholder="$t('label.vpncustomergatewayname')" />
@@ -32,7 +32,7 @@
           v-decorator="[
             'gateway',
             {
-              rules: [{ required: true, message: 'required'}],
+              rules: [{ required: true, message: `${this.$t('label.required')}`}],
             }
           ]"
           :placeholder="$t('label.vpncustomergateway')" />
@@ -42,7 +42,7 @@
           v-decorator="[
             'cidrlist',
             {
-              rules: [{ required: true, message: 'required'}],
+              rules: [{ required: true, message: `${this.$t('label.required')}`}],
             }
           ]"
           :placeholder="$t('label.vpncustomergateway.cidrlist')" />
@@ -53,7 +53,7 @@
           v-decorator="[
             'ipsecpsk',
             {
-              rules: [{ required: true, message: 'required'}],
+              rules: [{ required: true, message: `${this.$t('label.required')}`}],
             }
           ]"
           :placeholder="$t('label.vpncustomergateway.secretkey')" />

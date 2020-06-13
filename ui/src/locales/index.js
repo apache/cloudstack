@@ -34,7 +34,7 @@ function loadLocaleMessages () {
 Vue.use(VueI18n)
 
 export default new VueI18n({
-  locale: Vue.ls ? Vue.ls.get('current_locale') || 'en' : 'en',
+  locale: Vue.ls ? Vue.ls.get('LOCALE') || 'en' : 'en',
   fallbackLocale: 'en',
   silentTranslationWarn: true,
   messages: loadLocaleMessages()

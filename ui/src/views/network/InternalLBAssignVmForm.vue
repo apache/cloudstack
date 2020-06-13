@@ -124,7 +124,11 @@ export default {
       api('listLoadBalancers', {
         id: this.resource.id
       }).then(response => {
-        this.assignedVMs = response.listloadbalancersresponse.loadbalancer[0].loadbalancerinstance || []
+        const lb = response.listloadbalancersresponse.loadbalancer
+        this.assignedVMs = []
+        if (Array.isArray(lb) && lb.length) {
+          this.assignedVMs = lb[0].loadbalancerinstance || []
+        }
       }).finally(() => {
         this.fetchLoading = false
       })

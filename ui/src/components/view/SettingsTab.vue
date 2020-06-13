@@ -131,7 +131,7 @@ export default {
         console.error(error)
         this.$message.error('There was an error saving this setting.')
         this.$notification.error({
-          message: 'Error',
+          message: this.$t('label.error'),
           description: 'There was an error saving this setting. Please try again later.'
         })
       }).finally(() => {

@@ -21,7 +21,7 @@
       <a-card :bordered="false">
         <a-input-search
           size="default"
-          placeholder="Search"
+          :placeholder="$t('label.search')"
           v-model="searchQuery"
           @search="onSearch"
         >

@@ -50,12 +50,14 @@ export default {
       api: 'registerUserKeys',
       icon: 'file-protect',
       label: 'label.action.generate.keys',
+      message: 'message.generate.keys',
       dataView: true
     },
     {
       api: 'enableUser',
       icon: 'play-circle',
       label: 'label.action.enable.user',
+      message: 'message.enable.user',
       dataView: true,
       show: (record) => { return record.state === 'disabled' }
     },
@@ -63,6 +65,7 @@ export default {
       api: 'disableUser',
       icon: 'pause-circle',
       label: 'label.action.disable.user',
+      message: 'message.disable.user',
       dataView: true,
       show: (record) => { return record.state === 'enabled' }
     },
@@ -70,6 +73,7 @@ export default {
       api: 'deleteUser',
       icon: 'delete',
       label: 'label.action.delete.user',
+      message: 'message.delete.user',
       dataView: true
     }
   ]

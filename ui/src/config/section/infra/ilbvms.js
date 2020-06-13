@@ -28,6 +28,7 @@ export default {
       api: 'startInternalLoadBalancerVM',
       icon: 'caret-right',
       label: 'label.action.start.router',
+      message: 'message.confirm.start.lb.vm',
       dataView: true,
       show: (record) => { return record.state === 'Stopped' }
     },

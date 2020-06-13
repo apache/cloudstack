@@ -79,6 +79,7 @@ export default {
       api: 'activateProject',
       icon: 'play-circle',
       label: 'label.activate.project',
+      message: 'message.activate.project',
       dataView: true,
       show: (record) => { return record.state === 'Suspended' }
     },
@@ -86,6 +87,7 @@ export default {
       api: 'suspendProject',
       icon: 'pause-circle',
       label: 'label.suspend.project',
+      message: 'message.suspend.project',
       dataView: true,
       show: (record) => { return record.state !== 'Suspended' }
     },
@@ -106,6 +108,7 @@ export default {
       api: 'deleteProject',
       icon: 'delete',
       label: 'label.delete.project',
+      message: 'message.delete.project',
       dataView: true
     }
   ]

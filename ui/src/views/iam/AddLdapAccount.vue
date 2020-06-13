@@ -22,7 +22,7 @@
         <a-card :bordered="false">
           <a-input-search
             style="margin-bottom: 10px"
-            placeholder="Search"
+            :placeholder="$t('label.search')"
             v-model="searchQuery"
             @search="handleSearch" />
           <a-table
@@ -54,7 +54,7 @@
               <a-select
                 showSearch
                 v-decorator="['domainid', {
-                  rules: [{ required: true, message: 'Please select option' }]
+                  rules: [{ required: true, memessage: `${this.$t('message.error.select')}` }]
                 }]"
                 :placeholder="apiParams.domainid.description"
                 :loading="domainLoading">
@@ -73,7 +73,7 @@
               <a-select
                 showSearch
                 v-decorator="['roleid', {
-                  rules: [{ required: true, message: 'Please select option' }]
+                  rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                 }]"
                 :placeholder="apiParams.roleid.description"
                 :loading="roleLoading">

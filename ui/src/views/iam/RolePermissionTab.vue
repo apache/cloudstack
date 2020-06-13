@@ -34,7 +34,7 @@
             :dataSource="apis"
             :value="newRule"
             @change="val => newRule = val"
-            placeholder="Rule"
+            :placeholder="$t('label.rule')"
             :class="{'rule-dropdown-error' : newRuleSelectError}" />
         </div>
         <div class="rules-table__col rules-table__col--permission">

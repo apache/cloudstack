@@ -169,12 +169,12 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedzoneresponse.jobid,
-          successMessage: `Successfully released dedicated zone`,
+          successMessage: this.$t('message.dedicated.zone.released'),
           successMethod: () => {
             this.parentFetchData()
             this.dedicatedDomainId = null
             this.$store.dispatch('AddAsyncJob', {
-              title: 'Successfully released dedicated zone',
+              title: this.$t('message.dedicated.zone.released'),
               jobid: response.releasededicatedzoneresponse.jobid,
               status: 'progress'
             })
@@ -183,7 +183,7 @@ export default {
           errorMethod: () => {
             this.parentFetchData()
           },
-          loadingMessage: `Releasing dedicated zone...`,
+          loadingMessage: this.$t('message.releasing.dedicated.zone'),
           catchMessage: 'Error encountered while fetching async job result',
           catchMethod: () => {
             this.parentFetchData()
@@ -199,12 +199,12 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedpodresponse.jobid,
-          successMessage: `Successfully released dedicated pod`,
+          successMessage: this.$t('message.pod.dedication.released'),
           successMethod: () => {
             this.parentFetchData()
             this.dedicatedDomainId = null
             this.$store.dispatch('AddAsyncJob', {
-              title: 'Successfully released dedicated pod',
+              title: this.$t('message.pod.dedication.released'),
               jobid: response.releasededicatedpodresponse.jobid,
               status: 'progress'
             })
@@ -213,7 +213,7 @@ export default {
           errorMethod: () => {
             this.parentFetchData()
           },
-          loadingMessage: `Releasing dedicated pod...`,
+          loadingMessage: this.$t('message.releasing.dedicated.pod'),
           catchMessage: 'Error encountered while fetching async job result',
           catchMethod: () => {
             this.parentFetchData()
@@ -229,12 +229,12 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedclusterresponse.jobid,
-          successMessage: `Successfully released dedicated cluster`,
+          successMessage: this.$t('message.cluster.dedication.released'),
           successMethod: () => {
             this.parentFetchData()
             this.dedicatedDomainId = null
             this.$store.dispatch('AddAsyncJob', {
-              title: 'Successfully released dedicated cluster',
+              title: this.$t('message.cluster.dedication.released'),
               jobid: response.releasededicatedclusterresponse.jobid,
               status: 'progress'
             })
@@ -243,7 +243,7 @@ export default {
           errorMethod: () => {
             this.parentFetchData()
           },
-          loadingMessage: `Releasing dedicated cluster...`,
+          loadingMessage: this.$t('message.releasing.dedicated.cluster'),
           catchMessage: 'Error encountered while fetching async job result',
           catchMethod: () => {
             this.parentFetchData()
@@ -259,12 +259,12 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedhostresponse.jobid,
-          successMessage: `Successfully released dedicated host`,
+          successMessage: this.$t('message.host.dedication.released'),
           successMethod: () => {
             this.parentFetchData()
             this.dedicatedDomainId = null
             this.$store.dispatch('AddAsyncJob', {
-              title: 'Successfully released dedicated host',
+              title: this.$t('message.host.dedication.released'),
               jobid: response.releasededicatedhostresponse.jobid,
               status: 'progress'
             })
@@ -273,7 +273,7 @@ export default {
           errorMethod: () => {
             this.parentFetchData()
           },
-          loadingMessage: `Releasing dedicated host...`,
+          loadingMessage: this.$t('message.releasing.dedicated.host'),
           catchMessage: 'Error encountered while fetching async job result',
           catchMethod: () => {
             this.parentFetchData()

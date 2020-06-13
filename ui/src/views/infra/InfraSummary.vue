@@ -48,16 +48,16 @@
             </p>
 
             <a-form @submit.prevent="handleSslFormSubmit" ref="sslForm" :form="form">
-              <a-form-item label="Root certificate" :required="true">
+              <a-form-item :label="$t('label.root.certificate')" :required="true">
                 <a-textarea
                   id="rootCert"
                   rows="2"
-                  placeholder="Root certificate"
+                  :placeholder="$t('label.root.certificate')"
                   :autoFocus="true"
                   name="rootCert"
                   v-decorator="[
                     'root',
-                    {rules: [{ required: true, message: 'Required' }], validateTrigger:'change'}
+                    {rules: [{ required: true, message: `${this.$t('label.required')}` }], validateTrigger:'change'}
                   ]"
                 ></a-textarea>
               </a-form-item>
@@ -67,11 +67,11 @@
                   v-for="(item, index) in intermediateCertificates"
                   :key="`key-${index}`"
                   class="intermediate-certificate"
-                  :label="`Intermediate certificate ${index + 1}`">
+                  :label="$t('label.intermediate.certificate') + ` ${index + 1}`">
                   <a-textarea
                     :id="`intermediateCert${index}`"
                     rows="2"
-                    :placeholder="`Intermediate certificate ${index + 1}`"
+                    :placeholder="$t('label.intermediate.certificate') + ` ${index + 1}`"
                     :name="`intermediateCert${index}`"
                     v-decorator="[
                       `intermediate${index + 1}`,
@@ -88,40 +88,40 @@
                 </a-button>
               </a-form-item>
 
-              <a-form-item label="Server certificate" :required="true">
+              <a-form-item :label="$t('label.server.certificate')" :required="true">
                 <a-textarea
                   id="serverCert"
                   rows="2"
-                  placeholder="Server certificate"
+                  :placeholder="$t('label.server.certificate')"
                   name="serverCert"
                   v-decorator="[
                     'server',
-                    {rules: [{ required: true, message: 'Required' }], validateTrigger:'change'}
+                    {rules: [{ required: true, message: `${this.$t('label.required')}` }], validateTrigger:'change'}
                   ]"
                 ></a-textarea>
               </a-form-item>
 
-              <a-form-item label="PKCS#8 Private Key" :required="true">
+              <a-form-item :label="$t('label.pkcs.private.certificate')" :required="true">
                 <a-textarea
                   id="pkcsKey"
                   rows="2"
-                  placeholder="PKCS#8 Private Key"
+                  :placeholder="$t('label.pkcs.private.certificate')"
                   name="pkcsKey"
                   v-decorator="[
                     'pkcs',
-                    {rules: [{ required: true, message: 'Required' }], validateTrigger:'change'}
+                    {rules: [{ required: true, message: `${this.$t('label.required')}` }], validateTrigger:'change'}
                   ]"
                 ></a-textarea>
               </a-form-item>
 
-              <a-form-item label="DNS Domain Suffix (i.e., xyz.com)" :required="true">
+              <a-form-item :label="$t('label.domain.suffix')" :required="true">
                 <a-input
                   id="dnsSuffix"
-                  placeholder="DNS Domain Suffix (i.e., xyz.com)"
+                  :placeholder="$t('label.domain.suffix')"
                   name="dnsSuffix"
                   v-decorator="[
                     'dns',
-                    {rules: [{ required: true, message: 'Required' }], validateTrigger:'change'}
+                    {rules: [{ required: true, message: `${this.$t('label.required')}` }], validateTrigger:'change'}
                   ]"
                 ></a-input>
               </a-form-item>

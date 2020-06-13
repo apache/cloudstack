@@ -860,7 +860,7 @@
 "label.instanceport": "\u30a4\u30f3\u30b9\u30bf\u30f3\u30b9 \u30dd\u30fc\u30c8",
 "label.instances": "\u30a4\u30f3\u30b9\u30bf\u30f3\u30b9",
 "label.instanciate.template.associate.profile.blade": "\u30c6\u30f3\u30d7\u30ec\u30fc\u30c8\u306e\u30a4\u30f3\u30b9\u30bf\u30f3\u30b9\u4f5c\u6210\u304a\u3088\u3073\u30d7\u30ed\u30d5\u30a1\u30a4\u30eb\u3068\u30d6\u30ec\u30fc\u30c9\u306e\u95a2\u9023\u4ed8\u3051",
-"label.intermediate.certificate": "\u4e2d\u9593\u8a3c\u660e\u66f8 {0}",
+"label.intermediate.certificate": "\u4e2d\u9593\u8a3c\u660e\u66f8",
 "label.internal.dns.1": "\u5185\u90e8 DNS 1",
 "label.internal.dns.2": "\u5185\u90e8 DNS 2",
 "label.internal.lb": "\u5185\u90e8 LB",

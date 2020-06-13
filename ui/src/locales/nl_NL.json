@@ -861,7 +861,7 @@
 "label.instanceport": "instantie poort",
 "label.instances": "Instanties",
 "label.instanciate.template.associate.profile.blade": "Initieer Template en verbind Profiel met Blade",
-"label.intermediate.certificate": "Intermediair certificaat {0}",
+"label.intermediate.certificate": "Intermediair certificaat",
 "label.internal.dns.1": "Interne DNS 1",
 "label.internal.dns.2": "Interne DNS 2",
 "label.internal.lb": "interne LB",

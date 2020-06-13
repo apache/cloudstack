@@ -29,20 +29,20 @@
         <a-menu-item class="user-menu-item" key="0">
           <router-link :to="{ path: '/accountuser/' + $store.getters.userInfo.id }">
             <a-icon class="user-menu-item-icon" type="user"/>
-            <span class="user-menu-item-name">Profile</span>
+            <span class="user-menu-item-name">{{ $t('label.profilename') }}</span>
           </router-link>
         </a-menu-item>
         <a-menu-item class="user-menu-item" key="1" disabled>
           <a :href="docBase" target="_blank">
             <a-icon class="user-menu-item-icon" type="question-circle-o"></a-icon>
-            <span class="user-menu-item-name">Help</span>
+            <span class="user-menu-item-name">{{ $t('label.help') }}</span>
           </a>
         </a-menu-item>
         <a-menu-divider/>
         <a-menu-item class="user-menu-item" key="2">
           <a href="javascript:;" @click="handleLogout">
             <a-icon class="user-menu-item-icon" type="logout"/>
-            <span class="user-menu-item-name">Logout</span>
+            <span class="user-menu-item-name">{{ $t('label.logout') }}</span>
           </a>
         </a-menu-item>
       </a-menu>

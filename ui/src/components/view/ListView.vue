@@ -60,17 +60,21 @@
     </div>
     -->
 
-    <a slot="name" slot-scope="text, record" href="javascript:;">
+    <span slot="name" slot-scope="text, record">
       <div style="min-width: 120px">
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
           <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
         </span>
         <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
         <console :resource="record" size="small" style="margin-right: 5px" />
-        <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
-        <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
+
+        <span v-if="$route.name === 'globalsetting'">{{ text }}</span>
+        <span v-else>
+          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
+        </span>
       </div>
-    </a>
+    </span>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
@@ -93,6 +97,12 @@
     <a slot="vmname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
     </a>
+    <span slot="hypervisor" slot-scope="text, record">
+      <span v-if="$route.name === 'hypervisorcapability'">
+        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+      </span>
+      <span v-else>{{ text }}</span>
+    </span>
     <template slot="state" slot-scope="text">
       <status :text="text ? text : ''" displayText />
     </template>
@@ -286,8 +296,8 @@ export default {
           !json.updateconfigurationresponse.configuration.isdynamic &&
           ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
           this.$notification.warning({
-            message: 'Status',
-            description: 'Please restart your management server(s) for your new settings to take effect.'
+            message: this.$t('label.status'),
+            description: this.$t('message.restart.mgmt.server')
           })
         }
       }).catch(error => {

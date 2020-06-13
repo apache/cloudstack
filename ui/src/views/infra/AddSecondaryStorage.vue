@@ -45,7 +45,7 @@
                 'zone',
                 {
                   initialValue: this.zoneSelected,
-                  rules: [{ required: true, message: 'required'}]
+                  rules: [{ required: true, message: `${this.$t('label.required')}`}]
                 }]"
               @change="val => { zoneSelected = val }"
             >
@@ -61,7 +61,7 @@
               v-decorator="[
                 'server',
                 {
-                  rules: [{ required: true, message: 'required' }]
+                  rules: [{ required: true, message: `${this.$t('label.required')}` }]
                 }]"
             />
           </a-form-item>
@@ -70,7 +70,7 @@
               v-decorator="[
                 'path',
                 {
-                  rules: [{ required: true, message: 'required' }]
+                  rules: [{ required: true, message: `${this.$t('label.required')}` }]
                 }]"
             />
           </a-form-item>
@@ -81,7 +81,7 @@
               v-decorator="[
                 'smbUsername',
                 {
-                  rules: [{ required: true, message: 'required' }]
+                  rules: [{ required: true, message: `${this.$t('label.required')}` }]
                 }]"
             />
           </a-form-item>
@@ -90,7 +90,7 @@
               v-decorator="[
                 'smbPassword',
                 {
-                  rules: [{ required: true, message: 'required' }]
+                  rules: [{ required: true, message: `${this.$t('label.required')}` }]
                 }]"
             />
           </a-form-item>
@@ -99,7 +99,7 @@
               v-decorator="[
                 'smbDomain',
                 {
-                  rules: [{ required: true, message: 'required' }]
+                  rules: [{ required: true, message: `${this.$t('label.required')}` }]
                 }]"
             />
           </a-form-item>
@@ -110,7 +110,7 @@
               v-decorator="[
                 'url',
                 {
-                  rules: [{ required: true, message: 'required' }]
+                  rules: [{ required: true, message: `${this.$t('label.required')}` }]
                 }]"
             />
           </a-form-item>
@@ -119,7 +119,7 @@
               v-decorator="[
                 'account',
                 {
-                  rules: [{ required: true, message: 'required' }]
+                  rules: [{ required: true, message: `${this.$t('label.required')}` }]
                 }]"
             />
           </a-form-item>
@@ -128,7 +128,7 @@
               v-decorator="[
                 'username',
                 {
-                  rules: [{ required: true, message: 'required' }]
+                  rules: [{ required: true, message: `${this.$t('label.required')}` }]
                 }]"
             />
           </a-form-item>
@@ -137,7 +137,7 @@
               v-decorator="[
                 'key',
                 {
-                  rules: [{ required: true, message: 'required' }]
+                  rules: [{ required: true, message: `${this.$t('label.required')}` }]
                 }]"
             />
           </a-form-item>

@@ -87,7 +87,7 @@
                   v-decorator="['day-of-week', {
                     rules: [{
                       required: true,
-                      message: 'Please select option'
+                      message: `${this.$t('message.error.select')}`
                     }]
                   }]" >
                   <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex">
@@ -102,7 +102,7 @@
                   v-decorator="['day-of-month', {
                     rules: [{
                       required: true,
-                      message: 'Please select option'
+                      message: `${this.$t('message.error.select')}`
                     }]
                   }]">
                   <a-select-option v-for="opt in dayOfMonth" :key="opt.name">
@@ -118,7 +118,7 @@
                   v-decorator="['timezone', {
                     rules: [{
                       required: true,
-                      message: 'Please select option'
+                      messamessage: `${this.$t('message.error.select')}`
                     }]
                   }]"
                   :loading="fetching">

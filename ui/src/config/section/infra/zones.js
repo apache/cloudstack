@@ -88,6 +88,7 @@ export default {
       api: 'updateZone',
       icon: 'pause-circle',
       label: 'label.action.disable.zone',
+      message: 'message.action.disable.zone',
       dataView: true,
       defaultArgs: { allocationstate: 'Disabled' },
       show: (record) => { return record.allocationstate === 'Enabled' }
@@ -96,6 +97,7 @@ export default {
       api: 'updateZone',
       icon: 'play-circle',
       label: 'label.action.enable.zone',
+      message: 'message.action.enable.zone',
       dataView: true,
       defaultArgs: { allocationstate: 'Enabled' },
       show: (record) => { return record.allocationstate === 'Disabled' }
@@ -104,6 +106,7 @@ export default {
       api: 'enableOutOfBandManagementForZone',
       icon: 'plus-circle',
       label: 'label.outofbandmanagement.enable',
+      message: 'label.outofbandmanagement.enable',
       dataView: true,
       show: (record) => {
         return !record.resourcedetails || !record.resourcedetails.outOfBandManagementEnabled ||
@@ -120,6 +123,7 @@ export default {
       api: 'disableOutOfBandManagementForZone',
       icon: 'minus-circle',
       label: 'label.outofbandmanagement.disable',
+      message: 'label.outofbandmanagement.disable',
       dataView: true,
       show: (record) => {
         return record.resourcedetails && record.resourcedetails.outOfBandManagementEnabled &&
@@ -136,6 +140,7 @@ export default {
       api: 'enableHAForZone',
       icon: 'eye',
       label: 'label.ha.enable',
+      message: 'label.ha.enable',
       dataView: true,
       show: (record) => {
         return !record.resourcedetails || !record.resourcedetails.resourceHAEnabled ||
@@ -152,6 +157,7 @@ export default {
       api: 'disableHAForZone',
       icon: 'eye-invisible',
       label: 'label.ha.disable',
+      message: 'label.ha.disable',
       dataView: true,
       show: (record) => {
         return record.resourcedetails && record.resourcedetails.resourceHAEnabled &&
@@ -181,6 +187,7 @@ export default {
       api: 'updateVmwareDc',
       icon: 'block',
       label: 'label.update.vmware.datacenter',
+      message: 'label.update.vmware.datacenter',
       dataView: true,
       show: record => record.vmwaredc,
       args: ['zoneid', 'name', 'vcenter', 'username', 'password'],
@@ -194,6 +201,7 @@ export default {
       api: 'removeVmwareDc',
       icon: 'minus-square',
       label: 'label.remove.vmware.datacenter',
+      message: 'message.confirm.remove.vmware.datacenter',
       dataView: true,
       show: record => record.vmwaredc,
       args: ['zoneid'],
@@ -207,6 +215,7 @@ export default {
       api: 'deleteZone',
       icon: 'delete',
       label: 'label.action.delete.zone',
+      message: 'message.action.delete.zone',
       dataView: true
     }
   ]

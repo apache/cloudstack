@@ -315,11 +315,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatehostresponse.jobid,
-          successMessage: `Successfully dedicated host`,
+          successMessage: this.$t('message.host.dedicated'),
           successMethod: () => {
             this.loading = false
             this.$store.dispatch('AddAsyncJob', {
-              title: 'Successfully dedicated host',
+              title: this.$t('message.host.dedicated'),
               jobid: response.dedicatehostresponse.jobid,
               description: `Domain ID: ${this.dedicatedDomainId}`,
               status: 'progress'
@@ -329,7 +329,7 @@ export default {
           errorMethod: () => {
             this.loading = false
           },
-          loadingMessage: `Dedicating host...`,
+          loadingMessage: this.$t('message.dedicate.host'),
           catchMessage: 'Error encountered while fetching async job result',
           catchMethod: () => {
             this.loading = false

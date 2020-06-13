@@ -860,7 +860,7 @@
 "label.instanceport": "P\u00e9ld\u00e1ny port",
 "label.instances": "P\u00e9ld\u00e1nyok",
 "label.instanciate.template.associate.profile.blade": "Instanciate Template and Associate Profile to Blade",
-"label.intermediate.certificate": "K\u00f6zb\u00fcls\u0151 tan\u00fas\u00edtv\u00e1ny {0}",
+"label.intermediate.certificate": "K\u00f6zb\u00fcls\u0151 tan\u00fas\u00edtv\u00e1ny",
 "label.internal.dns.1": "1. bels\u0151 DNS",
 "label.internal.dns.2": "2. bels\u0151 DNS",
 "label.internal.lb": "Bels\u0151 LB",

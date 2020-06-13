@@ -105,6 +105,7 @@
                 icon="barcode"
                 type="dashed"
                 size="small"
+                @click="$message.success('Copied to clipboard')"
                 v-clipboard:copy="resource.id" />
             </a-tooltip>
             <span style="margin-left: 10px;">{{ resource.id }}</span>
@@ -498,13 +499,13 @@
               <template slot="title">
                 <span>Copy {{ $t('label.apikey') }}</span>
               </template>
-              <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="resource.apikey">
+              <a-button shape="circle" type="dashed" size="small" @click="$message.success('Copied to clipboard')" v-clipboard:copy="resource.apikey">
                 <a-icon type="copy"/>
               </a-button>
             </a-tooltip>
           </strong>
           <div>
-            {{ resource.apikey }}
+            {{ resource.apikey.substring(0, 20) }}...
           </div>
         </div> <br/>
         <div class="user-keys">
@@ -515,13 +516,13 @@
               <template slot="title">
                 <span>Copy {{ $t('label.secretkey') }}</span>
               </template>
-              <a-button shape="circle" type="dashed" size="small" v-clipboard:copy="resource.secretkey">
+              <a-button shape="circle" type="dashed" size="small" @click="$message.success('Copied to clipboard')" v-clipboard:copy="resource.secretkey">
                 <a-icon type="copy"/>
               </a-button>
             </a-tooltip>
           </strong>
           <div>
-            {{ resource.secretkey }}
+            {{ resource.secretkey.substring(0, 20) }}...
           </div>
         </div>
       </div>

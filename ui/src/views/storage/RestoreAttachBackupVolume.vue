@@ -22,7 +22,7 @@
         <a-select
           allowClear
           v-decorator="['volumeid', {
-            rules: [{ required: true, message: 'Please select option' }]
+            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }]"
           :loading="volumeOptions.loading">
           <a-select-option
@@ -37,7 +37,7 @@
           showSearch
           allowClear
           v-decorator="['virtualmachineid', {
-            rules: [{ required: true, message: 'Please select option' }]
+            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }]"
           :loading="virtualMachineOptions.loading">
           <a-select-option

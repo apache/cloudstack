@@ -77,6 +77,7 @@ export default {
           api: 'archiveAlerts',
           icon: 'book',
           label: 'label.archive.alerts',
+          message: 'message.confirm.archive.selected.alerts',
           dataView: true,
           args: ['ids'],
           mapping: {
@@ -88,7 +89,8 @@ export default {
         {
           api: 'deleteAlerts',
           icon: 'delete',
-          label: 'label.delete.events',
+          label: 'label.delete.alerts',
+          message: 'message.confirm.remove.selected.alerts',
           dataView: true,
           args: ['ids'],
           mapping: {

@@ -210,7 +210,7 @@ export default {
         networkids: this.selectedNetwork
       }).then(response => {
         this.$notification.success({
-          message: 'Successfully assigned instance'
+          message: this.$t('label.loadbalancerinstance')
         })
         this.loading = false
         this.$parent.$parent.close()

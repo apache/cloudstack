@@ -284,33 +284,33 @@ export default {
         {
           title: 'label.pod.name',
           key: 'podName',
-          placeHolder: 'Please enter pod name',
+          placeHolder: 'message.installwizard.tooltip.addpod.name',
           required: true
         },
         {
           title: 'label.reserved.system.gateway',
           key: 'podReservedGateway',
-          placeHolder: 'Please enter system gateway for Pod',
+          placeHolder: 'message.installwizard.tooltip.addpod.reservedsystemgateway',
           required: true
         },
         {
           title: 'label.reserved.system.netmask',
           key: 'podReservedNetmask',
-          placeHolder: 'Please enter system netmask for Pod',
+          placeHolder: 'message.tooltip.reserved.system.netmask',
           required: true
         },
         {
-          title: 'label.start.reserved.system.IP',
+          title: 'label.start.reserved.system.ip',
           key: 'podReservedStartIp',
-          placeHolder: 'Please enter reserved system start ip for Pod',
+          placeHolder: 'message.installwizard.tooltip.addpod.reservedsystemstartip',
           required: true,
           ipV4: true,
           message: 'Please enter a valid IP v4 address.'
         },
         {
-          title: 'label.end.reserved.system.IP',
+          title: 'label.end.reserved.system.ip',
           key: 'podReservedStopIp',
-          placeHolder: 'Please enter reserved system stop ip for Pod',
+          placeHolder: 'message.installwizard.tooltip.addpod.reservedsystemendip',
           required: false,
           ipV4: true,
           message: 'Please enter a valid IP v4 address.'
@@ -320,19 +320,19 @@ export default {
         {
           title: 'label.guest.gateway',
           key: 'guestGateway',
-          placeHolder: 'Please enter guest gateway',
+          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.guestgateway',
           required: false
         },
         {
           title: 'label.guest.netmask',
           key: 'guestNetmask',
-          placeHolder: 'Please enter guest netmask',
+          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.guestnetmask',
           required: false
         },
         {
           title: 'label.guest.start.ip',
           key: 'guestStartIp',
-          placeHolder: 'Please enter start ip for guest traffic',
+          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.gueststartip',
           required: false,
           ipV4: true,
           message: 'Please enter a valid IP v4 address.'
@@ -340,7 +340,7 @@ export default {
         {
           title: 'label.guest.end.ip',
           key: 'guestStopIp',
-          placeHolder: 'Please enter stop ip for guest traffic',
+          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.guestendip',
           required: false,
           ipV4: true,
           message: 'Please enter a valid IP v4 address.'

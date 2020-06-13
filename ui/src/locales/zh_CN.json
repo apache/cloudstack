@@ -860,7 +860,7 @@
 "label.instanceport": "\u5b9e\u4f8b\u7aef\u53e3",
 "label.instances": "\u5b9e\u4f8b",
 "label.instanciate.template.associate.profile.blade": "\u5c06\u6a21\u677f\u5b9e\u4f8b\u5316\u5e76\u5c06\u914d\u7f6e\u6587\u4ef6\u4e0e\u5200\u7247\u5f0f\u670d\u52a1\u5668\u5173\u8054",
-"label.intermediate.certificate": "\u4e2d\u95f4\u8bc1\u4e66 {0}",
+"label.intermediate.certificate": "\u4e2d\u95f4\u8bc1\u4e66",
 "label.internal.dns.1": "\u5185\u90e8 DNS 1",
 "label.internal.dns.2": "\u5185\u90e8 DNS 2",
 "label.internal.lb": "\u5185\u90e8\u8d1f\u8f7d\u5747\u8861\u5668",

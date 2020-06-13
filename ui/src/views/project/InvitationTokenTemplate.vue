@@ -25,7 +25,7 @@
         <a-form-item :label="$t('label.projectid')">
           <a-input
             v-decorator="['projectid', {
-              rules: [{ required: true, message: 'Please enter input' }]
+              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
             }]"
             :placeholder="apiParams.projectid.description"
           />
@@ -33,7 +33,7 @@
         <a-form-item :label="$t('label.token')">
           <a-input
             v-decorator="['token', {
-              rules: [{ required: true, message: 'Please enter input' }]
+              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
             }]"
             :placeholder="apiParams.token.description"
           />

@@ -18,7 +18,7 @@
 <template>
   <div class="form">
     <a-input-search
-      placeholder="Search"
+      :placeholder="$t('label.search')"
       v-model="searchQuery"
       style="margin-bottom: 10px;"
       @search="fetchData" />

@@ -54,6 +54,7 @@ export default {
       api: 'enableStorageMaintenance',
       icon: 'plus-square',
       label: 'label.action.enable.maintenance.mode',
+      message: 'message.action.primarystorage.enable.maintenance.mode',
       dataView: true,
       show: (record) => { return ['Up', 'Connecting', 'Down', 'ErrorInMaintenance'].includes(record.state) }
     },
@@ -61,6 +62,7 @@ export default {
       api: 'cancelStorageMaintenance',
       icon: 'minus-square',
       label: 'label.action.cancel.maintenance.mode',
+      message: 'message.action.cancel.maintenance.mode',
       dataView: true,
       show: (record) => { return ['Maintenance', 'PrepareForMaintenance', 'ErrorInMaintenance'].includes(record.state) }
     },

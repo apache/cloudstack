@@ -861,7 +861,7 @@
 "label.instanceport": "Puerto de Instancia",
 "label.instances": "Instancias",
 "label.instanciate.template.associate.profile.blade": "Instanciar Plantilla y asociar al Perfil al Blade",
-"label.intermediate.certificate": "Certificado intermedio {0}",
+"label.intermediate.certificate": "Certificado intermedio",
 "label.internal.dns.1": "DNS interno una",
 "label.internal.dns.2": "DNS interno 2",
 "label.internal.lb": "LB interno",

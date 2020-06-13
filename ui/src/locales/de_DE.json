@@ -862,7 +862,7 @@
 "label.instanceport": "Instanz-Port",
 "label.instances": "Instanzen",
 "label.instanciate.template.associate.profile.blade": "Vorlage instanzieren und Profil zu Blade assoziieren",
-"label.intermediate.certificate": "Intermediate Zertifikat {0}",
+"label.intermediate.certificate": "Intermediate Zertifikat",
 "label.internal.dns.1": "Interner DNS 1",
 "label.internal.dns.2": "Interner DNS 2",
 "label.internal.lb": "Interne LB",

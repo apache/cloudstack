@@ -861,7 +861,7 @@
 "label.instanceport": "Instance Port",
 "label.instances": "Istanze",
 "label.instanciate.template.associate.profile.blade": "Instanciate Template and Associate Profile to Blade",
-"label.intermediate.certificate": "Intermediate certificate {0}",
+"label.intermediate.certificate": "Intermediate certificate",
 "label.internal.dns.1": "DNS 1 Interno",
 "label.internal.dns.2": "DNS2 Interno",
 "label.internal.lb": "Internal LB",

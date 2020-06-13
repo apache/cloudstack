@@ -37,7 +37,7 @@
                     <a-form-item :label="this.$t('label.zoneid')">
                       <a-select
                         v-decorator="['zoneid', {
-                          rules: [{ required: true, message: 'Please select option' }]
+                          rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                         }]"
                         :options="zoneSelectOptions"
                         @change="onSelectZoneId"
@@ -127,7 +127,7 @@
                               initialValue: hypervisorSelectOptions && hypervisorSelectOptions.length > 0
                                 ? hypervisorSelectOptions[0].value
                                 : null,
-                              rules: [{ required: true, message: 'Please select option' }]
+                              rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                             }]"
                             :options="hypervisorSelectOptions"
                             @change="value => this.hypervisor = value" />

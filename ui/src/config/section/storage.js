@@ -66,6 +66,7 @@ export default {
           api: 'attachVolume',
           icon: 'paper-clip',
           label: 'label.action.attach.disk',
+          message: 'message.confirm.attach.disk',
           args: ['virtualmachineid'],
           dataView: true,
           show: (record) => { return record.type !== 'ROOT' && record.state !== 'Destroy' && !('virtualmachineid' in record) }
@@ -74,6 +75,7 @@ export default {
           api: 'detachVolume',
           icon: 'link',
           label: 'label.action.detach.disk',
+          message: 'message.detach.disk',
           dataView: true,
           show: (record) => { return record.type !== 'ROOT' && 'virtualmachineid' in record && record.virtualmachineid }
         },
@@ -134,6 +136,7 @@ export default {
           api: 'extractVolume',
           icon: 'cloud-download',
           label: 'label.action.download.volume',
+          message: 'message.download.volume.confirm',
           dataView: true,
           show: (record) => { return record && record.state === 'Ready' && (record.vmstate === 'Stopped' || record.virtualmachineid == null) && record.state !== 'Destroy' },
           args: ['zoneid', 'mode'],
@@ -164,6 +167,7 @@ export default {
           api: 'recoverVolume',
           icon: 'medicine-box',
           label: 'label.action.recover.volume',
+          message: 'message.action.recover.volume',
           dataView: true,
           show: (record, store) => {
             return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume) && record.state === 'Destroy'
@@ -173,6 +177,7 @@ export default {
           api: 'deleteVolume',
           icon: 'delete',
           label: 'label.action.delete.volume',
+          message: 'message.action.delete.volume',
           dataView: true,
           groupAction: true,
           show: (record, store) => {
@@ -184,6 +189,7 @@ export default {
           api: 'destroyVolume',
           icon: 'delete',
           label: 'label.action.destroy.volume',
+          message: 'message.action.destroy.volume',
           dataView: true,
           args: (record, store) => {
             return (!['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !store.features.allowuserexpungerecovervolumestore) ? [] : ['expunge']
@@ -233,6 +239,7 @@ export default {
           api: 'revertSnapshot',
           icon: 'sync',
           label: 'label.action.revert.snapshot',
+          message: 'message.action.revert.snapshot',
           dataView: true,
           show: (record) => { return record.revertable }
         },
@@ -240,6 +247,7 @@ export default {
           api: 'deleteSnapshot',
           icon: 'delete',
           label: 'label.action.delete.snapshot',
+          message: 'message.action.delete.snapshot',
           dataView: true
         }
       ]
@@ -257,6 +265,7 @@ export default {
           api: 'revertToVMSnapshot',
           icon: 'sync',
           label: 'label.action.vmsnapshot.revert',
+          message: 'label.action.vmsnapshot.revert',
           dataView: true,
           show: (record) => { return record.state === 'Ready' },
           args: ['vmsnapshotid'],
@@ -270,6 +279,7 @@ export default {
           api: 'deleteVMSnapshot',
           icon: 'delete',
           label: 'label.action.vmsnapshot.delete',
+          message: 'message.action.vmsnapshot.delete',
           dataView: true,
           args: ['vmsnapshotid'],
           mapping: {
@@ -292,12 +302,14 @@ export default {
           api: 'restoreBackup',
           icon: 'sync',
           label: 'label.backup.restore',
+          message: 'message.backup.restore',
           dataView: true
         },
         {
           api: 'restoreVolumeFromBackupAndAttachToVM',
           icon: 'paper-clip',
-          label: 'Restore Volume and Attach',
+          label: 'label.backup.attach.restore',
+          message: 'message.backup.attach.restore',
           dataView: true,
           popup: true,
           component: () => import('@/views/storage/RestoreAttachBackupVolume.vue')
@@ -306,6 +318,7 @@ export default {
           api: 'removeVirtualMachineFromBackupOffering',
           icon: 'scissor',
           label: 'label.backup.offering.remove',
+          message: 'message.backup.offering.remove',
           dataView: true,
           args: ['forced', 'virtualmachineid'],
           mapping: {
@@ -320,7 +333,8 @@ export default {
         {
           api: 'deleteBackup',
           icon: 'delete',
-          label: 'Delete Backup',
+          label: 'label.delete.backup',
+          message: 'message.delete.backup',
           dataView: true
         }
       ]

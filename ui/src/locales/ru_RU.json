@@ -860,7 +860,7 @@
 "label.instanceport": "Instance Port",
 "label.instances": "\u041c\u0430\u0448\u0438\u043d\u044b",
 "label.instanciate.template.associate.profile.blade": "Instanciate Template and Associate Profile to Blade",
-"label.intermediate.certificate": "Intermediate certificate {0}",
+"label.intermediate.certificate": "Intermediate certificate",
 "label.internal.dns.1": "\u0412\u043d\u0443\u0442\u0440\u0435\u043d\u043d\u0438\u0439 DNS 1",
 "label.internal.dns.2": "\u0412\u043d\u0443\u0442\u0440\u0435\u043d\u043d\u0438\u0439 DNS 2",
 "label.internal.lb": "Internal LB",

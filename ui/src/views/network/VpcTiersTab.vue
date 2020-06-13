@@ -134,11 +134,11 @@
           <a-form-item :label="$t('label.name')">
             <a-input
               placeholder="A unique name of the tier"
-              v-decorator="['name',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
+              v-decorator="['name',{rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.networkofferingid')">
             <a-select
-              v-decorator="['networkOffering',{rules: [{ required: true, message: 'Required' }]}]">
+              v-decorator="['networkOffering',{rules: [{ required: true, message: `${this.$t('label.required')}` }]}]">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
                 {{ item.name }}
               </a-select-option>
@@ -147,12 +147,12 @@
           <a-form-item :label="$t('label.gateway')">
             <a-input
               placeholder="The gateway of the tier in the super CIDR range and not overlapping the CIDR of any other tier in this VPC."
-              v-decorator="['gateway',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
+              v-decorator="['gateway',{rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.netmask')">
             <a-input
               placeholder="Netmask of the tier. For example, with VPC CIDR of 10.0.0.0/16 and network tier CIDR of 10.1.1.0/24, gateway is 10.1.1.1 and netmask is 255.255.255.0"
-              v-decorator="['netmask',{rules: [{ required: true, message: 'Required' }]}]"></a-input>
+              v-decorator="['netmask',{rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.externalid')">
             <a-input
@@ -201,7 +201,7 @@
                 'algorithm',
                 {
                   initialValue: 'Source',
-                  rules: [{ required: true, message: 'required'}]
+                  rules: [{ required: true, message: `${this.$t('label.required')}`}]
                 }]">
               <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]">
                 {{ key }}

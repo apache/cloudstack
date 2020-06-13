@@ -131,7 +131,7 @@
       @showSizeChange="handleChangePageSize"
       showSizeChanger/>
 
-    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal" class="tags-modal">
+    <a-modal :title="$t('label.edit.tags')" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal" class="tags-modal">
       <span v-show="tagsModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -166,7 +166,7 @@
     </a-modal>
 
     <a-modal
-      title="Configure Sticky Policy"
+      :title="$t('label.configure.sticky.policy')"
       v-model="stickinessModalVisible"
       :footer="null"
       :afterClose="closeModal"
@@ -177,7 +177,7 @@
       </span>
 
       <a-form :form="stickinessPolicyForm" @submit="handleSubmitStickinessForm" class="custom-ant-form">
-        <a-form-item label="Stickiness method">
+        <a-form-item :label="$t('label.stickiness.method')">
           <a-select v-decorator="['methodname']" @change="handleStickinessMethodSelectChange">
             <a-select-option value="LbCookie">LbCookie</a-select-option>
             <a-select-option value="AppCookie">AppCookie</a-select-option>
@@ -186,58 +186,58 @@
           </a-select>
         </a-form-item>
         <a-form-item
-          label="Sticky Name"
+          :label="$t('label.sticky.name')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie' || stickinessPolicyMethod === 'SourceBased'">
           <a-input v-decorator="['name', { rules: [{ required: true, message: 'Please specify a sticky name'}] }]" />
         </a-form-item>
         <a-form-item
-          label="Cookie name"
+          :label="$t('label.sticky.cookie-name')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie'">
           <a-input v-decorator="['cookieName']" />
         </a-form-item>
         <a-form-item
-          label="Mode"
+          :label="$t('label.sticky.mode')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie'">
           <a-input v-decorator="['mode']" />
         </a-form-item>
-        <a-form-item label="No cache" v-show="stickinessPolicyMethod === 'LbCookie'">
+        <a-form-item :label="$t('label.sticky.nocache')" v-show="stickinessPolicyMethod === 'LbCookie'">
           <a-checkbox v-decorator="['nocache']" v-model="stickinessNoCache"></a-checkbox>
         </a-form-item>
-        <a-form-item label="Indirect" v-show="stickinessPolicyMethod === 'LbCookie'">
+        <a-form-item :label="$t('label.sticky.indirect')" v-show="stickinessPolicyMethod === 'LbCookie'">
           <a-checkbox v-decorator="['indirect']" v-model="stickinessIndirect"></a-checkbox>
         </a-form-item>
-        <a-form-item label="Post only" v-show="stickinessPolicyMethod === 'LbCookie'">
+        <a-form-item :label="$t('label.sticky.postonly')" v-show="stickinessPolicyMethod === 'LbCookie'">
           <a-checkbox v-decorator="['postonly']" v-model="stickinessPostOnly"></a-checkbox>
         </a-form-item>
-        <a-form-item label="Domain" v-show="stickinessPolicyMethod === 'LbCookie'">
+        <a-form-item :label="$t('label.domain')" v-show="stickinessPolicyMethod === 'LbCookie'">
           <a-input v-decorator="['domain']" />
         </a-form-item>
-        <a-form-item label="Length" v-show="stickinessPolicyMethod === 'AppCookie'">
+        <a-form-item :label="$t('label.sticky.length')" v-show="stickinessPolicyMethod === 'AppCookie'">
           <a-input v-decorator="['length']" type="number" />
         </a-form-item>
-        <a-form-item label="Hold time" v-show="stickinessPolicyMethod === 'AppCookie'">
+        <a-form-item :label="$t('label.sticky.holdtime')" v-show="stickinessPolicyMethod === 'AppCookie'">
           <a-input v-decorator="['holdtime']" type="number" />
         </a-form-item>
-        <a-form-item label="Request learn" v-show="stickinessPolicyMethod === 'AppCookie'">
+        <a-form-item :label="$t('label.sticky.request-learn')" v-show="stickinessPolicyMethod === 'AppCookie'">
           <a-checkbox v-decorator="['requestLearn']" v-model="stickinessRequestLearn"></a-checkbox>
         </a-form-item>
-        <a-form-item label="Prefix" v-show="stickinessPolicyMethod === 'AppCookie'">
+        <a-form-item :label="$t('label.sticky.prefix')" v-show="stickinessPolicyMethod === 'AppCookie'">
           <a-checkbox v-decorator="['prefix']" v-model="stickinessPrefix"></a-checkbox>
         </a-form-item>
-        <a-form-item label="Table size" v-show="stickinessPolicyMethod === 'SourceBased'">
+        <a-form-item :label="$t('label.sticky.tablesize')" v-show="stickinessPolicyMethod === 'SourceBased'">
           <a-input v-decorator="['tablesize']" />
         </a-form-item>
-        <a-form-item label="Expires" v-show="stickinessPolicyMethod === 'SourceBased'">
+        <a-form-item :label="$t('label.sticky.expire')" v-show="stickinessPolicyMethod === 'SourceBased'">
           <a-input v-decorator="['expire']" />
         </a-form-item>
         <a-button type="primary" html-type="submit">OK</a-button>
       </a-form>
     </a-modal>
 
-    <a-modal title="Edit rule" v-model="editRuleModalVisible" :afterClose="closeModal" @ok="handleSubmitEditForm">
+    <a-modal :title="$t('label.edit.rule')" v-model="editRuleModalVisible" :afterClose="closeModal" @ok="handleSubmitEditForm">
       <span v-show="editRuleModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>

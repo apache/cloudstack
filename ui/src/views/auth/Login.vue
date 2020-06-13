@@ -39,7 +39,7 @@
           <a-input
             size="large"
             type="text"
-            placeholder="Username"
+            :placeholder="$t('label.username')"
             v-decorator="[
               'username',
               {rules: [{ required: true, message: 'Enter your username' }, { validator: handleUsernameOrEmail }], validateTrigger: 'change'}
@@ -54,7 +54,7 @@
             size="large"
             type="password"
             autocomplete="false"
-            placeholder="Password"
+            :placeholder="$t('label.password')"
             v-decorator="[
               'password',
               {rules: [{ required: true, message: 'Enter your password' }], validateTrigger: 'blur'}
@@ -68,7 +68,7 @@
           <a-input
             size="large"
             type="text"
-            placeholder="Domain"
+            :placeholder="$t('label.domain')"
             v-decorator="[
               'domain',
               {rules: [{ required: false, message: 'Enter your domain, leave empty for ROOT domain' }], validateTrigger: 'change'}

@@ -262,11 +262,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicateclusterresponse.jobid,
-          successMessage: `Successfully dedicated cluster`,
+          successMessage: this.$t('message.cluster.dedicated'),
           successMethod: () => {
             this.loading = false
             this.$store.dispatch('AddAsyncJob', {
-              title: 'Successfully dedicated cluster',
+              title: this.$t('message.cluster.dedicated'),
               jobid: response.dedicateclusterresponse.jobid,
               description: `Domain ID: ${this.dedicatedDomainId}`,
               status: 'progress'
@@ -276,7 +276,7 @@ export default {
           errorMethod: () => {
             this.loading = false
           },
-          loadingMessage: `Dedicating cluster...`,
+          loadingMessage: this.$t('message.dedicate.zone'),
           catchMessage: 'Error encountered while fetching async job result',
           catchMethod: () => {
             this.loading = false

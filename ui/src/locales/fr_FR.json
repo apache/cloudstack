@@ -861,7 +861,7 @@
 "label.instanceport": "Port Instance",
 "label.instances": "Instances",
 "label.instanciate.template.associate.profile.blade": "Instancier Mod\u00e8le et Profil associ\u00e9 \u00e0 la Lame",
-"label.intermediate.certificate": "Certificat interm\u00e9diaire {0}",
+"label.intermediate.certificate": "Certificat interm\u00e9diaire",
 "label.internal.dns.1": "DNS interne 1",
 "label.internal.dns.2": "DNS interne 2",
 "label.internal.lb": "R\u00e9partiteur interne",

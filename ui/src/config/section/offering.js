@@ -58,6 +58,7 @@ export default {
         api: 'deleteServiceOffering',
         icon: 'delete',
         label: 'label.action.delete.service.offering',
+        message: 'message.action.delete.service.offering',
         dataView: true
       }]
     },
@@ -88,6 +89,7 @@ export default {
         api: 'deleteServiceOffering',
         icon: 'delete',
         label: 'label.action.delete.system.service.offering',
+        message: 'message.action.delete.system.service.offering',
         dataView: true,
         params: { issystem: 'true' }
       }]
@@ -129,6 +131,7 @@ export default {
         api: 'deleteDiskOffering',
         icon: 'delete',
         label: 'label.action.delete.disk.offering',
+        message: 'message.action.delete.disk.offering',
         dataView: true
       }]
     },
@@ -150,6 +153,7 @@ export default {
         api: 'deleteBackupOffering',
         icon: 'delete',
         label: 'label.action.delete.backup.offering',
+        message: 'message.action.delete.backup.offering',
         dataView: true
       }]
     },
@@ -183,6 +187,7 @@ export default {
         api: 'updateNetworkOffering',
         icon: 'play-circle',
         label: 'label.enable.network.offering',
+        message: 'message.confirm.enable.network.offering',
         dataView: true,
         show: (record) => { return record.state === 'Disabled' },
         args: ['state'],
@@ -195,6 +200,7 @@ export default {
         api: 'updateNetworkOffering',
         icon: 'pause-circle',
         label: 'label.disable.network.offering',
+        message: 'message.confirm.disable.network.offering',
         dataView: true,
         show: (record) => { return record.state === 'Enabled' },
         args: ['state'],
@@ -214,6 +220,7 @@ export default {
         api: 'deleteNetworkOffering',
         icon: 'delete',
         label: 'label.remove.network.offering',
+        message: 'message.confirm.remove.network.offering',
         dataView: true
       }]
     },
@@ -248,6 +255,7 @@ export default {
         api: 'updateVPCOffering',
         icon: 'play-circle',
         label: 'label.enable.vpc.offering',
+        message: 'message.confirm.enable.vpc.offering',
         dataView: true,
         show: (record) => { return record.state === 'Disabled' },
         args: ['state'],
@@ -260,6 +268,7 @@ export default {
         api: 'updateVPCOffering',
         icon: 'pause-circle',
         label: 'label.disable.vpc.offering',
+        message: 'message.confirm.disable.vpc.offering',
         dataView: true,
         show: (record) => { return record.state === 'Enabled' },
         args: ['state'],
@@ -279,6 +288,7 @@ export default {
         api: 'deleteVPCOffering',
         icon: 'delete',
         label: 'label.remove.vpc.offering',
+        message: 'message.confirm.remove.vpc.offering',
         dataView: true
       }]
     }

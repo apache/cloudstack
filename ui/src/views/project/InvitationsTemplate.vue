@@ -22,7 +22,7 @@
         <a-input-search
           class="input-search-invitation"
           style="width: unset"
-          placeholder="Search"
+          :placeholder="$t('label.search')"
           v-model="searchQuery"
           @search="onSearch" />
       </a-col>

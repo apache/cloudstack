@@ -58,6 +58,7 @@ export default {
       api: 'deleteRole',
       icon: 'delete',
       label: 'label.delete.role',
+      message: 'label.delete.role',
       dataView: true
     }
   ]

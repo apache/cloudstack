@@ -38,7 +38,7 @@
           showSearch
           allowClear
           v-decorator="['zoneid', {
-            rules: [{ required: true, message: 'Please select option' }]
+            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }]"
           :loading="zones.loading"
           @change="onChangeZone">

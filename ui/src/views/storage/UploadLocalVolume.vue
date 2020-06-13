@@ -34,7 +34,7 @@
             :remove="handleRemove"
             :beforeUpload="beforeUpload"
             v-decorator="['file', {
-              rules: [{ required: true, message: 'Please enter input' }]
+              rules: [{ required: true, message: `${this.$t('message.error.required.input')}`}]
             }]">
             <p class="ant-upload-drag-icon">
               <a-icon type="cloud-upload" />
@@ -58,7 +58,7 @@
               rules: [
                 {
                   required: true,
-                  message: 'Please select option'
+                  message: `${this.$t('message.error.select')}`
                 }
               ]
             }]">
@@ -74,7 +74,7 @@
               rules: [
                 {
                   required: false,
-                  message: 'Please select option'
+                  message: `${this.$t('message.error.select')}`
                 }
               ]
             }]">

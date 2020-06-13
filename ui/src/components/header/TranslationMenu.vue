@@ -93,6 +93,10 @@ export default {
       hi
     }
   },
+  mounted () {
+    this.language = Vue.ls.get('LOCALE') || 'en'
+    this.setLocale(this.language)
+  },
   methods: {
     moment,
     onClick (e) {
@@ -107,7 +111,7 @@ export default {
       this.$i18n.locale = localeValue
       this.language = localeValue
       moment.locale(localeValue)
-      Vue.ls.set('current_locale', localeValue)
+      Vue.ls.set('LOCALE', localeValue)
     }
   }
 }

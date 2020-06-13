@@ -76,6 +76,7 @@ export default {
       api: 'updateResourceCount',
       icon: 'sync',
       label: 'label.action.update.resource.count',
+      message: 'message.update.resource.count',
       listView: true,
       dataView: true,
       args: ['domainid'],

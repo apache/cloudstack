@@ -89,7 +89,9 @@ export default {
           id: this.resource.id
         }).then(response => {
           this.storagePools = response.findstoragepoolsformigrationresponse.storagepool || []
-          this.selectedStoragePool = this.storagePools[0].id || ''
+          if (Array.isArray(this.storagePools) && this.storagePools.length) {
+            this.selectedStoragePool = this.storagePools[0].id || ''
+          }
         }).catch(error => {
           this.$notifyError(error)
           this.closeModal()
@@ -99,7 +101,9 @@ export default {
           zoneid: this.resource.zoneid
         }).then(response => {
           this.storagePools = response.liststoragepoolsresponse.storagepool || []
-          this.selectedStoragePool = this.storagePools[0].id || ''
+          if (Array.isArray(this.storagePools) && this.storagePools.length) {
+            this.selectedStoragePool = this.storagePools[0].id || ''
+          }
         }).catch(error => {
           this.$notifyError(error)
           this.closeModal()

@@ -61,6 +61,7 @@ export default {
       api: 'provisionCertificate',
       icon: 'safety-certificate',
       label: 'label.action.secure.host',
+      message: 'message.action.secure.host',
       dataView: true,
       show: (record) => { return record.hypervisor === 'KVM' },
       args: ['hostid'],
@@ -74,6 +75,7 @@ export default {
       api: 'reconnectHost',
       icon: 'forward',
       label: 'label.action.force.reconnect',
+      message: 'message.confirm.action.force.reconnect',
       dataView: true,
       show: (record) => { return ['Disconnected', 'Up'].includes(record.state) }
     },
@@ -81,6 +83,7 @@ export default {
       api: 'updateHost',
       icon: 'pause-circle',
       label: 'label.disable.host',
+      message: 'message.confirm.disable.host',
       dataView: true,
       defaultArgs: { allocationstate: 'Disable' },
       show: (record) => { return record.resourcestate === 'Enabled' }
@@ -89,6 +92,7 @@ export default {
       api: 'updateHost',
       icon: 'play-circle',
       label: 'label.enable.host',
+      message: 'message.confirm.enable.host',
       dataView: true,
       defaultArgs: { allocationstate: 'Enable' },
       show: (record) => { return record.resourcestate === 'Disabled' }
@@ -97,6 +101,7 @@ export default {
       api: 'prepareHostForMaintenance',
       icon: 'plus-square',
       label: 'label.action.enable.maintenance.mode',
+      message: 'message.action.host.enable.maintenance.mode',
       dataView: true,
       show: (record) => { return record.resourcestate === 'Enabled' }
     },
@@ -104,6 +109,7 @@ export default {
       api: 'cancelHostMaintenance',
       icon: 'minus-square',
       label: 'label.action.cancel.maintenance.mode',
+      message: 'message.action.cancel.maintenance.mode',
       dataView: true,
       show: (record) => { return record.resourcestate === 'Maintenance' || record.resourcestate === 'ErrorInMaintenance' || record.resourcestate === 'PrepareForMaintenance' }
     },
@@ -111,6 +117,7 @@ export default {
       api: 'configureOutOfBandManagement',
       icon: 'setting',
       label: 'label.outofbandmanagement.configure',
+      message: 'label.outofbandmanagement.configure',
       dataView: true,
       args: ['hostid', 'address', 'port', 'username', 'password', 'driver'],
       mapping: {
@@ -126,6 +133,7 @@ export default {
       api: 'enableOutOfBandManagementForHost',
       icon: 'plus-circle',
       label: 'label.outofbandmanagement.enable',
+      message: 'label.outofbandmanagement.enable',
       dataView: true,
       show: (record) => {
         return !record.outofbandmanagement || !record.outofbandmanagement.enabled ||
@@ -142,6 +150,7 @@ export default {
       api: 'disableOutOfBandManagementForHost',
       icon: 'minus-circle',
       label: 'label.outofbandmanagement.disable',
+      message: 'label.outofbandmanagement.disable',
       dataView: true,
       show: (record) => {
         return record.outofbandmanagement && record.outofbandmanagement.enabled &&
@@ -158,6 +167,7 @@ export default {
       api: 'issueOutOfBandManagementPowerAction',
       icon: 'login',
       label: 'label.outofbandmanagement.action.issue',
+      message: 'label.outofbandmanagement.action.issue',
       dataView: true,
       show: (record) => {
         return record.outofbandmanagement && record.outofbandmanagement.enabled &&
@@ -174,6 +184,7 @@ export default {
       api: 'changeOutOfBandManagementPassword',
       icon: 'key',
       label: 'label.outofbandmanagement.changepassword',
+      message: 'label.outofbandmanagement.changepassword',
       dataView: true,
       show: (record) => {
         return record.outofbandmanagement && record.outofbandmanagement.enabled &&
@@ -190,6 +201,7 @@ export default {
       api: 'configureHAForHost',
       icon: 'tool',
       label: 'label.ha.configure',
+      message: 'label.ha.configure',
       dataView: true,
       args: ['hostid', 'provider'],
       mapping: {
@@ -205,6 +217,7 @@ export default {
       api: 'enableHAForHost',
       icon: 'eye',
       label: 'label.ha.enable',
+      message: 'label.ha.enable',
       dataView: true,
       show: (record) => {
         return !record.hostha || !record.hostha.haenable || record.hostha.haenable === false
@@ -220,6 +233,7 @@ export default {
       api: 'disableHAForHost',
       icon: 'eye-invisible',
       label: 'label.ha.disable',
+      message: 'label.ha.disable',
       dataView: true,
       show: (record) => {
         return record.hostha && record.hostha.haenable &&

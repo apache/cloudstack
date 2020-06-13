@@ -59,7 +59,7 @@
           <a-form-item :label="$t('label.vlanrange')">
             <a-input
               v-decorator="['range', {
-                rules: [{ required: true, message: 'Required' }]
+                rules: [{ required: true, message: `${this.$t('label.required')}` }]
               }]"
             ></a-input>
           </a-form-item>
@@ -75,7 +75,7 @@
             <a-select
               @change="handleDomainChange"
               v-decorator="['domain', {
-                rules: [{ required: true, message: 'Required' }]
+                rules: [{ required: true, message: `${this.$t('label.required')}` }]
               }]"
             >
               <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.name }}</a-select-option>
@@ -85,7 +85,7 @@
           <a-form-item :label="$t('label.account')" v-if="selectedScope === 'account'">
             <a-select
               v-decorator="['account', {
-                rules: [{ required: true, message: 'Required' }]
+                rules: [{ required: true, message: `${this.$t('label.required')}` }]
               }]"
             >
               <a-select-option
@@ -100,7 +100,7 @@
           <a-form-item :label="$t('label.project')" v-if="selectedScope === 'project'">
             <a-select
               v-decorator="['project', {
-                rules: [{ required: true, message: 'Required' }]
+                rules: [{ required: true, message: `${this.$t('label.required')}` }]
               }]"
             >
               <a-select-option

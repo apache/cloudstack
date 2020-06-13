@@ -83,6 +83,7 @@ export default {
           api: 'startVirtualMachine',
           icon: 'caret-right',
           label: 'label.action.start.instance',
+          message: 'message.action.start.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           groupAction: true,
@@ -113,6 +114,7 @@ export default {
           api: 'restoreVirtualMachine',
           icon: 'sync',
           label: 'label.reinstall.vm',
+          message: 'message.reinstall.vm',
           dataView: true,
           args: ['virtualmachineid', 'templateid'],
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
@@ -142,6 +144,7 @@ export default {
           api: 'assignVirtualMachineToBackupOffering',
           icon: 'folder-add',
           label: 'label.backup.offering.assign',
+          message: 'label.backup.offering.assign',
           dataView: true,
           args: ['virtualmachineid', 'backupofferingid'],
           show: (record) => { return !record.backupofferingid },
@@ -185,6 +188,7 @@ export default {
           api: 'removeVirtualMachineFromBackupOffering',
           icon: 'scissor',
           label: 'label.backup.offering.remove',
+          message: 'label.backup.offering.remove',
           dataView: true,
           args: ['virtualmachineid', 'forced'],
           show: (record) => { return record.backupofferingid },
@@ -214,6 +218,7 @@ export default {
           api: 'detachIso',
           icon: 'link',
           label: 'label.action.detach.iso',
+          message: 'message.detach.iso.confirm',
           dataView: true,
           args: ['virtualmachineid'],
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
@@ -267,6 +272,7 @@ export default {
           api: 'migrateVirtualMachine',
           icon: 'drag',
           label: 'label.migrate.instance.to.ps',
+          message: 'message.migrate.instance.to.ps',
           dataView: true,
           show: (record, store) => { return ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
           args: ['storageid', 'virtualmachineid'],
@@ -283,6 +289,7 @@ export default {
           api: 'resetPasswordForVirtualMachine',
           icon: 'key',
           label: 'label.action.reset.password',
+          message: 'message.action.instance.reset.password',
           dataView: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
           response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
@@ -319,6 +326,7 @@ export default {
           api: 'recoverVirtualMachine',
           icon: 'medicine-box',
           label: 'label.recover.vm',
+          message: 'message.recover.vm',
           dataView: true,
           show: (record, store) => { return ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm }
         },
@@ -334,6 +342,7 @@ export default {
           api: 'expungeVirtualMachine',
           icon: 'delete',
           label: 'label.action.expunge.instance',
+          message: 'message.action.expunge.instance',
           dataView: true,
           show: (record, store) => { return ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm }
         },
@@ -341,6 +350,7 @@ export default {
           api: 'destroyVirtualMachine',
           icon: 'delete',
           label: 'label.action.destroy.instance',
+          message: 'message.action.destroy.instance',
           args: ['expunge', 'volumeids'],
           mapping: {
             volumeids: {
@@ -523,6 +533,7 @@ export default {
           api: 'deleteAffinityGroup',
           icon: 'delete',
           label: 'label.delete.affinity.group',
+          message: 'message.delete.affinity.group',
           dataView: true
         }
       ]
