@@ -37,9 +37,13 @@
         <a-button
           :icon="action.icon"
           :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-          shape="circle"
+          :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"
           style="margin-left: 5px"
-          @click="execAction(action)" />
+          @click="execAction(action)">
+          <span v-if="!dataView && action.icon === 'plus'">
+            {{ $t(action.label) }}
+          </span>
+        </a-button>
       </a-badge>
       <a-button
         v-if="action.api in $store.getters.apis &&
@@ -48,9 +52,13 @@
           ('show' in action ? action.show(resource, $store.getters) : true)"
         :icon="action.icon"
         :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-        shape="circle"
+        :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"
         style="margin-left: 5px"
-        @click="execAction(action)" />
+        @click="execAction(action)">
+        <span v-if="!dataView && action.icon === 'plus'">
+          {{ $t(action.label) }}
+        </span>
+      </a-button>
     </a-tooltip>
   </span>
 </template>

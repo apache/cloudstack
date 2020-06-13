@@ -68,7 +68,7 @@
         <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
         <console :resource="record" size="small" style="margin-right: 5px" />
 
-        <span v-if="$route.name === 'globalsetting'">{{ text }}</span>
+        <span v-if="$route.path.startsWith('/globalsetting')">{{ text }}</span>
         <span v-else>
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>

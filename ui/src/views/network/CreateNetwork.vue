@@ -116,11 +116,10 @@ export default {
 
 <style scoped lang="scss">
   .form-layout {
-    width: 600px;
-  }
-
-  .random {
-    width: 80%;
+    width: 80vw;
+    @media (min-width: 700px) {
+      width: 600px;
+    }
   }
 
   .action-button {

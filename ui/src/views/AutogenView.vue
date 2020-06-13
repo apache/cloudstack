@@ -21,53 +21,53 @@
       <a-row>
         <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
           <breadcrumb :resource="resource">
-            <a-tooltip placement="bottom" slot="end">
-              <template slot="title">
-                {{ $t('label.refresh') }}
-              </template>
-              <a-button
-                style="margin-top: 4px"
-                :loading="loading"
-                shape="round"
-                size="small"
-                icon="reload"
-                @click="fetchData()">
-                {{ $t('label.refresh') }}
-              </a-button>
-            </a-tooltip>
+            <span slot="end">
+              <a-tooltip placement="bottom">
+                <template slot="title">
+                  {{ $t('label.refresh') }}
+                </template>
+                <a-button
+                  style="margin-top: 4px"
+                  :loading="loading"
+                  shape="round"
+                  size="small"
+                  icon="reload"
+                  @click="fetchData()">
+                  {{ $t('label.refresh') }}
+                </a-button>
+              </a-tooltip>
+              <a-select
+                v-if="filters && filters.length > 0"
+                :placeholder="$t('label.filterby')"
+                :value="$t('label.' + selectedFilter)"
+                style="min-width: 100px; margin-left: 10px"
+                @change="changeFilter">
+                <a-icon slot="suffixIcon" type="filter" />
+                <a-select-option v-for="filter in filters" :key="filter">
+                  {{ $t('label.' + filter) }}
+                </a-select-option>
+              </a-select>
+            </span>
           </breadcrumb>
         </a-col>
         <a-col
           :span="device === 'mobile' ? 24 : 12"
-          :style="device !== 'mobile' ? { 'margin-bottom': '-6px' } : { 'margin-top': '12px', 'margin-bottom': '-6px' }">
-          <span :style="device !== 'mobile' ? { float: 'right' } : {}">
-            <action-button
-              style="margin-bottom: 5px"
-              :loading="loading"
-              :actions="actions"
-              :selectedRowKeys="selectedRowKeys"
-              :dataView="dataView"
-              :resource="resource"
-              @exec-action="execAction"/>
-            <a-select
-              v-if="filters && filters.length > 0"
-              :placeholder="$t('label.filterby')"
-              :value="$t('label.' + selectedFilter)"
-              style="min-width: 100px; margin-left: 10px"
-              @change="changeFilter">
-              <a-icon slot="suffixIcon" type="filter" />
-              <a-select-option v-for="filter in filters" :key="filter">
-                {{ $t('label.' + filter) }}
-              </a-select-option>
-            </a-select>
-            <a-input-search
-              style="width: 20vw; margin-left: 10px"
-              :placeholder="$t('label.search')"
-              v-model="searchQuery"
-              v-if="!dataView && !treeView"
-              allowClear
-              @search="onSearch" />
-          </span>
+          :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+          <action-button
+            :style="dataView || treeView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: 'inline-flex' }"
+            :loading="loading"
+            :actions="actions"
+            :selectedRowKeys="selectedRowKeys"
+            :dataView="dataView"
+            :resource="resource"
+            @exec-action="execAction"/>
+          <a-input-search
+            style="width: 100%; display: table-cell"
+            :placeholder="$t('label.search')"
+            v-if="!dataView && !treeView"
+            v-model="searchQuery"
+            allowClear
+            @search="onSearch" />
         </a-col>
       </a-row>
     </a-card>
