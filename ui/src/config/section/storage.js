@@ -122,15 +122,7 @@ export default {
           dataView: true,
           show: (record, store) => { return record && record.state === 'Ready' && ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) },
           popup: true,
-          component: () => import('@/views/storage/MigrateVolume.vue'),
-          mapping: {
-            volumeid: {
-              value: (record) => { return record.id }
-            },
-            storageid: {
-              api: 'listStoragePools'
-            }
-          }
+          component: () => import('@/views/storage/MigrateVolume.vue')
         },
         {
           api: 'extractVolume',

@@ -207,7 +207,8 @@ export default {
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && !record.isoid },
           mapping: {
             id: {
-              api: 'listIsos'
+              api: 'listIsos',
+              params: (record) => { return { zoneid: record.zoneid } }
             },
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -278,7 +279,8 @@ export default {
           args: ['storageid', 'virtualmachineid'],
           mapping: {
             storageid: {
-              api: 'listStoragePools'
+              api: 'listStoragePools',
+              params: (record) => { return { zoneid: record.zoneid } }
             },
             virtualmachineid: {
               value: (record) => { return record.id }
@@ -298,12 +300,20 @@ export default {
           api: 'resetSSHKeyForVirtualMachine',
           icon: 'lock',
           label: 'label.reset.ssh.key.pair',
+          message: 'message.desc.reset.ssh.key.pair',
           dataView: true,
-          args: ['keypair'],
+          args: ['keypair', 'account', 'domainid'],
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
           mapping: {
             keypair: {
-              api: 'listSSHKeyPairs'
+              api: 'listSSHKeyPairs',
+              params: (record) => { return { account: record.account, domainid: record.domainid } }
+            },
+            account: {
+              value: (record) => { return record.account }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
             }
           }
         },
@@ -314,13 +324,7 @@ export default {
           dataView: true,
           component: () => import('@/views/compute/AssignInstance'),
           popup: true,
-          show: (record) => { return ['Stopped'].includes(record.state) },
-          args: ['virtualmachineid', 'account', 'domainid'],
-          mapping: {
-            virtualmachineid: {
-              value: (record, params) => { return record.id }
-            }
-          }
+          show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
           api: 'recoverVirtualMachine',
