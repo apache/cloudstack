@@ -36,17 +36,22 @@
                   {{ $t('label.refresh') }}
                 </a-button>
               </a-tooltip>
-              <a-select
-                v-if="filters && filters.length > 0"
-                :placeholder="$t('label.filterby')"
-                :value="$t('label.' + selectedFilter)"
-                style="min-width: 100px; margin-left: 10px"
-                @change="changeFilter">
-                <a-icon slot="suffixIcon" type="filter" />
-                <a-select-option v-for="filter in filters" :key="filter">
-                  {{ $t('label.' + filter) }}
-                </a-select-option>
-              </a-select>
+              <a-tooltip placement="right">
+                <template slot="title">
+                  {{ $t('label.filterby') }}
+                </template>
+                <a-select
+                  v-if="filters && filters.length > 0"
+                  :placeholder="$t('label.filterby')"
+                  :value="$t('label.' + selectedFilter)"
+                  style="min-width: 100px; margin-left: 10px"
+                  @change="changeFilter">
+                  <a-icon slot="suffixIcon" type="filter" />
+                  <a-select-option v-for="filter in filters" :key="filter">
+                    {{ $t('label.' + filter) }}
+                  </a-select-option>
+                </a-select>
+              </a-tooltip>
             </span>
           </breadcrumb>
         </a-col>
@@ -436,8 +441,8 @@ export default {
         return
       }
 
-      if (['listTemplates', 'listIsos'].includes(this.apiName) && !this.dataView) {
-        if (['Admin'].includes(this.$store.getters.userInfo.roletype)) {
+      if (['listTemplates', 'listIsos', 'listVirtualMachinesMetrics'].includes(this.apiName) && !this.dataView) {
+        if (['Admin'].includes(this.$store.getters.userInfo.roletype) || this.apiName === 'listVirtualMachinesMetrics') {
           this.filters = ['all', ...this.filters]
           if (this.selectedFilter === '') {
             this.selectedFilter = 'all'
@@ -453,6 +458,13 @@ export default {
           params.templatefilter = this.selectedFilter
         } else if (this.$route.path.startsWith('/iso')) {
           params.isofilter = this.selectedFilter
+        } else if (this.$route.path.startsWith('/vm')) {
+          if (this.selectedFilter === 'self') {
+            params.account = this.$store.getters.userInfo.account
+            params.domainid = this.$store.getters.userInfo.domainid
+          } else if (['running', 'stopped'].includes(this.selectedFilter)) {
+            params.state = this.selectedFilter
+          }
         }
       }
 
@@ -846,6 +858,7 @@ export default {
     },
     changeFilter (filter) {
       this.selectedFilter = filter
+      this.page = 1
       this.fetchData()
     },
     changePage (page, pageSize) {
