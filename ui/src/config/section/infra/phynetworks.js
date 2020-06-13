@@ -38,7 +38,7 @@ export default {
   }],
   related: [{
     name: 'guestnetwork',
-    title: 'label.networks',
+    title: 'label.guest.networks',
     param: 'physicalnetworkid'
   }],
   actions: [
