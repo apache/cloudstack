@@ -1202,6 +1202,13 @@ export default {
   }
 
   .vm-info-card {
+    .ant-card-body {
+      min-height: 250px;
+      max-height: calc(100vh - 150px);
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
     .resource-detail-item__label {
       font-weight: normal;
     }
