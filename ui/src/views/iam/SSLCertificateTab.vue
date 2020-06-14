@@ -40,6 +40,7 @@
                 {{ $t('label.delete.sslcertificate') }}
               </template>
               <a-button
+                :disabled="!('deleteSslCert' in $store.getters.apis)"
                 type="danger"
                 shape="circle"
                 icon="delete"

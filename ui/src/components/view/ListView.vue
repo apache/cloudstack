@@ -193,6 +193,7 @@
       <a-input
         v-if="editableValueKey === record.key"
         :defaultValue="record.value"
+        :disabled="!('updateConfiguration' in $store.getters.apis)"
         v-model="editableValue"
         @keydown.esc="editableValueKey = null"
         @pressEnter="saveValue(record)">
@@ -204,11 +205,13 @@
     <template slot="actions" slot-scope="text, record">
       <a-button
         shape="circle"
+        :disabled="!('updateConfiguration' in $store.getters.apis)"
         v-if="editableValueKey !== record.key"
         icon="edit"
         @click="editValue(record)" />
       <a-button
         shape="circle"
+        :disabled="!('updateConfiguration' in $store.getters.apis)"
         @click="saveValue(record)"
         v-if="editableValueKey === record.key" >
         <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />

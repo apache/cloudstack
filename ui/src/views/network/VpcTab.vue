@@ -36,6 +36,7 @@
           type="dashed"
           icon="plus"
           style="width: 100%"
+          :disabled="!('createNetworkACLList' in $store.getters.apis)"
           @click="() => handleOpenModals('networkAcl')">
           Add Network ACL List
         </a-button>
@@ -83,6 +84,7 @@
           type="dashed"
           icon="plus"
           style="width: 100%"
+          :disabled="!('createPrivateGateway' in $store.getters.apis)"
           @click="() => handleOpenModals('privateGateways')">Add Private Gateway</a-button>
         <a-table
           class="table"
@@ -166,6 +168,7 @@
           type="dashed"
           icon="plus"
           style="width: 100%"
+          :disabled="!('createVpnGateway' in $store.getters.apis)"
           @click="handleCreateVpnGateway">
           Create Site-to-Site VPN Gateway
         </a-button>
@@ -189,6 +192,7 @@
           type="dashed"
           icon="plus"
           style="width: 100%"
+          :disabled="!('createVpnConnection' in $store.getters.apis)"
           @click="handleOpenModals('vpnConnection')">
           Create Site-to-Site VPN Connection
         </a-button>

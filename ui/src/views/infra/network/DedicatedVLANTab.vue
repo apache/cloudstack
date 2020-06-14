@@ -17,7 +17,12 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <a-button type="dashed" icon="plus" style="width: 100%" @click="handleOpenModal">{{ $t('label.dedicate.vlan.vni.range') }}</a-button>
+    <a-button
+      :disabled="!('dedicateGuestVlanRange' in $store.getters.apis)"
+      type="dashed"
+      icon="plus"
+      style="width: 100%"
+      @click="handleOpenModal">{{ $t('label.dedicate.vlan.vni.range') }}</a-button>
     <a-table
       size="small"
       style="overflow-y: auto; margin-top: 20px;"
@@ -34,7 +39,7 @@
           cancelText="No"
           placement="top"
         >
-          <a-button icon="delete" type="danger" shape="circle"></a-button>
+          <a-button :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" shape="circle"></a-button>
         </a-popconfirm>
       </template>
     </a-table>

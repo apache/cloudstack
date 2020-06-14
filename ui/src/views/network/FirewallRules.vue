@@ -48,7 +48,7 @@
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item" style="margin-left: auto;">
-          <a-button type="primary" @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
@@ -75,7 +75,13 @@
       <template slot="actions" slot-scope="record">
         <div class="actions">
           <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
-          <a-button shape="circle" type="danger" icon="delete" class="rule-action" @click="deleteRule(record)" />
+          <a-button
+            shape="circle"
+            type="danger"
+            icon="delete"
+            class="rule-action"
+            :disabled="!('deleteFirewallRule' in $store.getters.apis)"
+            @click="deleteRule(record)" />
         </div>
       </template>
     </a-table>
@@ -101,14 +107,14 @@
           <p class="add-tags__label">{{ $t('label.value') }}</p>
           <a-input v-model="newTag.value"></a-input>
         </div>
-        <a-button type="primary" @click="() => handleAddTag()" :loading="addTagLoading">{{ $t('label.add') }}</a-button>
+        <a-button type="primary" :disabled="!('createTag' in $store.getters.apis)" @click="() => handleAddTag()" :loading="addTagLoading">{{ $t('label.add') }}</a-button>
       </div>
 
       <a-divider></a-divider>
 
       <div class="tags-container">
         <div class="tags" v-for="(tag, index) in tags" :key="index">
-          <a-tag :key="index" :closable="true" :afterClose="() => handleDeleteTag(tag)">
+          <a-tag :key="index" :closable="'deleteTag' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
         </div>

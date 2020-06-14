@@ -18,7 +18,12 @@
 <template>
   <a-spin :spinning="fetchLoading">
     <div style="width: 100%; display: flex">
-      <a-button type="dashed" icon="plus" style="width: 100%; margin-right: 10px" @click="openAddRuleModal">
+      <a-button
+        type="dashed"
+        icon="plus"
+        style="width: 100%; margin-right: 10px"
+        :disabled="!('createNetworkACL' in $store.getters.apis)"
+        @click="openAddRuleModal">
         {{ $t('label.add') }} {{ $t('label.aclid') }}
       </a-button>
 
@@ -84,7 +89,7 @@
             <div class="list__actions">
               <a-button shape="circle" icon="tag" @click="() => openTagsModal(acl)"></a-button>
               <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(acl)"></a-button>
-              <a-button shape="circle" icon="delete" type="danger" @click="() => handleDeleteRule(acl.id)"></a-button>
+              <a-button shape="circle" icon="delete" type="danger" :disabled="!('deleteNetworkACL' in $store.getters.apis)" @click="() => handleDeleteRule(acl.id)"></a-button>
             </div>
           </div>
         </transition-group>

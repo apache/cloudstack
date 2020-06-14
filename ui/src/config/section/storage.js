@@ -43,7 +43,7 @@ export default {
           component: () => import('@/views/storage/CreateVolume.vue')
         },
         {
-          api: 'getUploadParamsForVolume',
+          api: 'createVolume',
           icon: 'cloud-upload',
           label: 'label.upload.volume.from.local',
           listView: true,

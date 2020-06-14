@@ -57,7 +57,7 @@ export default {
           component: () => import('@/views/image/RegisterOrUploadTemplate.vue')
         },
         {
-          api: 'getUploadParamsForTemplate',
+          api: 'registerTemplate',
           icon: 'cloud-upload',
           label: 'label.upload.template.from.local',
           listView: true,
@@ -132,7 +132,7 @@ export default {
           component: () => import('@/views/image/RegisterOrUploadIso.vue')
         },
         {
-          api: 'getUploadParamsForIso',
+          api: 'registerIso',
           icon: 'cloud-upload',
           label: 'label.upload.iso.from.local',
           listView: true,

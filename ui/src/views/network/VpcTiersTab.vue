@@ -17,7 +17,12 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <a-button type="dashed" icon="plus" style="width: 100%;margin-bottom: 20px;" @click="handleOpenModal">Add Network</a-button>
+    <a-button
+      type="dashed"
+      icon="plus"
+      style="width: 100%;margin-bottom: 20px;"
+      :disabled="!('createNetwork' in $store.getters.apis)"
+      @click="handleOpenModal">Add Network</a-button>
     <a-list class="list">
       <a-list-item v-for="(network, idx) in networks" :key="idx" class="list__item">
         <div class="list__item-outer-container">
@@ -57,7 +62,12 @@
               <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
             </template>
             <a-collapse-panel :header="$t('label.instances')" key="vm" :style="customStyle">
-              <a-button icon="plus" type="dashed" style="margin-bottom: 15px; width: 100%" @click="$router.push({ path: '/action/deployVirtualMachine?networkid=' + network.id })">
+              <a-button
+                icon="plus"
+                type="dashed"
+                style="margin-bottom: 15px; width: 100%"
+                :disabled="!('deployVirtualMachine' in $store.getters.apis)"
+                @click="$router.push({ path: '/action/deployVirtualMachine?networkid=' + network.id })">
                 {{ $t('label.vm.add') }}
               </a-button>
               <a-table
@@ -93,7 +103,12 @@
                 showSizeChanger/>
             </a-collapse-panel>
             <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :disabled="!showIlb(network)" >
-              <a-button icon="plus" type="dashed" style="margin-bottom: 15px; width: 100%" @click="handleAddInternalLB(network.id)">
+              <a-button
+                icon="plus"
+                type="dashed"
+                style="margin-bottom: 15px; width: 100%"
+                :disabled="!('createLoadBalancer' in $store.getters.apis)"
+                @click="handleAddInternalLB(network.id)">
                 {{ $t('label.add.internal.lb') }}
               </a-button>
               <a-table

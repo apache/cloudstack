@@ -403,7 +403,7 @@ export default {
       allowed: false,
       allowDirectDownload: false,
       uploadParams: null,
-      currentForm: this.action.currentAction.api === 'registerTemplate' ? 'Create' : 'Upload'
+      currentForm: this.action.currentAction.icon === 'plus' ? 'Create' : 'Upload'
     }
   },
   beforeCreate () {

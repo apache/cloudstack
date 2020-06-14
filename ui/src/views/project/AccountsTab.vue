@@ -32,7 +32,13 @@
               <template slot="title">
                 {{ $t('label.make.project.owner') }}
               </template>
-              <a-button type="default" shape="circle" icon="user" size="small" @click="onMakeProjectOwner(record)" />
+              <a-button
+                type="default"
+                shape="circle"
+                icon="user"
+                size="small"
+                :disabled="!('updateProject' in $store.getters.apis)"
+                @click="onMakeProjectOwner(record)" />
             </a-tooltip>
             <a-tooltip placement="top">
               <template slot="title">
@@ -43,6 +49,7 @@
                 shape="circle"
                 icon="delete"
                 size="small"
+                :disabled="!('deleteAccountFromProject' in $store.getters.apis)"
                 @click="onShowConfirmDelete(record)"/>
             </a-tooltip>
           </span>

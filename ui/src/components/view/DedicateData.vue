@@ -39,7 +39,7 @@
     <div>
       <strong>{{ $t('label.dedicated') }}</strong>
       <div>No</div>
-      <a-button type="primary" style="margin-top: 10px; margin-bottom: 10px;" @click="modalActive = true">
+      <a-button type="primary" style="margin-top: 10px; margin-bottom: 10px;" @click="modalActive = true" :disabled="!dedicateButtonAvailable">
         {{ dedicatedButtonLabel }}
       </a-button>
     </div>
@@ -70,6 +70,7 @@ export default {
   data () {
     return {
       modalActive: false,
+      dedicateButtonAvailable: true,
       dedicatedButtonLabel: 'Dedicate',
       releaseButtonLabel: 'Release',
       dedicatedModalLabel: 'Dedicate',
@@ -86,27 +87,32 @@ export default {
   },
   methods: {
     fetchData () {
+      this.dedicateButtonAvailable = true
       if (this.$route.meta.name === 'zone') {
         this.fetchDedicatedZones()
         this.releaseButtonLabel = this.$t('label.release.dedicated.zone')
+        this.dedicateButtonAvailable = ('dedicateZone' in this.$store.getters.apis)
         this.dedicatedButtonLabel = this.$t('label.dedicate.zone')
         this.dedicatedModalLabel = this.$t('label.dedicate.zone')
       }
       if (this.$route.meta.name === 'pod') {
         this.fetchDedicatedPods()
         this.releaseButtonLabel = this.$t('label.release.dedicated.pod')
+        this.dedicateButtonAvailable = ('dedicatePod' in this.$store.getters.apis)
         this.dedicatedButtonLabel = this.$t('label.dedicate.pod')
         this.dedicatedModalLabel = this.$t('label.dedicate.pod')
       }
       if (this.$route.meta.name === 'cluster') {
         this.fetchDedicatedClusters()
         this.releaseButtonLabel = this.$t('label.release.dedicated.cluster')
+        this.dedicateButtonAvailable = ('dedicateCluster' in this.$store.getters.apis)
         this.dedicatedButtonLabel = this.$t('label.dedicate.cluster')
         this.dedicatedModalLabel = this.$t('label.dedicate.cluster')
       }
       if (this.$route.meta.name === 'host') {
         this.fetchDedicatedHosts()
         this.releaseButtonLabel = this.$t('label.release.dedicated.host')
+        this.dedicateButtonAvailable = ('dedicateHost' in this.$store.getters.apis)
         this.dedicatedButtonLabel = this.$t('label.dedicate.host')
         this.dedicatedModalLabel = this.$t('label.dedicate.host')
       }

@@ -23,7 +23,14 @@
       :message="$t('message.action.settings.warning.vm.running')" />
     <div v-else>
       <div v-show="!showAddDetail">
-        <a-button type="dashed" style="width: 100%" icon="plus" @click="showAddDetail = true">{{ $t('label.add.setting') }}</a-button>
+        <a-button
+          type="dashed"
+          style="width: 100%"
+          icon="plus"
+          :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis)"
+          @click="showAddDetail = true">
+          {{ $t('label.add.setting') }}
+        </a-button>
       </div>
       <div v-show="showAddDetail">
         <a-auto-complete
@@ -62,16 +69,20 @@
             <span v-else>{{ item.value }}</span>
           </span>
         </a-list-item-meta>
-        <div slot="actions" v-if="!disableSettings">
+        <div slot="actions" v-if="!disableSettings && 'updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis">
           <a-button shape="circle" size="default" @click="updateDetail(index)" v-if="item.edit">
             <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
           </a-button>
           <a-button shape="circle" size="default" @click="hideEditDetail(index)" v-if="item.edit">
             <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
           </a-button>
-          <a-button shape="circle" @click="showEditDetail(index)" v-if="!item.edit" icon="edit" />
+          <a-button
+            shape="circle"
+            icon="edit"
+            v-if="!item.edit"
+            @click="showEditDetail(index)" />
         </div>
-        <div slot="actions" v-if="!disableSettings">
+        <div slot="actions" v-if="!disableSettings && 'updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis">
           <a-popconfirm
             title="Delete setting?"
             @confirm="deleteDetail(index)"

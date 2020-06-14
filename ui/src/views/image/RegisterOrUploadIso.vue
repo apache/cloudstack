@@ -191,7 +191,7 @@ export default {
       selectedZone: '',
       uploadParams: null,
       uploadPercentage: 0,
-      currentForm: this.action.currentAction.api === 'registerIso' ? 'Create' : 'Upload'
+      currentForm: this.action.currentAction.icon === 'plus' ? 'Create' : 'Upload'
     }
   },
   beforeCreate () {

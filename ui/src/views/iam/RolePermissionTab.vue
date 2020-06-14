@@ -52,6 +52,7 @@
               Save new Rule
             </template>
             <a-button
+              :disabled="!('createRolePermission' in $store.getters.apis)"
               icon="plus"
               type="primary"
               shape="circle"
@@ -94,6 +95,7 @@
             </div>
             <div class="rules-table__col rules-table__col--actions">
               <rule-delete
+                :disabled="!('deleteRolePermission' in $store.getters.apis)"
                 :record="record"
                 @delete="onRuleDelete(record.id)" />
             </div>

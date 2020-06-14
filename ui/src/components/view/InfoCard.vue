@@ -532,7 +532,7 @@
         <div class="title">{{ $t('label.tags') }}</div>
         <div>
           <template v-for="(tag, index) in tags">
-            <a-tag :key="index" :closable="true" :afterClose="() => handleDeleteTag(tag)">
+            <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
               {{ tag.key }} = {{ tag.value }}
             </a-tag>
           </template>
@@ -544,9 +544,9 @@
               @blur="handleInputConfirm"
               @keyup.enter="handleInputConfirm"
               compact>
-              <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 100px; text-align: center" placeholder="Key" />
+              <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 30%; text-align: center" placeholder="Key" />
               <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
-              <a-input :value="inputValue" @change="handleValueChange" style="width: 100px; text-align: center; border-left: 0" placeholder="Value" />
+              <a-input :value="inputValue" @change="handleValueChange" style="width: 30%; text-align: center; border-left: 0" placeholder="Value" />
               <a-button shape="circle" size="small" @click="handleInputConfirm">
                 <a-icon type="check"/>
               </a-button>
@@ -555,7 +555,7 @@
               </a-button>
             </a-input-group>
           </div>
-          <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
+          <a-tag @click="showInput" style="background: #fff; borderStyle: dashed;" v-else-if="'createTags' in $store.getters.apis">
             <a-icon type="plus" /> New Tag
           </a-tag>
         </div>

@@ -18,6 +18,7 @@
 <template>
   <a-spin :spinning="componentLoading">
     <a-button
+      :disabled="!('createManagementNetworkIpRange' in $store.getters.apis)"
       type="dashed"
       icon="plus"
       style="margin-bottom: 20px; width: 100%"
@@ -41,6 +42,7 @@
           <a-popover placement="bottom">
             <template slot="content">{{ $t('label.remove.ip.range') }}</template>
             <a-button
+              :disabled="!('deleteManagementNetworkIpRange' in $store.getters.apis)"
               icon="delete"
               shape="circle"
               type="danger"

@@ -34,6 +34,8 @@
           <a-input v-model="newRule.privateport"></a-input>
           <span class="error-text">Required</span>
         </div>
+      </div>
+      <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.algorithm') }}</div>
           <a-select v-model="newRule.algorithm">
@@ -52,7 +54,7 @@
         </div>
         <div class="form__item">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
-          <a-button type="primary" @click="handleOpenAddVMModal">Add</a-button>
+          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">Add</a-button>
         </div>
       </div>
     </div>
@@ -107,14 +109,14 @@
       <template slot="actions" slot-scope="record">
         <div class="actions">
           <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(record)"></a-button>
-          <a-button shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
+          <a-button :disabled="!('editLoadBalancerRule' in $store.getters.apis)" shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
             okText="Yes"
             cancelText="No"
           >
-            <a-button shape="circle" type="danger" icon="delete" />
+            <a-button :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" shape="circle" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </template>
@@ -149,14 +151,14 @@
             <a-input v-decorator="['value', { rules: [{ required: true, message: 'Please specify a tag value'}] }]" />
           </a-form-item>
         </div>
-        <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
+        <a-button :disabled="!('createTags' in $store.getters.apis)" type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
       </a-form>
 
       <a-divider></a-divider>
 
       <div v-show="!tagsModalLoading" class="tags-container">
         <div class="tags" v-for="(tag, index) in tags" :key="index">
-          <a-tag :key="index" :closable="true" :afterClose="() => handleDeleteTag(tag)">
+          <a-tag :key="index" :closable="'deleteTag' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
         </div>

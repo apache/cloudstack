@@ -29,6 +29,7 @@
         :v-bind="item.resourcetypename"
         :label="$t('label.max' + item.resourcetypename.replace('_', ''))">
         <a-input-number
+          :disabled="!('updateResourceLimit' in $store.getters.apis)"
           style="width: 100%;"
           v-decorator="[item.resourcetype, {
             initialValue: item.max
@@ -37,6 +38,7 @@
       </a-form-item>
       <div class="card-footer">
         <a-button
+          :disabled="!('updateResourceLimit' in $store.getters.apis)"
           v-if="!($route.meta.name === 'domain' && resource.level === 0)"
           :loading="formLoading"
           type="primary"

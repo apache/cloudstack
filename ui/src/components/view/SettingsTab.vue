@@ -23,6 +23,7 @@
       <div slot="actions" class="action">
         <a-button
           shape="circle"
+          :disabled="!('updateConfiguration' in $store.getters.apis)"
           v-if="editableValueKey !== index"
           icon="edit"
           @click="setEditableSetting(item, index)" />
