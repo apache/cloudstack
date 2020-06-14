@@ -203,7 +203,7 @@ export default {
         {
           api: 'deleteKubernetesSupportedVersion',
           icon: 'delete',
-          label: 'label.kubernetes.version.update',
+          label: 'label.kubernetes.version.delete',
           dataView: true
         }
       ]

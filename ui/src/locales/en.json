@@ -1071,7 +1071,7 @@
 "label.kubernetes.version.add": "Add Kubernetes Version",
 "label.kubernetes.version.delete": "Delete Kubernetes Version",
 "label.kubernetes.version.details": "Kubernetes version details",
-"label.kubernetes.version.update": "Update Kubernetes Version",
+"label.kubernetes.version.update": "Manage Kubernetes Version",
 "label.kubernetesversionid": "Kubernetes version",
 "label.kubernetesversionname": "Kubernetes version",
 "label.kvmnetworklabel": "KVM Traffic Label",
