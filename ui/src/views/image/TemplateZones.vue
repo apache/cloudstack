@@ -39,20 +39,12 @@
             @click="showCopyTemplate(record)" />
         </span>
         <span style="margin-right: 5px">
-          <a-popconfirm
-            v-if="'deleteTemplate' in $store.getters.apis"
-            placement="topRight"
-            :title="$t('message.action.delete.template')"
-            :ok-text="$t('label.yes')"
-            :cancel-text="$t('label.no')"
-            :loading="deleteLoading"
-            @confirm="deleteTemplate(record)"
-          >
-            <a-button
-              type="danger"
-              icon="delete"
-              shape="circle" />
-          </a-popconfirm>
+          <a-button
+            :disabled="!('deleteTemplate' in $store.getters.apis)"
+            type="danger"
+            icon="delete"
+            shape="circle"
+            @click="onShowDeleteModal(record)"/>
         </span>
       </template>
     </a-table>
@@ -75,7 +67,7 @@
       :visible="showCopyActionForm"
       :closable="true"
       @ok="handleCopyTemplateSubmit"
-      @cancel="onCloseCopyForm"
+      @cancel="onCloseModal"
       :confirmLoading="copyLoading"
       centered>
       <a-spin :spinning="copyLoading">
@@ -110,6 +102,22 @@
         </a-form>
       </a-spin>
     </a-modal>
+
+    <a-modal
+      :title="$t('label.action.delete.template')"
+      :visible="showDeleteTemplate"
+      :closable="true"
+      @ok="deleteTemplate"
+      @cancel="onCloseModal"
+      :confirmLoading="deleteLoading"
+      centered>
+      <a-spin :spinning="deleteLoading">
+        <a-alert :message="$t('message.action.delete.template')" type="warning" />
+        <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
+          <a-switch v-model="forcedDelete"></a-switch>
+        </a-form-item>
+      </a-spin>
+    </a-modal>
   </div>
 </template>
 
@@ -141,7 +149,9 @@ export default {
       zones: [],
       zoneLoading: false,
       copyLoading: false,
-      deleteLoading: false
+      deleteLoading: false,
+      showDeleteTemplate: false,
+      forcedDelete: false
     }
   },
   beforeCreate () {
@@ -217,10 +227,11 @@ export default {
       this.pageSize = pageSize
       this.fetchData()
     },
-    deleteTemplate (record) {
+    deleteTemplate () {
       const params = {
-        id: record.id,
-        zoneid: record.zoneid
+        id: this.currentRecord.id,
+        forced: this.forcedDelete,
+        zoneid: this.currentRecord.zoneid
       }
       this.deleteLoading = true
       api('deleteTemplate', params).then(json => {
@@ -249,6 +260,7 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.deleteLoading = false
+        this.onCloseModal()
         this.fetchData()
       })
     },
@@ -270,9 +282,15 @@ export default {
       this.fetchZoneData()
       this.showCopyActionForm = true
     },
-    onCloseCopyForm () {
+    onShowDeleteModal (record) {
+      this.forcedDelete = false
+      this.currentRecord = record
+      this.showDeleteTemplate = true
+    },
+    onCloseModal () {
       this.currentRecord = {}
       this.showCopyActionForm = false
+      this.showDeleteTemplate = false
     },
     handleCopyTemplateSubmit (e) {
       e.preventDefault()
@@ -311,7 +329,7 @@ export default {
         }).finally(() => {
           this.copyLoading = false
           this.$emit('refresh-data')
-          this.onCloseCopyForm()
+          this.onCloseModal()
           this.fetchData()
         })
       })
