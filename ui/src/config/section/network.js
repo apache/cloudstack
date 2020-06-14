@@ -41,11 +41,11 @@ export default {
       }, {
         name: 'egress.rules',
         component: () => import('@/views/network/EgressRulesTab.vue'),
-        show: (record) => { return record.type === 'Isolated' && 'listEgressFirewallRules' in store.getters.apis }
+        show: (record) => { return record.type === 'Isolated' && !('vpcid' in record) && 'listEgressFirewallRules' in store.getters.apis }
       }, {
         name: 'public.ip.addresses',
         component: () => import('@/views/network/IpAddressesTab.vue'),
-        show: (record) => { return record.type === 'Isolated' && 'listPublicIpAddresses' in store.getters.apis }
+        show: (record) => { return record.type === 'Isolated' && !('vpcid' in record) && 'listPublicIpAddresses' in store.getters.apis }
       }, {
         name: 'virtual.routers',
         component: () => import('@/views/network/RoutersTab.vue'),
