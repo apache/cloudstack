@@ -4007,7 +4007,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if the vlan is being used
         if (!bypassVlanOverlapCheck && _zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).size() > 0) {
-            throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
+            throw new InvalidParameterValueException("The VLAN tag to create; " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                     + zone.getName());
         }
 
