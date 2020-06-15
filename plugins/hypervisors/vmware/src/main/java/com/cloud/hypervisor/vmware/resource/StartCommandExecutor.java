@@ -244,6 +244,9 @@ class StartCommandExecutor {
                         // FR37 create blank or install as is ???? needs to be replaced with the proceudre at
                         // https://code.vmware.com/docs/5540/vsphere-automation-sdks-programming-guide/doc/GUID-82084C78-49FC-4B7F-BD89-F90D5AA22631.html
                         hyperHost.importVmFromOVF(vmSpec.getTemplateLocation(), vmNameOnVcenter, rootDiskDataStoreDetails.second(), "thin");
+                        // FR37 importUnmanaged code must be called
+                        // FR37 this must be called before starting
+                        // FR37 existing serviceOffering with the right (minimum) dimensions must exist
                     } else {
                         if (!hyperHost
                                 .createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmwareResource.getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / Resource.ResourceType.bytesToMiB), vmwareResource.getReservedMemoryMb(vmSpec), guestOsId,
