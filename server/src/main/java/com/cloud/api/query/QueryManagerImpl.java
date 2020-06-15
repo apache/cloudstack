@@ -3439,17 +3439,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             for (TemplateJoinVO v : uniqueTmpls) {
                 tzIds[i++] = v.getId();
             }
-            vrs = _templateJoinDao.findByIds(tzIds);
-
-            // Get only unique id rows
-            Long lastId = null;
-            for(i = vrs.size() - 1; i >= 0; i--) {
-                if (new Long(vrs.get(i).getId()).equals(lastId)) {
-                    vrs.remove(i);
-                    continue;
-                }
-                lastId = vrs.get(i).getId();
-            }
+            vrs = _templateJoinDao.findByDistinctIds(tzIds);
         } else {
             String[] tzIds = new String[uniqueTmpls.size()];
             for (TemplateJoinVO v : uniqueTmpls) {

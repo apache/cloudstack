@@ -92,6 +92,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
         tmpltIdsSearch = createSearchBuilder();
         tmpltIdsSearch.and("idsIN", tmpltIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        tmpltIdsSearch.groupBy(tmpltIdsSearch.entity().getId());
         tmpltIdsSearch.done();
 
         tmpltZoneSearch = createSearchBuilder();
@@ -488,7 +489,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     @Override
-    public List<TemplateJoinVO> findByIds(Long[] ids) {
+    public List<TemplateJoinVO> findByDistinctIds(Long... ids) {
         if (ids.length == 0) {
             return new ArrayList<TemplateJoinVO>();
         }

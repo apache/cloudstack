@@ -78,7 +78,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.SHOW_REMOVED, type=CommandType.BOOLEAN, description="show removed ISOs as well")
     private Boolean showRemoved;
 
-    @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, list only unique isos across zones")
+    @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, list only unique isos across zones", since = "4.15")
     private Boolean showUnique;
 
     /////////////////////////////////////////////////////
@@ -118,11 +118,11 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     }
 
     public Boolean getShowRemoved() {
-        return (showRemoved != null ? showRemoved : false);
+        return showRemoved != null && showRemoved;
     }
 
     public Boolean getShowUnique() {
-        return (showUnique != null ? showUnique : false);
+        return showUnique != null && showUnique;
     }
 
     public boolean listInReadyState() {

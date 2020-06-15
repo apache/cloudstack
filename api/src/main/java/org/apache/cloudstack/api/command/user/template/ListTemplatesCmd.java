@@ -78,7 +78,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.PARENT_TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list datadisk templates by parent template id", since = "4.4")
     private Long parentTemplateId;
 
-    @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, list only unique templates across zones")
+    @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, list only unique templates across zones", since = "4.15")
     private Boolean showUnique;
 
     /////////////////////////////////////////////////////
@@ -106,7 +106,11 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     }
 
     public Boolean getShowRemoved() {
-        return (showRemoved != null ? showRemoved : false);
+        return showRemoved != null && showRemoved;
+    }
+
+    public Boolean getShowUnique() {
+        return showUnique != null && showUnique;
     }
 
     public Long getParentTemplateId() {
@@ -149,9 +153,5 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
 
     public List<Long> getIds() {
         return ids;
-    }
-
-    public Boolean getShowUnique() {
-        return (showUnique != null ? showUnique : false);
     }
 }
