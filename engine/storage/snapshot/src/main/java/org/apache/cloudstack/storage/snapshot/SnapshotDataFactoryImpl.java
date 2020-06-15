@@ -73,6 +73,9 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         for (SnapshotDataStoreVO snapshotDataStoreVO : allSnapshotsFromVolumeAndDataStore) {
             DataStore store = storeMgr.getDataStore(snapshotDataStoreVO.getDataStoreId(), role);
             SnapshotVO snapshot = snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
+            if (snapshot == null){ //snapshot may have been removed;
+                continue;
+            }
             SnapshotObject info = SnapshotObject.getSnapshotObject(snapshot, store);
 
             infos.add(info);
