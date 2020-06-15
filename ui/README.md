@@ -119,39 +119,11 @@ Run Primate:
 
 ## Documentation
 
-### Learning Resources
-
 - VueJS Guide: https://vuejs.org/v2/guide/
-- Ant Design Spec: https://ant.design/docs/spec/introduce
-- Vue Ant Design: https://vue.ant.design/docs/vue/introduce/
+- Vue Ant Design: https://www.antdv.com/docs/vue/introduce/
+- Primate Developer [Docs](docs)
 - JavaScript ES6 Reference: https://www.tutorialspoint.com/es6/
 - Introduction to ES6: https://scrimba.com/g/gintrotoes6
-
-### Primate Development
-
-- Router [Configuration](config.md)
-- [Resource List View](listview.md) customisation
-- [Resource Detail View](detailview.md) customisation
-- [Action](action.md) customisation
-- Styling
-- Testing
-- [Theme](https://vue.ant.design/docs/vue/customize-theme/): Customise via `vue.config.js`
-```ecmascript 6
-  css: {
-    loaderOptions: {
-      less: {
-        modifyVars: {
-          /* Less variables, required modifyVars*/
-          /* Refer to variables at https://vue.ant.design/docs/vue/customize-theme/ */
-          'primary-color': '#F5222D',
-          'link-color': '#F5222D',
-          'border-radius-base': '4px',
-        },
-        javascriptEnabled: true,
-      }
-    }
-  }
-```
 
 ## Attributions
 
