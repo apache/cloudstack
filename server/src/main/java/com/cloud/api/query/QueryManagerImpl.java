@@ -781,7 +781,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         ResponseView respView = ResponseView.Restricted;
-        if (cmd instanceof ListVMsCmdByAdmin) {
+        Account caller = CallContext.current().getCallingAccount();
+        if (_accountMgr.isAdmin(caller.getId())) {
             respView = ResponseView.Full;
         }
         List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(), result.first().toArray(new UserVmJoinVO[result.first().size()]));
