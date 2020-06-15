@@ -114,19 +114,17 @@ class StartCommandExecutor {
             LOGGER.info("Executing resource StartCommand: " + vmwareResource.getGson().toJson(cmd));
         }
 
-        // FR37 if startcommand contains a secendary storage URL or some flag or other type of indicator, deploy OVA as is
-        String secStorUrl = cmd.getSecondaryStorage();
-        if (StringUtils.isNotEmpty(secStorUrl)) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("deploying OVA as is from %s", secStorUrl));
-            }
-        }
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
 
-        String existingVmName = null;
-        VirtualMachineFileInfo existingVmFileInfo = null;
-        VirtualMachineFileLayoutEx existingVmFileLayout = null;
-        List<DatastoreMO> existingDatastores = new ArrayList<>();
+        boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
+        // FR37 if startcommand contains a template url deploy OVA as is
+        if (installAsIs) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("deploying OVA as is from %s", vmSpec.getTemplateLocation()));
+            }
+        }
+
+        VirtualMachineData existingVm = null;
 
         Pair<String, String> names = composeVmNames(vmSpec);
         String vmInternalCSName = names.first();
@@ -225,37 +223,9 @@ class StartCommandExecutor {
                         ensureDiskControllers(vmMo, controllerInfo);
                     }
                 } else {
-                    // If a VM with the same name is found in a different cluster in the DC, unregister the old VM and configure a new VM (cold-migration).
-                    VirtualMachineMO existingVmInDc = dcMo.findVm(vmInternalCSName);
-                    if (existingVmInDc != null) {
-                        LOGGER.debug("Found VM: " + vmInternalCSName + " on a host in a different cluster. Unregistering the exisitng VM.");
-                        existingVmName = existingVmInDc.getName();
-                        existingVmFileInfo = existingVmInDc.getFileInfo();
-                        existingVmFileLayout = existingVmInDc.getFileLayout();
-                        existingDatastores = existingVmInDc.getAllDatastores();
-                        existingVmInDc.unregisterVm();
-                    }
-                    Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
-                    for (DiskTO vol : disks) {
-                        if (vol.getType() == Volume.Type.ROOT) {
-                            Map<String, String> details = vol.getDetails();
-                            boolean managed = false;
+                    existingVm = unregisterButHoldOnToOldVmData(vmInternalCSName, dcMo);
 
-                            if (details != null) {
-                                managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-                            }
-
-                            if (managed) {
-                                String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
-
-                                rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
-                            } else {
-                                DataStoreTO primaryStore = vol.getData().getDataStore();
-
-                                rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
-                            }
-                        }
-                    }
+                    Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = getRootDiskDataStoreDetails(disks, dataStoresDetails);
 
                     assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
 
@@ -270,8 +240,11 @@ class StartCommandExecutor {
                             }
                         }
                         tearDownVm(vmMo);
+                    } else if (installAsIs) {
+                        // FR37 create blank or install as is ???? needs to be replaced with the proceudre at
+                        // https://code.vmware.com/docs/5540/vsphere-automation-sdks-programming-guide/doc/GUID-82084C78-49FC-4B7F-BD89-F90D5AA22631.html
+                        hyperHost.importVmFromOVF(vmSpec.getTemplateLocation(), vmNameOnVcenter, rootDiskDataStoreDetails.second(), "thin");
                     } else {
-                        // FR37 create blank or install as is ????
                         if (!hyperHost
                                 .createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmwareResource.getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / Resource.ResourceType.bytesToMiB), vmwareResource.getReservedMemoryMb(vmSpec), guestOsId,
                                         rootDiskDataStoreDetails.first(), false, controllerInfo, systemVm)) {
@@ -747,19 +720,19 @@ class StartCommandExecutor {
             startAnswer.setIqnToData(iqnToData);
 
             // Since VM was successfully powered-on, if there was an existing VM in a different cluster that was unregistered, delete all the files associated with it.
-            if (existingVmName != null && existingVmFileLayout != null) {
+            if (existingVm != null && existingVm.vmName != null && existingVm.vmFileLayout != null) {
                 List<String> vmDatastoreNames = new ArrayList<>();
                 for (DatastoreMO vmDatastore : vmMo.getAllDatastores()) {
                     vmDatastoreNames.add(vmDatastore.getName());
                 }
                 // Don't delete files that are in a datastore that is being used by the new VM as well (zone-wide datastore).
                 List<String> skipDatastores = new ArrayList<>();
-                for (DatastoreMO existingDatastore : existingDatastores) {
+                for (DatastoreMO existingDatastore : existingVm.datastores) {
                     if (vmDatastoreNames.contains(existingDatastore.getName())) {
                         skipDatastores.add(existingDatastore.getName());
                     }
                 }
-                vmwareResource.deleteUnregisteredVmFiles(existingVmFileLayout, dcMo, true, skipDatastores);
+                vmwareResource.deleteUnregisteredVmFiles(existingVm.vmFileLayout, dcMo, true, skipDatastores);
             }
 
             return startAnswer;
@@ -775,7 +748,7 @@ class StartCommandExecutor {
             if ( e instanceof VmAlreadyExistsInVcenter) {
                 startAnswer.setContextParam("stopRetry", "true");
             }
-            reRegisterExistingVm(existingVmName, existingVmFileInfo, dcMo);
+            reRegisterExistingVm(existingVm, dcMo);
 
             return startAnswer;
         } finally {
@@ -786,19 +759,62 @@ class StartCommandExecutor {
     }
 
     /**
+     * If a VM with the same name is found in a different cluster in the DC, unregister the old VM and configure a new VM (cold-migration).
+     */
+    private VirtualMachineData unregisterButHoldOnToOldVmData(String vmInternalCSName, DatacenterMO dcMo) throws Exception {
+        VirtualMachineMO existingVmInDc = dcMo.findVm(vmInternalCSName);
+        VirtualMachineData existingVm = null;
+        if (existingVmInDc != null) {
+            existingVm = new VirtualMachineData();
+            existingVm.vmName = existingVmInDc.getName();
+            existingVm.vmFileInfo = existingVmInDc.getFileInfo();
+            existingVm.vmFileLayout = existingVmInDc.getFileLayout();
+            existingVm.datastores = existingVmInDc.getAllDatastores();
+            LOGGER.info("Found VM: " + vmInternalCSName + " on a host in a different cluster. Unregistering the exisitng VM.");
+            existingVmInDc.unregisterVm();
+        }
+        return existingVm;
+    }
+
+    private Pair<ManagedObjectReference, DatastoreMO> getRootDiskDataStoreDetails(DiskTO[] disks, HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails) {
+        Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
+        for (DiskTO vol : disks) {
+            if (vol.getType() == Volume.Type.ROOT) {
+                Map<String, String> details = vol.getDetails();
+                boolean managed = false;
+
+                if (details != null) {
+                    managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+                }
+
+                if (managed) {
+                    String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
+
+                    rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
+                } else {
+                    DataStoreTO primaryStore = vol.getData().getDataStore();
+
+                    rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
+                }
+            }
+        }
+        return rootDiskDataStoreDetails;
+    }
+
+    /**
      * Since VM start failed, if there was an existing VM in a different cluster that was unregistered, register it back.
      *
      * @param dcMo is guaranteed to be not null since we have noticed there is an existing VM in the dc (using that mo)
      */
-    private void reRegisterExistingVm(String existingVmName, VirtualMachineFileInfo existingVmFileInfo, DatacenterMO dcMo) {
-        if (existingVmName != null && existingVmFileInfo != null) {
-            LOGGER.debug("Since VM start failed, registering back an existing VM: " + existingVmName + " that was unregistered");
+    private void reRegisterExistingVm(VirtualMachineData existingVm, DatacenterMO dcMo) {
+        if (existingVm != null && existingVm.vmName != null && existingVm.vmFileInfo != null) {
+            LOGGER.debug("Since VM start failed, registering back an existing VM: " + existingVm.vmName + " that was unregistered");
             try {
-                DatastoreFile fileInDatastore = new DatastoreFile(existingVmFileInfo.getVmPathName());
+                DatastoreFile fileInDatastore = new DatastoreFile(existingVm.vmFileInfo.getVmPathName());
                 DatastoreMO existingVmDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
-                registerVm(existingVmName, existingVmDsMo, vmwareResource);
+                registerVm(existingVm.vmName, existingVmDsMo, vmwareResource);
             } catch (Exception ex) {
-                String message = "Failed to register an existing VM: " + existingVmName + " due to " + VmwareHelper.getExceptionMessage(ex);
+                String message = "Failed to register an existing VM: " + existingVm.vmName + " due to " + VmwareHelper.getExceptionMessage(ex);
                 LOGGER.warn(message, ex);
             }
         }
@@ -1746,8 +1762,15 @@ class StartCommandExecutor {
         }
     }
 
-    private class VmAlreadyExistsInVcenter extends Throwable {
+    private class VmAlreadyExistsInVcenter extends Exception {
         public VmAlreadyExistsInVcenter(String msg) {
         }
+    }
+
+    private class VirtualMachineData {
+        String vmName = null;
+        VirtualMachineFileInfo vmFileInfo = null;
+        VirtualMachineFileLayoutEx vmFileLayout = null;
+        List<DatastoreMO> datastores = new ArrayList<>();
     }
 }

@@ -83,6 +83,8 @@ public class VirtualMachineTO {
     Map<String, String> extraConfig = new HashMap<>();
     @LogLevel(LogLevel.Log4jLevel.Off)
     Pair<String, List<OVFPropertyTO>> ovfProperties;
+    // FR37 todo change to URL?
+    String templateLocation = null;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -402,4 +404,13 @@ public class VirtualMachineTO {
     public void setEnterHardwareSetup(boolean enterHardwareSetup) {
         this.enterHardwareSetup = enterHardwareSetup;
     }
+
+    public String getTemplateLocation() {
+        return templateLocation;
+    }
+
+    public void setTemplateLocation(String templateLocation) {
+        this.templateLocation = templateLocation;
+    }
+
 }

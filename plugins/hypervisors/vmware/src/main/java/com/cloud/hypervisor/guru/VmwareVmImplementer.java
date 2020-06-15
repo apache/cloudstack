@@ -121,6 +121,10 @@ class VmwareVmImplementer {
         // FR37 so the url for the original OVA can be used for deployment
         if (deployOvaAsIs) {
             if (LOG.isTraceEnabled()) {
+                // FR37 todo MAYBE add flag for deploy as is TO
+
+                // FR37 TODO add url for template in TO
+                to.setTemplateLocation(vm.getTemplate().getUrl());
                 // FR37 TODO add usefull stuff in message
                 LOG.trace("deploying OVA as is.");
             }
