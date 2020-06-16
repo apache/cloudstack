@@ -101,7 +101,6 @@ export default {
 <style>
 .ant-breadcrumb {
   vertical-align: text-bottom;
-  margin-bottom: 8px;
 }
 
 .ant-breadcrumb .anticon {

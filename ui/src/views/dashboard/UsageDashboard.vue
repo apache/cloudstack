@@ -60,7 +60,11 @@
       :xl="8">
       <chart-card>
         <div class="usage-dashboard-chart-card-inner">
-          <a-button><router-link :to="{ name: 'event' }">View Events</router-link></a-button>
+          <a-button>
+            <router-link :to="{ name: 'event' }">
+              {{ $t('label.view') + ' ' + $t('label.events') }}
+            </router-link>
+          </a-button>
         </div>
         <template slot="footer">
           <div class="usage-dashboard-chart-footer">
@@ -139,6 +143,11 @@ export default {
     },
     resource (newData, oldData) {
       this.project = newData
+    },
+    '$i18n.locale' (to, from) {
+      if (to !== from) {
+        this.fetchData()
+      }
     }
   },
   methods: {
@@ -149,21 +158,21 @@ export default {
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(0, 1, { name: 'Running VMs', count: count, path: 'vm' })
+        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, path: 'vm' })
       })
       api('listVirtualMachines', { state: 'Stopped', listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(1, 1, { name: 'Stopped VMs', count: count, path: 'vm' })
+        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, path: 'vm' })
       })
       api('listVirtualMachines', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(2, 1, { name: 'Total VMs', count: count, path: 'vm' })
+        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, path: 'vm' })
       })
       api('listVolumes', { listall: true }).then(json => {
         var count = 0
@@ -184,7 +193,7 @@ export default {
         if (json && json.listpublicipaddressesresponse) {
           count = json.listpublicipaddressesresponse.count
         }
-        this.stats.splice(5, 1, { name: 'Public IP Addresses', count: count, path: 'publicip' })
+        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, path: 'publicip' })
       })
       this.listEvents()
     },

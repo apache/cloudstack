@@ -22,20 +22,15 @@
         <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
           <breadcrumb :resource="resource">
             <span slot="end">
-              <a-tooltip placement="bottom">
-                <template slot="title">
-                  {{ $t('label.refresh') }}
-                </template>
-                <a-button
-                  style="margin-top: 4px"
-                  :loading="loading"
-                  shape="round"
-                  size="small"
-                  icon="reload"
-                  @click="fetchData()">
-                  {{ $t('label.refresh') }}
-                </a-button>
-              </a-tooltip>
+              <a-button
+                :loading="loading"
+                style="margin-bottom: 5px"
+                shape="round"
+                size="small"
+                icon="reload"
+                @click="fetchData()">
+                {{ $t('label.refresh') }}
+              </a-button>
               <a-tooltip placement="right">
                 <template slot="title">
                   {{ $t('label.filterby') }}
@@ -971,7 +966,7 @@ export default {
 .breadcrumb-card {
   margin-left: -24px;
   margin-right: -24px;
-  margin-top: -18px;
+  margin-top: -16px;
   margin-bottom: 12px;
 }
 
@@ -982,9 +977,5 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
-}
-
-.ant-breadcrumb .anticon {
-  margin-left: 8px;
 }
 </style>

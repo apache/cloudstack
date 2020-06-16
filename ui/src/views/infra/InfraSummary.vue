@@ -315,8 +315,8 @@ export default {
 <style lang="scss" scoped>
 
   .breadcrumb-card {
-    margin-left: -36px;
-    margin-right: -36px;
+    margin-left: -24px;
+    margin-right: -24px;
     margin-top: -16px;
     margin-bottom: 12px;
   }

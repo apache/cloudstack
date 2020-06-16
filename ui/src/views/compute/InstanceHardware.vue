@@ -75,7 +75,7 @@
                 <div class="label">{{ $t('label.physicalsize') }}</div>
                 <div>{{ (item.physicalsize / (1024 * 1024 * 1024.0)).toFixed(4) }} GB</div>
               </div>
-              <div class="attribute">
+              <div class="attribute" v-if="item.storage">
                 <div class="label">{{ $t('label.storagepool') }}</div>
                 <div>{{ item.storage }} ({{ item.storagetype }})</div>
               </div>
