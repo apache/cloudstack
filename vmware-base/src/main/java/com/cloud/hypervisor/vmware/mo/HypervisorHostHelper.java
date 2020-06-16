@@ -468,21 +468,6 @@ public class HypervisorHostHelper {
         }
     }
 
-    /**
-     * @param ethPortProfileName
-     * @param namePrefix
-     * @param hostMo
-     * @param vlanId
-     * @param networkRateMbps
-     * @param networkRateMulticastMbps
-     * @param timeOutMs
-     * @param vSwitchType
-     * @param numPorts
-     * @param details
-     * @return
-     * @throws Exception
-     */
-
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix, HostMO hostMo, String vlanId, String secondaryvlanId,
                                                                       Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs, VirtualSwitchType vSwitchType, int numPorts, String gateway,
                                                                       boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType, Map<String, String> vsmCredentials, Map<NetworkOffering.Detail, String> details) throws Exception {
@@ -1704,6 +1689,11 @@ public class HypervisorHostHelper {
         return url;
     }
 
+    /**
+     * removes the NetworkSection element from the {ovfString} if it is an ovf xml file
+     * @param ovfString input string
+     * @return like the input string but if xml elements by name {NetworkSection} removed
+     */
     public static String removeOVFNetwork(final String ovfString)  {
         if (ovfString == null || ovfString.isEmpty()) {
             return ovfString;
@@ -1733,24 +1723,33 @@ public class HypervisorHostHelper {
             transformer.transform(domSource, result);
             return writer.toString();
         } catch (SAXException | IOException | ParserConfigurationException | TransformerException e) {
+//            FR37 TODO this warn() should really be an error and the exception should be thrown???
             s_logger.warn("Unexpected exception caught while removing network elements from OVF:", e);
         }
         return ovfString;
     }
 
+    /**
+     * deploys a new VM from a ovf spec. It ignores network, defaults locale to 'US'
+     * @param host
+     * @param ovfFilePath
+     * @param vmName
+     * @param dsMo
+     * @param diskOption
+     * @param morRp
+     * @param morHost
+     * @param stripNetworks
+     * @throws Exception
+     */
     public static void importVmFromOVF(VmwareHypervisorHost host, String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, ManagedObjectReference morRp,
-            ManagedObjectReference morHost) throws Exception {
+            ManagedObjectReference morHost, boolean stripNetworks) throws Exception {
 
         assert (morRp != null);
 
-        OvfCreateImportSpecParams importSpecParams = new OvfCreateImportSpecParams();
-        importSpecParams.setHostSystem(morHost);
-        importSpecParams.setLocale("US");
-        importSpecParams.setEntityName(vmName);
-        importSpecParams.setDeploymentOption("");
-        importSpecParams.setDiskProvisioning(diskOption); // diskOption: thin, thick, etc
+        OvfCreateImportSpecParams importSpecParams = createOvfCreateImportSpecParamsObject(vmName, diskOption, morHost);
 
-        String ovfDescriptor = removeOVFNetwork(HttpNfcLeaseMO.readOvfContent(ovfFilePath));
+        String ovfDescriptor = readTheOvfDescriptorAsString(ovfFilePath, stripNetworks);
+
         VmwareContext context = host.getContext();
         OvfCreateImportSpecResult ovfImportResult =
                 context.getService().createImportSpec(context.getServiceContent().getOvfManager(), ovfDescriptor, morRp, dsMo.getMor(), importSpecParams);
@@ -1845,6 +1844,24 @@ public class HypervisorHostHelper {
                 leaseMo.completeLease();
             }
         }
+    }
+
+    private static OvfCreateImportSpecParams createOvfCreateImportSpecParamsObject(String vmName, String diskOption, ManagedObjectReference morHost) {
+        OvfCreateImportSpecParams importSpecParams = new OvfCreateImportSpecParams();
+        importSpecParams.setHostSystem(morHost);
+        importSpecParams.setLocale("US");
+        importSpecParams.setEntityName(vmName);
+        importSpecParams.setDeploymentOption("");
+        importSpecParams.setDiskProvisioning(diskOption); // diskOption: thin, thick, etc
+        return importSpecParams;
+    }
+
+    private static String readTheOvfDescriptorAsString(String ovfFilePath, boolean stripNetworks) throws IOException {
+        String ovfDescriptor = HttpNfcLeaseMO.readOvfContent(ovfFilePath);
+        if (stripNetworks) {
+            ovfDescriptor = removeOVFNetwork(ovfDescriptor);
+        }
+        return ovfDescriptor;
     }
 
     public static List<Pair<String, Boolean>> readOVF(VmwareHypervisorHost host, String ovfFilePath, DatastoreMO dsMo) throws Exception {

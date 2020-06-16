@@ -766,19 +766,19 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         if (dsMo == null)
             throw new Exception("Invalid datastore name: " + datastoreName);
 
-        importVmFromOVF(ovfFilePath, vmName, dsMo, diskOption);
+        importVmFromOVF(ovfFilePath, vmName, dsMo, diskOption, true);
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - importVmFromOVF() done");
     }
 
     @Override
-    public void importVmFromOVF(String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption) throws Exception {
+    public void importVmFromOVF(String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, boolean stripNeworks) throws Exception {
 
         ManagedObjectReference morRp = getHyperHostOwnerResourcePool();
         assert (morRp != null);
 
-        HypervisorHostHelper.importVmFromOVF(this, ovfFilePath, vmName, dsMo, diskOption, morRp, _mor);
+        HypervisorHostHelper.importVmFromOVF(this, ovfFilePath, vmName, dsMo, diskOption, morRp, _mor, stripNeworks);
     }
 
     @Override

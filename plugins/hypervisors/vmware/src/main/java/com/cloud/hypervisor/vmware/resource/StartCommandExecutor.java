@@ -243,7 +243,7 @@ class StartCommandExecutor {
                     } else if (installAsIs) {
                         // FR37 create blank or install as is ???? needs to be replaced with the proceudre at
                         // https://code.vmware.com/docs/5540/vsphere-automation-sdks-programming-guide/doc/GUID-82084C78-49FC-4B7F-BD89-F90D5AA22631.html
-                        hyperHost.importVmFromOVF(vmSpec.getTemplateLocation(), vmNameOnVcenter, rootDiskDataStoreDetails.second(), "thin");
+                        hyperHost.importVmFromOVF(vmSpec.getTemplateLocation(), vmNameOnVcenter, rootDiskDataStoreDetails.second(), "thin", false);
                         // FR37 importUnmanaged code must be called
                         // FR37 this must be called before starting
                         // FR37 existing serviceOffering with the right (minimum) dimensions must exist

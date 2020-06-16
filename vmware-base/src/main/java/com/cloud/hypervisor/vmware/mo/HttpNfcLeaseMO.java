@@ -119,6 +119,13 @@ public class HttpNfcLeaseMO extends BaseMO {
         return totalBytes;
     }
 
+    /**
+     * should be called {code}String readFileContents(String filePath){code}, does nothing special, like checking if this is indeed adhering to ovf format.
+     *
+     * @param ovfFilePath
+     * @return
+     * @throws IOException
+     */
     public static String readOvfContent(String ovfFilePath) throws IOException {
         StringBuffer strContent = new StringBuffer();
         BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(ovfFilePath),"UTF-8"));

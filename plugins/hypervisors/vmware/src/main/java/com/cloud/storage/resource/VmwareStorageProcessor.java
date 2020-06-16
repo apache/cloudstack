@@ -513,7 +513,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         String vmName = templateUuid;
-        hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin");
+        hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin", true);
 
         VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
         VmConfigInfo vAppConfig;
@@ -3429,7 +3429,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         VirtualMachineMO clonedVm = null;
         try {
-            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin");
+            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin", true);
             clonedVm = hyperHost.findVmOnHyperHost(newVolumeName);
             if (clonedVm == null) {
                 throw new Exception("Unable to create container VM for volume creation");
