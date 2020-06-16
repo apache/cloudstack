@@ -886,7 +886,9 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             }
         }
 
-        HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this);
+        if (dsMo != null) {
+            HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this);
+        }
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - mountDatastore() done(successfully)");
