@@ -1081,7 +1081,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     }
 
     private boolean isBackupEvent(String eventType) {
-        return eventType != null && (eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN) || eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE));
+        return eventType != null && (
+                eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN) ||
+                eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE) ||
+                eventType.equals(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC));
     }
 
     private void createVMHelperEvent(UsageEventVO event) {
@@ -1913,7 +1916,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, vmId, backupOfferingId, created);
             usageBackupDao.persist(backupVO);
         } else if (EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE.equals(event.getType())) {
-            usageBackupDao.removeUsage(accountId, zoneId, vmId);
+            usageBackupDao.removeUsage(accountId, vmId, event.getCreateDate());
+        } else if (EventTypes.EVENT_VM_BACKUP_USAGE_METRIC.equals(event.getType())) {
+            usageBackupDao.updateMetrics(vmId, event.getSize(), event.getVirtualSize());
         }
     }
 
