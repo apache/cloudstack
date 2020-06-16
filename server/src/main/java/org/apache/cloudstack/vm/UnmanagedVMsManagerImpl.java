@@ -140,9 +140,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
-public class UnmanageVMManagerImpl implements UnmanageVMManager {
+public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
-    private static final Logger LOGGER = Logger.getLogger(UnmanageVMManagerImpl.class);
+    private static final Logger LOGGER = Logger.getLogger(UnmanagedVMsManagerImpl.class);
 
     @Inject
     private AgentManager agentManager;
@@ -213,7 +213,7 @@ public class UnmanageVMManagerImpl implements UnmanageVMManager {
 
     protected Gson gson;
 
-    public UnmanageVMManagerImpl() {
+    public UnmanagedVMsManagerImpl() {
         gson = GsonHelper.getGsonLogger();
     }
 
@@ -1359,7 +1359,7 @@ public class UnmanageVMManagerImpl implements UnmanageVMManager {
 
     @Override
     public String getConfigComponentName() {
-        return UnmanageVMManagerImpl.class.getSimpleName();
+        return UnmanagedVMsManagerImpl.class.getSimpleName();
     }
 
     @Override

@@ -39,7 +39,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UnmanageVMInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.vm.UnmanageVMManager;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -57,7 +57,7 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
     public static final String API_NAME = "unmanageVirtualMachine";
 
     @Inject
-    private UnmanageVMManager unmanageVMManager;
+    private UnmanagedVMsManager unmanagedVMsManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -96,7 +96,7 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
         UnmanageVMInstanceResponse response = new UnmanageVMInstanceResponse();
         try {
             CallContext.current().setEventDetails("VM ID = " + vmId);
-            boolean result = unmanageVMManager.unmanageVMInstance(vmId);
+            boolean result = unmanagedVMsManager.unmanageVMInstance(vmId);
             response.setSuccess(result);
             if (result) {
                 response.setDetails("VM unmanaged successfully");

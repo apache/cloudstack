@@ -123,10 +123,10 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(UsageEventUtils.class)
-public class UnmanageVMManagerImplTest {
+public class UnmanagedVMsManagerImplTest {
 
     @InjectMocks
-    private UnmanageVMManager unmanageVMManager = new UnmanageVMManagerImpl();
+    private UnmanagedVMsManager unmanagedVMsManager = new UnmanagedVMsManagerImpl();
 
     @Mock
     private UserVmManager userVmManager;
@@ -340,7 +340,7 @@ public class UnmanageVMManagerImplTest {
     @Test
     public void listUnmanagedInstancesTest() {
         ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
-        unmanageVMManager.listUnmanagedInstances(cmd);
+        unmanagedVMsManager.listUnmanagedInstances(cmd);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -349,7 +349,7 @@ public class UnmanageVMManagerImplTest {
         ClusterVO cluster = new ClusterVO(1, 1, "Cluster");
         cluster.setHypervisorType(Hypervisor.HypervisorType.KVM.toString());
         when(clusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
-        unmanageVMManager.listUnmanagedInstances(cmd);
+        unmanagedVMsManager.listUnmanagedInstances(cmd);
     }
 
     @Test(expected = PermissionDeniedException.class)
@@ -359,7 +359,7 @@ public class UnmanageVMManagerImplTest {
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
-        unmanageVMManager.listUnmanagedInstances(cmd);
+        unmanagedVMsManager.listUnmanagedInstances(cmd);
     }
 
     @Test
@@ -369,7 +369,7 @@ public class UnmanageVMManagerImplTest {
         when(importUnmanageInstanceCmd.getAccountName()).thenReturn(null);
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
         PowerMockito.mockStatic(UsageEventUtils.class);
-        unmanageVMManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+        unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -378,7 +378,7 @@ public class UnmanageVMManagerImplTest {
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getName()).thenReturn("some name");
         when(importUnmanageInstanceCmd.getMigrateAllowed()).thenReturn(false);
-        unmanageVMManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+        unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
     }
 
     @Test(expected = ServerApiException.class)
@@ -387,37 +387,37 @@ public class UnmanageVMManagerImplTest {
         when(importUnmanageInstanceCmd.getName()).thenReturn("SomeInstance");
         when(importUnmanageInstanceCmd.getAccountName()).thenReturn(null);
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
-        unmanageVMManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+        unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void unmanageVMInstanceMissingInstanceTest() {
         long notExistingId = 10L;
-        unmanageVMManager.unmanageVMInstance(notExistingId);
+        unmanagedVMsManager.unmanageVMInstance(notExistingId);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void unmanageVMInstanceDestroyedInstanceTest() {
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Destroyed);
-        unmanageVMManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void unmanageVMInstanceExpungedInstanceTest() {
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Expunging);
-        unmanageVMManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 
     @Test(expected = UnsupportedServiceException.class)
     public void unmanageVMInstanceExistingVMSnapshotsTest() {
         when(vmSnapshotDao.findByVm(virtualMachineId)).thenReturn(Arrays.asList(new VMSnapshotVO(), new VMSnapshotVO()));
-        unmanageVMManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 
     @Test(expected = UnsupportedServiceException.class)
     public void unmanageVMInstanceExistingVolumeSnapshotsTest() {
         when(snapshotDao.listByVolumeId(virtualMachineId)).thenReturn(Arrays.asList(new SnapshotVO(), new SnapshotVO()));
-        unmanageVMManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 
     @Test(expected = UnsupportedServiceException.class)
@@ -425,6 +425,6 @@ public class UnmanageVMManagerImplTest {
         UserVmVO userVmVO = mock(UserVmVO.class);
         when(userVmDao.findById(virtualMachineId)).thenReturn(userVmVO);
         when(userVmVO.getIsoId()).thenReturn(3L);
-        unmanageVMManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 }

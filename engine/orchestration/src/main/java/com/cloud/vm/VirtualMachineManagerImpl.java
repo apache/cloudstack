@@ -74,7 +74,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.cloudstack.vm.UnmanageVMManager;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.BooleanUtils;
@@ -1566,7 +1566,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      */
     private void unmanageVMNics(VirtualMachineProfile profile, VMInstanceVO vm) {
         s_logger.debug("Cleaning up NICs");
-        Boolean preserveNics = UnmanageVMManager.UnmanageVMPreserveNic.valueIn(vm.getDataCenterId());
+        Boolean preserveNics = UnmanagedVMsManager.UnmanageVMPreserveNic.valueIn(vm.getDataCenterId());
         if (BooleanUtils.isTrue(preserveNics)) {
             s_logger.debug("Preserve NICs configuration enabled");
             profile.setParameter(VirtualMachineProfile.Param.PreserveNics, true);
