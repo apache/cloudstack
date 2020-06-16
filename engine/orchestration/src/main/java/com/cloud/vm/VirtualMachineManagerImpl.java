@@ -1519,7 +1519,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 final VirtualMachineGuru guru = getVmGuru(vm);
 
                 try {
-                    unmanageVMSnapsots(vm);
+                    unmanageVMSnapshots(vm);
                     unmanageVMNics(profile, vm);
                     unmanageVMVolumes(vm);
 
@@ -1539,7 +1539,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     /**
      * Clean up VM snapshots (if any) from DB
      */
-    private void unmanageVMSnapsots(VMInstanceVO vm) {
+    private void unmanageVMSnapshots(VMInstanceVO vm) {
         _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId());
     }
 

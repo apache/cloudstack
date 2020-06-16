@@ -7204,11 +7204,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void postProcessingUnmanageVM(UserVmVO vm) {
         ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
 
-        // First generate a VM stop event
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(),
-                vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
-                vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
-        resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        // First generate a VM stop event if the VM was not stopped already
+        if (vm.getState() != State.Stopped) {
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(),
+                    vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
+                    vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+            resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        }
 
         // VM destroy usage event
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(),
