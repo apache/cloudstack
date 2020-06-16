@@ -5041,7 +5041,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new PermissionDeniedException("Expunging a vm can only be done by an Admin. Or when the allow.user.expunge.recover.vm key is set.");
         }
 
-        _vmSnapshotMgr.deleteVMSnapshotsFromDB(vmId);
+        _vmSnapshotMgr.deleteVMSnapshotsFromDB(vmId, false);
 
         boolean status;
 

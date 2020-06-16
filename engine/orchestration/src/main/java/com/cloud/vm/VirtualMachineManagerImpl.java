@@ -1540,7 +1540,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * Clean up VM snapshots (if any) from DB
      */
     private void unmanageVMSnapshots(VMInstanceVO vm) {
-        _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId());
+        _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId(), true);
     }
 
     /**
@@ -2064,7 +2064,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         else {
             if (expunge) {
-                _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId());
+                _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId(), false);
             }
         }
     }
