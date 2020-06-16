@@ -22,8 +22,6 @@ set -x
 ROOT=$PWD
 
 function package_deb() {
-    VERSION=$(cd ../; grep --color=none \"version\" package.json | cut -d '"' -f4)
-    DATE=$(date +"%Y%m%d")
     sed -i "s/VERSION/$VERSION-$DATE/g" debian/changelog
     dpkg-buildpackage -uc -us
     $(cd ../; tar czf cloudstack-primate-$VERSION-$DATE.tar.gz dist --transform s/dist/primate/)
@@ -33,10 +31,9 @@ function package_rpm() {
     CWD=`pwd`
     RPMDIR=$CWD/../build
 
-    VERSION=$(cd ../; grep --color=none \"version\" package.json | cut -d '"' -f4)
     REALVER=`echo $VERSION`
     DEFVER="-D_ver $REALVER"
-    DEFREL="-D_rel $(date +"%Y%m%d")"
+    DEFREL="-D_rel $DATE"
 
     echo Preparing to package CloudStack Primate ${VERSION}
 
@@ -62,6 +59,10 @@ function package_rpm() {
         echo "RPM Build Done"
     fi
 }
+
+DATE=$(date +"%Y%m%d")
+VERSION=$(grep -Po '"version": "\K[^"]*' ../package.json)
+sed -i "s/\"version\":.*/\"version\": \"$VERSION$DATE\",/g" ../package.json
 
 case "$1" in
   deb ) package_deb

@@ -18,7 +18,9 @@
 <template>
   <div class="footer">
     <div class="links">
-      CloudStack Server {{ $store.getters.features.cloudstackversion }}
+      CloudStack {{ $store.getters.features.cloudstackversion }}
+      <a-divider type="vertical" />
+      Primate {{ $store.getters.version }}
       <a-divider type="vertical" />
       <a href="https://github.com/apache/cloudstack-primate/issues/new/choose" target="_blank">
         <a-icon type="github"/>

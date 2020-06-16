@@ -17,6 +17,7 @@
 
 const getters = {
   device: state => state.app.device,
+  version: state => state.app.version,
   theme: state => state.app.theme,
   color: state => state.app.color,
   token: state => state.user.token,
