@@ -48,6 +48,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceModifierActionWorker {
 
@@ -200,9 +201,9 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             if (network == null) {
                 logAndThrow(Level.ERROR, String.format("Failed to find network for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
             }
-            List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), null);
+            List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.User);
             if (networkVMs.size() > clusterVMs.size()) {
-                logAndThrow(Level.ERROR, String.format("Network ID: %s for Kubernetes cluster ID: %s has instances using it which are not part of the Kubernetes cluster", kubernetesCluster.getUuid()));
+                logAndThrow(Level.ERROR, String.format("Network ID: %s for Kubernetes cluster ID: %s has instances using it which are not part of the Kubernetes cluster", network.getUuid(), kubernetesCluster.getUuid()));
             }
             for (VMInstanceVO vm : networkVMs) {
                 boolean vmFoundInKubernetesCluster = false;
