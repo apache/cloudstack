@@ -185,7 +185,7 @@
                                     }
                                     propertyField = $('<input id=ovf-property-'+key+'>')
                                         .attr({pattern : '.{' + minLen + ',' + maxLen + '}'})
-                                        .attr(type: fieldType})
+                                        .attr({type: fieldType})
                                         .addClass('name').val(_s(this[fields.value]))
                                 }
                             } else {
