@@ -133,6 +133,11 @@
                             @change="value => this.hypervisor = value" />
                         </a-form-item>
                       </p>
+                      <a-form-item :label="this.$t('label.bootintosetup')" v-if="zoneSelected && ((tabKey === 'isoid' && hypervisor === 'VMware') || (tabKey === 'templateid' && template && template.hypervisor === 'VMware'))" >
+                        <a-switch
+                          v-decorator="['bootintosetup']">
+                        </a-switch>
+                      </a-form-item>
                     </a-card>
                     <a-form-item class="form-item-hidden">
                       <a-input v-decorator="['templateid']"/>
@@ -416,7 +421,8 @@ export default {
         DISK_OFFERING: 3,
         AFFINITY_GROUP: 4,
         NETWORK: 5,
-        SSH_KEY_PAIR: 6
+        SSH_KEY_PAIR: 6,
+        ENABLE_SETUP: 7
       },
       initDataConfig: {},
       defaultNetwork: '',
@@ -946,6 +952,10 @@ export default {
         deployVmData.keypair = values.keypair
         deployVmData.name = values.name
         deployVmData.displayname = values.name
+        // step 8: enter setup
+        if ('bootintosetup' in values) {
+          deployVmData.bootintosetup = values.bootintosetup
+        }
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')

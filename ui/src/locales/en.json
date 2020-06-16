@@ -458,6 +458,7 @@
 "label.bladeid": "Blade ID",
 "label.blades": "Blades",
 "label.bootable": "Bootable",
+"label.bootintosetup": "Boot into hardware setup",
 "label.broadcastdomainrange": "Broadcast domain range",
 "label.broadcastdomaintype": "Broadcast Domain Type",
 "label.broadcasturi": "Broadcast URI",
