@@ -4086,15 +4086,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         _itMgr.checkIfCanUpgrade(systemVm, newServiceOffering);
 
-        final boolean result = _itMgr.upgradeVmDb(systemVmId, serviceOfferingId);
-
-        if (newServiceOffering.isDynamic()) {
-            //save the custom values to the database.
-            _userVmMgr.saveCustomOfferingDetails(systemVmId, newServiceOffering);
-        }
-        if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
-            _userVmMgr.removeCustomOfferingDetails(systemVmId);
-        }
+        final boolean result = _itMgr.upgradeVmDb(systemVmId, newServiceOffering, currentServiceOffering);
 
         if (result) {
             return _vmInstanceDao.findById(systemVmId);
