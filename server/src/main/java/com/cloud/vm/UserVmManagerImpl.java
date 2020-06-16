@@ -1047,14 +1047,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
-        _itMgr.upgradeVmDb(vmId, svcOffId);
-        if (newServiceOffering.isDynamic()) {
-            //save the custom values to the database.
-            saveCustomOfferingDetails(vmId, newServiceOffering);
-        }
-        if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
-            removeCustomOfferingDetails(vmId);
-        }
+        _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
         // Increment or decrement CPU and Memory count accordingly.
         if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
@@ -1176,14 +1169,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         ServiceOffering newSvcOffering = _offeringDao.findById(svcOffId);
         _accountMgr.checkAccess(owner, newSvcOffering, _dcDao.findById(vmInstance.getDataCenterId()));
 
-        _itMgr.upgradeVmDb(vmId, svcOffId);
-        if (newServiceOffering.isDynamic()) {
-            //save the custom values to the database.
-            saveCustomOfferingDetails(vmId, newServiceOffering);
-        }
-        if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
-            removeCustomOfferingDetails(vmId);
-        }
+        _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
         // Increment or decrement CPU and Memory count accordingly.
         if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
@@ -1705,10 +1691,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // Generate usage event for VM upgrade
                 generateUsageEvent(vmInstance, vmInstance.isDisplayVm(), EventTypes.EVENT_VM_UPGRADE);
             }
-            if (vmInstance.getState().equals(State.Running)) {
-                // Generate usage event for Dynamic scaling of VM
-                generateUsageEvent( vmInstance, vmInstance.isDisplayVm(), EventTypes.EVENT_VM_DYNAMIC_SCALE);
-            }
             return vmInstance;
         } else {
             throw new CloudRuntimeException("Failed to scale the VM");
@@ -1881,17 +1863,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
 
                     // #3 scale the vm now
-                    _itMgr.upgradeVmDb(vmId, newServiceOfferingId);
-                    if (newServiceOffering.isDynamic()) {
-                        //save the custom values to the database.
-                        saveCustomOfferingDetails(vmId, newServiceOffering);
-                    }
                     vmInstance = _vmInstanceDao.findById(vmId);
-                    _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, existingHostHasCapacity);
+                    _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, newServiceOffering, customParameters, existingHostHasCapacity);
                     success = true;
-                    if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
-                        removeCustomOfferingDetails(vmId);
-                    }
                     return success;
                 } catch (InsufficientCapacityException e) {
                     s_logger.warn("Received exception while scaling ", e);
@@ -1903,15 +1877,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     s_logger.warn("Received exception while scaling ", e);
                 } finally {
                     if (!success) {
-                        _itMgr.upgradeVmDb(vmId, currentServiceOffering.getId()); // rollback
-
                         // Decrement CPU and Memory count accordingly.
                         if (newCpu > currentCpu) {
                             _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
-                        }
-                        //restoring old service offering will take care of removing new SO.
-                        if(currentServiceOffering.isDynamic()){
-                            saveCustomOfferingDetails(vmId, currentServiceOffering);
                         }
 
                         if (memoryDiff > 0) {
@@ -1922,35 +1890,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return success;
-    }
-
-    @Override
-    public void saveCustomOfferingDetails(long vmId, ServiceOffering serviceOffering) {
-        //save the custom values to the database.
-        Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vmId);
-        details.put(UsageEventVO.DynamicParameters.cpuNumber.name(), serviceOffering.getCpu().toString());
-        details.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
-        details.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
-        List<UserVmDetailVO> detailList = new ArrayList<UserVmDetailVO>();
-        for (Map.Entry<String, String> entry: details.entrySet()) {
-            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
-            detailList.add(detailVO);
-        }
-        userVmDetailsDao.saveDetails(detailList);
-    }
-
-    @Override
-    public void removeCustomOfferingDetails(long vmId) {
-        Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vmId);
-        details.remove(UsageEventVO.DynamicParameters.cpuNumber.name());
-        details.remove(UsageEventVO.DynamicParameters.cpuSpeed.name());
-        details.remove(UsageEventVO.DynamicParameters.memory.name());
-        List<UserVmDetailVO> detailList = new ArrayList<UserVmDetailVO>();
-        for(Map.Entry<String, String> entry: details.entrySet()) {
-            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
-            detailList.add(detailVO);
-        }
-        userVmDetailsDao.saveDetails(detailList);
     }
 
     @Override
