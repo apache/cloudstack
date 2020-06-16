@@ -74,7 +74,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name = ApiConstants.SHOW_REMOVED, type = CommandType.BOOLEAN, description = "show removed templates as well")
     private Boolean showRemoved;
-        
+
     @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, list only unique templates across zones", since = "4.13.2")
     private Boolean showUnique;
 
