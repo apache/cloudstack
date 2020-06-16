@@ -1692,7 +1692,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         ResponseView respView = ResponseView.Restricted;
         Account account = CallContext.current().getCallingAccount();
-        if (_accountMgr.isAdmin(account.getAccountId())) {
+        if (_accountMgr.isRootAdmin(account.getAccountId())) {
             respView = ResponseView.Full;
         }
 
