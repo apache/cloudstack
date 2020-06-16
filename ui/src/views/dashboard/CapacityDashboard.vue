@@ -54,16 +54,16 @@
           :key="stat.type">
           <chart-card :loading="loading">
             <router-link :to="{ path: '/zone/' + zoneSelected.id }">
-            <div class="capacity-dashboard-chart-card-inner">
-              <h3>{{ $t(ts[stat.name]) }}</h3>
-              <a-progress
-                type="dashboard"
-                :status="getStatus(parseFloat(stat.percentused))"
-                :percent="parseFloat(stat.percentused)"
-                :format="percent => `${parseFloat(stat.percentused).toFixed(2)}%`"
-                :strokeColor="getStrokeColour(parseFloat(stat.percentused))"
-                :width="100" />
-            </div>
+              <div class="capacity-dashboard-chart-card-inner">
+                <h3>{{ $t(ts[stat.name]) }}</h3>
+                <a-progress
+                  type="dashboard"
+                  :status="getStatus(parseFloat(stat.percentused))"
+                  :percent="parseFloat(stat.percentused)"
+                  :format="percent => `${parseFloat(stat.percentused).toFixed(2)}%`"
+                  :strokeColor="getStrokeColour(parseFloat(stat.percentused))"
+                  :width="100" />
+              </div>
             </router-link>
             <template slot="footer"><center>{{ displayData(stat.name, stat.capacityused) }} / {{ displayData(stat.name, stat.capacitytotal) }}</center></template>
           </chart-card>
@@ -96,7 +96,7 @@
           </a-tooltip>
           <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
             <template slot="title">
-            {{ $t('label.view') + ' ' + $t('label.events') }}
+              {{ $t('label.view') + ' ' + $t('label.events') }}
             </template>
             <a-button shape="circle">
               <router-link :to="{ name: 'event' }">
