@@ -539,6 +539,7 @@
 "label.confirmation": "Confirmation",
 "label.confirmdeclineinvitation": "Are you sure you want to decline this project invitation?",
 "label.confirmpassword": "Confirm Password",
+"label.confirmpassword.description": "Please type the same password again",
 "label.congratulations": "Congratulations!",
 "label.connectiontimeout": "Connection Timeout",
 "label.conservemode": "Conserve mode",

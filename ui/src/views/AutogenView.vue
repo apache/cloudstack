@@ -231,12 +231,21 @@
                   :placeholder="field.description"
                 />
               </span>
-              <span v-else-if="field.name==='password' || field.name==='currentpassword'">
+              <span v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'">
                 <a-input-password
                   v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
+                    rules: [
+                      {
+                        required: field.required,
+                        message: `${$t('message.error.required.input')}`
+                      },
+                      {
+                        validator: validateTwoPassword
+                      }
+                    ]
                   }]"
                   :placeholder="field.description"
+                  @blur="($event) => handleConfirmBlur($event, field.name)"
                 />
               </span>
               <span v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'">
@@ -357,7 +366,8 @@ export default {
       treeData: [],
       treeSelected: {},
       actionData: [],
-      formModel: {}
+      formModel: {},
+      confirmDirty: false
     }
   },
   computed: {
@@ -609,6 +619,7 @@ export default {
       this.currentAction = {}
     },
     execAction (action) {
+      const self = this
       this.form = this.$form.createForm(this)
       this.formModel = {}
       this.actionData = []
@@ -635,6 +646,14 @@ export default {
         }
         if (args.length > 0) {
           this.currentAction.paramFields = args.map(function (arg) {
+            if (arg === 'confirmpassword') {
+              return {
+                type: 'password',
+                name: 'confirmpassword',
+                required: true,
+                description: self.$t('label.confirmpassword.description')
+              }
+            }
             return paramFields.filter(function (param) {
               return param.name.toLowerCase() === arg.toLowerCase()
             })[0]
@@ -908,6 +927,40 @@ export default {
     },
     finishLoading () {
       this.loading = false
+    },
+    handleConfirmBlur (e, name) {
+      if (name !== 'confirmpassword') {
+        return
+      }
+      const value = e.target.value
+      this.confirmDirty = this.confirmDirty || !!value
+    },
+    validateTwoPassword (rule, value, callback) {
+      if (!value || value.length === 0) {
+        callback()
+      } else if (rule.field === 'confirmpassword') {
+        const form = this.form
+        const messageConfirm = this.$t('message.validate.equalto')
+        const passwordVal = form.getFieldValue('password')
+        if (passwordVal && passwordVal !== value) {
+          callback(messageConfirm)
+        } else {
+          callback()
+        }
+      } else if (rule.field === 'password') {
+        const form = this.form
+        const confirmPasswordVal = form.getFieldValue('confirmpassword')
+        if (!confirmPasswordVal || confirmPasswordVal.length === 0) {
+          callback()
+        } else if (value && this.confirmDirty) {
+          form.validateFields(['confirmpassword'], { force: true })
+          callback()
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
     }
   }
 }
