@@ -24,6 +24,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 public interface UnmanageVMManager extends VmImportService, UnmanageVMService, PluggableService, Configurable {
 
     ConfigKey<Boolean> UnmanageVMPreserveNic = new ConfigKey<>("Advanced", Boolean.class, "unmanage.vm.preserve.nics", "false",
-            "If set to true, preserve nics (and its MAC addresses) when unmanaging a VM. " +
-                    "Otherwise, nics are removed and MAC addresses can be reassigned", true, ConfigKey.Scope.Zone);
+            "If set to true, do not remove VM nics (and its MAC addresses) when unmanaging a VM, leaving them allocated but not reserved. " +
+                    "If set to false, nics are removed and MAC addresses can be reassigned", true, ConfigKey.Scope.Zone);
 }

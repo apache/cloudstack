@@ -7136,7 +7136,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             if (vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
-                throw new UnsupportedServiceException("Unmanage VM is currently allowed for VMware VMs only");
+                throw new UnsupportedServiceException("Unmanaging a VM is currently allowed for VMware VMs only");
             }
 
             List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());

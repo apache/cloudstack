@@ -1501,7 +1501,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vm.getId());
         if (CollectionUtils.isNotEmpty(pendingWorkJobs) || _haMgr.hasPendingHaWork(vm.getId())) {
-            String msg = "There are pending jobs or HA tasks working on the VM with id: " + vm.getId() + ", postpone unmanaging until there are no pending jobs or HA tasks";
+            String msg = "There are pending jobs or HA tasks working on the VM with id: " + vm.getId() + ", can't unmanage the VM.";
             s_logger.info(msg);
             throw new ConcurrentOperationException(msg);
         }
