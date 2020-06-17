@@ -17,7 +17,7 @@
 
 <template>
   <a-row class="capacity-dashboard" :gutter="12">
-    <a-col :xl="16">
+    <a-col :xl="18">
       <div class="capacity-dashboard-wrapper">
         <div class="capacity-dashboard-select">
           <a-select
@@ -48,7 +48,7 @@
         <a-col
           :xs="12"
           :sm="8"
-          :md="8"
+          :md="6"
           :style="{ marginBottom: '12px' }"
           v-for="stat in stats"
           :key="stat.type">
@@ -71,7 +71,7 @@
       </a-row>
     </a-col>
 
-    <a-col :xl="8">
+    <a-col :xl="6">
       <chart-card>
         <div style="text-align: center">
           <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
