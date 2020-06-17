@@ -34,6 +34,8 @@
             <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
             <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
+            <a-select-option value="all">{{ $t('label.all') | capitalise }}</a-select-option>
+            <a-select-option value="protocolnumber">{{ $t('label.protocol.number') | capitalise }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
@@ -43,6 +45,10 @@
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
           <div class="form__label">{{ $t('label.endport') }}</div>
           <a-input v-model="newRule.endport"></a-input>
+        </div>
+        <div v-show="newRule.protocol === 'protocolnumber'" class="form__item">
+          <div class="form__label">{{ $t('label.protocol.number') }}</div>
+          <a-input v-model="newRule.protocolnumber"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmptype') }}</div>
@@ -83,6 +89,14 @@
         <div v-if="record.account && record.securitygroupname">
           {{ record.account }} - {{ record.securitygroupname }}
         </div>
+      </template>
+      <template slot="startport" slot-scope="text, record">
+        <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
+        <div v-else>{{ text }}</div>
+      </template>
+      <template slot="endport" slot-scope="text, record">
+        <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
+        <div v-else>{{ text }}</div>
       </template>
       <template slot="actions" slot-scope="record">
         <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record)" />
@@ -153,6 +167,7 @@ export default {
         protocol: 'tcp',
         startport: null,
         endport: null,
+        protocolnumber: null,
         cidrlist: null,
         icmptype: null,
         icmpcode: null,
@@ -179,11 +194,13 @@ export default {
         },
         {
           title: this.$t('label.startport'),
-          dataIndex: 'startport'
+          dataIndex: 'startport',
+          scopedSlots: { customRender: 'startport' }
         },
         {
           title: this.$t('label.endport'),
-          dataIndex: 'endport'
+          dataIndex: 'endport',
+          scopedSlots: { customRender: 'endport' }
         },
         {
           title: 'ICMP Type',
@@ -237,7 +254,7 @@ export default {
         securitygroupid: this.resource.id,
         domainid: this.resource.domainid,
         account: this.resource.account,
-        protocol: this.newRule.protocol,
+        protocol: this.newRule.protocol === 'protocolnumber' ? this.newRule.protocolnumber : this.newRule.protocol,
         startport: this.newRule.startport,
         endport: this.newRule.endport,
         cidrlist: this.newRule.cidrlist,
