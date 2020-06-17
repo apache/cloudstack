@@ -1014,10 +1014,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setCreated(config.getCreated());
         LoadBalancerConfigKey configKey = LoadBalancerConfigKey.getConfigsByScopeAndName(config.getScope(), config.getName());
         if (configKey == null) {
-            throw new CloudRuntimeException(String.format("Unable to determine the load balancer config for scope %s and name %s", config.getScope(), config.getName()));
+            s_logger.warn(String.format("Unable to determine the load balancer config for scope %s and name %s", config.getScope(), config.getName()));
+        } else {
+            response.setDescription(configKey.displayText());
+            response.setDefaultValue(configKey.defaultValue());
         }
-        response.setDescription(configKey.displayText());
-        response.setDefaultValue(configKey.defaultValue());
         response.setObjectName("loadbalancerconfig");
         return response;
     }

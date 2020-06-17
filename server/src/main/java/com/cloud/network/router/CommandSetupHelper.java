@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -56,6 +57,7 @@ import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.LoadBalancerConfigTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
@@ -347,6 +349,20 @@ public class CommandSetupHelper {
         final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, routerPublicIp, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()),
                 router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
+        boolean isTransparent = false;
+        for (final LoadBalancerTO lbTO : lbs) {
+            final LoadBalancerConfigTO[] lbConfigs = lbTO.getLbConfigs();
+            for (LoadBalancerConfigTO lbConfig: lbConfigs) {
+                if (lbConfig.getName().equals(LoadBalancerConfigKey.LbTransparent.key())) {
+                    isTransparent = "true".equalsIgnoreCase(lbConfig.getValue());
+                    break;
+                }
+            }
+            if (isTransparent) {
+                break;
+            }
+        }
+        cmd.setIsTransparent(isTransparent);
         cmd.setNetworkCidr(guestNetwork.getCidr());
         if (router.getVpcId() != null) {
             cmd.setNetworkLbConfigs(_lbConfigMgr.getVpcLbConfigs(router.getVpcId()));

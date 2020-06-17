@@ -46,6 +46,7 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     public boolean keepAliveEnabled = false;
     NicTO nic;
     Long vpcId;
+    Boolean isTransparent;
     String networkCidr;
 
     protected LoadBalancerConfigCommand() {
@@ -93,6 +94,14 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
         for (LoadBalancerConfig lbConfig : networkLbConfigs) {
             this.networkLbConfigs[i++] = new LoadBalancerConfigTO(lbConfig);
         }
+    }
+
+    public void setIsTransparent(final Boolean isTransparent) {
+        this.isTransparent = isTransparent;
+    }
+
+    public Boolean isTransparent() {
+        return isTransparent;
     }
 
     public void setNetworkCidr(String networkCidr) {

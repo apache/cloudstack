@@ -19,15 +19,11 @@
 
 package com.cloud.agent.resource.virtualnetwork.facade;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
-
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.to.LoadBalancerConfigTO;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
@@ -60,19 +56,7 @@ public class LoadBalancerConfigItem extends AbstractConfigItemFacade {
         final String[] statRules = allRules[LoadBalancerConfigurator.STATS];
 
         final LoadBalancerRule loadBalancerRule = new LoadBalancerRule(configuration, tmpCfgFilePath, tmpCfgFileName, addRules, removeRules, statRules, routerIp);
-
-        boolean isTransparent = false;
-        final LoadBalancerConfigTO[] networkLbConfigs = command.getNetworkLbConfigs();
-        HashMap<String, String> networkLbConfigsMap = new HashMap<String, String>();
-        if (networkLbConfigs != null) {
-            for (LoadBalancerConfigTO networkLbConfig: networkLbConfigs) {
-                if (networkLbConfig.getName().equals(LoadBalancerConfigKey.LbTransparent.key())) {
-                    isTransparent = "true".equalsIgnoreCase(networkLbConfig.getValue());
-                    break;
-                }
-            }
-        }
-        loadBalancerRule.setIsTransparent(isTransparent);
+        loadBalancerRule.setIsTransparent(command.isTransparent());
         loadBalancerRule.setNetworkCidr(command.getNetworkCidr());
 
         final List<LoadBalancerRule> rules = new LinkedList<LoadBalancerRule>();

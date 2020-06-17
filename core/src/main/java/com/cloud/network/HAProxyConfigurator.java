@@ -485,6 +485,11 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
         }
 
+        boolean isTransparent = false;
+        if ("true".equalsIgnoreCase(lbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))) {
+            isTransparent = true;
+        }
+
         final List<String> frontendConfigs = new ArrayList<String>();
         final List<String> backendConfigs = new ArrayList<String>();
         final List<String> backendConfigsForHttp = new ArrayList<String>();
@@ -641,12 +646,6 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
         }
 
-        boolean isTransparent = false;
-        if ("true".equalsIgnoreCase(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))
-                    && "true".equalsIgnoreCase(lbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))) {
-            isTransparent = true;
-        }
-
         if (isTransparent) {
             sb = new StringBuilder();
             sb.append("frontend ").append(poolName);
@@ -742,7 +741,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             gSection.add("\tstats socket /var/run/haproxy.socket");
         }
 
-        if ("true".equalsIgnoreCase(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()))) {
+        // run haproxy as root
+        if (lbCmd.isTransparent()) {
             gSection.set(5, "\tuser root");
             gSection.set(6, "\tgroup root");
         }
