@@ -133,8 +133,8 @@ export default {
       message: 'label.outofbandmanagement.enable',
       dataView: true,
       show: (record) => {
-        return !record.outofbandmanagement || !record.outofbandmanagement.enabled ||
-          record.outofbandmanagement.enabled === false
+        return !(record.outofbandmanagement && record.outofbandmanagement.enabled &&
+          record.outofbandmanagement.enabled === true)
       },
       args: ['hostid'],
       mapping: {
@@ -168,7 +168,7 @@ export default {
       dataView: true,
       show: (record) => {
         return record.outofbandmanagement && record.outofbandmanagement.enabled &&
-        record.outofbandmanagement.enabled === true
+          record.outofbandmanagement.enabled === true
       },
       args: ['hostid', 'action'],
       mapping: {
@@ -217,7 +217,8 @@ export default {
       message: 'label.ha.enable',
       dataView: true,
       show: (record) => {
-        return !record.hostha || !record.hostha.haenable || record.hostha.haenable === false
+        return !(record.hostha && record.hostha.haenable &&
+          record.hostha.haenable === true)
       },
       args: ['hostid'],
       mapping: {
