@@ -148,6 +148,19 @@ export default {
       }
     },
     {
+      api: 'startRollingMaintenance',
+      icon: 'setting',
+      label: 'label.start.rolling.maintenance',
+      message: 'label.start.rolling.maintenance',
+      dataView: true,
+      args: ['timeout', 'payload', 'forced', 'clusterids'],
+      mapping: {
+        clusterids: {
+          value: (record) => { return record.id }
+        }
+      }
+    },
+    {
       api: 'deleteCluster',
       icon: 'delete',
       label: 'label.action.delete.cluster',

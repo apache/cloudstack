@@ -244,6 +244,22 @@ export default {
       }
     },
     {
+      api: 'startRollingMaintenance',
+      icon: 'setting',
+      label: 'label.start.rolling.maintenance',
+      message: 'label.start.rolling.maintenance',
+      dataView: true,
+      show: (record) => {
+        return record.hypervisor === 'KVM' && (record.resourcestate === 'Enabled' || record.resourcestate === 'ErrorInMaintenance')
+      },
+      args: ['timeout', 'payload', 'forced', 'hostids'],
+      mapping: {
+        hostids: {
+          value: (record) => { return record.id }
+        }
+      }
+    },
+    {
       api: 'deleteHost',
       icon: 'delete',
       label: 'label.action.remove.host',

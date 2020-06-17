@@ -1404,6 +1404,7 @@
 "label.path": "Path",
 "label.patp": "Palo Alto Threat Profile",
 "label.pavr": "Virtual Router",
+"label.payload": "Payload",
 "label.pcidevice": "GPU",
 "label.per.account": "Per Account",
 "label.per.zone": "Per Zone",

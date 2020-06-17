@@ -212,6 +212,19 @@ export default {
       }
     },
     {
+      api: 'startRollingMaintenance',
+      icon: 'setting',
+      label: 'label.start.rolling.maintenance',
+      message: 'label.start.rolling.maintenance',
+      dataView: true,
+      args: ['timeout', 'payload', 'forced', 'zoneids'],
+      mapping: {
+        zoneids: {
+          value: (record) => { return record.id }
+        }
+      }
+    },
+    {
       api: 'deleteZone',
       icon: 'delete',
       label: 'label.action.delete.zone',
