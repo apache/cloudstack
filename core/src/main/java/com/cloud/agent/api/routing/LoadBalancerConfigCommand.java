@@ -46,7 +46,7 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     public boolean keepAliveEnabled = false;
     NicTO nic;
     Long vpcId;
-    Boolean isTransparent;
+    Boolean isTransparent = false;
     String networkCidr;
 
     protected LoadBalancerConfigCommand() {
