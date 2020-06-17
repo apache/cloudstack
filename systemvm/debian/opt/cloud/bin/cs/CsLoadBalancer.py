@@ -34,6 +34,10 @@ class CsLoadBalancer(CsDataBag):
             return
         if 'configuration' not in self.dbag['config'][0].keys():
             return
+
+        ssl_certs = self.dbag['config'][0]['ssl_certs']
+        self._create_pem_for_sslcert(ssl_certs)
+
         config = self.dbag['config'][0]['configuration']
         file1 = CsFile(HAPROXY_CONF_T)
         file1.empty()
@@ -105,3 +109,15 @@ class CsLoadBalancer(CsDataBag):
             if not CsHelper.execute("ip rule show fwmark %s lookup %s" % (tableNo, tableNo)):
                 CsHelper.execute("ip rule add fwmark %s lookup %s" % (tableNo, tableNo))
                 CsHelper.execute("ip route add local 0.0.0.0/0 dev lo table %s" % tableNo)
+
+    def _create_pem_for_sslcert(self, ssl_certs):
+        logging.debug("CsLoadBalancer:: removing all pem files in /etc/ssl/private and creating new pem files")
+        CsHelper.execute("rm -rf /etc/ssl/private/*.pem")
+        for cert in ssl_certs:
+            file = CsFile("/etc/ssl/private/%s.pem" % cert['name'])
+            file.empty()
+            file.add("%s\n" % cert['cert'].replace("\r\n","\n"))
+            if 'chain' in cert.keys():
+                file.add("%s\n" % cert['chain'].replace("\r\n","\n"))
+            file.add("%s\n" % cert['key'].replace("\r\n","\n"))
+            file.commit()

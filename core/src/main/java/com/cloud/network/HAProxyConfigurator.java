@@ -37,6 +37,8 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
 import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule.SslCertEntry;
+import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
@@ -490,6 +492,11 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             isTransparent = true;
         }
 
+        boolean sslOffloading = false;
+        if (lbTO.getLbProtocol().equals(NetUtils.SSL_PROTO) && lbTO.getSslCert() != null) {
+            sslOffloading = true;
+        }
+
         final List<String> frontendConfigs = new ArrayList<String>();
         final List<String> backendConfigs = new ArrayList<String>();
         final List<String> backendConfigsForHttp = new ArrayList<String>();
@@ -497,6 +504,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
         sb = new StringBuilder();
         sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
+        if (sslOffloading) {
+            sb.append(" ssl crt /etc/ssl/private/").append(poolName).append(".pem");
+            sb.append("\n\thttp-request add-header X-Forwarded-Proto https");
+        }
         frontendConfigs.add(sb.toString());
         sb = new StringBuilder();
         sb.append("\t").append("balance ").append(algorithm);
@@ -628,7 +639,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             keepAliveEnabled = false;
         }
 
-        if (http || httpbasedStickiness) {
+        if (http || httpbasedStickiness || sslOffloading) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             frontendConfigs.add(sb.toString());
@@ -867,6 +878,25 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         result[REMOVE] = toRemove.toArray(new String[toRemove.size()]);
         result[STATS] = toStats.toArray(new String[toStats.size()]);
 
+        return result;
+    }
+
+    @Override
+    public SslCertEntry[] generateSslCertEntries(LoadBalancerConfigCommand lbCmd) {
+        final Set<SslCertEntry> sslCertEntries = new HashSet<SslCertEntry>();
+        for (final LoadBalancerTO lbTO : lbCmd.getLoadBalancers()) {
+            if (lbTO.getSslCert() != null) {
+                final LbSslCert cert = lbTO.getSslCert();
+                if (cert.isRevoked()) {
+                    continue;
+                }
+                StringBuilder sb = new StringBuilder();
+                final String name = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
+                final SslCertEntry sslCertEntry = new SslCertEntry(name, cert.getCert(), cert.getKey(), cert.getChain(), cert.getPassword());
+                sslCertEntries.add(sslCertEntry);
+            }
+        }
+        final SslCertEntry[] result = sslCertEntries.toArray(new SslCertEntry[sslCertEntries.size()]);
         return result;
     }
 }

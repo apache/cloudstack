@@ -224,6 +224,10 @@ public class LoadBalancerTO {
         return this.sslCert;
     }
 
+    public void setLbSslCert(LbSslCert sslCert) {
+        this.sslCert = sslCert;
+    }
+
     public String getSrcIpVlan() {
         return srcIpVlan;
     }
