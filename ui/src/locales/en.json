@@ -633,6 +633,7 @@
 "label.delete.srx": "Delete SRX",
 "label.delete.sslcertificate": "Delete SSL Certificate",
 "label.delete.ucs.manager": "Delete UCS Manager",
+"label.delete.domain": "Delete Domain",
 "label.delete.volumes": "Data Volumes to be deleted",
 "label.delete.vpn.connection": "Delete VPN connection",
 "label.delete.vpn.customer.gateway": "Delete VPN Customer Gateway",

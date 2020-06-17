@@ -399,6 +399,8 @@ export default {
       params.page = 1
       params.pageSize = 1
 
+      this.detailLoading = true
+
       api(apiName, params).then(json => {
         const jsonResponse = this.getResponseJsonData(json)
 
@@ -418,6 +420,8 @@ export default {
 
         // emit change resource to parent
         this.$emit('change-resource', this.resource)
+      }).finally(() => {
+        this.detailLoading = false
       })
     },
     getResponseJsonData (json) {

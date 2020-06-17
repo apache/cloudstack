@@ -54,7 +54,7 @@
           :span="device === 'mobile' ? 24 : 12"
           :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
           <action-button
-            :style="dataView || treeView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: 'inline-flex' }"
+            :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: 'inline-flex' }"
             :loading="loading"
             :actions="actions"
             :selectedRowKeys="selectedRowKeys"
@@ -64,7 +64,7 @@
           <a-input-search
             style="width: 100%; display: table-cell"
             :placeholder="$t('label.search')"
-            v-if="!dataView && !treeView"
+            v-if="!dataView"
             v-model="searchQuery"
             allowClear
             @search="onSearch" />
@@ -265,7 +265,7 @@
       </a-modal>
     </div>
 
-    <div v-if="dataView && !treeView">
+    <div v-if="dataView">
       <resource-view
         :resource="resource"
         :loading="loading"
@@ -276,8 +276,7 @@
         :loading="loading"
         :columns="columns"
         :items="items"
-        @refresh="this.fetchData"
-        v-if="!treeView" />
+        @refresh="this.fetchData" />
       <a-pagination
         class="row-element"
         size="small"
@@ -289,16 +288,7 @@
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger
-        showQuickJumper
-        v-if="!treeView" />
-      <tree-view
-        v-if="treeView"
-        :treeData="treeData"
-        :treeSelected="treeSelected"
-        :loading="loading"
-        :tabs="$route.meta.tabs"
-        @change-resource="changeResource"
-        :actionData="actionData"/>
+        showQuickJumper />
     </div>
   </div>
 </template>
@@ -315,7 +305,6 @@ import ChartCard from '@/components/widgets/ChartCard'
 import Status from '@/components/widgets/Status'
 import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
-import TreeView from '@/components/view/TreeView'
 import ActionButton from '@/components/view/ActionButton'
 
 export default {
@@ -325,7 +314,6 @@ export default {
     ChartCard,
     ResourceView,
     ListView,
-    TreeView,
     Status,
     ActionButton
   },
@@ -354,13 +342,9 @@ export default {
       currentAction: {},
       showAction: false,
       dataView: false,
-      treeView: false,
       selectedFilter: '',
       filters: [],
       actions: [],
-      treeData: [],
-      treeSelected: {},
-      actionData: [],
       formModel: {},
       confirmDirty: false
     }
@@ -415,21 +399,15 @@ export default {
       this.filters = this.$route.meta.filters || []
       this.columns = []
       this.columnKeys = []
-      this.treeData = []
-      this.treeSelected = {}
-
       if (Object.keys(this.$route.query).length > 0) {
         Object.assign(params, this.$route.query)
       } else if (this.$route.meta.params) {
         Object.assign(params, this.$route.meta.params)
       }
 
-      this.treeView = this.$route && this.$route.meta && this.$route.meta.treeView
-
       if (this.$route && this.$route.params && this.$route.params.id) {
         this.resource = {}
         this.dataView = true
-        this.treeView = false
       } else {
         this.dataView = false
       }
@@ -526,14 +504,8 @@ export default {
         }
       }
 
-      if (!this.treeView) {
-        params.page = this.page
-        params.pagesize = this.pageSize
-      } else {
-        const domainId = this.$store.getters.userInfo.domainid
-        params.id = domainId
-        delete params.treeView
-      }
+      params.page = this.page
+      params.pagesize = this.pageSize
 
       api(this.apiName, params).then(json => {
         var responseName
@@ -560,30 +532,22 @@ export default {
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
           this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
         }
-        if (this.treeView) {
-          this.treeData = this.generateTreeData(this.items)
-        } else {
-          for (let idx = 0; idx < this.items.length; idx++) {
-            this.items[idx].key = idx
-            for (const key in customRender) {
-              const func = customRender[key]
-              if (func && typeof func === 'function') {
-                this.items[idx][key] = func(this.items[idx])
-              }
+        for (let idx = 0; idx < this.items.length; idx++) {
+          this.items[idx].key = idx
+          for (const key in customRender) {
+            const func = customRender[key]
+            if (func && typeof func === 'function') {
+              this.items[idx][key] = func(this.items[idx])
             }
-            if (this.$route.path.startsWith('/ssh')) {
-              this.items[idx].id = this.items[idx].name
-            } else if (this.$route.path.startsWith('/ldapsetting')) {
-              this.items[idx].id = this.items[idx].hostname
-            }
+          }
+          if (this.$route.path.startsWith('/ssh')) {
+            this.items[idx].id = this.items[idx].name
+          } else if (this.$route.path.startsWith('/ldapsetting')) {
+            this.items[idx].id = this.items[idx].hostname
           }
         }
         if (this.items.length > 0) {
           this.resource = this.items[0]
-          this.treeSelected = this.treeView ? this.items[0] : {}
-        } else {
-          this.resource = {}
-          this.treeSelected = {}
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -617,7 +581,6 @@ export default {
       const self = this
       this.form = this.$form.createForm(this)
       this.formModel = {}
-      this.actionData = []
       if (action.component && action.api && !action.popup) {
         this.$router.push({ name: action.api })
         return
@@ -854,14 +817,7 @@ export default {
               this.$router.go(-1)
             } else {
               if (!hasJobId) {
-                // set action data for reload tree-view
-                if (this.treeView) {
-                  this.actionData.push(json)
-                }
                 this.fetchData()
-              } else {
-                this.$set(this.resource, 'isDel', true)
-                this.actionData.push(this.resource)
               }
             }
           }).catch(error => {
@@ -895,24 +851,6 @@ export default {
         this.loading = false
         this.selectedRowKeys = []
       }, 1000)
-    },
-    generateTreeData (treeData) {
-      const result = []
-      const rootItem = treeData
-
-      rootItem[0].title = rootItem[0].title ? rootItem[0].title : rootItem[0].name
-      rootItem[0].key = rootItem[0].id ? rootItem[0].id : 0
-
-      if (!rootItem[0].haschild) {
-        rootItem[0].isLeaf = true
-      }
-
-      result.push(rootItem[0])
-      return result
-    },
-    changeResource (resource) {
-      this.treeSelected = resource
-      this.resource = this.treeSelected
     },
     toggleLoading () {
       this.loading = !this.loading

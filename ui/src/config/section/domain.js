@@ -23,6 +23,7 @@ export default {
   resourceType: 'Domain',
   columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
   details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'vmlimit', 'iplimit', 'volumelimit', 'snapshotlimit', 'templatelimit', 'vpclimit', 'cpulimit', 'memorylimit', 'networklimit', 'primarystoragelimit', 'secondarystoragelimit'],
+  component: () => import('@/views/iam/DomainView.vue'),
   related: [{
     name: 'account',
     title: 'label.accounts',
@@ -56,7 +57,7 @@ export default {
       icon: 'plus',
       label: 'label.add.domain',
       listView: true,
-      dataView: true,
+      dataView: false,
       args: ['parentdomainid', 'name', 'networkdomain', 'domainid'],
       mapping: {
         parentdomainid: {

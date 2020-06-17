@@ -67,8 +67,7 @@ function generateRouterMap (section) {
           details: child.details,
           related: child.related,
           actions: child.actions,
-          treeView: child.treeView ? child.treeView : false,
-          tabs: child.treeView ? child.tabs : {}
+          tabs: child.tabs
         },
         component: component,
         hideChildrenInMenu: true,
