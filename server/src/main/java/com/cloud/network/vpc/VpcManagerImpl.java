@@ -1755,7 +1755,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return true;
             }
 
-            restartVPCNetworks(vpcId, callerAccount, callerUser, cleanUp);
+            restartVPCNetworks(vpcId, callerAccount, user, cleanUp);
 
             s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process without cleanup");
             if (!startVpc(vpcId, false)) {
