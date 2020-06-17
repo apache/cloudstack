@@ -1755,6 +1755,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return true;
             }
 
+            restartVPCNetworks(vpcId, callerAccount, callerUser, cleanUp);
+
             s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process without cleanup");
             if (!startVpc(vpcId, false)) {
                 s_logger.warn("Failed to start vpc as a part of VPC " + vpc + " restart process");
@@ -1768,6 +1770,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             final VpcVO vo = _vpcDao.findById(vpcId);
             vo.setRestartRequired(restartRequired);
             _vpcDao.update(vpc.getId(), vo);
+        }
+    }
+
+    private void restartVPCNetworks(long vpcId, Account callerAccount, User callerUser, boolean cleanUp) throws InsufficientCapacityException, ResourceUnavailableException {
+        List<? extends Network> networks = _ntwkModel.listNetworksByVpc(vpcId);
+        for (Network network: networks) {
+            if (network.isRestartRequired()) {
+                _ntwkMgr.restartNetwork(network.getId(), callerAccount, callerUser, cleanUp);
+            }
         }
     }
 
