@@ -85,6 +85,9 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
 
+    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup menu or not", since = "4.15.0.0")
+    private Boolean bootIntoSetup;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -103,6 +106,10 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
 
     public Long getClusterId() {
         return clusterId;
+    }
+
+    public Boolean getBootIntoSetup() {
+        return bootIntoSetup;
     }
 
     // ///////////////////////////////////////////////////

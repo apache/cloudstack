@@ -53,12 +53,19 @@ public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
             required=true, description="The ID of the virtual machine")
     private Long id;
 
+    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup menu or not", since = "4.15.0.0")
+    private Boolean bootIntoSetup;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;
+    }
+
+    public Boolean getBootIntoSetup() {
+        return bootIntoSetup;
     }
 
     /////////////////////////////////////////////////////

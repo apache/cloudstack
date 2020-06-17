@@ -993,7 +993,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<UserVmJoinVO> ssc = _userVmJoinDao.createSearchCriteria();
             ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            if (isRootAdmin) {
+                ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            }
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
             sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
         }
@@ -1305,7 +1307,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("networkName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("vpcName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
+            ssc.addOr("redundantState", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("instanceName", SearchCriteria.Op.SC, ssc);
         }
 

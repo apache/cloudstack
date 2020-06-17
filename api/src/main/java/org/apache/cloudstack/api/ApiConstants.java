@@ -805,8 +805,9 @@ public class ApiConstants {
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
 
-    public static final String BOOT_TYPE ="boottype";
-    public static final String BOOT_MODE ="bootmode";
+    public static final String BOOT_TYPE = "boottype";
+    public static final String BOOT_MODE = "bootmode";
+    public static final String BOOT_INTO_SETUP = "bootintosetup";
 
     public enum BootType {
         UEFI, BIOS;

@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.RegisterResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import java.util.Map;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 @APICommand(name = GetUserKeysCmd.APINAME,
             description = "This command allows the user to query the seceret and API keys for the account",

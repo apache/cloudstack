@@ -405,10 +405,10 @@ public class VmImportManagerImpl implements VmImportService {
         final Integer memory = instance.getMemory();
         Integer cpuSpeed = instance.getCpuSpeed() == null ? 0 : instance.getCpuSpeed();
         if (cpu == null || cpu == 0) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores for VM not valid"));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores for VM (%s) not valid", instance.getName()));
         }
         if (memory == null || memory == 0) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Memory for VM not valid", instance.getName()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Memory for VM (%s) not valid", instance.getName()));
         }
         if (serviceOffering.isDynamic()) {
             if (details.containsKey(VmDetailConstants.CPU_SPEED)) {
@@ -428,13 +428,13 @@ public class VmImportManagerImpl implements VmImportService {
             serviceOffering = serviceOfferingDao.getComputeOffering(serviceOffering, parameters);
         } else {
             if (!cpu.equals(serviceOffering.getCpu()) && !instance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOff)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering (%s) %d CPU cores does not matches VM CPU cores %d  and VM is not in powered off state (Power state: %s)", serviceOffering.getUuid(), serviceOffering.getCpu(), cpu, instance.getPowerState()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering (%s) %d CPU cores do not match VM CPU cores %d and VM is not in powered off state (Power state: %s)", serviceOffering.getUuid(), serviceOffering.getCpu(), cpu, instance.getPowerState()));
             }
             if (!memory.equals(serviceOffering.getRamSize()) && !instance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOff)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering (%s) %dMB memory does not matches VM memory %dMB and VM is not in powered off state (Power state: %s)", serviceOffering.getUuid(), serviceOffering.getRamSize(), memory, instance.getPowerState()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering (%s) %dMB memory does not match VM memory %dMB and VM is not in powered off state (Power state: %s)", serviceOffering.getUuid(), serviceOffering.getRamSize(), memory, instance.getPowerState()));
             }
             if (cpuSpeed != null && cpuSpeed > 0 && !cpuSpeed.equals(serviceOffering.getSpeed()) && !instance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOff)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering (%s) %dMHz CPU speed does not matches VM CPU speed %dMHz and VM is not in powered off state (Power state: %s)", serviceOffering.getUuid(), serviceOffering.getSpeed(), cpuSpeed, instance.getPowerState()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering (%s) %dMHz CPU speed does not match VM CPU speed %dMHz and VM is not in powered off state (Power state: %s)", serviceOffering.getUuid(), serviceOffering.getSpeed(), cpuSpeed, instance.getPowerState()));
             }
         }
         resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.cpu, new Long(serviceOffering.getCpu()));

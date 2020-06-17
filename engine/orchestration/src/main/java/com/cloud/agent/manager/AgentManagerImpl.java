@@ -49,7 +49,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
-import org.slf4j.MDC;
+import org.apache.log4j.MDC;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -388,8 +388,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 cmd.setContextParam("job", "job-" + job.getId());
             }
         }
-        if (MDC.get("logcontextid") != null && !MDC.get("logcontextid").isEmpty()) {
-            cmd.setContextParam("logid", MDC.get("logcontextid"));
+        String logcontextid = (String) MDC.get("logcontextid");
+        if (!Strings.isNullOrEmpty(logcontextid)) {
+            cmd.setContextParam("logid", logcontextid);
         }
     }
 
