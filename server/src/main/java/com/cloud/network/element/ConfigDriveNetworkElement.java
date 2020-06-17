@@ -340,12 +340,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     @Override
     public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
-        if (nic.isDefaultNic() && _networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
+        if (_networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
             LOG.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
-            final DataStore dataStore = findDataStore(vm, dest);
             try {
-                addConfigDriveDisk(vm, dataStore);
-            } catch (ResourceUnavailableException e) {
+                addPasswordAndUserdata(network, nic, vm, dest, context);
+            } catch (InsufficientCapacityException | ResourceUnavailableException e) {
                 LOG.error("Failed to add config disk drive due to: ", e);
                 return false;
             }
