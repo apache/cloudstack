@@ -68,7 +68,7 @@ export default {
       message: 'message.action.manage.cluster',
       dataView: true,
       defaultArgs: { managedstate: 'Managed' },
-      show: (record) => { return record.clustertype === 'CloudManaged' && ['PrepareUnmanaged', 'Unmanaged'].includes(record.state) }
+      show: (record) => { return record.managedstate !== 'Managed' }
     },
     {
       api: 'updateCluster',
@@ -77,7 +77,7 @@ export default {
       message: 'message.action.unmanage.cluster',
       dataView: true,
       defaultArgs: { managedstate: 'Unmanaged' },
-      show: (record) => { return record.clustertype === 'CloudManaged' && record.state === 'Enabled' }
+      show: (record) => { return record.managedstate === 'Managed' }
     },
     {
       api: 'enableOutOfBandManagementForCluster',
