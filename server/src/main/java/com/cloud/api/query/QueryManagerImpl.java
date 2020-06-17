@@ -3426,35 +3426,32 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        Integer count = uniqueTmplPair.second();
-        if (count.intValue() == 0) {
-            // empty result
-            return uniqueTmplPair;
-        }
-        List<TemplateJoinVO> uniqueTmpls = uniqueTmplPair.first();
-        int i = 0;
-        List<TemplateJoinVO> vrs = null;
-        if (showUnique) {
-            Long[] tzIds = new Long[uniqueTmpls.size()];
-            for (TemplateJoinVO v : uniqueTmpls) {
-                tzIds[i++] = v.getId();
-            }
-            vrs = _templateJoinDao.findByDistinctIds(tzIds);
-        } else {
-            String[] tzIds = new String[uniqueTmpls.size()];
-            for (TemplateJoinVO v : uniqueTmpls) {
-                tzIds[i++] = v.getTempZonePair();
-            }
-            vrs = _templateJoinDao.searchByTemplateZonePair(showRemovedTmpl, tzIds);
-        }
-
-        return new Pair<List<TemplateJoinVO>, Integer>(vrs, count);
+        return findTemplatesByIdOrTempZonePair(uniqueTmplPair, showRemovedTmpl, showUnique);
 
         // TODO: revisit the special logic for iso search in
         // VMTemplateDaoImpl.searchForTemplates and understand why we need to
         // specially handle ISO. The original logic is very twisted and no idea
         // about what the code was doing.
 
+    }
+
+    // findTemplatesByIdOrTempZonePair returns the templates with the given ids if showUnique is true, or else by the TempZonePair
+    private Pair<List<TemplateJoinVO>, Integer> findTemplatesByIdOrTempZonePair(Pair<List<TemplateJoinVO>, Integer> templateDataPair, boolean showRemoved, boolean showUnique) {
+        Integer count = templateDataPair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return templateDataPair;
+        }
+        List<TemplateJoinVO> templateData = templateDataPair.first();
+        List<TemplateJoinVO> templates = null;
+        if (showUnique) {
+            Long[] templateIds = templateData.stream().map(template -> template.getId()).toArray(Long[]::new);
+            templates = _templateJoinDao.findByDistinctIds(templateIds);
+        } else {
+            String[] templateZonePairs = templateData.stream().map(template -> template.getTempZonePair()).toArray(String[]::new);
+            templates = _templateJoinDao.searchByTemplateZonePair(showRemoved, templateZonePairs);
+        }
+        return new Pair<List<TemplateJoinVO>, Integer>(templates, count);
     }
 
     @Override

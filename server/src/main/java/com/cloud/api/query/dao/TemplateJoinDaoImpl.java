@@ -490,7 +490,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     @Override
     public List<TemplateJoinVO> findByDistinctIds(Long... ids) {
-        if (ids.length == 0) {
+        if (ids == null || ids.length == 0) {
             return new ArrayList<TemplateJoinVO>();
         }
         SearchCriteria<TemplateJoinVO> sc = tmpltIdsSearch.create();
