@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.account;
 
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;

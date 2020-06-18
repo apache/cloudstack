@@ -503,13 +503,12 @@ public class HostResponse extends BaseResponse {
         detailsCopy.remove("username");
         detailsCopy.remove("password");
 
-        if(detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
+        if (detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
             this.setUefiCapabilty(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_UEFI_ENABLE)));
             detailsCopy.remove(Host.HOST_UEFI_ENABLE);
         } else {
             this.setUefiCapabilty(new Boolean(false)); // in case of existing host which is not scanned for UEFI capability
         }
-
 
         this.details = detailsCopy;
     }
