@@ -3869,15 +3869,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void findHostAndMigrate(final String vmUuid, final Long newSvcOfferingId, final ExcludeList excludes) throws InsufficientCapacityException, ConcurrentOperationException,
+    public void findHostAndMigrate(final String vmUuid, final Long newSvcOfferingId, final Map<String, String> customParameters, final ExcludeList excludes) throws InsufficientCapacityException, ConcurrentOperationException,
     ResourceUnavailableException {
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null) {
             throw new CloudRuntimeException("Unable to find " + vmUuid);
         }
-
-        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        ServiceOfferingVO newServiceOffering = _offeringDao.findById(newSvcOfferingId);
+        if (newServiceOffering.isDynamic()) {
+            newServiceOffering.setDynamicFlag(true);
+            newServiceOffering = _offeringDao.getComputeOffering(newServiceOffering, customParameters);
+        }
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, newServiceOffering, null, null);
 
         final Long srcHostId = vm.getHostId();
         final Long oldSvcOfferingId = vm.getServiceOfferingId();

@@ -207,7 +207,7 @@ public interface VirtualMachineManager extends Manager {
     VirtualMachine reConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, ServiceOffering newServiceOffering, Map<String, String> customParameters, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
             InsufficientServerCapacityException;
 
-    void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
+    void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, Map<String, String> customParameters, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException;
 
     void migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException;
