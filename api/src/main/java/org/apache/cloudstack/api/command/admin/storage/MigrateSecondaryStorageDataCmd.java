@@ -101,6 +101,7 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
         MigrationResponse response = _imageStoreService.migrateData(this);
         response.setObjectName("imagestore");
         this.setResponseObject(response);
+        CallContext.current().setEventDetails(response.getMessage());
     }
 
     @Override

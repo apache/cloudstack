@@ -70,6 +70,7 @@ import com.cloud.projects.Project;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -319,6 +320,8 @@ public class EventTypes {
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
     public static final String EVENT_STORAGE_IP_RANGE_UPDATE = "STORAGE.IP.RANGE.UPDATE";
+
+    public static final String EVENT_IMAGE_STORE_DATA_MIGRATE = "IMAGE.STORE.MIGRATE.DATA";
 
     // Configuration Table
     public static final String EVENT_CONFIGURATION_VALUE_EDIT = "CONFIGURATION.VALUE.EDIT";
@@ -1008,6 +1011,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_POD_ROLLING_MAINTENANCE, PodResponse.class);
         entityEventDetails.put(EVENT_CLUSTER_ROLLING_MAINTENANCE, ClusterResponse.class);
         entityEventDetails.put(EVENT_HOST_ROLLING_MAINTENANCE, HostResponse.class);
+
+        entityEventDetails.put(EVENT_IMAGE_STORE_DATA_MIGRATE, ImageStore.class);
     }
 
     public static String getEntityForEvent(String eventName) {

@@ -35,6 +35,8 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -66,6 +68,7 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_IMAGE_STORE_DATA_MIGRATE, eventDescription = "migrating Image store data", async = true)
     public MigrationResponse migrateData(MigrateSecondaryStorageDataCmd cmd) {
         Long srcImgStoreId = cmd.getId();
         ImageStoreVO srcImageVO = imageStoreDao.findById(srcImgStoreId);
