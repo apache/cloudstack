@@ -327,6 +327,7 @@ public class ApiConstants {
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
+    public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SIZE = "size";
