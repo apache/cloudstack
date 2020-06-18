@@ -168,10 +168,7 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
         if (scope == null) {
             throw new InvalidParameterValueException("Invalid scope " + scopeStr);
         }
-        Pair<LoadBalancerConfigKey, String> res = LoadBalancerConfigKey.validate(scope, name, value);
-        if (res.second() != null) {
-            throw new InvalidParameterValueException(res.second());
-        }
+        LoadBalancerConfigKey configKey = validateParameters(scope, name, value);
 
         checkPermission(scope, networkId, vpcId, loadBalancerId);
 
@@ -182,7 +179,7 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             } else {
                 throw new InvalidParameterValueException("config " + name + " already exists, please add forced=true or update it instead");           }
         }
-        LoadBalancerConfigVO config = _lbConfigDao.persist(new LoadBalancerConfigVO(scope, networkId, vpcId, loadBalancerId, res.first(), value));
+        LoadBalancerConfigVO config = _lbConfigDao.persist(new LoadBalancerConfigVO(scope, networkId, vpcId, loadBalancerId, configKey, value));
 
         applyLbConfigsForNetwork(config.getNetworkId(), config.getVpcId(), config.getLoadBalancerId());
 
@@ -215,10 +212,7 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             throw new InvalidParameterValueException("Cannot find load balancer config by id " + id);
         }
         //validate parameters
-        Pair<LoadBalancerConfigKey, String> res = LoadBalancerConfigKey.validate(config.getScope(), config.getName(), value);
-        if (res.second() != null) {
-            throw new InvalidParameterValueException(res.second());
-        }
+        LoadBalancerConfigKey configKey = validateParameters(config.getScope(), config.getName(), value);
 
         checkPermission(config);
         config.setValue(value);
@@ -246,24 +240,29 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
         if (scope == null) {
             throw new InvalidParameterValueException("Invalid scope " + scopeStr);
         }
-        checkPermission(scope, networkId, vpcId, loadBalancerId);
-
         List<LoadBalancerConfigVO> configs = new ArrayList<LoadBalancerConfigVO>();
         for (Object obj : configList.keySet()) {
             String name = String.valueOf(obj);
             String value = (String) configList.get(name);
-            Pair<LoadBalancerConfigKey, String> res = LoadBalancerConfigKey.validate(scope, name, value);
-            if (res.second() != null) {
-                throw new InvalidParameterValueException(res.second());
-            }
-            configs.add(new LoadBalancerConfigVO(scope, networkId, vpcId, loadBalancerId, res.first(), value));
+            LoadBalancerConfigKey configKey = validateParameters(scope, name, value);
+            configs.add(new LoadBalancerConfigVO(scope, networkId, vpcId, loadBalancerId, configKey, value));
         }
+
+        checkPermission(scope, networkId, vpcId, loadBalancerId);
 
         configs = _lbConfigDao.saveConfigs(configs);
 
         applyLbConfigsForNetwork(networkId, vpcId, loadBalancerId);
 
         return configs;
+    }
+
+    private LoadBalancerConfigKey validateParameters(Scope scope, String name, String value) {
+        Pair<LoadBalancerConfigKey, String> res = LoadBalancerConfigKey.validate(scope, name, value);
+        if (res.second() != null) {
+            throw new InvalidParameterValueException(res.second());
+        }
+        return res.first();
     }
 
     private void checkPermission(LoadBalancerConfigVO config) {
