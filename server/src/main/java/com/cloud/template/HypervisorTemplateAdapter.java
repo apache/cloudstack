@@ -178,6 +178,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
     @Override
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
+        if(s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("registering template for %s",cmd.getUrl()));
+        }
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url);

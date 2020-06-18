@@ -189,6 +189,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "KVM Only: true if template is directly downloaded to Primary Storage bypassing Secondary Storage")
     private Boolean directDownload;
 
+    @SerializedName(ApiConstants.DEPLOY_AS_IS)
+    @Param(description = "Vmware Only: true if template is deployed without orchestrating disks and networks but \"as-is\" defined in the template.")
+    private Boolean deployAsIs;
+
     @SerializedName("parenttemplateid")
     @Param(description = "if Datadisk template, then id of the root disk template this template belongs to")
     private String parentTemplateId;
@@ -385,6 +389,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public Boolean getDirectDownload() {
         return directDownload;
+    }
+
+    public void setDeployAsIs(Boolean deployAsIs) {
+        this.deployAsIs = deployAsIs;
     }
 
     public void setParentTemplateId(String parentTemplateId) {

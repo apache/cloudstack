@@ -17,10 +17,32 @@
 package org.apache.cloudstack.api.command.admin.template;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
 @APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {}
+public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {
+
+    /////////////////////////////////////////////////////
+    //////////////// +API parameter /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name= ApiConstants.DEPLOY_AS_IS,
+            type = CommandType.BOOLEAN,
+            description = "true if template should not strip and define disks and networks but leave those to the template definition",
+            since = "4.15"
+    )
+    private Boolean deployAsIs;
+
+    /////////////////////////////////////////////////////
+    /////////////////// +Accessor ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Boolean isDeployAsIs() {
+        return (deployAsIs == null) ? false : deployAsIs;
+    }
+}

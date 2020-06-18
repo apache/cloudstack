@@ -52,6 +52,7 @@ public class TemplateProfile {
     Boolean isDynamicallyScalable;
     TemplateType templateType;
     Boolean directDownload;
+    Boolean deployAsIs;
     Long size;
 
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
@@ -91,11 +92,10 @@ public class TemplateProfile {
         else this.zoneIdList = null;
     }
 
-    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
-            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneId,
-
-            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details,
-            Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType, Boolean directDownload) {
+    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url, Boolean isPublic,
+            Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneId, HypervisorType hypervisorType, String accountName, Long domainId,
+            Long accountId, String chksum, Boolean bootable, String templateTag, Map details, Boolean sshKeyEnabled, Boolean isDynamicallyScalable, TemplateType templateType,
+            Boolean directDownload, Boolean deployAsIs) {
         this(templateId,
             userId,
             name,
@@ -122,6 +122,7 @@ public class TemplateProfile {
         this.isDynamicallyScalable = isDynamicallyScalable;
         this.templateType = templateType;
         this.directDownload = directDownload;
+        this.deployAsIs = deployAsIs;
     }
 
     public Long getTemplateId() {
@@ -168,16 +169,8 @@ public class TemplateProfile {
         return passwordEnabled;
     }
 
-    public void setPasswordEnabled(Boolean enabled) {
-        this.passwordEnabled = enabled;
-    }
-
     public Boolean isRequiresHVM() {
         return requiresHvm;
-    }
-
-    public void setRequiresHVM(Boolean hvm) {
-        this.requiresHvm = hvm;
     }
 
     public String getUrl() {
@@ -224,10 +217,6 @@ public class TemplateProfile {
         return guestOsId;
     }
 
-    public void setGuestOsId(Long id) {
-        this.guestOsId = id;
-    }
-
     public List<Long> getZoneIdList() {
         return zoneIdList;
     }
@@ -260,10 +249,6 @@ public class TemplateProfile {
         return chksum;
     }
 
-    public void setCheckSum(String chksum) {
-        this.chksum = chksum;
-    }
-
     public Boolean isBootable() {
         return this.bootable;
     }
@@ -284,10 +269,6 @@ public class TemplateProfile {
         return templateTag;
     }
 
-    public void setTemplateTag(String templateTag) {
-        this.templateTag = templateTag;
-    }
-
     public Map getDetails() {
         return this.details;
     }
@@ -296,20 +277,12 @@ public class TemplateProfile {
         this.details = details;
     }
 
-    public void setSshKeyEnabled(Boolean enabled) {
-        this.sshKeyEnbaled = enabled;
-    }
-
     public Boolean isSshKeyEnabled() {
         return this.sshKeyEnbaled;
     }
 
     public Boolean IsDynamicallyScalable() {
         return this.isDynamicallyScalable;
-    }
-
-    public void setScalabe(Boolean isDynamicallyScalabe) {
-        this.isDynamicallyScalable = isDynamicallyScalabe;
     }
 
     public TemplateType getTemplateType() {
@@ -330,5 +303,9 @@ public class TemplateProfile {
 
     public void setSize(Long size) {
         this.size = size;
+    }
+
+    public boolean isDeployAsIs() {
+        return deployAsIs == null ? false : deployAsIs;
     }
 }
