@@ -506,6 +506,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
         if (sslOffloading) {
             sb.append(" ssl crt /etc/ssl/private/").append(poolName).append(".pem");
+            // check for http2 support
+            if ("true".equalsIgnoreCase(lbConfigsMap.get(LoadBalancerConfigKey.LbHttp2.key()))) {
+                sb.append(" alpn h2,http/1.1");
+            }
             sb.append("\n\thttp-request add-header X-Forwarded-Proto https");
         }
         frontendConfigs.add(sb.toString());

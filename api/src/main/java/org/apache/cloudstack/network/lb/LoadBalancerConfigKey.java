@@ -41,6 +41,8 @@ public enum LoadBalancerConfigKey {
 
     LbHttp(Category.LoadBalancer, "lb.http", "LB http enabled/disabled", Boolean.class, "true for port 80; false for other ports", "If LB is http, default is 'true' for port 80 and 'false' for others'", Scope.LoadBalancerRule),
 
+    LbHttp2(Category.LoadBalancer, "lb.http2", "Enable/disable HTTP2 support", Boolean.class, "false", "Enable or disable HTTP2 support in HAproxy", Scope.LoadBalancerRule),
+
     LbHttpKeepalive(Category.LoadBalancer, "lb.http.keepalive", "LB http keepalive enabled/disabled", Boolean.class, "<Inherited from network offering>", "Enable or disable HTTP keep-alive, default is inherited from network offering", Scope.LoadBalancerRule),
 
     LbTransparent(Category.LoadBalancer, "lb.transparent.mode", "LB transparent mode enabled/disabled", Boolean.class, "false", "Enable or disable transparent mode, default is 'false'", Scope.LoadBalancerRule),
