@@ -185,6 +185,14 @@ export default {
           args: ['name', 'description']
         },
         {
+          api: 'updateSecurityGroup',
+          icon: 'edit',
+          label: 'label.edit',
+          dataView: true,
+          args: ['name'],
+          show: (record) => { return record.name !== 'default' }
+        },
+        {
           api: 'deleteSecurityGroup',
           icon: 'delete',
           label: 'label.action.delete.security.group',
