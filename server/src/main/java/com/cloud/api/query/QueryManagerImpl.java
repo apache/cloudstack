@@ -3624,25 +3624,30 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (domainId != null) {
                 SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId,
                         affinityGroupName, affinityGroupType, keyword);
-                affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
+                List<AffinityGroupJoinVO> groups = listDomainLevelAffinityGroups(scDomain, searchFilter, domainId);
+                affinityGroups.addAll(groups);
+                count += groups.size();
             } else {
 
                 for (Long permAcctId : permittedAccounts) {
                     Account permittedAcct = _accountDao.findById(permAcctId);
                     SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId,
                             affinityGroupName, affinityGroupType, keyword);
-
-                    affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, permittedAcct.getDomainId()));
+                    List<AffinityGroupJoinVO> groups = listDomainLevelAffinityGroups(scDomain, searchFilter, permittedAcct.getDomainId());
+                    affinityGroups.addAll(groups);
+                    count += groups.size();
                 }
             }
         } else if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
             // list all domain level affinity groups for the domain admin case
             SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
                     affinityGroupType, keyword);
-            affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
+            List<AffinityGroupJoinVO> groups = listDomainLevelAffinityGroups(scDomain, searchFilter, domainId);
+            affinityGroups.addAll(groups);
+            count += groups.size();
         }
 
-        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, affinityGroups.size());
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, count);
 
     }
 
