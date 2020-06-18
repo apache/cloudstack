@@ -1605,7 +1605,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String role = cmd.getRole();
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
-
+        Long projectRoleId = cmd.getProjectRoleId();
         // long projectId, String accountName, String role, Long startIndex,
         // Long pageSizeVal) {
         Account caller = CallContext.current().getCallingAccount();
@@ -1646,6 +1646,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (accountName != null) {
             sc.setParameters("accountName", accountName);
+        }
+
+        if (projectRoleId != null) {
+            sc.setParameters("projectRoleId", projectRoleId);
         }
 
         if (userId != null) {

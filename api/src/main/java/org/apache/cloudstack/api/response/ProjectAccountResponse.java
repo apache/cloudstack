@@ -50,8 +50,12 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     private Short accountType;
 
     @SerializedName(ApiConstants.USER_ID)
-    @Param(description = "aId of the user")
+    @Param(description = "Id of the user")
     private String userId;
+
+    @SerializedName(ApiConstants.PROJECT_ROLE_ID)
+    @Param(description = "Id of the project role associated with the account/user")
+    private String projectRoleId;
 
     @SerializedName(ApiConstants.ROLE)
     @Param(description = "account role in the project (regular,owner)")
@@ -103,6 +107,10 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     }
 
     public void setUserId(String userId) { this.userId = userId; }
+
+    public void setProjectRoleId(String projectRoleId) {
+        this.projectRoleId = projectRoleId;
+    }
 
     public void setUsers(List<UserResponse> users) {
         this.users = users;

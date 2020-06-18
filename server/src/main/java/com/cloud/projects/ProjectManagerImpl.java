@@ -20,6 +20,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TimeZone;
@@ -243,7 +244,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 Project project = _projectDao.persist(new ProjectVO(name, displayText, ownerFinal.getDomainId(), projectAccount.getId()));
 
                 //assign owner to the project
-                assignAccountToProject(project, ownerFinal.getId(), ProjectAccount.Role.Admin, (finalUser != null ? finalUser.getId() : null),  null);
+                assignAccountToProject(project, ownerFinal.getId(), ProjectAccount.Role.Admin,
+                        Optional.ofNullable(finalUser).map(User::getId).orElse(null),  null);
 
         if (project != null) {
             CallContext.current().setEventDetails("Project id=" + project.getId());
@@ -516,7 +518,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             if (userId == null) {
                 throw new InvalidParameterValueException("User information (ID) is required to add user to the project");
             }
-            if (assignUserToProject(project, userId, user.getAccountId(), projectRole, role != null ? role.getId() : null) != null) {
+            if (assignUserToProject(project, userId, user.getAccountId(), projectRole,
+                    Optional.ofNullable(role).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             }
             s_logger.warn("Failed to add user to project with id: " + projectId);
@@ -777,7 +780,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             if (account == null) {
                 throw new InvalidParameterValueException("Account information is required for assigning account to the project");
             }
-            if (assignAccountToProject(project, account.getId(), projectRoleType, null, projectRole != null ? projectRole.getId() : null) != null) {
+            if (assignAccountToProject(project, account.getId(), projectRoleType, null,
+                    Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
                 s_logger.warn("Failed to add account " + accountName + " to project id=" + projectId);
@@ -1260,7 +1264,6 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
         return sb.toString();
     }
-
     class EmailInvite {
         private Session _smtpSession;
         private final String _smtpHost;

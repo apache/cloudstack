@@ -68,7 +68,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
     private Long projectRoleId;
 
     @Parameter(name = ApiConstants.ROLE_TYPE, type = BaseCmd.CommandType.STRING,
-            description = "Project role type to be assigned to the user - Admin/Regular")
+            description = "Project role type to be assigned to the user - Admin/Regular; default: Regular")
     private String roleType;
 
     /////////////////////////////////////////////////////

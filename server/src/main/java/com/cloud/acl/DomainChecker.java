@@ -23,7 +23,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -42,9 +41,6 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectAccount;
-import com.cloud.projects.ProjectAccountVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -133,9 +129,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT && _projectMgr.canAccessProjectAccount(caller, owner.getId())) {
                     return true;
                 }
-
-                // TODO: verify??
-                checkProjectAccess(owner);
 
                 // since the current account is not the owner of the template, check the launch permissions table to see if the
                 // account can launch a VM from this template
@@ -419,35 +412,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
         }
         return false;
-    }
-
-    private void checkProjectAccess(Account caller) {
-        User user = CallContext.current().getCallingUser();
-        Project project = CallContext.current().getProject();
-        if (project == null) {
-            return;
-        }
-        ProjectAccountVO projectAccountVO = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
-        if (projectAccountVO != null) {
-            if (isProjectAdmin(projectAccountVO)) {
-                return;
-            }
-            throw new PermissionDeniedException(String.format("User %s of account %s doesn't have permission in project %s", user.getId(), caller.getId(), project.getId()));
-        }
-        projectAccountVO = _projectAccountDao.findByProjectIdAccountId(project.getId(), caller.getAccountId());
-        if (projectAccountVO != null) {
-            if (isProjectAdmin(projectAccountVO)) {
-                return;
-            }
-            throw new PermissionDeniedException(String.format("Account %s doesn't have permission in project %s", caller.getId(), project.getId()));
-        }
-    }
-
-    private boolean isProjectAdmin(ProjectAccountVO projectAccount) {
-        if (projectAccount.getAccountRole() != ProjectAccount.Role.Admin) {
-            throw new PermissionDeniedException("Current user is not permitted to perform the operation in the project");
-        }
-        return true;
     }
 
     @Override

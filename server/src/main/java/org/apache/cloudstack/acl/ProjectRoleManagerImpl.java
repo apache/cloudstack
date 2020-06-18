@@ -154,12 +154,10 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             LOGGER.warn(String.format("Project Role not found [id=%s]", roleId));
             return null;
         }
-        Account currentAcc = getCurrentAccount();
         if (!(role.getProjectId().equals(projectId))) {
             LOGGER.warn(String.format("Project role : %s doesn't belong to the project" + role.getName()));
             return null;
         }
-
         return role;
     }
 

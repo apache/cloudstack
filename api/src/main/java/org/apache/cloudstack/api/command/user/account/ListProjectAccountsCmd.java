@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.account;
 
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -26,6 +23,9 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ProjectRoleResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
@@ -52,6 +52,9 @@ public class ListProjectAccountsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ROLE, type = CommandType.STRING, description = "list accounts of the project by role")
     private String role;
 
+    @Parameter(name = ApiConstants.PROJECT_ROLE_ID, type = CommandType.UUID, entityType = ProjectRoleResponse.class, description = "list accounts of the project by project role id")
+    private Long projectRoleId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -69,6 +72,10 @@ public class ListProjectAccountsCmd extends BaseListCmd {
     }
 
     public Long getUserId() { return userId; }
+
+    public Long getProjectRoleId() {
+        return projectRoleId;
+    }
 
     @Override
     public String getCommandName() {

@@ -31,7 +31,6 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -157,7 +156,6 @@ import com.cloud.exception.RequestLimitException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnavailableCommandException;
-import com.cloud.projects.Project;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.user.Account;
@@ -831,13 +829,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
-    private boolean isSpecificAPI(String commandName) {
-        List<String> commands = Arrays.asList("suspendProject", "updateProject", "activateProject", "deleteProject");
-        if (commands.contains(commandName)) {
-            return true;
-        }
-        return false;
-    }
     @Override
     public boolean verifyRequest(final Map<String, Object[]> requestParameters, final Long userId, InetAddress remoteAddress) throws ServerApiException {
         try {
@@ -857,22 +848,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // if userId not null, that mean that user is logged in
             if (userId != null) {
                 final User user = ApiDBUtils.findUserById(userId);
-                for (Map.Entry<String, Object[]> entry: requestParameters.entrySet()) {
-                    if (entry.getKey().equals(ApiConstants.PROJECT_ID) || isSpecificAPI(commandName)) {
-                        String projectId = null;
-                        if (isSpecificAPI(commandName)) {
-                            projectId = String.valueOf(requestParameters.entrySet().stream()
-                                    .filter(e -> e.getKey().equals(ApiConstants.ID))
-                                    .map(Map.Entry::getValue).findFirst().get()[0]);
-                        } else {
-                            projectId = String.valueOf(entry.getValue()[0]);
-                        }
-                        Project project = projectDao.findByUuid(projectId);
-                        if (project != null) {
-                            CallContext.current().setProject(project);
-                        }
-                    }
-                }
                 return commandAvailable(remoteAddress, commandName, user);
             } else {
                 // check against every available command to see if the command exists or not

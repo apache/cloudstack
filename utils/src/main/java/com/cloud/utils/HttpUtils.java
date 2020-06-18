@@ -19,13 +19,14 @@
 
 package com.cloud.utils;
 
-import org.apache.log4j.Logger;
+import java.io.IOException;
+import java.util.Map;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 public class HttpUtils {
 

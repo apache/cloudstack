@@ -52,7 +52,7 @@ public class ProjectAccountJoinDaoImpl extends GenericDaoBase<ProjectAccountJoin
 
         projectAccountResponse.setProjectId(proj.getProjectUuid());
         projectAccountResponse.setProjectName(proj.getProjectName());
-
+        projectAccountResponse.setProjectRoleId(proj.getProjectRoleUuid());
         projectAccountResponse.setAccountId(proj.getAccountUuid());
         projectAccountResponse.setAccountName(proj.getAccountName());
         projectAccountResponse.setUserId(proj.getUserUuid());

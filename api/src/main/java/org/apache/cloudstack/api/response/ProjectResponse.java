@@ -19,14 +19,13 @@ package org.apache.cloudstack.api.response;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.projects.Project;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Project.class)
 public class ProjectResponse extends BaseResponse implements ResourceLimitAndCountResponse {
