@@ -232,13 +232,6 @@ export default {
       }],
       actions: [
         {
-          api: 'associateIpAddress',
-          icon: 'plus',
-          label: 'label.acquire.new.ip',
-          listView: true,
-          args: ['networkid']
-        },
-        {
           api: 'enableStaticNat',
           icon: 'plus-circle',
           label: 'label.action.enable.static.nat',
