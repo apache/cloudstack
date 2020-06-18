@@ -2142,6 +2142,7 @@
 "message.acquire.new.ip": "Please confirm that you would like to acquire a new IP for this network.",
 "message.acquire.new.ip.vpc": "Please confirm that you would like to acquire a new IP for this VPC.",
 "message.acquire.public.ip": "Please select a zone from which you want to acquire your new IP from.",
+"message.action.acquire.ip": "Please confirm that you want to acquire new IP",
 "message.action.cancel.maintenance": "Your host has been successfully canceled for maintenance. This process can take up to several minutes.",
 "message.action.cancel.maintenance.mode": "Please confirm that you want to cancel this maintenance.",
 "message.action.change.service.warning.for.instance": "Your instance must be stopped before attempting to change its current service offering.",
