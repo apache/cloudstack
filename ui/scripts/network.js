@@ -4119,6 +4119,9 @@
                                                         });
 
                                                         // Get SSL Certificate data
+                                                        if (lbRule.protocol != "ssl") {
+                                                            lbRule._hideFields.push('sslcertificate');
+                                                        };
                                                         $.ajax({
                                                             url: createURL('listSslCerts'),
                                                             data: {
@@ -4127,8 +4130,18 @@
                                                             },
                                                             async: false,
                                                             success: function(json) {
-                                                                if (json.listsslcertsresponse != null) {
-                                                                    lbRule._hideFields.push('sslcertificate');
+                                                                var sslcert = json.listsslcertsresponse.sslcert ?
+                                                                    json.listsslcertsresponse.sslcert[0] : null;
+
+                                                                if (sslcert) {
+                                                                    sslCertData = {
+                                                                        id: sslcert.id,
+                                                                        lbRuleID: lbRule.id
+                                                                    };
+                                                                } else {
+                                                                    sslCertData = {
+                                                                        lbRuleID: lbRule.id
+                                                                    };
                                                                 }
                                                             }
                                                         });
@@ -4188,6 +4201,7 @@
                                                                 name: 7
                                                             },
                                                             sticky: stickyData,
+                                                            sslcertificate: sslCertData,
                                                             autoScale: {
                                                                 lbRuleID: lbRule.id
                                                             }

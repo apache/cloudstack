@@ -67,7 +67,7 @@
                                         data: $.map(items, function(item) {
                                                 return {
                                                     id: item.id,
-                                                    description: item.id
+                                                    description: item.name
                                                 };
                                             })
                                     });
@@ -86,18 +86,18 @@
                         fields: certid
                     },
                     after: function(args) {
-                        // Remove fields not applicable to sticky method
+                        // Remove fields not applicable to certificate
                         args.$form.find('.form-item:hidden').remove();
 
                         var data = cloudStack.serializeForm(args.$form);
 
-                        /* $item indicates that this is an existing sticky rule;
-               re-create sticky rule with new parameters */
+                        /* $item indicates that this is an existing certificate;
+                           remove it and assign new certificate */
                         if ($item) {
                             var $loading = $('<div>').addClass('loading-overlay');
 
                             $loading.prependTo($item);
-                            cloudStack.lbStickyPolicy.actions.recreate(
+                            cloudStack.lbCertificatePolicy.actions.recreate(
                                 $item.data('multi-custom-data').id,
                                 $item.data('multi-custom-data').lbRuleID,
                                 data,
@@ -145,19 +145,19 @@
                     }
                 });
             },
-            'delete': function(stickyRuleID, complete, error) {
+            'delete': function(lbRuleID, complete, error) {
                 $.ajax({
-                    url: createURL('deleteLBStickinessPolicy'),
+                    url: createURL('removeCertFromLoadBalancer'),
                     data: {
-                        id: stickyRuleID
+                        lbruleid: lbRuleID
                     },
                     success: function(json) {
                         cloudStack.ui.notifications.add({
-                                desc: 'Remove previous LB sticky rule',
+                                desc: 'Remove previous LB Certificate',
                                 section: 'Network',
                                 poll: pollAsyncJobResult,
                                 _custom: {
-                                    jobId: json.deleteLBstickinessrruleresponse.jobid
+                                    jobId: json.removecertfromloadbalancerresponse.jobid
                                 }
                             },
                             complete, {},
@@ -172,9 +172,9 @@
                     }
                 });
             },
-            recreate: function(stickyRuleID, lbRuleID, data, complete, error) {
-                var addStickyPolicy = function() {
-                    cloudStack.lbStickyPolicy.actions.add(
+            recreate: function(certId, lbRuleID, data, complete, error) {
+                var addCertificatePolicy = function() {
+                    cloudStack.lbCertificatePolicy.actions.add(
                         lbRuleID,
                         data,
                         complete,
@@ -182,11 +182,19 @@
                     );
                 };
 
-                // Delete existing rule
-                if (data.methodname !== 'None') {
-                    addStickyPolicy();
+                if (certId && certId == data.certificate) {
+                    cloudStack.dialog.notice({
+                      message: _l('Certificate is not changed')
+                    });
+                    $(window).trigger('cloudStack.fullRefresh');
                 } else {
-                    cloudStack.lbStickyPolicy.actions['delete'](stickyRuleID, complete, error);
+                    if (certId) {
+                        // Delete existing certificate
+                        cloudStack.lbCertificatePolicy.actions['delete'](lbRuleID, complete, error);
+                        setTimeout(addCertificatePolicy, 2000);
+                    } else {
+                        addCertificatePolicy();
+                    }
                 }
             }
         }
