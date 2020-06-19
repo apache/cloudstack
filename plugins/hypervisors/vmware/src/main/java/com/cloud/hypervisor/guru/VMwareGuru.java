@@ -198,7 +198,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             "When set to true this will enable nested virtualization per vm", true, ConfigKey.Scope.Global, null);
 
     public static final ConfigKey<Boolean> VmwareImplementAsIsAndReconsiliate = new ConfigKey<Boolean>(Boolean.class, "vmware.dont.orchestrate.but.reconsiliate", "Advanced", "false",
-            "When set to true OVAs will be deployed as is to then discover disk.]/net/etc", true, ConfigKey.Scope.Global, null);
+            "When set to true OVAs will be deployed as is to then discover disk/net/etc", true, ConfigKey.Scope.Global, null);
 
     @Override public HypervisorType getHypervisorType() {
         return HypervisorType.VMware;

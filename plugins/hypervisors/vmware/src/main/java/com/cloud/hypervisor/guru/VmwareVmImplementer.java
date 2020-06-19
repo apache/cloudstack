@@ -61,6 +61,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -70,7 +71,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 class VmwareVmImplementer {
-    private static final Logger LOG = Logger.getLogger(VmwareVmImplementer.class);
+    private static final Logger LOGGER = Logger.getLogger(VmwareVmImplementer.class);
 
     @Inject
     DomainRouterDao domainRouterDao;
@@ -120,13 +121,27 @@ class VmwareVmImplementer {
         // FR37 if VmwareImplementAsIsAndReconsiliate add secondary storage or some other encoding of the OVA file to the start command,
         // FR37 so the url for the original OVA can be used for deployment
         if (deployOvaAsIs) {
-            if (LOG.isTraceEnabled()) {
+            if (LOGGER.isTraceEnabled()) {
                 // FR37 todo MAYBE add flag for deploy as is TO
 
-                // FR37 TODO add url for template in TO
-                to.setTemplateLocation(vm.getTemplate().getUrl());
+                // FR37 TODO add url for template in TO ???
+                // FR37 or the OVF file
+                // FR37 actually pass the location the ovf will found once we get to it ????
+                // FR37 secStor/template/tmpl/<account>/<template>/<name>.ovf.orig
+                String relativeLocation = String.format("template%stmpl%s%s%s%s%s%s",
+                        File.separator,
+                        File.separator,
+                        vm.getTemplate().getAccountId(),
+                        File.separator,
+                        vm.getTemplate().getId(),
+                        File.separator,
+                        vm.getTemplate().getName());
+
+                        to.setTemplateLocation(relativeLocation);
                 // FR37 TODO add usefull stuff in message
-                LOG.trace("deploying OVA as is.");
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("deploying OVA as is from %s.");
+                }
             }
         }
         Map<String, String> details = to.getDetails();
@@ -145,7 +160,7 @@ class VmwareVmImplementer {
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    LOG.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
+                    LOGGER.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
@@ -157,7 +172,7 @@ class VmwareVmImplementer {
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    LOG.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
+                    LOGGER.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
@@ -205,9 +220,9 @@ class VmwareVmImplementer {
     }
 
     private void setDetails(VirtualMachineTO to, Map<String, String> details) {
-        if (LOG.isTraceEnabled()) {
+        if (LOGGER.isTraceEnabled()) {
             for (String key: details.keySet()) {
-                LOG.trace(String.format("Detail for VM %s: %s => %s",to.getName(), key, details.get(key)));
+                LOGGER.trace(String.format("Detail for VM %s: %s => %s",to.getName(), key, details.get(key)));
             }
         }
         to.setDetails(details);
@@ -341,7 +356,7 @@ class VmwareVmImplementer {
                 String ovfPropKey = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
                 TemplateOVFPropertyVO templateOVFPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), ovfPropKey);
                 if (templateOVFPropertyVO == null) {
-                    LOG.warn(String.format("OVF property %s not found on template, discarding", ovfPropKey));
+                    LOGGER.warn(String.format("OVF property %s not found on template, discarding", ovfPropKey));
                     continue;
                 }
                 String ovfValue = details.get(detailKey);
@@ -422,8 +437,8 @@ class VmwareVmImplementer {
         Boolean globalNestedVPerVMEnabled = getGlobalNestedVPerVMEnabled();
 
         Boolean shouldEnableNestedVirtualization = shouldEnableNestedVirtualization(globalNestedVirtualisationEnabled, globalNestedVPerVMEnabled, localNestedV);
-        if(LOG.isDebugEnabled()) {
-            LOG.debug(String.format(
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format(
                     "Due to '%B'(globalNestedVirtualisationEnabled) and '%B'(globalNestedVPerVMEnabled) I'm adding a flag with value %B to the vm configuration for Nested Virtualisation.",
                     globalNestedVirtualisationEnabled,
                     globalNestedVPerVMEnabled,
