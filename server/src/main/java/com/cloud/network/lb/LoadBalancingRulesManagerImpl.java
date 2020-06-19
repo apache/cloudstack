@@ -1176,7 +1176,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_LB_CERT_ASSIGN, eventDescription = "assigning certificate to load balancer", async = true)
-    public boolean assignCertToLoadBalancer(long lbRuleId, Long certId) {
+    public boolean assignCertToLoadBalancer(long lbRuleId, Long certId, boolean forced) {
         CallContext caller = CallContext.current();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(lbRuleId));
@@ -1203,8 +1203,13 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         //check if the lb is already bound
         LoadBalancerCertMapVO certMapRule = _lbCertMapDao.findByLbRuleId(loadBalancer.getId());
-        if (certMapRule != null)
-            throw new InvalidParameterValueException("Another certificate is already bound to the LB");
+        if (certMapRule != null) {
+            if (! forced) {
+                throw new InvalidParameterValueException("Another certificate is already bound to the LB");
+            }
+            s_logger.debug("Another certificate is already bound to the LB, removing it");
+            removeCertFromLoadBalancer(lbRuleId);
+        }
 
         //check for correct port
         if (loadBalancer.getLbProtocol() == null || !(loadBalancer.getLbProtocol().equals(NetUtils.SSL_PROTO)))

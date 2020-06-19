@@ -65,15 +65,20 @@
                                     var items = json.listsslcertsresponse.sslcert;
                                     args.response.success({
                                         data: $.map(items, function(item) {
-                                                return {
-                                                    id: item.id,
-                                                    description: item.name
-                                                };
-                                            })
+                                            return {
+                                                id: item.id,
+                                                description: item.name
+                                            };
+                                        })
                                     });
                                 }
                             });
                         }
+                    },
+                    forced: {
+                       label: 'Force Assign',
+                       isBoolean: true,
+                       isChecked: false
                     }
                 };
 
@@ -83,7 +88,14 @@
                     form: {
                         title: 'Configure Certificate',
                         desc: 'Please complete the following fields',
-                        fields: certid
+                        fields: certid,
+                        preFilter: function(args) {
+                            if ($item) {
+                                var certId = $item.data('multi-custom-data').id;
+                                var $cert = args.$form.find('select[name=certificate]');
+                                $cert.val(certId);
+                            }
+                        }
                     },
                     after: function(args) {
                         // Remove fields not applicable to certificate
@@ -123,7 +135,7 @@
 
                 $.ajax({
                     url: createURL('assignCertToLoadBalancer'),
-                    data: {certid: data.certificate, lbruleid: lbRuleID},
+                    data: {certid: data.certificate, lbruleid: lbRuleID, forced: data.forced == "on"},
                     success: function(json) {
                         cloudStack.ui.notifications.add({
                                 desc: 'Add new LB Certificate',
@@ -188,13 +200,7 @@
                     });
                     $(window).trigger('cloudStack.fullRefresh');
                 } else {
-                    if (certId) {
-                        // Delete existing certificate
-                        cloudStack.lbCertificatePolicy.actions['delete'](lbRuleID, complete, error);
-                        setTimeout(addCertificatePolicy, 2000);
-                    } else {
-                        addCertificatePolicy();
-                    }
+                    addCertificatePolicy();
                 }
             }
         }

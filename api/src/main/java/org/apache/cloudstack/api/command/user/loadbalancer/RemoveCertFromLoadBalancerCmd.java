@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -89,5 +90,29 @@ public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd {
 
     public Long getLbRuleId() {
         return this.lbRuleId;
+    }
+
+    @Override
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.LoadBalancerRule;
+    }
+
+    @Override
+    public Long getInstanceId() {
+        return lbRuleId;
+    }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getLbRuleId());
+        if (lb == null) {
+            return null;
+        }
+        return lb.getNetworkId();
     }
 }

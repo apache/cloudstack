@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -60,11 +61,16 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
                description = "the ID of the certificate")
     Long certId;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false,
+        description = "Force assign the certificate. If there is a certificate bound to the LB, it will be removed")
+    private Boolean forced;
+
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException {
         //To change body of implemented methods use File | Settings | File Templates.
-        if (_lbService.assignCertToLoadBalancer(getLbRuleId(), getCertId())) {
+        if (_lbService.assignCertToLoadBalancer(getLbRuleId(), getCertId(), isForced())) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
@@ -102,5 +108,33 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
     public Long getLbRuleId() {
         return lbRuleId;
+    }
+
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
+    }
+
+    @Override
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.LoadBalancerRule;
+    }
+
+    @Override
+    public Long getInstanceId() {
+        return lbRuleId;
+    }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getLbRuleId());
+        if (lb == null) {
+            return null;
+        }
+        return lb.getNetworkId();
     }
 }
