@@ -493,7 +493,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         }
 
         boolean sslOffloading = false;
-        if (lbTO.getSslCert() != null && lbTO.getLbProtocol() != null && lbTO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
+        if (lbTO.getSslCert() != null && ! lbTO.getSslCert().isRevoked()
+                && lbTO.getLbProtocol() != null && lbTO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
             sslOffloading = true;
         }
 
