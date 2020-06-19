@@ -1192,8 +1192,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             /* Do not resize volume of running vm on KVM host if host is not Up or not Enabled */
             if (currentSize != newSize && userVm.getState() == State.Running && userVm.getHypervisorType() == HypervisorType.KVM) {
+                if (userVm.getHostId() == null) {
+                    throw new InvalidParameterValueException("Cannot find the hostId of running vm " + userVm.getUuid());
+                }
                 HostVO host = _hostDao.findById(userVm.getHostId());
-                if (host.getStatus() != Status.Up) {
+                if (host == null) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running does not exist");
+                } else if (host.getStatus() != Status.Up) {
                     throw new InvalidParameterValueException("The KVM host where vm is running is not Up");
                 } else if (host.getResourceState() != ResourceState.Enabled) {
                     throw new InvalidParameterValueException("The KVM host where vm is running is not Enabled");
