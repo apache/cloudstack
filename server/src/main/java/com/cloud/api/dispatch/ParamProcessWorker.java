@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -275,7 +274,7 @@ public class ParamProcessWorker implements DispatchWorker {
         List<Long> entityOwners = cmd.getEntityOwnerIds();
         Account[] owners = null;
         if (entityOwners != null) {
-            owners = entityOwners.stream().map(id -> _accountMgr.getAccount(id)).collect(Collectors.toList()).toArray(new Account[0]);
+            owners = entityOwners.stream().map(id -> _accountMgr.getAccount(id)).toArray(Account[]::new);
         } else {
             owners = new Account[]{_accountMgr.getAccount(cmd.getEntityOwnerId())};
         }

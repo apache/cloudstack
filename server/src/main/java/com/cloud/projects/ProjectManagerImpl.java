@@ -685,7 +685,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                                 " doesn't belong to the project. Add it to the project first and then change the project's ownership");
                     }
 
-                    if (isTheOnlyProjectOwnerOrOneself(projectId, newProjectAcc, caller) && newRole != Role.Admin) {
+                    if (isTheOnlyProjectOwner(projectId, newProjectAcc, caller) && newRole != Role.Admin) {
                         throw new InvalidParameterValueException("Cannot demote the only admin of the project");
                     }
                     updateProjectAccount(newProjectAcc, newRole, updatedAcc.getId());
@@ -834,11 +834,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
     }
 
-    private boolean isTheOnlyProjectOwnerOrOneself(Long projectId, ProjectAccount projectAccount, Account caller) {
+    private boolean isTheOnlyProjectOwner(Long projectId, ProjectAccount projectAccount, Account caller) {
         List<? extends  ProjectAccount> projectOwners = _projectAccountDao.getProjectOwners(projectId);
         if ((projectOwners.size() == 1 && projectOwners.get(0).getAccountId() == projectAccount.getAccountId()
                 && projectAccount.getAccountRole() == Role.Admin )) {
-            // || (projectAccount.getAccountId() == caller.getAccountId())
             return true;
         }
         return false;
@@ -886,7 +885,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
 
         //can't remove the owner of the project
-        if (isTheOnlyProjectOwnerOrOneself(projectId, projectAccount, caller)) {
+        if (isTheOnlyProjectOwner(projectId, projectAccount, caller)) {
             InvalidParameterValueException ex =
                 new InvalidParameterValueException("Unable to delete account " + accountName +
                     " from the project with specified id as the account is the owner of the project");
