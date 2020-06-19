@@ -120,7 +120,7 @@ class StartCommandExecutor {
         // FR37 if startcommand contains a template url deploy OVA as is
         if (installAsIs) {
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("deploying OVA as is from %s", vmSpec.getTemplateLocation()));
+                LOGGER.trace(String.format("deploying OVA from %s as is", vmSpec.getTemplateLocation()));
             }
         }
 
@@ -147,8 +147,8 @@ class StartCommandExecutor {
 
             checkIfVmExistsInVcenter(vmInternalCSName, vmNameOnVcenter, dcMo);
 
-            // FR37 disks should not yet be our concern
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
+            // FR37 disks should not yet be our concern
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             // FR37 this assert is not usefull if disks may be reconsiled later
             assert (disks.length > 0);
@@ -200,60 +200,16 @@ class StartCommandExecutor {
 
                 vmMo = hyperHost.findVmOnPeerHyperHost(vmInternalCSName);
                 if (vmMo != null) {
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("Found vm " + vmInternalCSName + " at other host, relocate to " + hyperHost.getHyperHostName());
-                    }
-
-                    takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
-
-                    if (VmwareResource.getVmPowerState(vmMo) != VirtualMachine.PowerState.PowerOff)
-                        vmMo.safePowerOff(vmwareResource.getShutdownWaitMs());
-
-                    diskInfoBuilder = vmMo.getDiskInfoBuilder();
-                    hasSnapshot = vmMo.hasSnapshot();
-                    if (!hasSnapshot)
-                        vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class, VirtualEthernetCard.class});
-                    else
-                        vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
-
-                    if (systemVm) {
-                        // System volumes doesn't require more than 1 SCSI controller as there is no requirement for data volumes.
-                        ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
-                    } else {
-                        ensureDiskControllers(vmMo, controllerInfo);
-                    }
+                    VirtualMachineRecycler virtualMachineRecycler = new VirtualMachineRecycler(vmInternalCSName, controllerInfo, systemVm, hyperHost, vmMo,
+                            systemVmScsiControllerType, firstScsiControllerBusNum, numScsiControllerForSystemVm);
+                    virtualMachineRecycler.invoke();
+                    diskInfoBuilder = virtualMachineRecycler.getDiskInfoBuilder();
+                    hasSnapshot = virtualMachineRecycler.isHasSnapshot();
                 } else {
                     existingVm = unregisterButHoldOnToOldVmData(vmInternalCSName, dcMo);
 
-                    Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = getRootDiskDataStoreDetails(disks, dataStoresDetails);
-
-                    assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
-
-                    boolean vmFolderExists = rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter);
-                    String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
-                    if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
-                        registerVm(vmNameOnVcenter, dsRootVolumeIsOn, vmwareResource);
-                        vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
-                        if (vmMo != null) {
-                            if (LOGGER.isDebugEnabled()) {
-                                LOGGER.debug("Found registered vm " + vmInternalCSName + " at host " + hyperHost.getHyperHostName());
-                            }
-                        }
-                        tearDownVm(vmMo);
-                    } else if (installAsIs) {
-                        // FR37 create blank or install as is ???? needs to be replaced with the proceudre at
-                        // https://code.vmware.com/docs/5540/vsphere-automation-sdks-programming-guide/doc/GUID-82084C78-49FC-4B7F-BD89-F90D5AA22631.html
-                        hyperHost.importVmFromOVF(vmSpec.getTemplateLocation(), vmNameOnVcenter, rootDiskDataStoreDetails.second(), "thin", false);
-                        // FR37 importUnmanaged code must be called
-                        // FR37 this must be called before starting
-                        // FR37 existing serviceOffering with the right (minimum) dimensions must exist
-                    } else {
-                        if (!hyperHost
-                                .createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmwareResource.getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / Resource.ResourceType.bytesToMiB), vmwareResource.getReservedMemoryMb(vmSpec), guestOsId,
-                                        rootDiskDataStoreDetails.first(), false, controllerInfo, systemVm)) {
-                            throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
-                        }
-                    }
+                    createNewVm(vmSpec, installAsIs, vmInternalCSName, vmNameOnVcenter, controllerInfo, systemVm, mgr, hyperHost, guestOsId, disks, dataStoresDetails,
+                            dsRootVolumeIsOn);
                 }
 
                 vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
@@ -351,38 +307,10 @@ class StartCommandExecutor {
 
             // prepare systemvm patch ISO
             if (vmSpec.getType() != VirtualMachine.Type.User) {
-                // attach ISO (for patching of system VM)
-                Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(vmwareResource.getDcId()));
-                String secStoreUrl = secStoreUrlAndId.first();
-                Long secStoreId = secStoreUrlAndId.second();
-                if (secStoreUrl == null) {
-                    String msg = "secondary storage for dc " + vmwareResource.getDcId() + " is not ready yet?";
-                    throw new Exception(msg);
-                }
-                mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
-
-                ManagedObjectReference morSecDs = vmwareResource.prepareSecondaryDatastoreOnHost(secStoreUrl);
-                if (morSecDs == null) {
-                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
-                    throw new Exception(msg);
-                }
-                DatastoreMO secDsMo = new DatastoreMO(hyperHost.getContext(), morSecDs);
-
-                deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
-                Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper
-                        .prepareIsoDevice(vmMo, String.format("[%s] systemvm/%s", secDsMo.getName(), mgr.getSystemVMIsoFileNameOnDatastore()), secDsMo.getMor(), true, true,
-                                ideUnitNumber++, i + 1);
-                deviceConfigSpecArray[i].setDevice(isoInfo.first());
-                if (isoInfo.second()) {
-                    if (LOGGER.isDebugEnabled())
-                        LOGGER.debug("Prepare ISO volume at new device " + vmwareResource.getGson().toJson(isoInfo.first()));
-                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
-                } else {
-                    if (LOGGER.isDebugEnabled())
-                        LOGGER.debug("Prepare ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
-                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-                }
-                i++;
+                PrepareSytemVMPatchISOMethod prepareSytemVm = new PrepareSytemVMPatchISOMethod(mgr, hyperHost, vmMo, deviceConfigSpecArray, i, ideUnitNumber);
+                prepareSytemVm.invoke();
+                i = prepareSytemVm.getI();
+                ideUnitNumber = prepareSytemVm.getIdeUnitNumber();
             } else {
                 // Note: we will always plug a CDROM device
                 if (volIso != null) {
@@ -761,6 +689,44 @@ class StartCommandExecutor {
         }
     }
 
+    private void createNewVm(VirtualMachineTO vmSpec, boolean installAsIs, String vmInternalCSName, String vmNameOnVcenter, Pair<String, String> controllerInfo, Boolean systemVm,
+            VmwareManager mgr, VmwareHypervisorHost hyperHost, String guestOsId, DiskTO[] disks, HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails,
+            DatastoreMO dsRootVolumeIsOn) throws Exception {
+        VirtualMachineMO vmMo;
+        Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = getRootDiskDataStoreDetails(disks, dataStoresDetails);
+
+        assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
+
+        boolean vmFolderExists = rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter);
+        String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
+        if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
+            registerVm(vmNameOnVcenter, dsRootVolumeIsOn, vmwareResource);
+            vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+            if (vmMo != null) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Found registered vm " + vmInternalCSName + " at host " + hyperHost.getHyperHostName());
+                }
+            }
+            tearDownVm(vmMo);
+        } else if (installAsIs) {
+            // FR37 create blank or install as is ???? needs to be replaced with the proceudre at
+            // https://code.vmware.com/docs/5540/vsphere-automation-sdks-programming-guide/doc/GUID-82084C78-49FC-4B7F-BD89-F90D5AA22631.html
+            DatastoreMO secDsMo = getDatastoreMOForSecStore(mgr, hyperHost);
+            String ovfLocation = String.format("[%s] %s", secDsMo.getName(), vmSpec.getTemplateLocation());
+
+            hyperHost.importVmFromOVF(ovfLocation, vmNameOnVcenter, rootDiskDataStoreDetails.second(), "thin", false);
+            // FR37 importUnmanaged code must be called
+            // FR37 this must be called before starting
+            // FR37 existing serviceOffering with the right (minimum) dimensions must exist
+        } else {
+            if (!hyperHost
+                    .createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmwareResource.getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / Resource.ResourceType.bytesToMiB), vmwareResource.getReservedMemoryMb(vmSpec), guestOsId,
+                            rootDiskDataStoreDetails.first(), false, controllerInfo, systemVm)) {
+                throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
+            }
+        }
+    }
+
     /**
      * If a VM with the same name is found in a different cluster in the DC, unregister the old VM and configure a new VM (cold-migration).
      */
@@ -926,6 +892,7 @@ class StartCommandExecutor {
         }
         return VirtualMachineGuestOsIdentifier.OTHER_GUEST;
     }
+
     private DiskTO[] validateDisks(DiskTO[] disks) {
         List<DiskTO> validatedDisks = new ArrayList<DiskTO>();
 
@@ -950,6 +917,7 @@ class StartCommandExecutor {
         Collections.sort(validatedDisks, (d1, d2) -> d1.getDiskSeq().compareTo(d2.getDiskSeq()));
         return validatedDisks.toArray(new DiskTO[0]);
     }
+
     private HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> inferDatastoreDetailsFromDiskInfo(VmwareHypervisorHost hyperHost, VmwareContext context,
             DiskTO[] disks, Command cmd) throws Exception {
         HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> mapIdToMors = new HashMap<>();
@@ -1116,28 +1084,6 @@ class StartCommandExecutor {
         } else if (DiskControllerType.getType(scsiDiskController) == DiskControllerType.lsilogic) {
             vmMo.ensureLsiLogicDeviceControllers(requiredNumScsiControllers, availableBusNum);
         }
-    }
-
-    private VirtualMachineMO takeVmFromOtherHyperHost(VmwareHypervisorHost hyperHost, String vmName) throws Exception {
-
-        VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
-        if (vmMo != null) {
-            ManagedObjectReference morTargetPhysicalHost = hyperHost.findMigrationTarget(vmMo);
-            if (morTargetPhysicalHost == null) {
-                String msg = "VM " + vmName + " is on other host and we have no resource available to migrate and start it here";
-                LOGGER.error(msg);
-                throw new Exception(msg);
-            }
-
-            if (!vmMo.relocate(morTargetPhysicalHost)) {
-                String msg = "VM " + vmName + " is on other host and we failed to relocate it here";
-                LOGGER.error(msg);
-                throw new Exception(msg);
-            }
-
-            return vmMo;
-        }
-        return null;
     }
 
     private void tearDownVm(VirtualMachineMO vmMo) throws Exception {
@@ -1775,5 +1721,152 @@ class StartCommandExecutor {
         VirtualMachineFileInfo vmFileInfo = null;
         VirtualMachineFileLayoutEx vmFileLayout = null;
         List<DatastoreMO> datastores = new ArrayList<>();
+    }
+
+    private class VirtualMachineRecycler {
+        private String vmInternalCSName;
+        private Pair<String, String> controllerInfo;
+        private Boolean systemVm;
+        private VmwareHypervisorHost hyperHost;
+        private VirtualMachineMO vmMo;
+        private DiskControllerType systemVmScsiControllerType;
+        private int firstScsiControllerBusNum;
+        private int numScsiControllerForSystemVm;
+        private VirtualMachineDiskInfoBuilder diskInfoBuilder;
+        private boolean hasSnapshot;
+
+        public VirtualMachineRecycler(String vmInternalCSName, Pair<String, String> controllerInfo, Boolean systemVm, VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo,
+                DiskControllerType systemVmScsiControllerType, int firstScsiControllerBusNum, int numScsiControllerForSystemVm) {
+            this.vmInternalCSName = vmInternalCSName;
+            this.controllerInfo = controllerInfo;
+            this.systemVm = systemVm;
+            this.hyperHost = hyperHost;
+            this.vmMo = vmMo;
+            this.systemVmScsiControllerType = systemVmScsiControllerType;
+            this.firstScsiControllerBusNum = firstScsiControllerBusNum;
+            this.numScsiControllerForSystemVm = numScsiControllerForSystemVm;
+        }
+
+        public VirtualMachineDiskInfoBuilder getDiskInfoBuilder() {
+            return diskInfoBuilder;
+        }
+
+        public boolean isHasSnapshot() {
+            return hasSnapshot;
+        }
+
+        public VirtualMachineRecycler invoke() throws Exception {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Found vm " + vmInternalCSName + " at other host, relocate to " + hyperHost.getHyperHostName());
+            }
+
+            takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
+
+            if (VmwareResource.getVmPowerState(vmMo) != VirtualMachine.PowerState.PowerOff)
+                vmMo.safePowerOff(vmwareResource.getShutdownWaitMs());
+
+            diskInfoBuilder = vmMo.getDiskInfoBuilder();
+            hasSnapshot = vmMo.hasSnapshot();
+            if (!hasSnapshot)
+                vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class, VirtualEthernetCard.class});
+            else
+                vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
+
+            if (systemVm) {
+                // System volumes doesn't require more than 1 SCSI controller as there is no requirement for data volumes.
+                ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
+            } else {
+                ensureDiskControllers(vmMo, controllerInfo);
+            }
+            return this;
+        }
+
+        private VirtualMachineMO takeVmFromOtherHyperHost(VmwareHypervisorHost hyperHost, String vmName) throws Exception {
+
+            VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+            if (vmMo != null) {
+                ManagedObjectReference morTargetPhysicalHost = hyperHost.findMigrationTarget(vmMo);
+                if (morTargetPhysicalHost == null) {
+                    String msg = "VM " + vmName + " is on other host and we have no resource available to migrate and start it here";
+                    LOGGER.error(msg);
+                    throw new Exception(msg);
+                }
+
+                if (!vmMo.relocate(morTargetPhysicalHost)) {
+                    String msg = "VM " + vmName + " is on other host and we failed to relocate it here";
+                    LOGGER.error(msg);
+                    throw new Exception(msg);
+                }
+
+                return vmMo;
+            }
+            return null;
+        }
+    }
+
+    private class PrepareSytemVMPatchISOMethod {
+        private VmwareManager mgr;
+        private VmwareHypervisorHost hyperHost;
+        private VirtualMachineMO vmMo;
+        private VirtualDeviceConfigSpec[] deviceConfigSpecArray;
+        private int i;
+        private int ideUnitNumber;
+
+        public PrepareSytemVMPatchISOMethod(VmwareManager mgr, VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, VirtualDeviceConfigSpec[] deviceConfigSpecArray, int i, int ideUnitNumber) {
+            this.mgr = mgr;
+            this.hyperHost = hyperHost;
+            this.vmMo = vmMo;
+            this.deviceConfigSpecArray = deviceConfigSpecArray;
+            this.i = i;
+            this.ideUnitNumber = ideUnitNumber;
+        }
+
+        public int getI() {
+            return i;
+        }
+
+        public int getIdeUnitNumber() {
+            return ideUnitNumber;
+        }
+
+        public PrepareSytemVMPatchISOMethod invoke() throws Exception {
+            // attach ISO (for patching of system VM)
+            DatastoreMO secDsMo = getDatastoreMOForSecStore(mgr, hyperHost);
+
+            deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
+            Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper
+                    .prepareIsoDevice(vmMo, String.format("[%s] systemvm/%s", secDsMo.getName(), mgr.getSystemVMIsoFileNameOnDatastore()), secDsMo.getMor(), true, true,
+                            ideUnitNumber++, i + 1);
+            deviceConfigSpecArray[i].setDevice(isoInfo.first());
+            if (isoInfo.second()) {
+                if (LOGGER.isDebugEnabled())
+                    LOGGER.debug("Prepare ISO volume at new device " + vmwareResource.getGson().toJson(isoInfo.first()));
+                deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            } else {
+                if (LOGGER.isDebugEnabled())
+                    LOGGER.debug("Prepare ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
+                deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+            }
+            i++;
+            return this;
+        }
+
+    }
+    private DatastoreMO getDatastoreMOForSecStore(VmwareManager mgr, VmwareHypervisorHost hyperHost) throws Exception {
+        Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(vmwareResource.getDcId()));
+        String secStoreUrl = secStoreUrlAndId.first();
+        Long secStoreId = secStoreUrlAndId.second();
+        if (secStoreUrl == null) {
+            String msg = "secondary storage for dc " + vmwareResource.getDcId() + " is not ready yet?";
+            throw new Exception(msg);
+        }
+        mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
+
+        ManagedObjectReference morSecDs = vmwareResource.prepareSecondaryDatastoreOnHost(secStoreUrl);
+        if (morSecDs == null) {
+            String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+            throw new Exception(msg);
+        }
+        return new DatastoreMO(hyperHost.getContext(), morSecDs);
     }
 }
