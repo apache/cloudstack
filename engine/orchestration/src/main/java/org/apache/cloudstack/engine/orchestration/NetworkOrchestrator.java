@@ -1613,7 +1613,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void addHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+    public void setHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest, boolean migrationSuccessful) throws ResourceUnavailableException {
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
             final NetworkVO network = _networksDao.findById(nic.getNetworkId());
@@ -1621,13 +1621,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                     _networkModel.getNetworkTag(vm.getHypervisorType(), network));
             for (final NetworkElement element : networkElements) {
-                if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)
-                        && element instanceof UserDataServiceProvider &&
-                        (element instanceof ConfigDriveNetworkElement || element instanceof VirtualRouterElement)) {
-                    final UserDataServiceProvider sp = (UserDataServiceProvider) element;
-                    if (!sp.saveHypervisorHostname(profile, network, vm, dest)) {
-                        throw new CloudRuntimeException("Failed to Add hypervisor hostname");
-                    }
+                if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) && element instanceof UserDataServiceProvider) {
+                        if (element instanceof ConfigDriveNetworkElement && !migrationSuccessful || element instanceof VirtualRouterElement && migrationSuccessful) {
+                            final UserDataServiceProvider sp = (UserDataServiceProvider) element;
+                            if (!sp.saveHypervisorHostname(profile, network, vm, dest)) {
+                                throw new CloudRuntimeException("Failed to Add hypervisor hostname");
+                            }
+                        }
                 }
             }
         }

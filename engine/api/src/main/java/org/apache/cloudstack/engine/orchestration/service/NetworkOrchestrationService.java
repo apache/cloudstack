@@ -299,9 +299,10 @@ public interface NetworkOrchestrationService {
      * service provider is ConfigDrive or VirtualRouter
      * @param vm holds the details of the Virtual Machine
      * @param dest holds information of the destination
+     * @param migrationSuccessful
      * @throws ResourceUnavailableException in case Datastore or agent to which a command is to be sent is unavailable
      */
-    void addHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException;
+    void setHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest, boolean migrationSuccessful) throws ResourceUnavailableException;
 
     List<NetworkGuru> getNetworkGurus();
 

@@ -53,7 +53,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -226,7 +225,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         return (canHandle(network.getTrafficType())
-                && configureConfigDriveData(profile, nic))
+                && configureConfigDriveData(profile, nic, dest))
                 && createConfigDriveIso(profile, dest, null);
     }
 
@@ -344,6 +343,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             LOG.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
             try {
                 addPasswordAndUserdata(network, nic, vm, dest, context);
+                // recreateConfigDriveIso(nic, network, vm, dest);
             } catch (InsufficientCapacityException | ResourceUnavailableException e) {
                 LOG.error("Failed to add config disk drive due to: ", e);
                 return false;
@@ -378,13 +378,6 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                 vm.setVmData(vmData);
                 vm.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
                 createConfigDriveIso(vm, dest, diskToUse);
-                if (vm.getHypervisorType().equals(Hypervisor.HypervisorType.KVM)) {
-                    if (!VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
-                        detachAndAttachDiskForKvm(vm, dest, diskToUse);
-                    }
-                } else {
-                    detachAndAttachDiskForOtherHypervisors(vm, dest, diskToUse);
-                }
             }
         }
     }
@@ -439,44 +432,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
         return dataStore;
     }
-
-    private void detachAndAttachDiskForKvm(VirtualMachineProfile vm, DeployDestination dest, DiskTO disk) {
-        final String WARN_MSG = "Disk may be locked as it is mounted in the VM";
-        final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
-        AttachIsoCommand command = new AttachIsoCommand(vm.getInstanceName(), isoPath, false, CONFIGDRIVEDISKSEQ, true);
-        Answer answer = agentManager.easySend(dest.getHost().getId(), command);
-        if (!answer.getResult()) {
-            LOG.debug(WARN_MSG);
-        }
-        command = new AttachIsoCommand(vm.getInstanceName(), disk.getData().getDataStore().getUrl() + "/" + isoPath, true, CONFIGDRIVEDISKSEQ, true);
-        answer = agentManager.easySend(dest.getHost().getId(), command);
-        if (!answer.getResult()) {
-            LOG.debug(WARN_MSG);
-            throw new CloudRuntimeException("Failed to attach recreated config drive ISO");
-        }
-    }
-
-    private void detachAndAttachDiskForOtherHypervisors(VirtualMachineProfile vm, DeployDestination dest, DiskTO disk) throws ResourceUnavailableException {
-        DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
-        try {
-            Answer result = agentManager.send(dest.getHost().getId(), cmd);
-            if (!result.getResult()) {
-                LOG.error("Failed to detach config drive ISO from VM");
-            }
-        } catch (OperationTimedoutException e) {
-            LOG.error("Operation timed-out exception: "+ e.getMessage());
-        }
-        AttachCommand command = new AttachCommand(disk, vm.getInstanceName());
-        try {
-            Answer result = agentManager.send(dest.getHost().getId(), command);
-            if (!result.getResult()) {
-                LOG.error("Failed to attach config drive ISO to VM");
-            }
-        } catch (OperationTimedoutException e) {
-            LOG.error("Operation timed-out exception: "+ e.getMessage());
-        }
-    }
-
+    
     private boolean doesVolumeStateCheckout(Volume vol) {
         switch (vol.getState()) {
         case Allocated:
@@ -630,9 +586,8 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
     }
 
-    private boolean configureConfigDriveData(final VirtualMachineProfile profile, final NicProfile nic) {
+    private boolean configureConfigDriveData(final VirtualMachineProfile profile, final NicProfile nic, final DeployDestination dest) {
         final UserVmVO vm = _userVmDao.findById(profile.getId());
-
         if (vm.getType() != VirtualMachine.Type.User) {
             return false;
         }
@@ -642,7 +597,12 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             String hostname = _hostDao.findById(vm.getHostId()).getName();
-            String destHostname = VirtualMachineManager.getHypervisorHostname(hostname);
+            String destHostname = null;
+            if (dest.getHost() == null ) {
+                destHostname = VirtualMachineManager.getHypervisorHostname(hostname);
+            } else {
+                destHostname = VirtualMachineManager.getHypervisorHostname(dest.getHost().getName());
+            }
             final List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
                     vm.getUuid(), nic.getIPv4Address(), sshPublicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, destHostname);
             profile.setVmData(vmData);
