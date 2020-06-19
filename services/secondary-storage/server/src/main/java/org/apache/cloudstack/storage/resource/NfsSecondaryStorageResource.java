@@ -53,6 +53,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.resource.ServerResource;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -192,6 +193,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
 
     private static final Map<String, String> updatableConfigData = Maps.newHashMap();
+
     static {
 
         updatableConfigData.put(PUBLIC_KEYS_FILE, METATDATA_DIR);
@@ -445,7 +447,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             Script command = new Script("cp", _timeout, s_logger);
             command.add(ovfFilePath);
-            command.add(ovfFilePath + ".orig");
+            command.add(ovfFilePath + ServerResource.ORIGINAL_FILE_EXTENSION);
             String result = command.execute();
             if (result != null) {
                 String msg = "Unable to rename original OVF, error msg: " + result;
@@ -513,7 +515,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                         throw new Exception(msg);
                     }
                     command = new Script("cp", _timeout, s_logger);
-                    command.add(ovfFilePath + ".orig");
+                    command.add(ovfFilePath + ServerResource.ORIGINAL_FILE_EXTENSION);
                     command.add(newTmplDirAbsolute);
                     result = command.execute();
                     if (result != null) {
@@ -527,7 +529,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // Create OVF for the disk
             String newOvfFilePath = newTmplDirAbsolute + File.separator + ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1);
             OVFHelper ovfHelper = new OVFHelper();
-            ovfHelper.rewriteOVFFile(ovfFilePath + ".orig", newOvfFilePath, diskName);
+            ovfHelper.rewriteOVFFile(ovfFilePath + ServerResource.ORIGINAL_FILE_EXTENSION, newOvfFilePath, diskName);
 
             postCreatePrivateTemplate(newTmplDirAbsolute, templateId, templateUniqueName, physicalSize, virtualSize);
             writeMetaOvaForTemplate(newTmplDirAbsolute, ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1), diskName, templateUniqueName, physicalSize);
