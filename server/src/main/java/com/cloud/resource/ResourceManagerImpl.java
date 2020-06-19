@@ -1373,10 +1373,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private void scheduleVmsRestart(Long hostId) {
         List<VMInstanceVO> allVmsOnHost = _vmDao.listByHostId(hostId);
         if (CollectionUtils.isEmpty(allVmsOnHost)) {
-            s_logger.debug(String.format("Host [id=%s] has no allocated VMs marking host as Dead.", hostId));
+            s_logger.debug(String.format("Host [id=%s] was marked as Dead with no allocated VMs, no need to schedule VM restart", hostId));
         }
 
-        s_logger.debug(String.format("Host [id=%s] has a total of %s allocated VMs. Triggering HA to start VMs that have HA enabled.", hostId, allVmsOnHost.size()));
+        s_logger.debug(String.format("Host [id=%s] was marked as Dead with a total of %s allocated VMs. Triggering HA to start VMs that have HA enabled.", hostId, allVmsOnHost.size()));
         for (VMInstanceVO vm : allVmsOnHost) {
             State vmState = vm.getState();
             if (vmState == State.Starting || vmState == State.Running || vmState == State.Stopping) {
@@ -1406,11 +1406,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             resourceStateTransitTo(host, ResourceState.Event.EnableDeadHost, _nodeId);
             host.setResourceState(ResourceState.Enabled);
         } catch (NoTransitionException e) {
-            s_logger.error(
+            throw new NoTransitionException(
                     String.format("Cannot transmit host [id=%s, name=%s, state=%s, status=%s] to %s state", host.getId(), host.getName(), host.getResourceState(), host.getStatus(),
-                            ResourceState.Enabled), e);
+                            ResourceState.Enabled));
         }
-
         return host;
     }
 

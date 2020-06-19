@@ -34,13 +34,14 @@ import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "cancelHostAsDead",
         description = "Cancel host status from 'Dead'. Host will transit back to status 'Enabled'.",
+        since = "4.15.0.0",
         responseObject = HostResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
 public class CancelHostAsDeadCmd extends BaseAsyncCmd {
 
-    private static final String S_NAME = "cancelhostasdeadresponse";
+    private static final String COMMAND_RESPONSE_NAME = "cancelhostasdeadresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,7 +64,7 @@ public class CancelHostAsDeadCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return S_NAME;
+        return COMMAND_RESPONSE_NAME;
     }
 
     public static String getResultObjectName() {
@@ -97,18 +98,16 @@ public class CancelHostAsDeadCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
+        Host host;
         try {
-            Host result = _resourceService.cancelHostAsDead(this);
-            if (result != null) {
-                HostResponse response = _responseGenerator.createHostResponse(result);
-                response.setResponseName("host");
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to cancel host from Dead status");
-            }
+            host = _resourceService.cancelHostAsDead(this);
         } catch (NoTransitionException exception) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to Cancel host from Dead status due to: " + exception.getMessage());
         }
+
+        HostResponse response = _responseGenerator.createHostResponse(host);
+        response.setResponseName(COMMAND_RESPONSE_NAME);
+        this.setResponseObject(response);
     }
 
 }

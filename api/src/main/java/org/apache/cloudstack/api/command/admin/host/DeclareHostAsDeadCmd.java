@@ -33,14 +33,15 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "declareHostAsDead",
-        description = "Declare host as 'Dead'. Host must be on 'Disconnected' or 'Alert' state.",
+        description = "Declare host as 'Dead'. Host must be on 'Disconnected' or 'Alert' state. The ADMIN must be sure that there are no VMs running on the respective host otherwise this command might corrupted VMs that were running on the 'Dead' host.",
+        since = "4.15.0.0",
         responseObject = HostResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
 public class DeclareHostAsDeadCmd extends BaseAsyncCmd {
 
-    private static final String S_NAME = "declarehostasdeadresponse";
+    private static final String COMMAND_RESPONSE_NAME = "declarehostasdeadresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,7 +64,7 @@ public class DeclareHostAsDeadCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return S_NAME;
+        return COMMAND_RESPONSE_NAME;
     }
 
     public static String getResultObjectName() {
@@ -97,18 +98,16 @@ public class DeclareHostAsDeadCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
+        Host host;
         try {
-            Host result = _resourceService.declareHostAsDead(this);
-            if (result != null) {
-                HostResponse response = _responseGenerator.createHostResponse(result);
-                response.setResponseName("host");
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to declare host as dead");
-            }
+            host = _resourceService.declareHostAsDead(this);
         } catch (NoTransitionException exception) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to declare host as dead due to: " + exception.getMessage());
         }
+
+        HostResponse response = _responseGenerator.createHostResponse(host);
+        response.setResponseName(COMMAND_RESPONSE_NAME);
+        this.setResponseObject(response);
     }
 
 }
