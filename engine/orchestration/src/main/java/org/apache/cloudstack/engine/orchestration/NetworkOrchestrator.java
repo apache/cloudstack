@@ -2498,6 +2498,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         } else {
                             uri = BroadcastDomainType.fromString(vlanIdFinal);
                         }
+
+                        if (_networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString()).size() > 0) {
+                            throw new InvalidParameterValueException("Network with vlan " + vlanIdFinal +
+                                " already exists or overlaps with other network pvlans in zone " + zoneId);
+                        }
+
                         userNetwork.setBroadcastUri(uri);
                         if (!vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
                             userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
