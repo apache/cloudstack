@@ -22,7 +22,7 @@
       itemLayout="vertical"
       size="small"
       :dataSource="osList"
-      :pagination="pagination">
+      :pagination="false">
       <a-list-item slot="renderItem" slot-scope="os, osIndex" key="os.id">
         <a-radio-group
           class="radio-group"
@@ -57,6 +57,19 @@
         </a-radio-group>
       </a-list-item>
     </a-list>
+
+    <div style="display: block; text-align: right;">
+      <a-pagination
+        size="small"
+        :current="page"
+        :pageSize="pageSize"
+        :total="itemCount"
+        :showTotal="total => `Total ${total} items`"
+        :pageSizeOptions="['10', '20', '40', '80', '100', '500']"
+        @change="onChangePage"
+        @showSizeChange="onChangePageSize"
+        showSizeChanger />
+    </div>
   </a-form-item>
 </template>
 
@@ -107,19 +120,6 @@ export default {
 
     this.$emit('emit-update-template-iso', this.inputDecorator, this.value)
   },
-  computed: {
-    pagination () {
-      return {
-        size: 'small',
-        page: 1,
-        pageSize: 10,
-        total: this.itemCount,
-        showSizeChanger: true,
-        onChange: this.onChangePage,
-        onShowSizeChange: this.onChangePageSize
-      }
-    }
-  },
   methods: {
     isShared (item) {
       return !item.ispublic && (item.account !== store.getters.userInfo.account)
@@ -131,13 +131,13 @@ export default {
       this.$emit('emit-update-template-iso', this.inputDecorator, id)
     },
     onChangePage (page, pageSize) {
-      this.pagination.page = page
-      this.pagination.pageSize = pageSize
+      this.page = page
+      this.pageSize = pageSize
       this.$forceUpdate()
     },
     onChangePageSize (page, pageSize) {
-      this.pagination.page = page
-      this.pagination.pageSize = pageSize
+      this.page = page
+      this.pageSize = pageSize
       this.$forceUpdate()
     },
     onFilterTag (tag) {

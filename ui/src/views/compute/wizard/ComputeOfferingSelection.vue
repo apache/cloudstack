@@ -25,16 +25,28 @@
     <a-table
       :columns="columns"
       :dataSource="tableSource"
-      :pagination="{showSizeChanger: true}"
+      :pagination="false"
       :rowSelection="rowSelection"
       :loading="loading"
       size="middle"
-      @change="handleTableChange"
       :scroll="{ y: 225 }"
     >
       <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('label.cpu') }}</span>
       <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('label.memory') }}</span>
     </a-table>
+
+    <div style="display: block; text-align: right;">
+      <a-pagination
+        size="small"
+        :current="options.page"
+        :pageSize="options.pageSize"
+        :total="rowCount"
+        :showTotal="total => `Total ${total} items`"
+        :pageSizeOptions="['10', '20', '40', '80', '100', '500']"
+        @change="onChangePage"
+        @showSizeChange="onChangePageSize"
+        showSizeChanger />
+    </div>
   </div>
 </template>
 
@@ -45,6 +57,10 @@ export default {
     computeItems: {
       type: Array,
       default: () => []
+    },
+    rowCount: {
+      type: Number,
+      default: () => 0
     },
     value: {
       type: String,
@@ -57,6 +73,10 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
+    },
+    zoneId: {
+      type: String,
+      default: () => ''
     }
   },
   data () {
@@ -79,17 +99,16 @@ export default {
           width: '30%'
         }
       ],
-      selectedRowKeys: []
+      selectedRowKeys: [],
+      oldZoneId: null,
+      options: {
+        page: 1,
+        pageSize: 10,
+        keyword: null
+      }
     }
   },
   computed: {
-    options () {
-      return {
-        page: 1,
-        pageSize: 10,
-        keyword: ''
-      }
-    },
     tableSource () {
       return this.computeItems.map((item) => {
         var cpuNumberValue = item.cpunumber + ''
@@ -137,6 +156,10 @@ export default {
           this.selectedRowKeys = [this.preFillContent.computeofferingid]
           this.$emit('select-compute-item', this.preFillContent.computeofferingid)
         } else {
+          if (this.oldZoneId === this.zoneId) {
+            return
+          }
+          this.oldZoneId = this.zoneId
           if (this.computeItems && this.computeItems.length > 0) {
             this.selectedRowKeys = [this.computeItems[0].id]
             this.$emit('select-compute-item', this.computeItems[0].id)
@@ -152,12 +175,19 @@ export default {
     },
     handleSearch (value) {
       this.filter = value
+      this.options.page = 1
+      this.options.pageSize = 10
       this.options.keyword = this.filter
       this.$emit('handle-search-filter', this.options)
     },
-    handleTableChange (pagination) {
-      this.options.page = pagination.current
-      this.options.pageSize = pagination.pageSize
+    onChangePage (page, pageSize) {
+      this.options.page = page
+      this.options.pageSize = pageSize
+      this.$emit('handle-search-filter', this.options)
+    },
+    onChangePageSize (page, pageSize) {
+      this.options.page = page
+      this.options.pageSize = pageSize
       this.$emit('handle-search-filter', this.options)
     }
   }

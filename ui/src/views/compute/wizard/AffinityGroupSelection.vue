@@ -27,12 +27,25 @@
       :columns="columns"
       :dataSource="items"
       :rowKey="record => record.id"
-      :pagination="{showSizeChanger: true}"
+      :pagination="false"
       :rowSelection="rowSelection"
       size="middle"
       :scroll="{ y: 225 }"
     >
     </a-table>
+
+    <div style="display: block; text-align: right;">
+      <a-pagination
+        size="small"
+        :current="options.page"
+        :pageSize="options.pageSize"
+        :total="rowCount"
+        :showTotal="total => `Total ${total} items`"
+        :pageSizeOptions="['10', '20', '40', '80', '100', '500']"
+        @change="onChangePage"
+        @showSizeChange="onChangePageSize"
+        showSizeChanger />
+    </div>
   </div>
 </template>
 
@@ -46,6 +59,10 @@ export default {
       type: Array,
       default: () => []
     },
+    rowCount: {
+      type: Number,
+      default: () => 0
+    },
     value: {
       type: Array,
       default: () => []
@@ -57,6 +74,10 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
+    },
+    zoneId: {
+      type: String,
+      default: () => ''
     }
   },
   data () {
@@ -74,17 +95,16 @@ export default {
           width: '60%'
         }
       ],
-      selectedRowKeys: []
+      selectedRowKeys: [],
+      oldZoneId: null,
+      options: {
+        page: 1,
+        pageSize: 10,
+        keyword: null
+      }
     }
   },
   computed: {
-    options () {
-      return {
-        page: 1,
-        pageSize: 10,
-        keyword: ''
-      }
-    },
     rowSelection () {
       return {
         type: 'checkbox',
@@ -107,6 +127,10 @@ export default {
           this.selectedRowKeys = this.preFillContent.affinitygroupids
           this.$emit('select-affinity-group-item', this.preFillContent.affinitygroupids)
         } else {
+          if (this.oldZoneId === this.zoneId) {
+            return
+          }
+          this.oldZoneId = this.zoneId
           this.selectedRowKeys = []
           this.$emit('select-affinity-group-item', null)
         }
@@ -116,12 +140,19 @@ export default {
   methods: {
     handleSearch (value) {
       this.filter = value
+      this.options.page = 1
+      this.options.pageSize = 10
       this.options.keyword = this.filter
       this.$emit('handle-search-filter', this.options)
     },
-    handleTableChange (pagination) {
-      this.options.page = pagination.current
-      this.options.pageSize = pagination.pageSize
+    onChangePage (page, pageSize) {
+      this.options.page = page
+      this.options.pageSize = pageSize
+      this.$emit('handle-search-filter', this.options)
+    },
+    onChangePageSize (page, pageSize) {
+      this.options.page = page
+      this.options.pageSize = pageSize
       this.$emit('handle-search-filter', this.options)
     }
   }

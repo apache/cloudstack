@@ -171,7 +171,6 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  inject: ['vmFetchTemplates', 'vmFetchIsos'],
   methods: {
     mappingDataSource () {
       let mappedItems = {}

@@ -26,10 +26,9 @@
       :loading="loading"
       :columns="columns"
       :dataSource="tableSource"
-      :pagination="{showSizeChanger: true}"
+      :pagination="false"
       :rowSelection="rowSelection"
       size="middle"
-      @change="handleTableChange"
       :scroll="{ y: 225 }"
     >
       <span slot="diskSizeTitle"><a-icon type="hdd" /> {{ $t('label.disksize') }}</span>
@@ -46,6 +45,19 @@
         <span v-else>-</span>
       </template>
     </a-table>
+
+    <div style="display: block; text-align: right;">
+      <a-pagination
+        size="small"
+        :current="options.page"
+        :pageSize="options.pageSize"
+        :total="rowCount"
+        :showTotal="total => `Total ${total} items`"
+        :pageSizeOptions="['10', '20', '40', '80', '100', '500']"
+        @change="onChangePage"
+        @showSizeChange="onChangePageSize"
+        showSizeChanger />
+    </div>
   </div>
 </template>
 
@@ -56,6 +68,10 @@ export default {
     items: {
       type: Array,
       default: () => []
+    },
+    rowCount: {
+      type: Number,
+      default: () => 0
     },
     value: {
       type: String,
@@ -68,6 +84,14 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
+    },
+    zoneId: {
+      type: String,
+      default: () => ''
+    },
+    isIsoSelected: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -93,20 +117,19 @@ export default {
         }
       ],
       selectedRowKeys: ['0'],
-      dataItems: []
+      dataItems: [],
+      oldZoneId: null,
+      options: {
+        page: 1,
+        pageSize: 10,
+        keyword: null
+      }
     }
   },
   created () {
     this.initDataItem()
   },
   computed: {
-    options () {
-      return {
-        page: 1,
-        pageSize: 10,
-        keyword: ''
-      }
-    },
     tableSource () {
       return this.dataItems.map((item) => {
         return {
@@ -145,23 +168,43 @@ export default {
           this.selectedRowKeys = [this.preFillContent.diskofferingid]
           this.$emit('select-disk-offering-item', this.preFillContent.diskofferingid)
         } else {
+          if (this.oldZoneId === this.zoneId) {
+            return
+          }
+          this.oldZoneId = this.zoneId
           this.selectedRowKeys = ['0']
           this.$emit('select-disk-offering-item', '0')
         }
+      }
+    },
+    isIsoSelected () {
+      if (this.isIsoSelected) {
+        this.dataItems = this.dataItems.filter(item => item.id !== '0')
+      } else {
+        this.dataItems.unshift({
+          id: '0',
+          name: this.$t('label.noselect'),
+          diskSize: undefined,
+          miniops: undefined,
+          maxiops: undefined,
+          isCustomized: undefined
+        })
       }
     }
   },
   methods: {
     initDataItem () {
       this.dataItems = []
-      this.dataItems.push({
-        id: '0',
-        name: this.$t('label.noselect'),
-        diskSize: undefined,
-        miniops: undefined,
-        maxiops: undefined,
-        isCustomized: undefined
-      })
+      if (this.options.page === 1 && !this.isIsoSelected) {
+        this.dataItems.push({
+          id: '0',
+          name: this.$t('label.noselect'),
+          diskSize: undefined,
+          miniops: undefined,
+          maxiops: undefined,
+          isCustomized: undefined
+        })
+      }
     },
     onSelectRow (value) {
       this.selectedRowKeys = value
@@ -169,12 +212,19 @@ export default {
     },
     handleSearch (value) {
       this.filter = value
+      this.options.page = 1
+      this.options.pageSize = 10
       this.options.keyword = this.filter
       this.$emit('handle-search-filter', this.options)
     },
-    handleTableChange (pagination) {
-      this.options.page = pagination.current
-      this.options.pageSize = pagination.pageSize
+    onChangePage (page, pageSize) {
+      this.options.page = page
+      this.options.pageSize = pageSize
+      this.$emit('handle-search-filter', this.options)
+    },
+    onChangePageSize (page, pageSize) {
+      this.options.page = page
+      this.options.pageSize = pageSize
       this.$emit('handle-search-filter', this.options)
     }
   }
