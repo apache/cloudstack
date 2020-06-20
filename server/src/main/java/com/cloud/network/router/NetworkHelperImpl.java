@@ -799,6 +799,11 @@ public class NetworkHelperImpl implements NetworkHelper {
             return false;
         }
 
+        List<String> lbProtocols = Arrays.asList("tcp", "udp", "tcp-proxy", "ssl");
+        if (! lbProtocols.contains(rule.getLbProtocol())) {
+            throw new InvalidParameterValueException("protocol " + rule.getLbProtocol() + " is not in valid protocols " + lbProtocols);
+        }
+
         for (final LoadBalancingRule.LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
             final List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
 

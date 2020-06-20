@@ -2092,6 +2092,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO lbBackup = _lbDao.findById(lbRuleId);
         String customId = cmd.getCustomId();
         Boolean forDisplay = cmd.getDisplay();
+        String protocol = cmd.getLbProtocol();
 
         if (lb == null) {
             throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
@@ -2120,6 +2121,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             lb.setDisplay(forDisplay);
         }
 
+        if (protocol != null) {
+            lb.setLbProtocol(protocol);
+        }
+
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
         if (!validateLbRule(rule)) {
@@ -2130,7 +2135,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         boolean success = _lbDao.update(lbRuleId, lb);
 
         // If algorithm is changed, have to reapply the lb config
-        if ((algorithm != null) && (tmplbVo.getAlgorithm().compareTo(algorithm) != 0)){
+        if ((algorithm != null && tmplbVo.getAlgorithm().compareTo(algorithm) != 0)
+                || (protocol != null && ! tmplbVo.getLbProtocol().equalsIgnoreCase(protocol))) {
             try {
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);
@@ -2150,6 +2156,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     }
                     if (lbBackup.getAlgorithm() != null) {
                         lb.setAlgorithm(lbBackup.getAlgorithm());
+                    }
+                    if (lbBackup.getLbProtocol() != null) {
+                        lb.setLbProtocol(lbBackup.getLbProtocol());
                     }
                     lb.setState(lbBackup.getState());
                     _lbDao.update(lb.getId(), lb);
