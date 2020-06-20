@@ -286,7 +286,13 @@ export default {
           icon: 'plus',
           label: 'label.add.private.gateway',
           listView: true,
-          args: ['physicalnetworkid', 'vlan', 'ipaddress', 'gateway', 'netmask', 'sourcenatsupported', 'aclid'],
+          args: (record, store) => {
+            var fields = ['vpcid', 'physicalnetworkid', 'vlan', 'ipaddress', 'gateway', 'netmask', 'sourcenatsupported', 'aclid']
+            if (store.apis.createPrivateGateway.params.filter(x => x.name === 'bypassvlanoverlapcheck').length > 0) {
+              fields.push('bypassvlanoverlapcheck')
+            }
+            return fields
+          },
           mapping: {
             aclid: {
               api: 'listNetworkACLLists'
