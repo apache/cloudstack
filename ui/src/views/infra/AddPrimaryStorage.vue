@@ -158,7 +158,7 @@
             <a-input v-decorator="['radospool']" />
           </a-form-item>
           <a-form-item :label="$t('label.rados.user')">
-            <a-input v-decorator="['rados.user']" />
+            <a-input v-decorator="['radosuser']" />
           </a-form-item>
           <a-form-item :label="$t('label.rados.secret')">
             <a-input v-decorator="['radossecret']" />
