@@ -24,6 +24,7 @@
             showSearch
             optionFilterProp="children"
             :defaultValue="zoneSelected.name"
+            :placeholder="$t('label.select.a.zone')"
             :value="zoneSelected.name"
             @change="changeZone">
             <a-select-option v-for="(zone, index) in zones" :key="index">
@@ -72,7 +73,7 @@
     </a-col>
 
     <a-col :xl="6">
-      <chart-card>
+      <chart-card :loading="loading">
         <div style="text-align: center">
           <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
             <template slot="title">
@@ -229,7 +230,7 @@ export default {
     listEvents () {
       const params = {
         page: 1,
-        pagesize: 7,
+        pagesize: 6,
         listall: true
       }
       this.loading = true

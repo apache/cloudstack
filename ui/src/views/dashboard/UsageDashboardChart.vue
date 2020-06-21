@@ -23,14 +23,22 @@
       :md="8"
       v-for="stat in stats"
       :key="stat.type">
-      <chart-card class="usage-dashboard-chart-card" :loading="loading">
+      <a-card
+        class="usage-dashboard-chart-card"
+        :bordered="false"
+        :loading="loading"
+        :style="stat.bgcolor ? { 'background-color': stat.bgcolor } : {}">
         <router-link :to="{ name: stat.path }">
-          <div class="usage-dashboard-chart-card-inner">
-            <h4>{{ stat.name }}</h4>
-            <h1>{{ stat.count == undefined ? 0 : stat.count }}</h1>
+          <div
+            class="usage-dashboard-chart-card-inner">
+            <h3>{{ stat.name }}</h3>
+            <h2>
+              <a-icon :type="stat.icon" />
+              {{ stat.count == undefined ? 0 : stat.count }}
+            </h2>
           </div>
         </router-link>
-      </chart-card>
+      </a-card>
     </a-col>
   </div>
 </template>

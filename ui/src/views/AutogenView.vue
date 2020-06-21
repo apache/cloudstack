@@ -415,7 +415,12 @@ export default {
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
         this.apiName = this.$route.meta.permission[0]
         if (this.$route.meta.columns) {
-          this.columnKeys = this.$route.meta.columns
+          const columns = this.$route.meta.columns
+          if (columns && typeof columns === 'function') {
+            this.columnKeys = columns()
+          } else {
+            this.columnKeys = columns
+          }
         }
 
         if (this.$route.meta.actions) {

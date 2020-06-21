@@ -18,7 +18,7 @@
 <template>
   <a-row class="usage-dashboard" :gutter="12">
     <a-col :xl="16">
-      <a-row>
+      <a-row :gutter="12">
         <a-card>
           <a-tabs
             v-if="showProject"
@@ -44,21 +44,29 @@
             :md="8"
             v-for="stat in stats"
             :key="stat.type">
-            <chart-card class="usage-dashboard-chart-card" :loading="loading">
+            <a-card
+              class="usage-dashboard-chart-card"
+              :bordered="false"
+              :loading="loading"
+              :style="stat.bgcolor ? { 'background-color': stat.bgcolor } : {}">
               <router-link :to="{ name: stat.path }">
-                <div class="usage-dashboard-chart-card-inner">
-                  <h4>{{ stat.name }}</h4>
-                  <h1>{{ stat.count == undefined ? 0 : stat.count }}</h1>
+                <div
+                  class="usage-dashboard-chart-card-inner">
+                  <h3>{{ stat.name }}</h3>
+                  <h2>
+                    <a-icon :type="stat.icon" />
+                    {{ stat.count == undefined ? 0 : stat.count }}
+                  </h2>
                 </div>
               </router-link>
-            </chart-card>
+            </a-card>
           </a-col>
         </a-card>
       </a-row>
     </a-col>
     <a-col
       :xl="8">
-      <chart-card>
+      <chart-card :loading="loading" >
         <div class="usage-dashboard-chart-card-inner">
           <a-button>
             <router-link :to="{ name: 'event' }">
@@ -158,42 +166,42 @@ export default {
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, path: 'vm' })
+        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop', bgcolor: '#dfe9cc', path: 'vm' })
       })
       api('listVirtualMachines', { state: 'Stopped', listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, path: 'vm' })
+        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff', bgcolor: '#edcbce', path: 'vm' })
       })
       api('listVirtualMachines', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, path: 'vm' })
+        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, icon: 'number', path: 'vm' })
       })
       api('listVolumes', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvolumesresponse) {
           count = json.listvolumesresponse.count
         }
-        this.stats.splice(3, 1, { name: 'Total Volumes', count: count, path: 'volume' })
+        this.stats.splice(3, 1, { name: 'Total Volumes', count: count, icon: 'database', path: 'volume' })
       })
       api('listNetworks', { listall: true }).then(json => {
         var count = 0
         if (json && json.listnetworksresponse) {
           count = json.listnetworksresponse.count
         }
-        this.stats.splice(4, 1, { name: 'Total Networks', count: count, path: 'guestnetwork' })
+        this.stats.splice(4, 1, { name: 'Total Networks', count: count, icon: 'apartment', path: 'guestnetwork' })
       })
       api('listPublicIpAddresses', { listall: true }).then(json => {
         var count = 0
         if (json && json.listpublicipaddressesresponse) {
           count = json.listpublicipaddressesresponse.count
         }
-        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, path: 'publicip' })
+        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, icon: 'environment', path: 'publicip' })
       })
       this.listEvents()
     },

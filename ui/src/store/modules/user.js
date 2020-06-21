@@ -128,10 +128,6 @@ const user = {
           // This will show the dashboard and some common navigation sections
           // to most users/roles, while we complete API autodiscovery
           const apis = {}
-          apis.listVirtualMachinesMetrics = {}
-          apis.listVolumesMetrics = {}
-          apis.listNetworks = {}
-          apis.listTemplates = {}
           apis.listUsers = {}
           apis.listAccounts = {}
           commit('SET_APIS', apis)

@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'storage',
   title: 'label.storage',
@@ -26,7 +28,22 @@ export default {
       icon: 'hdd',
       permission: ['listVolumesMetrics'],
       resourceType: 'Volume',
-      columns: ['name', 'state', 'type', 'vmname', 'size', 'physicalsize', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskiopstotal', 'storage', 'account', 'zonename'],
+      columns: () => {
+        const fields = ['name', 'state', 'type', 'sizegb', 'vmname', 'diskkbsread', 'diskkbswrite', 'diskiopstotal']
+
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.push('account')
+          fields.push('storage')
+          fields.push('zonename')
+        } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
+          fields.push('account')
+          fields.push('zonename')
+        } else {
+          fields.push('zonename')
+        }
+
+        return fields
+      },
       details: ['name', 'id', 'type', 'storagetype', 'diskofferingdisplaytext', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'miniops', 'maxiops', 'path'],
       related: [{
         name: 'snapshot',

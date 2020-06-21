@@ -129,6 +129,11 @@
       <router-link v-else-if="record.hostname" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </a>
+    <a slot="storage" slot-scope="text, record" href="javascript:;">
+      <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + record.storageid }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
+    </a>
+
     <a slot="clustername" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/cluster/' + record.clusterid }">{{ text }}</router-link>
     </a>

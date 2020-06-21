@@ -25,7 +25,7 @@ export default {
     {
       name: 'guestnetwork',
       title: 'label.guest.networks',
-      icon: 'gateway',
+      icon: 'apartment',
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: ['name', 'state', 'type', 'cidr', 'ip6cidr', 'broadcasturi', 'account', 'zonename'],
@@ -267,7 +267,7 @@ export default {
     {
       name: 'privategw',
       title: 'label.private.gateway',
-      icon: 'branches',
+      icon: 'gateway',
       hidden: true,
       permission: ['listPrivateGateways'],
       columns: ['ipaddress', 'state', 'gateway', 'netmask', 'account', 'domain'],

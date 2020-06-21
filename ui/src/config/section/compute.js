@@ -16,6 +16,7 @@
 // under the License.
 
 import kubernetes from '@/assets/icons/kubernetes.svg?inline'
+import store from '@/store'
 
 export default {
   name: 'compute',
@@ -30,16 +31,30 @@ export default {
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       filters: ['self', 'running', 'stopped'],
-      columns: [
-        'name', 'state', 'instancename', 'ipaddress', 'cpunumber', 'cpuused', 'cputotal',
-        {
-          memoryused: (record) => {
-            return record.memorykbs && record.memoryintfreekbs ? parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%' : '0.0%'
-          }
-        },
-        'memorytotal', 'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal',
-        'account', 'zonename'
-      ],
+      columns: () => {
+        const fields = [
+          'name', 'state', 'ipaddress', 'cpunumber', 'cpuused', 'cputotal',
+          {
+            memoryused: (record) => {
+              return record.memorykbs && record.memoryintfreekbs ? parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%' : '0.0%'
+            }
+          },
+          'memorytotal', 'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
+        ]
+
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.splice(2, 0, 'instancename')
+          fields.push('account')
+          fields.push('hostname')
+          fields.push('zonename')
+        } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
+          fields.push('account')
+          fields.push('zonename')
+        } else {
+          fields.push('zonename')
+        }
+        return fields
+      },
       related: [{
         name: 'volume',
         title: 'label.volumes',
@@ -105,7 +120,7 @@ export default {
         },
         {
           api: 'stopVirtualMachine',
-          icon: 'stop',
+          icon: 'poweroff',
           label: 'label.action.stop.instance',
           message: 'message.action.stop.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
