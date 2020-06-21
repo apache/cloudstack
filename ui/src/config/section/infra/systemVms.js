@@ -33,7 +33,7 @@ export default {
     },
     {
       api: 'stopSystemVm',
-      icon: 'stop',
+      icon: 'poweroff',
       label: 'label.action.stop.systemvm',
       message: 'message.action.stop.systemvm',
       dataView: true,

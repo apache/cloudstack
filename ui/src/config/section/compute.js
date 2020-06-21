@@ -439,7 +439,7 @@ export default {
         },
         {
           api: 'stopKubernetesCluster',
-          icon: 'stop',
+          icon: 'poweroff',
           label: 'label.kubernetes.cluster.stop',
           dataView: true,
           show: (record) => { return !['Stopped'].includes(record.state) }

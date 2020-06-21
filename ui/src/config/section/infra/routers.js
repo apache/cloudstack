@@ -34,7 +34,7 @@ export default {
     },
     {
       api: 'stopRouter',
-      icon: 'stop',
+      icon: 'poweroff',
       label: 'label.action.stop.router',
       message: 'message.action.stop.router',
       dataView: true,

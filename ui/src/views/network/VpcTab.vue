@@ -132,7 +132,7 @@
               </a-form-item>
               <a-form-item
                 :label="$t('label.bypassvlanoverlapcheck')"
-                v-if="$store.getters.apis.createPrivateGateway.params.filter(x => x.name === 'bypassvlanoverlapcheck').length > 0" >
+                v-if="$store.getters.apis.createPrivateGateway && $store.getters.apis.createPrivateGateway.params.filter(x => x.name === 'bypassvlanoverlapcheck').length > 0" >
                 <a-checkbox
                   v-decorator="['bypassvlanoverlapcheck']"
                 ></a-checkbox>

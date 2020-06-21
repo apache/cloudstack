@@ -34,7 +34,7 @@ export default {
     },
     {
       api: 'stopInternalLoadBalancerVM',
-      icon: 'stop',
+      icon: 'poweroff',
       label: 'label.action.stop.router',
       dataView: true,
       args: ['forced'],
