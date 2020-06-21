@@ -15,12 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'zone',
   title: 'label.zones',
   icon: 'global',
   permission: ['listZonesMetrics'],
-  columns: ['name', 'state', 'allocationstate', 'networktype', 'clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'order'],
+  columns: () => {
+    const fields = ['name', 'state', 'allocationstate', 'networktype', 'clusters']
+    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    if (store.getters.metrics) {
+      fields.push(...metricsFields)
+    }
+    fields.push('order')
+    return fields
+  },
   details: ['name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
   related: [{
     name: 'pod',

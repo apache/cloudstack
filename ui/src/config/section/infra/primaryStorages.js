@@ -15,12 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'storagepool',
   title: 'label.primary.storage',
   icon: 'database',
   permission: ['listStoragePoolsMetrics'],
-  columns: ['name', 'state', 'ipaddress', 'type', 'path', 'scope', 'disksizeusedgb', 'disksizetotalgb', 'disksizeallocatedgb', 'disksizeunallocatedgb', 'clustername', 'zonename'],
+  columns: () => {
+    const fields = ['name', 'state', 'ipaddress', 'scope', 'type', 'path']
+    const metricsFields = ['disksizeusedgb', 'disksizetotalgb', 'disksizeallocatedgb', 'disksizeunallocatedgb']
+    if (store.getters.metrics) {
+      fields.push(...metricsFields)
+    }
+    fields.push('clustername')
+    fields.push('zonename')
+    return fields
+  },
   details: ['name', 'id', 'ipaddress', 'type', 'scope', 'tags', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'clustername', 'podname', 'zonename', 'created'],
   related: [{
     name: 'volume',

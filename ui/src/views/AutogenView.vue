@@ -31,6 +31,13 @@
                 @click="fetchData()">
                 {{ $t('label.refresh') }}
               </a-button>
+              <a-switch
+                v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
+                style="margin-left: 8px"
+                :checked-children="$t('label.metrics')"
+                :un-checked-children="$t('label.metrics')"
+                :checked="$store.getters.metrics"
+                @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
               <a-tooltip placement="right">
                 <template slot="title">
                   {{ $t('label.filterby') }}
@@ -62,9 +69,9 @@
             :resource="resource"
             @exec-action="execAction"/>
           <a-input-search
+            v-if="!dataView"
             style="width: 100%; display: table-cell"
             :placeholder="$t('label.search')"
-            v-if="!dataView"
             v-model="searchQuery"
             allowClear
             @search="onSearch" />
@@ -383,6 +390,9 @@ export default {
       if (to !== from) {
         this.fetchData()
       }
+    },
+    '$store.getters.metrics' (oldVal, newVal) {
+      this.fetchData()
     }
   },
   methods: {

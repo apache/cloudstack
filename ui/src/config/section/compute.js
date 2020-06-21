@@ -32,8 +32,8 @@ export default {
       resourceType: 'UserVm',
       filters: ['self', 'running', 'stopped'],
       columns: () => {
-        const fields = [
-          'name', 'state', 'ipaddress', 'cpunumber', 'cpuused', 'cputotal',
+        const fields = ['name', 'state', 'ipaddress']
+        const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
           {
             memoryused: (record) => {
               return record.memorykbs && record.memoryintfreekbs ? parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%' : '0.0%'
@@ -42,15 +42,21 @@ export default {
           'memorytotal', 'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
         ]
 
+        if (store.getters.metrics) {
+          fields.push(...metricsFields)
+        }
+
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
           fields.push('account')
           fields.push('hostname')
           fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
+          fields.splice(2, 0, 'displayname')
           fields.push('account')
           fields.push('zonename')
         } else {
+          fields.splice(2, 0, 'displayname')
           fields.push('zonename')
         }
         return fields

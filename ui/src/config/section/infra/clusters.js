@@ -15,12 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'cluster',
   title: 'label.clusters',
   icon: 'cluster',
   permission: ['listClustersMetrics'],
-  columns: ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'podname', 'zonename'],
+  columns: () => {
+    const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']
+    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    if (store.getters.metrics) {
+      fields.push(...metricsFields)
+    }
+    fields.push('podname')
+    fields.push('zonename')
+    return fields
+  },
   details: ['name', 'id', 'allocationstate', 'clustertype', 'hypervisortype', 'podname', 'zonename'],
   related: [{
     name: 'host',

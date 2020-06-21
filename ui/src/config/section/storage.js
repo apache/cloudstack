@@ -29,7 +29,21 @@ export default {
       permission: ['listVolumesMetrics'],
       resourceType: 'Volume',
       columns: () => {
-        const fields = ['name', 'state', 'type', 'sizegb', 'vmname', 'diskkbsread', 'diskkbswrite', 'diskiopstotal']
+        const fields = ['name', 'state', 'type', 'vmname', 'sizegb']
+        const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
+
+        if (store.getters.userInfo.roletype === 'Admin') {
+          metricsFields.push({
+            physicalsize: (record) => {
+              return record.physicalsize ? parseFloat(record.physicalsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) + 'GB' : ''
+            }
+          })
+          metricsFields.push('utilization')
+        }
+
+        if (store.getters.metrics) {
+          fields.push(...metricsFields)
+        }
 
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.push('account')
