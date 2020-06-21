@@ -21,7 +21,7 @@
       class="project-select"
       defaultValue="Default View"
       :loading="loading"
-      :value="('id' in $store.getters.project) ? ($store.getters.project.displaytext || $store.getters.project.name) : 'Default View'"
+      :value="($store.getters.project && 'id' in $store.getters.project) ? ($store.getters.project.displaytext || $store.getters.project.name) : 'Default View'"
       :disabled="isDisabled()"
       :filterOption="filterProject"
       @change="changeProject"

@@ -23,6 +23,13 @@ export default {
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
   details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
+  tabs: [{
+    name: 'details',
+    component: () => import('@/components/view/DetailsTab.vue')
+  }, {
+    name: 'nics',
+    component: () => import('@/views/network/NicsTable.vue')
+  }],
   actions: [
     {
       api: 'startRouter',

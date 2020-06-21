@@ -55,6 +55,7 @@ import {
   Progress,
   Skeleton,
   Popconfirm,
+  Descriptions,
   message,
   notification
 } from 'ant-design-vue'

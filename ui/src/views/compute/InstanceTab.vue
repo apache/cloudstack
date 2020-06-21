@@ -16,199 +16,109 @@
 // under the License.
 
 <template>
-  <div>
-    <a-collapse v-model="activeKey" :bordered="false">
-      <a-collapse-panel :header="'ISO: ' + vm.isoname" v-if="vm.isoid" key="1">
-        <a-list
-          itemLayout="horizontal">
-          <a-list-item>
-            <a-list-item-meta>
-              <div slot="avatar">
-                <a-avatar>
-                  <a-icon type="usb" />
-                </a-avatar>
-              </div>
-              <div slot="title">
-                <router-link :to="{ path: '/iso/' + vm.isoid }">{{ vm.isoname }}</router-link> <br/>
-                <a-icon type="barcode"/> {{ vm.isoid }}
-              </div>
-            </a-list-item-meta>
-          </a-list-item>
-        </a-list>
-      </a-collapse-panel>
-
-      <a-collapse-panel :header="'Disks: ' + volumes.length" key="2">
-        <a-list
+  <a-spin :spinning="loading">
+    <a-tabs
+      :activeKey="currentTab"
+      :tabPosition="device === 'mobile' ? 'top' : 'left'"
+      :animated="false"
+      @change="handleChangeTab">
+      <a-tab-pane :tab="$t('label.details')" key="details">
+        <DetailsTab :resource="resource" :loading="loading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
+        <a-icon type="usb" />
+        <router-link :to="{ path: '/iso/' + vm.isoid }">{{ vm.isoname }}</router-link> <br/>
+        <a-icon type="barcode"/> {{ vm.isoid }}
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.volumes')" key="volumes" v-if="'listVolumes' in $store.getters.apis">
+        <a-table
+          class="table"
           size="small"
-          itemLayout="vertical"
+          :columns="volumeColumns"
           :dataSource="volumes"
+          :rowKey="item => item.id"
+          :pagination="false"
         >
-          <a-list-item slot="renderItem" slot-scope="item" class="list-item">
-            <a-list-item-meta>
-              <div slot="avatar">
-                <a-avatar>
-                  <a-icon type="hdd" />
-                </a-avatar>
-              </div>
-              <div slot="title" class="title">
-                <router-link :to="{ path: '/volume/' + item.id }">{{ item.name }} </router-link>
-                <div class="tags">
-                  <a-tag v-if="item.type">
-                    {{ item.type }}
-                  </a-tag>
-                  <a-tag v-if="item.state">
-                    {{ item.state }}
-                  </a-tag>
-                  <a-tag v-if="item.provisioningtype">
-                    {{ item.provisioningtype }}
-                  </a-tag>
-                </div>
-              </div>
-            </a-list-item-meta>
-            <div>
-              <a-divider class="divider-small" />
-              <div class="attribute">
-                <div class="label">{{ $t('label.size') }}</div>
-                <div>{{ (item.size / (1024 * 1024 * 1024.0)).toFixed(2) }} GB</div>
-              </div>
-              <div class="attribute" v-if="item.physicalsize">
-                <div class="label">{{ $t('label.physicalsize') }}</div>
-                <div>{{ (item.physicalsize / (1024 * 1024 * 1024.0)).toFixed(4) }} GB</div>
-              </div>
-              <div class="attribute" v-if="item.storage">
-                <div class="label">{{ $t('label.storagepool') }}</div>
-                <div>{{ item.storage }} ({{ item.storagetype }})</div>
-              </div>
-              <div class="attribute">
-                <div class="label">{{ $t('label.id') }}</div>
-                <div><a-icon type="barcode"/> {{ item.id }}</div>
-              </div>
-            </div>
-          </a-list-item>
-        </a-list>
-      </a-collapse-panel>
-
-      <a-collapse-panel :header="'Network Adapter(s): ' + (vm && vm.nic ? vm.nic.length : 0)" key="3" >
+          <template slot="name" slot-scope="text, item">
+            <a-icon type="hdd" />
+            <router-link :to="{ path: '/volume/' + item.id }">
+              {{ text }}
+            </router-link>
+            <a-tag v-if="item.provisioningtype">
+              {{ item.provisioningtype }}
+            </a-tag>
+          </template>
+          <template slot="state" slot-scope="text">
+            <status :text="text ? text : ''" displayText />
+          </template>
+          <template slot="size" slot-scope="text, item">
+            {{ parseFloat(item.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
+          </template>
+        </a-table>
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
         <a-button
-          type="primary"
+          type="dashed"
+          style="width: 100%; margin-bottom: 10px"
           @click="showAddModal"
           :loading="loadingNic"
           :disabled="!('addNicToVirtualMachine' in $store.getters.apis)">
           <a-icon type="plus"></a-icon> {{ $t('label.network.addvm') }}
         </a-button>
-        <a-divider class="divider-small" />
-        <a-list
-          size="small"
-          itemLayout="vertical"
-          :dataSource="vm.nic"
-          class="list"
-          :loading="loadingNic"
-        >
-          <a-list-item slot="renderItem" slot-scope="item" class="list-item">
-            <a-list-item-meta>
-              <div slot="avatar">
-                <a-avatar slot="avatar">
-                  <a-icon type="wifi" />
-                </a-avatar>
-              </div>
-              <div slot="title" class="title">
-                <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }} </router-link>
-                <div class="title__details">
-                  <div class="actions">
-                    <a-popconfirm
-                      title="Please confirm that you would like to make this NIC the default for this VM."
-                      @confirm="setAsDefault(item)"
-                      okText="Yes"
-                      cancelText="No"
-                      v-if="!item.isdefault"
-                    >
-                      <a-button
-                        :disabled="!('updateDefaultNicForVirtualMachine' in $store.getters.apis)"
-                        icon="check-square"
-                        shape="circle" />
-                    </a-popconfirm>
-                    <a-tooltip placement="bottom" v-if="item.type !== 'L2'">
-                      <template slot="title">
-                        {{ "Change IP Address" }}
-                      </template>
-                      <a-button
-                        icon="swap"
-                        shape="circle"
-                        :disabled="!('updateVmNicIp' in $store.getters.apis)"
-                        @click="editIpAddressNic = item.id; showUpdateIpModal = true" />
-                    </a-tooltip>
-                    <a-tooltip placement="bottom" v-if="item.type !== 'L2'">
-                      <template slot="title">
-                        {{ "Manage Secondary IP Addresses" }}
-                      </template>
-                      <a-button
-                        icon="environment"
-                        shape="circle"
-                        :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
-                        @click="fetchSecondaryIPs(item.id)" />
-                    </a-tooltip>
-                    <a-popconfirm
-                      :title="$t('message.network.removenic')"
-                      @confirm="removeNIC(item)"
-                      okText="Yes"
-                      cancelText="No"
-                      v-if="!item.isdefault"
-                    >
-                      <a-button
-                        :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
-                        type="danger"
-                        icon="delete"
-                        shape="circle" />
-                    </a-popconfirm>
-                  </div>
-                  <div class="tags">
-                    <a-tag v-if="item.isdefault">
-                      {{ $t('label.default') }}
-                    </a-tag>
-                    <a-tag v-if="item.type">
-                      {{ item.type }}
-                    </a-tag>
-                    <a-tag v-if="item.broadcasturi">
-                      {{ item.broadcasturi }}
-                    </a-tag>
-                    <a-tag v-if="item.isolationuri">
-                      {{ item.isolationuri }}
-                    </a-tag>
-                  </div>
-                </div>
-              </div>
-            </a-list-item-meta>
-            <div>
-              <a-divider class="divider-small" />
-              <div class="attribute">
-                <div class="label">{{ $t('label.macaddress') }}</div>
-                <div>{{ item.macaddress }}</div>
-              </div>
-              <div class="attribute" v-if="item.ipaddress">
-                <div class="label">{{ $t('label.ipaddress') }}</div>
-                <div>{{ item.ipaddress }}</div>
-              </div>
-              <div class="attribute" v-if="item.secondaryip && item.secondaryip.length > 0 && item.type !== 'L2'">
-                <div class="label">{{ $t('label.secondaryips') }}</div>
-                <div>{{ item.secondaryip.map(x => x.ipaddress).join(', ') }}</div>
-              </div>
-              <div class="attribute" v-if="item.netmask">
-                <div class="label">{{ $t('label.netmask') }}</div>
-                <div>{{ item.netmask }}</div>
-              </div>
-              <div class="attribute" v-if="item.gateway">
-                <div class="label">{{ $t('label.gateway') }}</div>
-                <div>{{ item.gateway }}</div>
-              </div>
-              <div class="attribute">
-                <div class="label">{{ $t('label.id') }}</div>
-                <div><a-icon type="barcode"/> {{ item.id }}</div>
-              </div>
-            </div>
-          </a-list-item>
-        </a-list>
-      </a-collapse-panel>
-    </a-collapse>
+        <NicsTable :resource="vm" :loading="loading">
+          <span slot="actions" slot-scope="record">
+            <a-popconfirm
+              :title="$t('label.set.default.nic')"
+              @confirm="setAsDefault(record.nic)"
+              okText="Yes"
+              cancelText="No"
+              v-if="!record.nic.isdefault"
+            >
+              <a-button
+                :disabled="!('updateDefaultNicForVirtualMachine' in $store.getters.apis)"
+                icon="check-square"
+                shape="circle" />
+            </a-popconfirm>
+            <a-tooltip placement="bottom" v-if="record.nic.type !== 'L2'">
+              <template slot="title">
+                {{ "Change IP Address" }}
+              </template>
+              <a-button
+                icon="swap"
+                shape="circle"
+                :disabled="!('updateVmNicIp' in $store.getters.apis)"
+                @click="editIpAddressNic = record.nic.id; showUpdateIpModal = true" />
+            </a-tooltip>
+            <a-tooltip placement="bottom" v-if="record.nic.type !== 'L2'">
+              <template slot="title">
+                {{ "Manage Secondary IP Addresses" }}
+              </template>
+              <a-button
+                icon="environment"
+                shape="circle"
+                :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
+                @click="fetchSecondaryIPs(record.nic.id)" />
+            </a-tooltip>
+            <a-popconfirm
+              :title="$t('message.network.removenic')"
+              @confirm="removeNIC(record.nic)"
+              okText="Yes"
+              cancelText="No"
+              v-if="!record.nic.isdefault"
+            >
+              <a-button
+                :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
+                type="danger"
+                icon="delete"
+                shape="circle" />
+            </a-popconfirm>
+          </span>
+        </NicsTable>
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.settings')" key="settings">
+        <DetailSettings :resource="resource" :loading="loading" />
+      </a-tab-pane>
+    </a-tabs>
 
     <a-modal
       :visible="showAddNetworkModal"
@@ -216,10 +126,9 @@
       @cancel="closeModals"
       @ok="submitAddNetwork">
       {{ $t('message.network.addvm.desc') }}
-
       <div class="modal-form">
         <p class="modal-form__label">{{ $t('label.network') }}:</p>
-        <a-select :defaultValue="addNetworkData.network" @change="e => addNetworkData.network === e">
+        <a-select :defaultValue="addNetworkData.network" @change="e => addNetworkData.network = e">
           <a-select-option
             v-for="network in addNetworkData.allNetworks"
             :key="network.id"
@@ -230,7 +139,6 @@
         <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
         <a-input v-model="addNetworkData.ip"></a-input>
       </div>
-
     </a-modal>
 
     <a-modal
@@ -245,7 +153,6 @@
         <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
         <a-input v-model="editIpAddressValue"></a-input>
       </div>
-
     </a-modal>
 
     <a-modal
@@ -284,21 +191,29 @@
       </a-list>
     </a-modal>
 
-  </div>
+  </a-spin>
 </template>
 
 <script>
 
 import { api } from '@/api'
+import { mixinDevice } from '@/utils/mixin.js'
 import ResourceLayout from '@/layouts/ResourceLayout'
 import Status from '@/components/widgets/Status'
+import DetailsTab from '@/components/view/DetailsTab'
+import DetailSettings from '@/components/view/DetailSettings'
+import NicsTable from '@/views/network/NicsTable'
 
 export default {
-  name: 'InstanceHardware',
+  name: 'InstanceTab',
   components: {
     ResourceLayout,
+    DetailsTab,
+    DetailSettings,
+    NicsTable,
     Status
   },
+  mixins: [mixinDevice],
   props: {
     resource: {
       type: Object,
@@ -315,7 +230,7 @@ export default {
       vm: {},
       volumes: [],
       totalStorage: 0,
-      activeKey: ['1', '2', '3'],
+      currentTab: 'details',
       showAddNetworkModal: false,
       showUpdateIpModal: false,
       showSecondaryIpModal: false,
@@ -329,7 +244,28 @@ export default {
       editIpAddressValue: '',
       secondaryIPs: [],
       selectedNicId: '',
-      newSecondaryIp: ''
+      newSecondaryIp: '',
+      volumeColumns: [
+        {
+          title: this.$t('label.name'),
+          dataIndex: 'name',
+          scopedSlots: { customRender: 'name' }
+        },
+        {
+          title: this.$t('label.state'),
+          dataIndex: 'state',
+          scopedSlots: { customRender: 'state' }
+        },
+        {
+          title: this.$t('label.type'),
+          dataIndex: 'type'
+        },
+        {
+          title: this.$t('label.size'),
+          dataIndex: 'size',
+          scopedSlots: { customRender: 'size' }
+        }
+      ]
     }
   },
   created () {
@@ -346,6 +282,9 @@ export default {
     }
   },
   methods: {
+    handleChangeTab (e) {
+      this.currentTab = e
+    },
     fetchData () {
       this.volumes = []
       if (!this.vm || !this.vm.id) {

@@ -61,6 +61,7 @@ export default {
         }
         return fields
       },
+      details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
       related: [{
         name: 'volume',
         title: 'label.volumes',
@@ -79,11 +80,7 @@ export default {
         param: 'virtualmachineid'
       }],
       tabs: [{
-        name: 'hardware',
-        component: () => import('@/views/compute/InstanceHardware.vue')
-      }, {
-        name: 'settings',
-        component: () => import('@/components/view/DetailSettings')
+        component: () => import('@/views/compute/InstanceTab.vue')
       }],
       actions: [
         {
