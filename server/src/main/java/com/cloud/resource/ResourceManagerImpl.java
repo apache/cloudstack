@@ -1028,12 +1028,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     @DB
     public Cluster updateCluster(UpdateClusterCmd cmd) {
-        ClusterVO cluster = (ClusterVO) getCluster(cmd.getId());
-        String clusterType = cmd. getClusterType();
-        String hypervisor = cmd.getHypervisor();
-        String allocationState = cmd.getAllocationState();
-        String managedstate = cmd.getManagedstate();
-        String name = cmd.getClusterName();
+        final ClusterVO cluster = (ClusterVO) getCluster(cmd.getId());
+        final String clusterType = cmd.getClusterType();
+        final String hypervisor = cmd.getHypervisor();
+        final String allocationState = cmd.getAllocationState();
+        final String managedstate = cmd.getManagedstate();
+        final String name = cmd.getClusterName();
 
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
@@ -1488,6 +1488,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
         final Long hostId = cmd.getId();
+        final String name = cmd.getName();
         final Long guestOSCategoryId = cmd.getOsCategoryId();
 
         // Verify that the host exists
@@ -1503,6 +1504,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
 
             resourceStateTransitTo(host, resourceEvent, _nodeId);
+        }
+
+        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Updating Host Name to :" + name);
+            }
+            host.setName(name);
+            _hostDao.persist(host);
         }
 
         if (guestOSCategoryId != null) {
