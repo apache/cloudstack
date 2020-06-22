@@ -107,7 +107,7 @@ public class UpdateClusterCmd extends BaseCmd {
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + getId());
         }
-        Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate());
+        Cluster result = _resourceService.updateCluster(this);
         if (result != null) {
             ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false);
             clusterResponse.setResponseName(getCommandName());

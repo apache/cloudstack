@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
@@ -1026,11 +1027,21 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     @DB
-    public Cluster updateCluster(final Cluster clusterToUpdate, final String clusterType, final String hypervisor, final String allocationState, final String managedstate) {
+    public Cluster updateCluster(UpdateClusterCmd cmd) {
+        ClusterVO cluster = (ClusterVO) getCluster(cmd.getId());
+        String clusterType = cmd. getClusterType();
+        String hypervisor = cmd.getHypervisor();
+        String allocationState = cmd.getAllocationState();
+        String managedstate = cmd.getManagedstate();
+        String name = cmd.getClusterName();
 
-        final ClusterVO cluster = (ClusterVO)clusterToUpdate;
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
+
+        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+            cluster.setName(name);
+            doUpdate = true;
+        }
 
         if (hypervisor != null && !hypervisor.isEmpty()) {
             final Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
