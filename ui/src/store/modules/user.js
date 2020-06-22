@@ -156,7 +156,7 @@ const user = {
           })
         }
 
-        api('listUsers').then(response => {
+        api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
