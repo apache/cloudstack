@@ -41,6 +41,13 @@ class TestData(object):
                 "username": "user",
                 "password": "password",
             },
+            "useracc": {
+                "email": "user1@test.com",
+                "firstname": "User",
+                "lastname": "User",
+                "username": "user1",
+                "password": "fr3sca",
+            },
             "project": {
                 "name": "Test Project",
                 "displaytext": "Test project",
@@ -82,7 +89,7 @@ class TestRoleBasedUsersInProjects(cloudstackTestCase):
             self.project.id
         )
 
-        self.cleanup = []
+        self.cleanup = [self.project]
 
     def tearDown(self):
         try:
@@ -144,7 +151,6 @@ class TestRoleBasedUsersInProjects(cloudstackTestCase):
             self.fail("API call succeeded which is denied for the project role")
         except CloudstackAPIException:
             pass
-        self.cleanup.append(self.project)
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
     def test_add_user_to_project_with_project_role(self):
@@ -181,7 +187,7 @@ class TestRoleBasedUsersInProjects(cloudstackTestCase):
             self.fail("API call succeeded which is denied for the project role")
         except CloudstackAPIException:
             pass
-        self.cleanup.append(self.project)
+
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
     def test_add_multiple_admins_in_project(self):
@@ -199,32 +205,67 @@ class TestRoleBasedUsersInProjects(cloudstackTestCase):
             roleid=4
         )
         self.cleanup.append(self.useraccount)
-        # Add account to the project
-        self.project.addUser(
+
+        self.useraccount1 = Account.create(
             self.apiclient,
-            userid=self.useraccount.user[0].id,
-            roletype='Admin',
+            self.testdata["useracc"],
+            roleid=4
+        )
+
+        self.cleanup.append(self.useraccount1)
+
+        self.project.addAccount(
+            self.apiclient,
+            account=self.useraccount.name,
+            projectroleid=self.projectrole.id,
+            roletype='Admin'
+        )
+
+        self.project.addAccount(
+            self.apiclient,
+            account=self.useraccount1.name,
             projectroleid=self.projectrole.id
         )
-        project_accounts = Project.listAccounts(self.apiclient, projectid=self.project.id)
-        admin_count = 0
-        for acc in project_accounts:
-            if acc.role == 'Admin':
-                admin_count+=1
+        project_accounts = Project.listAccounts(self.apiclient, projectid=self.project.id, role='Admin')
 
-        self.assertEqual(admin_count, 2, "account not added with admin Role")
+        self.assertEqual(len(project_accounts), 2, "account not added with admin Role")
 
-        self.userapiclient = self.testClient.getUserApiClient(
+        self.userapiclientAdminRole = self.testClient.getUserApiClient(
             UserName=self.useraccount.name,
             DomainName=self.useraccount.domain,
             type=0)
+
+        self.userapiclientRegularRole = self.testClient.getUserApiClient(
+            UserName=self.useraccount1.name,
+            DomainName=self.useraccount1.domain,
+            type=0)
+
         try:
             PublicIPAddress.list(
-                self.userapiclient,
+                self.userapiclientAdminRole,
                 projectid=self.project.id
             )
             self.debug("User added to the project could execute the listPublicIpAddresses API despite the project "
                        "role as it is the Admin")
-        except CloudstackAPIException:
             pass
-        self.cleanup.append(self.project)
+        except CloudstackAPIException:
+            self.fail("User is an Admin, should be able to execute the command despite Project role")
+
+        try:
+            self.project.suspend(
+                self.userapiclientAdminRole,
+            )
+            self.debug("The user can perform Project administrative operations as it is added as "
+                       "an Admin to the project")
+            pass
+        except CloudstackAPIException:
+            self.fail("User should be allowed to execute project administrative operations"
+                      "as it is the Project Admin")
+
+        try:
+            self.project.suspend(
+                self.userapiclientRegularRole,
+            )
+        except Exception as e:
+            pass
+
