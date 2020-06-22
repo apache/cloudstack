@@ -1039,6 +1039,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         boolean doUpdate = false;
 
         if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+            s_logger.debug("Updating Cluster name to: " + name);
             cluster.setName(name);
             doUpdate = true;
         }
@@ -1507,9 +1508,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Updating Host Name to :" + name);
-            }
+            s_logger.debug("Updating Host name to: " + name);
             host.setName(name);
             _hostDao.update(host.getId(), host);
         }

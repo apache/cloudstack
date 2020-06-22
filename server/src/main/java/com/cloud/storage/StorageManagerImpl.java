@@ -794,6 +794,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         String name = cmd.getName();
         if(org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+            s_logger.debug("Updating Storage Pool name to: " + name);
             pool.setName(name);
             _storagePoolDao.update(pool.getId(), pool);
         }
