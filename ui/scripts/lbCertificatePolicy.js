@@ -63,13 +63,18 @@
                                         return;
                                     }
                                     var items = json.listsslcertsresponse.sslcert;
+                                    var data = [{
+                                        id: 'none',
+                                        description: '---None---'
+                                    }];
+                                    $.map(items, function(item) {
+                                        data.push({
+                                            id: item.id,
+                                            description: item.name
+                                        });
+                                    });
                                     args.response.success({
-                                        data: $.map(items, function(item) {
-                                            return {
-                                                id: item.id,
-                                                description: item.name
-                                            };
-                                        })
+                                        data: data
                                     });
                                 }
                             });
@@ -199,6 +204,14 @@
                       message: _l('Certificate is not changed')
                     });
                     $(window).trigger('cloudStack.fullRefresh');
+                } else if (certId == null && data.certificate == 'none') {
+                    cloudStack.dialog.notice({
+                      message: _l('Certificate is not assigned')
+                    });
+                    $(window).trigger('cloudStack.fullRefresh');
+                } else if (certId && data.certificate == 'none') {
+                    // Delete existing certificate
+                    cloudStack.lbCertificatePolicy.actions['delete'](lbRuleID, complete, error);
                 } else {
                     addCertificatePolicy();
                 }
