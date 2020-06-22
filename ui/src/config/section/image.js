@@ -21,6 +21,7 @@ export default {
   name: 'image',
   title: 'label.images',
   icon: 'picture',
+  docHelp: 'adminguide/templates.html',
   children: [
     {
       name: 'template',
@@ -52,6 +53,7 @@ export default {
           api: 'registerTemplate',
           icon: 'plus',
           label: 'label.action.register.template',
+          docHelp: 'adminguide/templates.html#uploading-templates-from-a-remote-http-server',
           listView: true,
           popup: true,
           component: () => import('@/views/image/RegisterOrUploadTemplate.vue')
@@ -60,6 +62,7 @@ export default {
           api: 'registerTemplate',
           icon: 'cloud-upload',
           label: 'label.upload.template.from.local',
+          docHelp: 'adminguide/templates.html#uploading-templates-and-isos-from-a-local-computer',
           listView: true,
           popup: true,
           component: () => import('@/views/image/RegisterOrUploadTemplate.vue')
@@ -76,6 +79,7 @@ export default {
           icon: 'cloud-download',
           label: 'label.action.download.template',
           message: 'message.action.download.template',
+          docHelp: 'adminguide/templates.html#exporting-templates',
           dataView: true,
           show: (record) => { return record && record.isextractable },
           args: ['zoneid', 'mode'],
@@ -93,6 +97,7 @@ export default {
           api: 'updateTemplatePermissions',
           icon: 'reconciliation',
           label: 'label.action.share.template',
+          docHelp: 'adminguide/templates.html#sharing-templates-with-other-accounts-projects',
           dataView: true,
           popup: true,
           show: (record, store) => { return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) || record.templatetype !== 'BUILTIN') },
@@ -104,6 +109,7 @@ export default {
       name: 'iso',
       title: 'label.isos',
       icon: 'usb',
+      docHelp: 'adminguide/templates.html#working-with-isos',
       permission: ['listIsos'],
       params: { isofilter: 'self', showunique: 'true' },
       resourceType: 'ISO',
@@ -127,6 +133,7 @@ export default {
           api: 'registerIso',
           icon: 'plus',
           label: 'label.action.register.iso',
+          docHelp: 'adminguide/templates.html#id10',
           listView: true,
           popup: true,
           component: () => import('@/views/image/RegisterOrUploadIso.vue')
@@ -135,6 +142,7 @@ export default {
           api: 'registerIso',
           icon: 'cloud-upload',
           label: 'label.upload.iso.from.local',
+          docHelp: 'adminguide/templates.html#id10',
           listView: true,
           popup: true,
           component: () => import('@/views/image/RegisterOrUploadIso.vue')
@@ -151,6 +159,7 @@ export default {
           icon: 'cloud-download',
           label: 'label.action.download.iso',
           message: 'message.action.download.iso',
+          docHelp: 'adminguide/templates.html#exporting-templates',
           dataView: true,
           show: (record) => { return record && record.isextractable },
           args: ['zoneid', 'mode'],
@@ -168,6 +177,7 @@ export default {
           api: 'updateIsoPermissions',
           icon: 'reconciliation',
           label: 'label.action.edit.iso',
+          docHelp: 'adminguide/templates.html#sharing-templates-with-other-accounts-projects',
           dataView: true,
           args: ['op', 'accounts', 'projectids'],
           popup: true,

@@ -21,6 +21,7 @@ export default {
   name: 'storagepool',
   title: 'label.primary.storage',
   icon: 'database',
+  docHelp: 'adminguide/storage.html#primary-storage',
   permission: ['listStoragePoolsMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'ipaddress', 'scope', 'type', 'path']

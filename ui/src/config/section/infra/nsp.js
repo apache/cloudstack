@@ -19,6 +19,7 @@ export default {
   name: 'nsp',
   title: 'label.network.service.providers',
   icon: 'compass',
+  docHelp: 'adminguide/networking.html#network-service-providers',
   hidden: true,
   permission: ['listNetworkServiceProviders'],
   columns: ['name', 'state', 'physicalnetworkid'],

@@ -19,6 +19,7 @@ export default {
   name: 'quota',
   title: 'label.quota',
   icon: 'pie-chart',
+  docHelp: 'plugins/quota.html',
   permission: ['quotaSummary'],
   children: [
     {
@@ -33,6 +34,7 @@ export default {
       name: 'quotatariff',
       title: 'label.quota.tariff',
       icon: 'credit-card',
+      docHelp: 'plugins/quota.html#quota-tariff',
       permission: ['quotaTariffList'],
       columns: ['usageName', 'description', 'usageUnit', 'tariffValue'],
       details: ['usageName', 'description', 'usageUnit', 'tariffValue']

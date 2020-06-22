@@ -18,6 +18,7 @@
 export default {
   name: 'physicalnetwork',
   title: 'label.physical.network',
+  docHelp: 'adminguide/networking_and_traffic.html#basic-zone-physical-network-configuration',
   icon: 'api',
   hidden: true,
   permission: ['listPhysicalNetworks'],

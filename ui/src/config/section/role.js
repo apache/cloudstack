@@ -19,6 +19,7 @@ export default {
   name: 'role',
   title: 'label.roles',
   icon: 'idcard',
+  docHelp: 'adminguide/accounts.html#roles',
   permission: ['listRoles', 'listRolePermissions'],
   columns: ['name', 'type', 'description'],
   details: ['name', 'id', 'type', 'description'],

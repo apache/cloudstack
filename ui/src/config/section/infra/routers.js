@@ -19,6 +19,7 @@ export default {
   name: 'router',
   title: 'label.virtual.routers',
   icon: 'fork',
+  docHelp: 'adminguide/systemvm.html#virtual-router',
   permission: ['listRouters'],
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
@@ -70,6 +71,7 @@ export default {
       icon: 'fullscreen',
       label: 'label.upgrade.router.newer.template',
       message: 'message.confirm.upgrade.router.newer.template',
+      docHelp: 'adminguide/systemvm.html#upgrading-virtual-routers',
       dataView: true,
       groupAction: true,
       show: (record) => { return record.requiresupgrade }

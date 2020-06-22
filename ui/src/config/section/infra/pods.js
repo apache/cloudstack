@@ -36,6 +36,7 @@ export default {
       api: 'createPod',
       icon: 'plus',
       label: 'label.add.pod',
+      docHelp: 'installguide/configuration.html#adding-a-pod',
       listView: true,
       popup: true,
       component: () => import('@/views/infra/PodAdd.vue')
@@ -52,6 +53,7 @@ export default {
       icon: 'play-circle',
       label: 'label.action.enable.pod',
       message: 'message.action.enable.pod',
+      docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
       dataView: true,
       show: (record) => { return record.allocationstate === 'Disabled' },
       args: ['allocationstate'],
@@ -66,6 +68,7 @@ export default {
       icon: 'pause-circle',
       label: 'label.action.disable.pod',
       message: 'message.action.disable.pod',
+      docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
       dataView: true,
       show: (record) => { return record.allocationstate === 'Enabled' },
       args: ['allocationstate'],

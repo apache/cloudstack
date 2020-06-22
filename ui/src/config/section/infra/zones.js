@@ -74,6 +74,7 @@ export default {
       api: 'createZone',
       icon: 'plus',
       label: 'label.add.zone',
+      docHelp: 'installguide/configuration.html#adding-a-zone',
       listView: true,
       popup: true,
       component: () => import('@/views/infra/zone/ZoneWizard.vue')
@@ -99,6 +100,7 @@ export default {
       icon: 'pause-circle',
       label: 'label.action.disable.zone',
       message: 'message.action.disable.zone',
+      docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
       dataView: true,
       defaultArgs: { allocationstate: 'Disabled' },
       show: (record) => { return record.allocationstate === 'Enabled' }
@@ -108,6 +110,7 @@ export default {
       icon: 'play-circle',
       label: 'label.action.enable.zone',
       message: 'message.action.enable.zone',
+      docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
       dataView: true,
       defaultArgs: { allocationstate: 'Enabled' },
       show: (record) => { return record.allocationstate === 'Disabled' }

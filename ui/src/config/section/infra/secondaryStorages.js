@@ -19,6 +19,7 @@ export default {
   name: 'imagestore',
   title: 'label.secondary.storage',
   icon: 'picture',
+  docHelp: 'adminguide/storage.html#secondary-storage',
   permission: ['listImageStores'],
   columns: ['name', 'url', 'protocol', 'scope', 'zonename'],
   details: ['name', 'id', 'url', 'protocol', 'provider', 'scope', 'zonename'],

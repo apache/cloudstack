@@ -24,6 +24,7 @@ export default {
     {
       name: 'computeoffering',
       title: 'label.compute.offerings',
+      docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       icon: 'cloud',
       permission: ['listServiceOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
@@ -38,6 +39,7 @@ export default {
         api: 'createServiceOffering',
         icon: 'plus',
         label: 'label.add.compute.offering',
+        docHelp: 'adminguide/service_offerings.html#creating-a-new-compute-offering',
         listView: true,
         popup: true,
         component: () => import('@/views/offering/AddComputeOffering.vue')
@@ -45,12 +47,14 @@ export default {
         api: 'updateServiceOffering',
         icon: 'edit',
         label: 'label.edit',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         args: ['name', 'displaytext']
       }, {
         api: 'updateServiceOffering',
         icon: 'lock',
         label: 'label.action.update.offering.access',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         popup: true,
         component: () => import('@/views/offering/UpdateOfferingAccess.vue')
@@ -59,6 +63,7 @@ export default {
         icon: 'delete',
         label: 'label.action.delete.service.offering',
         message: 'message.action.delete.service.offering',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true
       }]
     },
@@ -66,6 +71,7 @@ export default {
       name: 'systemoffering',
       title: 'label.system.offerings',
       icon: 'setting',
+      docHelp: 'adminguide/service_offerings.html#system-service-offerings',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
       columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'tags', 'order'],
@@ -74,6 +80,7 @@ export default {
         api: 'createServiceOffering',
         icon: 'plus',
         label: 'label.add.system.service.offering',
+        docHelp: 'adminguide/service_offerings.html#creating-a-new-system-service-offering',
         listView: true,
         params: { issystem: 'true' },
         popup: true,
@@ -84,12 +91,14 @@ export default {
         label: 'label.edit',
         dataView: true,
         params: { issystem: 'true' },
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         args: ['name', 'displaytext']
       }, {
         api: 'deleteServiceOffering',
         icon: 'delete',
         label: 'label.action.delete.system.service.offering',
         message: 'message.action.delete.system.service.offering',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         params: { issystem: 'true' }
       }]
@@ -98,6 +107,7 @@ export default {
       name: 'diskoffering',
       title: 'label.disk.offerings',
       icon: 'hdd',
+      docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       permission: ['listDiskOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'disksize', 'tags', 'domain', 'zone', 'order'],
@@ -111,6 +121,7 @@ export default {
         api: 'createDiskOffering',
         icon: 'plus',
         label: 'label.add.disk.offering',
+        docHelp: 'adminguide/service_offerings.html#creating-a-new-disk-offering',
         listView: true,
         popup: true,
         component: () => import('@/views/offering/AddDiskOffering.vue')
@@ -118,12 +129,14 @@ export default {
         api: 'updateDiskOffering',
         icon: 'edit',
         label: 'label.edit',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         args: ['name', 'displaytext']
       }, {
         api: 'updateDiskOffering',
         icon: 'lock',
         label: 'label.action.update.offering.access',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         popup: true,
         component: () => import('@/views/offering/UpdateOfferingAccess.vue')
@@ -132,6 +145,7 @@ export default {
         icon: 'delete',
         label: 'label.action.delete.disk.offering',
         message: 'message.action.delete.disk.offering',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true
       }]
     },
@@ -139,6 +153,7 @@ export default {
       name: 'backupoffering',
       title: 'label.backup.offerings',
       icon: 'cloud-upload',
+      docHelp: 'adminguide/virtual_machines.html#backup-offerings',
       permission: ['listBackupOfferings', 'listInfrastructure'],
       columns: ['name', 'description', 'zoneid'],
       details: ['name', 'id', 'description', 'externalid', 'zone', 'created'],
@@ -146,6 +161,7 @@ export default {
         api: 'importBackupOffering',
         icon: 'plus',
         label: 'label.import.backup.offering',
+        docHelp: 'adminguide/virtual_machines.html#importing-backup-offerings',
         listView: true,
         popup: true,
         component: () => import('@/views/offering/ImportBackupOffering.vue')
@@ -154,6 +170,7 @@ export default {
         icon: 'delete',
         label: 'label.action.delete.backup.offering',
         message: 'message.action.delete.backup.offering',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true
       }]
     },
@@ -161,6 +178,7 @@ export default {
       name: 'networkoffering',
       title: 'label.network.offerings',
       icon: 'wifi',
+      docHelp: 'adminguide/networking.html#network-offerings',
       permission: ['listNetworkOfferings', 'listInfrastructure'],
       params: { isrecursive: 'true' },
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'tags', 'domain', 'zone', 'order'],
@@ -169,6 +187,7 @@ export default {
         api: 'createNetworkOffering',
         icon: 'plus',
         label: 'label.add.network.offering',
+        docHelp: 'adminguide/networking.html#creating-a-new-network-offering',
         listView: true,
         popup: true,
         component: () => import('@/views/offering/AddNetworkOffering.vue')
@@ -176,6 +195,7 @@ export default {
         api: 'updateNetworkOffering',
         icon: 'edit',
         label: 'label.edit',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         args: ['name', 'displaytext', 'availability'],
         mapping: {
@@ -213,6 +233,7 @@ export default {
         api: 'updateNetworkOffering',
         icon: 'lock',
         label: 'label.action.update.offering.access',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         popup: true,
         component: () => import('@/views/offering/UpdateOfferingAccess.vue')
@@ -221,6 +242,7 @@ export default {
         icon: 'delete',
         label: 'label.remove.network.offering',
         message: 'message.confirm.remove.network.offering',
+        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true
       }]
     },

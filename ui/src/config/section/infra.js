@@ -55,6 +55,7 @@ export default {
       name: 'cpusocket',
       title: 'label.cpu.sockets',
       icon: 'inbox',
+      docHelp: 'adminguide/management.html#reporting-cpu-sockets',
       permission: ['listHosts'],
       component: () => import('@/views/infra/CpuSockets.vue')
     },
@@ -69,6 +70,7 @@ export default {
       name: 'alert',
       title: 'label.alerts',
       icon: 'flag',
+      docHelp: 'adminguide/management.html#administrator-alerts',
       permission: ['listAlerts'],
       columns: ['name', 'description', 'type', 'sent'],
       details: ['name', 'id', 'type', 'sent', 'description'],
@@ -78,6 +80,7 @@ export default {
           icon: 'book',
           label: 'label.archive.alerts',
           message: 'message.confirm.archive.selected.alerts',
+          docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
           dataView: true,
           args: ['ids'],
           mapping: {
@@ -91,6 +94,7 @@ export default {
           icon: 'delete',
           label: 'label.delete.alerts',
           message: 'message.confirm.remove.selected.alerts',
+          docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
           dataView: true,
           args: ['ids'],
           mapping: {

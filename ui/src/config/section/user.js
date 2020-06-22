@@ -19,6 +19,7 @@ export default {
   name: 'accountuser',
   title: 'label.users',
   icon: 'user',
+  docHelp: 'adminguide/accounts.html#users',
   hidden: true,
   permission: ['listUsers'],
   columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account', 'domain'],
