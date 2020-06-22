@@ -55,7 +55,6 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: java-11-openjdk
-Requires: python2
 Requires: python3
 Requires: bash
 Requires: gawk
@@ -86,9 +85,7 @@ management, and intelligence in CloudStack.
 
 %package common
 Summary: Apache CloudStack common files and scripts
-Requires: python2
 Requires: python3
-Requires: python3-pip
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
