@@ -30,7 +30,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
-import com.cloud.utils.StringUtils;
 
 @APICommand(name = MigrateSecondaryStorageDataCmd.APINAME,
         description = "migrates data objects from one secondary storage to destination image store(s)",
@@ -88,12 +87,12 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FILE_MIGRATE;
+        return EventTypes.EVENT_IMAGE_STORE_DATA_MIGRATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate files/data objects " + "from : " + this.getId() + " to: " + StringUtils.join(getMigrateTo(), ",");
+        return "Attempting to migrate files/data objects ";
     }
 
     @Override

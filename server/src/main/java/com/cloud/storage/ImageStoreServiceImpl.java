@@ -26,6 +26,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
 import org.apache.cloudstack.api.response.MigrationResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -73,6 +74,7 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
         Long srcImgStoreId = cmd.getId();
         ImageStoreVO srcImageVO = imageStoreDao.findById(srcImgStoreId);
         List<Long> destImgStoreIds = cmd.getMigrateTo();
+        List<String> imagestores = new ArrayList<String>();
         String migrationType = cmd.getMigrationType();
 
         // default policy is complete
@@ -90,7 +92,7 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
         if (srcImageVO == null) {
             throw new CloudRuntimeException("Cannot find secondary storage with id: " + srcImgStoreId);
         }
-
+        imagestores.add(srcImageVO.getName());
         if (srcImageVO.getRole() != DataStoreRole.Image) {
             throw new CloudRuntimeException("Secondary storage is not of Image Role");
         }
@@ -103,15 +105,17 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
         // Validate all the Ids correspond to valid Image stores
         List<Long> destDatastores = new ArrayList<>();
         for (Long id : destImgStoreIds) {
-            if (imageStoreDao.findById(id) == null) {
+            ImageStoreVO store = imageStoreDao.findById(id);
+            if (store == null) {
                 s_logger.warn("Secondary storage with id: " + id + "is not found. Skipping it...");
                 continue;
             }
-            if (imageStoreDao.findById(id).isReadonly()) {
+            if (store.isReadonly()) {
                 s_logger.warn("Secondary storage: "+ id + " cannot be considered for migration as has read-only permission, Skipping it... ");
                 continue;
             }
             destDatastores.add(id);
+            imagestores.add(store.getName());
         }
 
         if (destDatastores.size() < 1) {
@@ -124,6 +128,7 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
             return new MigrationResponse(message, policy.toString(), false);
         }
 
+        CallContext.current().setEventDetails("Migrating files/data objects " + "from : " + imagestores.get(0) + " to: " + imagestores.subList(1, imagestores.size()));
         return  stgService.migrateData(srcImgStoreId, destDatastores, policy);
     }
 

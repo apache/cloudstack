@@ -1305,7 +1305,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
             if (srcData instanceof TemplateObjectTO || srcData instanceof VolumeObjectTO) {
                 File srcDir = null;
-                if (srcFile.isFile()) {
+                if (srcFile.isFile() || srcFile.getName().contains(".")) {
                     srcDir = new File(srcFile.getParent());
                 }
                 File destDir = null;

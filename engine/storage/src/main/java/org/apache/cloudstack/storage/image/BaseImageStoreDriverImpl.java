@@ -54,6 +54,7 @@ import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateDatadiskTemplateCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -66,6 +67,8 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
@@ -128,6 +131,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     StorageManager storageMgr;
     @Inject
     protected SecondaryStorageVmDao _secStorageVmDao;
+    @Inject
+    AgentManager agentMgr;
 
     protected String _proxy = null;
 
@@ -400,9 +405,20 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
         CommandExecLogVO execLog = new CommandExecLogVO(endPoint.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(endPoint.getId()).getName()).getId(), cmd.getClass().getSimpleName(), 1);
         Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
-        answer = endPoint.sendMessage(cmd);
-        answer.setContextParam("cmd", cmdExecId.toString());
-        return answer;
+        //answer = endPoint.sendMessage(cmd);
+        String errMsg = null;
+        try {
+            answer = agentMgr.send(endPoint.getId(), cmd);
+            answer.setContextParam("cmd", cmdExecId.toString());
+            return answer;
+        }  catch (AgentUnavailableException e) {
+            errMsg = e.toString();
+            s_logger.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
+        } catch (OperationTimedoutException e) {
+            errMsg = e.toString();
+            s_logger.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
+        }
+        throw new CloudRuntimeException("Failed to send command, due to Agent:" + endPoint.getId() + ", " + errMsg);
     }
 
     @Override
