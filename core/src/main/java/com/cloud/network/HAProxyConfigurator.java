@@ -573,8 +573,12 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             .append(" ")
             .append(dest.getDestIp())
             .append(":")
-            .append(dest.getDestPort())
-            .append(" check");
+            .append(dest.getDestPort());
+            if ("true".equalsIgnoreCase(lbConfigsMap.get(LoadBalancerConfigKey.LbBackendHttps.key()))) {
+                sb.append(" check ssl verify none");
+            } else {
+                sb.append(" check");
+            }
 
             if (lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()) != null) {
                 long maxConnEach = Long.parseLong(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()));

@@ -45,6 +45,8 @@ public enum LoadBalancerConfigKey {
 
     LbHttpKeepalive(Category.LoadBalancer, "lb.http.keepalive", "LB http keepalive enabled/disabled", Boolean.class, "<Inherited from network offering>", "Enable or disable HTTP keep-alive, default is inherited from network offering", Scope.LoadBalancerRule),
 
+    LbBackendHttps(Category.LoadBalancer, "lb.backend.https", "If backend server is https", Boolean.class, "false", "If backend server is https. If yes, use 'check ssl verify none' instead of 'check'", Scope.LoadBalancerRule),
+
     LbTransparent(Category.LoadBalancer, "lb.transparent.mode", "LB transparent mode enabled/disabled", Boolean.class, "false", "Enable or disable transparent mode, default is 'false'", Scope.LoadBalancerRule),
 
     GlobalMaxConn(Category.LoadBalancer, "global.maxconn", "LB max connection", Long.class, "4096", "Maximum per process number of concurrent connections, default is '4096'", Scope.Network, Scope.Vpc),
