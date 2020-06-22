@@ -291,7 +291,8 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         final String hostname = cmd.getHostname();
         final int port = cmd.getPort();
         final Long domainId = cmd.getDomainId();
-        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(hostname, port, domainId);
+        final boolean listAll = cmd.listAll();
+        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(hostname, port, domainId, listAll);
         return new Pair<List<? extends LdapConfigurationVO>, Integer>(result.first(), result.second());
     }
 
