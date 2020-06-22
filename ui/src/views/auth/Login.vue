@@ -111,7 +111,6 @@
 <script>
 import { api } from '@/api'
 import { mapActions } from 'vuex'
-import config from '@/config/settings'
 import TranslationMenu from '@/components/header/TranslationMenu'
 
 export default {
@@ -195,7 +194,7 @@ export default {
               })
           } else if (customActiveKey === 'saml') {
             state.loginBtn = false
-            var samlUrl = config.apiBase + '?command=samlSso'
+            var samlUrl = this.$config.apiBase + '?command=samlSso'
             if (values.idp) {
               samlUrl += ('&idpid=' + values.idp)
             }

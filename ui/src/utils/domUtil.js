@@ -15,8 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import config from '@/config/settings'
-
 export const setDocumentTitle = function (title) {
   document.title = title
   const ua = navigator.userAgent
@@ -34,5 +32,3 @@ export const setDocumentTitle = function (title) {
     document.body.appendChild(i)
   }
 }
-
-export const domTitle = config.appTitle

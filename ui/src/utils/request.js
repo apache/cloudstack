@@ -17,7 +17,6 @@
 
 import Vue from 'vue'
 import axios from 'axios'
-import config from '@/config/settings'
 import router from '@/router'
 import store from '@/store'
 import { VueAxios } from './axios'
@@ -25,7 +24,6 @@ import notification from 'ant-design-vue/es/notification'
 import { CURRENT_PROJECT } from '@/store/mutation-types'
 
 const service = axios.create({
-  baseURL: config.apiBase,
   timeout: 600000
 })
 

@@ -683,10 +683,11 @@ export default {
       return options
     },
     keyboardSelectOptions () {
-      return this.options.keyboards.map((keyboard) => {
+      const keyboardOpts = this.$config.keyboardOptions || {}
+      return Object.keys(keyboardOpts).map((keyboard) => {
         return {
-          label: this.$t(keyboard.description),
-          value: keyboard.id
+          label: this.$t(keyboardOpts[keyboard]),
+          value: keyboard
         }
       })
     }
@@ -805,7 +806,6 @@ export default {
         })
       }
 
-      this.fetchKeyboard()
       this.fetchBootTypes()
       this.fetchBootModes()
       Vue.nextTick().then(() => {
@@ -825,35 +825,6 @@ export default {
         }
       })
       await this.fetchAllTemplates()
-    },
-    fetchKeyboard () {
-      const keyboardType = []
-      keyboardType.push({
-        id: '',
-        description: ''
-      })
-      keyboardType.push({
-        id: 'us',
-        description: 'label.standard.us.keyboard'
-      })
-      keyboardType.push({
-        id: 'uk',
-        description: 'label.uk.keyboard'
-      })
-      keyboardType.push({
-        id: 'fr',
-        description: 'label.french.azerty.keyboard'
-      })
-      keyboardType.push({
-        id: 'jp',
-        description: 'label.japanese.keyboard'
-      })
-      keyboardType.push({
-        id: 'sc',
-        description: 'label.simplified.chinese.keyboard'
-      })
-
-      this.$set(this.options, 'keyboards', keyboardType)
     },
     fetchBootTypes () {
       const bootTypes = []

@@ -118,7 +118,7 @@
           <a
             v-if="currentAction.docHelp || $route.meta.docHelp"
             style="margin-left: 5px"
-            :href="docBase + '/' + (currentAction.docHelp || $route.meta.docHelp)"
+            :href="$config.docBase + '/' + (currentAction.docHelp || $route.meta.docHelp)"
             target="_blank">
             <a-icon type="question-circle-o"></a-icon>
           </a>
@@ -304,7 +304,6 @@
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
-import config from '@/config/settings'
 import store from '@/store'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
@@ -336,7 +335,6 @@ export default {
   data () {
     return {
       apiName: '',
-      docBase: config.docBase,
       loading: false,
       actionLoading: false,
       columns: [],

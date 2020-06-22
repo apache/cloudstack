@@ -19,7 +19,15 @@
   <div id="userLayout" :class="['user-layout', device]">
     <div class="user-layout-container">
       <div class="user-layout-header">
-        <img src="~@/assets/banner.svg" class="user-layout-logo" alt="logo">
+        <img
+          v-if="$config.banner"
+          :style="{
+            width: $config.theme['@banner-width'],
+            height: $config.theme['@banner-height']
+          }"
+          :src="$config.banner"
+          class="user-layout-logo"
+          alt="logo">
       </div>
       <route-view></route-view>
     </div>
@@ -65,8 +73,6 @@ export default {
   }
 
   &-logo {
-    width: 95%;
-    max-width: 450px;
     border-style: none;
     margin: 0 auto 2rem;
     display: block;

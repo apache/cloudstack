@@ -25,10 +25,6 @@ export default {
   autoHideHeader: false, //  auto hide header
   invertedMode: true,
   multiTab: false, // enable to have tab/route history stuff
-  // CloudStack options
-  apiBase: '/client/api',
-  docBase: 'http://docs.cloudstack.apache.org/en/latest',
-  appTitle: 'CloudStack',
   // vue-ls options
   storageOptions: {
     namespace: 'primate__', // key prefix

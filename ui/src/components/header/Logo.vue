@@ -17,7 +17,14 @@
 
 <template>
   <div class="logo">
-    <img class="logo-image" src="~@/assets/logo.svg"/>
+    <img
+      v-if="$config.logo"
+      :style="{
+        width: $config.theme['@logo-width'],
+        height: $config.theme['@logo-height']
+      }"
+      :src="$config.logo"
+      class="logo-image" />
   </div>
 </template>
 
@@ -59,7 +66,6 @@ export default {
 }
 
 .logo-image {
-  width: 256px;
   display: inline-block;
   vertical-align: middle;
 }

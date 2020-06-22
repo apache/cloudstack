@@ -20,13 +20,14 @@ const webpack = require('webpack')
 const fs = require('fs')
 const packageJson = fs.readFileSync('./package.json')
 const version = JSON.parse(packageJson).version || 'master'
+const createThemeColorReplacerPlugin = require('./theme.config')
 
 function resolve (dir) {
   return path.join(__dirname, dir)
 }
 
 // vue.config.js
-module.exports = {
+const vueConfig = {
   publicPath: './',
   /*
     Vue-cli3:
@@ -56,6 +57,7 @@ module.exports = {
 
   chainWebpack: (config) => {
     config.resolve.alias
+      .set('@public', resolve('public'))
       .set('@$', resolve('src'))
       .set('@api', resolve('src/api'))
       .set('@assets', resolve('src/assets'))
@@ -103,11 +105,8 @@ module.exports = {
     loaderOptions: {
       less: {
         modifyVars: {
-          // Refer:
           // https://ant.design/docs/spec/colors
           // https://vue.ant.design/docs/vue/customize-theme/
-          'primary-color': '#1890ff',
-          'link-color': '#1890ff'
         },
         javascriptEnabled: true
       }
@@ -149,3 +148,7 @@ module.exports = {
     }
   }
 }
+
+vueConfig.configureWebpack.plugins.push(createThemeColorReplacerPlugin())
+
+module.exports = vueConfig

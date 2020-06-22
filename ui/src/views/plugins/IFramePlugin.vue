@@ -15,33 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
-import App from './App.vue'
-import router from './router'
-import store from './store'
-import i18n from './locales'
+<template>
+  <div>
+    <iframe :src="$route.meta.path" width="100%" frameBorder="0" style="height: 90vh">
+    </iframe>
+  </div>
+</template>
 
-import bootstrap from './core/bootstrap'
-import './core/use'
-import './core/ext'
-import './permission' // permission control
-import './utils/filter' // global filter
-import { pollJobPlugin, notifierPlugin } from './utils/plugins'
-import { VueAxios } from './utils/request'
+<script>
 
-Vue.config.productionTip = false
-Vue.use(VueAxios, router)
-Vue.use(pollJobPlugin)
-Vue.use(notifierPlugin)
-
-fetch('config.json').then(response => response.json()).then(config => {
-  Vue.prototype.$config = config
-  Vue.axios.defaults.baseURL = config.apiBase
-  new Vue({
-    router,
-    store,
-    i18n,
-    created: bootstrap,
-    render: h => h(App)
-  }).$mount('#app')
-})
+export default {
+  name: 'IFramePlugin'
+}
+</script>

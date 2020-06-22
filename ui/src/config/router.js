@@ -18,6 +18,8 @@
 // eslint-disable-next-line
 import { UserLayout, BasicLayout, RouteView, BlankLayout, PageView } from '@/layouts'
 import AutogenView from '@/views/AutogenView.vue'
+import IFramePlugin from '@/views/plugins/IFramePlugin.vue'
+import Vue from 'vue'
 
 import compute from '@/config/section/compute'
 import storage from '@/config/section/storage'
@@ -167,7 +169,7 @@ function generateRouterMap (section) {
 }
 
 export function asyncRouterMap () {
-  return [{
+  const routerMap = [{
     path: '/',
     name: 'index',
     component: BasicLayout,
@@ -255,6 +257,20 @@ export function asyncRouterMap () {
   {
     path: '*', redirect: '/exception/404', hidden: true
   }]
+
+  const plugins = Vue.prototype.$config.plugins
+  if (plugins && plugins.length > 0) {
+    plugins.map(plugin => {
+      routerMap[0].children.push({
+        path: '/plugins/' + plugin.name,
+        name: plugin.name,
+        component: IFramePlugin,
+        meta: { title: plugin.name, icon: plugin.icon, path: plugin.path }
+      })
+    })
+  }
+
+  return routerMap
 }
 
 export const constantRouterMap = [

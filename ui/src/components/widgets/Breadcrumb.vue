@@ -39,7 +39,7 @@
           <a
             v-if="item.meta.docHelp"
             style="margin-right: 12px"
-            :href="docBase + '/' + $route.meta.docHelp"
+            :href="$config.docBase + '/' + $route.meta.docHelp"
             target="_blank">
             <a-icon type="question-circle-o"></a-icon>
           </a>
@@ -52,7 +52,6 @@
 </template>
 
 <script>
-import config from '@/config/settings'
 
 export default {
   name: 'Breadcrumb',
@@ -67,8 +66,7 @@ export default {
   data () {
     return {
       name: '',
-      breadList: [],
-      docBase: config.docBase
+      breadList: []
     }
   },
   created () {
