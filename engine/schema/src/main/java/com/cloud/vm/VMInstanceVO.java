@@ -238,7 +238,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.diskOfferingId = diskOfferingId;
     }
 
-    protected VMInstanceVO() {
+    public VMInstanceVO() {
     }
 
     public Date getRemoved() {
