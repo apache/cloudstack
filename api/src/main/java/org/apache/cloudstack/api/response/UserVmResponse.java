@@ -290,6 +290,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "OS type id of the vm", since = "4.4")
     private String osTypeId;
 
+    @SerializedName(ApiConstants.OS_DISPLAY_NAME)
+    @Param(description = "OS name of the vm", since = "4.13.2")
+    private String osDisplayName;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
@@ -822,6 +826,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.osTypeId = osTypeId;
     }
 
+    public void setOsDisplayName(String osDisplayName) {
+        this.osDisplayName = osDisplayName;
+    }
+
     public Set<Long> getTagIds() {
         return tagIds;
     }
@@ -848,5 +856,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getOsTypeId() {
         return osTypeId;
+    }
+
+    public String getOsDisplayName() {
+        return osDisplayName;
     }
 }
