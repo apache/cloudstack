@@ -72,6 +72,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.storage.Upload;
@@ -405,7 +406,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
         CommandExecLogVO execLog = new CommandExecLogVO(endPoint.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(endPoint.getId()).getName()).getId(), cmd.getClass().getSimpleName(), 1);
         Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
-        //answer = endPoint.sendMessage(cmd);
         String errMsg = null;
         try {
             answer = agentMgr.send(endPoint.getId(), cmd);
@@ -423,7 +423,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
-        if (srcData.getDataStore().getTO() instanceof NfsTO && destData.getDataStore().getTO() instanceof NfsTO) {
+        DataStore srcStore = srcData.getDataStore();
+        DataStore destStore = destData.getDataStore();
+        if ((srcData.getDataStore().getTO() instanceof NfsTO && destData.getDataStore().getTO() instanceof NfsTO) &&
+                (srcStore.getRole() == DataStoreRole.Image && destStore.getRole() == DataStoreRole.Image)) {
             return true;
         }
         return false;
