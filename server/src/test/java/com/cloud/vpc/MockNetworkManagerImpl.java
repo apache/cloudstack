@@ -941,7 +941,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public void addHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest) {
+    public void setHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest, boolean migrationSuccessful) {
         return;
     }
 

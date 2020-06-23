@@ -1552,7 +1552,7 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public int detachIso(String isoDatastorePath) throws Exception {
-        return detachIso(isoDatastorePath, true);
+        return detachIso(isoDatastorePath, false);
     }
 
     public int detachIso(String isoDatastorePath, final boolean force) throws Exception {

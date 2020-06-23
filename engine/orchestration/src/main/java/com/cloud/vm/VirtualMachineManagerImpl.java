@@ -2511,7 +2511,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (final AgentUnavailableException ae) {
                     s_logger.info("Looks like the destination Host is unavailable for cleanup");
                 }
-
+                _networkMgr.setHypervisorHostname(profile, dest, false);
                 try {
                     stateTransitTo(vm, Event.OperationFailed, srcHostId);
                 } catch (final NoTransitionException e) {
@@ -2519,7 +2519,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             } else {
                 _networkMgr.commitNicForMigration(vmSrc, profile);
-                _networkMgr.addHypervisorHostname(profile, dest);
+                _networkMgr.setHypervisorHostname(profile, dest, true);
             }
 
             work.setStep(Step.Done);
@@ -2899,8 +2899,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (final NoTransitionException e) {
                     s_logger.error("Error while transitioning vm from migrating to running state.", e);
                 }
+                _networkMgr.setHypervisorHostname(profile, destination, false);
             } else {
-                _networkMgr.addHypervisorHostname(profile, destination);
+                _networkMgr.setHypervisorHostname(profile, destination, true);
             }
 
             work.setStep(Step.Done);
@@ -4115,14 +4116,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (final AgentUnavailableException ae) {
                     s_logger.info("Looks like the destination Host is unavailable for cleanup");
                 }
-
+                _networkMgr.setHypervisorHostname(profile, dest, false);
                 try {
                     stateTransitTo(vm, Event.OperationFailed, srcHostId);
                 } catch (final NoTransitionException e) {
                     s_logger.warn(e.getMessage());
                 }
             } else {
-                _networkMgr.addHypervisorHostname(profile, dest);
+                _networkMgr.setHypervisorHostname(profile, dest, true);
             }
 
             work.setStep(Step.Done);
