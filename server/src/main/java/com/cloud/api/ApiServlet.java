@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
@@ -50,7 +51,6 @@ import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
-
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
@@ -259,6 +259,22 @@ public class ApiServlet extends HttpServlet {
                 userId = (Long)session.getAttribute("userid");
                 final String account = (String) session.getAttribute("account");
                 final Object accountObj = session.getAttribute("accountobj");
+                if (session.getAttribute(ApiConstants.SESSIONKEY) != null) {
+                    Cookie[] cookies = req.getCookies();
+                    if (cookies != null) {
+                        HttpSession finalSession = session;
+                        List<Cookie> sessionKeys = Arrays.stream(cookies).filter(cookie ->  cookie.getName().equals(ApiConstants.SESSIONKEY)
+                                && cookie.getValue().equals(finalSession.getAttribute(ApiConstants.SESSIONKEY))).collect(Collectors.toList());
+                        Cookie validCookie = sessionKeys.get(0);
+                        for (Cookie cookie : cookies) {
+                            if (cookie.getName().equals(ApiConstants.SESSIONKEY)) {
+                                if (cookie.getValue() != null && !cookie.getValue().equals(validCookie.getValue())) {
+                                    cookie.setValue((String) validCookie.getValue());
+                                }
+                            }
+                        }
+                    }
+                }
                 if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY)) {
                     try {
                         session.invalidate();
