@@ -98,34 +98,8 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 citrixResourceBase.createPatchVbd(conn, vmName, vm);
             }
-            // put cdrom at the first place in the list
-            List<DiskTO> disks = new ArrayList<DiskTO>(vmSpec.getDisks().length);
-            int index = 0;
-            for (final DiskTO disk : vmSpec.getDisks()) {
-                if (Volume.Type.ISO.equals(disk.getType())) {
-                    disks.add(0, disk);
-                } else {
-                    disks.add(index, disk);
-                }
-                index++;
-            }
 
-            for (DiskTO disk : disks) {
-                final VDI newVdi = citrixResourceBase.prepareManagedDisk(conn, disk, vmSpec.getId(), vmSpec.getName());
-
-                if (newVdi != null) {
-                    final Map<String, String> data = new HashMap<>();
-
-                    final String path = newVdi.getUuid(conn);
-
-                    data.put(StartAnswer.PATH, path);
-                    data.put(StartAnswer.IMAGE_FORMAT, Storage.ImageFormat.VHD.toString());
-
-                    iqnToData.put(disk.getDetails().get(DiskTO.IQN), data);
-                }
-
-                citrixResourceBase.createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), newVdi);
-            }
+            prepareDisks(vmSpec, citrixResourceBase, conn, iqnToData, vmName, vm);
 
             for (final NicTO nic : vmSpec.getNics()) {
                 citrixResourceBase.createVif(conn, vmName, vm, vmSpec, nic);
@@ -225,6 +199,37 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 s_logger.debug("2. The VM " + vmName + " is in " + state + " state.");
             } else {
                 s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
+            }
+        }
+    }
+
+    private void prepareDisks(VirtualMachineTO vmSpec, CitrixResourceBase citrixResourceBase, Connection conn,
+                              Map<String, Map<String, String>> iqnToData, String vmName, VM vm) throws Exception {
+        // put cdrom at the first place in the list
+        List<DiskTO> disks = new ArrayList<DiskTO>(vmSpec.getDisks().length);
+        int index = 0;
+        for (final DiskTO disk : vmSpec.getDisks()) {
+            if (Volume.Type.ISO.equals(disk.getType())) {
+                disks.add(0, disk);
+            } else {
+                disks.add(index, disk);
+            }
+            index++;
+        }
+        int isoCount = 0;
+        for (DiskTO disk : disks) {
+            final VDI newVdi = citrixResourceBase.prepareManagedDisk(conn, disk, vmSpec.getId(), vmSpec.getName());
+            if (newVdi != null) {
+                final Map<String, String> data = new HashMap<>();
+                final String path = newVdi.getUuid(conn);
+                data.put(StartAnswer.PATH, path);
+                data.put(StartAnswer.IMAGE_FORMAT, Storage.ImageFormat.VHD.toString());
+                iqnToData.put(disk.getDetails().get(DiskTO.IQN), data);
+            }
+            citrixResourceBase.createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), newVdi, isoCount);
+
+            if (disk.getType() == Volume.Type.ISO) {
+                isoCount++;
             }
         }
     }
