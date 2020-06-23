@@ -197,7 +197,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (shouldMigrate(chosenFileForMigration, srcDatastore.getId(), destDatastoreId, storageCapacities, snapshotChains, migrationPolicy)) {
-                migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, srcDatastore, destDatastoreId, executor, futures);
+                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, srcDatastore, destDatastoreId, executor, futures);
             } else {
                 if (migrationPolicy == MigrationPolicy.BALANCE) {
                     message = "Migration completed and has successfully balanced the data objects among stores:  " + StringUtils.join(storageCapacities.keySet(), ",");
@@ -232,7 +232,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         return new Pair<String, Boolean>(message, success);
     }
 
-    protected void migrateAway(DataObject chosenFileForMigration, Map<Long, Pair<Long, Long>> storageCapacities,
+    protected Map<Long, Pair<Long, Long>> migrateAway(DataObject chosenFileForMigration, Map<Long, Pair<Long, Long>> storageCapacities,
                                Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, DataStore srcDatastore, Long destDatastoreId, ThreadPoolExecutor executor,
     List<Future<AsyncCallFuture<DataObjectResult>>> futures) {
         Long fileSize = migrationHelper.getFileSize(chosenFileForMigration, snapshotChains);
@@ -251,6 +251,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
         futures.add((executor.submit(task)));
         s_logger.debug("Migration of file  " + chosenFileForMigration.getId() + " is initiated");
+        return storageCapacities;
     }
 
 
