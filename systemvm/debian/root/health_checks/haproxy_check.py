@@ -21,8 +21,8 @@ from utility import getHealthChecksData, formatPort
 
 
 def checkMaxconn(haproxyData, haCfgSections):
-    if "maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
-        if haproxyData["maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
+    if "global.maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
+        if haproxyData["global.maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
             print "global maxconn mismatch occured"
             return False
 
@@ -36,12 +36,27 @@ def checkLoadBalance(haproxyData, haCfgSections):
                     formatPort(lbSec["sourcePortStart"],
                                lbSec["sourcePortEnd"])
         secName = "listen " + srcServer
+        secFrontend = "frontend " + srcServer
+        secBackend = "backend " + srcServer + "-backend"
+        cfgSection = None
 
-        if secName not in haCfgSections:
+        if "transparent" in lbSec and lbSec["transparent"].lower() == 'true':
+            if secFrontend not in haCfgSections:
+                print "Missing section for load balancing " + secFrontend + "\n"
+                correct = False
+            elif secBackend not in haCfgSections:
+                print "Missing section for load balancing " + secBackend + "\n"
+                correct = False
+            else:
+                cfgSection = haCfgSections[secFrontend]
+                cfgSection.update(haCfgSections[secBackend])
+        elif secName not in haCfgSections:
             print "Missing section for load balancing " + secName + "\n"
             correct = False
         else:
             cfgSection = haCfgSections[secName]
+
+        if cfgSection:
             if "server" in cfgSection:
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
                     print "Incorrect balance method for " + secName + \
@@ -50,6 +65,8 @@ def checkLoadBalance(haproxyData, haCfgSections):
                     correct = False
 
                 bindStr = lbSec["sourceIp"] + ":" + formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
+                if lbSec.has_key("sslcert"):
+                    bindStr += " ssl crt /etc/ssl/private/" + lbSec["sslcert"]
                 if cfgSection["bind"][0] != bindStr:
                     print "Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + "."
                     correct = False

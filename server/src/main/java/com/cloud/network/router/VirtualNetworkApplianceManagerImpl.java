@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.BlockingQueue;
@@ -62,6 +63,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -161,6 +163,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LBStickinessPolicyDao;
 import com.cloud.network.dao.LBStickinessPolicyVO;
+import com.cloud.network.dao.LoadBalancerConfigDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVMMapVO;
@@ -193,6 +196,7 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.LoadBalancerConfig;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -286,6 +290,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private DataCenterDao _dcDao;
     @Inject protected VlanDao _vlanDao;
     @Inject private FirewallRulesDao _rulesDao;
+    @Inject private LoadBalancerConfigDao _lbConfigDao;
     @Inject private LoadBalancerDao _loadBalancerDao;
     @Inject private LoadBalancerVMMapDao _loadBalancerVMMapDao;
     @Inject protected IPAddressDao _ipAddressDao;
@@ -1741,27 +1746,72 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     private void updateWithLbRules(final DomainRouterJoinVO routerJoinVO, final StringBuilder loadBalancingData) {
+        List<? extends LoadBalancerConfig> networkLbConfigs = null;
+        if (routerJoinVO.getNetworkId() == 0) {
+            return;
+        } else {
+            Network network = _networkDao.findById(routerJoinVO.getNetworkId());
+            if (network.getTrafficType() != TrafficType.Guest) {
+                return;
+            }
+        }
+        if (routerJoinVO.getVpcId() != 0) {
+            networkLbConfigs = _lbConfigDao.listByVpcId(routerJoinVO.getVpcId());
+        } else {
+            networkLbConfigs = _lbConfigDao.listByNetworkId(routerJoinVO.getNetworkId());
+        }
+        HashMap<String, String> networkLbConfigsMap = new HashMap<String, String>();
+        if (networkLbConfigs != null) {
+            for (LoadBalancerConfig networkLbConfig: networkLbConfigs) {
+                networkLbConfigsMap.put(networkLbConfig.getName(), networkLbConfig.getValue());
+            }
+        }
+        Optional<String> lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxConn.key()));
+        String globalMaxConn = lbConfig.isPresent() ? lbConfig.get() : null;
+
         List<? extends FirewallRuleVO> loadBalancerVOs = this.getLBRules(routerJoinVO);
         for (FirewallRuleVO firewallRuleVO : loadBalancerVOs) {
+            List<? extends LoadBalancerConfig> lbConfigs = _lbConfigDao.listByLoadBalancerId(firewallRuleVO.getId());
+            final HashMap<String, String> lbConfigsMap = new HashMap<String, String>();
+            if (lbConfigs != null) {
+                for (LoadBalancerConfig config: lbConfigs) {
+                    lbConfigsMap.put(config.getName(), config.getValue());
+                }
+            }
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()));
+            String isTransparent = lbConfig.isPresent() ? lbConfig.get() : null;
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbHttp.key()));
+            String isHttp = lbConfig.isPresent() ? lbConfig.get() : null;
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbHttpKeepalive.key()));
+            String isHttpKeepalive = lbConfig.isPresent() ? lbConfig.get() : null;
+
             List<LoadBalancerVMMapVO> vmMapVOs = _loadBalancerVMMapDao.listByLoadBalancerId(firewallRuleVO.getId(), false);
             if (vmMapVOs.size() > 0) {
 
                 final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());
-                if (offering.getConcurrentConnections() == null) {
-                    loadBalancingData.append("maxconn=").append(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+                if (globalMaxConn != null) {
+                    loadBalancingData.append("global.maxconn=").append(globalMaxConn);
+                } else if (offering.getConcurrentConnections() == null) {
+                    loadBalancingData.append("global.maxconn=").append(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
                 } else {
-                    loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections().toString());
+                    loadBalancingData.append("global.maxconn=").append(offering.getConcurrentConnections().toString());
                 }
 
                 loadBalancingData.append(",sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
                         .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
                 if (firewallRuleVO instanceof LoadBalancerVO) {
                     LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
-                    loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
+                    String sourceIp = _ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString();
+                    loadBalancingData.append(",sourceIp=").append(sourceIp)
                             .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
                             .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
                             .append(",algorithm=").append(loadBalancerVO.getAlgorithm())
                             .append(",protocol=").append(loadBalancerVO.getLbProtocol());
+                    final LbSslCert sslCert = _lbMgr.getLbSslCert(firewallRuleVO.getId());
+                    if (sslCert != null && ! sslCert.isRevoked()) {
+                        loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
+                                .append(loadBalancerVO.getSourcePortStart()).append(".pem");
+                    }
                 } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
                     ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
                     loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
@@ -1771,7 +1821,19 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             .append(",protocol=").append(appLoadBalancerVO.getLbProtocol());
                 }
                 loadBalancingData.append(",stickiness=").append(getStickinessPolicies(firewallRuleVO.getId()));
-                loadBalancingData.append(",keepAliveEnabled=").append(offering.isKeepAliveEnabled()).append(",vmIps=");
+                if (isHttp != null) {
+                    loadBalancingData.append(",http=").append(isHttp);
+                }
+                if (isHttpKeepalive != null) {
+                    loadBalancingData.append(",keepAliveEnabled=").append(isHttpKeepalive);
+                } else {
+                    loadBalancingData.append(",keepAliveEnabled=").append(offering.isKeepAliveEnabled());
+                }
+                if (isTransparent != null) {
+                    loadBalancingData.append(",transparent=").append(isTransparent);
+                }
+
+                loadBalancingData.append(",vmIps=");
                 for (LoadBalancerVMMapVO vmMapVO : vmMapVOs) {
                     loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
                 }
