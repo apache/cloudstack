@@ -44,3 +44,14 @@
     }
   }
 }
+
+a {
+  color: @link-color;
+  background-color: transparent;
+}
+a:hover {
+  color: color(~`colorPalette("@{primary-color}", 5)`);
+}
+a:active {
+  color: color(~`colorPalette("@{primary-color}", 7)`);
+}

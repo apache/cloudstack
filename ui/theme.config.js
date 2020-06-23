@@ -28,6 +28,7 @@ const options = {
   varFile: resolve('./src/style/vars.less'),
   themeVariables: [
     '@primary-color',
+    '@link-color',
     '@success-color',
     '@warning-color',
     '@processing-color',

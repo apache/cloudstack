@@ -11,6 +11,7 @@
   },
   "theme": {
     "@primary-color": "#1890ff",
+    "@link-color": "#1890ff",
     "@processing-color": "#1890ff",
     "@success-color": "#52c41a",
     "@warning-color": "#faad14",
@@ -25,8 +26,8 @@
     "@box-shadow-base": "0 2px 8px rgba(0, 0, 0, 0.15)",
     "@logo-width": "256px",
     "@logo-height": "64px",
-    "@login-banner-width": "700px",
-    "@login-banner-height": "110px",
+    "@banner-width": "700px",
+    "@banner-height": "110px",
     "@error-width": "256px",
     "@error-height": "256px"
   },
