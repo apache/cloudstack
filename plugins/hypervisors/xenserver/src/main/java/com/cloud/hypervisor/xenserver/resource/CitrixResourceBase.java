@@ -206,6 +206,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
     private final static String BASE_MOUNT_POINT_ON_REMOTE = "/var/cloud_mount/";
 
+    private final static int USER_DEVICE_START_ID = 3;
+
+    private final static String VM_NAME_ISO_SUFFIX = "-ISO";
+
+    private final static String VM_FILE_ISO_SUFFIX = ".iso";
+
     private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
     private static final long mem_128m = 134217728L;
@@ -1125,7 +1131,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException(errMsg);
     }
 
-    public VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
+    public VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi, int isoCount) throws XmlRpcException, XenAPIException {
         final Volume.Type type = volume.getType();
 
         if (vdi == null) {
@@ -1161,7 +1167,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (volume.getType() == Volume.Type.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
-            vbdr.userdevice = "3";
+            vbdr.userdevice = String.valueOf(USER_DEVICE_START_ID + isoCount);
         } else {
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
@@ -3880,7 +3886,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return getVDIbyUuid(conn, volumePath);
     }
 
-    protected VDI mount(final Connection conn, final String vmName, final DiskTO volume) throws XmlRpcException, XenAPIException {
+    public VDI mount(final Connection conn, final String vmName, final DiskTO volume) throws XmlRpcException, XenAPIException {
         final DataTO data = volume.getData();
         final Volume.Type type = volume.getType();
         if (type == Volume.Type.ISO) {
@@ -3894,7 +3900,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // corer case, xenserver pv driver iso
             final String templateName = iso.getName();
-            if (templateName.startsWith("xs-tools")) {
+            if (templateName != null && templateName.startsWith("xs-tools")) {
                 try {
                     final String actualTemplateName = getActualIsoTemplate(conn);
                     final Set<VDI> vdis = VDI.getByNameLabel(conn, actualTemplateName);
@@ -3923,7 +3929,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } catch (final URISyntaxException e) {
                 throw new CloudRuntimeException("Incorrect uri " + mountpoint, e);
             }
-            final SR isoSr = createIsoSRbyURI(conn, uri, vmName, false);
+            final SR isoSr = createIsoSRbyURI(conn, uri, vmName, true);
 
             final String isoname = isoPath.substring(index + 1);
 
@@ -4109,17 +4115,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             throw new CloudRuntimeException("There are " + (vms == null ? "0" : vms.size()) + " VMs named " + vmName);
         }
         final VM vm = vms.iterator().next();
-
-        if (vmDataList != null) {
-            // create SR
-            SR sr = createLocalIsoSR(conn, _configDriveSRName + getHost().getIp());
-
-            // 1. create vm data files
-            createVmdataFiles(vmName, vmDataList, configDriveLabel);
-
-            // 2. copy config drive iso to host
-            copyConfigDriveIsoToHost(conn, sr, vmName);
-        }
 
         final Set<VBD> vbds = vm.getVBDs(conn);
         for (final VBD vbd : vbds) {
@@ -5461,7 +5456,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public SR createLocalIsoSR(final Connection conn, final String srName) throws XenAPIException, XmlRpcException {
 
         // if config drive sr already exists then return
-        SR sr = getSRByNameLabelandHost(conn, _configDriveSRName + _host.getIp());
+        SR sr = getSRByNameLabelandHost(conn, srName);
 
         if (sr != null) {
             s_logger.debug("Config drive SR already exist, returing it");
@@ -5554,10 +5549,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.debug("Attaching config drive iso device for the VM " + vmName + " In host " + ipAddr);
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
 
-            SR sr = getSRByNameLabel(conn, _configDriveSRName + ipAddr);
+            SR sr = getSRByNameLabel(conn, vmName + VM_NAME_ISO_SUFFIX);
             //Here you will find only two vdis with the <vmname>.iso.
             //one is from source host and second from dest host
-            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + ".iso");
+            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + VM_FILE_ISO_SUFFIX);
             if (vdis.isEmpty()) {
                 s_logger.debug("Could not find config drive ISO: " + vmName);
                 return false;
