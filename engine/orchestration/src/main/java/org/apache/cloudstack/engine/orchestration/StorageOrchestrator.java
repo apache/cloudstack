@@ -64,7 +64,6 @@ import com.cloud.storage.StorageService;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -200,11 +199,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, srcDatastore, destDatastoreId, executor, futures);
             } else {
                 if (migrationPolicy == MigrationPolicy.BALANCE) {
-                    message = "Migration completed and has successfully balanced the data objects among stores:  " + StringUtils.join(storageCapacities.keySet(), ",");
-                } else {
-                    message = "Complete migration failed. Please set the source Image store to read-write mode if you want to continue using it";
-                    success = false;
+                    continue;
                 }
+                message = "Complete migration failed. Please set the source Image store to read-write mode if you want to continue using it";
+                success = false;
                 break;
             }
         }
@@ -219,7 +217,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         if (destDatastoreId == srcDatastore.getId() && !files.isEmpty()) {
             if (migrationPolicy == MigrationPolicy.BALANCE) {
                 s_logger.debug("Migration completed : data stores have been balanced ");
-                message = "Image stores have been balanced";
+                if (destDatastoreId == srcDatastore.getId()) {
+                    message = "Seems like source datastore has more free capacity than the destination(s)";
+                }
+                message += "Image stores have been attempted to be balanced";
                 success = true;
             } else {
                 message = "Files not completely migrated from "+ srcDatastore.getId() + ". Datastore (source): " + srcDatastore.getId() + "has equal or more free space than destination."+
