@@ -17,7 +17,10 @@
 
 <template>
   <div class="footer">
-    <div class="links">
+    <div class="line">
+      <span v-html="$config.footer" />
+    </div>
+    <div class="line" v-if="$store.getters.userInfo.roletype === 'Admin'">
       CloudStack {{ $store.getters.features.cloudstackversion }}
       <a-divider type="vertical" />
       Primate {{ $store.getters.version }}
@@ -46,7 +49,7 @@ export default {
     margin: 48px 0 24px;
     text-align: center;
 
-    .links {
+    .line {
       margin-bottom: 8px;
 
       a {
