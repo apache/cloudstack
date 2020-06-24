@@ -506,7 +506,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         sb = new StringBuilder();
         sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
         if (sslOffloading) {
-            sb.append(" ssl crt /etc/ssl/private/").append(poolName).append(".pem");
+            sb.append(" ssl crt /etc/ssl/cloudstack/").append(poolName).append(".pem");
             // check for http2 support
             if ("true".equalsIgnoreCase(lbConfigsMap.get(LoadBalancerConfigKey.LbHttp2.key()))) {
                 sb.append(" alpn h2,http/1.1");
@@ -897,6 +897,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             if (lbTO.getSslCert() != null) {
                 final LbSslCert cert = lbTO.getSslCert();
                 if (cert.isRevoked()) {
+                    continue;
+                }
+                if (lbTO.getLbProtocol() == null || ! lbTO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
                     continue;
                 }
                 StringBuilder sb = new StringBuilder();

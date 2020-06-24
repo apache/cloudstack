@@ -16,6 +16,7 @@
 # under the License.
 import logging
 import os.path
+from os import listdir
 import re
 from cs.CsDatabag import CsDataBag
 from CsProcess import CsProcess
@@ -35,8 +36,8 @@ class CsLoadBalancer(CsDataBag):
         if 'configuration' not in self.dbag['config'][0].keys():
             return
 
-        ssl_certs = self.dbag['config'][0]['ssl_certs']
-        self._create_pem_for_sslcert(ssl_certs)
+        if 'ssl_certs' in self.dbag['config'][0].keys():
+            self._create_pem_for_sslcert(self.dbag['config'][0]['ssl_certs'])
 
         config = self.dbag['config'][0]['configuration']
         file1 = CsFile(HAPROXY_CONF_T)
@@ -111,13 +112,19 @@ class CsLoadBalancer(CsDataBag):
                 CsHelper.execute("ip route add local 0.0.0.0/0 dev lo table %s" % tableNo)
 
     def _create_pem_for_sslcert(self, ssl_certs):
-        logging.debug("CsLoadBalancer:: removing all pem files in /etc/ssl/private and creating new pem files")
-        CsHelper.execute("rm -rf /etc/ssl/private/*.pem")
+        dir_certs = "/etc/ssl/cloudstack"
+        logging.debug("CsLoadBalancer:: creating new pem files in %s and cleaning up it" % dir_certs)
+        CsHelper.execute("mkdir -p %s" % dir_certs)
+        cert_names = []
         for cert in ssl_certs:
-            file = CsFile("/etc/ssl/private/%s.pem" % cert['name'])
+            cert_names.append(cert['name'] + ".pem")
+            file = CsFile("%s/%s.pem" % (dir_certs, cert['name']))
             file.empty()
             file.add("%s\n" % cert['cert'].replace("\r\n","\n"))
             if 'chain' in cert.keys():
                 file.add("%s\n" % cert['chain'].replace("\r\n","\n"))
             file.add("%s\n" % cert['key'].replace("\r\n","\n"))
             file.commit()
+        for f in listdir(dir_certs):
+            if f not in cert_names:
+                CsHelper.execute("rm %s/%s" % (dir_certs, f))

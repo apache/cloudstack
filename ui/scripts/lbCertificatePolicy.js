@@ -25,6 +25,7 @@
                 var certid = {
                     certificate: {
                         label: 'label.certificate.name',
+                        required: true,
                         select: function(args) {
                             var data = {};
                             var item = {};
@@ -64,7 +65,7 @@
                                     }
                                     var items = json.listsslcertsresponse.sslcert;
                                     var data = [{
-                                        id: 'none',
+                                        id: 'None',
                                         description: '---None---'
                                     }];
                                     $.map(items, function(item) {
@@ -98,7 +99,11 @@
                             if ($item) {
                                 var certId = $item.data('multi-custom-data').id;
                                 var $cert = args.$form.find('select[name=certificate]');
-                                $cert.val(certId);
+                                if (certId) {
+                                    $cert.val(certId);
+                                } else {
+                                    $cert.val("None");
+                                }
                             }
                         }
                     },
@@ -204,12 +209,12 @@
                       message: _l('Certificate is not changed')
                     });
                     $(window).trigger('cloudStack.fullRefresh');
-                } else if (certId == null && data.certificate == 'none') {
+                } else if (certId == null && data.certificate == 'None') {
                     cloudStack.dialog.notice({
                       message: _l('Certificate is not assigned')
                     });
                     $(window).trigger('cloudStack.fullRefresh');
-                } else if (certId && data.certificate == 'none') {
+                } else if (certId && data.certificate == 'None') {
                     // Delete existing certificate
                     cloudStack.lbCertificatePolicy.actions['delete'](lbRuleID, complete, error);
                 } else {
