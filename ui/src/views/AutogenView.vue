@@ -738,7 +738,7 @@ export default {
       this.currentAction.paramFields.map(field => {
         let fieldValue = null
         let fieldName = null
-        if (field.type === 'list' || field.name === 'account' || (this.currentAction.mapping && field.name in this.currentAction.mapping)) {
+        if (field.type === 'list' || field.name === 'account') {
           fieldName = field.name.replace('ids', 'name').replace('id', 'name')
         } else {
           fieldName = field.name
