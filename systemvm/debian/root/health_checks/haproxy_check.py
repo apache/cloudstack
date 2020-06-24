@@ -20,18 +20,44 @@ from os import sys, path
 from utility import getHealthChecksData, formatPort
 
 
-def checkMaxconn(haproxyData, haCfgSections):
+def checkGlobal(haproxyData, haCfgSections):
     if "global.maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
         if haproxyData["global.maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
             print "global maxconn mismatch occured"
             return False
+    if "global.maxpipes" in haproxyData and "maxpipes" in haCfgSections["global"]:
+        if haproxyData["global.maxpipes"] != haCfgSections["global"]["maxpipes"][0].strip():
+            print "global maxpipes mismatch occured"
+            return False
 
     return True
 
+def checkDefaults(haproxyData, haCfgSections):
+    if "timeout" in haCfgSections["defaults"]:
+        timeouts = haCfgSections["defaults"]["timeout"]
+        if "default.timeout.connect" in haproxyData:
+            timeout = "connect    %s" % haproxyData["default.timeout.connect"]
+            if timeout not in timeouts:
+                 print "default timeout connect mismatch occured"
+                 return False
+        if "default.timeout.server" in haproxyData:
+            timeout = "server     %s" % haproxyData["default.timeout.server"]
+            if timeout not in timeouts:
+                 print "default timeout server mismatch occured"
+                 return False
+        if "default.timeout.client" in haproxyData:
+            timeout = "client     %s" % haproxyData["default.timeout.client"]
+            if timeout not in timeouts:
+                 print "default timeout client mismatch occured"
+                 return False
+
+    return True
 
 def checkLoadBalance(haproxyData, haCfgSections):
     correct = True
     for lbSec in haproxyData:
+        if "global.maxconn" in lbSec:   # Ignore first part (global and default settings)
+            continue;
         srcServer = lbSec["sourceIp"].replace('.', '_') + "-" + \
                     formatPort(lbSec["sourcePortStart"],
                                lbSec["sourcePortEnd"])
@@ -136,10 +162,11 @@ def main():
 
             currSectionDict[lineSec[0]].append(lineSec[1] if len(lineSec) > 1 else '')
 
-    checkMaxConn = checkMaxconn(haproxyData[0], haCfgSections)
+    checkGlobalResult = checkGlobal(haproxyData[0], haCfgSections)
+    checkDefaultsResult = checkDefaults(haproxyData[0], haCfgSections)
     checkLbRules = checkLoadBalance(haproxyData, haCfgSections)
 
-    if checkMaxConn and checkLbRules:
+    if checkGlobalResult and checkDefaultsResult and checkLbRules:
         print "All checks pass"
         exit(0)
     else:

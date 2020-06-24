@@ -1768,8 +1768,36 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
         Optional<String> lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxConn.key()));
         String globalMaxConn = lbConfig.isPresent() ? lbConfig.get() : null;
+        lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxPipes.key()));
+        String globalMaxPipes = lbConfig.isPresent() ? lbConfig.get() : null;
 
+        final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());;
         List<? extends FirewallRuleVO> loadBalancerVOs = this.getLBRules(routerJoinVO);
+        if (loadBalancerVOs.size() > 0) {
+            String globalMaxConnFinal;
+            if (globalMaxConn != null) {
+                globalMaxConnFinal = globalMaxConn;
+            } else if (offering.getConcurrentConnections() == null) {
+                globalMaxConnFinal = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+            } else {
+                globalMaxConnFinal = offering.getConcurrentConnections().toString();
+            }
+            loadBalancingData.append("global.maxconn=").append(globalMaxConnFinal);
+            String globalMaxPipesFinal;
+            if (globalMaxPipes != null) {
+                globalMaxPipesFinal = globalMaxPipes;
+            } else {
+                globalMaxPipesFinal = Long.toString(Long.parseLong(globalMaxConnFinal) / 4);
+            }
+            loadBalancingData.append(",global.maxpipes=").append(globalMaxPipesFinal);
+            lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutConnect.key()));
+            loadBalancingData.append(",default.timeout.connect=").append(lbConfig.isPresent() ? lbConfig.get() : 5000);
+            lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutServer.key()));
+            loadBalancingData.append(",default.timeout.server=").append(lbConfig.isPresent() ? lbConfig.get() : 50000);
+            lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutClient.key()));
+            loadBalancingData.append(",default.timeout.client=").append(lbConfig.isPresent() ? lbConfig.get() : 50000);
+            loadBalancingData.append(";");
+        }
         for (FirewallRuleVO firewallRuleVO : loadBalancerVOs) {
             List<? extends LoadBalancerConfig> lbConfigs = _lbConfigDao.listByLoadBalancerId(firewallRuleVO.getId());
             final HashMap<String, String> lbConfigsMap = new HashMap<String, String>();
@@ -1787,17 +1815,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             List<LoadBalancerVMMapVO> vmMapVOs = _loadBalancerVMMapDao.listByLoadBalancerId(firewallRuleVO.getId(), false);
             if (vmMapVOs.size() > 0) {
-
-                final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());
-                if (globalMaxConn != null) {
-                    loadBalancingData.append("global.maxconn=").append(globalMaxConn);
-                } else if (offering.getConcurrentConnections() == null) {
-                    loadBalancingData.append("global.maxconn=").append(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
-                } else {
-                    loadBalancingData.append("global.maxconn=").append(offering.getConcurrentConnections().toString());
-                }
-
-                loadBalancingData.append(",sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
+                loadBalancingData.append("sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
                         .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
                 if (firewallRuleVO instanceof LoadBalancerVO) {
                     LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
