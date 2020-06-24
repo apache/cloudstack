@@ -249,7 +249,7 @@ public class RedfishClient {
         } else if (InternetDomainName.isValid(hostAddress)) {
             return hostAddress;
         } else {
-            throw new RedfishException(String.format("Redfish host address '%s' is not a valid IPv4 or IPv6 address", hostAddress));
+            throw new RedfishException(String.format("Redfish host address '%s' is not a valid IPv4/IPv6 address nor a valid domain name.", hostAddress));
         }
     }
 
