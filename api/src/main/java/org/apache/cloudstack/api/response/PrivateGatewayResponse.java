@@ -62,7 +62,7 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)
-    @Param(description = "VPC name the private gateway belongs to")
+    @Param(description = "VPC name the private gateway belongs to", since = "4.13.2")
     private String vpcName;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)

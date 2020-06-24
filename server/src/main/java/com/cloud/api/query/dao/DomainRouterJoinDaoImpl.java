@@ -33,9 +33,11 @@ import org.apache.cloudstack.utils.CloudStackVersion;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
@@ -47,7 +49,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     public static final Logger s_logger = Logger.getLogger(DomainRouterJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao  _configDao;
+    private ConfigurationDao _configDao;
     @Inject
     public AccountManager _accountMgr;
 
@@ -75,7 +77,10 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setZoneId(router.getDataCenterUuid());
         routerResponse.setName(router.getName());
         routerResponse.setTemplateId(router.getTemplateUuid());
-        routerResponse.setTemplateName(ApiDBUtils.findTemplateById(router.getTemplateId()).getName());
+        VMTemplateVO template = ApiDBUtils.findTemplateById(router.getTemplateId());
+        if (template != null) {
+            routerResponse.setTemplateName(template.getName());
+        }
         routerResponse.setCreated(router.getCreated());
         routerResponse.setState(router.getState());
         routerResponse.setIsRedundantRouter(router.isRedundantRouter());
@@ -100,7 +105,10 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                 routerResponse.setHypervisor(router.getHypervisorType().toString());
             }
             routerResponse.setPodId(router.getPodUuid());
-            routerResponse.setPodName(ApiDBUtils.findPodById(router.getPodId()).getName());
+            HostPodVO pod = ApiDBUtils.findPodById(router.getPodId());
+            if (pod != null) {
+                routerResponse.setPodName(pod.getName());
+            }
             long nic_id = router.getNicId();
             if (nic_id > 0) {
                 TrafficType ty = router.getTrafficType();

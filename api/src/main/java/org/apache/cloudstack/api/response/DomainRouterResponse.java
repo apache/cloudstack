@@ -78,7 +78,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     private String podId;
 
     @SerializedName(ApiConstants.POD_NAME)
-    @Param(description = "the Pod name for the router")
+    @Param(description = "the Pod name for the router", since = "4.13.2")
     private String podName;
 
     @SerializedName(ApiConstants.HOST_ID)
@@ -150,7 +150,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     private String templateId;
 
     @SerializedName(ApiConstants.TEMPLATE_NAME)
-    @Param(description = "the template name for the router")
+    @Param(description = "the template name for the router", since = "4.13.2")
     private String templateName;
 
     @SerializedName(ApiConstants.CREATED)

@@ -79,7 +79,7 @@ public class SystemVmResponse extends BaseResponse {
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name for the system VM")
+    @Param(description = "the Pod name for the system VM", since = "4.13.2")
     private String podName;
 
     @SerializedName("hostid")
@@ -135,7 +135,7 @@ public class SystemVmResponse extends BaseResponse {
     private String templateId;
 
     @SerializedName("templatename")
-    @Param(description = "the template name for the system VM")
+    @Param(description = "the template name for the system VM", since = "4.13.2")
     private String templateName;
 
     @SerializedName("created")

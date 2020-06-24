@@ -140,7 +140,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)
-    @Param(description = "VPC name the ip belongs to")
+    @Param(description = "VPC name the ip belongs to", since = "4.13.2")
     private String vpcName;
 
     @SerializedName(ApiConstants.TAGS)

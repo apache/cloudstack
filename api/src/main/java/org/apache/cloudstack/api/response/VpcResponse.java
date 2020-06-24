@@ -68,7 +68,7 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     private String vpcOfferingId;
 
     @SerializedName(ApiConstants.VPC_OFF_NAME)
-    @Param(description = "vpc offering name the VPC is created from")
+    @Param(description = "vpc offering name the VPC is created from", since = "4.13.2")
     private String vpcOfferingName;
 
     @SerializedName(ApiConstants.CREATED)
