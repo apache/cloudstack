@@ -489,10 +489,6 @@ public class TemplateServiceImpl implements TemplateService {
                                     s_logger.info("Removing leftover template " + uniqueName + " entry from template store table");
                                     // remove those leftover entries
                                     _vmTemplateStoreDao.remove(tmpltStore.getId());
-                                    // remove from zones
-                                    _vmTemplateZoneDao.deletePrimaryRecordsForTemplate(tmplt.getId());
-                                    // remove template
-                                    _templateDao.remove(tmplt.getId());
                                 }
                             }
                         }
