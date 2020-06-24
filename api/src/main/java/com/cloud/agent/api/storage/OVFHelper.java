@@ -157,7 +157,7 @@ public class OVFHelper {
         return getConfigurableOVFPropertiesFromDocument(doc);
     }
 
-    public List<DatadiskTO> getOVFVolumeInfoFromFile(final String ovfFilePath) {
+    public List<DatadiskTO> getOVFVolumeInfoFromFile(final String ovfFilePath) throws InternalErrorException {
         if (StringUtils.isBlank(ovfFilePath)) {
             return new ArrayList<>();
         }
@@ -167,7 +167,7 @@ public class OVFHelper {
         return getOVFVolumeInfoFromFile(ovfFilePath, doc);
     }
 
-    public List<DatadiskTO> getOVFVolumeInfoFromFile(String ovfFilePath, Document doc) {
+    public List<DatadiskTO> getOVFVolumeInfoFromFile(String ovfFilePath, Document doc) throws InternalErrorException {
         if (org.apache.commons.lang.StringUtils.isBlank(ovfFilePath)) {
             return null;
         }
@@ -202,17 +202,17 @@ public class OVFHelper {
         }
     }
 
-    private List<DatadiskTO> matchDisksToFilesAndGenerateDiskTOs(File ovfFile, List<OVFFile> vf, List<OVFDisk> vd) {
+    private List<DatadiskTO> matchDisksToFilesAndGenerateDiskTOs(File ovfFile, List<OVFFile> vf, List<OVFDisk> vd) throws InternalErrorException {
         List<DatadiskTO> diskTOs = new ArrayList<>();
         for (OVFFile of : vf) {
             if (StringUtils.isBlank(of._id)){
                 LOGGER.error("The ovf file info is incomplete file info");
-                throw new CloudRuntimeException("The ovf file info has incomplete file info");
+                throw new InternalErrorException("The ovf file info has incomplete file info");
             }
             OVFDisk cdisk = getDisk(of._id, vd);
             if (cdisk == null && !of.isIso){
                 LOGGER.error("The ovf file info has incomplete disk info");
-                throw new CloudRuntimeException("The ovf file info has incomplete disk info");
+                throw new InternalErrorException("The ovf file info has incomplete disk info");
             }
             Long capacity = cdisk == null ? of._size : cdisk._capacity;
             String controller = "";
@@ -227,7 +227,7 @@ public class OVFHelper {
             File f = new File(dataDiskPath);
             if (!f.exists() || f.isDirectory()) {
                 LOGGER.error("One of the attached disk or iso does not exists " + dataDiskPath);
-                throw new CloudRuntimeException("One of the attached disk or iso as stated on OVF does not exists " + dataDiskPath);
+                throw new InternalErrorException("One of the attached disk or iso as stated on OVF does not exists " + dataDiskPath);
             }
             diskTOs.add(new DatadiskTO(dataDiskPath, capacity, of._size, of._id, of.isIso, of._bootable, controller, controllerSubType));
         }
@@ -462,7 +462,7 @@ public class OVFHelper {
         return null;
     }
 
-    public List<NetworkPrerequisiteTO> getNetPrerequisitesFromDocument(Document doc) {
+    public List<NetworkPrerequisiteTO> getNetPrerequisitesFromDocument(Document doc) throws InternalErrorException {
         if (doc == null) {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("no document to parse; returning no prerequiste networks");
@@ -472,9 +472,9 @@ public class OVFHelper {
 
         Map<String, NetworkPrerequisiteTO> nets = getNetworksFromDocumentTree(doc);
 
-        Node systemElement = getSystemNode(doc);
+        checkForOnlyOneSystemNode(doc);
 
-        matchNicsToNets(nets, systemElement);
+        matchNicsToNets(nets, doc);
 
         return new ArrayList<>(nets.values());
     }
@@ -510,14 +510,20 @@ public class OVFHelper {
 
     /**
      * get all the stuff from parent node
+     * TODO check for completeness and optionality
+     *
      * @param nic the object to carry through the system
      * @param parentNode the xml container node for nic data
      */
     private void fillNicPrerequisites(NetworkPrerequisiteTO nic, Node parentNode) {
 //     *   <rasd:AddressOnParent>7</rasd:AddressOnParent>
-        nic.setAddressOnParent(Integer.parseInt(getChildNodeValue(parentNode, "AddressOnParent")));
+        try {
+            nic.setAddressOnParent(Integer.parseInt(getChildNodeValue(parentNode, "rasd:AddressOnParent")));
+        } catch (NumberFormatException e) {
+            LOGGER.warn("encountered element of type \"rasd:AddressOnParent\", that could not be parse to an integer number: " + getChildNodeValue(parentNode, "rasd:AddressOnParent"));
+        }
 //     *   <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
-        nic.setAutomaticAllocation(Boolean.parseBoolean(getChildNodeValue(parentNode, "AutomaticAllocation")));
+        nic.setAutomaticAllocation(Boolean.parseBoolean(getChildNodeValue(parentNode, "rasd:AutomaticAllocation")));
 //     *   <rasd:Connection>Management0-0</rasd:Connection>
         // covoured in parent
 //     *   <rasd:Description>E1000 Ethernet adapter on "Management Network"</rasd:Description>
@@ -525,22 +531,25 @@ public class OVFHelper {
 //     *   <rasd:ElementName>Network adapter 1</rasd:ElementName>
         nic.setElementName(getChildNodeValue(parentNode, "rasd:ElementName"));
 //     *   <rasd:InstanceID>6</rasd:InstanceID>
-        nic.setInstanceID(Integer.parseInt(getChildNodeValue(parentNode, "rasd:InstanceID")));
+        try {
+            nic.setInstanceID(Integer.parseInt(getChildNodeValue(parentNode, "rasd:InstanceID")));
+        } catch (NumberFormatException e) {
+            LOGGER.warn("encountered element of type \"rasd:InstanceID\", that could not be parse to an integer number: " + getChildNodeValue(parentNode, "rasd:InstanceID"));
+        }
 //     *   <rasd:ResourceSubType>E1000</rasd:ResourceSubType>
         nic.setResourceSubType(getChildNodeValue(parentNode, "rasd:ResourceSubType"));
 //     *   <rasd:ResourceType>10</rasd:ResourceType>
         nic.setResourceType(getChildNodeValue(parentNode, "rasd:ResourceType"));
     }
 
-    private Node getSystemNode(Document doc) {
+    private void checkForOnlyOneSystemNode(Document doc) throws InternalErrorException {
         // get hardware VirtualSystem, for now we support only one of those
         NodeList systemElements = doc.getElementsByTagName("VirtualSystem");
         if (systemElements.getLength() != 1) {
             String msg = "found " + systemElements.getLength() + " system definitions in OVA, can only handle exactly one.";
             LOGGER.warn(msg);
-            throw new CloudRuntimeException(msg);
+            throw new InternalErrorException(msg);
         }
-        return systemElements.item(0);
     }
 
     private Map<String, NetworkPrerequisiteTO> getNetworksFromDocumentTree(Document doc) {

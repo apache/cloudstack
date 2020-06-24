@@ -353,13 +353,13 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private void persistExtraDetails(DataObject obj, List<OVFPropertyTO> ovfProperties, List<NetworkPrerequisiteTO> networkRequirements) {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("saving %d ovf properties for template '%s' as details", ovfProperties.size(), obj.getUuid()));
+            LOGGER.trace(String.format("saving %d ovf properties for template '%s' as details", ovfProperties != null ? ovfProperties.size() : 0, obj.getUuid()));
         }
         if (CollectionUtils.isNotEmpty(ovfProperties)) {
             persistOVFProperties(ovfProperties, obj.getId());
         }
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("saving %d required network requirements for template '%s' as details", networkRequirements.size(), obj.getUuid()));
+            LOGGER.trace(String.format("saving %d required network requirements for template '%s' as details", networkRequirements != null ? networkRequirements.size() : 0, obj.getUuid()));
         }
         if (CollectionUtils.isNotEmpty(networkRequirements)) {
             persistNetworkRequirements(networkRequirements, obj.getId());
