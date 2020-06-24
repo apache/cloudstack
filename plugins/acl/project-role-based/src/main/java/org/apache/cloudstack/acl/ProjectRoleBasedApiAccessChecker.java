@@ -74,6 +74,10 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
             return true;
         }
 
+        if (accountService.isRootAdmin(userAccount.getId())) {
+            return true;
+        }
+
         ProjectAccount projectUser = projectAccountDao.findByProjectIdUserId(project.getId(), userAccount.getAccountId(), user.getId());
         if (projectUser != null) {
             if (projectUser.getAccountRole() == ProjectAccount.Role.Admin) {
