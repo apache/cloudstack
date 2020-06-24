@@ -41,13 +41,6 @@ public class Storage {
         private final boolean supportSnapshot;
         private final String fileExtension;
 
-        private ImageFormat(boolean supportThinProvisioning, boolean supportSparse, boolean supportSnapshot) {
-            this.supportThinProvisioning = supportThinProvisioning;
-            this.supportSparse = supportSparse;
-            this.supportSnapshot = supportSnapshot;
-            fileExtension = null;
-        }
-
         private ImageFormat(boolean supportThinProvisioning, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
             this.supportThinProvisioning = supportThinProvisioning;
             this.supportSparse = supportSparse;

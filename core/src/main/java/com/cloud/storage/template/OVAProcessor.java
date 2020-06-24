@@ -101,23 +101,30 @@ public class OVAProcessor extends AdapterBase implements Processor {
      * @throws InternalErrorException on an invalid ova contents
      */
     private void validateOva(String templateFileFullPath, FormatInfo info) throws InternalErrorException {
-        String ovfFile = getOVFFilePath(templateFileFullPath);
+        String ovfFilePath = getOVFFilePath(templateFileFullPath);
         OVFHelper ovfHelper = new OVFHelper();
-        // TODO assess side effects of this call, remove capture of return value and optionally remove or simplify called method
-        List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFile);
-        Document doc = ovfHelper.getDocumentFromFile(ovfFile);
+        Document doc = ovfHelper.getDocumentFromFile(ovfFilePath);
+        // FR37 TODO assess side effects of this call, remove capture of return value and optionally remove or simplify called method
+        List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, doc);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("Found %d disks in template %s", CollectionUtils.isNotEmpty(disks) ? disks.size() : 0, ovfFilePath));
+        }
         List<NetworkPrerequisiteTO> nets = ovfHelper.getNetPrerequisitesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(nets)) {
             LOGGER.info("Found " + nets.size() + " prerequisite networks");
             info.networks = nets;
+        } else if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("no net prerequisites found in template %s", ovfFilePath));
         }
         List<OVFPropertyTO> ovfProperties = ovfHelper.getConfigurableOVFPropertiesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(ovfProperties)) {
             LOGGER.info("Found " + ovfProperties.size() + " configurable OVF properties");
             info.ovfProperties = ovfProperties;
+        } else if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("no ovf properties found in template %s", ovfFilePath));
         }
             // FR37 TODO if something is bad something will have been thrown above
-//            s_logger.info("The ovf file " + ovfFile + " is invalid ", e);
+//            LOGGER.info("The ovf file " + ovfFilePath + " is invalid ", e);
 //            throw new InternalErrorException("OVA package has bad ovf file " + e.getMessage(), e);
     }
 

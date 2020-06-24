@@ -56,7 +56,7 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class OVFHelper {
-    private static final Logger s_logger = Logger.getLogger(OVFHelper.class);
+    private static final Logger LOGGER = Logger.getLogger(OVFHelper.class);
 
     /**
      * Get disk virtual size given its values on fields: 'ovf:capacity' and 'ovf:capacityAllocationUnits'
@@ -161,37 +161,84 @@ public class OVFHelper {
         if (StringUtils.isBlank(ovfFilePath)) {
             return new ArrayList<>();
         }
-        ArrayList<OVFFile> vf = new ArrayList<>();
-        ArrayList<OVFDisk> vd = new ArrayList<>();
 
-        File ovfFile = new File(ovfFilePath);
         Document doc = getDocumentFromFile(ovfFilePath);
+
+        return getOVFVolumeInfoFromFile(ovfFilePath, doc);
+    }
+
+    public List<DatadiskTO> getOVFVolumeInfoFromFile(String ovfFilePath, Document doc) {
+        if (org.apache.commons.lang.StringUtils.isBlank(ovfFilePath)) {
+            return null;
+        }
+        File ovfFile = new File(ovfFilePath);
         NodeList disks = doc.getElementsByTagName("Disk");
         NodeList files = doc.getElementsByTagName("File");
         NodeList items = doc.getElementsByTagName("Item");
-        boolean toggle = true;
-        for (int j = 0; j < files.getLength(); j++) {
-            Element file = (Element)files.item(j);
-            OVFFile of = new OVFFile();
-            of._href = file.getAttribute("ovf:href");
-            if (of._href.endsWith("vmdk") || of._href.endsWith("iso")) {
-                of._id = file.getAttribute("ovf:id");
-                String size = file.getAttribute("ovf:size");
-                if (StringUtils.isNotBlank(size)) {
-                    of._size = Long.parseLong(size);
-                } else {
-                    String dataDiskPath = ovfFile.getParent() + File.separator + of._href;
-                    File this_file = new File(dataDiskPath);
-                    of._size = this_file.length();
-                }
-                of.isIso = of._href.endsWith("iso");
-                if (toggle && !of.isIso) {
-                    of._bootable = true;
-                    toggle = !toggle;
-                }
-                vf.add(of);
+
+        List<OVFFile> vf = extractFilesFromOvfDocumentTree(ovfFile, files);
+
+        List<OVFDisk> vd = extractDisksFromOvfDocumentTree(disks, items);
+
+        List<DatadiskTO> diskTOs = matchDisksToFilesAndGenerateDiskTOs(ovfFile, vf, vd);
+
+        moveFirstIsoToEndOfDiskList(diskTOs);
+
+        return diskTOs;
+    }
+
+    /**
+     * check if first disk is an iso move it to the end. the semantics of this are not complete as more than one ISO may be there and theoretically an OVA may only contain ISOs
+     *
+     */
+    private void moveFirstIsoToEndOfDiskList(List<DatadiskTO> diskTOs) {
+        DatadiskTO fd = diskTOs.get(0);
+        if (fd.isIso()) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("moving first disk to the end as it is an ISO");
             }
+            diskTOs.remove(0);
+            diskTOs.add(fd);
         }
+    }
+
+    private List<DatadiskTO> matchDisksToFilesAndGenerateDiskTOs(File ovfFile, List<OVFFile> vf, List<OVFDisk> vd) {
+        List<DatadiskTO> diskTOs = new ArrayList<>();
+        for (OVFFile of : vf) {
+            if (StringUtils.isBlank(of._id)){
+                LOGGER.error("The ovf file info is incomplete file info");
+                throw new CloudRuntimeException("The ovf file info has incomplete file info");
+            }
+            OVFDisk cdisk = getDisk(of._id, vd);
+            if (cdisk == null && !of.isIso){
+                LOGGER.error("The ovf file info has incomplete disk info");
+                throw new CloudRuntimeException("The ovf file info has incomplete disk info");
+            }
+            Long capacity = cdisk == null ? of._size : cdisk._capacity;
+            String controller = "";
+            String controllerSubType = "";
+            if (cdisk != null) {
+                OVFDiskController cDiskController = cdisk._controller;
+                controller = cDiskController == null ? "" : cdisk._controller._name;
+                controllerSubType = cDiskController == null ? "" : cdisk._controller._subType;
+            }
+
+            String dataDiskPath = ovfFile.getParent() + File.separator + of._href;
+            File f = new File(dataDiskPath);
+            if (!f.exists() || f.isDirectory()) {
+                LOGGER.error("One of the attached disk or iso does not exists " + dataDiskPath);
+                throw new CloudRuntimeException("One of the attached disk or iso as stated on OVF does not exists " + dataDiskPath);
+            }
+            diskTOs.add(new DatadiskTO(dataDiskPath, capacity, of._size, of._id, of.isIso, of._bootable, controller, controllerSubType));
+        }
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("found %d file definitions in %s",diskTOs.size(), ovfFile.getPath()));
+        }
+        return diskTOs;
+    }
+
+    private List<OVFDisk> extractDisksFromOvfDocumentTree(NodeList disks, NodeList items) {
+        ArrayList<OVFDisk> vd = new ArrayList<>();
         for (int i = 0; i < disks.getLength(); i++) {
             Element disk = (Element)disks.item(i);
             OVFDisk od = new OVFDisk();
@@ -217,43 +264,41 @@ public class OVFHelper {
             od._controller = getControllerType(items, od._diskId);
             vd.add(od);
         }
-
-
-        List<DatadiskTO> disksTO = new ArrayList<>();
-        for (OVFFile of : vf) {
-            if (StringUtils.isBlank(of._id)){
-                s_logger.error("The ovf file info is incomplete file info");
-                throw new CloudRuntimeException("The ovf file info has incomplete file info");
-            }
-            OVFDisk cdisk = getDisk(of._id, vd);
-            if (cdisk == null && !of.isIso){
-                s_logger.error("The ovf file info has incomplete disk info");
-                throw new CloudRuntimeException("The ovf file info has incomplete disk info");
-            }
-            Long capacity = cdisk == null ? of._size : cdisk._capacity;
-            String controller = "";
-            String controllerSubType = "";
-            if (cdisk != null) {
-                OVFDiskController cDiskController = cdisk._controller;
-                controller = cDiskController == null ? "" : cdisk._controller._name;
-                controllerSubType = cDiskController == null ? "" : cdisk._controller._subType;
-            }
-
-            String dataDiskPath = ovfFile.getParent() + File.separator + of._href;
-            File f = new File(dataDiskPath);
-            if (!f.exists() || f.isDirectory()) {
-                s_logger.error("One of the attached disk or iso does not exists " + dataDiskPath);
-                throw new CloudRuntimeException("One of the attached disk or iso as stated on OVF does not exists " + dataDiskPath);
-            }
-            disksTO.add(new DatadiskTO(dataDiskPath, capacity, of._size, of._id, of.isIso, of._bootable, controller, controllerSubType));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("found %d disk definitions",vd.size()));
         }
-        //check if first disk is an iso move it to the end
-        DatadiskTO fd = disksTO.get(0);
-        if (fd.isIso()) {
-            disksTO.remove(0);
-            disksTO.add(fd);
+        return vd;
+    }
+
+    private List<OVFFile> extractFilesFromOvfDocumentTree( File ovfFile, NodeList files) {
+        ArrayList<OVFFile> vf = new ArrayList<>();
+        boolean toggle = true;
+        for (int j = 0; j < files.getLength(); j++) {
+            Element file = (Element)files.item(j);
+            OVFFile of = new OVFFile();
+            of._href = file.getAttribute("ovf:href");
+            if (of._href.endsWith("vmdk") || of._href.endsWith("iso")) {
+                of._id = file.getAttribute("ovf:id");
+                String size = file.getAttribute("ovf:size");
+                if (StringUtils.isNotBlank(size)) {
+                    of._size = Long.parseLong(size);
+                } else {
+                    String dataDiskPath = ovfFile.getParent() + File.separator + of._href;
+                    File this_file = new File(dataDiskPath);
+                    of._size = this_file.length();
+                }
+                of.isIso = of._href.endsWith("iso");
+                if (toggle && !of.isIso) {
+                    of._bootable = true;
+                    toggle = !toggle;
+                }
+                vf.add(of);
+            }
         }
-        return disksTO;
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("found %d file definitions in %s",vf.size(), ovfFile.getPath()));
+        }
+        return vf;
     }
 
     public Document getDocumentFromFile(String ovfFilePath) {
@@ -265,7 +310,7 @@ public class OVFHelper {
             DocumentBuilder builder = documentBuilderFactory.newDocumentBuilder();
             return builder.parse(new File(ovfFilePath));
         } catch (SAXException | IOException | ParserConfigurationException e) {
-            s_logger.error("Unexpected exception caught while parsing ovf file:" + ovfFilePath, e);
+            LOGGER.error("Unexpected exception caught while parsing ovf file:" + ovfFilePath, e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -360,7 +405,7 @@ public class OVFHelper {
             Element disk = (Element)disks.item(i);
             String fileRef = disk.getAttribute("ovf:fileRef");
             if (keepfile == null) {
-                s_logger.info("FATAL: OVA format error");
+                LOGGER.info("FATAL: OVA format error");
             } else if (keepfile.equals(fileRef)) {
                 keepdisk = disk.getAttribute("ovf:diskId");
             } else {
@@ -403,7 +448,7 @@ public class OVFHelper {
             outfile.write(writer.toString());
             outfile.close();
         } catch (IOException | TransformerException e) {
-            s_logger.info("Unexpected exception caught while removing network elements from OVF:" + e.getMessage(), e);
+            LOGGER.info("Unexpected exception caught while rewriting OVF:" + e.getMessage(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -419,6 +464,9 @@ public class OVFHelper {
 
     public List<NetworkPrerequisiteTO> getNetPrerequisitesFromDocument(Document doc) {
         if (doc == null) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("no document to parse; returning no prerequiste networks");
+            }
             return Collections.emptyList();
         }
 
@@ -434,11 +482,19 @@ public class OVFHelper {
     private void matchNicsToNets(Map<String, NetworkPrerequisiteTO> nets, Node systemElement) {
         final DocumentTraversal traversal = (DocumentTraversal) systemElement;
         final NodeIterator iterator = traversal.createNodeIterator(systemElement, NodeFilter.SHOW_ELEMENT, null, true);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("starting out with %d network-prerequisites, parsing hardware",nets.size()));
+        }
+        int nicCount = 0;
         for (Node n = iterator.nextNode(); n != null; n = iterator.nextNode()) {
             final Element e = (Element) n;
             if ("rasd:Connection".equals(e.getTagName())) {
+                nicCount++;
                 String name = e.getTextContent(); // should be in our nets
                 if(nets.get(name) == null) {
+                    if(LOGGER.isInfoEnabled()) {
+                        LOGGER.info(String.format("found a nic definition without a network definition byname %s, adding it to the list.", name));
+                    }
                     nets.put(name, new NetworkPrerequisiteTO());
                 }
                 NetworkPrerequisiteTO thisNet = nets.get(name);
@@ -446,6 +502,9 @@ public class OVFHelper {
                     fillNicPrerequisites(thisNet,e.getParentNode());
                 }
             }
+        }
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("ending up with %d network-prerequisites, parsed %d nics", nets.size(), nicCount));
         }
     }
 
@@ -478,7 +537,7 @@ public class OVFHelper {
         NodeList systemElements = doc.getElementsByTagName("VirtualSystem");
         if (systemElements.getLength() != 1) {
             String msg = "found " + systemElements.getLength() + " system definitions in OVA, can only handle exactly one.";
-            s_logger.warn(msg);
+            LOGGER.warn(msg);
             throw new CloudRuntimeException(msg);
         }
         return systemElements.item(0);
@@ -499,6 +558,9 @@ public class OVFHelper {
             network.setNetworkDescription(description);
 
             nets.put(networkName,network);
+        }
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("found %d networks in template", nets.size()));
         }
         return nets;
     }
