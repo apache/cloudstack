@@ -86,7 +86,7 @@
           <a-form-item :label="$t('label.bypassvlanoverlapcheck')">
             <a-switch v-decorator="['bypassvlanoverlapcheck']" />
           </a-form-item>
-          <a-form-item :label="$t('label.isolatedpvlantype')">
+          <a-form-item :label="$t('label.isolatedpvlantype')" v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
             <a-radio-group
               v-decorator="['isolatedpvlantype', {
                 initialValue: this.isolatePvlanType
@@ -589,11 +589,11 @@ export default {
         if (this.isValidValueForKey(values, 'bypassvlanoverlapcheck')) {
           params.bypassvlanoverlapcheck = values.bypassvlanoverlapcheck
         }
-        if (this.isValidValueForKey(values, 'isolatedpvlantype')) {
+        if (this.isValidValueForKey(values, 'isolatedpvlantype') && values.isolatedpvlantype !== 'none') {
           params.isolatedpvlantype = values.isolatedpvlantype
-        }
-        if (this.isValidValueForKey(values, 'isolatedpvlan')) {
-          params.isolatedpvlan = values.isolatedpvlan
+          if (this.isValidValueForKey(values, 'isolatedpvlan')) {
+            params.isolatedpvlan = values.isolatedpvlan
+          }
         }
         if (this.scopeType !== 'all') {
           params.domainid = this.selectedDomain.id
