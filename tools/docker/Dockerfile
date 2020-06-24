@@ -17,7 +17,7 @@
 #
 # CloudStack-simulator build
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
 LABEL Vendor="Apache.org" License="ApacheV2" Version="4.15.0.0-SNAPSHOT"
@@ -31,6 +31,7 @@ RUN apt-get -y update && apt-get install -y \
     git \
     sudo \
     ipmitool \
+    iproute2 \
     maven \
     openjdk-11-jdk \
     python-dev \
@@ -55,6 +56,7 @@ RUN mvn -Pdeveloper -Dsimulator -DskipTests clean install
 RUN find /var/lib/mysql -type f -exec touch {} \; && \
     (/usr/bin/mysqld_safe &) && \
     sleep 5; \
+    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password by ''" --connect-expired-password; \
     mvn -Pdeveloper -pl developer -Ddeploydb; \
     mvn -Pdeveloper -pl developer -Ddeploydb-simulator; \
     MARVIN_FILE=`find /root/tools/marvin/dist/ -name "Marvin*.tar.gz"`; \

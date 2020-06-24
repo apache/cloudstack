@@ -894,6 +894,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             NetworkVO nw = ApiDBUtils.findNetworkById(networkId);
             if (nw != null) {
                 ipResponse.setNetworkId(nw.getUuid());
+                ipResponse.setNetworkName(nw.getName());
             }
         }
         ipResponse.setState(ipAddr.getState().toString());

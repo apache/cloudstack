@@ -74,6 +74,16 @@
                   });
                 }
               }
+            },
+            bootintosetup: {
+              label: 'label.enter.hardware.setup',
+              isBoolean: true,
+              isHidden: function(args) {
+                if (args.context.instances[0].hypervisor !== 'VMware') {
+                  return true;
+                }
+                return false;
+              }
             }
           }
         },
@@ -1049,7 +1059,18 @@
                                           });
                                       }
                                   }
+                                },
+                                bootintosetup: {
+                                    label: 'label.enter.hardware.setup',
+                                    isBoolean: true,
+                                    isHidden: function(args) {
+                                       if (args.context.instances[0].hypervisor !== 'VMware') {
+                                         return true;
+                                       }
+                                         return false;
+                                       }
                                 }
+
                             }
                         },
                         action: function(args) {
@@ -1069,6 +1090,12 @@
                             if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
                                 $.extend(data, {
                                     hostid: args.data.hostId
+                                });
+                            }
+                            var bootintosetup = (args.data.bootintosetup == "on");
+                            if (bootintosetup) {
+                                $.extend(data, {
+                                    bootintosetup : bootintosetup
                                 });
                             }
                             $.ajax({
@@ -1115,10 +1142,34 @@
                     restart: {
                         label: 'label.action.reboot.instance',
                         compactLabel: 'label.reboot',
+                        createForm: {
+                            title: 'label.action.reboot.instance',
+                            desc: 'message.action.reboot.instance',
+                            preFilter: function(args) {
+                                args.$form.find('.form-item[rel=bootintosetup]').find('input').attr('checked', 'checked'); //checked
+                                args.$form.find('.form-item[rel=bootintosetup]').css('display', 'inline-block'); //shown
+                            },
+                            fields: {
+                                bootintosetup: {
+                                    label: 'label.enter.hardware.setup',
+                                    isBoolean: true,
+                                    isHidden: function(args) {
+                                      if (args.context.instances[0].hypervisor !== 'VMware') {
+                                        return true;
+                                      }
+                                      return false;
+                                    }
+                                }
+                            }
+                        },
                         action: function(args) {
                             $.ajax({
-                                url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
+                                url: createURL("rebootVirtualMachine"),
                                 dataType: "json",
+                                data: {
+                                    id: args.context.instances[0].id,
+                                    bootintosetup: (args.data.bootintosetup == "on")
+                                },
                                 async: true,
                                 success: function(json) {
                                     var jid = json.rebootvirtualmachineresponse.jobid;

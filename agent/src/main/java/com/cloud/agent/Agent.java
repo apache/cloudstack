@@ -51,7 +51,7 @@ import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import org.slf4j.MDC;
+import org.apache.log4j.MDC;
 
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;

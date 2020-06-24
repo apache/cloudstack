@@ -512,7 +512,7 @@ public class UriUtils {
             ImmutableMap.<String, Set<String>>builder()
                         .put("vhd", buildExtensionSet(false, "vhd"))
                         .put("vhdx", buildExtensionSet(false, "vhdx"))
-                        .put("qcow2", buildExtensionSet(true, "qcow2"))
+                        .put("qcow2", buildExtensionSet(true, "qcow2", "img"))
                         .put("ova", buildExtensionSet(true, "ova"))
                         .put("tar", buildExtensionSet(false, "tar"))
                         .put("raw", buildExtensionSet(false, "img", "raw"))

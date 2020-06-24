@@ -327,6 +327,7 @@ public class ApiConstants {
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
+    public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SIZE = "size";
@@ -805,8 +806,9 @@ public class ApiConstants {
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
 
-    public static final String BOOT_TYPE ="boottype";
-    public static final String BOOT_MODE ="bootmode";
+    public static final String BOOT_TYPE = "boottype";
+    public static final String BOOT_MODE = "bootmode";
+    public static final String BOOT_INTO_SETUP = "bootintosetup";
 
     public enum BootType {
         UEFI, BIOS;
