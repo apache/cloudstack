@@ -172,7 +172,7 @@ export default {
         domainid: this.resource.domainid,
         keyword: this.searchQuery
       }).then(response => {
-        this.vmsList = response.listvirtualmachinesresponse.virtualmachine
+        this.vmsList = response.listvirtualmachinesresponse.virtualmachine || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -204,9 +204,9 @@ export default {
       this.loading = true
       api('listNics', {
         virtualmachineid: this.selectedVm,
-        networkid: this.resource.associatednetworkid
+        networkid: this.resource.associatednetworkid || this.selectedVpcTier
       }).then(response => {
-        this.nicsList = response.listnicsresponse.nic
+        this.nicsList = response.listnicsresponse.nic || []
 
         let secondaryIps = this.nicsList.map(item => item.secondaryip)
 
