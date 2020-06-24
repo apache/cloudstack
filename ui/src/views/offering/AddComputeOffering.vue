@@ -595,6 +595,7 @@ export default {
       this.isSystem = true
     }
     this.fetchData()
+    this.isPublic = this.isAdmin()
   },
   methods: {
     fetchData () {

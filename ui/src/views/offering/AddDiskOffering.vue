@@ -348,6 +348,7 @@ export default {
   },
   mounted () {
     this.fetchData()
+    this.isPublic = this.isAdmin()
   },
   methods: {
     fetchData () {
