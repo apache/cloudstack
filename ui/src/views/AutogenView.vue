@@ -366,6 +366,9 @@ export default {
   mounted () {
     this.currentPath = this.$route.fullPath
     this.fetchData()
+    if ('projectid' in this.$route.query) {
+      this.switchProject(this.$route.query.projectid)
+    }
   },
   beforeRouteUpdate (to, from, next) {
     this.currentPath = this.$route.fullPath
@@ -383,6 +386,9 @@ export default {
         this.itemCount = 0
         this.selectedFilter = ''
         this.fetchData()
+        if ('projectid' in to.query) {
+          this.switchProject(to.query.projectid)
+        }
       }
     },
     '$i18n.locale' (to, from) {
@@ -395,6 +401,21 @@ export default {
     }
   },
   methods: {
+    switchProject (projectId) {
+      if (!projectId || !projectId.length || projectId.length !== 36) {
+        return
+      }
+      api('listProjects', { id: projectId, listall: true, details: 'min' }).then(json => {
+        if (!json || !json.listprojectsresponse || !json.listprojectsresponse.project) return
+        const project = json.listprojectsresponse.project[0]
+        this.$store.dispatch('SetProject', project)
+        this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
+        this.$message.success(`Switched to "${project.name}"`)
+        const query = Object.assign({}, this.$route.query)
+        delete query.projectid
+        this.$router.replace({ query })
+      })
+    },
     fetchData (params = { listall: true }) {
       if (this.routeName !== this.$route.name) {
         this.routeName = this.$route.name
