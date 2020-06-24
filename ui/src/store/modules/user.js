@@ -89,7 +89,6 @@ const user = {
           Cookies.set('account', result.account, { expires: 1 })
           Cookies.set('domainid', result.domainid, { expires: 1 })
           Cookies.set('role', result.type, { expires: 1 })
-          Cookies.set('sessionkey', result.sessionkey, { expires: 1 })
           Cookies.set('timezone', result.timezone, { expires: 1 })
           Cookies.set('timezoneoffset', result.timezoneoffset, { expires: 1 })
           Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
