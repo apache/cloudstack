@@ -30,6 +30,10 @@ export default {
   }, {
     name: 'nics',
     component: () => import('@/views/network/NicsTable.vue')
+  }, {
+    name: 'router.health.checks',
+    show: (record, route, user) => { return ['Running'].includes(record.state) && ['Admin'].includes(user.roletype) },
+    component: () => import('@views/infra/routers/RouterHealthCheck.vue')
   }],
   actions: [
     {
@@ -81,7 +85,7 @@ export default {
       icon: 'drag',
       label: 'label.action.migrate.router',
       dataView: true,
-      show: (record) => { return record.state === 'Running' },
+      show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
       args: ['virtualmachineid', 'hostid'],
       mapping: {
         virtualmachineid: {
@@ -94,7 +98,7 @@ export default {
       icon: 'reconciliation',
       label: 'label.action.run.diagnostics',
       dataView: true,
-      show: (record) => { return record.state === 'Running' },
+      show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
       args: ['targetid', 'type', 'ipaddress', 'params'],
       mapping: {
         targetid: {
@@ -111,7 +115,7 @@ export default {
       icon: 'download',
       label: 'label.action.get.diagnostics',
       dataView: true,
-      show: (record) => { return record.state === 'Running' },
+      show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
       args: ['targetid', 'files'],
       mapping: {
         targetid: {
