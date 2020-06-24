@@ -239,7 +239,7 @@ public class ApiServlet extends HttpServlet {
                             }
                         }
                         final Cookie[] cookies = req.getCookies();
-                        if (cookies != null)
+                        if (cookies != null) {
                             for (final Cookie cookie : cookies) {
                                 cookie.setValue("");
                                 cookie.setMaxAge(0);
