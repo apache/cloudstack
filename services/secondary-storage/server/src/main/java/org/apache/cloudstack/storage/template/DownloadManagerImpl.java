@@ -55,6 +55,7 @@ import com.cloud.storage.template.RawImageProcessor;
 import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.TemplateConstants;
+import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -126,6 +127,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private final long id;
         private final ResourceType resourceType;
         private List<OVFPropertyTO> ovfProperties;
+        private List<NetworkPrerequisiteTO> networks;
 
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
                 String installPathPrefix, ResourceType resourceType) {
@@ -227,6 +229,14 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
             this.ovfProperties = ovfProperties;
+        }
+
+        public List<NetworkPrerequisiteTO> getNetworks() {
+            return networks;
+        }
+
+        public void setNetworks(List<NetworkPrerequisiteTO> networks) {
+            this.networks = networks;
         }
     }
 
@@ -507,7 +517,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         while (en.hasNext()) {
             Processor processor = en.next();
 
-            FormatInfo info = null;
+            FormatInfo info;
             try {
                 info = processor.process(resourcePath, null, templateName, this._processTimeout);
             } catch (InternalErrorException e) {
@@ -523,6 +533,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 dnld.setTemplatePhysicalSize(info.size);
                 if (CollectionUtils.isNotEmpty(info.ovfProperties)) {
                     dnld.setOvfProperties(info.ovfProperties);
+                }
+                if (CollectionUtils.isNotEmpty(info.networks)) {
+                    dnld.setNetworks(info.networks);
                 }
                 break;
             }
@@ -826,6 +839,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                             getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
             if (CollectionUtils.isNotEmpty(dj.getOvfProperties())) {
                 answer.setOvfProperties(dj.getOvfProperties());
+            }
+            if (CollectionUtils.isNotEmpty(dj.getNetworks())) {
+                answer.setNetworkRequirements(dj.getNetworks());
             }
             jobs.remove(jobId);
             return answer;

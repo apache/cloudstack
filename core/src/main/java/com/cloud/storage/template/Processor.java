@@ -27,6 +27,7 @@ import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
+import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 
 /**
  * Generic interface to process different types of image formats
@@ -48,13 +49,14 @@ public interface Processor extends Adapter {
 
     FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException;
 
-    public static class FormatInfo {
+    class FormatInfo {
         public ImageFormat format;
         public long size;
         public long virtualSize;
         public String filename;
         public boolean isCorrupted;
         public List<OVFPropertyTO> ovfProperties;
+        public List<NetworkPrerequisiteTO> networks;
     }
 
     long getVirtualSize(File file) throws IOException;

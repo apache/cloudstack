@@ -222,7 +222,7 @@ class StartCommandExecutor {
             // vApp cdrom device
             // HACK ALERT: ovf properties might not be the only or defining feature of vApps; needs checking
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("adding divice tie device count for vApp config ISO");
+                LOGGER.trace("adding device to device count for vApp config ISO");
             }
             if (vmSpec.getOvfProperties() != null) {
                 totalChangeDevices++;
@@ -712,7 +712,12 @@ class StartCommandExecutor {
             // FR37 create blank or install as is ???? needs to be replaced with the proceudre at
             // https://code.vmware.com/docs/5540/vsphere-automation-sdks-programming-guide/doc/GUID-82084C78-49FC-4B7F-BD89-F90D5AA22631.html
             DatastoreMO secDsMo = getDatastoreMOForSecStore(mgr, hyperHost);
-            String ovfLocation = String.format("[%s] %s", secDsMo.getName(), vmSpec.getTemplateLocation());
+            String ssUrl = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(vmwareResource.getDcId())).first();
+            // FR37 this happens at the MS so format should not be "[%s] %s" but some local file (on secStor)
+// not
+// String ovfLocation = String.format("[%s] %s", secDsMo.getName(), vmSpec.getTemplateLocation());
+            // but
+            String ovfLocation = String.format("%s/%s", ssUrl, vmSpec.getTemplateLocation());
 
             hyperHost.importVmFromOVF(ovfLocation, vmNameOnVcenter, rootDiskDataStoreDetails.second(), "thin", false);
             // FR37 importUnmanaged code must be called

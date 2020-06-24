@@ -35,6 +35,7 @@ import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.google.gson.Gson;
+import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -80,7 +81,26 @@ import com.cloud.utils.net.Proxy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
-    private static final Logger s_logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
+    private static final Logger LOGGER = Logger.getLogger(BaseImageStoreDriverImpl.class);
+
+    public static final String OVF_PROPERTY_PREFIX = "ovfProperty-";
+    public static final String OVF_PROPERTY_DEFAULT = OVF_PROPERTY_PREFIX + "default-";
+    public static final String OVF_PROPERTY_DESCRIPTION = OVF_PROPERTY_PREFIX + "description-";
+    public static final String OVF_PROPERTY_QUALIFIERS = OVF_PROPERTY_PREFIX + "qualifiers-";
+    public static final String OVF_PROPERTY_LABEL = OVF_PROPERTY_PREFIX + "label-";
+    public static final String OVF_PROPERTY_TYPE = OVF_PROPERTY_PREFIX + "type-";
+    public static final String OVF_PROPERTY_PASSWORD = OVF_PROPERTY_PREFIX + "password-";
+
+    public static final String REQUIRED_NETWORK_PREFIX = "network-";
+    public static final String REQUIRED_NETWORK_DESCRIPTION = REQUIRED_NETWORK_PREFIX + "description-";
+    public static final String REQUIRED_NETWORK_RESOURCE_TYPE = REQUIRED_NETWORK_PREFIX + "resourceType-";
+    public static final String REQUIRED_NETWORK_ELEMENT_NAME = REQUIRED_NETWORK_PREFIX + "elementName-";
+    public static final String REQUIRED_NETWORK_NIC_DESCRIPTION = REQUIRED_NETWORK_PREFIX + "nicDescription-";
+    public static final String REQUIRED_NETWORK_RESOURCE_SUBTYPE = REQUIRED_NETWORK_PREFIX + "resourceSubType-";
+    public static final String REQUIRED_NETWORK_ADDRESS_ON_PARENT = REQUIRED_NETWORK_PREFIX + "addressOnParent-";
+    public static final String REQUIRED_NETWORK_INSTANCEID = REQUIRED_NETWORK_PREFIX + "instanceId-";
+    public static final String REQUIRED_NETWORK_AUTOMATIC_ALLOCATION = REQUIRED_NETWORK_PREFIX + "automaticAllocation-";
+
     @Inject
     protected VMTemplateDao _templateDao;
     @Inject
@@ -161,14 +181,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         caller.setContext(context);
         if (data.getType() == DataObjectType.TEMPLATE) {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Downloading template to data store " + dataStore.getId());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Downloading template to data store " + dataStore.getId());
             }
             _downloadMonitor.downloadTemplateToStorage(data, caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
             caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Downloading volume to data store " + dataStore.getId());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Downloading volume to data store " + dataStore.getId());
             }
             _downloadMonitor.downloadVolumeToStorage(data, caller);
         }
@@ -178,21 +198,22 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
      * Persist OVF properties as template details for template with id = templateId
      */
     private void persistOVFProperties(List<OVFPropertyTO> ovfProperties, long templateId) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("saving properties for template %d as details", templateId));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("saving properties for template %d as details", templateId));
         }
         for (OVFPropertyTO property : ovfProperties) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("saving property %s for template %d as detail", property.getKey(), templateId));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("saving property %s for template %d as detail", property.getKey(), templateId));
             }
-            persistOvfPropertyAsTemplateDetail(templateId, property);
+            persistOvfPropertyAsSetOfTemplateDetails(templateId, property);
         }
         persistOvfPropertiesInDedicatedTable(ovfProperties, templateId);
     }
 
+    @Deprecated(since = "now", forRemoval = true)
     private void persistOvfPropertiesInDedicatedTable(List<OVFPropertyTO> ovfProperties, long templateId) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("saving properties for template %d in dedicated table", templateId));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("saving properties for template %d in dedicated table", templateId));
         }
         List<TemplateOVFPropertyVO> listToPersist = new ArrayList<>();
         for (OVFPropertyTO property : ovfProperties) {
@@ -207,54 +228,84 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 listToPersist.add(option);
             }
         }
+        storeToDedicatedTable(templateId, listToPersist);
+    }
+
+    @Deprecated(since = "now", forRemoval = true)
+    private void storeToDedicatedTable(long templateId, List<TemplateOVFPropertyVO> listToPersist) {
         if (CollectionUtils.isNotEmpty(listToPersist)) {
-            s_logger.debug("Persisting " + listToPersist.size() + " OVF properties for template " + templateId);
+            LOGGER.debug("Persisting " + listToPersist.size() + " OVF properties for template " + templateId);
             templateOvfPropertiesDao.saveOptions(listToPersist);
         }
     }
 
-    private void persistOvfPropertyAsTemplateDetail(long templateId, OVFPropertyTO property) {
-        String key = "ovfProperty-" + property.getKey();
-        // TODO save separate details for each of the properties of a property
+    private void persistOvfPropertyAsSetOfTemplateDetails(long templateId, OVFPropertyTO property) {
+        String key = property.getKey();
+        // save separate attributes for each of the properties of a property
         //
-        savePropertyAttribute(templateId, key + "-default", property.getValue());
-        savePropertyAttribute(templateId, key + "-description", property.getDescription());
-        savePropertyAttribute(templateId, key + "-qualifiers", property.getQualifiers());
-        savePropertyAttribute(templateId, key + "-label", property.getLabel());
-        savePropertyAttribute(templateId, key + "-type", property.getType());
-        savePropertyAttribute(templateId, key + "-password", property.isPassword().toString());
+        savePropertyAttribute(templateId, OVF_PROPERTY_DEFAULT + key, property.getValue());
+        savePropertyAttribute(templateId, OVF_PROPERTY_DESCRIPTION + key, property.getDescription());
+        savePropertyAttribute(templateId, OVF_PROPERTY_QUALIFIERS + key, property.getQualifiers());
+        savePropertyAttribute(templateId, OVF_PROPERTY_LABEL + key, property.getLabel());
+        savePropertyAttribute(templateId, OVF_PROPERTY_TYPE + key, property.getType());
+        savePropertyAttribute(templateId, OVF_PROPERTY_PASSWORD + key, property.isPassword().toString());
     }
-    void savePropertyAttribute(long templateId, String key, String value) {
+
+    private void persistNetworkRequirements(List<NetworkPrerequisiteTO> networkRequirements, long templateId) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("saving network requirements for template %d as details", templateId));
+        }
+        for (NetworkPrerequisiteTO network : networkRequirements) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("saving property %s for template %d as detail", network.getName(), templateId));
+            }
+            persistRequiredNetworkAsSetOfTemplateDetails(templateId, network);
+        }
+    }
+
+    private void persistRequiredNetworkAsSetOfTemplateDetails(long templateId, NetworkPrerequisiteTO network) {
+        String key = network.getName();
+
+        savePropertyAttribute(templateId, REQUIRED_NETWORK_DESCRIPTION + key, network.getNetworkDescription());
+        savePropertyAttribute(templateId, REQUIRED_NETWORK_ELEMENT_NAME + key, network.getElementName());
+        savePropertyAttribute(templateId, REQUIRED_NETWORK_NIC_DESCRIPTION + key, network.getNicDescription());
+        savePropertyAttribute(templateId, REQUIRED_NETWORK_RESOURCE_TYPE + key, network.getResourceType());
+        savePropertyAttribute(templateId, REQUIRED_NETWORK_RESOURCE_SUBTYPE + key, network.getResourceSubType());
+        savePropertyAttribute(templateId, REQUIRED_NETWORK_ADDRESS_ON_PARENT + key, Integer.toString(network.getAddressOnParent()));
+        savePropertyAttribute(templateId, REQUIRED_NETWORK_INSTANCEID + key, Integer.toString(network.getInstanceID()));
+        savePropertyAttribute(templateId, REQUIRED_NETWORK_AUTOMATIC_ALLOCATION + key, Boolean.toString(network.isAutomaticAllocation()));
+    }
+
+    private void savePropertyAttribute(long templateId, String key, String value) {
         if ( templateDetailsDao.findDetail(templateId,key) != null) {
-            s_logger.debug(String.format("detail '%s' existed for template %d, deleting.", key, templateId));
+            LOGGER.debug(String.format("detail '%s' existed for template %d, deleting.", key, templateId));
             templateDetailsDao.removeDetail(templateId,key);
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("template property for template %d to save is '%s': '%s'", templateId, key, value));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("template detail for template %d to save is '%s': '%s'", templateId, key, value));
         }
         VMTemplateDetailVO detailVO = new VMTemplateDetailVO(templateId, key, value, false);
-        s_logger.debug("Persisting template details " + detailVO.getName() + " from OVF properties for template " + templateId);
+        LOGGER.debug("Persisting template details " + detailVO.getName() + " from OVF properties for template " + templateId);
         templateDetailsDao.persist(detailVO);
     }
 
     protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
         CreateContext<CreateCmdResult> context) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Performing image store createTemplate async callback");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Performing image store createTemplate async callback");
         }
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();
         List<OVFPropertyTO> ovfProperties = answer.getOvfProperties();
+        List<NetworkPrerequisiteTO> networkRequirements = answer.getNetworkRequirements();
 
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                if (CollectionUtils.isNotEmpty(ovfProperties)) {
-                    persistOVFProperties(ovfProperties, obj.getId());
-                }
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
+                persistExtraDetails(obj, ovfProperties, networkRequirements);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
                 return null;
             }
@@ -285,21 +336,34 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             caller.complete(result);
             String msg = "Failed to register template: " + obj.getUuid() + " with error: " + answer.getErrorString();
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED, _vmTemplateZoneDao.listByTemplateId(obj.getId()).get(0).getZoneId(), null, msg, msg);
-            s_logger.error(msg);
+            LOGGER.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             if (answer.getCheckSum() != null) {
                 VMTemplateVO templateDaoBuilder = _templateDao.createForUpdate();
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
             }
-            if (CollectionUtils.isNotEmpty(ovfProperties)) {
-                persistOVFProperties(ovfProperties, obj.getId());
-            }
+            persistExtraDetails(obj, ovfProperties, networkRequirements);
 
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
         }
         return null;
+    }
+
+    private void persistExtraDetails(DataObject obj, List<OVFPropertyTO> ovfProperties, List<NetworkPrerequisiteTO> networkRequirements) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("saving %d ovf properties for template '%s' as details", ovfProperties.size(), obj.getUuid()));
+        }
+        if (CollectionUtils.isNotEmpty(ovfProperties)) {
+            persistOVFProperties(ovfProperties, obj.getId());
+        }
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("saving %d required network requirements for template '%s' as details", networkRequirements.size(), obj.getUuid()));
+        }
+        if (CollectionUtils.isNotEmpty(networkRequirements)) {
+            persistNetworkRequirements(networkRequirements, obj.getId());
+        }
     }
 
     protected Void
@@ -311,8 +375,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         VolumeDataStoreVO volStoreVO = _volumeStoreDao.findByStoreVolume(store.getId(), obj.getId());
         if (volStoreVO != null) {
             if (volStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Volume is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Volume is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
                 return null;
             }
@@ -344,7 +408,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             String msg = "Failed to upload volume: " + obj.getUuid() + " with error: " + answer.getErrorString();
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
                     (volStoreVO == null ? -1L : volStoreVO.getZoneId()), null, msg, msg);
-            s_logger.error(msg);
+            LOGGER.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
@@ -361,7 +425,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             Answer answer = null;
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                s_logger.error(errMsg);
+                LOGGER.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
             } else {
                 answer = ep.sendMessage(cmd);
@@ -370,7 +434,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 result.setResult(answer.getDetails());
             }
         } catch (Exception ex) {
-            s_logger.debug("Unable to destoy " + data.getType().toString() + ": " + data.getId(), ex);
+            LOGGER.debug("Unable to destoy " + data.getType().toString() + ": " + data.getId(), ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -396,8 +460,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Override
     public List<DatadiskTO> getDataDiskTemplates(DataObject obj) {
         List<DatadiskTO> dataDiskDetails = new ArrayList<DatadiskTO>();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Get the data disks present in the OVA template");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Get the data disks present in the OVA template");
         }
         DataStore store = obj.getDataStore();
         GetDatadisksCommand cmd = new GetDatadisksCommand(obj.getTO());
@@ -405,7 +469,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         Answer answer = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            LOGGER.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
         } else {
             answer = ep.sendMessage(cmd);
@@ -424,14 +488,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, String diskId, boolean bootable, long fileSize, AsyncCompletionCallback<CreateCmdResult> callback) {
         Answer answer = null;
         String errMsg = null;
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Create Datadisk template: " + dataDiskTemplate.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Create Datadisk template: " + dataDiskTemplate.getId());
         }
         CreateDatadiskTemplateCommand cmd = new CreateDatadiskTemplateCommand(dataDiskTemplate.getTO(), path, diskId, fileSize, bootable);
         EndPoint ep = _defaultEpSelector.select(dataDiskTemplate.getDataStore());
         if (ep == null) {
             errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            LOGGER.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
         } else {
             answer = ep.sendMessage(cmd);

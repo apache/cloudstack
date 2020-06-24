@@ -27,6 +27,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 
 public class DownloadAnswer extends Answer {
     private String jobId;
@@ -40,6 +41,7 @@ public class DownloadAnswer extends Answer {
     private String checkSum;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private List<OVFPropertyTO> ovfProperties;
+    private List<NetworkPrerequisiteTO> networkRequirements;
 
     public String getCheckSum() {
         return checkSum;
@@ -156,5 +158,13 @@ public class DownloadAnswer extends Answer {
 
     public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
         this.ovfProperties = ovfProperties;
+    }
+
+    public List<NetworkPrerequisiteTO> getNetworkRequirements() {
+        return networkRequirements;
+    }
+
+    public void setNetworkRequirements(List<NetworkPrerequisiteTO> networkRequirements) {
+        this.networkRequirements = networkRequirements;
     }
 }

@@ -22,8 +22,12 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
@@ -34,6 +38,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.exception.InternalErrorException;
+import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -41,6 +46,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.traversal.DocumentTraversal;
+import org.w3c.dom.traversal.NodeFilter;
+import org.w3c.dom.traversal.NodeIterator;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -119,8 +127,11 @@ public class OVFHelper {
     /**
      * Retrieve OVF properties from a parsed OVF file, with attribute 'ovf:userConfigurable' set to true
      */
-    private List<OVFPropertyTO> getConfigurableOVFPropertiesFromDocument(Document doc) {
+    public List<OVFPropertyTO> getConfigurableOVFPropertiesFromDocument(Document doc) {
         List<OVFPropertyTO> props = new ArrayList<>();
+        if (doc == null) {
+            return props;
+        }
         NodeList properties = doc.getElementsByTagName("Property");
         if (properties != null) {
             for (int i = 0; i < properties.getLength(); i++) {
@@ -138,94 +149,77 @@ public class OVFHelper {
     }
 
     /**
-     * Get properties from OVF file located on ovfFilePath
-     */
-    public List<OVFPropertyTO> getOVFPropertiesFromFile(String ovfFilePath) throws ParserConfigurationException, IOException, SAXException {
-        if (StringUtils.isBlank(ovfFilePath)) {
-            return new ArrayList<>();
-        }
-        File ovfFile = new File(ovfFilePath);
-        final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(ovfFile);
-        return getConfigurableOVFPropertiesFromDocument(doc);
-    }
-
-    /**
      * Get properties from OVF XML string
      */
-    protected List<OVFPropertyTO> getOVFPropertiesXmlString(final String ovfFilePath) throws ParserConfigurationException, IOException, SAXException {
-        InputSource is = new InputSource(new StringReader(ovfFilePath));
+    protected List<OVFPropertyTO> getOVFPropertiesFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
+        InputSource is = new InputSource(new StringReader(ovfString));
         final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
         return getConfigurableOVFPropertiesFromDocument(doc);
     }
 
-    public List<DatadiskTO> getOVFVolumeInfo(final String ovfFilePath) {
+    public List<DatadiskTO> getOVFVolumeInfoFromFile(final String ovfFilePath) {
         if (StringUtils.isBlank(ovfFilePath)) {
-            return new ArrayList<DatadiskTO>();
+            return new ArrayList<>();
         }
-        ArrayList<OVFFile> vf = new ArrayList<OVFFile>();
-        ArrayList<OVFDisk> vd = new ArrayList<OVFDisk>();
+        ArrayList<OVFFile> vf = new ArrayList<>();
+        ArrayList<OVFDisk> vd = new ArrayList<>();
 
         File ovfFile = new File(ovfFilePath);
-        try {
-            final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFilePath));
-            NodeList disks = doc.getElementsByTagName("Disk");
-            NodeList files = doc.getElementsByTagName("File");
-            NodeList items = doc.getElementsByTagName("Item");
-            boolean toggle = true;
-            for (int j = 0; j < files.getLength(); j++) {
-                Element file = (Element)files.item(j);
-                OVFFile of = new OVFFile();
-                of._href = file.getAttribute("ovf:href");
-                if (of._href.endsWith("vmdk") || of._href.endsWith("iso")) {
-                    of._id = file.getAttribute("ovf:id");
-                    String size = file.getAttribute("ovf:size");
-                    if (StringUtils.isNotBlank(size)) {
-                        of._size = Long.parseLong(size);
-                    } else {
-                        String dataDiskPath = ovfFile.getParent() + File.separator + of._href;
-                        File this_file = new File(dataDiskPath);
-                        of._size = this_file.length();
-                    }
-                    of.isIso = of._href.endsWith("iso");
-                    if (toggle && !of.isIso) {
-                        of._bootable = true;
-                        toggle = !toggle;
-                    }
-                    vf.add(of);
+        Document doc = getDocumentFromFile(ovfFilePath);
+        NodeList disks = doc.getElementsByTagName("Disk");
+        NodeList files = doc.getElementsByTagName("File");
+        NodeList items = doc.getElementsByTagName("Item");
+        boolean toggle = true;
+        for (int j = 0; j < files.getLength(); j++) {
+            Element file = (Element)files.item(j);
+            OVFFile of = new OVFFile();
+            of._href = file.getAttribute("ovf:href");
+            if (of._href.endsWith("vmdk") || of._href.endsWith("iso")) {
+                of._id = file.getAttribute("ovf:id");
+                String size = file.getAttribute("ovf:size");
+                if (StringUtils.isNotBlank(size)) {
+                    of._size = Long.parseLong(size);
+                } else {
+                    String dataDiskPath = ovfFile.getParent() + File.separator + of._href;
+                    File this_file = new File(dataDiskPath);
+                    of._size = this_file.length();
                 }
-            }
-            for (int i = 0; i < disks.getLength(); i++) {
-                Element disk = (Element)disks.item(i);
-                OVFDisk od = new OVFDisk();
-                String virtualSize = disk.getAttribute("ovf:capacity");
-                od._capacity = NumberUtils.toLong(virtualSize, 0L);
-                String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
-                od._diskId = disk.getAttribute("ovf:diskId");
-                od._fileRef = disk.getAttribute("ovf:fileRef");
-                od._populatedSize = NumberUtils.toLong(disk.getAttribute("ovf:populatedSize"));
-
-                if ((od._capacity != 0) && (allocationUnits != null)) {
-
-                    long units = 1;
-                    if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
-                        units = ResourceType.bytesToKiB;
-                    } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
-                        units = ResourceType.bytesToMiB;
-                    } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
-                        units = ResourceType.bytesToGiB;
-                    }
-                    od._capacity = od._capacity * units;
+                of.isIso = of._href.endsWith("iso");
+                if (toggle && !of.isIso) {
+                    of._bootable = true;
+                    toggle = !toggle;
                 }
-                od._controller = getControllerType(items, od._diskId);
-                vd.add(od);
+                vf.add(of);
             }
+        }
+        for (int i = 0; i < disks.getLength(); i++) {
+            Element disk = (Element)disks.item(i);
+            OVFDisk od = new OVFDisk();
+            String virtualSize = disk.getAttribute("ovf:capacity");
+            od._capacity = NumberUtils.toLong(virtualSize, 0L);
+            String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
+            od._diskId = disk.getAttribute("ovf:diskId");
+            od._fileRef = disk.getAttribute("ovf:fileRef");
+            od._populatedSize = NumberUtils.toLong(disk.getAttribute("ovf:populatedSize"));
 
-        } catch (SAXException | IOException | ParserConfigurationException e) {
-            s_logger.error("Unexpected exception caught while parsing ovf file:" + ovfFilePath, e);
-            throw new CloudRuntimeException(e);
+            if ((od._capacity != 0) && (allocationUnits != null)) {
+
+                long units = 1;
+                if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
+                    units = ResourceType.bytesToKiB;
+                } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
+                    units = ResourceType.bytesToMiB;
+                } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
+                    units = ResourceType.bytesToGiB;
+                }
+                od._capacity = od._capacity * units;
+            }
+            od._controller = getControllerType(items, od._diskId);
+            vd.add(od);
         }
 
-        List<DatadiskTO> disksTO = new ArrayList<DatadiskTO>();
+
+        List<DatadiskTO> disksTO = new ArrayList<>();
         for (OVFFile of : vf) {
             if (StringUtils.isBlank(of._id)){
                 s_logger.error("The ovf file info is incomplete file info");
@@ -260,6 +254,20 @@ public class OVFHelper {
             disksTO.add(fd);
         }
         return disksTO;
+    }
+
+    public Document getDocumentFromFile(String ovfFilePath) {
+        if (org.apache.commons.lang.StringUtils.isBlank(ovfFilePath)) {
+            return null;
+        }
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newDefaultInstance();
+        try {
+            DocumentBuilder builder = documentBuilderFactory.newDocumentBuilder();
+            return builder.parse(new File(ovfFilePath));
+        } catch (SAXException | IOException | ParserConfigurationException e) {
+            s_logger.error("Unexpected exception caught while parsing ovf file:" + ovfFilePath, e);
+            throw new CloudRuntimeException(e);
+        }
     }
 
     private OVFDiskController getControllerType(final NodeList itemList, final String diskId) {
@@ -330,56 +338,61 @@ public class OVFHelper {
         return dc;
     }
 
-    public void rewriteOVFFile(final String origOvfFilePath, final String newOvfFilePath, final String diskName) {
-        try {
-            final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(origOvfFilePath));
-            NodeList disks = doc.getElementsByTagName("Disk");
-            NodeList files = doc.getElementsByTagName("File");
-            NodeList items = doc.getElementsByTagName("Item");
-            String keepfile = null;
-            List<Element> toremove = new ArrayList<Element>();
-            for (int j = 0; j < files.getLength(); j++) {
-                Element file = (Element)files.item(j);
-                String href = file.getAttribute("ovf:href");
-                if (diskName.equals(href)) {
-                    keepfile = file.getAttribute("ovf:id");
-                } else {
-                    toremove.add(file);
-                }
+    public void rewriteOVFFileForSingleDisk(final String origOvfFilePath, final String newOvfFilePath, final String diskName) {
+        final Document doc = getDocumentFromFile(origOvfFilePath);
+
+        NodeList disks = doc.getElementsByTagName("Disk");
+        NodeList files = doc.getElementsByTagName("File");
+        NodeList items = doc.getElementsByTagName("Item");
+        String keepfile = null;
+        List<Element> toremove = new ArrayList<>();
+        for (int j = 0; j < files.getLength(); j++) {
+            Element file = (Element)files.item(j);
+            String href = file.getAttribute("ovf:href");
+            if (diskName.equals(href)) {
+                keepfile = file.getAttribute("ovf:id");
+            } else {
+                toremove.add(file);
             }
-            String keepdisk = null;
-            for (int i = 0; i < disks.getLength(); i++) {
-                Element disk = (Element)disks.item(i);
-                String fileRef = disk.getAttribute("ovf:fileRef");
-                if (keepfile == null) {
-                    s_logger.info("FATAL: OVA format error");
-                } else if (keepfile.equals(fileRef)) {
-                    keepdisk = disk.getAttribute("ovf:diskId");
-                } else {
-                    toremove.add(disk);
-                }
+        }
+        String keepdisk = null;
+        for (int i = 0; i < disks.getLength(); i++) {
+            Element disk = (Element)disks.item(i);
+            String fileRef = disk.getAttribute("ovf:fileRef");
+            if (keepfile == null) {
+                s_logger.info("FATAL: OVA format error");
+            } else if (keepfile.equals(fileRef)) {
+                keepdisk = disk.getAttribute("ovf:diskId");
+            } else {
+                toremove.add(disk);
             }
-            for (int k = 0; k < items.getLength(); k++) {
-                Element item = (Element)items.item(k);
-                NodeList cn = item.getChildNodes();
-                for (int l = 0; l < cn.getLength(); l++) {
-                    if (cn.item(l) instanceof Element) {
-                        Element el = (Element)cn.item(l);
-                        if ("rasd:HostResource".equals(el.getNodeName())
-                                && !(el.getTextContent().contains("ovf:/file/" + keepdisk) || el.getTextContent().contains("ovf:/disk/" + keepdisk))) {
-                            toremove.add(item);
-                            break;
-                        }
+        }
+        for (int k = 0; k < items.getLength(); k++) {
+            Element item = (Element)items.item(k);
+            NodeList cn = item.getChildNodes();
+            for (int l = 0; l < cn.getLength(); l++) {
+                if (cn.item(l) instanceof Element) {
+                    Element el = (Element)cn.item(l);
+                    if ("rasd:HostResource".equals(el.getNodeName())
+                            && !(el.getTextContent().contains("ovf:/file/" + keepdisk) || el.getTextContent().contains("ovf:/disk/" + keepdisk))) {
+                        toremove.add(item);
+                        break;
                     }
                 }
             }
+        }
 
-            for (Element rme : toremove) {
-                if (rme.getParentNode() != null) {
-                    rme.getParentNode().removeChild(rme);
-                }
+        for (Element rme : toremove) {
+            if (rme.getParentNode() != null) {
+                rme.getParentNode().removeChild(rme);
             }
+        }
 
+        writeDocumentToFile(newOvfFilePath, doc);
+    }
+
+    private void writeDocumentToFile(String newOvfFilePath, Document doc) {
+        try {
             final StringWriter writer = new StringWriter();
             final StreamResult result = new StreamResult(writer);
             final TransformerFactory tf = TransformerFactory.newInstance();
@@ -389,7 +402,7 @@ public class OVFHelper {
             PrintWriter outfile = new PrintWriter(newOvfFilePath);
             outfile.write(writer.toString());
             outfile.close();
-        } catch (SAXException | IOException | ParserConfigurationException | TransformerException e) {
+        } catch (IOException | TransformerException e) {
             s_logger.info("Unexpected exception caught while removing network elements from OVF:" + e.getMessage(), e);
             throw new CloudRuntimeException(e);
         }
@@ -402,6 +415,92 @@ public class OVFHelper {
             }
         }
         return null;
+    }
+
+    public List<NetworkPrerequisiteTO> getNetPrerequisitesFromDocument(Document doc) {
+        if (doc == null) {
+            return Collections.emptyList();
+        }
+
+        Map<String, NetworkPrerequisiteTO> nets = getNetworksFromDocumentTree(doc);
+
+        Node systemElement = getSystemNode(doc);
+
+        matchNicsToNets(nets, systemElement);
+
+        return new ArrayList<>(nets.values());
+    }
+
+    private void matchNicsToNets(Map<String, NetworkPrerequisiteTO> nets, Node systemElement) {
+        final DocumentTraversal traversal = (DocumentTraversal) systemElement;
+        final NodeIterator iterator = traversal.createNodeIterator(systemElement, NodeFilter.SHOW_ELEMENT, null, true);
+        for (Node n = iterator.nextNode(); n != null; n = iterator.nextNode()) {
+            final Element e = (Element) n;
+            if ("rasd:Connection".equals(e.getTagName())) {
+                String name = e.getTextContent(); // should be in our nets
+                if(nets.get(name) == null) {
+                    nets.put(name, new NetworkPrerequisiteTO());
+                }
+                NetworkPrerequisiteTO thisNet = nets.get(name);
+                if (e.getParentNode() != null) {
+                    fillNicPrerequisites(thisNet,e.getParentNode());
+                }
+            }
+        }
+    }
+
+    /**
+     * get all the stuff from parent node
+     * @param nic the object to carry through the system
+     * @param parentNode the xml container node for nic data
+     */
+    private void fillNicPrerequisites(NetworkPrerequisiteTO nic, Node parentNode) {
+//     *   <rasd:AddressOnParent>7</rasd:AddressOnParent>
+        nic.setAddressOnParent(Integer.parseInt(getChildNodeValue(parentNode, "AddressOnParent")));
+//     *   <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
+        nic.setAutomaticAllocation(Boolean.parseBoolean(getChildNodeValue(parentNode, "AutomaticAllocation")));
+//     *   <rasd:Connection>Management0-0</rasd:Connection>
+        // covoured in parent
+//     *   <rasd:Description>E1000 Ethernet adapter on "Management Network"</rasd:Description>
+        nic.setNicDescription(getChildNodeValue(parentNode, "rasd:Description"));
+//     *   <rasd:ElementName>Network adapter 1</rasd:ElementName>
+        nic.setElementName(getChildNodeValue(parentNode, "rasd:ElementName"));
+//     *   <rasd:InstanceID>6</rasd:InstanceID>
+        nic.setInstanceID(Integer.parseInt(getChildNodeValue(parentNode, "rasd:InstanceID")));
+//     *   <rasd:ResourceSubType>E1000</rasd:ResourceSubType>
+        nic.setResourceSubType(getChildNodeValue(parentNode, "rasd:ResourceSubType"));
+//     *   <rasd:ResourceType>10</rasd:ResourceType>
+        nic.setResourceType(getChildNodeValue(parentNode, "rasd:ResourceType"));
+    }
+
+    private Node getSystemNode(Document doc) {
+        // get hardware VirtualSystem, for now we support only one of those
+        NodeList systemElements = doc.getElementsByTagName("VirtualSystem");
+        if (systemElements.getLength() != 1) {
+            String msg = "found " + systemElements.getLength() + " system definitions in OVA, can only handle exactly one.";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return systemElements.item(0);
+    }
+
+    private Map<String, NetworkPrerequisiteTO> getNetworksFromDocumentTree(Document doc) {
+        NodeList networkElements = doc.getElementsByTagName("Network");
+        Map<String, NetworkPrerequisiteTO> nets = new HashMap<>();
+        for (int i = 0; i < networkElements.getLength(); i++) {
+
+            Element networkElement = (Element)networkElements.item(i);
+            String networkName = networkElement.getAttribute("ovf:name");
+
+            String description = getChildNodeValue(networkElement, "Description");
+
+            NetworkPrerequisiteTO network = new NetworkPrerequisiteTO();
+            network.setName(networkName);
+            network.setNetworkDescription(description);
+
+            nets.put(networkName,network);
+        }
+        return nets;
     }
 
     class OVFFile {

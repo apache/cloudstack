@@ -457,7 +457,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.debug("Reading OVF " + ovfFilePath + " to retrive the number of disks present in OVA");
             OVFHelper ovfHelper = new OVFHelper();
 
-            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFilePath);
+            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath);
             return new GetDatadisksAnswer(disks);
         } catch (Exception e) {
             String msg = "Get Datadisk Template Count failed due to " + e.getMessage();
@@ -529,7 +529,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // Create OVF for the disk
             String newOvfFilePath = newTmplDirAbsolute + File.separator + ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1);
             OVFHelper ovfHelper = new OVFHelper();
-            ovfHelper.rewriteOVFFile(ovfFilePath + ServerResource.ORIGINAL_FILE_EXTENSION, newOvfFilePath, diskName);
+            ovfHelper.rewriteOVFFileForSingleDisk(ovfFilePath + ServerResource.ORIGINAL_FILE_EXTENSION, newOvfFilePath, diskName);
 
             postCreatePrivateTemplate(newTmplDirAbsolute, templateId, templateUniqueName, physicalSize, virtualSize);
             writeMetaOvaForTemplate(newTmplDirAbsolute, ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1), diskName, templateUniqueName, physicalSize);

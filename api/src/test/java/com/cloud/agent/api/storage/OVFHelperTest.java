@@ -44,12 +44,12 @@ public class OVFHelperTest {
 
     @Test
     public void testGetOVFPropertiesValidOVF() throws IOException, SAXException, ParserConfigurationException {
-        List<OVFPropertyTO> props = ovfHelper.getOVFPropertiesXmlString(ovfFileProductSection);
+        List<OVFPropertyTO> props = ovfHelper.getOVFPropertiesFromXmlString(ovfFileProductSection);
         Assert.assertEquals(2, props.size());
     }
 
     @Test(expected = SAXParseException.class)
     public void testGetOVFPropertiesInvalidOVF() throws IOException, SAXException, ParserConfigurationException {
-        ovfHelper.getOVFPropertiesXmlString(ovfFileProductSection + "xxxxxxxxxxxxxxxxx");
+        ovfHelper.getOVFPropertiesFromXmlString(ovfFileProductSection + "xxxxxxxxxxxxxxxxx");
     }
 }

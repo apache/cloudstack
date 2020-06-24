@@ -126,8 +126,9 @@ class VmwareVmImplementer {
 
                 // FR37 TODO add url for template in TO ???
                 // FR37 or the OVF file
-                // FR37 actually pass the location the ovf will found once we get to it ????
+                // FR37 actually pass the location where the ovf will found once we get to it ????
                 // FR37 secStor/template/tmpl/<account>/<template>/<name>.ovf.orig
+                // FR37 or pass the content of the OVF?
                 String relativeLocation = String.format("template%stmpl%s%s%s%s%s%s",
                         File.separator,
                         File.separator,

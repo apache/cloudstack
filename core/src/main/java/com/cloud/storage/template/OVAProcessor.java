@@ -20,21 +20,19 @@
 package com.cloud.storage.template;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.storage.OVFHelper;
 import com.cloud.agent.api.to.DatadiskTO;
@@ -49,7 +47,7 @@ import com.cloud.utils.script.Script;
  * processes the content of an OVA for registration of a template
  */
 public class OVAProcessor extends AdapterBase implements Processor {
-    private static final Logger s_logger = Logger.getLogger(OVAProcessor.class);
+    private static final Logger LOGGER = Logger.getLogger(OVAProcessor.class);
     StorageLayer _storage;
 
     @Override
@@ -63,11 +61,11 @@ public class OVAProcessor extends AdapterBase implements Processor {
             return null;
         }
 
-        s_logger.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
+        LOGGER.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
         String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Unable to find the vmware template file: " + templateFilePath);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Unable to find the vmware template file: " + templateFilePath);
             }
             return null;
         }
@@ -104,52 +102,56 @@ public class OVAProcessor extends AdapterBase implements Processor {
      */
     private void validateOva(String templateFileFullPath, FormatInfo info) throws InternalErrorException {
         String ovfFile = getOVFFilePath(templateFileFullPath);
-        try {
-            OVFHelper ovfHelper = new OVFHelper();
-            // TDOD assess side effects of this call, remove capture of return value and optionally remove or simplify called method
-            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFile);
-            List<OVFPropertyTO> ovfProperties = ovfHelper.getOVFPropertiesFromFile(ovfFile);
-            if (CollectionUtils.isNotEmpty(ovfProperties)) {
-                s_logger.info("Found " + ovfProperties.size() + " configurable OVF properties");
-                info.ovfProperties = ovfProperties;
-            }
-        } catch (ParserConfigurationException | IOException | SAXException e) {
-            s_logger.info("The ovf file " + ovfFile + " is invalid ", e);
-            throw new InternalErrorException("OVA package has bad ovf file " + e.getMessage(), e);
+        OVFHelper ovfHelper = new OVFHelper();
+        // TODO assess side effects of this call, remove capture of return value and optionally remove or simplify called method
+        List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFile);
+        Document doc = ovfHelper.getDocumentFromFile(ovfFile);
+        List<NetworkPrerequisiteTO> nets = ovfHelper.getNetPrerequisitesFromDocument(doc);
+        if (CollectionUtils.isNotEmpty(nets)) {
+            LOGGER.info("Found " + nets.size() + " prerequisite networks");
+            info.networks = nets;
         }
+        List<OVFPropertyTO> ovfProperties = ovfHelper.getConfigurableOVFPropertiesFromDocument(doc);
+        if (CollectionUtils.isNotEmpty(ovfProperties)) {
+            LOGGER.info("Found " + ovfProperties.size() + " configurable OVF properties");
+            info.ovfProperties = ovfProperties;
+        }
+            // FR37 TODO if something is bad something will have been thrown above
+//            s_logger.info("The ovf file " + ovfFile + " is invalid ", e);
+//            throw new InternalErrorException("OVA package has bad ovf file " + e.getMessage(), e);
     }
 
     private void setFileSystemAccessRights(String templatePath) {
         Script command;
         String result;
 
-        command = new Script("chmod", 0, s_logger);
+        command = new Script("chmod", 0, LOGGER);
         command.add("-R");
         command.add("666", templatePath);
         result = command.execute();
         if (result != null) {
-            s_logger.warn("Unable to set permissions for files in " + templatePath + " due to " + result);
+            LOGGER.warn("Unable to set permissions for files in " + templatePath + " due to " + result);
         }
-        command = new Script("chmod", 0, s_logger);
+        command = new Script("chmod", 0, LOGGER);
         command.add("777", templatePath);
         result = command.execute();
         if (result != null) {
-            s_logger.warn("Unable to set permissions for " + templatePath + " due to " + result);
+            LOGGER.warn("Unable to set permissions for " + templatePath + " due to " + result);
         }
     }
 
     private String unpackOva(String templatePath, String templateName, long processTimeout) throws InternalErrorException {
-        s_logger.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
+        LOGGER.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
         String templateFileFullPath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         File templateFile = new File(templateFileFullPath);
-        Script command = new Script("tar", processTimeout, s_logger);
+        Script command = new Script("tar", processTimeout, LOGGER);
         command.add("--no-same-owner");
         command.add("--no-same-permissions");
         command.add("-xf", templateFileFullPath);
         command.setWorkDir(templateFile.getParent());
         String result = command.execute();
         if (result != null) {
-            s_logger.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
+            LOGGER.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
             throw new InternalErrorException("failed to untar OVA package");
         }
         return templateFileFullPath;
@@ -157,13 +159,13 @@ public class OVAProcessor extends AdapterBase implements Processor {
 
     private boolean conversionChecks(ImageFormat format) {
         if (format != null) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("We currently don't handle conversion from " + format + " to OVA.");
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("We currently don't handle conversion from " + format + " to OVA.");
             }
             return false;
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("We are handling format " + format + ".");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("We are handling format " + format + ".");
         }
         return true;
     }
@@ -174,7 +176,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             long size = getTemplateVirtualSize(file.getParent(), file.getName());
             return size;
         } catch (Exception e) {
-            s_logger.info("[ignored]"
+            LOGGER.info("[ignored]"
                     + "failed to get virtual template size for ova: " + e.getLocalizedMessage());
         }
         return file.length();
@@ -188,7 +190,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         String ovfFileName = getOVFFilePath(templateFileFullPath);
         if (ovfFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + templatePath;
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new InternalErrorException(msg);
         }
         try {
@@ -201,7 +203,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             return virtualSize;
         } catch (Exception e) {
             String msg = "getTemplateVirtualSize: Unable to parse OVF XML document " + templatePath + " to get the virtual disk " + templateName + " size due to " + e;
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new InternalErrorException(msg);
         }
     }
@@ -235,7 +237,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             return new Pair<Long, Long>(virtualSize, fileSize);
         } catch (Exception e) {
             String msg = "getDiskDetails: Unable to parse OVF XML document " + ovfFilePath + " to get the virtual disk " + diskName + " size due to " + e;
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new InternalErrorException(msg);
         }
     }

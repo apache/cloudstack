@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
+@Deprecated
 public class TemplateOVFPropertiesDaoImpl extends GenericDaoBase<TemplateOVFPropertyVO, Long> implements TemplateOVFPropertiesDao {
 
     private final static Logger s_logger = Logger.getLogger(TemplateOVFPropertiesDaoImpl.class);
