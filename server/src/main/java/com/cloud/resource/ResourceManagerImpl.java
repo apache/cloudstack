@@ -1039,6 +1039,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         boolean doUpdate = false;
 
         if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+            if(cluster.getHypervisorType() == HypervisorType.VMware) {
+                throw new InvalidParameterValueException("Renaming VMware cluster is not supported as it could cause problems if the updated  cluster name is not mapped on VCenter.");
+            }
             s_logger.debug("Updating Cluster name to: " + name);
             cluster.setName(name);
             doUpdate = true;
