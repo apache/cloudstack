@@ -285,7 +285,9 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#change-affinity-group-for-an-existing-vm',
           dataView: true,
           args: ['affinitygroupids'],
-          show: (record) => { return ['Stopped'].includes(record.state) }
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          component: () => import('@/views/compute/ChangeAffinity'),
+          popup: true
         },
         {
           api: 'scaleVirtualMachine',
