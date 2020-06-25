@@ -352,6 +352,7 @@ public class ApiConstants {
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
+    public static final String TEMPLATE_NAME = "templatename";
     public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
@@ -600,8 +601,10 @@ public class ApiConstants {
     public static final String END_POINT = "endpoint";
     public static final String REGION_ID = "regionid";
     public static final String VPC_OFF_ID = "vpcofferingid";
+    public static final String VPC_OFF_NAME = "vpcofferingname";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
+    public static final String VPC_NAME = "vpcname";
     public static final String GATEWAY_ID = "gatewayid";
     public static final String CAN_USE_FOR_DEPLOY = "canusefordeploy";
     public static final String RESOURCE_IDS = "resourceids";
