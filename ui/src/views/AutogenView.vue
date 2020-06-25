@@ -543,6 +543,8 @@ export default {
         params.id = this.$route.params.id
         if (this.$route.path.startsWith('/ssh/')) {
           params.name = this.$route.params.id
+        } else if (this.$route.path.startsWith('/vmsnapshot/')) {
+          params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
         }

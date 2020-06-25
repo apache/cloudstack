@@ -257,7 +257,7 @@ export default {
       details: ['name', 'id', 'displaytext', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
-        title: 'label.vpcs',
+        title: 'label.vpc',
         param: 'vpcofferingid'
       }],
       actions: [{

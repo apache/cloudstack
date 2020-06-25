@@ -192,7 +192,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#backup-offerings',
           dataView: true,
           args: ['virtualmachineid', 'backupofferingid'],
-          show: (record) => { return !record.backupofferingid },
+          show: (record) => { return !record.backupofferingid && !['Error', 'Destroyed'].includes(record.state) && ['VMware', 'Simulator'].includes(record.hypervisor) },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
