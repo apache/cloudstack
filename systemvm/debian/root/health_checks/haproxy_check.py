@@ -19,6 +19,7 @@
 from os import sys, path
 from utility import getHealthChecksData, formatPort
 
+SSL_CERTS_DIR = "/etc/ssl/cloudstack/"
 
 def checkGlobal(haproxyData, haCfgSections):
     if "global.maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
@@ -92,7 +93,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
 
                 bindStr = lbSec["sourceIp"] + ":" + formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
                 if lbSec.has_key("sslcert"):
-                    bindStr += " ssl crt /etc/ssl/private/" + lbSec["sslcert"]
+                    bindStr += " ssl crt " + SSL_CERTS_DIR + lbSec["sslcert"]
                 if cfgSection["bind"][0] != bindStr:
                     print "Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + "."
                     correct = False
