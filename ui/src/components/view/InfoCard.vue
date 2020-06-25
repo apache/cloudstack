@@ -285,6 +285,13 @@
             <span v-else>{{ resource.ipaddress }}</span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.projectid">
+          <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
+          <div class="resource-detail-item__details">
+            <a-icon type="project" />
+            <router-link :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
+          </div>
+        </div>
 
         <div class="resource-detail-item">
           <slot name="details">
