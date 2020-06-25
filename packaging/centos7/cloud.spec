@@ -524,6 +524,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 #%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
+%{_datadir}/%{name}-management/setup/wheel/*.whl
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
