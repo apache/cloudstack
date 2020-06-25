@@ -47,6 +47,7 @@ BuildRequires: glibc-devel
 BuildRequires: /usr/bin/mkisofs
 BuildRequires: maven => 3.0.0
 BuildRequires: python3-setuptools
+BuildRequires: wget
 
 %description
 CloudStack is a highly-scalable elastic, open source,
@@ -76,8 +77,8 @@ Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
+Requires: python3-pip
 Requires: python3-setuptools
-Requires: mysql-connector-python3
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -231,6 +232,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel
 
 # Setup Jetty
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
@@ -274,6 +276,11 @@ install -D packaging/systemd/cloudstack-management.default ${RPM_BUILD_ROOT}%{_s
 install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
+
+# Package mysql-connector-python
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/ee/ff/48bde5c0f013094d729fe4b0316ba2a24774b3ff1c52d924a8a4cb04078a/six-1.15.0-py2.py3-none-any.whl
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/28/05/9867ef8eafd12265267bee138fa2c46ebf34a276ea4cbe184cba4c606e8b/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/d1/53/4cf90d2fe81b9cdb55dc180951bcec44ea8685665f1bdb1412501dc362dd/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
 
 chmod 440 ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/mnt
@@ -380,6 +387,9 @@ then
     rm -f %{_datadir}/%{name}-management/work
     rm -f %{_sysconfdir}/default/%{name}-management
 fi
+
+# Install mysql-connector-python
+pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
 
 %post management
 /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
