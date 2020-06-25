@@ -1481,6 +1481,7 @@ public class LibvirtVMDef {
         private List<String> _features;
         private int _coresPerSocket = -1;
         private int _sockets = -1;
+        private int _threads = 1;
 
         public void setMode(String mode) {
             _mode = mode;
@@ -1499,6 +1500,12 @@ public class LibvirtVMDef {
         public void setTopology(int coresPerSocket, int sockets) {
             _coresPerSocket = coresPerSocket;
             _sockets = sockets;
+        }
+
+        public void setTopology(int coresPerSocket, int sockets, int threads) {
+            _coresPerSocket = coresPerSocket;
+            _sockets = sockets;
+            _threads = threads;
         }
 
         @Override
@@ -1528,7 +1535,7 @@ public class LibvirtVMDef {
 
             // add topology
             if (_sockets > 0 && _coresPerSocket > 0) {
-                modeBuilder.append("<topology sockets='" + _sockets + "' cores='" + _coresPerSocket + "' threads='1' />");
+                modeBuilder.append("<topology sockets='" + _sockets + "' cores='" + _coresPerSocket + "' threads=' "  + _threads + "' />");
             }
 
             // close cpu def
