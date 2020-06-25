@@ -2297,12 +2297,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 cmd.setFeatures(_cpuFeatures);
             }
             // multi cores per socket, for larger core configs
-            if (vcpus % 6 == 0) {
-                final int sockets = vcpus / 6;
-                cmd.setTopology(6, sockets);
-            } else if (vcpus % 4 == 0) {
-                final int sockets = vcpus / 4;
-                cmd.setTopology(4, sockets);
+            String coresPerSocket = null;
+            Boolean coresthreads = null;
+            if (vmTO.getDetails() != null) {
+                coresPerSocket = vmTO.getDetails().get(VmDetailConstants.CPU_CORE_PER_SOCKET);
+                coresthreads = Boolean.valueOf(vmTO.getDetails().get(VmDetailConstants.CPU_HYPERTHREADING));
+
+                s_logger.debug("user custom set coresPerSocket:" + coresPerSocket + ", coresThreads:" + coresthreads + "  ,   vmTO:" + vmTO.getUuid());
+            }
+            if (coresPerSocket != null) {
+                final int numCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, 1);
+                if (vcpus % numCoresPerSocket == 0) {
+                    final int sockets = vcpus / numCoresPerSocket;
+                    if(coresthreads && numCoresPerSocket % 2 == 0) {
+                        cmd.setTopology(numCoresPerSocket /2, sockets,2);
+                    } else {
+                        cmd.setTopology(numCoresPerSocket, sockets);
+                    }
+                }
+            } else {
+                if (vcpus % 6 == 0) {
+                    final int sockets = vcpus / 6;
+                    cmd.setTopology(6, sockets);
+                } else if (vcpus % 4 == 0) {
+                    final int sockets = vcpus / 4;
+                    cmd.setTopology(4, sockets);
+                }
             }
             vm.addComp(cmd);
         }
