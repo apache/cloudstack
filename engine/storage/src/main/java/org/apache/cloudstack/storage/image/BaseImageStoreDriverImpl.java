@@ -242,7 +242,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private void persistOvfPropertyAsSetOfTemplateDetails(long templateId, OVFPropertyTO property) {
         String key = property.getKey();
         // save separate attributes for each of the properties of a property
-        //
+        // FR37 TODO save as a single json object
         savePropertyAttribute(templateId, OVF_PROPERTY_DEFAULT + key, property.getValue());
         savePropertyAttribute(templateId, OVF_PROPERTY_DESCRIPTION + key, property.getDescription());
         savePropertyAttribute(templateId, OVF_PROPERTY_QUALIFIERS + key, property.getQualifiers());
@@ -266,6 +266,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private void persistRequiredNetworkAsSetOfTemplateDetails(long templateId, NetworkPrerequisiteTO network) {
         String key = network.getName();
 
+        // FR37 TODO save as a single json string
         savePropertyAttribute(templateId, REQUIRED_NETWORK_DESCRIPTION + key, network.getNetworkDescription());
         savePropertyAttribute(templateId, REQUIRED_NETWORK_ELEMENT_NAME + key, network.getElementName());
         savePropertyAttribute(templateId, REQUIRED_NETWORK_NIC_DESCRIPTION + key, network.getNicDescription());
