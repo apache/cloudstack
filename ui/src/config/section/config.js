@@ -42,7 +42,7 @@ export default {
           label: 'label.configure.ldap',
           listView: true,
           args: [
-            'hostname', 'port'
+            'hostname', 'port', 'domainid'
           ]
         },
         {
