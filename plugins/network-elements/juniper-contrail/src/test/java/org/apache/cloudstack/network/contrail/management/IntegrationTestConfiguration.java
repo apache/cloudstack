@@ -45,7 +45,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDaoImpl;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDaoImpl;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DcDetailsDaoImpl;
-import org.apache.cloudstack.engine.orchestration.NetworkOrchestrator;
+import org.apache.cloudstack.engine.orchestration.network.NetworkOrchestrator;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;

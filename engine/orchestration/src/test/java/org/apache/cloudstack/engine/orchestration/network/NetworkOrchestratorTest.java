@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.engine.orchestration;
+package org.apache.cloudstack.engine.orchestration.network;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
