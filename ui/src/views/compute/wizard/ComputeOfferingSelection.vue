@@ -152,6 +152,9 @@ export default {
     },
     loading () {
       if (!this.loading) {
+        if (!this.preFillContent) {
+          return
+        }
         if (this.preFillContent.computeofferingid) {
           this.selectedRowKeys = [this.preFillContent.computeofferingid]
           this.$emit('select-compute-item', this.preFillContent.computeofferingid)

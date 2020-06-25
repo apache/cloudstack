@@ -170,6 +170,9 @@ export default {
   },
   methods: {
     fillValue () {
+      if (!this.preFillContent) {
+        return
+      }
       if (this.preFillContent.cpunumber) {
         this.cpuNumberInputValue = this.preFillContent.cpunumber
       }

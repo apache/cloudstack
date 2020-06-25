@@ -292,21 +292,12 @@ export default {
         {
           api: 'scaleVirtualMachine',
           icon: 'arrows-alt',
-          // label: label.change.service.offering
           label: 'Scale VM',
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
-          args: ['serviceofferingid', 'details'],
-          show: (record) => { return ['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC' }
-        },
-        {
-          api: 'changeServiceForVirtualMachine',
-          icon: 'sliders',
-          label: 'label.change.service.offering',
-          docHelp: 'adminguide/virtual_machines.html#changing-the-service-offering-for-a-vm',
-          dataView: true,
-          args: ['serviceofferingid'],
-          show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') }
+          show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') },
+          popup: true,
+          component: () => import('@/views/compute/ScaleVM.vue')
         },
         {
           api: 'migrateVirtualMachine',
