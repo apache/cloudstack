@@ -110,6 +110,7 @@ Requires: iproute
 Requires: ipset
 Requires: perl
 Requires: libvirt-python
+Requires: python36-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
@@ -260,7 +261,7 @@ cp client/target/lib/*jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties server.properties log4j-cloud.xml commons-logging.properties environment.properties java.security.ciphers
+for name in db.properties server.properties log4j-cloud.xml environment.properties java.security.ciphers
 do
   cp client/target/conf/$name ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
@@ -292,6 +293,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/plugins
 install -D packaging/systemd/cloudstack-agent.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-agent.service
+install -D packaging/systemd/cloudstack-rolling-maintenance@.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-rolling-maintenance@.service
 install -D packaging/systemd/cloudstack-agent.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
@@ -300,6 +302,7 @@ install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}%{_bindir
 install -D agent/target/transformed/cloudstack-agent-upgrade ${RPM_BUILD_ROOT}%{_bindir}/%{name}-agent-upgrade
 install -D agent/target/transformed/cloud-guest-tool ${RPM_BUILD_ROOT}%{_bindir}/%{name}-guest-tool
 install -D agent/target/transformed/libvirtqemuhook ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook
+install -D agent/target/transformed/rolling-maintenance ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/rolling-maintenance
 install -D agent/target/transformed/cloud-ssh ${RPM_BUILD_ROOT}%{_bindir}/%{name}-ssh
 install -D agent/target/transformed/cloudstack-agent-profile.sh ${RPM_BUILD_ROOT}%{_sysconfdir}/profile.d/%{name}-agent-profile.sh
 install -D agent/target/transformed/cloudstack-agent.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-agent
@@ -428,6 +431,7 @@ cp -a ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook %{_sysconfd
 mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /sbin/service libvirtd restart
 /sbin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
+/sbin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
 
 # if saved configs from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
@@ -488,7 +492,6 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
-%config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %attr(0644,root,root) %{_unitdir}/%{name}-management.service
 %attr(0755,cloud,cloud) %{_localstatedir}/run/%{name}-management.pid
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
@@ -519,6 +522,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/%{name}-guest-tool
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
 %attr(0644,root,root) %{_unitdir}/%{name}-agent.service
+%attr(0644,root,root) %{_unitdir}/%{name}-rolling-maintenance@.service
 %config(noreplace) %{_sysconfdir}/default/%{name}-agent
 %attr(0644,root,root) %{_sysconfdir}/profile.d/%{name}-agent-profile.sh
 %config(noreplace) %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-agent
@@ -527,6 +531,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %dir %{_localstatedir}/log/%{name}/agent
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
 %attr(0755,root,root) %{_datadir}/%{name}-agent/lib/libvirtqemuhook
+%attr(0755,root,root) %{_datadir}/%{name}-agent/lib/rolling-maintenance
 %dir %{_datadir}/%{name}-agent/plugins
 %{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-agent-%{version}/NOTICE

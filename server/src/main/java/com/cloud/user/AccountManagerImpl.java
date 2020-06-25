@@ -507,14 +507,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         ControlledEntity prevEntity = null;
         if (sameOwner) {
             for (ControlledEntity entity : entities) {
-                if (sameOwner) {
-                    if (ownerId == null) {
-                        ownerId = entity.getAccountId();
-                    } else if (ownerId.longValue() != entity.getAccountId()) {
-                        throw new PermissionDeniedException("Entity " + entity + " and entity " + prevEntity + " belong to different accounts");
-                    }
-                    prevEntity = entity;
+                if (ownerId == null) {
+                    ownerId = entity.getAccountId();
+                } else if (ownerId.longValue() != entity.getAccountId()) {
+                    throw new PermissionDeniedException("Entity " + entity + " and entity " + prevEntity + " belong to different accounts");
                 }
+                prevEntity = entity;
             }
         }
 

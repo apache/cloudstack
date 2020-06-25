@@ -4,7 +4,7 @@
   "provisioners": [
     {
       "type": "shell",
-      "execute_command": "echo 'cloud'|sudo -S bash '{{.Path}}'",
+      "execute_command": "echo 'cloud' | sudo -u root -S bash {{.Path}}",
       "scripts": [
         "scripts/apt_upgrade.sh",
         "scripts/configure_grub.sh",
@@ -13,11 +13,11 @@
         "scripts/configure_acpid.sh",
         "scripts/install_systemvm_packages.sh",
         "scripts/configure_conntrack.sh",
-        "../cloud_scripts_shar_archive.sh",
-        "scripts/configure_systemvm_services.sh",
         "scripts/authorized_keys.sh",
         "scripts/configure_persistent_config.sh",
         "scripts/configure_login.sh",
+        "../cloud_scripts_shar_archive.sh",
+        "scripts/configure_systemvm_services.sh",
         "scripts/cleanup.sh",
         "scripts/finalize.sh"
       ]
@@ -29,50 +29,39 @@
       "accelerator": "kvm",
       "headless": true,
       "qemuargs": [
-        [ "-m", "512M" ],
-        [ "-smp", "cpus=1,maxcpus=1,cores=1" ]
+        [ "-m", "500M" ],
+        [ "-smp", "1" ]
       ],
-      "disk_size": 2000,
       "format": "qcow2",
-
+      "disk_size": 2500,
       "disk_interface": "virtio",
       "net_device": "virtio-net",
-
-      "iso_url": "https://cdimage.debian.org/cdimage/archive/9.12.0/amd64/iso-cd/debian-9.12.0-amd64-netinst.iso",
-      "iso_checksum": "af81de39678db1f814be4ce1b7b64b891f6f59926d6f835842c4b52b462ac7e78c45b5efd8273c196d64ba0b2dd1a0aabfb97c6e4f10702ee11a72e07aec9d67",
+      "iso_url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-10.4.0-amd64-netinst.iso",
+      "iso_checksum": "ec69e4bfceca56222e6e81766bf235596171afe19d47c20120783c1644f72dc605d341714751341051518b0b322d6c84e9de997815e0c74f525c66f9d9eb4295",
       "iso_checksum_type": "sha512",
-
-      "vm_name": "systemvmtemplate",
       "output_directory": "../dist",
-
       "http_directory": "http",
-      "http_port_min": 10082,
-      "http_port_max": 10089,
-
-      "ssh_host_port_min": 2222,
-      "ssh_host_port_max": 2229,
-
+      "vm_name": "systemvmtemplate",
       "ssh_username": "cloud",
       "ssh_password": "cloud",
-      "ssh_port": 22,
       "ssh_wait_timeout": "30m",
-
-      "boot_wait": "10s",
+      "boot_wait": "5s",
       "boot_command": [
         "<esc><wait>",
         "install <wait>",
-        " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
-        " debian-installer=en_US <wait>",
-        " auto <wait>",
-        " locale=en_US <wait>",
-        " kbd-chooser/method=us <wait>",
-        " netcfg/get_hostname=systemvm <wait>",
-        " netcfg/get_domain=apache.org <wait>",
-        " fb=false <wait>",
-        " debconf/frontend=noninteractive <wait>",
-        " console-setup/ask_detect=false <wait>",
-        " console-keymaps-at/keymap=us <wait>",
-        " keyboard-configuration/xkb-keymap=us <wait>",
+        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
+        "debian-installer=en_US.UTF-8 <wait>",
+        "auto <wait>",
+        "language=en locale=en_US.UTF-8 <wait>",
+        "kbd-chooser/method=us <wait>",
+        "keyboard-configuration/xkb-keymap=us <wait>",
+        "netcfg/get_hostname=systemvm <wait>",
+        "netcfg/get_domain=apache.org <wait>",
+        "country=IN keymap=us <wait>",
+        "fb=false <wait>",
+        "debconf/frontend=noninteractive <wait>",
+        "console-setup/ask_detect=false <wait>",
+        "console-keymaps-at/keymap=us <wait>",
         "<enter><wait>"
       ],
 

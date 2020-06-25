@@ -66,6 +66,10 @@ public class Script implements Callable<String> {
     Process _process;
     Thread _thread;
 
+    public boolean isTimeout() {
+        return _isTimeOut;
+    }
+
     public int getExitValue() {
         return _process.exitValue();
     }

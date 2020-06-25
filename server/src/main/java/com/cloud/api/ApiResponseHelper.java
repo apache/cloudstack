@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -44,6 +45,9 @@ import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceHostSkippedResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceHostUpdatedResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
@@ -871,6 +875,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             Vpc vpc = ApiDBUtils.findVpcById(ipAddr.getVpcId());
             if (vpc != null) {
                 ipResponse.setVpcId(vpc.getUuid());
+                ipResponse.setVpcName(vpc.getName());
             }
         }
 
@@ -890,6 +895,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             NetworkVO nw = ApiDBUtils.findNetworkById(networkId);
             if (nw != null) {
                 ipResponse.setNetworkId(nw.getUuid());
+                ipResponse.setNetworkName(nw.getName());
             }
         }
         ipResponse.setState(ipAddr.getState().toString());
@@ -1373,11 +1379,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 HostPodVO pod = ApiDBUtils.findPodById(vm.getPodIdToDeployIn());
                 if (pod != null) {
                     vmResponse.setPodId(pod.getUuid());
+                    vmResponse.setPodName(pod.getName());
                 }
             }
             VMTemplateVO template = ApiDBUtils.findTemplateById(vm.getTemplateId());
             if (template != null) {
                 vmResponse.setTemplateId(template.getUuid());
+                vmResponse.setTemplateName(template.getName());
             }
             vmResponse.setCreated(vm.getCreated());
 
@@ -2896,6 +2904,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         VpcOffering voff = ApiDBUtils.findVpcOfferingById(vpc.getVpcOfferingId());
         if (voff != null) {
             response.setVpcOfferingId(voff.getUuid());
+            response.setVpcOfferingName(voff.getName());
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
@@ -2968,6 +2977,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (result.getVpcId() != null) {
             Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
 
         DataCenter zone = ApiDBUtils.findZoneById(result.getZoneId());
@@ -3158,6 +3168,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
         if (vpc != null) {
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
         response.setRemoved(result.getRemoved());
         response.setForDisplay(result.isDisplay());
@@ -4280,5 +4291,32 @@ public class ApiResponseHelper implements ResponseGenerator {
             responses.add(healthCheckResponse);
         }
         return responses;
+    }
+
+    @Override
+    public RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details, List<RollingMaintenanceManager.HostUpdated> hostsUpdated, List<RollingMaintenanceManager.HostSkipped> hostsSkipped) {
+        RollingMaintenanceResponse response = new RollingMaintenanceResponse(success, details);
+        List<RollingMaintenanceHostUpdatedResponse> updated = new ArrayList<>();
+        for (RollingMaintenanceManager.HostUpdated h : hostsUpdated) {
+            RollingMaintenanceHostUpdatedResponse r = new RollingMaintenanceHostUpdatedResponse();
+            r.setHostId(h.getHost().getUuid());
+            r.setHostName(h.getHost().getName());
+            r.setStartDate(getDateStringInternal(h.getStart()));
+            r.setEndDate(getDateStringInternal(h.getEnd()));
+            r.setOutput(h.getOutputMsg());
+            updated.add(r);
+        }
+        List<RollingMaintenanceHostSkippedResponse> skipped = new ArrayList<>();
+        for (RollingMaintenanceManager.HostSkipped h : hostsSkipped) {
+            RollingMaintenanceHostSkippedResponse r = new RollingMaintenanceHostSkippedResponse();
+            r.setHostId(h.getHost().getUuid());
+            r.setHostName(h.getHost().getName());
+            r.setReason(h.getReason());
+            skipped.add(r);
+        }
+        response.setUpdatedHosts(updated);
+        response.setSkippedHosts(skipped);
+        response.setObjectName("rollingmaintenance");
+        return response;
     }
 }

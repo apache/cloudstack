@@ -48,6 +48,13 @@ public interface IpAddressManager {
     ConfigKey<Boolean> RulesContinueOnError = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rule.delete.ignoreerror", "true",
             "When true, ip address delete (ipassoc) failures are  ignored", true);
 
+    ConfigKey<String> VrouterRedundantTiersPlacement = new ConfigKey<String>(
+            "Advanced", String.class,
+            "vrouter.redundant.tiers.placement",
+            "random",
+            "Set placement of vrouter ips in redundant mode in vpc tiers, this can be 3 value: `first` to use first ips in tiers, `last` to use last ips in tiers and `random` to take random ips in tiers.",
+            true, ConfigKey.Scope.Account);
+
     /**
      * Assigns a new public ip address.
      *
@@ -102,6 +109,12 @@ public interface IpAddressManager {
     IPAddressVO markIpAsUnavailable(long addrId);
 
     String acquireGuestIpAddress(Network network, String requestedIp);
+
+    String acquireFirstGuestIpAddress(Network network);
+
+    String acquireLastGuestIpAddress(Network network);
+
+    String acquireGuestIpAddressByPlacement(Network network, String requestedIp);
 
     boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException;
 

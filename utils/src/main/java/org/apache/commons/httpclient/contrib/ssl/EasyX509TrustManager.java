@@ -29,8 +29,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 
 /**
  * <p>
@@ -58,7 +57,7 @@ public class EasyX509TrustManager implements X509TrustManager {
     private X509TrustManager standardTrustManager = null;
 
     /** Log object for this class. */
-    private static final Log LOG = LogFactory.getLog(EasyX509TrustManager.class);
+    private static final Logger LOG = Logger.getLogger(EasyX509TrustManager.class.getName());
 
     /**
      * Constructor for EasyX509TrustManager.
@@ -83,7 +82,7 @@ public class EasyX509TrustManager implements X509TrustManager {
     }
 
     /**
-     * @see javax.net.ssl.X509TrustManager#checkServerTrusted(X509Certificate[],String authType)
+     * @see X509TrustManager#checkServerTrusted(X509Certificate[],String authType)
      */
     @Override
     public void checkServerTrusted(X509Certificate[] certificates, String authType) throws CertificateException {

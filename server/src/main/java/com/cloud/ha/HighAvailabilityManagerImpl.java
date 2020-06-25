@@ -105,10 +105,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     private static final int SECONDS_TO_MILLISECONDS_FACTOR = 1000;
 
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
-    private ConfigKey<Integer> MaxRetries = new ConfigKey<>("Advanced", Integer.class,
-            "max.retries","5",
+    private ConfigKey<Integer> MigrationMaxRetries = new ConfigKey<>("Advanced", Integer.class,
+            "vm.ha.migration.max.retries","5",
             "Total number of attempts for trying migration of a VM.",
-            true, ConfigKey.Scope.Cluster);
+            true, ConfigKey.Scope.Global);
 
     WorkerThread[] _workers;
     boolean _stopped;
@@ -863,7 +863,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         _forceHA = ForceHA.value();
         _timeToSleep = TimeToSleep.value() * SECONDS_TO_MILLISECONDS_FACTOR;
-        _maxRetries = MaxRetries.value();
+        _maxRetries = MigrationMaxRetries.value();
         _timeBetweenFailures = TimeBetweenFailures.value() * SECONDS_TO_MILLISECONDS_FACTOR;
         _timeBetweenCleanups = TimeBetweenCleanup.value();
         _stopRetryInterval = StopRetryInterval.value();
@@ -1037,7 +1037,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
      */
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] {TimeBetweenCleanup, MaxRetries, TimeToSleep, TimeBetweenFailures,
+        return new ConfigKey[] {TimeBetweenCleanup, MigrationMaxRetries, TimeToSleep, TimeBetweenFailures,
             StopRetryInterval, RestartRetryInterval, MigrateRetryInterval, InvestigateRetryInterval,
             HAWorkers, ForceHA};
     }

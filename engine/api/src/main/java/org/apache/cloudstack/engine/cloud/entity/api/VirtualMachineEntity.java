@@ -171,4 +171,10 @@ public interface VirtualMachineEntity extends CloudStackEntity {
      * @param netowrk network to disconnect from
      */
     void disconnectFrom(NetworkEntity netowrk, short nicId);
+
+    /**
+     *  passing additional params of deployment associated with the virtual machine
+     */
+    void setParamsToEntity(Map<VirtualMachineProfile.Param, Object> params);
+
 }

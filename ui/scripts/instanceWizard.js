@@ -965,14 +965,16 @@
                     }
                 });
 
-                $.ajax({
-                    url: createURL("listTemplateOvfProperties&id=" + selectedTemplateObj.id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                        ovfProps = json.listtemplateovfpropertiesresponse.ovfproperty;
-                    }
-                });
+                if (selectedTemplateObj) {
+                    $.ajax({
+                        url: createURL("listTemplateOvfProperties&id=" + selectedTemplateObj.id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            ovfProps = json.listtemplateovfpropertiesresponse.ovfproperty;
+                        }
+                    });
+                }
 
                 var $step = $('.step.sshkeyPairs:visible');
                 if (ovfProps == null || ovfProps.length === 0) {
@@ -1397,6 +1399,24 @@
             if (keyboard != null && keyboard.length > 0) {  //when blank option (default option) is selected => args.data.keyboardLanguage == ""
                 $.extend(deployVmData, {
                     keyboard : keyboard
+                });
+            }
+            var boottype = args.data.customboot;
+            if (boottype != null && boottype.length > 0) {
+                $.extend(deployVmData, {
+                    boottype : boottype
+                });
+            }
+            var bootmode = args.data.bootmode;
+            if (bootmode != null && bootmode.length > 0) {
+                $.extend(deployVmData, {
+                    bootmode : bootmode
+                });
+            }
+            var bootintosetup = (args.data.bootintosetup == "on");
+            if (bootintosetup) {
+                $.extend(deployVmData, {
+                    bootintosetup : bootintosetup
                 });
             }
 

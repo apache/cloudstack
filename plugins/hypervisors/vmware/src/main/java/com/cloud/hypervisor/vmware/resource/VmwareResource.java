@@ -192,7 +192,6 @@ import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.InternalErrorException;
@@ -318,6 +317,7 @@ import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineBootOptions;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
@@ -1723,6 +1723,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
         String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         DiskTO rootDiskTO = null;
+        String bootMode = null;
+        if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
+            bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
+        }
+        if (null == bootMode) {
+            bootMode = ApiConstants.BootType.BIOS.toString();
+        }
+
         // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
         // This helps avoid mix of different scsi subtype controllers in instance.
         if (DiskControllerType.osdefault == DiskControllerType.getType(dataDiskController) && DiskControllerType.lsilogic == DiskControllerType.getType(rootDiskController)) {
@@ -2280,6 +2288,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
+            setBootOptions(vmSpec, bootMode, vmConfigSpec);
+
             //
             // Configure VM
             //
@@ -2367,6 +2377,30 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private void setBootOptions(VirtualMachineTO vmSpec, String bootMode, VirtualMachineConfigSpec vmConfigSpec) {
+        VirtualMachineBootOptions bootOptions = null;
+        if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")) {
+            vmConfigSpec.setFirmware("efi");
+            if (vmSpec.getDetails().containsKey(ApiConstants.BootType.UEFI.toString()) && "secure".equalsIgnoreCase(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()))) {
+                if (bootOptions == null) {
+                    bootOptions = new VirtualMachineBootOptions();
+                }
+                bootOptions.setEfiSecureBootEnabled(true);
+            }
+        }
+        if (vmSpec.isEnterHardwareSetup()) {
+            if (bootOptions == null) {
+                bootOptions = new VirtualMachineBootOptions();
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("configuring VM '%s' to enter hardware setup",vmSpec.getName()));
+            }
+            bootOptions.setEnterBIOSSetup(vmSpec.isEnterHardwareSetup());
+        }
+        if (bootOptions != null) {
+            vmConfigSpec.setBootOptions(bootOptions);
+        }
+    }
 
     /**
      * Set the ovf section spec from existing vApp configuration
@@ -2772,6 +2806,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private static void configCustomExtraOption(List<OptionValue> extraOptions, VirtualMachineTO vmSpec) {
         // we no longer to validation anymore
         for (Map.Entry<String, String> entry : vmSpec.getDetails().entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(VmDetailConstants.BOOT_MODE)) {
+                continue;
+            }
             OptionValue newVal = new OptionValue();
             newVal.setKey(entry.getKey());
             newVal.setValue(entry.getValue());
@@ -3890,8 +3927,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.trace("Detected mounted vmware tools installer for :[" + cmd.getVmName() + "]");
                 }
                 try {
-                    vmMo.rebootGuest();
-                    return new RebootAnswer(cmd, "reboot succeeded", true);
+                    if (canSetEnableSetupConfig(vmMo,cmd.getVirtualMachine())) {
+                        vmMo.rebootGuest();
+                        return new RebootAnswer(cmd, "reboot succeeded", true);
+                    } else {
+                        return new RebootAnswer(cmd, "Failed to configure VM to boot into hardware setup menu: " + vmMo.getName(), false);
+                    }
                 } catch (ToolsUnavailableFaultMsg e) {
                     s_logger.warn("VMware tools is not installed at guest OS, we will perform hard reset for reboot");
                 } catch (Exception e) {
@@ -3930,6 +3971,33 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
         }
+    }
+
+    /**
+     * set the boot into setup option if possible
+     * @param vmMo vmware view on the vm
+     * @param virtualMachine orchestration spec for the vm
+     * @return true unless reboot into setup is requested and vmware is unable to comply
+     */
+    private boolean canSetEnableSetupConfig(VirtualMachineMO vmMo, VirtualMachineTO virtualMachine) {
+        if (virtualMachine.isEnterHardwareSetup()) {
+            VirtualMachineBootOptions bootOptions = new VirtualMachineBootOptions();
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("configuring VM '%s' to reboot into hardware setup menu.",virtualMachine.getName()));
+            }
+            bootOptions.setEnterBIOSSetup(virtualMachine.isEnterHardwareSetup());
+            vmConfigSpec.setBootOptions(bootOptions);
+            try {
+                if (!vmMo.configureVm(vmConfigSpec)) {
+                    return false;
+                }
+            } catch (Exception e) {
+                s_logger.error(String.format("failed to reconfigure VM '%s' to boot into hardware setup menu",virtualMachine.getName()),e);
+                return false;
+            }
+        }
+        return true;
     }
 
     protected Answer execute(CheckVirtualMachineCommand cmd) {
@@ -6429,16 +6497,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private static String getRouterSshControlIp(NetworkElementCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String routerGuestIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
-        String zoneNetworkType = cmd.getAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE);
-
-        if (routerGuestIp != null && zoneNetworkType != null && NetworkType.valueOf(zoneNetworkType) == NetworkType.Basic) {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("In Basic zone mode, use router's guest IP for SSH control. guest IP : " + routerGuestIp);
-
-            return routerGuestIp;
-        }
-
         if (s_logger.isDebugEnabled())
             s_logger.debug("Use router's private IP for SSH control. IP : " + routerIp);
         return routerIp;

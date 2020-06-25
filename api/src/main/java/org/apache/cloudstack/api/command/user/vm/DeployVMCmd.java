@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
+
+import com.cloud.utils.StringUtils;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -109,6 +112,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     //@ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
+
+    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]", since = "4.14.0.0")
+    private String bootType;
+
+    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy By default for BIOS", since = "4.14.0.0")
+    private String bootMode;
+
+    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup or not (ignored if startVm = false, only valid for vmware)", since = "4.15.0.0")
+    private Boolean bootIntoSetup;
 
     //DataDisk information
     @ACL
@@ -244,6 +256,22 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return domainId;
     }
 
+    private ApiConstants.BootType  getBootType() {
+
+        if (StringUtils.isNotBlank(bootType)) {
+            try {
+                String type = bootType.trim().toUpperCase();
+                return ApiConstants.BootType.valueOf(type);
+            } catch (IllegalArgumentException e) {
+                String errMesg = "Invalid bootType " + bootType + "Specified for vm " + getName()
+                        + " Valid values are: " + Arrays.toString(ApiConstants.BootType.values());
+                s_logger.warn(errMesg);
+                throw new InvalidParameterValueException(errMesg);
+            }
+        }
+        return null;
+    }
+
     public Map<String, String> getDetails() {
         Map<String, String> customparameterMap = new HashMap<String, String>();
         if (details != null && details.size() != 0) {
@@ -256,11 +284,33 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 }
             }
         }
+        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+            customparameterMap.put(getBootType().toString(), getBootMode().toString());
+        }
+
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
             customparameterMap.put("rootdisksize", rootdisksize.toString());
         }
+
         return customparameterMap;
     }
+
+
+    public ApiConstants.BootMode getBootMode() {
+        if (StringUtils.isNotBlank(bootMode)) {
+            try {
+                String mode = bootMode.trim().toUpperCase();
+                return ApiConstants.BootMode.valueOf(mode);
+            } catch (IllegalArgumentException e) {
+                String errMesg = "Invalid bootMode " + bootMode + "Specified for vm " + getName()
+                        + " Valid values are:  "+ Arrays.toString(ApiConstants.BootMode.values());
+                s_logger.warn(errMesg);
+                throw new InvalidParameterValueException(errMesg);
+                }
+        }
+        return null;
+    }
+
 
     public Map<String, String> getVmOVFProperties() {
         Map<String, String> map = new HashMap<>();
@@ -527,6 +577,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public boolean getCopyImageTags() {
         return copyImageTags == null ? false : copyImageTags;
+    }
+
+    public Boolean getBootIntoSetup() {
+        return bootIntoSetup;
     }
 
     /////////////////////////////////////////////////////

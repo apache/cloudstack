@@ -298,6 +298,18 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "OS type id of the vm", since = "4.4")
     private String osTypeId;
 
+    @SerializedName(ApiConstants.OS_DISPLAY_NAME)
+    @Param(description = "OS name of the vm", since = "4.13.2")
+    private String osDisplayName;
+
+    @SerializedName(ApiConstants.BOOT_MODE)
+    @Param(description = "Guest vm Boot Mode")
+    private String bootMode;
+
+    @SerializedName(ApiConstants.BOOT_TYPE)
+    @Param(description = "Guest vm Boot Type")
+    private String bootType;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
@@ -846,6 +858,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.osTypeId = osTypeId;
     }
 
+    public void setOsDisplayName(String osDisplayName) {
+        this.osDisplayName = osDisplayName;
+    }
+
     public Set<Long> getTagIds() {
         return tagIds;
     }
@@ -873,4 +889,16 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public String getOsTypeId() {
         return osTypeId;
     }
+
+    public String getOsDisplayName() {
+        return osDisplayName;
+    }
+
+    public String getBootType() { return bootType; }
+
+    public void setBootType(String bootType) { this.bootType = bootType; }
+
+    public String getBootMode() { return bootMode; }
+
+    public void setBootMode(String bootMode) { this.bootMode = bootMode; }
 }

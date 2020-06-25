@@ -35,6 +35,7 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
@@ -79,7 +80,10 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             libvirtComputingResource.createVifs(vmSpec, vm);
 
             s_logger.debug("starting " + vmName + ": " + vm.toString());
-            libvirtComputingResource.startVM(conn, vmName, vm.toString());
+            String vmInitialSpecification = vm.toString();
+            String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
+            libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification);
+            performAgentStartHook(vmName, libvirtComputingResource);
 
             libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
@@ -135,5 +139,31 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
             }
         }
+    }
+
+    private void performAgentStartHook(String vmName, LibvirtComputingResource libvirtComputingResource) {
+        try {
+            LibvirtKvmAgentHook onStartHook = libvirtComputingResource.getStartHook();
+            onStartHook.handle(vmName);
+        } catch (Exception e) {
+            s_logger.warn("Exception occurred when handling LibVirt VM onStart hook: {}", e);
+        }
+    }
+
+    private String performXmlTransformHook(String vmInitialSpecification, final LibvirtComputingResource libvirtComputingResource) {
+        String vmFinalSpecification;
+        try {
+            // if transformer fails, everything must go as it's just skipped.
+            LibvirtKvmAgentHook t = libvirtComputingResource.getTransformer();
+            vmFinalSpecification = (String) t.handle(vmInitialSpecification);
+            if (null == vmFinalSpecification) {
+                s_logger.warn("Libvirt XML transformer returned NULL, will use XML specification unchanged.");
+                vmFinalSpecification = vmInitialSpecification;
+            }
+        } catch(Exception e) {
+            s_logger.warn("Exception occurred when handling LibVirt XML transformer hook: {}", e);
+            vmFinalSpecification = vmInitialSpecification;
+        }
+        return vmFinalSpecification;
     }
 }

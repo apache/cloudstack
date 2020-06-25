@@ -60,6 +60,10 @@ public interface VirtualMachineProfile {
         public static final Param PxeSeverType = new Param("PxeSeverType");
         public static final Param HaTag = new Param("HaTag");
         public static final Param HaOperation = new Param("HaOperation");
+        public static final Param UefiFlag = new Param("UefiFlag");
+        public static final Param BootMode = new Param("BootMode");
+        public static final Param BootType = new Param("BootType");
+        public static final Param BootIntoSetup = new Param("enterHardwareSetup");
 
         private String name;
 

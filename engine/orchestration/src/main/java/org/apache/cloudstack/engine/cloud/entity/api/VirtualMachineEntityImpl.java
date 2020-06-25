@@ -20,9 +20,11 @@ import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 
@@ -269,4 +271,22 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
     }
 
+    @Override
+    public void setParamsToEntity(Map<VirtualMachineProfile.Param, Object> map) {
+        if (MapUtils.isNotEmpty(map)) {
+            if (this.vmEntityVO != null) {
+                Map<String, String> details = this.vmEntityVO.getDetails();
+                if (details == null) {
+                    details = new HashMap<String, String>();
+                }
+                for (Map.Entry<VirtualMachineProfile.Param, Object> entry : map.entrySet()) {
+                    if (null != entry && null != entry.getValue() && null != entry.getKey()) {
+                        details.put(entry.getKey().getName(), entry.getValue().toString());
+                    }
+                }
+                this.vmEntityVO.setDetails(details);
+            }
+        }
+
+    }
 }

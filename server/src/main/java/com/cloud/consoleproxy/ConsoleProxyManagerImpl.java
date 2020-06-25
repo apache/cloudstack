@@ -32,6 +32,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
@@ -154,7 +156,8 @@ import com.google.gson.GsonBuilder;
 // Starting, HA, Migrating, Running state are all counted as "Open" for available capacity calculation
 // because sooner or later, it will be driven into Running state
 //
-public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter, Configurable {
+
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -1739,6 +1742,16 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     public void setConsoleProxyAllocators(List<ConsoleProxyAllocator> consoleProxyAllocators) {
         _consoleProxyAllocators = consoleProxyAllocators;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ConsoleProxyManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { NoVncConsoleDefault };
     }
 
 }

@@ -285,7 +285,9 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             // place the newly created volume in the Volume Access Group
             List<HostVO> hosts = hostDao.findByClusterId(clusterId);
 
-            SolidFireUtil.placeVolumeInVolumeAccessGroups(sfConnection, sfVolume.getId(), hosts);
+            String clusterUuId = clusterDao.findById(clusterId).getUuid();
+
+            SolidFireUtil.placeVolumeInVolumeAccessGroups(sfConnection, sfVolume.getId(), hosts, clusterUuId);
 
             SolidFireUtil.SolidFireAccount sfAccount = sfCreateVolume.getAccount();
             Account csAccount = CallContext.current().getCallingAccount();

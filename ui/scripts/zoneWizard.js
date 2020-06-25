@@ -406,6 +406,9 @@
 
                         args.$form.find('[rel=ip6dns1]').hide();
                         args.$form.find('[rel=ip6dns2]').hide();
+
+                        args.$form.find('[rel=ip6cidr]').hide();
+                        args.$form.find('[rel=ip6gateway]').hide();
                     } else { //Advanced zone
                         if (args.data["zone-advanced-sg-enabled"] != "on") { //Advanced SG-disabled zone
                             args.$form.find('[rel=networkOfferingId]').hide();
@@ -413,12 +416,18 @@
 
                             args.$form.find('[rel=ip6dns1]').show();
                             args.$form.find('[rel=ip6dns2]').show();
+
+                            args.$form.find('[rel=ip6cidr]').hide();
+                            args.$form.find('[rel=ip6gateway]').hide();
                         } else { //Advanced SG-enabled zone
                             args.$form.find('[rel=networkOfferingId]').show(); //will be used to create a guest network during zone creation
                             args.$form.find('[rel=guestcidraddress]').hide();
 
-                            args.$form.find('[rel=ip6dns1]').hide();
-                            args.$form.find('[rel=ip6dns2]').hide();
+                            args.$form.find('[rel=ip6dns1]').show();
+                            args.$form.find('[rel=ip6dns2]').show();
+
+                            args.$form.find('[rel=ip6cidr]').show();
+                            args.$form.find('[rel=ip6gateway]').show();
                         }
                     }
                 },
@@ -460,6 +469,21 @@
                             ipv6: true
                         }
                    },
+
+                    ip6cidr: {
+                        label: 'label.ipv6.CIDR',
+                        validation: {
+                            required: false,
+                            ipv6cidr: true
+                        }
+                    },
+                    ip6gateway: {
+                        label: 'label.ipv6.gateway',
+                        validation: {
+                            required: false,
+                            ipv6: true
+                        }
+                    },
 
                     internaldns1: {
                         label: 'label.internal.dns.1',
@@ -3878,6 +3902,16 @@
                                 endip: args.data.guestTraffic.guestEndIp
                             });
                         }
+                        if (args.data.zone.ip6cidr != null && args.data.zone.ip6cidr.length > 0) {
+                            $.extend(data, {
+                                ip6cidr: args.data.zone.ip6cidr
+                            });
+                        }
+                        if (args.data.zone.ip6gateway != null && args.data.zone.ip6gateway.length > 0) {
+                            $.extend(data, {
+                                ip6gateway: args.data.zone.ip6gateway
+                            });
+                        }
                     }
 
                     $.ajax({
@@ -4173,7 +4207,7 @@
                     } else if (args.data.returnedZone.networktype == "Advanced") { //update VLAN in physical network(s) in advanced zone
                         var physicalNetworksHavingGuestIncludingVlan = [];
                         $(args.data.physicalNetworks).each(function() {
-                            if (this.guestConfiguration != null && this.guestConfiguration.vlanRangeStart != null && this.guestConfiguration.vlanRangeStart.length > 0) {
+                            if (args.data.guestTraffic != null && args.data.guestTraffic.vlanRangeStart != null && args.data.guestTraffic.vlanRangeStart.length > 0) {
                                 physicalNetworksHavingGuestIncludingVlan.push(this);
                             }
                         });
@@ -4186,10 +4220,10 @@
                             var updatedCount = 0;
                             $(physicalNetworksHavingGuestIncludingVlan).each(function() {
                                 var vlan;
-                                if (this.guestConfiguration.vlanRangeEnd == null || this.guestConfiguration.vlanRangeEnd.length == 0)
-                                    vlan = this.guestConfiguration.vlanRangeStart;
+                                if (args.data.guestTraffic.vlanRangeEnd == null || args.data.guestTraffic.vlanRangeEnd.length == 0)
+                                    vlan = args.data.guestTraffic.vlanRangeStart;
                                 else
-                                    vlan = this.guestConfiguration.vlanRangeStart + "-" + this.guestConfiguration.vlanRangeEnd;
+                                    vlan = args.data.guestTraffic.vlanRangeStart + "-" + args.data.guestTraffic.vlanRangeEnd;
 
                                 var originalId = this.id;
                                 var returnedId;

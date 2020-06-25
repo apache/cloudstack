@@ -20,14 +20,11 @@ package com.cloud.usage.dao;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.cloudstack.backup.Backup;
-
 import com.cloud.usage.UsageBackupVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine;
 
 public interface UsageBackupDao extends GenericDao<UsageBackupVO, Long> {
-    void updateMetrics(VirtualMachine vm, Backup.Metric metric);
-    void removeUsage(Long accountId, Long zoneId, Long backupId);
+    void updateMetrics(Long vmId, Long size, Long virtualSize);
+    void removeUsage(Long accountId, Long vmId, Date eventDate);
     List<UsageBackupVO> getUsageRecords(Long accountId, Date startDate, Date endDate);
 }

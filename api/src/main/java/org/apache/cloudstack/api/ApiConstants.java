@@ -55,6 +55,7 @@ public class ApiConstants {
     public static final String CERTIFICATE_CHAIN = "certchain";
     public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
     public static final String CERTIFICATE_ID = "certid";
+    public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
@@ -74,6 +75,7 @@ public class ApiConstants {
     public static final String CLEANUP = "cleanup";
     public static final String MAKEREDUNDANT = "makeredundant";
     public static final String CLUSTER_ID = "clusterid";
+    public static final String CLUSTER_IDS = "clusterids";
     public static final String CLUSTER_NAME = "clustername";
     public static final String CLUSTER_TYPE = "clustertype";
     public static final String CN = "cn";
@@ -173,6 +175,7 @@ public class ApiConstants {
     public static final String HEALTH = "health";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
+    public static final String HOST_IDS = "hostids";
     public static final String HOST_NAME = "hostname";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
@@ -256,6 +259,7 @@ public class ApiConstants {
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
+    public static final String OUTPUT = "output";
     public static final String OVF_PROPERTIES = "ovfproperties";
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
@@ -267,6 +271,7 @@ public class ApiConstants {
     public static final String PASSWORD_ENABLED = "passwordenabled";
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
+    public static final String PAYLOAD = "payload";
     public static final String POD_ID = "podid";
     public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";
@@ -322,6 +327,7 @@ public class ApiConstants {
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
+    public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SIZE = "size";
@@ -347,6 +353,7 @@ public class ApiConstants {
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
+    public static final String TEMPLATE_NAME = "templatename";
     public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
@@ -595,8 +602,10 @@ public class ApiConstants {
     public static final String END_POINT = "endpoint";
     public static final String REGION_ID = "regionid";
     public static final String VPC_OFF_ID = "vpcofferingid";
+    public static final String VPC_OFF_NAME = "vpcofferingname";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
+    public static final String VPC_NAME = "vpcname";
     public static final String GATEWAY_ID = "gatewayid";
     public static final String CAN_USE_FOR_DEPLOY = "canusefordeploy";
     public static final String RESOURCE_IDS = "resourceids";
@@ -799,6 +808,28 @@ public class ApiConstants {
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
+
+    public static final String BOOT_TYPE = "boottype";
+    public static final String BOOT_MODE = "bootmode";
+    public static final String BOOT_INTO_SETUP = "bootintosetup";
+
+    public enum BootType {
+        UEFI, BIOS;
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+    }
+
+    public enum BootMode {
+        LEGACY, SECURE;
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+    }
 
     public enum HostDetails {
         all, capacity, events, stats, min;

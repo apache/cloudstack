@@ -622,6 +622,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
+    public boolean cancelMaintenance(long hostId) {
+        return false;
+    }
+
+    @Override
     public boolean isHostGpuEnabled(final long hostId) {
         // TODO Auto-generated method stub
         return false;

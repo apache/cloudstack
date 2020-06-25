@@ -348,8 +348,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             // directly to s3
             ImageStoreEntity imageStore = (ImageStoreEntity)dataStoreMgr.getImageStoreWithFreeCapacity(destScope.getScopeId());
             if (imageStore == null || !imageStore.getProtocol().equalsIgnoreCase("nfs") && !imageStore.getProtocol().equalsIgnoreCase("cifs")) {
-                s_logger.debug("can't find a nfs (or cifs) image store to satisfy the need for a staging store");
-                return null;
+                String errMsg = "can't find a nfs (or cifs) image store to satisfy the need for a staging store";
+                Answer answer = new Answer(null, false, errMsg);
+                return answer;
             }
 
             DataObject objOnImageStore = imageStore.create(srcData);

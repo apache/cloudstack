@@ -19,11 +19,11 @@ package com.cloud.configuration;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -166,6 +166,8 @@ public class ConfigurationManagerTest {
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
+    private static final String MAXIMUM_DURATION_ALLOWED = "3600";
+
     @Mock
     Network network;
     @Mock
@@ -280,9 +282,8 @@ public class ConfigurationManagerTest {
 
         when(configurationMgr._accountVlanMapDao.listAccountVlanMapsByAccount(anyLong())).thenReturn(null);
 
-        DataCenterVO dc =
-            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null, true,
-                true, null, null);
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null,
+                true, true, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         List<IPAddressVO> ipAddressList = new ArrayList<IPAddressVO>();
@@ -324,9 +325,8 @@ public class ConfigurationManagerTest {
         accountVlanMaps.add(accountVlanMap);
         when(configurationMgr._accountVlanMapDao.listAccountVlanMapsByVlan(anyLong())).thenReturn(accountVlanMaps);
 
-        DataCenterVO dc =
-            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null, true,
-                true, null, null);
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null,
+                true, true, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         List<IPAddressVO> ipAddressList = new ArrayList<IPAddressVO>();
@@ -351,8 +351,7 @@ public class ConfigurationManagerTest {
         when(configurationMgr._accountVlanMapDao.listAccountVlanMapsByVlan(anyLong())).thenReturn(null);
 
         // public ip range belongs to zone of type basic
-        DataCenterVO dc =
-            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
                 true, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
@@ -377,9 +376,8 @@ public class ConfigurationManagerTest {
 
         when(configurationMgr._accountVlanMapDao.listAccountVlanMapsByAccount(anyLong())).thenReturn(null);
 
-        DataCenterVO dc =
-            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null, true,
-                true, null, null);
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null,
+                true, true, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         // one of the ip addresses of the range is allocated to different account
@@ -489,11 +487,7 @@ public class ConfigurationManagerTest {
     public void searchForNetworkOfferingsTest() {
         NetworkOfferingJoinVO forVpcOfferingJoinVO = new NetworkOfferingJoinVO();
         forVpcOfferingJoinVO.setForVpc(true);
-        List<NetworkOfferingJoinVO> offerings = Arrays.asList(
-                new NetworkOfferingJoinVO(),
-                new NetworkOfferingJoinVO(),
-                forVpcOfferingJoinVO
-        );
+        List<NetworkOfferingJoinVO> offerings = Arrays.asList(new NetworkOfferingJoinVO(), new NetworkOfferingJoinVO(), forVpcOfferingJoinVO);
 
         Mockito.when(networkOfferingJoinDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
         Mockito.when(networkOfferingJoinDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class))).thenReturn(offerings);
@@ -558,9 +552,9 @@ public class ConfigurationManagerTest {
             configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
         } catch (InvalidParameterValueException e) {
             Assert.assertTrue(
-                e.getMessage(),
-                e.getMessage().contains(
-                    "Capability " + Capability.AssociatePublicIP.getName() + " can only be set when capability " + Capability.ElasticIp.getName() + " is true"));
+                    e.getMessage(),
+                    e.getMessage().contains(
+                        "Capability " + Capability.AssociatePublicIP.getName() + " can only be set when capability " + Capability.ElasticIp.getName() + " is true"));
             caught = true;
         }
         Assert.assertTrue("should not be accepted", caught);
@@ -858,7 +852,6 @@ public class ConfigurationManagerTest {
         doThrow(new InvalidParameterValueException("Exception from Mock: endIPv6 is not in ip6cidr indicated network!")).when(configurationMgr._networkModel).checkIp6Parameters("2001:db8:0:f101::a", "2001:db9:0:f101::2", "2001:db8:0:f101::1", "2001:db8:0:f101::0/64");
         doThrow(new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in")).when(configurationMgr._networkModel).checkIp6Parameters(Mockito.anyString(), Mockito.anyString(), Mockito.isNull(String.class), Mockito.isNull(String.class));
 
-
         configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
         Assert.assertTrue(result);
         try {
@@ -883,7 +876,7 @@ public class ConfigurationManagerTest {
         try {
             configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::a", "2001:db9:0:f101::2", ipV6Network);
             Assert.fail();
-        } catch(InvalidParameterValueException e){
+        } catch(InvalidParameterValueException e) {
             Assert.assertEquals(e.getMessage(), "Exception from Mock: endIPv6 is not in ip6cidr indicated network!");
         }
 
@@ -909,5 +902,40 @@ public class ConfigurationManagerTest {
     @Test
     public void testGetVlanNumberFromUriUntagged() {
         Assert.assertEquals("untagged", configurationMgr.getVlanNumberFromUri("vlan://untagged"));
+    }
+
+    @Test
+    public void validateMaxRateEqualsOrGreaterTestAllGood() {
+        configurationMgr.validateMaxRateEqualsOrGreater(1l, 2l, "IOPS Read");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateMaxRateEqualsOrGreaterTestNormalRateGreaterThanMax() {
+        configurationMgr.validateMaxRateEqualsOrGreater(3l, 2l, "IOPS Read");
+    }
+
+    @Test
+    public void validateMaxRateNull() {
+        configurationMgr.validateMaxRateEqualsOrGreater(3l, null, "IOPS Read");
+    }
+
+    @Test
+    public void validateNormalRateNull() {
+        configurationMgr.validateMaxRateEqualsOrGreater(null, 3l, "IOPS Read");
+    }
+
+    @Test
+    public void validateAllNull() {
+        configurationMgr.validateMaxRateEqualsOrGreater(null, 3l, "IOPS Read");
+    }
+
+    @Test
+    public void validateMaximumIopsAndBytesLengthTestAllNull() {
+        configurationMgr.validateMaximumIopsAndBytesLength(null, null, null, null);
+    }
+
+    @Test
+    public void validateMaximumIopsAndBytesLengthTestDefaultLengthConfigs() {
+        configurationMgr.validateMaximumIopsAndBytesLength(36000l, 36000l, 36000l, 36000l);
     }
 }
