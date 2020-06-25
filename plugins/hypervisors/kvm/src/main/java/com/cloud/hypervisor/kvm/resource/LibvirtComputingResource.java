@@ -2304,7 +2304,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 coresPerSocket = vmTO.getDetails().get(VmDetailConstants.CPU_CORE_PER_SOCKET);
                 coresthreads = Boolean.valueOf(vmTO.getDetails().get(VmDetailConstants.CPU_HYPERTHREADING));
 
-                s_logger.debug("user custom set coresPerSocket:" + coresPerSocket + ", coresThreads:" + coresthreads +"  ,   vmTO:"+vmTO.getUuid());
+                s_logger.debug("user custom set coresPerSocket:" + coresPerSocket + ", coresThreads:" + coresthreads + "  ,   vmTO:" + vmTO.getUuid());
             }
             if (coresPerSocket != null) {
                 final int numCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, 1);
