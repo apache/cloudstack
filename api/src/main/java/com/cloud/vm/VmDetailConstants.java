@@ -55,6 +55,7 @@ public interface VmDetailConstants {
     String SSH_PUBLIC_KEY = "SSH.PublicKey";
     String PASSWORD = "password";
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
+    String CPU_HYPERTHREADING = "cpu.hyperthreading";
 
     // VM import with nic, disk and custom params for custom compute offering
     String NIC = "nic";
