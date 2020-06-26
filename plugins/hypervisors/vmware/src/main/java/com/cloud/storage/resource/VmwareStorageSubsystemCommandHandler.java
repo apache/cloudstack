@@ -47,7 +47,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
     private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
     private PremiumSecondaryStorageResource storageResource;
-    private Integer _nfsVersion;
+    private String _nfsVersion;
 
     public PremiumSecondaryStorageResource getStorageResource() {
         return storageResource;
@@ -65,7 +65,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         this.storageManager = storageManager;
     }
 
-    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor, Integer nfsVersion) {
+    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor, String nfsVersion) {
         super(processor);
         this._nfsVersion = nfsVersion;
     }
@@ -75,7 +75,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         for (VmwareStorageProcessorConfigurableFields key : params.keySet()){
             switch (key){
             case NFS_VERSION:
-                Integer nfsVersion = (Integer) params.get(key);
+                String nfsVersion = (String) params.get(key);
                 processor.setNfsVersion(nfsVersion);
                 this._nfsVersion = nfsVersion;
                 break;
