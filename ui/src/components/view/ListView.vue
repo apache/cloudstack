@@ -19,7 +19,7 @@
   <a-table
     size="small"
     :loading="loading"
-    :columns="columns"
+    :columns="fetchColumns()"
     :dataSource="items"
     :rowKey="record => record.id || record.name"
     :pagination="false"
@@ -275,6 +275,12 @@ export default {
     }
   },
   methods: {
+    fetchColumns () {
+      if (this.isOrderUpdatable()) {
+        return this.columns
+      }
+      return this.columns.filter(x => x.dataIndex !== 'order')
+    },
     getRowClassName (record, index) {
       if (index % 2 === 0) {
         return 'light-row'
@@ -320,8 +326,7 @@ export default {
       this.editableValueKey = record.key
       this.editableValue = record.value
     },
-    handleUpdateOrder (id, index) {
-      this.parentToggleLoading()
+    getUpdateApi () {
       let apiString = ''
       switch (this.$route.name) {
         case 'template':
@@ -349,6 +354,14 @@ export default {
         default:
           apiString = 'updateTemplate'
       }
+      return apiString
+    },
+    isOrderUpdatable () {
+      return this.getUpdateApi() in this.$store.getters.apis
+    },
+    handleUpdateOrder (id, index) {
+      this.parentToggleLoading()
+      const apiString = this.getUpdateApi()
 
       api(apiString, {
         id,
