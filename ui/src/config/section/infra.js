@@ -82,6 +82,8 @@ export default {
           message: 'message.confirm.archive.selected.alerts',
           docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
           dataView: true,
+          groupAction: true,
+          groupMap: (selection) => { return [{ ids: selection.join(',') }] },
           args: ['ids'],
           mapping: {
             ids: {
@@ -96,6 +98,8 @@ export default {
           message: 'message.confirm.remove.selected.alerts',
           docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
           dataView: true,
+          groupAction: true,
+          groupMap: (selection) => { return [{ ids: selection.join(',') }] },
           args: ['ids'],
           mapping: {
             ids: {

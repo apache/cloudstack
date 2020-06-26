@@ -108,6 +108,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
           show: (record) => { return ['Stopped'].includes(record.state) },
           args: (record, store) => {
             var fields = []
@@ -131,6 +132,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
           args: ['forced'],
           show: (record) => { return ['Running'].includes(record.state) }
         },
@@ -387,7 +389,6 @@ export default {
           icon: 'disconnect',
           label: 'label.action.unmanage.virtualmachine',
           dataView: true,
-          groupAction: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && record.hypervisor === 'VMware' }
         },
         {
@@ -414,6 +415,7 @@ export default {
           },
           dataView: true,
           groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x, expunge: true } }) },
           show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) }
         }
       ]

@@ -35,8 +35,9 @@ export default {
       label: 'label.archive.events',
       message: 'message.confirm.archive.selected.events',
       docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
-      listView: false,
       dataView: true,
+      groupAction: true,
+      groupMap: (selection) => { return [{ ids: selection.join(',') }] },
       args: ['ids'],
       mapping: {
         ids: {
@@ -50,8 +51,9 @@ export default {
       label: 'label.delete.events',
       message: 'message.confirm.remove.selected.events',
       docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
-      listView: false,
       dataView: true,
+      groupAction: true,
+      groupMap: (selection) => { return [{ ids: selection.join(',') }] },
       args: ['ids'],
       mapping: {
         ids: {

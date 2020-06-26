@@ -31,9 +31,10 @@
         :overflowCount="9"
         :count="actionBadge[action.api] ? actionBadge[action.api].badgeNum : 0"
         v-if="action.api in $store.getters.apis &&
-          action.showBadge &&
-          ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView)) &&
-          ('show' in action ? action.show(resource, $store.getters) : true)">
+          action.showBadge && (
+            (!dataView && (action.listView || (action.groupAction && selectedRowKeys.length > 0))) ||
+            (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
+          )" >
         <a-button
           :icon="action.icon"
           :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
@@ -47,9 +48,10 @@
       </a-badge>
       <a-button
         v-if="action.api in $store.getters.apis &&
-          !action.showBadge &&
-          ((!dataView && (action.listView || action.groupAction && selectedRowKeys.length > 0)) || (dataView && action.dataView)) &&
-          ('show' in action ? action.show(resource, $store.getters) : true)"
+          !action.showBadge && (
+            (!dataView && (action.listView || (action.groupAction && selectedRowKeys.length > 0))) ||
+            (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
+          )"
         :icon="action.icon"
         :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
         :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"

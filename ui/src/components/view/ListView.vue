@@ -23,7 +23,7 @@
     :dataSource="items"
     :rowKey="record => record.id || record.name"
     :pagination="false"
-    :rowSelection="['vm-tbd', 'event-tbd', 'alert-tbd'].includes($route.name) ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+    :rowSelection="['vm', 'event', 'alert'].includes($route.name) ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >
@@ -287,9 +287,15 @@ export default {
       }
       return 'dark-row'
     },
-    onSelectChange (selectedRowKeys) {
-      console.log('selectedRowKeys changed: ', selectedRowKeys)
-      this.selectedRowKeys = selectedRowKeys
+    setSelection (selection) {
+      this.selectedRowKeys = selection
+      this.$emit('selection-change', this.selectedRowKeys)
+    },
+    resetSelection () {
+      this.setSelection([])
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.setSelection(selectedRowKeys)
     },
     changeProject (project) {
       this.$store.dispatch('SetProject', project)
