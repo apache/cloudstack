@@ -93,7 +93,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     StorageLayer _storage;
     public Map<String, Processor> _processors;
     private long _processTimeout;
-    private Integer _nfsVersion;
+    private String _nfsVersion;
 
     public class Completion implements DownloadCompleteCallback {
         private final String jobId;
