@@ -26,6 +26,8 @@ import CsHelper
 HAPROXY_CONF_T = "/etc/haproxy/haproxy.cfg.new"
 HAPROXY_CONF_P = "/etc/haproxy/haproxy.cfg"
 
+SSL_CERTS_DIR = "/etc/ssl/cloudstack/"
+CsHelper.execute("mkdir -p %s" % SSL_CERTS_DIR)
 
 class CsLoadBalancer(CsDataBag):
     """ Manage Load Balancer entries """
@@ -112,19 +114,17 @@ class CsLoadBalancer(CsDataBag):
                 CsHelper.execute("ip route add local 0.0.0.0/0 dev lo table %s" % tableNo)
 
     def _create_pem_for_sslcert(self, ssl_certs):
-        dir_certs = "/etc/ssl/cloudstack"
-        logging.debug("CsLoadBalancer:: creating new pem files in %s and cleaning up it" % dir_certs)
-        CsHelper.execute("mkdir -p %s" % dir_certs)
+        logging.debug("CsLoadBalancer:: creating new pem files in %s and cleaning up it" % SSL_CERTS_DIR)
         cert_names = []
         for cert in ssl_certs:
             cert_names.append(cert['name'] + ".pem")
-            file = CsFile("%s/%s.pem" % (dir_certs, cert['name']))
+            file = CsFile("%s/%s.pem" % (SSL_CERTS_DIR, cert['name']))
             file.empty()
             file.add("%s\n" % cert['cert'].replace("\r\n","\n"))
             if 'chain' in cert.keys():
                 file.add("%s\n" % cert['chain'].replace("\r\n","\n"))
             file.add("%s\n" % cert['key'].replace("\r\n","\n"))
             file.commit()
-        for f in listdir(dir_certs):
+        for f in listdir(SSL_CERTS_DIR):
             if f not in cert_names:
-                CsHelper.execute("rm %s/%s" % (dir_certs, f))
+                CsHelper.execute("rm -rf %s/%s" % (SSL_CERTS_DIR, f))
