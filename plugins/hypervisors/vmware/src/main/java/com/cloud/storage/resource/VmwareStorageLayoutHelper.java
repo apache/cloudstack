@@ -311,7 +311,14 @@ public class VmwareStorageLayoutHelper {
     }
 
     public static String getLegacyDatastorePathFromVmdkFileName(DatastoreMO dsMo, String vmdkFileName) throws Exception {
-        return String.format("[%s] %s/%s", dsMo.getName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, vmdkFileName);
+        String vmdkDatastorePath = String.format("[%s] %s/%s", dsMo.getName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, vmdkFileName);
+        if (!dsMo.fileExists(vmdkDatastorePath)) {
+            vmdkDatastorePath = String.format("[%s] %s/%s", dsMo.getName(), HypervisorHostHelper.VSPHERE_FCD_DEFAULT_FOLDER, vmdkFileName);
+        }
+        if (!dsMo.fileExists(vmdkDatastorePath)) {
+            vmdkDatastorePath = getDeprecatedLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
+        }
+        return vmdkDatastorePath;
     }
 
     public static String getDeprecatedLegacyDatastorePathFromVmdkFileName(DatastoreMO dsMo, String vmdkFileName) throws Exception {
