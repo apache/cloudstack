@@ -47,9 +47,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -5038,7 +5041,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new PermissionDeniedException("Expunging a vm can only be done by an Admin. Or when the allow.user.expunge.recover.vm key is set.");
         }
 
-        _vmSnapshotMgr.deleteVMSnapshotsFromDB(vmId);
+        _vmSnapshotMgr.deleteVMSnapshotsFromDB(vmId, false);
 
         boolean status;
 
@@ -6951,6 +6954,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    @Override
+    public void finalizeUnmanage(VirtualMachine vm) {
+    }
+
     private void encryptAndStorePassword(UserVmVO vm, String password) {
         String sshPublicKey = vm.getDetail(VmDetailConstants.SSH_PUBLIC_KEY);
         if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
@@ -7111,5 +7118,140 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKey, null,
                 id, instanceName, uuidName, hypervisorType, customParameters,
                 null, null, null, powerState);
+    }
+
+    @Override
+    public boolean unmanageUserVM(Long vmId) {
+        UserVmVO vm = _vmDao.findById(vmId);
+        if (vm == null || vm.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find a VM with ID = " + vmId);
+        }
+
+        vm = _vmDao.acquireInLockTable(vm.getId());
+        boolean result;
+        try {
+            if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+                s_logger.debug("VM ID = " + vmId + " is not running or stopped, cannot be unmanaged");
+                return false;
+            }
+
+            if (vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
+                throw new UnsupportedServiceException("Unmanaging a VM is currently allowed for VMware VMs only");
+            }
+
+            List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+            checkUnmanagingVMOngoingVolumeSnapshots(vm);
+            checkUnmanagingVMVolumes(vm, volumes);
+
+            result = _itMgr.unmanage(vm.getUuid());
+            if (result) {
+                cleanupUnmanageVMResources(vm.getId());
+                unmanageVMFromDB(vm.getId());
+                publishUnmanageVMUsageEvents(vm, volumes);
+            } else {
+                throw new CloudRuntimeException("Error while unmanaging VM: " + vm.getUuid());
+            }
+        } catch (Exception e) {
+            s_logger.error("Could not unmanage VM " + vm.getUuid(), e);
+            throw new CloudRuntimeException(e);
+        } finally {
+            _vmDao.releaseFromLockTable(vm.getId());
+        }
+
+        return true;
+    }
+
+    /*
+        Generate usage events related to unmanaging a VM
+     */
+    private void publishUnmanageVMUsageEvents(UserVmVO vm, List<VolumeVO> volumes) {
+        postProcessingUnmanageVMVolumes(volumes, vm);
+        postProcessingUnmanageVM(vm);
+    }
+
+    /*
+        Cleanup the VM from resources and groups
+     */
+    private void cleanupUnmanageVMResources(long vmId) {
+        cleanupVmResources(vmId);
+        removeVMFromAffinityGroups(vmId);
+    }
+
+    private void unmanageVMFromDB(long vmId) {
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        userVmDetailsDao.removeDetails(vmId);
+        vm.setState(State.Expunging);
+        vm.setRemoved(new Date());
+        _vmInstanceDao.update(vm.getId(), vm);
+    }
+
+    /*
+        Remove VM from affinity groups after unmanaging
+     */
+    private void removeVMFromAffinityGroups(long vmId) {
+        List<AffinityGroupVMMapVO> affinityGroups = _affinityGroupVMMapDao.listByInstanceId(vmId);
+        if (affinityGroups.size() > 0) {
+            s_logger.debug("Cleaning up VM from affinity groups after unmanaging");
+            for (AffinityGroupVMMapVO map : affinityGroups) {
+                _affinityGroupVMMapDao.expunge(map.getId());
+            }
+        }
+    }
+
+    /*
+        Decrement VM resources and generate usage events after unmanaging VM
+     */
+    private void postProcessingUnmanageVM(UserVmVO vm) {
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+
+        // First generate a VM stop event if the VM was not stopped already
+        if (vm.getState() != State.Stopped) {
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(),
+                    vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
+                    vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+            resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        }
+
+        // VM destroy usage event
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(),
+                vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
+                vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+        resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+    }
+
+    /*
+        Decrement resources for volumes and generate usage event for ROOT volume after unmanaging VM.
+        Usage events for DATA disks are published by the transition listener: @see VolumeStateListener#postStateTransitionEvent
+     */
+    private void postProcessingUnmanageVMVolumes(List<VolumeVO> volumes, UserVmVO vm) {
+        for (VolumeVO volume : volumes) {
+            if (volume.getVolumeType() == Volume.Type.ROOT) {
+                //
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                        Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+            }
+            _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.volume);
+            _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
+        }
+    }
+
+    private void checkUnmanagingVMOngoingVolumeSnapshots(UserVmVO vm) {
+        s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vm.getId());
+        if (checkStatusOfVolumeSnapshots(vm.getId(), Volume.Type.ROOT)) {
+            throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, vm unmanage is not permitted, please try again later.");
+        }
+        s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vm.getId());
+    }
+
+    private void checkUnmanagingVMVolumes(UserVmVO vm, List<VolumeVO> volumes) {
+        for (VolumeVO volume : volumes) {
+            if (volume.getInstanceId() == null || !volume.getInstanceId().equals(vm.getId())) {
+                throw new CloudRuntimeException("Invalid state for volume with ID " + volume.getId() + " of VM " +
+                        vm.getId() +": it is not attached to VM");
+            } else if (volume.getVolumeType() != Volume.Type.ROOT && volume.getVolumeType() != Volume.Type.DATADISK) {
+                throw new CloudRuntimeException("Invalid type for volume with ID " + volume.getId() +
+                        ": ROOT or DATADISK expected but got " + volume.getVolumeType());
+            }
+        }
     }
 }

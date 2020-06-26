@@ -25,6 +25,17 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.PrepareUnmanageVMInstanceAnswer;
+import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
+import com.cloud.event.ActionEvent;
+import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -32,6 +43,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
+import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceDiskResponse;
@@ -40,6 +52,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -127,9 +140,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
-public class VmImportManagerImpl implements VmImportService {
+public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
-    private static final Logger LOGGER = Logger.getLogger(VmImportManagerImpl.class);
+    private static final Logger LOGGER = Logger.getLogger(UnmanagedVMsManagerImpl.class);
 
     @Inject
     private AgentManager agentManager;
@@ -191,10 +204,16 @@ public class VmImportManagerImpl implements VmImportService {
     private GuestOSDao guestOSDao;
     @Inject
     private GuestOSHypervisorDao guestOSHypervisorDao;
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
+    @Inject
+    private SnapshotDao snapshotDao;
+    @Inject
+    private UserVmDao userVmDao;
 
     protected Gson gson;
 
-    public VmImportManagerImpl() {
+    public UnmanagedVMsManagerImpl() {
         gson = GsonHelper.getGsonLogger();
     }
 
@@ -680,8 +699,8 @@ public class VmImportManagerImpl implements VmImportService {
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
 
-    private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, boolean isDefaultNic) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), 0, network, isDefaultNic, vm, ipAddresses);
+    private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, boolean isDefaultNic, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), 0, network, isDefaultNic, vm, ipAddresses, forced);
         if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC ID: %s import failed", nic.getNicId()));
         }
@@ -850,11 +869,15 @@ public class VmImportManagerImpl implements VmImportService {
         }
         try {
             if (!serviceOfferingVO.isDynamic()) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_IMPORT, userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), userVm.getHostName(), serviceOfferingVO.getId(), userVm.getTemplateId(),
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), userVm.getHostName(), serviceOfferingVO.getId(), userVm.getTemplateId(),
                         userVm.getHypervisorType().toString(), VirtualMachine.class.getName(), userVm.getUuid(), userVm.isDisplayVm());
             } else {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_IMPORT, userVm.getAccountId(), userVm.getAccountId(), userVm.getDataCenterId(), userVm.getHostName(), serviceOfferingVO.getId(), userVm.getTemplateId(),
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, userVm.getAccountId(), userVm.getAccountId(), userVm.getDataCenterId(), userVm.getHostName(), serviceOfferingVO.getId(), userVm.getTemplateId(),
                         userVm.getHypervisorType().toString(), VirtualMachine.class.getName(), userVm.getUuid(), userVm.getDetails(), userVm.isDisplayVm());
+            }
+            if (userVm.getState() == VirtualMachine.State.Running) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_START, userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), userVm.getHostName(), serviceOfferingVO.getId(), userVm.getTemplateId(),
+                        userVm.getHypervisorType().toString(), VirtualMachine.class.getName(), userVm.getUuid(), userVm.isDisplayVm());
             }
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to publish usage records during VM import for unmanaged vm %s", userVm.getInstanceName()), e);
@@ -876,13 +899,24 @@ public class VmImportManagerImpl implements VmImportService {
             resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.volume, volume.isDisplayVolume());
             resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.primary_storage, volume.isDisplayVolume(), volume.getSize());
         }
+
+        List<NicVO> nics = nicDao.listByVmId(userVm.getId());
+        for (NicVO nic : nics) {
+            try {
+                NetworkVO network = networkDao.findById(nic.getNetworkId());
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(),
+                        Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 1L, VirtualMachine.class.getName(), userVm.getUuid(), userVm.isDisplay());
+            } catch (Exception e) {
+                LOGGER.error(String.format("Failed to publish network usage records during VM import. %s", Strings.nullToEmpty(e.getMessage())));
+            }
+        }
     }
 
     private UserVm importVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceName, final DataCenter zone, final Cluster cluster, final HostVO host,
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                 final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
                                                 final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
-                                                final Map<String, String> details, final boolean migrateAllowed) {
+                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced) {
         UserVm userVm = null;
 
         ServiceOfferingVO validatedServiceOffering = null;
@@ -986,7 +1020,7 @@ public class VmImportManagerImpl implements VmImportService {
             for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
                 Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
                 Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                importNic(nic, userVm, network, ipAddresses, firstNic);
+                importNic(nic, userVm, network, ipAddresses, firstNic, forced);
                 firstNic = false;
             }
         } catch (Exception e) {
@@ -1139,6 +1173,7 @@ public class VmImportManagerImpl implements VmImportService {
         final Map<String, Network.IpAddresses> nicIpAddressMap = cmd.getNicIpAddressList();
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
         final Map<String, String> details = cmd.getDetails();
+        final boolean forced = cmd.isForced();
         List<HostVO> hosts = resourceManager.listHostsInClusterByStatus(clusterId, Status.Up);
         UserVm userVm = null;
         List<String> additionalNameFilters = getAdditionalNameFilters(cluster);
@@ -1192,7 +1227,7 @@ public class VmImportManagerImpl implements VmImportService {
                             template, displayName, hostName, caller, owner, userId,
                             serviceOffering, dataDiskOfferingMap,
                             nicNetworkMap, nicIpAddressMap,
-                            details, cmd.getMigrateAllowed());
+                            details, cmd.getMigrateAllowed(), forced);
                     break;
                 }
             }
@@ -1211,6 +1246,124 @@ public class VmImportManagerImpl implements VmImportService {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(ListUnmanagedInstancesCmd.class);
         cmdList.add(ImportUnmanagedInstanceCmd.class);
+        cmdList.add(UnmanageVMInstanceCmd.class);
         return cmdList;
+    }
+
+    /**
+     * Perform validations before attempting to unmanage a VM from CloudStack:
+     * - VM must not have any associated volume snapshot
+     * - VM must not have an attached ISO
+     */
+    private void performUnmanageVMInstancePrechecks(VMInstanceVO vmVO) {
+        if (hasVolumeSnapshotsPriorToUnmanageVM(vmVO)) {
+            throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
+                    " as there are volume snapshots for its volume(s). Please remove snapshots before unmanaging.");
+        }
+
+        if (hasISOAttached(vmVO)) {
+            throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
+                    " as there is an ISO attached. Please detach ISO before unmanaging.");
+        }
+    }
+
+    private boolean hasVolumeSnapshotsPriorToUnmanageVM(VMInstanceVO vmVO) {
+        List<VolumeVO> volumes = volumeDao.findByInstance(vmVO.getId());
+        for (VolumeVO volume : volumes) {
+            List<SnapshotVO> snaps = snapshotDao.listByVolumeId(volume.getId());
+            if (CollectionUtils.isNotEmpty(snaps)) {
+                for (SnapshotVO snap : snaps) {
+                    if (snap.getState() != Snapshot.State.Destroyed && snap.getRemoved() == null) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean hasISOAttached(VMInstanceVO vmVO) {
+        UserVmVO userVM = userVmDao.findById(vmVO.getId());
+        if (userVM == null) {
+            throw new InvalidParameterValueException("Could not find user VM with ID = " + vmVO.getUuid());
+        }
+        return userVM.getIsoId() != null;
+    }
+
+    /**
+     * Find a suitable host within the scope of the VM to unmanage to verify the VM exists
+     */
+    private Long findSuitableHostId(VMInstanceVO vmVO) {
+        Long hostId = vmVO.getHostId();
+        if (hostId == null) {
+            long zoneId = vmVO.getDataCenterId();
+            List<HostVO> hosts = hostDao.listAllHostsUpByZoneAndHypervisor(zoneId, vmVO.getHypervisorType());
+            for (HostVO host : hosts) {
+                if (host.isInMaintenanceStates() || host.getState() != Status.Up || host.getStatus() != Status.Up) {
+                    continue;
+                }
+                hostId = host.getId();
+                break;
+            }
+        }
+
+        if (hostId == null) {
+            throw new CloudRuntimeException("Cannot find a host to verify if the VM to unmanage " +
+                    "with id = " + vmVO.getUuid() + " exists.");
+        }
+        return hostId;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_UNMANAGE, eventDescription = "unmanaging VM", async = true)
+    public boolean unmanageVMInstance(long vmId) {
+        VMInstanceVO vmVO = vmDao.findById(vmId);
+        if (vmVO == null || vmVO.getRemoved() != null) {
+            throw new InvalidParameterValueException("Could not find VM to unmanage, it is either removed or not existing VM");
+        } else if (vmVO.getState() != VirtualMachine.State.Running && vmVO.getState() != VirtualMachine.State.Stopped) {
+            throw new InvalidParameterValueException("VM with id = " + vmVO.getUuid() + " must be running or stopped to be unmanaged");
+        } else if (vmVO.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
+            throw new UnsupportedServiceException("Unmanage VM is currently allowed for VMware VMs only");
+        } else if (vmVO.getType() != VirtualMachine.Type.User) {
+            throw new UnsupportedServiceException("Unmanage VM is currently allowed for guest VMs only");
+        }
+
+        performUnmanageVMInstancePrechecks(vmVO);
+
+        Long hostId = findSuitableHostId(vmVO);
+        String instanceName = vmVO.getInstanceName();
+
+        if (!existsVMToUnmanage(instanceName, hostId)) {
+            throw new CloudRuntimeException("VM with id = " + vmVO.getUuid() + " is not found in the hypervisor");
+        }
+
+        return userVmManager.unmanageUserVM(vmId);
+    }
+
+    /**
+     * Verify the VM to unmanage exists on the hypervisor
+     */
+    private boolean existsVMToUnmanage(String instanceName, Long hostId) {
+        PrepareUnmanageVMInstanceCommand command = new PrepareUnmanageVMInstanceCommand();
+        command.setInstanceName(instanceName);
+        Answer ans = agentManager.easySend(hostId, command);
+        if (!(ans instanceof PrepareUnmanageVMInstanceAnswer)) {
+            throw new CloudRuntimeException("Error communicating with host " + hostId);
+        }
+        PrepareUnmanageVMInstanceAnswer answer = (PrepareUnmanageVMInstanceAnswer) ans;
+        if (!answer.getResult()) {
+            LOGGER.error("Error verifying VM " + instanceName + " exists on host with ID = " + hostId + ": " + answer.getDetails());
+        }
+        return answer.getResult();
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return UnmanagedVMsManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { UnmanageVMPreserveNic };
     }
 }

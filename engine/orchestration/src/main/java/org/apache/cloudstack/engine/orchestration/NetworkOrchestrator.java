@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -38,6 +39,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -53,6 +56,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -2057,8 +2061,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
-        nic.setState(Nic.State.Deallocating);
-        _nicDao.update(nic.getId(), nic);
+        Boolean preserveNics = (Boolean) vm.getParameter(VirtualMachineProfile.Param.PreserveNics);
+        if (BooleanUtils.isNotTrue(preserveNics)) {
+            nic.setState(Nic.State.Deallocating);
+            _nicDao.update(nic.getId(), nic);
+        }
+
         final NicProfile profile = new NicProfile(nic, network, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(
                 vm.getHypervisorType(), network));
 
@@ -2113,7 +2121,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
-        _nicDao.remove(nic.getId());
+        if (BooleanUtils.isNotTrue(preserveNics)) {
+            _nicDao.remove(nic.getId());
+        }
 
         s_logger.debug("Removed nic id=" + nic.getId());
         //remove the secondary ip addresses corresponding to to this nic
@@ -4002,7 +4012,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @DB
     @Override
-    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses)
+    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final boolean forced)
             throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during import");
         String guestIp = null;
@@ -4024,6 +4034,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
+                NicVO existingNic = _nicDao.findByNetworkIdAndMacAddress(network.getId(), macAddress);
+                if (existingNic != null) {
+                    if (!forced) {
+                        throw new CloudRuntimeException("NIC with MAC address = " + macAddress + " exists on network with ID = " + network.getId() +
+                                " and forced flag is disabled");
+                    }
+                    s_logger.debug("Removing existing NIC with MAC address = " + macAddress + " on network with ID = " + network.getId());
+                    existingNic.setState(Nic.State.Deallocating);
+                    existingNic.setRemoved(new Date());
+                    _nicDao.update(existingNic.getId(), existingNic);
+                }
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
                 vo.setMacAddress(macAddress);
                 vo.setAddressFormat(Networks.AddressFormat.Ip4);
@@ -4063,6 +4084,24 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
+    @Override
+    public void unmanageNics(VirtualMachineProfile vm) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Unmanaging NICs for VM: " + vm.getId());
+        }
+
+        VirtualMachine virtualMachine = vm.getVirtualMachine();
+        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        for (final NicVO nic : nics) {
+            removeNic(vm, nic);
+            NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            if (virtualMachine.getState() != VirtualMachine.State.Stopped) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, virtualMachine.getAccountId(), virtualMachine.getDataCenterId(), virtualMachine.getId(),
+                        Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, virtualMachine.getClass().getName(), virtualMachine.getUuid(), virtualMachine.isDisplay());
+            }
+        }
     }
 
     @Override

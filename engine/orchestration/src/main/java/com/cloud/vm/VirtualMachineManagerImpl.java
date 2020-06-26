@@ -74,8 +74,10 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -212,6 +214,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
@@ -1488,6 +1491,88 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    @Override
+    public boolean unmanage(String vmUuid) {
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+        if (vm == null || vm.getRemoved() != null) {
+            throw new CloudRuntimeException("Could not find VM with id = " + vmUuid);
+        }
+
+        final List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vm.getId());
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs) || _haMgr.hasPendingHaWork(vm.getId())) {
+            String msg = "There are pending jobs or HA tasks working on the VM with id: " + vm.getId() + ", can't unmanage the VM.";
+            s_logger.info(msg);
+            throw new ConcurrentOperationException(msg);
+        }
+
+        Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Unmanaging vm " + vm);
+                }
+
+                final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+                final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+                final VirtualMachineGuru guru = getVmGuru(vm);
+
+                try {
+                    unmanageVMSnapshots(vm);
+                    unmanageVMNics(profile, vm);
+                    unmanageVMVolumes(vm);
+
+                    guru.finalizeUnmanage(vm);
+                } catch (Exception e) {
+                    s_logger.error("Error while unmanaging VM " + vm, e);
+                    return false;
+                }
+
+                return true;
+            }
+        });
+
+        return BooleanUtils.isTrue(result);
+    }
+
+    /**
+     * Clean up VM snapshots (if any) from DB
+     */
+    private void unmanageVMSnapshots(VMInstanceVO vm) {
+        _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId(), true);
+    }
+
+    /**
+     * Clean up volumes for a VM to be unmanaged from CloudStack
+     */
+    private void unmanageVMVolumes(VMInstanceVO vm) {
+        final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        if (hostId != null) {
+            volumeMgr.revokeAccess(vm.getId(), hostId);
+        }
+        volumeMgr.unmanageVolumes(vm.getId());
+
+        List<Map<String, String>> targets = getTargets(hostId, vm.getId());
+        if (hostId != null && CollectionUtils.isNotEmpty(targets)) {
+            removeDynamicTargets(hostId, targets);
+        }
+    }
+
+    /**
+     * Clean up NICs for a VM to be unmanaged from CloudStack:
+     * - If 'unmanage.vm.preserve.nics' = true: then the NICs are not removed but still Allocated, to preserve MAC addresses
+     * - If 'unmanage.vm.preserve.nics' = false: then the NICs are removed while unmanaging
+     */
+    private void unmanageVMNics(VirtualMachineProfile profile, VMInstanceVO vm) {
+        s_logger.debug("Cleaning up NICs");
+        Boolean preserveNics = UnmanagedVMsManager.UnmanageVMPreserveNic.valueIn(vm.getDataCenterId());
+        if (BooleanUtils.isTrue(preserveNics)) {
+            s_logger.debug("Preserve NICs configuration enabled");
+            profile.setParameter(VirtualMachineProfile.Param.PreserveNics, true);
+        }
+        _networkMgr.unmanageNics(profile);
+    }
+
     private List<Map<String, String>> getVolumesToDisconnect(VirtualMachine vm) {
         List<Map<String, String>> volumesToDisconnect = new ArrayList<>();
 
@@ -1978,7 +2063,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         else {
             if (expunge) {
-                _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId());
+                _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId(), false);
             }
         }
     }

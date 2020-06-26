@@ -317,5 +317,7 @@ public interface NetworkOrchestrationService {
      */
     void cleanupNicDhcpDnsEntry(Network network, VirtualMachineProfile vmProfile, NicProfile nicProfile);
 
-    Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
+    Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
+
+    void unmanageNics(VirtualMachineProfile vm);
 }
