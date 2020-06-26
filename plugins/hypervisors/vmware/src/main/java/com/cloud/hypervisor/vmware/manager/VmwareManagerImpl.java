@@ -633,7 +633,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public void prepareSecondaryStorageStore(String storageUrl, Long storeId) {
-        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(storeId);
+        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(storeId);
         String mountPoint = getMountPoint(storageUrl, nfsVersion);
 
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
@@ -729,7 +729,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public String getMountPoint(String storageUrl, Integer nfsVersion) {
+    public String getMountPoint(String storageUrl, String nfsVersion) {
         String mountPoint = null;
         synchronized (_storageMounts) {
             mountPoint = _storageMounts.get(storageUrl);
@@ -820,7 +820,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
-    protected String mount(String path, String parent, Integer nfsVersion) {
+    protected String mount(String path, String parent, String nfsVersion) {
         String mountPoint = setupMountPoint(parent);
         if (mountPoint == null) {
             s_logger.warn("Unable to create a mount point");
