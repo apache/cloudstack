@@ -73,9 +73,9 @@ public interface CapacityManager {
                     "If set to true, creates VMs as full clones on ESX hypervisor",
                     true,
                     ConfigKey.Scope.StoragePool);
-    static final ConfigKey<Integer> ImageStoreNFSVersion =
-            new ConfigKey<Integer>(
-                    Integer.class,
+    static final ConfigKey<String> ImageStoreNFSVersion =
+            new ConfigKey<String>(
+                    String.class,
                     "secstorage.nfs.version",
                     "Advanced",
                     null,
