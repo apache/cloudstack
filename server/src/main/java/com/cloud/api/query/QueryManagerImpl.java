@@ -841,7 +841,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         ResponseView respView = ResponseView.Restricted;
-        if (cmd instanceof ListVMsCmdByAdmin) {
+        Account caller = CallContext.current().getCallingAccount();
+        if (_accountMgr.isRootAdmin(caller.getId())) {
             respView = ResponseView.Full;
         }
         List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(), result.first().toArray(new UserVmJoinVO[result.first().size()]));
@@ -1772,7 +1773,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         ResponseView respView = cmd.getResponseView();
         Account account = CallContext.current().getCallingAccount();
-        if (_accountMgr.isAdmin(account.getAccountId())) {
+        if (_accountMgr.isRootAdmin(account.getAccountId())) {
             respView = ResponseView.Full;
         }
 
@@ -3714,25 +3715,30 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (domainId != null) {
                 SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId,
                         affinityGroupName, affinityGroupType, keyword);
-                affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
+                Pair<List<AffinityGroupJoinVO>, Integer> groupsPair = listDomainLevelAffinityGroups(scDomain, searchFilter, domainId);
+                affinityGroups.addAll(groupsPair.first());
+                count += groupsPair.second();
             } else {
 
                 for (Long permAcctId : permittedAccounts) {
                     Account permittedAcct = _accountDao.findById(permAcctId);
                     SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId,
                             affinityGroupName, affinityGroupType, keyword);
-
-                    affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, permittedAcct.getDomainId()));
+                    Pair<List<AffinityGroupJoinVO>, Integer> groupsPair = listDomainLevelAffinityGroups(scDomain, searchFilter, permittedAcct.getDomainId());
+                    affinityGroups.addAll(groupsPair.first());
+                    count += groupsPair.second();
                 }
             }
         } else if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
             // list all domain level affinity groups for the domain admin case
             SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
                     affinityGroupType, keyword);
-            affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
+            Pair<List<AffinityGroupJoinVO>, Integer> groupsPair = listDomainLevelAffinityGroups(scDomain, searchFilter, domainId);
+            affinityGroups.addAll(groupsPair.first());
+            count += groupsPair.second();
         }
 
-        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, affinityGroups.size());
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, count);
 
     }
 
@@ -3830,7 +3836,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
     }
 
-    private List<AffinityGroupJoinVO> listDomainLevelAffinityGroups(SearchCriteria<AffinityGroupJoinVO> sc, Filter searchFilter, long domainId) {
+    private Pair<List<AffinityGroupJoinVO>, Integer> listDomainLevelAffinityGroups(SearchCriteria<AffinityGroupJoinVO> sc, Filter searchFilter, long domainId) {
         List<Long> affinityGroupIds = new ArrayList<Long>();
         Set<Long> allowedDomains = _domainMgr.getDomainParentIds(domainId);
         List<AffinityGroupDomainMapVO> maps = _affinityGroupDomainMapDao.listByDomain(allowedDomains.toArray());
@@ -3854,7 +3860,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             Integer count = uniqueGroupsPair.second();
             if (count.intValue() == 0) {
                 // empty result
-                return new ArrayList<AffinityGroupJoinVO>();
+                return new Pair<>(new ArrayList<AffinityGroupJoinVO>(), 0);
             }
             List<AffinityGroupJoinVO> uniqueGroups = uniqueGroupsPair.first();
             Long[] vrIds = new Long[uniqueGroups.size()];
@@ -3863,9 +3869,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 vrIds[i++] = v.getId();
             }
             List<AffinityGroupJoinVO> vrs = _affinityGroupJoinDao.searchByIds(vrIds);
-            return vrs;
+            return new Pair<>(vrs, count);
         } else {
-            return new ArrayList<AffinityGroupJoinVO>();
+            return new Pair<>(new ArrayList<AffinityGroupJoinVO>(), 0);
         }
     }
 
