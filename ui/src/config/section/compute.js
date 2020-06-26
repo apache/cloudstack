@@ -63,20 +63,12 @@ export default {
       },
       details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
       related: [{
-        name: 'volume',
-        title: 'label.volumes',
-        param: 'virtualmachineid'
-      }, {
         name: 'vmsnapshot',
         title: 'label.vm.snapshots',
         param: 'virtualmachineid'
       }, {
         name: 'backup',
         title: 'label.backup',
-        param: 'virtualmachineid'
-      }, {
-        name: 'affinitygroup',
-        title: 'label.affinity.groups',
         param: 'virtualmachineid'
       }],
       tabs: [{
