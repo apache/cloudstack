@@ -3781,7 +3781,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             ipv4 = true;
         }
 
-        if (startIPv6 != null) {
+        if (vlanIp6Cidr != null) {
             ipv6 = true;
         }
 

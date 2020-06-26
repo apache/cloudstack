@@ -2188,7 +2188,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
 
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(ip6Gateway) && org.apache.commons.lang3.StringUtils.isNotBlank(ip6Cidr)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(ip6Gateway) || org.apache.commons.lang3.StringUtils.isBlank(ip6Cidr)) {
             throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
         }
 
