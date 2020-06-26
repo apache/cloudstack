@@ -26,18 +26,18 @@ public abstract class StorageNfsVersionCommand extends Command {
         super();
     }
 
-    protected StorageNfsVersionCommand(Integer nfsVersion){
+    protected StorageNfsVersionCommand(String nfsVersion){
         super();
         this.nfsVersion = nfsVersion;
     }
 
-    private Integer nfsVersion;
+    private String nfsVersion;
 
-    public Integer getNfsVersion() {
+    public String getNfsVersion() {
         return nfsVersion;
     }
 
-    public void setNfsVersion(Integer nfsVersion) {
+    public void setNfsVersion(String nfsVersion) {
         this.nfsVersion = nfsVersion;
     }
 
