@@ -112,6 +112,25 @@
                 :placeholder="apiParams.group.description"
               />
             </a-form-item>
+            <div v-if="'authorizeSamlSso' in $store.getters.apis">
+              <a-form-item :label="$t('label.samlenable')">
+                <a-switch v-decorator="['samlEnable']" @change="checked => { this.samlEnable = checked }" />
+              </a-form-item>
+              <a-form-item v-if="samlEnable" :label="$t('label.samlentity')">
+                <a-select
+                  v-decorator="['samlEntity', {
+                    initialValue: selectedIdp,
+                    rules: [{ required: samlEnable, message: `${this.$t('message.error.select')}` }]
+                  }]"
+                  placeholder="Choose SAML identity provider"
+                  :loading="loading">
+                  <a-select-option v-for="(idp, idx) in listIdps" :key="idx">
+                    {{ idp.orgName }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </div>
+
             <div class="card-footer">
               <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
               <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
@@ -139,6 +158,8 @@ export default {
       listDomains: [],
       listRoles: [],
       timeZoneMap: [],
+      listIdps: [],
+      selectedIdp: '',
       filters: [],
       selectedFilter: '',
       listLoading: false,
@@ -146,7 +167,8 @@ export default {
       domainLoading: false,
       roleLoading: false,
       loading: false,
-      searchQuery: undefined
+      searchQuery: undefined,
+      samlEnable: false
     }
   },
   beforeCreate () {
@@ -168,6 +190,7 @@ export default {
     this.dataSource = []
     this.listDomains = []
     this.listRoles = []
+    this.listIdps = []
     this.columns = [
       {
         title: this.$t('label.name'),
@@ -224,11 +247,13 @@ export default {
       const [
         listTimeZone,
         listDomains,
-        listRoles
+        listRoles,
+        listIdps
       ] = await Promise.all([
         this.fetchTimeZone(),
         this.fetchListDomains(),
-        this.fetchListRoles()
+        this.fetchListRoles(),
+        ('listIdps' in this.$store.getters.apis) ? this.fetchIdps() : []
       ]).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -239,6 +264,7 @@ export default {
       this.timeZoneMap = listTimeZone && listTimeZone.length > 0 ? listTimeZone : []
       this.listDomains = listDomains && listDomains.length > 0 ? listDomains : []
       this.listRoles = listRoles && listRoles.length > 0 ? listRoles : []
+      this.listIdps = listIdps && listIdps.length > 0 ? listIdps : []
     },
     fetchTimeZone (value) {
       return new Promise((resolve, reject) => {
@@ -299,6 +325,19 @@ export default {
         })
       })
     },
+    fetchIdps () {
+      return new Promise((resolve, reject) => {
+        api('listIdps').then(json => {
+          const listIdps = json.listidpsresponse.idp || []
+          if (listIdps.length !== 0) {
+            this.selectedIdp = listIdps[0].id
+          }
+          resolve(listIdps)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
@@ -338,13 +377,13 @@ export default {
           })
         }
         this.loading = true
-        Promise.all(promises).then(response => {
-          for (let i = 0; i < response.length; i++) {
+        Promise.all(promises).then(responses => {
+          for (const response of responses) {
             if (apiName === 'ldapCreateAccount' && values.samlEnable) {
               const users = response.createaccountresponse.account.user
-              const entity = values.samlEntity
-              if (users && entity) {
-                this.authorizeUsersForSamlSSO(users, entity)
+              const entityId = values.samlEntity
+              if (users && entityId) {
+                this.authorizeUsersForSamlSSO(users, entityId)
               }
             } else if (apiName === 'importLdapUsers' && response.ldapuserresponse && values.samlEnable) {
               this.$notification.error({
@@ -355,12 +394,11 @@ export default {
               if (apiName === 'ldapCreateAccount') {
                 this.$notification.success({
                   message: this.$t('label.add.ldap.account'),
-                  description: response[i].createaccountresponse.account.name
+                  description: response.createaccountresponse.account.name
                 })
               }
             }
           }
-
           this.$emit('refresh-data')
           this.handleClose()
         }).catch(error => {
@@ -393,13 +431,13 @@ export default {
     handleClose () {
       this.$emit('close-action')
     },
-    authorizeUsersForSamlSSO (users, entity) {
+    authorizeUsersForSamlSSO (users, entityId) {
       const promises = []
       for (var i = 0; i < users.length; i++) {
         const params = {}
         params.enable = true
         params.userid = users[i].id
-        params.entityid = entity
+        params.entityid = entityId
         promises.push(new Promise((resolve, reject) => {
           api('authorizeSamlSso', params).catch(error => {
             reject(error)

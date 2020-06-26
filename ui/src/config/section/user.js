@@ -71,6 +71,14 @@ export default {
       show: (record) => { return record.state === 'enabled' }
     },
     {
+      api: 'authorizeSamlSso',
+      icon: 'form',
+      label: 'Configure SAML SSO Authorization',
+      dataView: true,
+      popup: true,
+      component: () => import('@/views/iam/ConfigureSamlSsoAuth.vue')
+    },
+    {
       api: 'deleteUser',
       icon: 'delete',
       label: 'label.action.delete.user',

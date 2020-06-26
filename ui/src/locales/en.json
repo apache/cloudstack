@@ -1659,6 +1659,8 @@
 "label.rule.number": "Rule Number",
 "label.rules": "Rules",
 "label.running": "Running VMs",
+"label.saml.disable": "SAML Disable",
+"label.saml.enable": "SAML Enable",
 "label.s3.access.key": "Access Key",
 "label.s3.bucket": "Bucket",
 "label.s3.connection.timeout": "Connection Timeout",
