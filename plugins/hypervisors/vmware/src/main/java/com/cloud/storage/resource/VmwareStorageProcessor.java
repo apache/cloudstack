@@ -34,6 +34,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.cloud.hypervisor.vmware.mo.VirtualStorageObjectManagerMO;
+import com.vmware.vim25.BaseConfigInfoDiskFileBackingInfo;
+import com.vmware.vim25.VStorageObject;
+import com.vmware.vim25.VirtualDiskType;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -2253,37 +2257,50 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String volumeUuid = UUID.randomUUID().toString().replace("-", "");
 
             String volumeDatastorePath = dsMo.getDatastorePath(volumeUuid + ".vmdk");
-            String dummyVmName = hostService.getWorkerName(context, cmd, 0);
-            try {
-                s_logger.info("Create worker VM " + dummyVmName);
-                vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
-                if (vmMo == null) {
-                    throw new Exception("Unable to create a dummy VM for volume creation");
+
+            VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(context);
+            VStorageObject virtualDisk = vStorageObjectManagerMO.createDisk(morDatastore, VirtualDiskType.THIN, volume.getSize(), volumeDatastorePath, volumeUuid);
+            VolumeObjectTO newVol = new VolumeObjectTO();
+            DatastoreFile file = new DatastoreFile(((BaseConfigInfoDiskFileBackingInfo)virtualDisk.getConfig().getBacking()).getFilePath());
+            newVol.setPath(file.getFileBaseName());
+            newVol.setSize(volume.getSize());
+            return new CreateObjectAnswer(newVol);
+
+            /*
+            *   // This is old code which uses workervm to create disks
+            *   String dummyVmName = hostService.getWorkerName(context, cmd, 0);
+                try {
+                    s_logger.info("Create worker VM " + dummyVmName);
+                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
+                    if (vmMo == null) {
+                        throw new Exception("Unable to create a dummy VM for volume creation");
+                    }
+
+                    synchronized (this) {
+                        try {
+                            vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
+                            vmMo.detachDisk(volumeDatastorePath, false);
+                        }
+                        catch (Exception e) {
+                            s_logger.error("Deleting file " + volumeDatastorePath + " due to error: " + e.getMessage());
+                            VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid, dcMo, VmwareManager.s_vmwareSearchExcludeFolder.value());
+                            throw new CloudRuntimeException("Unable to create volume due to: " + e.getMessage());
+                        }
+                    }
+
+                    VolumeObjectTO newVol = new VolumeObjectTO();
+                    newVol.setPath(volumeUuid);
+                    newVol.setSize(volume.getSize());
+                    return new CreateObjectAnswer(newVol);
+                } finally {
+                    s_logger.info("Destroy dummy VM after volume creation");
+                    if (vmMo != null) {
+                        vmMo.detachAllDisks();
+                        vmMo.destroy();
+                    }
                 }
 
-                synchronized (this) {
-                    try {
-                        vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
-                        vmMo.detachDisk(volumeDatastorePath, false);
-                    }
-                    catch (Exception e) {
-                        s_logger.error("Deleting file " + volumeDatastorePath + " due to error: " + e.getMessage());
-                        VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid, dcMo, VmwareManager.s_vmwareSearchExcludeFolder.value());
-                        throw new CloudRuntimeException("Unable to create volume due to: " + e.getMessage());
-                    }
-                }
-
-                VolumeObjectTO newVol = new VolumeObjectTO();
-                newVol.setPath(volumeUuid);
-                newVol.setSize(volume.getSize());
-                return new CreateObjectAnswer(newVol);
-            } finally {
-                s_logger.info("Destroy dummy VM after volume creation");
-                if (vmMo != null) {
-                    vmMo.detachAllDisks();
-                    vmMo.destroy();
-                }
-            }
+            * */
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");

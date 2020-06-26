@@ -38,6 +38,7 @@ import com.vmware.vim25.VStorageObject;
 import com.vmware.vim25.VStorageObjectConfigInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.ArrayOfManagedObjectReference;
@@ -1195,7 +1196,18 @@ public class VirtualMachineMO extends BaseMO {
             s_logger.trace("vCenter API trace - createDisk() done(successfully)");
     }
 
-    public void updateVmdkAdapter(String vmdkFileName, String newAdapterType) throws Exception {
+    public void updateVmdkAdapter(String vmdkFileName, String diskController) throws Exception {
+
+        DiskControllerType diskControllerType = DiskControllerType.getType(diskController);
+        VmdkAdapterType vmdkAdapterType = VmdkAdapterType.getAdapterType(diskControllerType);
+        if (vmdkAdapterType == VmdkAdapterType.none) {
+            String message = "Failed to attach disk due to invalid vmdk adapter type for vmdk file [" +
+                    vmdkFileName + "] with controller : " + diskControllerType;
+            s_logger.debug(message);
+            throw new Exception(message);
+        }
+
+        String newAdapterType = vmdkAdapterType.toString();
         Pair<VmdkFileDescriptor, byte[]> vmdkInfo = getVmdkFileInfo(vmdkFileName);
         VmdkFileDescriptor vmdkFileDescriptor = vmdkInfo.first();
         boolean isVmfsSparseFile = vmdkFileDescriptor.isVmfsSparseFile();
@@ -1240,6 +1252,10 @@ public class VirtualMachineMO extends BaseMO {
         }
     }
 
+    public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs) throws Exception {
+        attachDisk(vmdkDatastorePathChain, morDs, null);
+    }
+
     public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController) throws Exception {
 
         if(s_logger.isTraceEnabled())
@@ -1262,24 +1278,20 @@ public class VirtualMachineMO extends BaseMO {
             controllerKey = getIDEControllerKey(ideDeviceCount);
             unitNumber = getFreeUnitNumberOnIDEController(controllerKey);
         } else {
-            controllerKey = getScsiDiskControllerKey(diskController);
+            if (StringUtils.isNotBlank(diskController)) {
+                controllerKey = getScsiDiskControllerKey(diskController);
+            } else {
+                controllerKey = getScsiDeviceControllerKey();
+            }
             unitNumber = -1;
         }
+
         synchronized (_mor.getValue().intern()) {
             VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, controllerKey, vmdkDatastorePathChain, morDs, unitNumber, 1);
-            controllerKey = newDisk.getControllerKey();
-            unitNumber = newDisk.getUnitNumber();
-            VirtualDiskFlatVer2BackingInfo backingInfo = (VirtualDiskFlatVer2BackingInfo)newDisk.getBacking();
-            String vmdkFileName = backingInfo.getFileName();
-            DiskControllerType diskControllerType = DiskControllerType.getType(diskController);
-            VmdkAdapterType vmdkAdapterType = VmdkAdapterType.getAdapterType(diskControllerType);
-            if (vmdkAdapterType == VmdkAdapterType.none) {
-                String message = "Failed to attach disk due to invalid vmdk adapter type for vmdk file [" +
-                    vmdkFileName + "] with controller : " + diskControllerType;
-                s_logger.debug(message);
-                throw new Exception(message);
+            if (StringUtils.isNotBlank(diskController)) {
+                String vmdkFileName = vmdkDatastorePathChain[0];
+                updateVmdkAdapter(vmdkFileName, diskController);
             }
-            updateVmdkAdapter(vmdkFileName, vmdkAdapterType.toString());
             VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
@@ -1317,69 +1329,6 @@ public class VirtualMachineMO extends BaseMO {
         }
         throw new Exception("SCSI Controller with key " + controllerKey + " is Not Found");
 
-    }
-
-    public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs) throws Exception {
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain) +
-                    ", datastore: " + morDs.getValue());
-
-        synchronized (_mor.getValue().intern()) {
-            VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, getScsiDeviceControllerKey(), vmdkDatastorePathChain, morDs, -1, 1);
-            VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-
-            deviceConfigSpec.setDevice(newDisk);
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-
-            reConfigSpec.getDeviceChange().add(deviceConfigSpec);
-
-            ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-            boolean result = _context.getVimClient().waitForTask(morTask);
-
-            if (!result) {
-                if (s_logger.isTraceEnabled())
-                    s_logger.trace("vCenter API trace - attachDisk() done(failed)");
-                throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            }
-
-            _context.waitForTaskProgressDone(morTask);
-        }
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
-    }
-
-    public void attachDisk(Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain, int controllerKey) throws Exception {
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain));
-
-        synchronized (_mor.getValue().intern()) {
-            VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey, vmdkDatastorePathChain, -1, 1);
-            VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-
-            deviceConfigSpec.setDevice(newDisk);
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-
-            reConfigSpec.getDeviceChange().add(deviceConfigSpec);
-
-            ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-            boolean result = _context.getVimClient().waitForTask(morTask);
-
-            if (!result) {
-                if (s_logger.isTraceEnabled())
-                    s_logger.trace("vCenter API trace - attachDisk() done(failed)");
-                throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            }
-
-            _context.waitForTaskProgressDone(morTask);
-        }
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
@@ -2489,7 +2438,7 @@ public class VirtualMachineMO extends BaseMO {
                                     s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
                                     if (((VirtualDisk) device).getVDiskId() == null) {
                                         s_logger.debug("vDiskid does not exist for volume " + vmdkDatastorePath + " registering the disk now");
-                                        VirtualStorageObjectManager vStorageObjectManagerMO = new VirtualStorageObjectManager(getOwnerDatacenter().first().getContext());
+                                        VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(getOwnerDatacenter().first().getContext());
                                         VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsBackingFile, null, getOwnerDatacenter().first().getName());
                                         VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
                                         ((VirtualDisk) device).setVDiskId(diskConfigInfo.getId());

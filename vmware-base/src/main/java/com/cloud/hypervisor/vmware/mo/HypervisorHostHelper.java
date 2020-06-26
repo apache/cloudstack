@@ -139,6 +139,7 @@ public class HypervisorHostHelper {
     private static final String VMDK_PACK_DIR = "ova";
     private static final String OVA_OPTION_KEY_BOOTDISK = "cloud.ova.bootdisk";
     public static final String VSPHERE_DATASTORE_BASE_FOLDER = ".cloudstack.base.folder";
+    public static final String VSPHERE_FCD_DEFAULT_FOLDER = "fcd";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
