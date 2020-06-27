@@ -117,8 +117,9 @@ export default {
           scopedSlots: { customRender: 'name' }
         },
         {
-          title: this.$t('label.instancename'),
-          dataIndex: 'instancename'
+          title: this.$t('label.state'),
+          dataIndex: 'state',
+          scopedSlots: { customRender: 'state' }
         },
         {
           title: this.$t('label.displayname'),
@@ -131,11 +132,6 @@ export default {
         {
           title: this.$t('label.zonenamelabel'),
           dataIndex: 'zonename'
-        },
-        {
-          title: this.$t('label.state'),
-          dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
         },
         {
           title: 'Select',

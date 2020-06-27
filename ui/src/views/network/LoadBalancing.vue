@@ -107,7 +107,7 @@
               <div>
                 <status :text="instance.loadbalancerruleinstance.state" />
                 <a-icon type="desktop" />
-                <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
+                <router-link :to="{ path: '/vm/' + instance.loadbalancerruleinstance.id }">
                   {{ instance.loadbalancerruleinstance.displayname }}
                 </router-link>
               </div>

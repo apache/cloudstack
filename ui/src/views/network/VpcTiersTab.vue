@@ -22,7 +22,7 @@
       icon="plus"
       style="width: 100%;margin-bottom: 20px;"
       :disabled="!('createNetwork' in $store.getters.apis)"
-      @click="handleOpenModal">Add Network</a-button>
+      @click="handleOpenModal">{{ $t('label.add.network') }}</a-button>
     <a-list class="list">
       <a-list-item v-for="(network, idx) in networks" :key="idx" class="list__item">
         <div class="list__item-outer-container">
@@ -531,6 +531,7 @@ export default {
           this.$message.error('Failed to create Internal LB')
         }).finally(() => {
           this.modalLoading = false
+          this.fetchLoading = false
           this.showAddInternalLB = false
           this.fetchData()
         })

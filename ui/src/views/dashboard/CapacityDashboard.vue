@@ -33,16 +33,11 @@
           </a-select>
         </div>
         <div class="capacity-dashboard-button">
-          <a-tooltip placement="bottom">
-            <template slot="title">
-              Fetch Latest
-            </template>
-            <a-button
-              shape="circle"
-              @click="listCapacity(zoneSelected, true)">
-              <a-icon class="capacity-dashboard-button-icon" type="reload" />
-            </a-button>
-          </a-tooltip>
+          <a-button
+            shape="round"
+            @click="listCapacity(zoneSelected, true)">
+            {{ $t('label.fetch.latest') }}
+          </a-button>
         </div>
       </div>
       <a-row :gutter="12">
