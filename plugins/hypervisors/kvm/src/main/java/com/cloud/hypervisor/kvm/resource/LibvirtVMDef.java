@@ -443,6 +443,11 @@ public class LibvirtVMDef {
                     devicesBuilder.append(dev.toString());
                 }
             }
+            devicesBuilder.append("<controller type='pci' model='pcie-root'/>\n");
+            for (int i = 0; i < 32; i++) {
+              devicesBuilder.append("<controller type='pci' model='pcie-root-port'/>\n");
+            }
+            devicesBuilder.append("<controller type='pci' model='pcie-to-pci-bridge'/>\n");
             devicesBuilder.append("</devices>\n");
             return devicesBuilder.toString();
         }
