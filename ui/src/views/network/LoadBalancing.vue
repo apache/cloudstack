@@ -18,21 +18,6 @@
 <template>
   <div>
     <div>
-      <div class="filter" v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
-        <div class="form">
-          <div class="form__item" ref="newRuleTier">
-            <div class="form__label">{{ $t('label.tiername') }}</div>
-            <a-select v-model="newRule.tier">
-              <a-select-option
-                v-for="tier in tiers.data"
-                :loading="tiers.loading"
-                :key="tier.id">
-                {{ tier.displaytext }}
-              </a-select-option>
-            </a-select>
-          </div>
-        </div>
-      </div>
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
@@ -294,6 +279,21 @@
       @cancel="closeModal"
     >
       <div>
+        <span
+          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+          <strong>{{ $t('label.select.tier') }} </strong>
+          <a-select
+            v-model="selectedTier"
+            @change="fetchVirtualMachines()"
+            :placeholder="$t('label.select.tier')" >
+            <a-select-option
+              v-for="tier in tiers.data"
+              :loading="tiers.loading"
+              :key="tier.id">
+              {{ tier.displaytext }}
+            </a-select-option>
+          </a-select>
+        </span>
         <a-input-search
           class="input-search"
           placeholder="Search"
@@ -377,6 +377,7 @@ export default {
       tagsModalLoading: false,
       tags: [],
       selectedRule: null,
+      selectedTier: null,
       stickinessModalVisible: false,
       stickinessPolicies: [],
       stickinessPolicyForm: this.$form.createForm(this),
@@ -524,7 +525,7 @@ export default {
         vpcid: this.resource.vpcid
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
-        this.newRule.tier = this.tiers.data && this.tiers.data[0].id ? this.tiers.data[0].id : null
+        this.selectedTier = this.tiers.data && this.tiers.data[0].id ? this.tiers.data[0].id : null
         this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
@@ -982,7 +983,7 @@ export default {
 
       api('listNics', {
         virtualmachineid: e.target.value,
-        networkid: this.resource.associatednetworkid
+        networkid: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
         if (!response || !response.listnicsresponse || !response.listnicsresponse.nic[0]) return
         const newItem = []
@@ -1002,7 +1003,7 @@ export default {
       this.vmCount = 0
       this.vms = []
       this.addVmModalLoading = true
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.newRule.tier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
       api('listVirtualMachines', {
         listAll: true,
         keyword: this.searchQuery,
@@ -1085,7 +1086,7 @@ export default {
         return
       }
 
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.newRule.tier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
       api('createLoadBalancerRule', {
         openfirewall: false,
         networkid: networkId,
@@ -1496,7 +1497,7 @@ export default {
 
   .input-search {
     margin-bottom: 10px;
-    width: 220px;
+    width: 50%;
     float: right;
   }
 </style>

@@ -97,6 +97,9 @@
     <a slot="vmname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
     </a>
+    <a slot="virtualmachinename" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
+    </a>
     <span slot="hypervisor" slot-scope="text, record">
       <span v-if="$route.name === 'hypervisorcapability'">
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -120,6 +123,9 @@
     </template>
     <a slot="guestnetworkname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
+    </a>
+    <a slot="associatednetworkname" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }">{{ text }}</router-link>
     </a>
     <a slot="vpcname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>

@@ -167,7 +167,7 @@ export default {
       this.addVmModalNicLoading = true
       api('listNics', {
         virtualmachineid: e.target.value,
-        networkid: this.resource.associatednetworkid
+        networkid: this.resource.networkid
       }).then(response => {
         if (!response.listnicsresponse.nic[0]) return
         const newItem = []

@@ -83,9 +83,12 @@
                     :to="{ path: '/vm/'+item.id}">{{ item.name }}
                   </router-link>
                 </template>
+                <template slot="state" slot-scope="text, item">
+                  <status :text="item.state" displayText></status>
+                </template>
                 <template slot="ip" slot-scope="text, item">
                   <div v-for="nic in item.nic" :key="nic.id">
-                    {{ nic.isdefault === true ? nic.ipaddress : '' }}
+                    {{ nic.networkid === network.id ? nic.ipaddress : '' }}
                   </div>
                 </template>
               </a-table>
@@ -329,6 +332,11 @@ export default {
           title: this.$t('label.name'),
           dataIndex: 'name',
           scopedSlots: { customRender: 'name' }
+        },
+        {
+          title: this.$t('label.state'),
+          dataIndex: 'state',
+          scopedSlots: { customRender: 'state' }
         },
         {
           title: this.$t('label.ip'),

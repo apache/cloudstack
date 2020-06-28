@@ -48,44 +48,51 @@ export default {
     getBadgeStatus (state) {
       var status = 'default'
       switch (state) {
-        case 'Running':
-        case 'Ready':
-        case 'Up':
-        case 'BackedUp':
-        case 'Implemented':
-        case 'Enabled':
-        case 'enabled':
         case 'Active':
+        case 'BackedUp':
         case 'Completed':
         case 'Connected':
-        case 'Started':
         case 'Download Complete':
+        case 'Enabled':
+        case 'Implemented':
+        case 'Ready':
+        case 'Running':
+        case 'Setup':
+        case 'Started':
         case 'Successfully Installed':
         case 'True':
+        case 'Up':
+        case 'enabled':
           status = 'success'
           break
+        case 'Alert':
+        case 'Declined':
         case 'Disabled':
+        case 'Disconnected':
         case 'Down':
         case 'Error':
-        case 'Stopped':
-        case 'Declined':
-        case 'Disconnected':
         case 'False':
+        case 'Stopped':
           status = 'error'
           break
         case 'Migrating':
+        case 'Scaling':
+        case 'Scheduled':
         case 'Starting':
         case 'Stopping':
-        case 'Scheduled':
-        case 'Scaling':
         case 'Upgrading':
           status = 'processing'
           break
-        case 'Alert':
         case 'Allocated':
+          if (this.$route.path.startsWith('/publicip')) {
+            status = 'success'
+          } else {
+            status = 'warning'
+          }
+          break
         case 'Created':
-        case 'Pending':
         case 'Maintenance':
+        case 'Pending':
           status = 'warning'
           break
       }

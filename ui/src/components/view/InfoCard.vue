@@ -334,6 +334,13 @@
             <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetworkid }} </router-link>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.sourceipaddressnetworkid">
+          <div class="resource-detail-item__label">{{ $t('label.network') }}</div>
+          <div class="resource-detail-item__details">
+            <a-icon type="wifi" />
+            <router-link :to="{ path: '/guestnetwork/' + resource.sourceipaddressnetworkid }">{{ resource.sourceipaddressnetworkname || resource.sourceipaddressnetworkid }} </router-link>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.guestnetworkid">
           <div class="resource-detail-item__label">{{ $t('label.guestnetwork') }}</div>
           <div class="resource-detail-item__details">
@@ -386,14 +393,14 @@
           <div class="resource-detail-item__label">{{ $t('label.backupofferingid') }}</div>
           <a-icon type="cloud-upload" />
           <router-link v-if="$router.resolve('/backupoffering/' + resource.backupofferingid).route.name !== '404'" :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
-          <span v-else>{{ resource.backupofferingname || resourece.backupofferingid }}</span>
+          <span v-else>{{ resource.backupofferingname || resource.backupofferingid }}</span>
         </div>
         <div class="resource-detail-item" v-if="resource.networkofferingid">
           <div class="resource-detail-item__label">{{ $t('label.networkofferingid') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="wifi" />
             <router-link v-if="$router.resolve('/networkoffering/' + resource.networkofferingid).route.name !== '404'" :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
-            <span v-else>{{ resource.networkofferingname || resourece.networkofferingid }}</span>
+            <span v-else>{{ resource.networkofferingname || resource.networkofferingid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcofferingid">
@@ -401,7 +408,7 @@
           <div class="resource-detail-item__details">
             <a-icon type="deployment-unit" />
             <router-link v-if="$router.resolve('/vpcoffering/' + resource.vpcofferingid).route.name !== '404'" :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
-            <span v-else>{{ resource.vpcofferingname || resourece.vpcofferingid }}</span>
+            <span v-else>{{ resource.vpcofferingname || resource.vpcofferingid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.storageid">

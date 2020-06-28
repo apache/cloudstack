@@ -30,7 +30,9 @@
       </template>
       <template slot="ipaddress" slot-scope="text, record">
         <span v-for="nic in record.nic" :key="nic.id">
-          {{ nic.ipaddress }} <br/>
+          <span v-if="nic.networkid === resource.networkid">
+            {{ nic.ipaddress }} <br/>
+          </span>
         </span>
       </template>
       <template slot="remove" slot-scope="text, record">
