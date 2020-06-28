@@ -69,7 +69,7 @@ router.beforeEach((to, from, next) => {
               description: 'Exception caught while discoverying features'
             })
             store.dispatch('Logout').then(() => {
-              next({ path: '/user/login' })
+              next({ path: '/user/login', query: { redirect: to.fullPath } })
             })
           })
       } else {
@@ -80,7 +80,7 @@ router.beforeEach((to, from, next) => {
     if (whiteList.includes(to.name)) {
       next()
     } else {
-      next({ path: '/user/login' })
+      next({ path: '/user/login', query: { redirect: to.fullPath } })
       NProgress.done()
     }
   }
