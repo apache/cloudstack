@@ -411,7 +411,7 @@ public class TemplateServiceImpl implements TemplateService {
                                     if (tmplt.getState() == VirtualMachineTemplate.State.NotUploaded || tmplt.getState() == VirtualMachineTemplate.State.UploadInProgress) {
                                         VirtualMachineTemplate.Event event = VirtualMachineTemplate.Event.OperationSucceeded;
                                         // For multi-disk OVA, check and create data disk templates
-                                        if (tmplt.getFormat().equals(ImageFormat.OVA)) {
+                                        if (tmplt.getFormat().equals(ImageFormat.OVA) && !tmplt.isDeployAsIs()) {
                                             if (!createOvaDataDiskTemplates(_templateFactory.getTemplate(tmlpt.getId(), store))) {
                                                 event = VirtualMachineTemplate.Event.OperationFailed;
                                             }
@@ -709,7 +709,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         // For multi-disk OVA, check and create data disk templates
-        if (template.getFormat().equals(ImageFormat.OVA)) {
+        if (template.getFormat().equals(ImageFormat.OVA) && !template.isDeployAsIs()) {
             if (!createOvaDataDiskTemplates(template)) {
                 template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
                 result.setResult(callbackResult.getResult());

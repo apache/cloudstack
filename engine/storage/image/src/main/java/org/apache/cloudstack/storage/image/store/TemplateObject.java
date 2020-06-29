@@ -363,6 +363,14 @@ public class TemplateObject implements TemplateInfo {
         return this.imageVO.isDirectDownload();
     }
 
+    @Override
+    public boolean isDeployAsIs() {
+        if (this.imageVO == null) {
+            return false;
+        }
+        return this.imageVO.isDeployAsIs();
+    }
+
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }

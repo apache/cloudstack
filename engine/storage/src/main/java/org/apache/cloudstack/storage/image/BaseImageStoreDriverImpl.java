@@ -28,13 +28,13 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -132,7 +132,13 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     protected String _proxy = null;
 
-    private static Gson gson = GsonHelper.getGson();
+    private static Gson gson;
+
+    static {
+        GsonBuilder builder = new GsonBuilder();
+        builder.disableHtmlEscaping();
+        gson = builder.create();
+    }
 
     protected Proxy getHttpProxy() {
         if (_proxy == null) {
@@ -241,14 +247,13 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private void persistOvfPropertyAsSetOfTemplateDetails(long templateId, OVFPropertyTO property) {
         String key = property.getKey();
-        // save separate attributes for each of the properties of a property
-        // FR37 TODO save as a single json object
-        savePropertyAttribute(templateId, OVF_PROPERTY_DEFAULT + key, property.getValue());
-        savePropertyAttribute(templateId, OVF_PROPERTY_DESCRIPTION + key, property.getDescription());
-        savePropertyAttribute(templateId, OVF_PROPERTY_QUALIFIERS + key, property.getQualifiers());
-        savePropertyAttribute(templateId, OVF_PROPERTY_LABEL + key, property.getLabel());
-        savePropertyAttribute(templateId, OVF_PROPERTY_TYPE + key, property.getType());
-        savePropertyAttribute(templateId, OVF_PROPERTY_PASSWORD + key, property.isPassword().toString());
+        String propKey = OVF_PROPERTY_PREFIX + key;
+        try {
+            String propValue = gson.toJson(property);
+            savePropertyAttribute(templateId, propKey, propValue);
+        } catch (RuntimeException re) {
+            LOGGER.error("gson marshalling of property object fails: " + propKey,re);
+        }
     }
 
     private void persistNetworkRequirements(List<NetworkPrerequisiteTO> networkRequirements, long templateId) {
@@ -265,16 +270,13 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private void persistRequiredNetworkAsSetOfTemplateDetails(long templateId, NetworkPrerequisiteTO network) {
         String key = network.getName();
-
-        // FR37 TODO save as a single json string
-        savePropertyAttribute(templateId, REQUIRED_NETWORK_DESCRIPTION + key, network.getNetworkDescription());
-        savePropertyAttribute(templateId, REQUIRED_NETWORK_ELEMENT_NAME + key, network.getElementName());
-        savePropertyAttribute(templateId, REQUIRED_NETWORK_NIC_DESCRIPTION + key, network.getNicDescription());
-        savePropertyAttribute(templateId, REQUIRED_NETWORK_RESOURCE_TYPE + key, network.getResourceType());
-        savePropertyAttribute(templateId, REQUIRED_NETWORK_RESOURCE_SUBTYPE + key, network.getResourceSubType());
-        savePropertyAttribute(templateId, REQUIRED_NETWORK_ADDRESS_ON_PARENT + key, Integer.toString(network.getAddressOnParent()));
-        savePropertyAttribute(templateId, REQUIRED_NETWORK_INSTANCEID + key, Integer.toString(network.getInstanceID()));
-        savePropertyAttribute(templateId, REQUIRED_NETWORK_AUTOMATIC_ALLOCATION + key, Boolean.toString(network.isAutomaticAllocation()));
+        String propKey = REQUIRED_NETWORK_PREFIX + key;
+        try {
+            String propValue = gson.toJson(network);
+            savePropertyAttribute(templateId, propKey, propValue);
+        } catch (RuntimeException re) {
+            LOGGER.warn("gson marshalling of network object fails: " + propKey,re);
+        }
     }
 
     private void savePropertyAttribute(long templateId, String key, String value) {
