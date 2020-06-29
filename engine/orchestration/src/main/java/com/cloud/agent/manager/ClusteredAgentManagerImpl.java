@@ -614,8 +614,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         @Override
         protected void doTask(final Task task) throws TaskExecutionException {
-            final TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-            try {
+            try (final TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);) {
                 if (task.getType() != Task.Type.DATA) {
                     super.doTask(task);
                     return;
@@ -723,8 +722,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 final String message = String.format("UnsupportedVersionException occured when executing taks! Error '%s'", e.getMessage());
                 s_logger.error(message);
                 throw new TaskExecutionException(message, e);
-            } finally {
-                txn.close();
             }
         }
     }
