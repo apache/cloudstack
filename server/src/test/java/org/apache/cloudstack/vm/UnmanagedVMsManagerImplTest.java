@@ -19,17 +19,29 @@ package org.apache.cloudstack.vm;
 
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -111,10 +123,10 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(UsageEventUtils.class)
-public class VmImportManagerImplTest {
+public class UnmanagedVMsManagerImplTest {
 
     @InjectMocks
-    private VmImportService vmIngestionService = new VmImportManagerImpl();
+    private UnmanagedVMsManager unmanagedVMsManager = new UnmanagedVMsManagerImpl();
 
     @Mock
     private UserVmManager userVmManager;
@@ -160,6 +172,21 @@ public class VmImportManagerImplTest {
     private NetworkModel networkModel;
     @Mock
     private ConfigurationDao configurationDao;
+    @Mock
+    private VMSnapshotDao vmSnapshotDao;
+    @Mock
+    private SnapshotDao snapshotDao;
+    @Mock
+    private UserVmDao userVmDao;
+    @Mock
+    private NicDao nicDao;
+
+    @Mock
+    private VMInstanceVO virtualMachine;
+    @Mock
+    private NicVO nicVO;
+
+    private static final long virtualMachineId = 1L;
 
     @Before
     public void setUp() throws Exception {
@@ -281,7 +308,7 @@ public class VmImportManagerImplTest {
         NicProfile profile = Mockito.mock(NicProfile.class);
         Integer deviceId = 100;
         Pair<NicProfile, Integer> pair = new Pair<NicProfile, Integer>(profile, deviceId);
-        when(networkOrchestrationService.importNic(nullable(String.class), nullable(Integer.class), nullable(Network.class), nullable(Boolean.class), nullable(VirtualMachine.class), nullable(Network.IpAddresses.class))).thenReturn(pair);
+        when(networkOrchestrationService.importNic(nullable(String.class), nullable(Integer.class), nullable(Network.class), nullable(Boolean.class), nullable(VirtualMachine.class), nullable(Network.IpAddresses.class), anyBoolean())).thenReturn(pair);
         when(volumeManager.importVolume(Mockito.any(Volume.Type.class), Mockito.anyString(), Mockito.any(DiskOffering.class), Mockito.anyLong(),
                 Mockito.anyLong(), Mockito.anyLong(), Mockito.any(VirtualMachine.class), Mockito.any(VirtualMachineTemplate.class),
                 Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(Mockito.mock(DiskProfile.class));
@@ -291,6 +318,18 @@ public class VmImportManagerImplTest {
         userVmResponse.setInstanceName(instance.getName());
         userVmResponses.add(userVmResponse);
         when(responseGenerator.createUserVmResponse(Mockito.any(ResponseObject.ResponseView.class), Mockito.anyString(), Mockito.any(UserVm.class))).thenReturn(userVmResponses);
+
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
+        when(virtualMachine.getInstanceName()).thenReturn("i-2-7-VM");
+        when(virtualMachine.getId()).thenReturn(virtualMachineId);
+        VolumeVO volumeVO = mock(VolumeVO.class);
+        when(volumeDao.findByInstance(virtualMachineId)).thenReturn(Collections.singletonList(volumeVO));
+        when(volumeVO.getInstanceId()).thenReturn(virtualMachineId);
+        when(volumeVO.getId()).thenReturn(virtualMachineId);
+        when(nicDao.listByVmId(virtualMachineId)).thenReturn(Collections.singletonList(nicVO));
+        when(nicVO.getNetworkId()).thenReturn(1L);
+        when(networkDao.findById(1L)).thenReturn(networkVO);
     }
 
     @After
@@ -301,7 +340,7 @@ public class VmImportManagerImplTest {
     @Test
     public void listUnmanagedInstancesTest() {
         ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
-        vmIngestionService.listUnmanagedInstances(cmd);
+        unmanagedVMsManager.listUnmanagedInstances(cmd);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -310,7 +349,7 @@ public class VmImportManagerImplTest {
         ClusterVO cluster = new ClusterVO(1, 1, "Cluster");
         cluster.setHypervisorType(Hypervisor.HypervisorType.KVM.toString());
         when(clusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
-        vmIngestionService.listUnmanagedInstances(cmd);
+        unmanagedVMsManager.listUnmanagedInstances(cmd);
     }
 
     @Test(expected = PermissionDeniedException.class)
@@ -320,7 +359,7 @@ public class VmImportManagerImplTest {
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
-        vmIngestionService.listUnmanagedInstances(cmd);
+        unmanagedVMsManager.listUnmanagedInstances(cmd);
     }
 
     @Test
@@ -330,7 +369,7 @@ public class VmImportManagerImplTest {
         when(importUnmanageInstanceCmd.getAccountName()).thenReturn(null);
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
         PowerMockito.mockStatic(UsageEventUtils.class);
-        vmIngestionService.importUnmanagedInstance(importUnmanageInstanceCmd);
+        unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -339,7 +378,7 @@ public class VmImportManagerImplTest {
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getName()).thenReturn("some name");
         when(importUnmanageInstanceCmd.getMigrateAllowed()).thenReturn(false);
-        vmIngestionService.importUnmanagedInstance(importUnmanageInstanceCmd);
+        unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
     }
 
     @Test(expected = ServerApiException.class)
@@ -348,6 +387,44 @@ public class VmImportManagerImplTest {
         when(importUnmanageInstanceCmd.getName()).thenReturn("SomeInstance");
         when(importUnmanageInstanceCmd.getAccountName()).thenReturn(null);
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
-        vmIngestionService.importUnmanagedInstance(importUnmanageInstanceCmd);
+        unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void unmanageVMInstanceMissingInstanceTest() {
+        long notExistingId = 10L;
+        unmanagedVMsManager.unmanageVMInstance(notExistingId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void unmanageVMInstanceDestroyedInstanceTest() {
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Destroyed);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void unmanageVMInstanceExpungedInstanceTest() {
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Expunging);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceExistingVMSnapshotsTest() {
+        when(vmSnapshotDao.findByVm(virtualMachineId)).thenReturn(Arrays.asList(new VMSnapshotVO(), new VMSnapshotVO()));
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceExistingVolumeSnapshotsTest() {
+        when(snapshotDao.listByVolumeId(virtualMachineId)).thenReturn(Arrays.asList(new SnapshotVO(), new SnapshotVO()));
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceExistingISOAttachedTest() {
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmDao.findById(virtualMachineId)).thenReturn(userVmVO);
+        when(userVmVO.getIsoId()).thenReturn(3L);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 }

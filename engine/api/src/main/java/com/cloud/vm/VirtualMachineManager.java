@@ -227,4 +227,11 @@ public interface VirtualMachineManager extends Manager {
         String destHostname = (AllowExposeHypervisorHostname.value() && AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? name : null;
         return destHostname;
     }
+
+    /**
+     * Unmanage a VM from CloudStack:
+     * - Remove the references of the VM and its volumes, nics, IPs from database
+     * - Keep the VM as it is on the hypervisor
+     */
+    boolean unmanage(String vmUuid);
 }
