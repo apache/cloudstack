@@ -6,7 +6,6 @@ SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
 
 %:
-	# TODO : Make it work with python2 also
 	dh $@ --with systemd
 
 override_dh_auto_configure:
