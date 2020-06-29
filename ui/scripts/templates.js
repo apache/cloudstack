@@ -696,7 +696,7 @@
                                 }
                                 if (args.$form.find('.form-item[rel=deployAsIs]').css("display") != "none" && args.data.deployAsIs != "") {
                                     $.extend(data, {
-                                        'details[0].deployAsIs': args.data.DeployAsIs
+                                        deployAsIs: (args.data.deployAsIs == "on") ? "true" : "false"
                                     });
                                 }
                                 // for hypervisor == VMware (ends here)
@@ -1935,7 +1935,7 @@
                                         isBoolean: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
-                                    deployasis: {
+                                    deployAsIs: {
                                         label: 'label.deploy.as.is',
                                         isBoolean: true,
                                         converter: cloudStack.converters.toBooleanText
@@ -2891,7 +2891,7 @@
                                     isextractable: (args.data.isExtractable == "on"),
                                     bootable: (args.data.isBootable == "on"),
                                     directdownload: (args.data.directdownload == "on"),
-                                    deployasis: (args.data.deployAsIs == "on")
+                                    deployAsIs: (args.data.deployAsIs == "on")
                                 };
 
                                 if (args.$form.find('.form-item[rel=osTypeId]').css("display") != "none") {
@@ -2924,15 +2924,6 @@
                                             data: items[0]
                                         });
 
-                                        /*
-                     if(items.length > 1) {
-                     for(var i=1; i<items.length; i++) {
-                     var $midmenuItem2 = $("#midmenu_item").clone();
-                     ISOToMidmenu(items[i], $midmenuItem2);
-                     bindClickToMidMenu($midmenuItem2, templateToRightPanel, ISOGetMidmenuId);
-                     $("#midmenu_container").append($midmenuItem2.show());              }
-                     }
-                     */
                                     },
                                     error: function(XMLHttpResponse) {
                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -3728,7 +3719,7 @@
                                         isBoolean: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
-                                    deployasis: {
+                                    deployAsIs: {
                                         label: 'label.deploy.as.is',
                                         isBoolean: true,
                                         converter: cloudStack.converters.toBooleanText
