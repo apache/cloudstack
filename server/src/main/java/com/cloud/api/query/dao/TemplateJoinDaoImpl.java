@@ -151,13 +151,14 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
-            ImageStoreVO store = dataStoreDao.findById(templateInStore.getDataStoreId());
-            // check for valid store
-            String name =  store != null ? store.getName() : "";
-            downloadDetailInImageStores.put("datastore", name);
-            downloadDetailInImageStores.put("dowloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
-            downloadDetailInImageStores.put("dowloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
-            dowloadProgressDetails.add(downloadDetailInImageStores);
+            if (templateInStore != null) {
+                ImageStoreVO store = dataStoreDao.findById(templateInStore.getDataStoreId());
+                String name = store != null ? store.getName() : "";
+                downloadDetailInImageStores.put("datastore", name);
+                downloadDetailInImageStores.put("dowloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
+                downloadDetailInImageStores.put("dowloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
+                dowloadProgressDetails.add(downloadDetailInImageStores);
+            }
         }
         TemplateResponse templateResponse = new TemplateResponse();
         templateResponse.setDownloadProgress(dowloadProgressDetails);
