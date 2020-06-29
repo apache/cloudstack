@@ -51,7 +51,7 @@ public class ProjectRolePermissionsDaoImpl  extends GenericDaoBase<ProjectRolePe
 
         ProjectRolePermissionsSearch = createSearchBuilder();
         ProjectRolePermissionsSearch.and("uuid", ProjectRolePermissionsSearch.entity().getUuid(), SearchCriteria.Op.EQ);
-        ProjectRolePermissionsSearch.and("projectRoleId", ProjectRolePermissionsSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
+        ProjectRolePermissionsSearch.and("projectRoleId", ProjectRolePermissionsSearch.entity().getProjectRoleId(), SearchCriteria.Op.EQ);
         ProjectRolePermissionsSearch.and("projectId", ProjectRolePermissionsSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
         ProjectRolePermissionsSearch.and("sortOrder", ProjectRolePermissionsSearch.entity().getSortOrder(), SearchCriteria.Op.EQ);
         ProjectRolePermissionsSearch.done();
@@ -65,7 +65,7 @@ public class ProjectRolePermissionsDaoImpl  extends GenericDaoBase<ProjectRolePe
     public List<ProjectRolePermissionVO> findAllByRoleIdSorted(Long roleId, Long projectId) {
         final SearchCriteria<ProjectRolePermissionVO> sc = ProjectRolePermissionsSearch.create();
         if (roleId != null && roleId > 0L) {
-            sc.setParameters("roleId", roleId);
+            sc.setParameters("projectRoleId", roleId);
         }
         if (projectId != null && projectId > 0L) {
             sc.setParameters("projectId", projectId);

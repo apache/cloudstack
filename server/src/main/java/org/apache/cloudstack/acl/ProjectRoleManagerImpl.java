@@ -182,7 +182,11 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
         return Transaction.execute(new TransactionCallback<ProjectRolePermissionVO>() {
             @Override
             public ProjectRolePermissionVO doInTransaction(TransactionStatus status) {
-                return projRolePermissionsDao.persist(new ProjectRolePermissionVO(projectId, projectRoleId, rule.toString(), permission, description));
+                try {
+                    return projRolePermissionsDao.persist(new ProjectRolePermissionVO(projectId, projectRoleId, rule.toString(), permission, description));
+                } catch (Exception e) {
+                    throw new CloudRuntimeException("Project role permission for " + rule.toString()+ " seems to already exist.");
+                }
             }
         });
     }
