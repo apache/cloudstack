@@ -39,8 +39,10 @@ public class DownloadAnswer extends Answer {
     private long templateSize = 0L;
     private long templatePhySicalSize = 0L;
     private String checkSum;
+
     @LogLevel(LogLevel.Log4jLevel.Off)
     private List<OVFPropertyTO> ovfProperties;
+    @LogLevel(LogLevel.Log4jLevel.Off)
     private List<NetworkPrerequisiteTO> networkRequirements;
 
     public String getCheckSum() {
