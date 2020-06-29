@@ -192,7 +192,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ROLE_PERMISSION_UPDATE_ORDER, eventDescription = "updating Project Role Permission order")
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ROLE_PERMISSION_UPDATE, eventDescription = "updating Project Role Permission order")
     public boolean updateProjectRolePermission(Long projectId, ProjectRole projectRole, List<ProjectRolePermission> rolePermissionsOrder) {
         checkAccess(projectId);
         return projectRole != null && rolePermissionsOrder != null && projRolePermissionsDao.update(projectRole, projectId, rolePermissionsOrder);

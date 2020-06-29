@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.command.admin.acl.ListRolePermissionsCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListRolesCmd;
 import org.apache.cloudstack.api.command.admin.acl.UpdateRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.UpdateRolePermissionCmd;
-import org.apache.cloudstack.api.command.admin.acl.project.CreateProjectRoleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -327,7 +326,6 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         cmdList.add(ListRolePermissionsCmd.class);
         cmdList.add(UpdateRolePermissionCmd.class);
         cmdList.add(DeleteRolePermissionCmd.class);
-        cmdList.add(CreateProjectRoleCmd.class);
         return cmdList;
     }
 }

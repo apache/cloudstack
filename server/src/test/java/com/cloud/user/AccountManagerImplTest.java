@@ -368,13 +368,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doReturn(Account.ACCOUNT_ID_SYSTEM).when(userVoMock).getAccountId();
         Mockito.doReturn(Account.ACCOUNT_ID_SYSTEM).when(accountMock).getId();
         Mockito.doReturn(callingAccount).when(_accountDao).findById(Account.ACCOUNT_ID_SYSTEM);
-        // TODO -  remove:
-//        CallContext.current().setProject(project);
-//        Mockito.lenient().doReturn(1L).when(project).getId();
-//        Mockito.lenient().doReturn(1L).when(_user).getId();
-//        Mockito.lenient().doReturn(1L).when(accountMock).getAccountId();
-//       Mockito.lenient().doReturn(projectAccountVO).when(_projectAccountDao).findByProjectIdUserId(anyLong(), anyLong(), anyLong());
-//       Mockito.lenient().doReturn(ProjectAccount.Role.Admin).when(projectAccountVO).getProjectRole();
         accountManagerImpl.retrieveAndValidateAccount(userVoMock);
     }
 
