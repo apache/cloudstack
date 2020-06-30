@@ -77,6 +77,13 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
             since = "4.13")
     private String zoneIds;
 
+    @Parameter(name = ApiConstants.TAGS,
+            type = CommandType.STRING,
+            description = "Comma-separated list of tags to be added to disk offering",
+            since = "4.15")
+    private String tags;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -159,6 +166,10 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
             validZoneIds.addAll(_configService.getDiskOfferingZones(id));
         }
         return validZoneIds;
+    }
+
+    public String getTags() {
+        return tags;
     }
 
 /////////////////////////////////////////////////////

@@ -3102,6 +3102,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Boolean displayDiskOffering = cmd.getDisplayOffering();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        final String tags = cmd.getTags();
 
         // Check if diskOffering exists
         final DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
@@ -3183,7 +3184,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by id user: %s because it is not root-admin or domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
         }
 
-        final boolean updateNeeded = name != null || displayText != null || sortKey != null || displayDiskOffering != null;
+        final boolean updateNeeded = name != null || displayText != null || sortKey != null || displayDiskOffering != null || tags != null;
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _diskOfferingDao.findById(diskOfferingId);
@@ -3207,30 +3208,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             diskOffering.setDisplayOffering(displayDiskOffering);
         }
 
-        // Note: tag editing commented out for now;keeping the code intact,
-        // might need to re-enable in next releases
-        // if (tags != null)
-        // {
-        // if (tags.trim().isEmpty() && diskOfferingHandle.getTags() == null)
-        // {
-        // //no new tags; no existing tags
-        // diskOffering.setTagsArray(csvTagsToList(null));
-        // }
-        // else if (!tags.trim().isEmpty() && diskOfferingHandle.getTags() !=
-        // null)
-        // {
-        // //new tags + existing tags
-        // List<String> oldTags = csvTagsToList(diskOfferingHandle.getTags());
-        // List<String> newTags = csvTagsToList(tags);
-        // oldTags.addAll(newTags);
-        // diskOffering.setTagsArray(oldTags);
-        // }
-        // else if(!tags.trim().isEmpty())
-        // {
-        // //new tags; NO existing tags
-        // diskOffering.setTagsArray(csvTagsToList(tags));
-        // }
-        // }
+        if (tags != null){
+            if(tags.isBlank()){
+                diskOffering.setTags(null);
+            }else {
+                diskOffering.setTags(tags);
+            }
+        }
 
         if (updateNeeded && !_diskOfferingDao.update(diskOfferingId, diskOffering)) {
             return null;
