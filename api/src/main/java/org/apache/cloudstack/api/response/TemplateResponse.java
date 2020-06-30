@@ -176,7 +176,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     @SerializedName(ApiConstants.DOWNLOAD_DETAILS)
     @Param(description = "Lists the download progress of a template across all secondary storages")
-    private List downloadDetails;
+    private List<Map<String, String>> downloadDetails;
 
     @SerializedName(ApiConstants.BITS)
     @Param(description = "the processor bit size", since = "4.10")
@@ -260,7 +260,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
         this.isPublic = isPublic;
     }
 
-    public void setDownloadProgress(List downloadDetails) {
+    public void setDownloadProgress(List<Map<String, String>> downloadDetails) {
         this.downloadDetails = downloadDetails;
     }
 

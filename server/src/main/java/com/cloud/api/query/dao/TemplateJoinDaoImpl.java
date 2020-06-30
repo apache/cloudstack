@@ -33,7 +33,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
@@ -146,22 +145,18 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     @Override
     public TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO template) {
-        List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplate(template.getId());
-        List dowloadProgressDetails = new ArrayList();
+        List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId());
+        List<Map<String, String>> downloadProgressDetails = new ArrayList();
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
-            if (templateInStore != null) {
-                ImageStoreVO store = dataStoreDao.findById(templateInStore.getDataStoreId());
-                String name = store != null ? store.getName() : "";
-                downloadDetailInImageStores.put("datastore", name);
-                downloadDetailInImageStores.put("dowloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
-                downloadDetailInImageStores.put("dowloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
-                dowloadProgressDetails.add(downloadDetailInImageStores);
-            }
+            downloadDetailInImageStores.put("datastore", dataStoreDao.findById(templateInStore.getDataStoreId()).getName());
+            downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
+            downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
+            downloadProgressDetails.add(downloadDetailInImageStores);
         }
         TemplateResponse templateResponse = new TemplateResponse();
-        templateResponse.setDownloadProgress(dowloadProgressDetails);
+        templateResponse.setDownloadProgress(downloadProgressDetails);
         templateResponse.setId(template.getUuid());
         templateResponse.setName(template.getName());
         templateResponse.setDisplayText(template.getDisplayText());
