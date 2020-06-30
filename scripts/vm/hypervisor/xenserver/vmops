@@ -162,7 +162,7 @@ def setLinkLocalIP(session, args):
 
         if result.lower().strip() == "bridge":
             try:
-                cmd = ["ip", "link", "add", "name", brName, "type", "bridge"]
+                cmd = ["brctl", "addbr", brName]
                 txt = util.pread2(cmd)
             except:
                 pass
