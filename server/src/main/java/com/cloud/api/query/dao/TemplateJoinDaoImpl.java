@@ -25,6 +25,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.storage.ImageStore;
+import com.google.gson.Gson;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -291,15 +294,21 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     @Override
     public TemplateResponse setTemplateResponse(ResponseView view, TemplateResponse templateResponse, TemplateJoinVO template) {
+        Gson gson = new Gson();
 
         // update details map
-        if (template.getDetailName() != null) {
-            Map<String, String> details = templateResponse.getDetails();
-            if (details == null) {
-                details = new HashMap<>();
+        String key = template.getDetailName();
+        if (key != null) {
+            // FR37 TODO check properties and network prerequisites and if details is one of those fill those instead of detail
+            if (key.startsWith(ImageStore.OVF_PROPERTY_PREFIX)) {
+                OVFPropertyTO property = gson.fromJson(template.getDetailValue(), OVFPropertyTO.class);
+                templateResponse.addProperty(createTemplateOVFPropertyResponse(property));
+            } else if (key.startsWith(ImageStore.REQUIRED_NETWORK_PREFIX)) {
+                // FR37 TODO do similar as above
+
+            } else {
+                templateResponse.addDetail(key, template.getDetailValue());
             }
-            details.put(template.getDetailName(), template.getDetailValue());
-            templateResponse.setDetails(details);
         }
 
         // update tag information

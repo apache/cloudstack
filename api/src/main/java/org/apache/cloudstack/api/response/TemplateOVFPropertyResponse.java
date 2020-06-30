@@ -23,6 +23,10 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
+/**
+ * the placeholder of parameters to fill for deployment
+ //  FR37 TODO remname for generic use
+ */
 @EntityReference(value = OVFProperty.class)
 public class TemplateOVFPropertyResponse extends BaseResponse {
 

@@ -21,6 +21,9 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ImageStore extends Identity, InternalIdentity {
 
+    String OVF_PROPERTY_PREFIX = "ACS-property-";
+    String REQUIRED_NETWORK_PREFIX = "ACS-network-";
+
     /**
      * @return name of the object store.
      */

@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.dao.TemplateOVFPropertiesDao;
@@ -82,24 +83,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private static final Logger LOGGER = Logger.getLogger(BaseImageStoreDriverImpl.class);
-
-    public static final String OVF_PROPERTY_PREFIX = "ovfProperty-";
-    public static final String OVF_PROPERTY_DEFAULT = OVF_PROPERTY_PREFIX + "default-";
-    public static final String OVF_PROPERTY_DESCRIPTION = OVF_PROPERTY_PREFIX + "description-";
-    public static final String OVF_PROPERTY_QUALIFIERS = OVF_PROPERTY_PREFIX + "qualifiers-";
-    public static final String OVF_PROPERTY_LABEL = OVF_PROPERTY_PREFIX + "label-";
-    public static final String OVF_PROPERTY_TYPE = OVF_PROPERTY_PREFIX + "type-";
-    public static final String OVF_PROPERTY_PASSWORD = OVF_PROPERTY_PREFIX + "password-";
-
-    public static final String REQUIRED_NETWORK_PREFIX = "network-";
-    public static final String REQUIRED_NETWORK_DESCRIPTION = REQUIRED_NETWORK_PREFIX + "description-";
-    public static final String REQUIRED_NETWORK_RESOURCE_TYPE = REQUIRED_NETWORK_PREFIX + "resourceType-";
-    public static final String REQUIRED_NETWORK_ELEMENT_NAME = REQUIRED_NETWORK_PREFIX + "elementName-";
-    public static final String REQUIRED_NETWORK_NIC_DESCRIPTION = REQUIRED_NETWORK_PREFIX + "nicDescription-";
-    public static final String REQUIRED_NETWORK_RESOURCE_SUBTYPE = REQUIRED_NETWORK_PREFIX + "resourceSubType-";
-    public static final String REQUIRED_NETWORK_ADDRESS_ON_PARENT = REQUIRED_NETWORK_PREFIX + "addressOnParent-";
-    public static final String REQUIRED_NETWORK_INSTANCEID = REQUIRED_NETWORK_PREFIX + "instanceId-";
-    public static final String REQUIRED_NETWORK_AUTOMATIC_ALLOCATION = REQUIRED_NETWORK_PREFIX + "automaticAllocation-";
 
     @Inject
     protected VMTemplateDao _templateDao;
@@ -247,7 +230,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private void persistOvfPropertyAsSetOfTemplateDetails(long templateId, OVFPropertyTO property) {
         String key = property.getKey();
-        String propKey = OVF_PROPERTY_PREFIX + key;
+        String propKey = ImageStore.OVF_PROPERTY_PREFIX + key;
         try {
             String propValue = gson.toJson(property);
             savePropertyAttribute(templateId, propKey, propValue);
@@ -270,7 +253,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private void persistRequiredNetworkAsSetOfTemplateDetails(long templateId, NetworkPrerequisiteTO network) {
         String key = network.getName();
-        String propKey = REQUIRED_NETWORK_PREFIX + key;
+        String propKey = ImageStore.REQUIRED_NETWORK_PREFIX + key;
         try {
             String propValue = gson.toJson(network);
             savePropertyAttribute(templateId, propKey, propValue);

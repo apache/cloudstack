@@ -18,7 +18,9 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.TemplateOVFPropertyResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
 import com.cloud.api.query.vo.TemplateJoinVO;
@@ -49,4 +51,19 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
     Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter);
 
     List<TemplateJoinVO> findByDistinctIds(Long... ids);
+
+    default TemplateOVFPropertyResponse createTemplateOVFPropertyResponse(OVFPropertyTO ovfPropertyTO) {
+        TemplateOVFPropertyResponse propertyResponse = new TemplateOVFPropertyResponse();
+
+        propertyResponse.setKey(ovfPropertyTO.getKey());
+        propertyResponse.setType(ovfPropertyTO.getType());
+        propertyResponse.setValue(ovfPropertyTO.getValue());
+        propertyResponse.setQualifiers(ovfPropertyTO.getQualifiers());
+        propertyResponse.setUserConfigurable(ovfPropertyTO.isUserConfigurable());
+        propertyResponse.setLabel(ovfPropertyTO.getLabel());
+        propertyResponse.setDescription(ovfPropertyTO.getDescription());
+        propertyResponse.setPassword(ovfPropertyTO.isPassword());
+        propertyResponse.setObjectName("ovfproperty");
+        return propertyResponse;
+    }
 }
