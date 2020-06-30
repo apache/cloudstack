@@ -64,6 +64,26 @@ def enableDynamicApiChecker(conn):
     conn.close()
     print("Dynamic role based API checker has been enabled!")
 
+def getDatabaseConnection(options):
+    try:
+        conn = mysql.connector.connect(
+                host=options.host,
+                user=options.user,
+                passwd=options.password,
+                port=int(options.port),
+                db=options.db,
+                auth_plugin='mysql_native_password')
+    except TypeError as err:
+        if str(err).find("got an unexpected keyword argument 'auth_plugin'")>=0:
+            conn = mysql.connector.connect(
+                    host=options.host,
+                    user=options.user,
+                    passwd=options.password,
+                    port=int(options.port),
+                    db=options.db)
+        else:
+            raise
+    return conn
 
 def main():
     parser = OptionParser()
@@ -91,13 +111,7 @@ def main():
     global dryrun
     if options.dryrun:
         dryrun = True
-
-    conn = mysql.connector.connect(
-            host=options.host,
-            user=options.user,
-            passwd=options.password,
-            port=int(options.port),
-            db=options.db)
+    conn = getDatabaseConnection(options)
 
     if options.defaultRules:
         print("Applying the default role permissions, ignoring any provided properties files(s).")

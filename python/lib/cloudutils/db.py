@@ -29,10 +29,21 @@ class Database(object):
         self.db = db
 
     def connect(self):
-        return mysql.connector.connect(host=self.host,
-                                       user=self.username,
-                                       password=self.password,
-                                       database=self.db)
+        try:
+            conn = mysql.connector.connect(host=self.host,
+                                        user=self.username,
+                                        password=self.password,
+                                        database=self.db,
+                                        auth_plugin='mysql_native_password')
+        except TypeError as err:
+            if str(err).find("got an unexpected keyword argument 'auth_plugin'")>=0:
+                conn = mysql.connector.connect(host=self.host,
+                                            user=self.username,
+                                            password=self.password,
+                                            database=self.db)
+            else:
+                raise
+        return conn
 
     def execute(self, statement):
         txn = None
