@@ -35,33 +35,17 @@ class DbConnection(object):
         self.passwd = passwd
         self.database = db
 
-    def __getConnection(self, db=None):
-        try:
-            conn = contextlib.\
-                closing(mysql.connector.connect(host=str(self.host),
-                                                port=int(self.port),
-                                                user=str(self.user),
-                                                password=str(self.passwd),
-                                                db=str(self.database) if not db else db),
-                                                auth_plugin='mysql_native_password')
-        except TypeError as err:
-            if str(err).find("got an unexpected keyword argument 'auth_plugin'")>=0:
-                conn = contextlib.\
-                    closing(mysql.connector.connect(host=str(self.host),
-                                                    port=int(self.port),
-                                                    user=str(self.user),
-                                                    password=str(self.passwd),
-                                                    db=str(self.database) if not db else db))
-            else:
-                raise
-        return conn
-
     def execute(self, sql=None, params=None, db=None):
         if sql is None:
             return None
 
         resultRow = []
-        with self.__getConnection(db) as conn:
+        with contextlib.\
+            closing(mysql.connector.connect(host=str(self.host),
+                                            port=int(self.port),
+                                            user=str(self.user),
+                                            password=str(self.passwd),
+                                            db=str(self.database) if not db else db)) as conn:
             conn.autocommit = True
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
                 cursor.execute(sql, params)
