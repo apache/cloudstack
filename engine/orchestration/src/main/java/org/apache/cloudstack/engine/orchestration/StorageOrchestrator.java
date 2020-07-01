@@ -159,7 +159,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             storageService.updateImageStoreStatus(srcDataStoreId, true);
         }
 
-        storageCapacities = getStorageCapacities(storageCapacities);
+        storageCapacities = getStorageCapacities(storageCapacities, srcDataStoreId);
         double meanstddev = getStandardDeviation(storageCapacities);
         double threshold = ImageStoreImbalanceThreshold.value();
         MigrationResponse response = null;
@@ -179,11 +179,11 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 chosenFileForMigration = files.remove(0);
             }
 
-            storageCapacities = getStorageCapacities(storageCapacities);
+            storageCapacities = getStorageCapacities(storageCapacities, srcDataStoreId);
             List<Long> orderedDS = migrationHelper.sortDataStores(storageCapacities);
             Long destDatastoreId = orderedDS.get(0);
 
-            if (chosenFileForMigration == null || destDatastoreId == null || destDatastoreId == srcDatastore.getId()) {
+            if (chosenFileForMigration == null || destDatastoreId == null || destDatastoreId == srcDatastore.getId() ) {
                 Pair<String, Boolean> result = migrateCompleted(destDatastoreId, srcDatastore, files, migrationPolicy);
                 message = result.first();
                 success = result.second();
@@ -303,7 +303,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
     }
 
-    private Map<Long, Pair<Long, Long>> getStorageCapacities(Map<Long, Pair<Long, Long>> storageCapacities) {
+    private Map<Long, Pair<Long, Long>> getStorageCapacities(Map<Long, Pair<Long, Long>> storageCapacities, Long srcDataStoreId) {
         Map<Long, Pair<Long, Long>> capacities = new Hashtable<>();
         for (Long storeId : storageCapacities.keySet()) {
             StorageStats stats = statsCollector.getStorageStats(storeId);
@@ -313,10 +313,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 } else {
                     long totalCapacity = stats.getCapacityBytes();
                     Long freeCapacity = totalCapacity - stats.getByteUsed();
-                    if (freeCapacity >= storageCapacities.get(storeId).first()) {
-                        capacities.put(storeId, storageCapacities.get(storeId));
-                    } else {
+                    if (storeId.equals(srcDataStoreId) || freeCapacity < storageCapacities.get(storeId).first()) {
                         capacities.put(storeId, new Pair<>(freeCapacity, totalCapacity));
+                    } else {
+                        capacities.put(storeId, storageCapacities.get(storeId));
                     }
                 }
             } else {
