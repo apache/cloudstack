@@ -54,11 +54,31 @@ def checkDefaults(haproxyData, haCfgSections):
 
     return True
 
+def checkServerValues(haproxyData, serverSections):
+    serverArray = serverSections[0].split(" ")
+
+    if "maxconn" in serverArray and "server.maxconn" in haproxyData:
+        maxconnServer = serverArray[serverArray.index("maxconn") + 1]
+        if maxconnServer != haproxyData["server.maxconn"]:
+            return False
+
+    if "minconn" in serverArray and "server.minconn" in haproxyData:
+        minconnServer = serverArray[serverArray.index("minconn") + 1]
+        if minconnServer != haproxyData["server.minconn"]:
+            return False
+
+    if "maxqueue" in serverArray and "server.maxqueue" in haproxyData:
+        maxqueueServer = serverArray[serverArray.index("maxqueue") + 1]
+        if maxqueueServer != haproxyData["server.maxqueue"]:
+            return False
+
+    return True
+
 def checkLoadBalance(haproxyData, haCfgSections):
     correct = True
     for lbSec in haproxyData:
         if "global.maxconn" in lbSec:   # Ignore first part (global and default settings)
-            continue;
+            continue
         srcServer = lbSec["sourceIp"].replace('.', '_') + "-" + \
                     formatPort(lbSec["sourcePortStart"],
                                lbSec["sourcePortEnd"])
@@ -85,6 +105,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
 
         if cfgSection:
             if "server" in cfgSection:
+                correct = checkServerValues(haproxyData, cfgSection["server"])
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
                     print "Incorrect balance method for " + secName + \
                           "Expected : " + lbSec["algorithm"] + \

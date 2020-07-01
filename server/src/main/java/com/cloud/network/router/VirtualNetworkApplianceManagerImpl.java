@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
@@ -1767,9 +1768,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
         Optional<String> lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxConn.key()));
-        String globalMaxConn = lbConfig.isPresent() ? lbConfig.get() : null;
+        String globalMaxConn = lbConfig.orElse(null);
         lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxPipes.key()));
-        String globalMaxPipes = lbConfig.isPresent() ? lbConfig.get() : null;
+        String globalMaxPipes = lbConfig.orElse(null);
 
         final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());;
         List<? extends FirewallRuleVO> loadBalancerVOs = this.getLBRules(routerJoinVO);
@@ -1784,11 +1785,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
             loadBalancingData.append("global.maxconn=").append(globalMaxConnFinal);
             String globalMaxPipesFinal;
-            if (globalMaxPipes != null) {
-                globalMaxPipesFinal = globalMaxPipes;
-            } else {
-                globalMaxPipesFinal = Long.toString(Long.parseLong(globalMaxConnFinal) / 4);
-            }
+            globalMaxPipesFinal = Objects.requireNonNullElseGet(globalMaxPipes,
+                    () -> Long.toString(Long.parseLong(globalMaxConnFinal) / 4));
             loadBalancingData.append(",global.maxpipes=").append(globalMaxPipesFinal);
             lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutConnect.key()));
             loadBalancingData.append(",default.timeout.connect=").append(lbConfig.isPresent() ? lbConfig.get() : 5000);
@@ -1807,11 +1805,19 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
             }
             lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()));
-            String isTransparent = lbConfig.isPresent() ? lbConfig.get() : null;
+            String isTransparent = lbConfig.orElse(null);
             lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbHttp.key()));
-            String isHttp = lbConfig.isPresent() ? lbConfig.get() : null;
+            String isHttp = lbConfig.orElse(null);
             lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbHttpKeepalive.key()));
-            String isHttpKeepalive = lbConfig.isPresent() ? lbConfig.get() : null;
+            String isHttpKeepalive = lbConfig.orElse(null);
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()));
+
+            // Process lb.server values
+            String serverMaxconn = lbConfig.orElse(null);
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMinConn.key()));
+            String serverMinconn = lbConfig.orElse(null);
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxQueue.key()));
+            String serverMaxqueue = lbConfig.orElse(null);
 
             List<LoadBalancerVMMapVO> vmMapVOs = _loadBalancerVMMapDao.listByLoadBalancerId(firewallRuleVO.getId(), false);
             if (vmMapVOs.size() > 0) {
@@ -1849,6 +1855,15 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
                 if (isTransparent != null) {
                     loadBalancingData.append(",transparent=").append(isTransparent);
+                }
+                if (serverMaxconn != null) {
+                    loadBalancingData.append(",server.maxconn=").append(serverMaxconn);
+                }
+                if (serverMinconn != null) {
+                    loadBalancingData.append(",server.minconn=").append(serverMinconn);
+                }
+                if (serverMaxqueue != null) {
+                    loadBalancingData.append(",server.maxqueue=").append(serverMaxqueue);
                 }
 
                 loadBalancingData.append(",vmIps=");
