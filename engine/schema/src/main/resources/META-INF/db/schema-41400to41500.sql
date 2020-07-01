@@ -18,3 +18,7 @@
 --;
 -- Schema upgrade from 4.14.0.0 to 4.15.0.0
 --;
+
+
+-- Fix Debian 10 32-bit hypervisor mappings on VMware, debian10-32bit OS ID in guest_os table is 292, not 282
+UPDATE `guest_os_hypervisor` SET guest_os_id=292 WHERE guest_os_id=282 AND hypervisor_type="VMware" AND guest_os_name="debian10Guest";
