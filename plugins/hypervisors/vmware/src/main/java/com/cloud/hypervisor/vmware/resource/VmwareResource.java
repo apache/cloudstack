@@ -4414,7 +4414,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
 
                     // If datastore is VMFS and target datastore is not mounted or accessible to source host then fail migration.
-                    if (filerTo.getType().equals(StoragePoolType.VMFS)) {
+                    if (filerTo.getType().equals(StoragePoolType.VMFS) || filerTo.getType().equals(StoragePoolType.PreSetup)) {
                         if (morDsAtSource == null) {
                             s_logger.warn(
                                     "If host version is below 5.1, then target VMFS datastore(s) need to manually mounted on source host for a successful live storage migration.");
@@ -4901,7 +4901,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             StorageFilerTO pool = cmd.getPool();
 
-            if (pool.getType() != StoragePoolType.NetworkFilesystem && pool.getType() != StoragePoolType.VMFS) {
+            if (pool.getType() != StoragePoolType.NetworkFilesystem && pool.getType() != StoragePoolType.VMFS && pool.getType() != StoragePoolType.PreSetup) {
                 throw new Exception("Unsupported storage pool type " + pool.getType());
             }
 
@@ -4923,7 +4923,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             Map<String, TemplateProp> tInfo = new HashMap<>();
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
 
-            if (cmd.getAdd() && pool.getType() == StoragePoolType.VMFS) {
+            if (cmd.getAdd() && (pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup)) {
                 answer.setLocalDatastoreName(morDatastore.getValue());
             }
 
