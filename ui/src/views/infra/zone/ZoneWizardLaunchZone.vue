@@ -564,14 +564,14 @@ export default {
         for (let index = 0; index < this.stepData.physicalNetworksReturned.length; index++) {
           const physicalNetwork = this.stepData.physicalNetworksReturned[index]
 
-          if (!this.stepData.stepMove.includes('advUpdatePhysicalNetwork' + index)) {
+          if (!this.stepData.stepMove.includes('advUpdatePhysicalNetwork' + physicalNetwork.id)) {
             const updPhysicalParams = {}
             updPhysicalParams.state = 'Enabled'
             updPhysicalParams.id = physicalNetwork.id
 
             try {
               await this.updatePhysicalNetwork(updPhysicalParams)
-              this.stepData.stepMove.push('advUpdatePhysicalNetwork' + index)
+              this.stepData.stepMove.push('advUpdatePhysicalNetwork' + physicalNetwork.id)
             } catch (e) {
               this.messageError = e
               this.processStatus = STATUS_FAILED
@@ -581,7 +581,7 @@ export default {
           }
 
           // ***** Virtual Router ***** (begin) *****
-          if (!this.stepData.stepMove.includes('advVirtualRouter' + index)) {
+          if (!this.stepData.stepMove.includes('advVirtualRouter' + physicalNetwork.id)) {
             const listParams = {}
             listParams.name = 'VirtualRouter'
             listParams.physicalNetworkId = physicalNetwork.id
@@ -591,7 +591,7 @@ export default {
               const elementId = await this.listVirtualRouterElements(providerId)
               await this.configureVirtualRouterElement(elementId)
               await this.updateNetworkServiceProvider(providerId)
-              this.stepData.stepMove.push('advVirtualRouter' + index)
+              this.stepData.stepMove.push('advVirtualRouter' + physicalNetwork.id)
             } catch (e) {
               this.messageError = e
               this.processStatus = STATUS_FAILED
@@ -639,7 +639,7 @@ export default {
       }
     },
     async configOvs (physicalNetwork) {
-      if (this.stepData.stepMove.includes('configOvs')) {
+      if (this.stepData.stepMove.includes('configOvs' + physicalNetwork.id)) {
         return
       }
 
@@ -656,10 +656,10 @@ export default {
         }
       }
 
-      this.stepData.stepMove.push('configOvs')
+      this.stepData.stepMove.push('configOvs' + physicalNetwork.id)
     },
     async configInternalLBVM (physicalNetwork) {
-      if (this.stepData.stepMove.includes('configInternalLBVM')) {
+      if (this.stepData.stepMove.includes('configInternalLBVM' + physicalNetwork.id)) {
         return
       }
 
@@ -676,7 +676,7 @@ export default {
         }
       }
 
-      this.stepData.stepMove.push('configInternalLBVM')
+      this.stepData.stepMove.push('configInternalLBVM' + physicalNetwork.id)
     },
     async configVpcVirtualRouter (physicalNetwork) {
       const listParams = {}
@@ -684,13 +684,13 @@ export default {
       listParams.physicalNetworkId = physicalNetwork.id
 
       try {
-        if (!this.stepData.stepMove.includes('configVpcVirtualRouter')) {
+        if (!this.stepData.stepMove.includes('configVpcVirtualRouter' + physicalNetwork.id)) {
           const providerId = await this.listNetworkServiceProviders(listParams)
           const elementId = await this.listVirtualRouterElements(providerId)
           await this.configureVirtualRouterElement(elementId)
           await this.updateNetworkServiceProvider(providerId)
 
-          this.stepData.stepMove.push('configVpcVirtualRouter')
+          this.stepData.stepMove.push('configVpcVirtualRouter' + physicalNetwork.id)
         }
       } catch (e) {
         this.messageError = e
@@ -1496,10 +1496,10 @@ export default {
       listNetworkParams.physicalNetworkId = this.stepData.physicalNetworkReturned.id
 
       try {
-        if (!this.stepData.stepMove.includes('enableSecurityGroupProvider')) {
+        if (!this.stepData.stepMove.includes('enableSecurityGroupProvider' + this.stepData.physicalNetworkReturned.id)) {
           const securityGroupProviderId = await this.listNetworkServiceProviders(listNetworkParams)
           await this.updateNetworkServiceProvider(securityGroupProviderId, 'enableSecurityGroupProvider')
-          this.stepData.stepMove.push('enableSecurityGroupProvider')
+          this.stepData.stepMove.push('enableSecurityGroupProvider' + this.stepData.physicalNetworkReturned.id)
         }
 
         await this.stepAddNetscalerProvider()
