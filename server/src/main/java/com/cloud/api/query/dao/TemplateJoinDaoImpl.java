@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.storage.ImageStore;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -301,10 +302,19 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         if (key != null) {
             // FR37 TODO check properties and network prerequisites and if details is one of those fill those instead of detail
             if (key.startsWith(ImageStore.OVF_PROPERTY_PREFIX)) {
-                OVFPropertyTO property = gson.fromJson(template.getDetailValue(), OVFPropertyTO.class);
-                templateResponse.addProperty(createTemplateOVFPropertyResponse(property));
+                try {
+                    OVFPropertyTO property = gson.fromJson(template.getDetailValue(), OVFPropertyTO.class);
+                    templateResponse.addProperty(createTemplateOVFPropertyResponse(property));
+                } catch (JsonSyntaxException e) {
+                    s_logger.warn(String.format("found an unexpected property for template '%s'; %s: %s",
+                            template.getUuid(), template.getDetailName(), template.getDetailValue()));
+                    templateResponse.addDetail(key, template.getDetailValue());
+                }
             } else if (key.startsWith(ImageStore.REQUIRED_NETWORK_PREFIX)) {
                 // FR37 TODO do similar as above
+                    s_logger.warn(String.format("not encoding network definition for template '%s'; %s: %s",
+                            template.getUuid(), template.getDetailName(), template.getDetailValue()));
+                    templateResponse.addDetail(key, template.getDetailValue());
 
             } else {
                 templateResponse.addDetail(key, template.getDetailValue());
