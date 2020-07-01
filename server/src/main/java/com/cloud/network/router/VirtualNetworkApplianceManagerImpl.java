@@ -1810,9 +1810,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             String isHttp = lbConfig.orElse(null);
             lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbHttpKeepalive.key()));
             String isHttpKeepalive = lbConfig.orElse(null);
-            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()));
 
             // Process lb.server values
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()));
             String serverMaxconn = lbConfig.orElse(null);
             lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMinConn.key()));
             String serverMinconn = lbConfig.orElse(null);

@@ -55,24 +55,37 @@ def checkDefaults(haproxyData, haCfgSections):
     return True
 
 def checkServerValues(haproxyData, serverSections):
+    correct = True
     serverArray = serverSections[0].split(" ")
 
-    if "maxconn" in serverArray and "server.maxconn" in haproxyData:
-        maxconnServer = serverArray[serverArray.index("maxconn") + 1]
-        if maxconnServer != haproxyData["server.maxconn"]:
-            return False
+    if "server.maxconn" in haproxyData:
+        if "maxconn" not in serverArray:
+            print("maxconn value is missing in line %s" % serverSections)
+            correct = False
+        else:
+            maxconnServer = serverArray[serverArray.index("maxconn") + 1]
+            if maxconnServer != haproxyData["server.maxconn"]:
+                correct = False
 
-    if "minconn" in serverArray and "server.minconn" in haproxyData:
-        minconnServer = serverArray[serverArray.index("minconn") + 1]
-        if minconnServer != haproxyData["server.minconn"]:
-            return False
+    if "server.minconn" in haproxyData:
+        if "minconn" not in serverArray:
+            print("minconn value is missing in line %s" % serverSections)
+            correct = False
+        else:
+            minconnServer = serverArray[serverArray.index("minconn") + 1]
+            if minconnServer != haproxyData["server.minconn"]:
+                correct = False
 
-    if "maxqueue" in serverArray and "server.maxqueue" in haproxyData:
-        maxqueueServer = serverArray[serverArray.index("maxqueue") + 1]
-        if maxqueueServer != haproxyData["server.maxqueue"]:
-            return False
+    if "server.maxqueue" in haproxyData:
+        if "maxqueue" not in serverArray:
+            print("maxqueue value is missing in line %s" % serverSections)
+            correct = False
+        else:
+            maxqueueServer = serverArray[serverArray.index("maxqueue") + 1]
+            if maxqueueServer != haproxyData["server.maxqueue"]:
+                correct = False
 
-    return True
+    return correct
 
 def checkLoadBalance(haproxyData, haCfgSections):
     correct = True
@@ -105,7 +118,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
 
         if cfgSection:
             if "server" in cfgSection:
-                correct = checkServerValues(haproxyData, cfgSection["server"])
+                correct = checkServerValues(lbSec, cfgSection["server"])
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
                     print "Incorrect balance method for " + secName + \
                           "Expected : " + lbSec["algorithm"] + \
