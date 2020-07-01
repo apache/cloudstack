@@ -79,7 +79,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.TAGS,
             type = CommandType.STRING,
-            description = "Comma-separated list of tags to be added to disk offering",
+            description = "comma-separated list of tags for the disk offering, tags should match with existing storage pool tags",
             since = "4.15")
     private String tags;
 

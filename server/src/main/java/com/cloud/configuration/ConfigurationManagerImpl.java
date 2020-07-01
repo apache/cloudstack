@@ -3211,7 +3211,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (tags != null){
             if(tags.isBlank()){
                 diskOffering.setTags(null);
-            }else {
+            } else {
                 diskOffering.setTags(tags);
             }
         }
