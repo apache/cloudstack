@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.to.NicTO;
@@ -41,6 +42,7 @@ import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -60,6 +62,12 @@ public interface VirtualMachineManager extends Manager {
 
     ConfigKey<Boolean> ResoureCountRunningVMsonly = new ConfigKey<Boolean>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
             "Count the resources of only running VMs in resource limitation.", true);
+
+    ConfigKey<Boolean> AllowExposeHypervisorHostnameAccountLevel = new ConfigKey<Boolean>("Advanced", Boolean.class, "account.allow.expose.host.hostname",
+            "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Account);
+
+    ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<Boolean>("Advanced", Boolean.class, "global.allow.expose.host.hostname",
+            "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Global);
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
@@ -213,6 +221,12 @@ public interface VirtualMachineManager extends Manager {
     void migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException;
 
     boolean getExecuteInSequence(HypervisorType hypervisorType);
+
+    static String getHypervisorHostname(String name) {
+        final Account caller = CallContext.current().getCallingAccount();
+        String destHostname = (AllowExposeHypervisorHostname.value() && AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? name : null;
+        return destHostname;
+    }
 
     /**
      * Unmanage a VM from CloudStack:

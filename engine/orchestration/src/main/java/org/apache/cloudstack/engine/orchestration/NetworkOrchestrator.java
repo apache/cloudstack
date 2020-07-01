@@ -143,6 +143,7 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.element.AggregatedCommandExecutor;
+import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.IpDeployer;
@@ -151,6 +152,7 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RedundantResource;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.guru.NetworkGuruAdditionalFunctions;
 import com.cloud.network.lb.LoadBalancingRulesManager;
@@ -1614,6 +1616,26 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    @Override
+    public void setHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest, boolean migrationSuccessful) throws ResourceUnavailableException {
+        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        for (final NicVO nic : nics) {
+            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+            final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                    _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+            for (final NetworkElement element : networkElements) {
+                if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) && element instanceof UserDataServiceProvider) {
+                        if (element instanceof ConfigDriveNetworkElement && !migrationSuccessful || element instanceof VirtualRouterElement && migrationSuccessful) {
+                            final UserDataServiceProvider sp = (UserDataServiceProvider) element;
+                            if (!sp.saveHypervisorHostname(profile, network, vm, dest)) {
+                                throw new CloudRuntimeException("Failed to Add hypervisor hostname");
+                            }
+                        }
+                }
+            }
+        }
+    }
 
     @DB
     protected void updateNic(final NicVO nic, final long networkId, final int count) {
@@ -1748,7 +1770,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 .stream()
                 .collect(Collectors.toMap(NicExtraDhcpOptionVO::getCode, NicExtraDhcpOptionVO::getValue));
     }
-
 
     @Override
     public void prepareNicForMigration(final VirtualMachineProfile vm, final DeployDestination dest) {

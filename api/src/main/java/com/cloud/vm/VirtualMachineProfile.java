@@ -38,6 +38,10 @@ public interface VirtualMachineProfile {
 
     void setVmData(List<String[]> vmData);
 
+    void setDisks(List<DiskTO> disks);
+
+    void setNics(List<NicProfile> nics);
+
     String getConfigDriveLabel();
 
     void setConfigDriveLabel(String configDriveLabel);
