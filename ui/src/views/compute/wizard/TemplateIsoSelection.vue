@@ -17,74 +17,29 @@
 
 <template>
   <div>
-    <span class="filter-group">
-      <a-input-search
-        class="search-input"
-        :placeholder="$t('label.search')"
-        v-model="filter"
-        @search="filterDataSource">
-        <a-popover
-          placement="bottomRight"
-          slot="addonAfter"
-          trigger="click"
-          v-model="visibleFilter">
-          <template slot="content">
-            <a-form
-              style="width: 170px"
-              :form="form"
-              layout="vertical"
-              @submit="handleSubmit">
-              <a-form-item :label="$t('label.filter')">
-                <a-select
-                  allowClear
-                  mode="multiple"
-                  v-decorator="['filter']">
-                  <a-select-option
-                    v-for="(opt) in filterOpts"
-                    :key="opt.id">{{ $t('label.' + opt.name) }}</a-select-option>
-                </a-select>
-              </a-form-item>
-              <div class="filter-group-button">
-                <a-button
-                  class="filter-group-button-clear"
-                  type="default"
-                  size="small"
-                  icon="stop"
-                  @click="onClear">Clear</a-button>
-                <a-button
-                  class="filter-group-button-search"
-                  type="primary"
-                  size="small"
-                  icon="search"
-                  @click="handleSubmit">Search</a-button>
-              </div>
-            </a-form>
-          </template>
-          <a-button
-            class="filter-group-button"
-            icon="filter"
-            size="small"/>
-        </a-popover>
-      </a-input-search>
-    </span>
+    <a-input-search
+      class="search-input"
+      :placeholder="$t('label.search')"
+      v-model="filter"
+      @search="filterDataSource">
+    </a-input-search>
     <a-spin :spinning="loading">
       <a-tabs
         :animated="false"
         :defaultActiveKey="Object.keys(dataSource)[0]"
+        v-model="filterType"
         tabPosition="top"
-        v-model="osType"
-        @change="changeOsName">
-        <a-tab-pane v-for="(osList, osName) in dataSource" :key="osName">
-          <span slot="tab">
-            <os-logo :os-name="osName"></os-logo>
-          </span>
+        @change="changeFilterType">
+        <a-tab-pane
+          v-for="filterItem in filterOpts"
+          :key="filterItem.id"
+          :tab="$t(filterItem.name)">
           <TemplateIsoRadioGroup
-            v-if="osType===osName"
-            :osType="osType"
-            :osList="dataSource[osName]"
+            v-if="filterType===filterItem.id"
+            :osList="dataSource[filterItem.id]"
+            :itemCount="itemCount[filterItem.id]"
             :input-decorator="inputDecorator"
             :selected="checkedValue"
-            :itemCount="itemCount[osName]"
             :preFillContent="preFillContent"
             @handle-filter-tag="filterDataSource"
             @emit-update-template-iso="updateTemplateIso"
@@ -96,15 +51,13 @@
 </template>
 
 <script>
-import OsLogo from '@/components/widgets/OsLogo'
 import { getNormalizedOsName } from '@/utils/icons'
-import _ from 'lodash'
 import TemplateIsoRadioGroup from '@views/compute/wizard/TemplateIsoRadioGroup'
 import store from '@/store'
 
 export default {
   name: 'TemplateIsoSelection',
-  components: { TemplateIsoRadioGroup, OsLogo },
+  components: { TemplateIsoRadioGroup },
   props: {
     items: {
       type: Array,
@@ -137,18 +90,20 @@ export default {
       visibleFilter: false,
       filterOpts: [{
         id: 'featured',
-        name: 'featured'
+        name: 'label.featured'
       }, {
         id: 'community',
-        name: 'community'
+        name: 'label.community'
       }, {
         id: 'selfexecutable',
-        name: 'selfexecutable'
+        name: 'label.my.templates'
       }, {
         id: 'sharedexecutable',
-        name: 'sharedexecutable'
+        name: 'label.sharedexecutable'
       }],
-      osType: ''
+      osType: '',
+      filterType: '',
+      oldInputDecorator: ''
     }
   },
   watch: {
@@ -160,10 +115,11 @@ export default {
         this.checkedValue = items[0].id
       }
       this.dataSource = this.mappingDataSource()
-      this.osType = Object.keys(this.dataSource)[0]
+      this.filterType = Object.keys(this.dataSource)[0]
     },
     inputDecorator (newValue, oldValue) {
       if (newValue !== oldValue) {
+        this.oldInputDecorator = this.inputDecorator
         this.filter = ''
       }
     }
@@ -173,24 +129,36 @@ export default {
   },
   methods: {
     mappingDataSource () {
-      let mappedItems = {}
-      const itemCount = {}
+      const mappedItems = {
+        featured: [],
+        community: [],
+        selfexecutable: [],
+        sharedexecutable: []
+      }
+      const itemCount = {
+        featured: 0,
+        community: 0,
+        selfexecutable: 0,
+        sharedexecutable: 0
+      }
       this.filteredItems.forEach((os) => {
-        const osName = getNormalizedOsName(os.ostypename)
-        if (Array.isArray(mappedItems[osName])) {
-          mappedItems[osName].push(os)
-          itemCount[osName] = itemCount[osName] + 1
+        os.osName = getNormalizedOsName(os.ostypename)
+        if (os.isPublic && os.isfeatured) {
+          mappedItems.community.push(os)
+          itemCount.community = itemCount.community + 1
+        } else if (os.isfeatured) {
+          mappedItems.featured.push(os)
+          itemCount.featured = itemCount.featured + 1
         } else {
-          mappedItems[osName] = [os]
-          itemCount[osName] = 1
+          const isSelf = !os.ispublic && (os.account === store.getters.userInfo.account)
+          if (isSelf) {
+            mappedItems.selfexecutable.push(os)
+            itemCount.selfexecutable = itemCount.selfexecutable + 1
+          } else {
+            mappedItems.sharedexecutable.push(os)
+            itemCount.sharedexecutable = itemCount.sharedexecutable + 1
+          }
         }
-      })
-      mappedItems = _.mapValues(mappedItems, (list) => {
-        let featuredItems = list.filter((item) => item.isfeatured)
-        let nonFeaturedItems = list.filter((item) => !item.isfeatured)
-        featuredItems = _.sortBy(featuredItems, (item) => item.displaytext.toLowerCase())
-        nonFeaturedItems = _.sortBy(nonFeaturedItems, (item) => item.displaytext.toLowerCase())
-        return featuredItems.concat(nonFeaturedItems) // pin featured isos/templates at the top
       })
       this.itemCount = itemCount
       return mappedItems
@@ -262,8 +230,8 @@ export default {
       this.filter = ''
       this.filterDataSource('')
     },
-    changeOsName (value) {
-      this.osType = value
+    changeFilterType (value) {
+      this.filterType = value
     }
   }
 }
@@ -287,52 +255,5 @@ export default {
 
   /deep/.ant-tabs-nav-scroll {
     min-height: 45px;
-  }
-
-  .filter-group {
-    /deep/.ant-input-affix-wrapper {
-      float: right;
-      width: calc(100% - 32px);
-
-      .ant-input {
-        border-radius: 4px;
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-      }
-    }
-
-    /deep/.ant-input-group-addon {
-      float: left;
-      width: 32px;
-      height: 32px;
-      border-radius: 4px;
-      border-right: 0;
-      border-left: 1px solid #d9d9d9;
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
-      padding: 0 0 0 1px;
-    }
-
-    &-button {
-      background: inherit;
-      border: 0;
-      padding: 0;
-    }
-
-    &-button {
-      position: relative;
-      display: block;
-      min-height: 30px;
-
-      &-clear {
-        position: absolute;
-        left: 0;
-      }
-
-      &-search {
-        position: absolute;
-        right: 0;
-      }
-    }
   }
 </style>

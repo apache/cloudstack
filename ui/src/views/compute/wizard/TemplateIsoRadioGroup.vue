@@ -33,26 +33,10 @@
             class="radio-group__radio"
             :value="os.id">
             {{ os.displaytext }}&nbsp;
-            <a-tag
-              :visible="os.ispublic && !os.isfeatured"
-              color="blue"
-              @click="onFilterTag('is: public')"
-            >{{ $t('label.ispublic') }}</a-tag>
-            <a-tag
-              :visible="os.isfeatured"
-              color="green"
-              @click="onFilterTag('is: featured')"
-            >{{ $t('label.isfeatured') }}</a-tag>
-            <a-tag
-              :visible="isSelf(os)"
-              color="orange"
-              @click="onFilterTag('is: self')"
-            >{{ $t('label.isself') }}</a-tag>
-            <a-tag
-              :visible="isShared(os)"
-              color="cyan"
-              @click="onFilterTag('is: shared')"
-            >{{ $t('label.isshared') }}</a-tag>
+            <os-logo
+              class="radio-group__os-logo"
+              :osId="os.ostypeid"
+              :os-name="os.osName" />
           </a-radio>
         </a-radio-group>
       </a-list-item>
@@ -74,10 +58,11 @@
 </template>
 
 <script>
-import store from '@/store'
+import OsLogo from '@/components/widgets/OsLogo'
 
 export default {
   name: 'TemplateIsoRadioGroup',
+  components: { OsLogo },
   props: {
     osList: {
       type: Array,
@@ -95,10 +80,6 @@ export default {
       type: Number,
       default: 0
     },
-    osType: {
-      type: String,
-      default: ''
-    },
     preFillContent: {
       type: Object,
       default: () => {}
@@ -112,20 +93,23 @@ export default {
     }
   },
   mounted () {
-    if (this.inputDecorator === 'templateid') {
-      this.value = !this.preFillContent.templateid ? this.selected : this.preFillContent.templateid
-    } else {
-      this.value = !this.preFillContent.isoid ? this.selected : this.preFillContent.isoid
+    this.onSelectTemplateIso()
+  },
+  watch: {
+    selected (newVal, oldVal) {
+      if (newVal === oldVal) return
+      this.onSelectTemplateIso()
     }
-
-    this.$emit('emit-update-template-iso', this.inputDecorator, this.value)
   },
   methods: {
-    isShared (item) {
-      return !item.ispublic && (item.account !== store.getters.userInfo.account)
-    },
-    isSelf (item) {
-      return !item.ispublic && (item.account === store.getters.userInfo.account)
+    onSelectTemplateIso () {
+      if (this.inputDecorator === 'templateid') {
+        this.value = !this.preFillContent.templateid ? this.selected : this.preFillContent.templateid
+      } else {
+        this.value = !this.preFillContent.isoid ? this.selected : this.preFillContent.isoid
+      }
+
+      this.$emit('emit-update-template-iso', this.inputDecorator, this.value)
     },
     updateSelectionTemplateIso (id) {
       this.$emit('emit-update-template-iso', this.inputDecorator, id)
@@ -139,9 +123,6 @@ export default {
       this.page = page
       this.pageSize = pageSize
       this.$forceUpdate()
-    },
-    onFilterTag (tag) {
-      this.$emit('handle-filter-tag', tag)
     }
   }
 }
@@ -151,13 +132,25 @@ export default {
   .radio-group {
     display: block;
 
+    /deep/.ant-radio {
+      width: 35px;
+    }
+
     &__radio {
       margin: 0.5rem 0;
-    }
-  }
 
-  .ant-tag {
-    margin-left: 0.4rem;
+      /deep/span:last-child {
+        display: inline-block;
+      }
+    }
+
+    &__os-logo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      margin-top: 2px;
+      margin-left: 23px;
+    }
   }
 
   /deep/.ant-spin-container {
