@@ -279,6 +279,7 @@ touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 
 # Package mysql-connector-python
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/ee/ff/48bde5c0f013094d729fe4b0316ba2a24774b3ff1c52d924a8a4cb04078a/six-1.15.0-py2.py3-none-any.whl
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/e9/93/4860cebd5ad3ff2664ad3c966490ccb46e3b88458b2095145bca11727ca4/setuptools-47.3.1-py3-none-any.whl
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/28/05/9867ef8eafd12265267bee138fa2c46ebf34a276ea4cbe184cba4c606e8b/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/d1/53/4cf90d2fe81b9cdb55dc180951bcec44ea8685665f1bdb1412501dc362dd/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
 
@@ -390,7 +391,7 @@ fi
 
 %post management
 # Install mysql-connector-python
-pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
+pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/setuptools-47.3.1-py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
 
 /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
 
@@ -478,7 +479,7 @@ if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
 fi
 
 %post marvin
-pip install --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-8.0.20.zip#md5=88588b3f96cd4b48a60edc49f423b8db
+pip install --upgrade https://files.pythonhosted.org/packages/ca/ea/1e2553b088bad2f9fa8120c2624f797b2d7450d3b61bb492d29c72e3d3c2/mysql_connector_python-8.0.20-cp27-cp27mu-manylinux1_x86_64.whl
 pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 #No default permission as the permission setup is complex
