@@ -481,7 +481,7 @@ if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
 fi
 
 %post marvin
-pip install --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df
+pip install --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-8.0.20.zip#md5=88588b3f96cd4b48a60edc49f423b8db
 pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 #No default permission as the permission setup is complex
