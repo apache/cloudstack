@@ -41,7 +41,7 @@ public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetH
         CPUStat cpuStat = libvirtComputingResource.getCPUStat();
         MemStat memStat = libvirtComputingResource.getMemStat();
         memStat.refresh();
-        
+
         final double cpuUtil = cpuStat.getCpuUsedPercent();
         final double loadAvg = cpuStat.getCpuLoadAverage();
 
