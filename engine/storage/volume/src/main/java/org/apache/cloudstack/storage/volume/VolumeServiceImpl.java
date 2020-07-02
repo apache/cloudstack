@@ -2108,4 +2108,21 @@ public class VolumeServiceImpl implements VolumeService {
 
         return volFactory.getVolume(volumeId);
     }
+
+    @DB
+    @Override
+    /**
+     * The volume must be marked as expunged on DB to exclude it from the storage cleanup task
+     */
+    public void unmanageVolume(long volumeId) {
+        VolumeInfo vol = volFactory.getVolume(volumeId);
+        if (vol != null) {
+            vol.stateTransit(Volume.Event.DestroyRequested);
+            snapshotMgr.deletePoliciesForVolume(volumeId);
+            vol.stateTransit(Volume.Event.OperationSucceeded);
+            vol.stateTransit(Volume.Event.ExpungingRequested);
+            vol.stateTransit(Volume.Event.OperationSucceeded);
+            volDao.remove(vol.getId());
+        }
+    }
 }

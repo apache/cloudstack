@@ -68,6 +68,8 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
@@ -177,23 +179,29 @@ public class CommandSetupHelper {
     private VlanDao _vlanDao;
     @Inject
     private IPAddressDao _ipAddressDao;
-
     @Inject
     private RouterControlHelper _routerControlHelper;
+    @Inject
+    private HostDao _hostDao;
 
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
 
     public void createVmDataCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final String publicKey, final Commands cmds) {
-        final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
-        final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
-        final IPAddressVO staticNatIp = _ipAddressDao.findByVmIdAndNetworkId(nic.getNetworkId(), vm.getId());
-        cmds.addCommand(
-                "vmdata",
-                generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,
-                        staticNatIp == null || staticNatIp.getState() != IpAddress.State.Allocated ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
-                        vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
+        if (vm != null && router != null && nic != null) {
+            final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
+            final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
+            final IPAddressVO staticNatIp = _ipAddressDao.findByVmIdAndNetworkId(nic.getNetworkId(), vm.getId());
+
+            Host host = _hostDao.findById(vm.getHostId());
+            String destHostname = VirtualMachineManager.getHypervisorHostname(host.getName());
+            cmds.addCommand(
+                    "vmdata",
+                    generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,
+                            staticNatIp == null || staticNatIp.getState() != IpAddress.State.Allocated ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
+                            vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId(), destHostname));
+        }
     }
 
     public void createApplyVpnUsersCommand(final List<? extends VpnUser> users, final VirtualRouter router, final Commands cmds) {
@@ -1038,7 +1046,7 @@ public class CommandSetupHelper {
 
     private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering,
             final String zoneName, final String publicIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey,
-            final long guestNetworkId) {
+            final long guestNetworkId, String hostname) {
         final VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkModel.getExecuteInSeqNtwkElmtCmd());
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
@@ -1084,6 +1092,7 @@ public class CommandSetupHelper {
         }
         cmd.addVmData("metadata", "cloud-identifier", cloudIdentifier);
 
+        cmd.addVmData("metadata", "hypervisor-host-name", hostname);
         return cmd;
     }
 

@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -39,13 +40,16 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -66,6 +70,7 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
@@ -110,11 +115,23 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Inject
     HostDao _hostDao;
     @Inject
+    HostPodDao _podDao;
+    @Inject
+    ClusterDao _clusterDao;
+    @Inject
     AgentManager agentManager;
     @Inject
     DataStoreManager _dataStoreMgr;
     @Inject
     EndPointSelector _ep;
+    @Inject
+    EntityManager _entityMgr;
+    @Inject
+    ServiceOfferingDao _offeringDao;
+    @Inject
+    ImageStoreDao imgstore;
+    @Inject
+    private HypervisorGuruManager _hvGuruMgr;
 
     private final static Integer CONFIGDRIVEDISKSEQ = 4;
 
@@ -204,8 +221,8 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         return (canHandle(network.getTrafficType())
-                && configureConfigDriveData(profile, nic))
-                && createConfigDriveIso(profile, dest);
+                && configureConfigDriveData(profile, nic, dest))
+                && createConfigDriveIso(profile, dest, null);
     }
 
     @Override
@@ -242,6 +259,19 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
 
         return canHandle;
+    }
+
+    @Override
+    public boolean saveHypervisorHostname(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+        if (vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
+            try {
+                recreateConfigDriveIso(nic, network, vm, dest);
+            } catch (ResourceUnavailableException e) {
+                LOG.error("Failed to add config disk drive due to: ", e);
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -323,6 +353,32 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     @Override
     public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
+    }
+
+    private void recreateConfigDriveIso(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+        if (nic.isDefaultNic() && _networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
+            DiskTO diskToUse = null;
+            for (DiskTO disk : vm.getDisks()) {
+                if (disk.getType() == Volume.Type.ISO && disk.getPath() != null && disk.getPath().contains("configdrive")) {
+                    diskToUse = disk;
+                    break;
+                }
+            }
+            final UserVmVO userVm = _userVmDao.findById(vm.getId());
+
+            if (userVm != null) {
+                final boolean isWindows = isWindows(userVm.getGuestOSId());
+                List<String[]> vmData = _networkModel.generateVmData(userVm.getUserData(), _serviceOfferingDao.findById(userVm.getServiceOfferingId()).getName(), userVm.getDataCenterId(), userVm.getInstanceName(), vm.getHostName(), vm.getId(),
+                        vm.getUuid(), nic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) vm.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, VirtualMachineManager.getHypervisorHostname(dest.getHost().getName()));
+                vm.setVmData(vmData);
+                vm.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
+                createConfigDriveIso(vm, dest, diskToUse);
+            }
+        }
+    }
+
+    private boolean isWindows(long guestOSId) {
+        return _guestOSCategoryDao.findById(_guestOSDao.findById(guestOSId).getCategoryId()).getName().equalsIgnoreCase("Windows");
     }
 
     private DataStore findDataStore(VirtualMachineProfile profile, DeployDestination dest) {
@@ -422,8 +478,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return agentId;
     }
 
-    private boolean createConfigDriveIso(VirtualMachineProfile profile, DeployDestination dest) throws ResourceUnavailableException {
-        final DataStore dataStore = findDataStore(profile, dest);
+    private boolean createConfigDriveIso(VirtualMachineProfile profile, DeployDestination dest, DiskTO disk) throws ResourceUnavailableException {
+        DataStore dataStore = getDatastoreForConfigDriveIso(disk, profile, dest);
+
         final Long agentId = findAgentId(profile, dest, dataStore);
         if (agentId == null || dataStore == null) {
             throw new ResourceUnavailableException("Config drive iso creation failed, agent or datastore not available",
@@ -444,6 +501,28 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
         addConfigDriveDisk(profile, dataStore);
         return true;
+    }
+
+    private DataStore getDatastoreForConfigDriveIso(DiskTO disk, VirtualMachineProfile profile, DeployDestination dest) {
+        DataStore dataStore = null;
+        if (disk != null) {
+            String dId = disk.getData().getDataStore().getUuid();
+            if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
+                dataStore = _dataStoreMgr.getDataStore(dId, DataStoreRole.Primary);
+            } else {
+                List<DataStore> dataStores = _dataStoreMgr.listImageStores();
+                String url = disk.getData().getDataStore().getUrl();
+                for(DataStore ds : dataStores) {
+                    if (url.equals(ds.getUri()) && DataStoreRole.Image.equals(ds.getRole())) {
+                        dataStore = ds;
+                        break;
+                    }
+                }
+            }
+        } else {
+            dataStore = findDataStore(profile, dest);
+        }
+        return dataStore;
     }
 
     private boolean deleteConfigDriveIso(final VirtualMachine vm) throws ResourceUnavailableException {
@@ -502,7 +581,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
     }
 
-    private boolean configureConfigDriveData(final VirtualMachineProfile profile, final NicProfile nic) {
+    private boolean configureConfigDriveData(final VirtualMachineProfile profile, final NicProfile nic, final DeployDestination dest) {
         final UserVmVO vm = _userVmDao.findById(profile.getId());
         if (vm.getType() != VirtualMachine.Type.User) {
             return false;
@@ -512,9 +591,15 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             final String sshPublicKey = getSshKey(profile);
             final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-
+            String hostname = _hostDao.findById(vm.getHostId()).getName();
+            String destHostname = null;
+            if (dest.getHost() == null ) {
+                destHostname = VirtualMachineManager.getHypervisorHostname(hostname);
+            } else {
+                destHostname = VirtualMachineManager.getHypervisorHostname(dest.getHost().getName());
+            }
             final List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
-                    vm.getUuid(), nic.getIPv4Address(), sshPublicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+                    vm.getUuid(), nic.getIPv4Address(), sshPublicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, destHostname);
             profile.setVmData(vmData);
             profile.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
         }

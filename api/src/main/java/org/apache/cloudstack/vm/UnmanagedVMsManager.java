@@ -17,13 +17,13 @@
 
 package org.apache.cloudstack.vm;
 
-import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
+import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
-public interface VmImportService {
-    ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd);
-    UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd);
+public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService, PluggableService, Configurable {
+
+    ConfigKey<Boolean> UnmanageVMPreserveNic = new ConfigKey<>("Advanced", Boolean.class, "unmanage.vm.preserve.nics", "false",
+            "If set to true, do not remove VM nics (and its MAC addresses) when unmanaging a VM, leaving them allocated but not reserved. " +
+                    "If set to false, nics are removed and MAC addresses can be reassigned", true, ConfigKey.Scope.Zone);
 }
