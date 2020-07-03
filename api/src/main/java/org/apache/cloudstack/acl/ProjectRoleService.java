@@ -20,6 +20,7 @@ package org.apache.cloudstack.acl;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.acl.project.CreateProjectRolePermissionCmd;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
 public interface ProjectRoleService {
     /**

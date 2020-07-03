@@ -33,6 +33,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
+
 import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)

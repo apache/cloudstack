@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.UnavailableCommandException;

@@ -23,9 +23,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.cloudstack.acl.Permission;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.RolePermissionVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;

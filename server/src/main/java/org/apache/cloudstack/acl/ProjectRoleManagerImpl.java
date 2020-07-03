@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.dao.ProjectRoleDao;
 import org.apache.cloudstack.acl.dao.ProjectRolePermissionsDao;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.api.command.admin.acl.project.CreateProjectRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.project.CreateProjectRolePermissionCmd;
 import org.apache.cloudstack.api.command.admin.acl.project.DeleteProjectRoleCmd;

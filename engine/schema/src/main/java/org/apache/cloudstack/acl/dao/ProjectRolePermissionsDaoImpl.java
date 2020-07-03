@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.cloudstack.acl.Permission;
 import org.apache.cloudstack.acl.ProjectRole;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.ProjectRolePermission;
 import org.apache.cloudstack.acl.ProjectRolePermissionVO;
 import org.apache.log4j.Logger;

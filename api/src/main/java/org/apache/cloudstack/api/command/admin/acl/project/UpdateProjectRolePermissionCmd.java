@@ -20,7 +20,7 @@ package org.apache.cloudstack.api.command.admin.acl.project;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.acl.Permission;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.ProjectRolePermission;
 import org.apache.cloudstack.acl.RoleType;

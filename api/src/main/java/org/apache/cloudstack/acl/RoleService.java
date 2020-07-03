@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
 public interface RoleService {
 

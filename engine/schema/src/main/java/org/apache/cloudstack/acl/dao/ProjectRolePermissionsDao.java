@@ -19,10 +19,10 @@ package org.apache.cloudstack.acl.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.acl.Permission;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.ProjectRolePermission;
 import org.apache.cloudstack.acl.ProjectRolePermissionVO;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
 import com.cloud.utils.db.GenericDao;
 

@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.command.admin.acl.ListRolePermissionsCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListRolesCmd;
 import org.apache.cloudstack.api.command.admin.acl.UpdateRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.UpdateRolePermissionCmd;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -414,7 +415,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    public RolePermission.Permission getRolePermission(String permission) {
+    public Permission getRolePermission(String permission) {
         if (Strings.isNullOrEmpty(permission)) {
             return null;
         }

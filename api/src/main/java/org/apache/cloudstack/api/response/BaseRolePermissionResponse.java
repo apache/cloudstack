@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.api.response;
 
-import org.apache.cloudstack.acl.Permission;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
