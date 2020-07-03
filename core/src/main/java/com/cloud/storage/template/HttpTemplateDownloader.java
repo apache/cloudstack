@@ -220,7 +220,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         } catch (IOException ioe) {
             status = TemplateDownloader.Status.UNRECOVERABLE_ERROR; //probably a file write error?
             // Let's not overwrite the original error message.
-            if (errorString == null){
+            if (errorString == null) {
                 errorString = ioe.getMessage();
             }
         } finally {
