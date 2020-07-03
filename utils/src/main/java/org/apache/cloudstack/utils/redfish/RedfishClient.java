@@ -43,6 +43,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
@@ -149,36 +150,15 @@ public class RedfishClient {
     protected HttpResponse executeGetRequest(String url) {
         URIBuilder builder = null;
         HttpGet httpReq = null;
-
         try {
             builder = new URIBuilder(url);
-            httpReq = new HttpGet(builder.build());;
-            httpReq.addHeader(ACCEPT, APPLICATION_JSON);
-            String encoding = basicAuth(username, password);
-            httpReq.addHeader("Authorization", encoding);
+            httpReq = new HttpGet(builder.build());
         } catch (URISyntaxException e) {
             throw new RedfishException(String.format("Failed to create URI for GET request [URL: %s] due to exception.", url), e);
         }
 
-        HttpClient client = null;
-        if (ignoreSsl) {
-            try {
-                client = ignoreSSLCertValidator();
-            } catch (NoSuchAlgorithmException | KeyManagementException e) {
-                throw new RedfishException(String.format("Failed to handle SSL Cert validator on GET request [URL: %s] due to exception.", url), e);
-            }
-        } else {
-            client = HttpClientBuilder.create().build();
-        }
-        try {
-            return client.execute(httpReq);
-        } catch (IOException e) {
-            throw new RedfishException(String.format("Failed to execute GET request [URL: %s] due to exception.", url), e);
-        }
-    }
-
-    private static String basicAuth(String username, String password) {
-        return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        prepareHttpRequestBasicAuth(httpReq);
+        return executeHttpRequest(url, httpReq);
     }
 
     /**
@@ -189,15 +169,36 @@ public class RedfishClient {
         try {
             URIBuilder builder = new URIBuilder(url);
             httpReq = new HttpPost(builder.build());
-            httpReq.addHeader(ACCEPT, APPLICATION_JSON);
             httpReq.addHeader(HTTP.CONTENT_TYPE, APPLICATION_JSON);
-            String encoding = basicAuth(username, password);
-            httpReq.addHeader("Authorization", encoding);
             httpReq.setEntity(new StringEntity(jsonToSend.toString()));
         } catch (URISyntaxException | UnsupportedEncodingException e) {
             throw new RedfishException(String.format("Failed to create URI for POST request [URL: %s] due to exception.", url), e);
         }
 
+        prepareHttpRequestBasicAuth(httpReq);
+        return executeHttpRequest(url, httpReq);
+    }
+
+    /**
+     * Prepare http request to accept JSON and basic authentication
+     */
+    private void prepareHttpRequestBasicAuth(HttpRequestBase httpReq) {
+        httpReq.addHeader(ACCEPT, APPLICATION_JSON);
+        String encoding = basicAuth(username, password);
+        httpReq.addHeader("Authorization", encoding);
+    }
+
+    /**
+     * Encodes 'username:password' into 64-base encoded String
+     */
+    private static String basicAuth(String username, String password) {
+        return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+    }
+
+    /**
+     * Executes Http request according to URL and HttpRequestBase (e.g. HttpGet, HttpPost)
+     */
+    private HttpResponse executeHttpRequest(String url, HttpRequestBase httpReq) {
         HttpClient client = null;
         if (ignoreSsl) {
             try {
