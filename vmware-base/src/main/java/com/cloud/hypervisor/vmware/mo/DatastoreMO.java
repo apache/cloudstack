@@ -279,47 +279,6 @@ public class DatastoreMO extends BaseMO {
         return false;
     }
 
-    public String[] getVmdkFileChain(String rootVmdkDatastoreFullPath) throws Exception {
-        Pair<DatacenterMO, String> dcPair = getOwnerDatacenter();
-
-        List<String> files = new ArrayList<>();
-        files.add(rootVmdkDatastoreFullPath);
-
-        String currentVmdkFullPath = rootVmdkDatastoreFullPath;
-        while (true) {
-            String url = getContext().composeDatastoreBrowseUrl(dcPair.second(), currentVmdkFullPath);
-            byte[] content = getContext().getResourceContent(url);
-            if (content == null || content.length == 0)
-                break;
-
-            VmdkFileDescriptor descriptor = new VmdkFileDescriptor();
-            descriptor.parse(content);
-
-            String parentFileName = descriptor.getParentFileName();
-            if (parentFileName == null)
-                break;
-
-            if (parentFileName.startsWith("/")) {
-                // when parent file is not at the same directory as it is, assume it is at parent directory
-                // this is only valid in Apache CloudStack primary storage deployment
-                DatastoreFile dsFile = new DatastoreFile(currentVmdkFullPath);
-                String dir = dsFile.getDir();
-                if (dir != null && dir.lastIndexOf('/') > 0)
-                    dir = dir.substring(0, dir.lastIndexOf('/'));
-                else
-                    dir = "";
-
-                currentVmdkFullPath = new DatastoreFile(dsFile.getDatastoreName(), dir, parentFileName.substring(parentFileName.lastIndexOf('/') + 1)).getPath();
-                files.add(currentVmdkFullPath);
-            } else {
-                currentVmdkFullPath = DatastoreFile.getCompanionDatastorePath(currentVmdkFullPath, parentFileName);
-                files.add(currentVmdkFullPath);
-            }
-        }
-
-        return files.toArray(new String[0]);
-    }
-
     @Deprecated
     public String[] listDirContent(String path) throws Exception {
         String fullPath = path;

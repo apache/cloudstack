@@ -665,9 +665,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     VirtualMachineMO vmMo = vmInfo.first();
                     vmMo.unregisterVm();
 
-                    String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, managedStoragePoolRootVolumeName,
+                    String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairManagedDatastorePath(dsMo, managedStoragePoolRootVolumeName,
                             managedStoragePoolRootVolumeName, VmwareStorageLayoutType.VMWARE, false);
-                    String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null,
+                    String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairManagedDatastorePath(dsMo, null,
                             managedStoragePoolRootVolumeName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
 
                     dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
