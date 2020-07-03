@@ -1789,11 +1789,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     () -> Long.toString(Long.parseLong(globalMaxConnFinal) / 4));
             loadBalancingData.append(",global.maxpipes=").append(globalMaxPipesFinal);
             lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutConnect.key()));
-            loadBalancingData.append(",default.timeout.connect=").append(lbConfig.isPresent() ? lbConfig.get() : 5000);
+            loadBalancingData.append(",default.timeout.connect=").append(lbConfig.orElse(LoadBalancerConfigKey.LbTimeoutConnect.defaultValue()));
             lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutServer.key()));
-            loadBalancingData.append(",default.timeout.server=").append(lbConfig.isPresent() ? lbConfig.get() : 50000);
+            loadBalancingData.append(",default.timeout.server=").append(lbConfig.orElse(LoadBalancerConfigKey.LbTimeoutServer.defaultValue()));
             lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutClient.key()));
-            loadBalancingData.append(",default.timeout.client=").append(lbConfig.isPresent() ? lbConfig.get() : 50000);
+            loadBalancingData.append(",default.timeout.client=").append(lbConfig.orElse(LoadBalancerConfigKey.LbTimeoutClient.defaultValue()));
             loadBalancingData.append(";");
         }
         for (FirewallRuleVO firewallRuleVO : loadBalancerVOs) {
@@ -1810,6 +1810,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             String isHttp = lbConfig.orElse(null);
             lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbHttpKeepalive.key()));
             String isHttpKeepalive = lbConfig.orElse(null);
+
+            // process lb values
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbMaxConn.key()));
+            String lbMaxConn = lbConfig.orElse(null);
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbFullConn.key()));
+            String lbFullConn = lbConfig.orElse(null);
 
             // Process lb.server values
             lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()));
@@ -1855,6 +1861,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
                 if (isTransparent != null) {
                     loadBalancingData.append(",transparent=").append(isTransparent);
+                }
+                if (lbMaxConn != null) {
+                    loadBalancingData.append(",lb.maxconn=").append(lbMaxConn);
+                }
+                if (lbFullConn != null) {
+                    loadBalancingData.append(",lb.fullconn=").append(lbFullConn);
                 }
                 if (serverMaxconn != null) {
                     loadBalancingData.append(",server.maxconn=").append(serverMaxconn);

@@ -54,6 +54,38 @@ def checkDefaults(haproxyData, haCfgSections):
 
     return True
 
+def checkLbValues(lbSection, cfgSection):
+    correct = True
+    if "lb.maxconn" in lbSection:
+        if "maxconn" not in cfgSection:
+            print("maxconn value is missing in %s" % cfgSection)
+            correct = False
+        else:
+            if cfgSection["maxconn"][0] != lbSection["lb.maxconn"]:
+                print("maxconn value in %s doesnt match with %s" % (lbSection, cfgSection))
+                correct = False
+
+    if "lb.fullconn" in lbSection:
+        if "fullconn" not in cfgSection:
+            print("fullconn value missing in %s" % cfgSection)
+            correct = False
+        else:
+            if cfgSection["fullconn"][0] != lbSection["lb.fullconn"]:
+                print("fullconn value in %s doesnt match with %s" % (lbSection, cfgSection))
+
+    if "http" in lbSection:
+        if "mode" not in cfgSection:
+            print("mode http is enabled but not configured in haproxy rule %s" % cfgSection)
+            correct = False
+        else:
+            print("cfgsection mode is %s" % cfgSection["mode"][0])
+            print("lbsection mode is %s" % lbSection["http"])
+            if lbSection["http"] == 'true' and cfgSection["mode"][0] != 'http':
+                print("http mode value mismatch in rule %s" % cfgSection)
+                correct = False
+
+    return correct
+
 def checkServerValues(haproxyData, serverSections):
     correct = True
     serverArray = serverSections[0].split(" ")
@@ -117,8 +149,9 @@ def checkLoadBalance(haproxyData, haCfgSections):
             cfgSection = haCfgSections[secName]
 
         if cfgSection:
+            correct = correct and checkLbValues(lbSec, cfgSection)
             if "server" in cfgSection:
-                correct = checkServerValues(lbSec, cfgSection["server"])
+                correct = correct and checkServerValues(lbSec, cfgSection["server"])
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
                     print "Incorrect balance method for " + secName + \
                           "Expected : " + lbSec["algorithm"] + \
