@@ -327,6 +327,7 @@ public class ApiConstants {
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
+    public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SIZE = "size";
@@ -353,6 +354,7 @@ public class ApiConstants {
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
+    public static final String TEMPLATE_NAME = "templatename";
     public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
@@ -479,6 +481,7 @@ public class ApiConstants {
     public static final String ROLE_NAME = "rolename";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
+    public static final String RULES = "rules";
     public static final String RULE_ID = "ruleid";
     public static final String PROJECT_ROLE_PERMISSION_ID = "projectrolepermissionid";
     public static final String RULE_ORDER = "ruleorder";
@@ -604,8 +607,10 @@ public class ApiConstants {
     public static final String END_POINT = "endpoint";
     public static final String REGION_ID = "regionid";
     public static final String VPC_OFF_ID = "vpcofferingid";
+    public static final String VPC_OFF_NAME = "vpcofferingname";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
+    public static final String VPC_NAME = "vpcname";
     public static final String GATEWAY_ID = "gatewayid";
     public static final String CAN_USE_FOR_DEPLOY = "canusefordeploy";
     public static final String RESOURCE_IDS = "resourceids";

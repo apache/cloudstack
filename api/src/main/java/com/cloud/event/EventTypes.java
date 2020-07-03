@@ -184,6 +184,7 @@ public class EventTypes {
     public static final String EVENT_ROLE_CREATE = "ROLE.CREATE";
     public static final String EVENT_ROLE_UPDATE = "ROLE.UPDATE";
     public static final String EVENT_ROLE_DELETE = "ROLE.DELETE";
+    public static final String EVENT_ROLE_IMPORT = "ROLE.IMPORT";
     public static final String EVENT_ROLE_PERMISSION_CREATE = "ROLE.PERMISSION.CREATE";
     public static final String EVENT_ROLE_PERMISSION_UPDATE = "ROLE.PERMISSION.UPDATE";
     public static final String EVENT_ROLE_PERMISSION_DELETE = "ROLE.PERMISSION.DELETE";
@@ -502,6 +503,7 @@ public class EventTypes {
     public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "BACKUP.RESTORE.VOLUME.TO.VM";
     public static final String EVENT_VM_BACKUP_SCHEDULE_CONFIGURE = "BACKUP.SCHEDULE.CONFIGURE";
     public static final String EVENT_VM_BACKUP_SCHEDULE_DELETE = "BACKUP.SCHEDULE.DELETE";
+    public static final String EVENT_VM_BACKUP_USAGE_METRIC = "BACKUP.USAGE.METRIC";
 
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
@@ -698,6 +700,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROLE_CREATE, Role.class);
         entityEventDetails.put(EVENT_ROLE_UPDATE, Role.class);
         entityEventDetails.put(EVENT_ROLE_DELETE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_IMPORT, Role.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_CREATE, RolePermission.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_UPDATE, RolePermission.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_DELETE, RolePermission.class);

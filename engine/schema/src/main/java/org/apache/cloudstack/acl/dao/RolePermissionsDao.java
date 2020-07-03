@@ -57,4 +57,12 @@ public interface RolePermissionsDao extends GenericDao<RolePermissionVO, Long> {
      * @return returns list of role permissions
      */
     List<RolePermissionVO> findAllByRoleIdSorted(Long roleId);
+
+    /**
+     * Returns role permission for a given role and rule
+     * @param roleId the ID of the role
+     * @param roleId rule for the role
+     * @return returns role permission
+     */
+    RolePermissionVO findByRoleIdAndRule(Long roleId, String rule);
 }

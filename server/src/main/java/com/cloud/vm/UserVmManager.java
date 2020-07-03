@@ -33,7 +33,6 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.user.Account;
@@ -117,10 +116,6 @@ public interface UserVmManager extends UserVmService {
     //the validateCustomParameters, save and remove CustomOfferingDetils functions can be removed from the interface once we can
     //find a common place for all the scaling and upgrading code of both user and systemvms.
     void validateCustomParameters(ServiceOfferingVO serviceOffering, Map<String, String> customParameters);
-
-    public void saveCustomOfferingDetails(long vmId, ServiceOffering serviceOffering);
-
-    public void removeCustomOfferingDetails(long vmId);
 
     void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType);
 

@@ -43,4 +43,5 @@ public interface ApiServerService {
 
     public Class<?> getCmdClass(String cmdName);
 
+    public boolean isValidApiName(String apiName);
 }

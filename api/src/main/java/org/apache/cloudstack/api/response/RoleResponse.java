@@ -32,10 +32,17 @@ public class RoleResponse extends BaseRoleResponse {
     @Param(description = "the type of the role")
     private String roleType;
 
+    @SerializedName(ApiConstants.IS_DEFAULT)
+    @Param(description = "true if role is default, false otherwise")
+    private Boolean isDefault;
+
     public void setRoleType(RoleType roleType) {
         if (roleType != null) {
             this.roleType = roleType.name();
         }
     }
 
+    public void setIsDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
+    }
 }

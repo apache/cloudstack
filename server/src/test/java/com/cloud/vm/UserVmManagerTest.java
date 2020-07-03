@@ -574,7 +574,7 @@ public class UserVmManagerTest {
         doReturn(VirtualMachine.State.Stopped).when(_vmInstance).getState();
         when(_vmDao.findById(anyLong())).thenReturn(null);
 
-        doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), anyLong());
+        doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), so1, so2);
 
         //when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
 
@@ -621,9 +621,9 @@ public class UserVmManagerTest {
 
         //when(ApiDBUtils.getCpuOverprovisioningFactor()).thenReturn(3f);
         when(_capacityMgr.checkIfHostHasCapacity(anyLong(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean())).thenReturn(false);
-        when(_itMgr.reConfigureVm(_vmInstance.getUuid(), so1, false)).thenReturn(_vmInstance);
+        when(_itMgr.reConfigureVm(_vmInstance.getUuid(), so2, so1, new HashMap<String, String>(), false)).thenReturn(_vmInstance);
 
-        doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), anyLong());
+        doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), so1, so2);
 
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
 
