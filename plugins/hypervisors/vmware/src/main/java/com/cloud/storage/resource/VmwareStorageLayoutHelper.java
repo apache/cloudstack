@@ -51,12 +51,45 @@ public class VmwareStorageLayoutHelper {
                 return filePair;
 
             case CLOUDSTACK_LEGACY:
-                filePair[0] = getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkName + ".vmdk");
+                filePair[0] = getDatastorePathBaseFolderFromVmdkFileName(dsMo, vmdkName + ".vmdk");
 
                 if (linkedVmdk)
-                    filePair[1] = getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkName + "-delta.vmdk");
+                    filePair[1] = getDatastorePathBaseFolderFromVmdkFileName(dsMo, vmdkName + "-delta.vmdk");
                 else
-                    filePair[1] = getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkName + "-flat.vmdk");
+                    filePair[1] = getDatastorePathBaseFolderFromVmdkFileName(dsMo, vmdkName + "-flat.vmdk");
+                return filePair;
+
+            default:
+                assert (false);
+                break;
+        }
+
+        assert (false);
+        return null;
+    }
+
+    public static String[] getVmdkFilePairManagedDatastorePath(DatastoreMO dsMo, String vmName, String vmdkName, VmwareStorageLayoutType layoutType, boolean linkedVmdk)
+            throws Exception {
+
+        String[] filePair = new String[2];
+        switch (layoutType) {
+            case VMWARE:
+                assert (vmName != null && !vmName.isEmpty());
+                filePair[0] = getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, vmdkName + ".vmdk");
+
+                if (linkedVmdk)
+                    filePair[1] = getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, vmdkName + "-delta.vmdk");
+                else
+                    filePair[1] = getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, vmdkName + "-flat.vmdk");
+                return filePair;
+
+            case CLOUDSTACK_LEGACY:
+                filePair[0] = getDeprecatedLegacyDatastorePathFromVmdkFileName(dsMo, vmdkName + ".vmdk");
+
+                if (linkedVmdk)
+                    filePair[1] = getDeprecatedLegacyDatastorePathFromVmdkFileName(dsMo, vmdkName + "-delta.vmdk");
+                else
+                    filePair[1] = getDeprecatedLegacyDatastorePathFromVmdkFileName(dsMo, vmdkName + "-flat.vmdk");
                 return filePair;
 
             default:
@@ -161,7 +194,7 @@ public class VmwareStorageLayoutHelper {
         DatastoreFile srcDsFile = new DatastoreFile(fileDsFullPath);
         String companionFilePath = srcDsFile.getCompanionPath(vmdkName + "-flat.vmdk");
         if (ds.fileExists(companionFilePath)) {
-            String targetPath = getLegacyDatastorePathFromVmdkFileName(ds, vmdkName + "-flat.vmdk");
+            String targetPath = getDatastorePathBaseFolderFromVmdkFileName(ds, vmdkName + "-flat.vmdk");
 
             s_logger.info("Fixup folder-synchronization. move " + companionFilePath + " -> " + targetPath);
             ds.moveDatastoreFile(companionFilePath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
@@ -169,14 +202,14 @@ public class VmwareStorageLayoutHelper {
 
         companionFilePath = srcDsFile.getCompanionPath(vmdkName + "-delta.vmdk");
         if (ds.fileExists(companionFilePath)) {
-            String targetPath = getLegacyDatastorePathFromVmdkFileName(ds, vmdkName + "-delta.vmdk");
+            String targetPath = getDatastorePathBaseFolderFromVmdkFileName(ds, vmdkName + "-delta.vmdk");
 
             s_logger.info("Fixup folder-synchronization. move " + companionFilePath + " -> " + targetPath);
             ds.moveDatastoreFile(companionFilePath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
         }
 
         // move the identity VMDK file the last
-        String targetPath = getLegacyDatastorePathFromVmdkFileName(ds, vmdkName + ".vmdk");
+        String targetPath = getDatastorePathBaseFolderFromVmdkFileName(ds, vmdkName + ".vmdk");
         s_logger.info("Fixup folder-synchronization. move " + fileDsFullPath + " -> " + targetPath);
         ds.moveDatastoreFile(fileDsFullPath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
 
@@ -310,15 +343,18 @@ public class VmwareStorageLayoutHelper {
         }
     }
 
+    //This method call is for the volumes which actually exists
     public static String getLegacyDatastorePathFromVmdkFileName(DatastoreMO dsMo, String vmdkFileName) throws Exception {
         String vmdkDatastorePath = String.format("[%s] %s/%s", dsMo.getName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, vmdkFileName);
-        if (!dsMo.fileExists(vmdkDatastorePath)) {
-            vmdkDatastorePath = String.format("[%s] %s/%s", dsMo.getName(), HypervisorHostHelper.VSPHERE_FCD_DEFAULT_FOLDER, vmdkFileName);
-        }
         if (!dsMo.fileExists(vmdkDatastorePath)) {
             vmdkDatastorePath = getDeprecatedLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
         }
         return vmdkDatastorePath;
+    }
+
+    //This method call is for the volumes to be created or can also be for volumes already exists
+    public static String getDatastorePathBaseFolderFromVmdkFileName(DatastoreMO dsMo, String vmdkFileName) throws Exception {
+        return String.format("[%s] %s/%s", dsMo.getName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, vmdkFileName);
     }
 
     public static String getDeprecatedLegacyDatastorePathFromVmdkFileName(DatastoreMO dsMo, String vmdkFileName) throws Exception {

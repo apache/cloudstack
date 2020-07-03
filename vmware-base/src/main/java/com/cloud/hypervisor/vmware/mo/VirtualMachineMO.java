@@ -36,6 +36,7 @@ import java.util.concurrent.Future;
 
 import com.vmware.vim25.VStorageObject;
 import com.vmware.vim25.VStorageObjectConfigInfo;
+import com.vmware.vim25.VirtualMachineRelocateTransformation;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
