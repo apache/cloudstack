@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.cloudstack.acl.ProjectRole;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -33,7 +34,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = ListProjectRolesCmd.APINAME, description = "Lists Project roles in CloudStack", responseObject = ProjectRoleResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.15.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.15.0", authorized = {
+        RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListProjectRolesCmd extends BaseCmd {
     public static final String APINAME = "listProjectRoles";
 

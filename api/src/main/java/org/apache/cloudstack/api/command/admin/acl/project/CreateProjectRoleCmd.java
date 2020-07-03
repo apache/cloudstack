@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.admin.acl.project;
 
 import org.apache.cloudstack.acl.ProjectRole;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,7 +33,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = CreateProjectRoleCmd.APINAME, description = "Creates a Project role", responseObject = ProjectRoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.15.0")
+        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User}, since = "4.15.0")
 public class CreateProjectRoleCmd extends ProjectRoleCmd {
     public static final String APINAME = "createProjectRole";
 

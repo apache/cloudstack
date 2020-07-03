@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.cloudstack.acl.Permission;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.ProjectRolePermission;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,8 +39,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.EnumUtils;
 
 @APICommand(name = UpdateProjectRolePermissionCmd.APINAME, description = "Updates a project role permission and/or order", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.15.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
+        RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.15.0")
 public class UpdateProjectRolePermissionCmd extends BaseCmd {
     public static final String APINAME = "updateProjectRolePermission";
 
@@ -59,12 +60,12 @@ public class UpdateProjectRolePermissionCmd extends BaseCmd {
             description = "The parent role permission uuid, use 0 to move this rule at the top of the list")
     private List<Long> projectRulePermissionOrder;
 
-    @Parameter(name = ApiConstants.PROJECT_RULE_ID, type = CommandType.UUID, entityType = ProjectRolePermissionResponse.class,
-            description = "Project Role permission rule id", since="4.11")
+    @Parameter(name = ApiConstants.PROJECT_ROLE_PERMISSION_ID, type = CommandType.UUID, entityType = ProjectRolePermissionResponse.class,
+            description = "Project Role permission rule id")
     private Long projectRuleId;
 
     @Parameter(name = ApiConstants.PERMISSION, type = CommandType.STRING,
-            description = "Rule permission, can be: allow or deny", since="4.11")
+            description = "Rule permission, can be: allow or deny")
     private String projectRolePermission;
 
     /////////////////////////////////////////////////////

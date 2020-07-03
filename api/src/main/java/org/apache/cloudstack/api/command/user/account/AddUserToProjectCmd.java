@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.api.command.user.account;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.ProjectAccount;
 
 @APICommand(name = AddUserToProjectCmd.APINAME, description = "Adds user to a project", responseObject = SuccessResponse.class, since = "4.14",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class AddUserToProjectCmd extends BaseAsyncCmd {
     public static final String APINAME = "addUserToProject";
 

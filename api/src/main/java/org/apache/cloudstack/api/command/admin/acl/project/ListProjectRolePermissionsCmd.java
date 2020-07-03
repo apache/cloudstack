@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.ProjectRolePermission;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,8 +36,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = ListProjectRolePermissionsCmd.APINAME, description = "Lists a project's project role permissions", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.15.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
+        RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.15.0")
 public class ListProjectRolePermissionsCmd extends BaseCmd {
     public static final String APINAME = "listProjectRolePermissions";
 

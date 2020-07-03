@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.acl.project;
 
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.ProjectRolePermission;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,8 +33,8 @@ import org.apache.cloudstack.api.response.ProjectRoleResponse;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = CreateProjectRolePermissionCmd.APINAME, description = "Adds API permissions to a project role", responseObject = ProjectRolePermissionResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.15.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
+        RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.15.0")
 public class CreateProjectRolePermissionCmd extends BaseRolePermissionCmd {
     public static final String APINAME = "createProjectRolePermission";
 

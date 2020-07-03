@@ -24,6 +24,7 @@ import org.apache.cloudstack.acl.ProjectRoleVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.google.common.base.Strings;
 
 public class ProjectRoleDaoImpl extends GenericDaoBase<ProjectRoleVO, Long>  implements ProjectRoleDao{
     private final SearchBuilder<ProjectRoleVO>  ProjectRoleSearch;
@@ -40,7 +41,9 @@ public class ProjectRoleDaoImpl extends GenericDaoBase<ProjectRoleVO, Long>  imp
     @Override
     public List<ProjectRoleVO> findByName(String name, Long projectId) {
         SearchCriteria<ProjectRoleVO> sc = ProjectRoleSearch.create();
-        sc.setParameters("name", "%" + name + "%");
+        if (!Strings.isNullOrEmpty(name)) {
+            sc.setParameters("name", "%" + name + "%");
+        }
         if (projectId != null) {
             sc.setParameters("project_id", projectId);
         }

@@ -31,10 +31,9 @@ import org.apache.cloudstack.api.response.ProjectRoleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-
 @APICommand(name = DeleteProjectRoleCmd.APINAME, description = "Delete Project roles in CloudStack", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.15.0", authorized = {
-        RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin})
+        RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteProjectRoleCmd extends BaseCmd {
     public static final String APINAME = "deleteProjectRole" ;
 
