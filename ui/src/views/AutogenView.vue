@@ -28,7 +28,7 @@
                 shape="round"
                 size="small"
                 icon="reload"
-                @click="fetchData()">
+                @click="fetchData({ listall: true, irefresh: true })">
                 {{ $t('label.refresh') }}
               </a-button>
               <a-switch
@@ -80,7 +80,7 @@
     </a-card>
 
     <div v-show="showAction">
-      <keep-alive v-if="currentAction.component">
+      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0)">
         <a-modal
           :visible="showAction"
           :closable="true"
@@ -448,11 +448,17 @@ export default {
       }
 
       if (this.$route && this.$route.params && this.$route.params.id) {
-        this.resource = {}
         this.dataView = true
-        this.$emit('change-resource', this.resource)
+        if (!('irefresh' in params)) {
+          this.resource = {}
+          this.$emit('change-resource', this.resource)
+        }
       } else {
         this.dataView = false
+      }
+
+      if ('irefresh' in params) {
+        delete params.irefresh
       }
 
       if ('listview' in this.$refs && this.$refs.listview) {

@@ -17,7 +17,7 @@
 
 <template>
   <div class="form-layout">
-    <p v-html="$t('message.action.destroy.instance')" />
+    <a-alert type="warning" v-html="$t('message.action.destroy.instance')" /><br/>
     <a-spin :spinning="loading">
       <a-form
         :form="form"
