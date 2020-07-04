@@ -398,17 +398,12 @@ export default {
           label: 'label.action.destroy.instance',
           message: 'message.action.destroy.instance',
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
-          args: ['expunge', 'volumeids'],
-          mapping: {
-            volumeids: {
-              api: 'listVolumes',
-              params: (record) => { return { virtualmachineid: record.id, type: 'DATADISK' } }
-            }
-          },
           dataView: true,
           groupAction: true,
+          popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x, expunge: true } }) },
-          show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) }
+          show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) },
+          component: () => import('@/views/compute/DestoryVM.vue')
         }
       ]
     },
