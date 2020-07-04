@@ -40,7 +40,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd{
+public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(UpdatePodManagementNetworkIpRangeCmd.class);
 
@@ -117,7 +117,7 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd{
 
     @Override
     public String getEventDescription() {
-        return "Updating pod management IP range " + getNewStartIP() + "-" + getNewEndIP()+ " of Pod: " + getPodId();
+        return "Updating pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getPodId();
     }
     @Override
     public String getCommandName() {
