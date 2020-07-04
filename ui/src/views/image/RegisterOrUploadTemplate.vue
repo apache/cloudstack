@@ -324,13 +324,13 @@
                 </a-row>
                 <a-row>
                   <a-col :span="12">
-                    <a-checkbox value="isrouting">
-                      {{ $t('label.isrouting') }}
+                    <a-checkbox value="ispublic">
+                      {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
                   <a-col :span="12">
-                    <a-checkbox value="ispublic">
-                      {{ $t('label.ispublic') }}
+                    <a-checkbox value="isfeatured">
+                      {{ $t('label.isfeatured') }}
                     </a-checkbox>
                   </a-col>
                 </a-row>
@@ -340,9 +340,9 @@
                       {{ $t('label.requireshvm') }}
                     </a-checkbox>
                   </a-col>
-                  <a-col :span="12">
-                    <a-checkbox value="isfeatured">
-                      {{ $t('label.isfeatured') }}
+                  <a-col :span="12" v-if="$store.getters.userInfo.roletype === 'Admin'">
+                    <a-checkbox value="isrouting">
+                      {{ $t('label.isrouting') }}
                     </a-checkbox>
                   </a-col>
                 </a-row>

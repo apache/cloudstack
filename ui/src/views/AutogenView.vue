@@ -345,7 +345,8 @@ export default {
       parentStartLoading: this.startLoading,
       parentFinishLoading: this.finishLoading,
       parentChangeResource: this.changeResource,
-      parentPollActionCompletion: this.pollActionCompletion
+      parentPollActionCompletion: this.pollActionCompletion,
+      parentEditTariffAction: () => {}
     }
   },
   data () {
@@ -688,7 +689,7 @@ export default {
         }
       }
       this.actionLoading = false
-      if (action.dataView && ['copy', 'edit'].includes(action.icon)) {
+      if (action.dataView && ['copy', 'edit', 'share-alt'].includes(action.icon)) {
         this.fillEditFormFieldValues()
       }
     },

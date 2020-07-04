@@ -203,12 +203,15 @@ export default {
     })
   },
   created () {
-    this.zones = [
-      {
-        id: '-1',
-        name: this.$t('label.all.zone')
-      }
-    ]
+    this.zones = []
+    if (this.$store.getters.userInfo.roletype === 'Admin') {
+      this.zones = [
+        {
+          id: '-1',
+          name: this.$t('label.all.zone')
+        }
+      ]
+    }
   },
   mounted () {
     this.fetchData()
@@ -335,7 +338,7 @@ export default {
           api('registerIso', params).then(json => {
             this.$emit('refresh-data')
             this.$notification.success({
-              message: 'label.action.register.iso',
+              message: this.$t('label.action.register.iso'),
               description: 'Sucessfully registered ISO ' + params.name
             })
           }).catch(error => {
