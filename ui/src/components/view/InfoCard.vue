@@ -30,7 +30,7 @@
             </div>
             <slot name="name">
               <h4 class="name">
-                {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || resource.virtualmachinename }}
+                {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || resource.virtualmachinename || resource.templatetype }}
               </h4>
               <console style="margin-left: 10px" :resource="resource" size="default" v-if="resource.id" />
             </slot>

@@ -28,7 +28,39 @@ export default {
       icon: 'bars',
       permission: ['quotaSummary'],
       columns: ['account', 'domain', 'state', 'currency', 'balance', 'quota'],
-      details: ['account', 'domain', 'state', 'currency', 'balance', 'quota', 'startdate', 'enddate']
+      details: ['account', 'domain', 'state', 'currency', 'balance', 'quota', 'startdate', 'enddate'],
+      component: () => import('@/views/plugins/quota/QuotaSummary.vue'),
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'quota.statement.quota',
+          component: () => import('@/views/plugins/quota/QuotaUsage.vue')
+        },
+        {
+          name: 'quota.statement.balance',
+          component: () => import('@/views/plugins/quota/QuotaBalance.vue')
+        }
+      ],
+      actions: [
+        {
+          api: 'quotaCredits',
+          icon: 'plus',
+          label: 'label.quota.add.credits',
+          dataView: true,
+          args: ['value', 'min_balance', 'quota_enforce'],
+          mapping: {
+            account: {
+              value: (record) => { return record.account }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          }
+        }
+      ]
     },
     {
       name: 'quotatariff',
@@ -36,8 +68,9 @@ export default {
       icon: 'credit-card',
       docHelp: 'plugins/quota.html#quota-tariff',
       permission: ['quotaTariffList'],
-      columns: ['usageName', 'description', 'usageUnit', 'tariffValue'],
-      details: ['usageName', 'description', 'usageUnit', 'tariffValue']
+      columns: ['usageName', 'description', 'usageUnit', 'tariffValue', 'tariffActions'],
+      details: ['usageName', 'description', 'usageUnit', 'tariffValue'],
+      component: () => import('@/views/plugins/quota/QuotaTariff.vue')
     },
     {
       name: 'quotaemailtemplate',
@@ -45,7 +78,11 @@ export default {
       icon: 'mail',
       permission: ['quotaEmailTemplateList'],
       columns: ['templatetype', 'templatesubject', 'templatebody'],
-      details: ['templatetype', 'templatesubject', 'templatebody']
+      details: ['templatetype', 'templatesubject', 'templatebody'],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/views/plugins/quota/EmailTemplateDetails.vue')
+      }]
     }
   ]
 }

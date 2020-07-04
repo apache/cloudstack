@@ -21,7 +21,7 @@
     :loading="loading"
     :columns="fetchColumns()"
     :dataSource="items"
-    :rowKey="record => record.id || record.name"
+    :rowKey="record => record.id || record.name || record.usageType"
     :pagination="false"
     :rowSelection="['vm', 'event', 'alert'].includes($route.name) ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
@@ -75,6 +75,9 @@
         </span>
       </div>
     </span>
+    <a slot="templatetype" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: $route.path + '/' + record.templatetype }">{{ text }}</router-link>
+    </a>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
@@ -147,11 +150,14 @@
       <router-link :to="{ path: '/pod/' + record.podid }">{{ text }}</router-link>
     </a>
     <a slot="account" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: '/account/' + record.accountid }" v-if="record.accountid">{{ text }}</router-link>
+      <router-link
+        v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`) !== '404'"
+        :to="{ path: `${$route.path}/${record.account}`, query: { account: record.account, domainid: record.domainid, quota: true } }">{{ text }}</router-link>
+      <router-link :to="{ path: '/account/' + record.accountid }" v-else-if="record.accountid">{{ text }}</router-link>
       <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else>{{ text }}</router-link>
     </a>
     <span slot="domain" slot-scope="text, record" href="javascript:;">
-      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).route.name !== '404'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
+      <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $router.resolve('/domain/' + record.domainid).route.name !== '404'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
     <span slot="domainpath" slot-scope="text, record" href="javascript:;">
@@ -235,6 +241,15 @@
         <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
       </a-button>
     </template>
+    <template slot="tariffActions" slot-scope="text, record">
+      <a-button
+        shape="circle"
+        v-if="editableValueKey !== record.key"
+        :disabled="!('quotaTariffUpdate' in $store.getters.apis)"
+        icon="edit"
+        @click="editTariffValue(record)" />
+      <slot></slot>
+    </template>
   </a-table>
 </template>
 
@@ -267,7 +282,7 @@ export default {
       default: false
     }
   },
-  inject: ['parentFetchData', 'parentToggleLoading'],
+  inject: ['parentFetchData', 'parentToggleLoading', 'parentEditTariffAction'],
   data () {
     return {
       selectedRowKeys: [],
@@ -329,10 +344,9 @@ export default {
       }).catch(error => {
         console.error(error)
         this.$message.error('There was an error saving this setting.')
+      }).finally(() => {
+        this.$emit('refresh')
       })
-        .finally(() => {
-          this.$emit('refresh')
-        })
     },
     editValue (record) {
       this.editableValueKey = record.key
@@ -428,6 +442,9 @@ export default {
       data.forEach((item, index) => {
         this.handleUpdateOrder(item.id, index + 1)
       })
+    },
+    editTariffValue (record) {
+      this.parentEditTariffAction(true, record)
     }
   }
 }
