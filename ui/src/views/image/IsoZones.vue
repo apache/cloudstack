@@ -175,6 +175,11 @@ export default {
         scopedSlots: { customRender: 'action' }
       }
     ]
+    const userInfo = this.$store.getters.userInfo
+    if (!['Admin'].includes(userInfo.roletype) &&
+      (userInfo.account !== this.resource.account || userInfo.domain !== this.resource.domain)) {
+      this.columns = this.columns.filter(col => { return col.dataIndex !== 'status' })
+    }
   },
   mounted () {
     this.fetchData()

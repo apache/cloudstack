@@ -33,7 +33,7 @@ export default {
       resourceType: 'Template',
       filters: ['self', 'shared', 'featured', 'community'],
       columns: () => {
-        var fields = ['name', 'ostypename', 'status', 'hypervisor', 'account', 'domain']
+        var fields = ['name', 'ostypename', 'hypervisor', 'account', 'domain']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('order')
         }
