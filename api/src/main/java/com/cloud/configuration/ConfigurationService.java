@@ -210,7 +210,6 @@ public interface ConfigurationService {
      * @throws com.cloud.exception.ConcurrentOperationException
      * @return Success
      */
-
     void updatePodIpRange(UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException;
 
     /**
