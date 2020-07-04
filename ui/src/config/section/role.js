@@ -36,12 +36,16 @@ export default {
       icon: 'plus',
       label: 'label.add.role',
       listView: true,
-      args: ['name', 'description', 'type'],
-      mapping: {
-        type: {
-          options: ['Admin', 'DomainAdmin', 'User']
-        }
-      }
+      popup: true,
+      component: () => import('@/views/iam/CreateRole.vue')
+    },
+    {
+      api: 'importRole',
+      icon: 'cloud-upload',
+      label: 'label.import.role',
+      listView: true,
+      popup: true,
+      component: () => import('@/views/iam/ImportRole.vue')
     },
     {
       api: 'updateRole',

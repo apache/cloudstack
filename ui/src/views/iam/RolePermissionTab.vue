@@ -18,6 +18,11 @@
 <template>
   <a-icon v-if="loadingTable" type="loading" class="main-loading-spinner"></a-icon>
   <div v-else>
+    <div style="width: 100%; display: flex; margin-bottom: 10px">
+      <a-button type="dashed" @click="exportRolePermissions" style="width: 100%" icon="download">
+        Export Rules
+      </a-button>
+    </div>
     <div v-if="updateTable" class="loading-overlay">
       <a-icon type="loading" />
     </div>
@@ -166,7 +171,7 @@ export default {
       api('listRolePermissions', { roleid: this.resource.id }).then(response => {
         this.rules = response.listrolepermissionsresponse.rolepermission
       }).catch(error => {
-        console.error(error)
+        this.$notifyError(error)
       }).finally(() => {
         this.loadingTable = false
         this.updateTable = false
@@ -178,7 +183,7 @@ export default {
         roleid: this.resource.id,
         ruleorder: this.rules.map(rule => rule.id)
       }).catch(error => {
-        console.error(error)
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchData()
       })
@@ -186,7 +191,7 @@ export default {
     onRuleDelete (key) {
       this.updateTable = true
       api('deleteRolePermission', { id: key }).catch(error => {
-        console.error(error)
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchData()
       })
@@ -204,7 +209,7 @@ export default {
       }).then(() => {
         this.fetchData()
       }).catch(error => {
-        console.error(error)
+        this.$notifyError(error)
       })
     },
     onRuleSelect (value) {
@@ -224,11 +229,44 @@ export default {
         roleid: this.resource.id
       }).then(() => {
       }).catch(error => {
-        console.error(error)
+        this.$notifyError(error)
       }).finally(() => {
         this.resetNewFields()
         this.fetchData()
       })
+    },
+    rulesDataToCsv ({ data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
+      if (data === null || !data.length) {
+        return null
+      }
+
+      const keys = ['rule', 'permission', 'description']
+      let result = ''
+      result += keys.join(columnDelimiter)
+      result += lineDelimiter
+
+      data.forEach(item => {
+        keys.forEach(key => {
+          if (item[key] === undefined) {
+            item[key] = ''
+          }
+          result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          result += columnDelimiter
+        })
+        result = result.slice(0, -1)
+        result += lineDelimiter
+      })
+
+      return result
+    },
+    exportRolePermissions () {
+      const rulesCsvData = this.rulesDataToCsv({ data: this.rules })
+      const hiddenElement = document.createElement('a')
+      hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(rulesCsvData)
+      hiddenElement.target = '_blank'
+      hiddenElement.download = this.resource.name + '_' + this.resource.type + '.csv'
+      hiddenElement.click()
+      hiddenElement.delete()
     }
   }
 }
