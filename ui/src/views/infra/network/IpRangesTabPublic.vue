@@ -18,6 +18,7 @@
 <template>
   <a-spin :spinning="componentLoading">
     <a-button
+      :disabled="!('createVlanIpRange' in this.$store.getters.apis)"
       type="dashed"
       icon="plus"
       style="margin-bottom: 20px; width: 100%"
@@ -43,7 +44,8 @@
             <a-button
               icon="user-add"
               shape="circle"
-              @click="() => handleOpenAddAccountModal(record)"></a-button>
+              @click="() => handleOpenAddAccountModal(record)"
+              :disabled="!('dedicatePublicIpRange' in $store.getters.apis)"></a-button>
           </a-popover>
           <a-popover
             v-else
@@ -53,11 +55,17 @@
               icon="user-delete"
               shape="circle"
               type="danger"
-              @click="() => handleRemoveAccount(record.id)"></a-button>
+              @click="() => handleRemoveAccount(record.id)"
+              :disabled="!('releasePublicIpRange' in $store.getters.apis)"></a-button>
           </a-popover>
           <a-popover placement="bottom">
             <template slot="content">{{ $t('label.remove.ip.range') }}</template>
-            <a-button icon="delete" shape="circle" type="danger" @click="handleDeleteIpRange(record.id)"></a-button>
+            <a-button
+              icon="delete"
+              shape="circle"
+              type="danger"
+              @click="handleDeleteIpRange(record.id)"
+              :disabled="!('deleteVlanIpRange' in $store.getters.apis)"></a-button>
           </a-popover>
         </div>
       </template>

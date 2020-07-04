@@ -71,6 +71,7 @@
       <draggable
         v-model="rules"
         @change="changeOrder"
+        :disabled="!('updateRolePermission' in this.$store.getters.apis)"
         handle=".drag-handle"
         animation="200"
         ghostClass="drag-ghost">
