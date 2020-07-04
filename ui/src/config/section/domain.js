@@ -46,6 +46,11 @@ export default {
       component: () => import('@/components/view/ResourceLimitTab.vue')
     },
     {
+      name: 'resourcecount',
+      show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
+      component: () => import('@/components/view/ResourceCountUsage.vue')
+    },
+    {
       name: 'settings',
       component: () => import('@/components/view/SettingsTab.vue'),
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
