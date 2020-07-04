@@ -117,7 +117,7 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd{
 
     @Override
     public String getEventDescription() {
-        return "Updating pod management IP range " + getNewStartIP()+"-"+getNewEndIP()+ " of Pod: " + getPodId();
+        return "Updating pod management IP range " + getNewStartIP() + "-" + getNewEndIP()+ " of Pod: " + getPodId();
     }
     @Override
     public String getCommandName() {
@@ -143,7 +143,7 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd{
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (Exception e) {
-            s_logger.warn("Failed to update pod management IP range " + getNewStartIP()+"-"+getNewEndIP()+ " of Pod: " + getPodId(), e);
+            s_logger.warn("Failed to update pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getPodId(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
