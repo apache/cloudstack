@@ -23,6 +23,7 @@ export default {
   permission: ['listProjects'],
   resourceType: 'Project',
   columns: ['name', 'state', 'displaytext', 'account', 'domain'],
+  searchFilters: ['name', 'displaytext', 'domainid', 'account'],
   details: ['name', 'id', 'displaytext', 'projectaccountname', 'account', 'domain'],
   tabs: [
     {

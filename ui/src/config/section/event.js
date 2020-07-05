@@ -23,6 +23,7 @@ export default {
   permission: ['listEvents'],
   columns: ['username', 'description', 'state', 'level', 'type', 'account', 'domain', 'created'],
   details: ['username', 'id', 'description', 'state', 'level', 'type', 'account', 'domain', 'created'],
+  searchFilters: ['level', 'domainid', 'account', 'keyword'],
   related: [{
     name: 'event',
     title: 'label.event.timeline',

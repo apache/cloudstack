@@ -68,13 +68,11 @@
             :dataView="dataView"
             :resource="resource"
             @exec-action="execAction"/>
-          <a-input-search
+          <search-view
             v-if="!dataView"
-            style="width: 100%; display: table-cell"
-            :placeholder="$t('label.search')"
-            v-model="searchQuery"
-            allowClear
-            @search="onSearch" />
+            :searchFilters="searchFilters"
+            :selectedFilters="paramsFilters"
+            :apiName="apiName"/>
         </a-col>
       </a-row>
     </a-card>
@@ -304,7 +302,7 @@
         :current="page"
         :pageSize="pageSize"
         :total="itemCount"
-        :showTotal="total => `Showing ${1+((page-1)*pageSize)}-${Math.min(page*pageSize, total)} of ${total} items`"
+        :showTotal="total => `Showing ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} of ${total} items`"
         :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '500'] : ['10', '20', '50', '100', '500']"
         @change="changePage"
         @showSizeChange="changePageSize"
@@ -326,6 +324,7 @@ import Status from '@/components/widgets/Status'
 import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
+import SearchView from '@/components/view/SearchView'
 
 export default {
   name: 'Resource',
@@ -335,7 +334,8 @@ export default {
     ResourceView,
     ListView,
     Status,
-    ActionButton
+    ActionButton,
+    SearchView
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -344,6 +344,9 @@ export default {
       parentToggleLoading: this.toggleLoading,
       parentStartLoading: this.startLoading,
       parentFinishLoading: this.finishLoading,
+      parentSearch: this.onSearch,
+      parentChangeFilter: this.changeFilter,
+      parentFilter: this.onFilter,
       parentChangeResource: this.changeResource,
       parentPollActionCompletion: this.pollActionCompletion,
       parentEditTariffAction: () => {}
@@ -367,6 +370,8 @@ export default {
       dataView: false,
       selectedFilter: '',
       filters: [],
+      searchFilters: [],
+      paramsFilters: {},
       actions: [],
       formModel: {},
       confirmDirty: false
@@ -397,6 +402,7 @@ export default {
     '$route' (to, from) {
       if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
         this.searchQuery = ''
+        this.paramsFilters = {}
         this.page = 1
         this.itemCount = 0
         this.selectedFilter = ''
@@ -449,6 +455,11 @@ export default {
       } else if (this.$route.meta.params) {
         Object.assign(params, this.$route.meta.params)
       }
+      if (Object.keys(this.paramsFilters).length > 0) {
+        Object.assign(params, this.paramsFilters)
+      }
+
+      this.searchFilters = this.$route && this.$route.meta && this.$route.meta.searchFilters
 
       if (this.$route && this.$route.params && this.$route.params.id) {
         this.dataView = true
@@ -616,6 +627,16 @@ export default {
           this.$emit('change-resource', this.resource)
         }
       }).catch(error => {
+        if (Object.keys(this.paramsFilters).length > 0) {
+          this.itemCount = 0
+          this.items = []
+          this.$message.error({
+            content: error.response.headers['x-description'],
+            duration: 5
+          })
+          return
+        }
+
         this.$notifyError(error)
 
         if ([401, 405].includes(error.response.status)) {
@@ -634,7 +655,16 @@ export default {
       })
     },
     onSearch (value) {
+      this.paramsFilters = {}
       this.searchQuery = value
+      this.page = 1
+      this.fetchData()
+    },
+    onFilter (filters) {
+      this.paramsFilters = {}
+      if (filters && Object.keys(filters).length > 0) {
+        this.paramsFilters = filters
+      }
       this.page = 1
       this.fetchData()
     },

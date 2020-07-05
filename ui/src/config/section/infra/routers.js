@@ -23,6 +23,7 @@ export default {
   permission: ['listRouters'],
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
+  searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
   details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
   tabs: [{
     name: 'details',

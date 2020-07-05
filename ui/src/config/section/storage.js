@@ -64,6 +64,7 @@ export default {
         title: 'label.snapshots',
         param: 'volumeid'
       }],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'state', 'tags'],
       actions: [
         {
           api: 'createVolume',
@@ -231,6 +232,7 @@ export default {
       resourceType: 'Snapshot',
       columns: ['name', 'state', 'volumename', 'intervaltype', 'created', 'account'],
       details: ['name', 'id', 'volumename', 'intervaltype', 'account', 'domain', 'created'],
+      searchFilters: ['name', 'domainid', 'account', 'tags'],
       actions: [
         {
           api: 'createTemplate',
@@ -283,6 +285,7 @@ export default {
       resourceType: 'VMSnapshot',
       columns: ['displayname', 'state', 'type', 'current', 'parentName', 'created', 'account'],
       details: ['name', 'id', 'displayname', 'description', 'type', 'current', 'parentName', 'virtualmachineid', 'account', 'domain', 'created'],
+      searchFilters: ['name', 'domainid', 'account', 'tags'],
       actions: [
         {
           api: 'revertToVMSnapshot',

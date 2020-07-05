@@ -21,7 +21,6 @@ import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 
 export const pollJobPlugin = {
-
   install (Vue) {
     Vue.prototype.$pollJob = function (options) {
       /**
@@ -111,7 +110,6 @@ export const pollJobPlugin = {
 }
 
 export const notifierPlugin = {
-
   install (Vue) {
     Vue.prototype.$notifyError = function (error) {
       console.log(error)

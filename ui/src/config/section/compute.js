@@ -61,6 +61,7 @@ export default {
         }
         return fields
       },
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
       related: [{
         name: 'vmsnapshot',

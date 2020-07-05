@@ -40,6 +40,7 @@ export default {
         return fields
       },
       details: ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'crosszones', 'type', 'account', 'domain', 'created'],
+      searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -130,6 +131,7 @@ export default {
       filters: ['self', 'shared', 'featured', 'community'],
       columns: ['name', 'ostypename', 'account', 'domain'],
       details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created'],
+      searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',
         title: 'label.instances',

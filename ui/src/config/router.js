@@ -42,7 +42,7 @@ function generateRouterMap (section) {
     name: section.name,
     path: '/' + section.name,
     hidden: section.hidden,
-    meta: { title: section.title, icon: section.icon, docHelp: section.docHelp },
+    meta: { title: section.title, icon: section.icon, docHelp: section.docHelp, searchFilters: section.searchFilters },
     component: RouteView
   }
 
@@ -67,6 +67,7 @@ function generateRouterMap (section) {
           params: child.params ? child.params : {},
           columns: child.columns,
           details: child.details,
+          searchFilters: child.searchFilters,
           related: child.related,
           actions: child.actions,
           tabs: child.tabs
@@ -86,6 +87,7 @@ function generateRouterMap (section) {
               resourceType: child.resourceType,
               params: child.params ? child.params : {},
               details: child.details,
+              searchFilters: child.searchFilters,
               related: child.related,
               tabs: child.tabs,
               actions: child.actions ? child.actions : []
@@ -142,6 +144,7 @@ function generateRouterMap (section) {
         params: section.params ? section.params : {},
         details: section.details,
         related: section.related,
+        searchFilters: section.searchFilters,
         tabs: section.tabs,
         actions: section.actions ? section.actions : []
       },
