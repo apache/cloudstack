@@ -1496,7 +1496,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         verifyIpRangeParameters(newStartIP,newEndIP);
         checkIpRangeContainsTakenAddresses(pod,currentStartIP,currentEndIP,newStartIP,newEndIP);
 
-        String vlan = verifyPodIpRangeExists(existingPodIpRanges,currentStartIP,currentEndIP,newStartIP,newEndIP);
+        String vlan = verifyPodIpRangeExists(podId,existingPodIpRanges,currentStartIP,currentEndIP,newStartIP,newEndIP);
 
         List<Long> currentIpRange = listAllIPsWithintheRange(currentStartIP,currentEndIP);
         List<Long> newIpRange = listAllIPsWithintheRange(newStartIP,newEndIP);
@@ -1521,7 +1521,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private String verifyPodIpRangeExists(String[] existingPodIpRanges, String currentStartIP,
+    private String verifyPodIpRangeExists(long podId,String[] existingPodIpRanges, String currentStartIP,
             String currentEndIP, String newStartIP, String newEndIP) {
         boolean foundRange = false;
         String vlan = null;
