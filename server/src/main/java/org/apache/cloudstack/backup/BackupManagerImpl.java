@@ -769,6 +769,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        if (!BackupFrameworkEnabled.value()) {
+            boolean featureEnabled = false;
+            for (final DataCenter dataCenter : dataCenterDao.listAllZones()) {
+                if (BackupFrameworkEnabled.valueIn(dataCenter.getId())) {
+                    featureEnabled = true;
+                    break;
+                }
+            }
+            if (!featureEnabled) {
+                return cmdList;
+            }
+        }
+
         // Offerings
         cmdList.add(ListBackupProvidersCmd.class);
         cmdList.add(ListBackupProviderOfferingsCmd.class);
