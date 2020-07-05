@@ -304,8 +304,8 @@
         :current="page"
         :pageSize="pageSize"
         :total="itemCount"
-        :showTotal="total => `Total ${total} items`"
-        :pageSizeOptions="['10', '20', '40', '80', '100', '500']"
+        :showTotal="total => `Showing ${1+((page-1)*pageSize)}-${Math.min(page*pageSize, total)} of ${total} items`"
+        :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '500'] : ['10', '20', '50', '100', '500']"
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger
@@ -376,6 +376,9 @@ export default {
     this.form = this.$form.createForm(this)
   },
   mounted () {
+    if (this.device === 'desktop') {
+      this.pageSize = 20
+    }
     this.currentPath = this.$route.fullPath
     this.fetchData()
     if ('projectid' in this.$route.query) {

@@ -503,7 +503,7 @@
 "label.character": "Character",
 "label.chassis": "Chassis",
 "label.checksum": "Checksum",
-"label.cidr": "Super CIDR for Guest Networks",
+"label.cidr": "CIDR",
 "label.cidr.account": "CIDR or Account/Security Group",
 "label.cidr.destination.network": "Destination Network CIDR",
 "label.cidr.of.destination.network": "CIDR of destination network",
