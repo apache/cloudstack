@@ -38,7 +38,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     ConfigKey<Boolean> BackupFrameworkEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "backup.framework.enabled",
             "false",
-            "Is backup and recovery framework enabled. Restart management server on global value change.", false, ConfigKey.Scope.Zone);
+            "Is backup and recovery framework enabled.", false, ConfigKey.Scope.Zone);
 
     ConfigKey<String> BackupProviderPlugin = new ConfigKey<>("Advanced", String.class,
             "backup.framework.provider.plugin",
