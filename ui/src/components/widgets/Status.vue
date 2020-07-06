@@ -38,7 +38,37 @@ export default {
   methods: {
     getText () {
       if (this.displayText && this.text) {
-        return this.text.charAt(0).toUpperCase() + this.text.slice(1)
+        var state = this.text
+        switch (state) {
+          case 'Running':
+            state = this.$t('state.running')
+            break
+          case 'Stopped':
+            state = this.$t('state.stopped')
+            break
+          case 'Starting':
+            state = this.$t('state.starting')
+            break
+          case 'Stopping':
+            state = this.$t('state.stopping')
+            break
+          case 'Suspended':
+            state = this.$t('state.suspended')
+            break
+          case 'Pending':
+            state = this.$t('state.pending')
+            break
+          case 'Migrating':
+            state = this.$t('state.migrating')
+            break
+          case 'Expunging':
+            state = this.$t('state.expunging')
+            break
+          case 'Error':
+            state = this.$t('state.error')
+            break
+        }
+        return state.charAt(0).toUpperCase() + state.slice(1)
       }
       return ''
     },
