@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.EntityReference;
 
 
 @EntityReference(value = VsphereStoragePolicy.class)
-public class ImportVsphereStoragePoliciesResponse extends BaseResponse {
+public class VsphereStoragePoliciesResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the Storage Policy")
