@@ -1444,9 +1444,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         List<VsphereStoragePolicyVO> allStoragePolicies = vsphereStoragePolicyDao.listAll();
         List<PbmProfile> finalStorageProfiles = storageProfiles;
         List<VsphereStoragePolicyVO> needToMarkRemoved = allStoragePolicies.stream()
-                .filter(existingPolicy -> finalStorageProfiles.stream()
-                    .anyMatch(storageProfile -> !storageProfile.getProfileId().equals(existingPolicy.getPolicyId())))
+                .filter(existingPolicy -> !finalStorageProfiles.stream()
+                    .anyMatch(storageProfile -> storageProfile.getProfileId().getUniqueId().equals(existingPolicy.getPolicyId())))
                 .collect(Collectors.toList());
+
+        for (VsphereStoragePolicyVO storagePolicy : needToMarkRemoved) {
+            vsphereStoragePolicyDao.remove(storagePolicy.getId());
+        }
 
         List<VsphereStoragePolicyVO> storagePolicies = vsphereStoragePolicyDao.listAll();
         return storagePolicies;
