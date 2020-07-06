@@ -34,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -1439,6 +1440,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 vsphereStoragePolicyDao.update(storagePolicyVO.getId(), storagePolicyVO);
             }
         }
+
+        List<VsphereStoragePolicyVO> allStoragePolicies = vsphereStoragePolicyDao.listAll();
+        List<PbmProfile> finalStorageProfiles = storageProfiles;
+        List<VsphereStoragePolicyVO> needToMarkRemoved = allStoragePolicies.stream()
+                .filter(existingPolicy -> finalStorageProfiles.stream()
+                    .anyMatch(storageProfile -> !storageProfile.getProfileId().equals(existingPolicy.getPolicyId())))
+                .collect(Collectors.toList());
 
         List<VsphereStoragePolicyVO> storagePolicies = vsphereStoragePolicyDao.listAll();
         return storagePolicies;
