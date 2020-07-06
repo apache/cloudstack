@@ -85,6 +85,8 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        if self.hypervisor.lower() != 'simulator':
+            raise self.skipTest("Skipping test cases which must only run for Simulator")
         self.cleanup = []
 
     def tearDown(self):
