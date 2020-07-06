@@ -31,7 +31,7 @@ public class QuotaSummaryResponse extends BaseResponse {
 
     @SerializedName("accountid")
     @Param(description = "account id")
-    private Long accountId;
+    private String accountId;
 
     @SerializedName("account")
     @Param(description = "account name")
@@ -39,7 +39,7 @@ public class QuotaSummaryResponse extends BaseResponse {
 
     @SerializedName("domainid")
     @Param(description = "domain id")
-    private Long domainId;
+    private String domainId;
 
     @SerializedName("domain")
     @Param(description = "domain name")
@@ -73,11 +73,11 @@ public class QuotaSummaryResponse extends BaseResponse {
         super();
     }
 
-    public Long getAccountId() {
+    public String getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(Long accountId) {
+    public void setAccountId(String accountId) {
         this.accountId = accountId;
     }
 
@@ -89,11 +89,11 @@ public class QuotaSummaryResponse extends BaseResponse {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
+    public String getDomainId() {
         return domainId;
     }
 
-    public void setDomainId(Long domainId) {
+    public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 
