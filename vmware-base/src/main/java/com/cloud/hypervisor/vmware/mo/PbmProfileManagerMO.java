@@ -62,7 +62,7 @@ public class PbmProfileManagerMO extends BaseMO {
         List<PbmProfile> profiles = _context.getPbmService().pbmRetrieveContent(_mor, profileIds);
 
         List<PbmProfile> requirementCategoryProfiles = profiles.stream()
-                .filter(x -> ((PbmCapabilityProfile)x).getProfileCategory().equals(PbmProfileCategoryEnum.REQUIREMENT))
+                .filter(x -> ((PbmCapabilityProfile)x).getProfileCategory().equals(PbmProfileCategoryEnum.REQUIREMENT.toString()))
                 .collect(Collectors.toList());
         return requirementCategoryProfiles;
     }
