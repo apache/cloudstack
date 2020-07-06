@@ -23,6 +23,8 @@ import com.cloud.utils.db.SearchCriteria;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class VsphereStoragePolicyDaoImpl extends GenericDaoBase<VsphereStoragePolicyVO, Long> implements VsphereStoragePolicyDao {
 
@@ -50,5 +52,13 @@ public class VsphereStoragePolicyDaoImpl extends GenericDaoBase<VsphereStoragePo
         sc.setParameters("zoneId", zoneId);
         sc.setParameters("policyId", policyId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<VsphereStoragePolicyVO> findByZoneId(Long zoneId) {
+        SearchCriteria<VsphereStoragePolicyVO> sc = zoneSearch.create();
+        sc.setParameters("zoneId", zoneId);
+
+        return listBy(sc);
     }
 }

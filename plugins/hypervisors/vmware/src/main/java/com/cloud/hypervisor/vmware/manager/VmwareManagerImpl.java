@@ -16,50 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.rmi.RemoteException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import com.cloud.dc.VsphereStoragePolicy;
-import com.cloud.dc.VsphereStoragePolicyVO;
-import com.cloud.dc.dao.VsphereStoragePolicyDao;
-import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
-import com.vmware.pbm.PbmProfile;
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
-import org.apache.cloudstack.management.ManagementServerHost;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
-
 import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -77,9 +33,12 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.VsphereStoragePolicy;
+import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.DiscoveredWithErrorException;
@@ -109,6 +68,7 @@ import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
@@ -149,8 +109,48 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
+import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.rmi.RemoteException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
@@ -1056,6 +1056,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(RemoveVmwareDcCmd.class);
         cmdList.add(ListVmwareDcsCmd.class);
         cmdList.add(ImportVsphereStoragePoliciesCmd.class);
+        cmdList.add(ListVsphereStoragePoliciesCmd.class);
         return cmdList;
     }
 
@@ -1454,6 +1455,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         List<VsphereStoragePolicyVO> storagePolicies = vsphereStoragePolicyDao.listAll();
         return storagePolicies;
+    }
+
+    @Override
+    public List<? extends VsphereStoragePolicy> listVsphereStoragePolicies(ListVsphereStoragePoliciesCmd cmd) {
+        List<? extends VsphereStoragePolicy> storagePolicies = vsphereStoragePolicyDao.findByZoneId(cmd.getZoneId());
+        if (storagePolicies != null) {
+            return new ArrayList<>(storagePolicies);
+        }
+        return Collections.emptyList();
     }
 
     @Override

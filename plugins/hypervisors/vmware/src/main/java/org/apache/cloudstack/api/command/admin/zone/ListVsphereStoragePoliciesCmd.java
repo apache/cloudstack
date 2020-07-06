@@ -25,7 +25,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,8 +32,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -43,15 +42,15 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = ImportVsphereStoragePoliciesCmd.APINAME, description = "Import vSphere storage policies",
+@APICommand(name = ListVsphereStoragePoliciesCmd.APINAME, description = "List vSphere storage policies",
         responseObject = VsphereStoragePoliciesResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class ImportVsphereStoragePoliciesCmd extends BaseCmd {
+public class ListVsphereStoragePoliciesCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ImportVsphereStoragePoliciesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListVsphereStoragePoliciesCmd.class.getName());
 
-    public static final String APINAME = "importVsphereStoragePolicies";
+    public static final String APINAME = "listVsphereStoragePolicies";
 
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
@@ -75,7 +74,7 @@ public class ImportVsphereStoragePoliciesCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find zone by ID: " + getZoneId());
         }
 
-        List<? extends VsphereStoragePolicy> storagePolicies = _vmwareDatacenterService.importVsphereStoragePolicies(this);
+        List<? extends VsphereStoragePolicy> storagePolicies = _vmwareDatacenterService.listVsphereStoragePolicies(this);
         final ListResponse<VsphereStoragePoliciesResponse> responseList = new ListResponse<>();
         final List<VsphereStoragePoliciesResponse> storagePoliciesResponseList = new ArrayList<>();
         for (VsphereStoragePolicy storagePolicy : storagePolicies) {
@@ -107,5 +106,4 @@ public class ImportVsphereStoragePoliciesCmd extends BaseCmd {
     public Long getZoneId() {
         return zoneId;
     }
-
 }
