@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.zone;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.VsphereStoragePolicy;
-import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -31,7 +30,6 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -49,7 +47,7 @@ import java.util.List;
         responseObject = ImportVsphereStoragePoliciesResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class ImportVsphereStoragePoliciesCmd extends BaseAsyncCmd {
+public class ImportVsphereStoragePoliciesCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ImportVsphereStoragePoliciesCmd.class.getName());
 
@@ -63,16 +61,6 @@ public class ImportVsphereStoragePoliciesCmd extends BaseAsyncCmd {
     private Long zoneId;
 
     @Override
-    public String getEventType() {
-        return EventTypes.EVENT_IMPORT_VCENTER_STORAGE_POLICIES;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Importing vSphere Storage Policies";
-    }
-
-    @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         final DataCenter dataCenter = _resourceService.getZone(getZoneId());
         if (dataCenter == null) {
@@ -82,7 +70,7 @@ public class ImportVsphereStoragePoliciesCmd extends BaseAsyncCmd {
         List<? extends VsphereStoragePolicy> storagePolicies = _vmwareDatacenterService.importVsphereStoragePolicies(this);
         final ListResponse<ImportVsphereStoragePoliciesResponse> responseList = new ListResponse<>();
         final List<ImportVsphereStoragePoliciesResponse> storagePoliciesResponseList = new ArrayList<>();
-        for (VsphereStoragePolicy storagePolicy :  storagePolicies) {
+        for (VsphereStoragePolicy storagePolicy : storagePolicies) {
             final ImportVsphereStoragePoliciesResponse storagePoliciesResponse = new ImportVsphereStoragePoliciesResponse();
             storagePoliciesResponse.setZoneId(dataCenter.getUuid());
             storagePoliciesResponse.setId(storagePolicy.getUuid());
