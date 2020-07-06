@@ -711,7 +711,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPrimaryStorageProtocol: {
-        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint, RDB, CLVM or Gluster. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS. For Hyper-V, choose SMB/CIFS. For LXC, choose NFS or SharedMountPoint. For OVM, choose NFS or ocfs2.',
+        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint, RDB, CLVM or Gluster. For vSphere, choose PreSetup (VMFS or iSCSI or FiberChannel or vSAN or vVols) or NFS. For Hyper-V, choose SMB/CIFS. For LXC, choose NFS or SharedMountPoint. For OVM, choose NFS or ocfs2.',
         externalLink: ''
     },
     helpPrimaryStorageServer: {

@@ -441,4 +441,9 @@ public class DatastoreMO extends BaseMO {
 
         return isDatastoreCompatible;
     }
+
+    public String getDatastoreType() throws Exception {
+        DatastoreSummary summary = _context.getVimClient().getDynamicProperty(getMor(), "summary");
+        return summary.getType();
+    }
 }

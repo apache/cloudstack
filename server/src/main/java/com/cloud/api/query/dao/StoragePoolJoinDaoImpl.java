@@ -32,6 +32,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -51,6 +53,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
 
     @Inject
     protected PrimaryDataStoreDao storagePoolDao;
+
+    @Inject
+    private StoragePoolDetailsDao storagePoolDetailsDao;
 
     private final SearchBuilder<StoragePoolJoinVO> spSearch;
 
@@ -94,6 +99,10 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             poolResponse.setHypervisor(pool.getHypervisor().toString());
         }
 
+        StoragePoolDetailVO poolType = storagePoolDetailsDao.findDetail(pool.getId(), "pool_type");
+        if (poolType != null) {
+            poolResponse.setType(poolType.getValue());
+        }
         long allocatedSize = pool.getUsedCapacity() + pool.getReservedCapacity();
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
