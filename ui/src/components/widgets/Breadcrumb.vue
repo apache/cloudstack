@@ -34,7 +34,7 @@
       <span v-if="index === (breadList.length - 1)" style="margin-left: 5px">
         <a-tooltip placement="bottom">
           <template slot="title">
-            {{ "Open Documentation" }}
+            {{ $t('label.open.documentation') }}
           </template>
           <a
             v-if="item.meta.docHelp"

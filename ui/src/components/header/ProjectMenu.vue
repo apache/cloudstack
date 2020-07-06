@@ -19,9 +19,9 @@
   <span class="header-notice-opener">
     <a-select
       class="project-select"
-      defaultValue="Default View"
+      :defaultValue="$t('label.default.view')"
       :loading="loading"
-      :value="($store.getters.project && 'id' in $store.getters.project) ? ($store.getters.project.displaytext || $store.getters.project.name) : 'Default View'"
+      :value="($store.getters.project && 'id' in $store.getters.project) ? ($store.getters.project.displaytext || $store.getters.project.name) : $t('label.default.view')"
       :disabled="isDisabled()"
       :filterOption="filterProject"
       @change="changeProject"
@@ -70,7 +70,7 @@ export default {
         this.loading = true
         api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500 }).then(json => {
           if (page === 1) {
-            this.projects = [{ name: 'Default View' }]
+            this.projects = [{ name: this.$t('label.default.view') }]
           }
           if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
             this.projects.push(...json.listprojectsresponse.project)

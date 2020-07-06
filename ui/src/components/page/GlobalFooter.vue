@@ -27,7 +27,7 @@
       <a-divider type="vertical" />
       <a href="https://github.com/apache/cloudstack-primate/issues/new/choose" target="_blank">
         <a-icon type="github"/>
-        Report Bug
+        {{ $t('label.report.bug') }}
       </a>
     </div>
   </div>

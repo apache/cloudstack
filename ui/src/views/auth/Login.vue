@@ -33,7 +33,7 @@
       <a-tab-pane key="cs">
         <span slot="tab">
           <a-icon type="safety" />
-          Portal {{ $t('label.login') }}
+          {{ $t('label.login.portal') }}
         </span>
         <a-form-item>
           <a-input
