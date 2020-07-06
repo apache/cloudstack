@@ -22,6 +22,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -53,6 +56,8 @@ public class DefaultHostListener implements HypervisorHostListener {
     StoragePoolHostDao storagePoolHostDao;
     @Inject
     PrimaryDataStoreDao primaryStoreDao;
+    @Inject
+    StoragePoolDetailsDao storagePoolDetailsDao;
 
     @Override
     public boolean hostAdded(long hostId) {
@@ -102,6 +107,10 @@ public class DefaultHostListener implements HypervisorHostListener {
         StoragePoolVO poolVO = this.primaryStoreDao.findById(poolId);
         poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
         poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        if(StringUtils.isNotEmpty(mspAnswer.getPoolType())) {
+            StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(poolId, "pool_type", mspAnswer.getPoolType(), false);
+            storagePoolDetailsDao.persist(storagePoolDetailVO);
+        }
         primaryStoreDao.update(pool.getId(), poolVO);
 
         s_logger.info("Connection established between storage pool " + pool + " and host " + hostId);

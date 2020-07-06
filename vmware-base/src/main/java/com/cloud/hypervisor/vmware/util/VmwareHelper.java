@@ -36,7 +36,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.vmware.vim25.VirtualDiskType;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
