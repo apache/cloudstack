@@ -736,7 +736,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     public boolean isDisabled(final Long zoneId) {
-        return !BackupFrameworkEnabled.valueIn(zoneId);
+        return !(BackupFrameworkEnabled.value() && BackupFrameworkEnabled.valueIn(zoneId));
     }
 
     private void validateForZone(final Long zoneId) {
@@ -770,16 +770,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
         if (!BackupFrameworkEnabled.value()) {
-            boolean featureEnabled = false;
-            for (final DataCenter dataCenter : dataCenterDao.listAllZones()) {
-                if (BackupFrameworkEnabled.valueIn(dataCenter.getId())) {
-                    featureEnabled = true;
-                    break;
-                }
-            }
-            if (!featureEnabled) {
-                return cmdList;
-            }
+            return cmdList;
         }
 
         // Offerings
