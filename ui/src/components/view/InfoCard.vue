@@ -455,7 +455,8 @@
           <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="user" />
-            <router-link :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
+            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
+            <span v-else>{{ resource.account }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.roleid">
@@ -470,7 +471,7 @@
           <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="block" />
-            <router-link v-if="$router.resolve('/domain/' + resource.domainid).route.name !== '404'" :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
+            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
           </div>
         </div>

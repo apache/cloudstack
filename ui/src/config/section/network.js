@@ -283,7 +283,7 @@ export default {
       icon: 'gateway',
       hidden: true,
       permission: ['listPrivateGateways'],
-      columns: ['ipaddress', 'state', 'gateway', 'netmask', 'account', 'domain'],
+      columns: ['ipaddress', 'state', 'gateway', 'netmask', 'account'],
       details: ['ipaddress', 'gateway', 'netmask', 'vlan', 'sourcenatsupported', 'aclid', 'account', 'domain', 'zone'],
       tabs: [{
         name: 'details',
@@ -554,7 +554,7 @@ export default {
       title: 'label.vpncustomergatewayid',
       icon: 'lock',
       permission: ['listVpnCustomerGateways'],
-      columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
+      columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account'],
       details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'esppolicy', 'esplifetime', 'dpd', 'forceencap', 'account', 'domain'],
       searchFilters: ['keyword', 'domainid', 'account'],
       actions: [

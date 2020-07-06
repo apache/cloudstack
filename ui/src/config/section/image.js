@@ -33,7 +33,10 @@ export default {
       resourceType: 'Template',
       filters: ['self', 'shared', 'featured', 'community'],
       columns: () => {
-        var fields = ['name', 'ostypename', 'hypervisor', 'account', 'domain']
+        var fields = ['name', 'hypervisor', 'ostypename']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('account')
+        }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('order')
         }
@@ -129,7 +132,13 @@ export default {
       params: { isofilter: 'self', showunique: 'true' },
       resourceType: 'ISO',
       filters: ['self', 'shared', 'featured', 'community'],
-      columns: ['name', 'ostypename', 'account', 'domain'],
+      columns: () => {
+        var fields = ['name', 'ostypename']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('account')
+        }
+        return fields
+      },
       details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created'],
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
