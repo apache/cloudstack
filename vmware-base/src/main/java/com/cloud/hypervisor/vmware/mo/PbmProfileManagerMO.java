@@ -19,7 +19,9 @@ package com.cloud.hypervisor.vmware.mo;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.vmware.pbm.PbmCapabilityProfile;
 import com.vmware.pbm.PbmProfile;
+import com.vmware.pbm.PbmProfileCategoryEnum;
 import com.vmware.pbm.PbmProfileId;
 import com.vmware.pbm.PbmProfileResourceType;
 import com.vmware.pbm.PbmProfileResourceTypeEnum;
@@ -29,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PbmProfileManagerMO extends BaseMO {
 
@@ -57,20 +60,28 @@ public class PbmProfileManagerMO extends BaseMO {
     public List<PbmProfile> getStorageProfiles() throws Exception {
         List<PbmProfileId> profileIds = getStorageProfileIds();
         List<PbmProfile> profiles = _context.getPbmService().pbmRetrieveContent(_mor, profileIds);
-        return profiles;
+
+        List<PbmProfile> requirementCategoryProfiles = profiles.stream()
+                .filter(x -> ((PbmCapabilityProfile)x).getProfileCategory().equals(PbmProfileCategoryEnum.REQUIREMENT))
+                .collect(Collectors.toList());
+        return requirementCategoryProfiles;
     }
 
     public PbmProfile getStorageProfile(String storageProfileId) throws Exception {
         List<PbmProfileId> profileIds = getStorageProfileIds();
-        for (PbmProfileId profileId : profileIds) {
-            if (storageProfileId.equals(profileId.getUniqueId())) {
-                List<PbmProfile> profile = _context.getPbmService().pbmRetrieveContent(_mor, Collections.singletonList(profileId));
-                return profile.get(0);
-            }
+
+        PbmProfileId profileId = profileIds.stream()
+                .filter(x -> x.getUniqueId().equals(storageProfileId))
+                .findFirst().orElse(null);
+
+        if (profileId == null) {
+            String errMsg = String.format("Storage profile with id %s not found", storageProfileId);
+            s_logger.debug(errMsg);
+            throw new CloudRuntimeException(errMsg);
         }
-        String errMsg = String.format("Storage profile with id %s not found", storageProfileId);
-        s_logger.debug(errMsg);
-        throw new CloudRuntimeException(errMsg);
+
+        List<PbmProfile> profile = _context.getPbmService().pbmRetrieveContent(_mor, Collections.singletonList(profileId));
+        return profile.get(0);
     }
 
     private PbmProfileResourceType getStorageResourceType() {
