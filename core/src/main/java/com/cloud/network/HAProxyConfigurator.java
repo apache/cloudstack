@@ -56,6 +56,18 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
     private static final String SSL_CERTS_DIR = "/etc/ssl/cloudstack/";
 
+    // https://ssl-config.mozilla.org/#server=haproxy&version=1.8&config=old&openssl=1.1.1d&guideline=5.4
+    private static String sslConfigurationOld = "\n\tssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA" +
+            "\n\tssl-default-bind-options no-sslv3 no-tls-tickets" +
+            "\n\n\tssl-default-server-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA" +
+            "\n\tssl-default-server-options no-sslv3 no-tls-tickets";
+
+    // https://ssl-config.mozilla.org/#server=haproxy&version=1.8&config=intermediate&openssl=1.1.1d&guideline=5.4
+    private static String sslConfigurationIntermediate = "\n\tssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384" +
+            "\n\tssl-default-bind-options no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets" +
+            "\n\n\tssl-default-server-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384" +
+            "\n\tssl-default-server-options no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets";
+
     @Override
     public String[] generateConfiguration(final List<PortForwardingRuleTO> fwRules) {
         // Group the rules by publicip:publicport
@@ -766,6 +778,15 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if (lbCmd.isTransparent()) {
             gSection.set(5, "\tuser root");
             gSection.set(6, "\tgroup root");
+        }
+
+        String sslConfiguration = LoadBalancerConfigKey.LbSslConfiguration.key();
+        if (sslConfiguration != null && sslConfiguration.equalsIgnoreCase("old")){
+            gSection.add(sslConfigurationOld);
+            gSection.add("\n\tssl-dh-param-file /root/dhparam.pem.old");
+        } else if (sslConfiguration == null || ! sslConfiguration.equalsIgnoreCase("none")){
+            gSection.add(sslConfigurationIntermediate);
+            gSection.add("\n\tssl-dh-param-file /root/dhparam.pem.intermediate");
         }
 
         if (s_logger.isDebugEnabled()) {
