@@ -161,6 +161,12 @@ public class EventTypes {
     public static final String EVENT_FIREWALL_EGRESS_CLOSE = "FIREWALL.EGRESS.CLOSE";
     public static final String EVENT_FIREWALL_EGRESS_UPDATE = "FIREWALL.EGRESS.UPDATE";
 
+    //Tungsten
+    public static final String EVENT_TUNGSTEN_VM_INTERFACE_CREATE = "TUNGSTEN.VM.INTERFACE.CREATE";
+    public static final String EVENT_TUNGSTEN_VIRTUAL_MACHINE_CREATE = "TUNGSTEN.VIRTUAL.MACHINE.CREATE";
+    public static final String EVENT_TUNGSTEN_NETWORK_CREATE = "TUNGSTEN.NETWORK.CREATE";
+    public static final String EVENT_TUNGSTEN_INSTANCE_IP = "TUNGSTEN.INSTANCE.IP";
+
     //NIC Events
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";
     public static final String EVENT_NIC_DELETE = "NIC.DELETE";

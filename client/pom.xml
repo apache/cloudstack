@@ -30,7 +30,7 @@
     <repositories>
         <repository>
             <id>juniper-contrail</id>
-            <url>https://juniper.github.io/contrail-maven/snapshots</url>
+            <url>https://github.com/Juniper/contrail-maven/raw/master/releases</url>
         </repository>
     </repositories>
     <dependencies>
@@ -200,6 +200,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-network-ovs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-network-tungsten</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -512,6 +517,11 @@
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-integrations-kubernetes-service</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.juniper.contrail</groupId>
+            <artifactId>juniper-contrail-api</artifactId>
+            <version>1.2</version>
         </dependency>
     </dependencies>
     <build>
