@@ -33,6 +33,8 @@ public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long> {
 
     ProjectAccountVO findByProjectIdUserId(long projectId, long accountId, long userId);
 
+    boolean canUserAccessProjectAccount(long accountId, long userId, long projectAccountId);
+
     boolean canAccessProjectAccount(long accountId, long projectAccountId);
 
     boolean canModifyProjectAccount(long accountId, long projectAccountId);

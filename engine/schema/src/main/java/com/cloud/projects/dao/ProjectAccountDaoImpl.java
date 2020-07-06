@@ -119,6 +119,20 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     }
 
     @Override
+    public boolean canUserAccessProjectAccount(long accountId, long userId, long projectAccountId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("userId", userId);
+        sc.setParameters("projectAccountId", projectAccountId);
+
+        if (findOneBy(sc) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public boolean canAccessProjectAccount(long accountId, long projectAccountId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);

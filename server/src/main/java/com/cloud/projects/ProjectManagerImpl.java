@@ -542,7 +542,12 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             _accountMgr.checkAccess(caller, _domainDao.findById(owner.getDomainId()));
             return true;
         }
-
+        User user = CallContext.current().getCallingUser();
+        ProjectVO project = _projectDao.findByProjectAccountId(accountId);
+        ProjectAccount userProjectAccount = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
+        if (userProjectAccount != null) {
+            return _projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), accountId);
+        }
         return _projectAccountDao.canAccessProjectAccount(caller.getId(), accountId);
     }
 
@@ -562,7 +567,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         if (project != null) {
             ProjectAccountVO projectUser = _projectAccountDao.findByProjectIdUserId(project.getId(), caller.getAccountId(), user.getId());
             if (projectUser != null) {
-                return _projectAccountDao.canUserModifyProject(project.getId(), caller.getId(), user.getId());
+                return _projectAccountDao.canUserModifyProject(project.getId(), caller.getAccountId(), user.getId());
             }
         }
         return _projectAccountDao.canModifyProjectAccount(caller.getId(), accountId);
