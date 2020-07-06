@@ -54,7 +54,21 @@ def checkDefaults(haproxyData, haCfgSections):
 
     return True
 
-def checkLbValues(lbSection, cfgSection):
+def checkFrontendLbValues(lbSection, cfgSection):
+    correct = True
+    if "lb.timeout.client" in lbSection:
+        if "timeout" not in cfgSection:
+            print("timeout is enabled but not configured in haproxy rule %s" % cfgSection)
+            correct = False
+        else:
+            timeout = "client     %s" % lbSection["lb.timeout.client"]
+            if timeout not in cfgSection["timeout"]:
+                print("timeout client section is not configured in rule %s" % cfgSection)
+                correct = False
+
+    return correct
+
+def checkBackendLbValues(lbSection, cfgSection):
     correct = True
     if "lb.maxconn" in lbSection:
         if "maxconn" not in cfgSection:
@@ -78,11 +92,32 @@ def checkLbValues(lbSection, cfgSection):
             print("mode http is enabled but not configured in haproxy rule %s" % cfgSection)
             correct = False
         else:
-            print("cfgsection mode is %s" % cfgSection["mode"][0])
-            print("lbsection mode is %s" % lbSection["http"])
             if lbSection["http"] == 'true' and cfgSection["mode"][0] != 'http':
                 print("http mode value mismatch in rule %s" % cfgSection)
                 correct = False
+
+    if "lb.timeout.connect" in lbSection:
+        if "timeout" not in cfgSection:
+            print("timeout is enabled but not configured in haproxy rule %s" % cfgSection)
+            correct = False
+        else:
+            timeout = "connect    %s" % lbSection["lb.timeout.connect"]
+            if timeout not in cfgSection["timeout"]:
+                print("timeout connect section is not configured in rule %s" % cfgSection)
+                correct = False
+
+    if "lb.timeout.server" in lbSection:
+        if "timeout" not in cfgSection:
+            print("timeout is enabled but not configured in haproxy rule %s" % cfgSection)
+            correct = False
+        else:
+            timeout = "server     %s" % lbSection["lb.timeout.server"]
+            if timeout not in cfgSection["timeout"]:
+                print("timeout server section is not configured in rule %s" % cfgSection)
+                correct = False
+
+    if "transparent" not in lbSection:
+        correct = checkFrontendLbValues(lbSection, cfgSection)
 
     return correct
 
@@ -117,6 +152,11 @@ def checkServerValues(haproxyData, serverSections):
             if maxqueueServer != haproxyData["server.maxqueue"]:
                 correct = False
 
+    if "lb.backend.https" in haproxyData:
+        if "ssl verify none" not in serverSections[0]:
+            print("backend https is enabled but not configured in %s" % serverSections[0])
+            correct = False
+
     return correct
 
 def checkLoadBalance(haproxyData, haCfgSections):
@@ -141,6 +181,8 @@ def checkLoadBalance(haproxyData, haCfgSections):
                 correct = False
             else:
                 cfgSection = haCfgSections[secFrontend]
+                if cfgSection is not None:
+                    correct = checkFrontendLbValues(lbSec, cfgSection)
                 cfgSection.update(haCfgSections[secBackend])
         elif secName not in haCfgSections:
             print "Missing section for load balancing " + secName + "\n"
@@ -149,8 +191,8 @@ def checkLoadBalance(haproxyData, haCfgSections):
             cfgSection = haCfgSections[secName]
 
         if cfgSection:
-            correct = correct and checkLbValues(lbSec, cfgSection)
             if "server" in cfgSection:
+                correct = correct and checkBackendLbValues(lbSec, cfgSection)
                 correct = correct and checkServerValues(lbSec, cfgSection["server"])
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
                     print "Incorrect balance method for " + secName + \
@@ -161,6 +203,8 @@ def checkLoadBalance(haproxyData, haCfgSections):
                 bindStr = lbSec["sourceIp"] + ":" + formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
                 if lbSec.has_key("sslcert"):
                     bindStr += " ssl crt " + SSL_CERTS_DIR + lbSec["sslcert"]
+                if "http2" in lbSec and lbSec["http2"].lower() == 'true':
+                    bindStr += " alpn h2,http/1.1"
                 if cfgSection["bind"][0] != bindStr:
                     print "Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + "."
                     correct = False

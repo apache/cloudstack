@@ -1811,20 +1811,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbHttpKeepalive.key()));
             String isHttpKeepalive = lbConfig.orElse(null);
 
-            // process lb values
-            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbMaxConn.key()));
-            String lbMaxConn = lbConfig.orElse(null);
-            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbFullConn.key()));
-            String lbFullConn = lbConfig.orElse(null);
-
-            // Process lb.server values
-            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()));
-            String serverMaxconn = lbConfig.orElse(null);
-            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMinConn.key()));
-            String serverMinconn = lbConfig.orElse(null);
-            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxQueue.key()));
-            String serverMaxqueue = lbConfig.orElse(null);
-
             List<LoadBalancerVMMapVO> vmMapVOs = _loadBalancerVMMapDao.listByLoadBalancerId(firewallRuleVO.getId(), false);
             if (vmMapVOs.size() > 0) {
                 loadBalancingData.append("sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
@@ -1862,21 +1848,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 if (isTransparent != null) {
                     loadBalancingData.append(",transparent=").append(isTransparent);
                 }
-                if (lbMaxConn != null) {
-                    loadBalancingData.append(",lb.maxconn=").append(lbMaxConn);
-                }
-                if (lbFullConn != null) {
-                    loadBalancingData.append(",lb.fullconn=").append(lbFullConn);
-                }
-                if (serverMaxconn != null) {
-                    loadBalancingData.append(",server.maxconn=").append(serverMaxconn);
-                }
-                if (serverMinconn != null) {
-                    loadBalancingData.append(",server.minconn=").append(serverMinconn);
-                }
-                if (serverMaxqueue != null) {
-                    loadBalancingData.append(",server.maxqueue=").append(serverMaxqueue);
-                }
+                updateLbValues(lbConfigsMap, loadBalancingData);
 
                 loadBalancingData.append(",vmIps=");
                 for (LoadBalancerVMMapVO vmMapVO : vmMapVOs) {
@@ -1884,6 +1856,52 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
                 loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
             }
+        }
+    }
+
+    private void updateLbValues(final HashMap<String, String> lbConfigsMap, StringBuilder loadBalancingData) {
+        String lbMaxConn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbMaxConn.key(), null);
+        String lbFullConn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbFullConn.key(), null);
+        String lbTimeoutConnect = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbTimeoutConnect.key(), null);
+        String lbTimeoutServer = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbTimeoutServer.key(), null);
+        String lbTimeoutClient = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbTimeoutClient.key(), null);
+        String lbBackendHttps = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbBackendHttps.key(), null);
+        String lbHttp2 = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbHttp2.key(), null);
+
+        // Process lb.server values
+        String serverMaxconn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbServerMaxConn.key(), null);
+        String serverMinconn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbServerMinConn.key(), null);
+        String serverMaxqueue = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbServerMaxQueue.key(), null);
+
+        if (lbMaxConn != null) {
+            loadBalancingData.append(",lb.maxconn=").append(lbMaxConn);
+        }
+        if (lbFullConn != null) {
+            loadBalancingData.append(",lb.fullconn=").append(lbFullConn);
+        }
+        if (lbTimeoutConnect != null) {
+            loadBalancingData.append(",lb.timeout.connect=").append(lbTimeoutConnect);
+        }
+        if (lbTimeoutServer != null) {
+            loadBalancingData.append(",lb.timeout.server=").append(lbTimeoutServer);
+        }
+        if (lbTimeoutClient != null) {
+            loadBalancingData.append(",lb.timeout.client=").append(lbTimeoutClient);
+        }
+        if (lbBackendHttps != null) {
+            loadBalancingData.append(",lb.backend.https=").append(lbBackendHttps);
+        }
+        if (lbHttp2 != null) {
+            loadBalancingData.append(",http2=").append(lbHttp2);
+        }
+        if (serverMaxconn != null) {
+            loadBalancingData.append(",server.maxconn=").append(serverMaxconn);
+        }
+        if (serverMinconn != null) {
+            loadBalancingData.append(",server.minconn=").append(serverMinconn);
+        }
+        if (serverMaxqueue != null) {
+            loadBalancingData.append(",server.maxqueue=").append(serverMaxqueue);
         }
     }
 
