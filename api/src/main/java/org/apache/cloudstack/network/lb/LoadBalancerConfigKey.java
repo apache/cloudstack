@@ -61,7 +61,9 @@ public enum LoadBalancerConfigKey {
 
     LbServerMinConn(Category.LoadBalancer, "lb.server.minconn", "LB minimum connection per server", Long.class, "", "LB minimum connection per server, default is ''", Scope.LoadBalancerRule),
 
-    LbServerMaxQueue(Category.LoadBalancer, "lb.server.maxqueue", "Max conn wait in queue per server", Long.class, "<0 means unlimited in haproxy>", "Maximum number of connections which will wait in queue for this server, default is ''", Scope.LoadBalancerRule);
+    LbServerMaxQueue(Category.LoadBalancer, "lb.server.maxqueue", "Max conn wait in queue per server", Long.class, "<0 means unlimited in haproxy>", "Maximum number of connections which will wait in queue for this server, default is ''", Scope.LoadBalancerRule),
+
+    LbSslConfiguration(Category.LoadBalancer, "lb.ssl.configuration", "SSL configuration, could be 'none', 'old' or 'intermediate'", String.class, "none", "if 'none', no SSL configurations will be added, if 'old', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=old&openssl-version=1.0.2l if 'intermediate', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=intermediate&openssl-version=1.0.2l default value is 'none'", Scope.LoadBalancerRule);
 
     public static enum Category {
         General, Advanced, Stats, LoadBalancer
@@ -197,6 +199,13 @@ public enum LoadBalancerConfigKey {
                 return new Pair<LoadBalancerConfigKey, String>(null, "Please enter either 'true' or 'false' for parameter " + key);
             }
         }
+
+        if(key.equals("lb.ssl.configuration")){
+            if ( !("none".equalsIgnoreCase(value) || "old".equalsIgnoreCase(value) || "intermediate".equalsIgnoreCase(value)) ){
+                return new Pair<>(null, "Please enter either 'none', 'old' or 'intermediate' for parameter " + key);
+            }
+        }
+
         return new Pair<LoadBalancerConfigKey, String>(config, null);
     }
 }
