@@ -366,7 +366,7 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public boolean isDeployAsIs() {
         if (this.imageVO == null) {
-            return false;
+            return true;
         }
         return this.imageVO.isDeployAsIs();
     }

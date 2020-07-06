@@ -61,7 +61,6 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -118,6 +117,7 @@ class VmwareVmImplementer {
     VirtualMachineTO implement(VirtualMachineProfile vm, VirtualMachineTO to, long clusterId, Boolean deployOvaAsIs) {
         to.setBootloader(VirtualMachineTemplate.BootloaderType.HVM);
 
+        HostVO host = hostDao.findById(vm.getVirtualMachine().getHostId());
         // FR37 if VmwareImplementAsIsAndReconsiliate add secondary storage or some other encoding of the OVA file to the start command,
         // FR37 so the url for the original OVA can be used for deployment
         if (deployOvaAsIs) {
@@ -129,19 +129,26 @@ class VmwareVmImplementer {
                 // FR37 actually pass the location where the ovf will found once we get to it ????
                 // FR37 secStor/template/tmpl/<account>/<template>/<name>.ovf.orig
                 // FR37 or pass the content of the OVF?
-                String relativeLocation = String.format("template%stmpl%s%s%s%s%s%s",
-                        File.separator,
-                        File.separator,
-                        vm.getTemplate().getAccountId(),
-                        File.separator,
-                        vm.getTemplate().getId(),
-                        File.separator,
-                        vm.getTemplate().getName());
+//                String relativeLocation = String.format("template%stmpl%s%s%s%s%s%s",
+//                        File.separator,
+//                        File.separator,
+//                        vm.getTemplate().getAccountId(),
+//                        File.separator,
+//                        vm.getTemplate().getId(),
+//                        File.separator,
+//                        vm.getTemplate().getName());
+//                storagePoolDao.findBy
 
-                        to.setTemplateLocation(relativeLocation);
+                VMTemplateStoragePoolVO templateStoragePoolVO =  templateStoragePoolDao.findByHostTemplate(host.getId(),vm.getTemplate().getId());
+                long storePoolId = templateStoragePoolVO.getDataStoreId();
+
+                StoragePoolVO storagePoolVO = storagePoolDao.findById(storePoolId);
+                String relativeLocation = storagePoolVO.getUuid();
+
+                to.setTemplateLocation(relativeLocation);
                 // FR37 TODO add usefull stuff in message
                 if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("deploying OVA as is from %s.");
+                    LOGGER.trace(String.format("deploying OVA as is from %s.", relativeLocation));
                 }
             }
         }
@@ -200,7 +207,7 @@ class VmwareVmImplementer {
         GuestOSVO guestOS = guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
         to.setHostName(vm.getHostName());
-        HostVO host = hostDao.findById(vm.getVirtualMachine().getHostId());
+
         GuestOSHypervisorVO guestOsMapping = null;
         if (host != null) {
             guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), host.getHypervisorVersion());
@@ -354,7 +361,7 @@ class VmwareVmImplementer {
                 // put the resulting json in a OVFPropertyTO named propertyTO
                 // setValue(details.get(detailKey)) on the resulting propTO
                 // skipp all upto ovfProperties.add(propertyTO);
-                String ovfPropKey = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
+                String ovfPropKey = detailKey.replace(ApiConstants.ACS_PROPERTY + "-", "");
                 TemplateOVFPropertyVO templateOVFPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), ovfPropKey);
                 if (templateOVFPropertyVO == null) {
                     LOGGER.warn(String.format("OVF property %s not found on template, discarding", ovfPropKey));

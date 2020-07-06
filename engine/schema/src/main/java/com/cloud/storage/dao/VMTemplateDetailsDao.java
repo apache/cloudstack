@@ -16,11 +16,18 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.utils.db.GenericDao;
 
+import java.util.List;
+
 public interface VMTemplateDetailsDao extends GenericDao<VMTemplateDetailVO, Long>, ResourceDetailsDao<VMTemplateDetailVO> {
 
+    boolean existsOption(long templateId, String key);
+    OVFPropertyTO findByTemplateAndKey(long templateId, String key);
+    void saveOptions(List<OVFPropertyTO> opts);
+    List<OVFPropertyTO> listByTemplateId(long templateId);
 }

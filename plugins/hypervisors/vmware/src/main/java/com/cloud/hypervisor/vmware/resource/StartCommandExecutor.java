@@ -208,7 +208,7 @@ class StartCommandExecutor {
                 } else {
                     existingVm = unregisterButHoldOnToOldVmData(vmInternalCSName, dcMo);
 
-                    createNewVm(vmSpec, installAsIs, vmInternalCSName, vmNameOnVcenter, controllerInfo, systemVm, mgr, hyperHost, guestOsId, disks, dataStoresDetails,
+                    createNewVm(context, vmSpec, installAsIs, vmInternalCSName, vmNameOnVcenter, controllerInfo, systemVm, mgr, hyperHost, guestOsId, disks, dataStoresDetails,
                             dsRootVolumeIsOn);
                 }
 
@@ -689,7 +689,7 @@ class StartCommandExecutor {
         }
     }
 
-    private void createNewVm(VirtualMachineTO vmSpec, boolean installAsIs, String vmInternalCSName, String vmNameOnVcenter, Pair<String, String> controllerInfo, Boolean systemVm,
+    private void createNewVm(VmwareContext context, VirtualMachineTO vmSpec, boolean installAsIs, String vmInternalCSName, String vmNameOnVcenter, Pair<String, String> controllerInfo, Boolean systemVm,
             VmwareManager mgr, VmwareHypervisorHost hyperHost, String guestOsId, DiskTO[] disks, HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails,
             DatastoreMO dsRootVolumeIsOn) throws Exception {
         VirtualMachineMO vmMo;
@@ -711,15 +711,16 @@ class StartCommandExecutor {
         } else if (installAsIs) {
             // FR37 create blank or install as is ???? needs to be replaced with the proceudre at
             // https://code.vmware.com/docs/5540/vsphere-automation-sdks-programming-guide/doc/GUID-82084C78-49FC-4B7F-BD89-F90D5AA22631.html
-            DatastoreMO secDsMo = getDatastoreMOForSecStore(mgr, hyperHost);
-            String ssUrl = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(vmwareResource.getDcId())).first();
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, vmSpec.getTemplateLocation());
+            DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
             // FR37 this happens at the MS so format should not be "[%s] %s" but some local file (on secStor)
-// not
-// String ovfLocation = String.format("[%s] %s", secDsMo.getName(), vmSpec.getTemplateLocation());
-            // but
-            String ovfLocation = String.format("%s/%s", ssUrl, vmSpec.getTemplateLocation());
 
-            hyperHost.importVmFromOVF(ovfLocation, vmNameOnVcenter, rootDiskDataStoreDetails.second(), "thin", false);
+            vmMo = vmwareResource.contentLibraryService.deployOvf(context, vmSpec.getTemplateLocation(), vmInternalCSName, hyperHost, dsMo);
+
+            if(LOGGER.isTraceEnabled()) {
+                vmMo.getVmdkFileBaseNames();
+                LOGGER.trace(String.format("", vmMo.getVmdkFileBaseNames()));
+            }
             // FR37 importUnmanaged code must be called
             // FR37 this must be called before starting
             // FR37 existing serviceOffering with the right (minimum) dimensions must exist

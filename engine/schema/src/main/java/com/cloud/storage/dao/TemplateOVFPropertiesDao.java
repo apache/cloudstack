@@ -22,6 +22,7 @@ import com.cloud.utils.db.GenericDao;
 
 import java.util.List;
 
+@Deprecated
 public interface TemplateOVFPropertiesDao extends GenericDao<TemplateOVFPropertyVO, Long> {
 
     boolean existsOption(long templateId, String key);

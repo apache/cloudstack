@@ -262,6 +262,7 @@ public class ApiConstants {
     public static final String OUTPUT = "output";
     public static final String OVF_PROPERTIES = "ovfproperties";
     public static final String PROPERTIES = "properties";
+    public static final String ACS_PROPERTY = "ACS-property";
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";

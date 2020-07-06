@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.vmware.vim25.DatastoreSummary;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -477,9 +478,23 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return null;
     }
 
-    private Pair<VirtualMachineMO, Long> copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
-                                                                            String templatePathAtSecondaryStorage, String templateName, String templateUuid,
-                                                                            boolean createSnapshot, Integer nfsVersion) throws Exception {
+    private String getOVFFile(String srcOVAFileName) {
+        File file = new File(srcOVAFileName);
+        assert (_storage != null);
+        String[] files = _storage.listFiles(file.getParent());
+        if (files != null) {
+            for (String fileName : files) {
+                if (fileName.toLowerCase().endsWith(".ovf")) {
+                    File ovfFile = new File(fileName);
+                    return ovfFile.getName();
+                }
+            }
+        }
+        return null;
+    }
+
+    private Pair<VirtualMachineMO, Long> copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl, String templatePathAtSecondaryStorage, String templateName, String templateUuid,
+            boolean createSnapshot, Integer nfsVersion, boolean deployAsIs) throws Exception {
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
                 templatePathAtSecondaryStorage + ", templateName: " + templateName);
 
@@ -513,7 +528,28 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         String vmName = templateUuid;
-        hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin", true);
+
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("deploying new style == %b", deployAsIs));
+        }
+        if (deployAsIs) {
+            // FR37 TODO: Uncomment this to use content library to import vm from ovf
+            String storeName = getSecondaryDatastoreUUID(secondaryStorageUrl);
+            ManagedObjectReference morSecDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storeName);
+            if (morSecDatastore == null) {
+                morSecDatastore = prepareSecondaryDatastoreOnHost(secondaryStorageUrl);
+            }
+            DatastoreMO secDsMo = new DatastoreMO(datastoreMo.getContext(), morSecDatastore);
+            DatastoreSummary secDatastoresummary = secDsMo.getSummary();
+
+            String ovfFile = getOVFFile(srcOVAFileName);
+            boolean importResult = true;//contentLibraryService.importOvf(datastoreMo.getContext(), secDatastoresummary.getUrl() + templatePathAtSecondaryStorage, ovfFile, datastoreMo.getName(), templateUuid);
+            if (!importResult) {
+                s_logger.warn("Failed to import ovf into the content library: " + srcFileName);
+            }
+        } else {
+            hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin", true);
+        }
 
         VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
         VmConfigInfo vAppConfig;
@@ -561,6 +597,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     @Override
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
+        // FR37 TODO find where TO is created and make sure deployAsIs is set correctly
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO srcStore = srcData.getDataStore();
 
@@ -655,7 +692,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 if (managed) {
                     vmInfo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
-                            managedStoragePoolRootVolumeName, false, _nfsVersion);
+                            managedStoragePoolRootVolumeName, false, _nfsVersion, template.isDeployAsIs());
 
                     VirtualMachineMO vmMo = vmInfo.first();
                     vmMo.unregisterVm();
@@ -673,7 +710,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
                 else {
                     vmInfo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
-                            templateUuidName, true, _nfsVersion);
+                            templateUuidName, true, _nfsVersion, template.isDeployAsIs());
                 }
             } else {
                 s_logger.info("Template " + templateInfo.second() + " has already been setup, skip the template setup process in primary storage");

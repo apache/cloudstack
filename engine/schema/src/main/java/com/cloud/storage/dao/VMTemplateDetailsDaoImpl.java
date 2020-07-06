@@ -17,17 +17,91 @@
 package com.cloud.storage.dao;
 
 
+import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.storage.ImageStore;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.google.gson.Gson;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 import com.cloud.storage.VMTemplateDetailVO;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
+
+    private final static Logger LOGGER = Logger.getLogger(VMTemplateDetailsDaoImpl.class);
+
+    Gson gson = new Gson();
+
+    SearchBuilder<VMTemplateDetailVO> OptionsSearchBuilder;
+
+    public VMTemplateDetailsDaoImpl() {
+        super();
+        OptionsSearchBuilder = createSearchBuilder();
+        OptionsSearchBuilder.and("resourceId", OptionsSearchBuilder.entity().getResourceId(), SearchCriteria.Op.EQ);
+        OptionsSearchBuilder.and("name", OptionsSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
+        OptionsSearchBuilder.done();
+    }
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
         super.addDetail(new VMTemplateDetailVO(resourceId, key, value, display));
+    }
+
+    @Override
+    public boolean existsOption(long templateId, String key) {
+        return findByTemplateAndKey(templateId, key) != null;
+    }
+
+    @Override
+    public OVFPropertyTO findByTemplateAndKey(long templateId, String key) {
+        SearchCriteria<VMTemplateDetailVO> sc = OptionsSearchBuilder.create();
+        sc.setParameters("resourceId", templateId);
+        sc.setParameters("name", ApiConstants.ACS_PROPERTY + "-" + key);
+        OVFPropertyTO property = null;
+        VMTemplateDetailVO detail = findOneBy(sc);
+        if (detail != null) {
+            property = gson.fromJson(detail.getValue(), OVFPropertyTO.class);
+        }
+        return property;
+    }
+
+    @Override
+    public void saveOptions(List<OVFPropertyTO> opts) {
+        if (CollectionUtils.isEmpty(opts)) {
+            return;
+        }
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        for (OVFPropertyTO opt : opts) {
+            String json = gson.toJson(opt);
+            VMTemplateDetailVO templateDetailVO = new VMTemplateDetailVO(opt.getTemplateId(), ApiConstants.ACS_PROPERTY + "-" + opt.getKey(), json, opt.isUserConfigurable());
+            persist(templateDetailVO);
+        }
+        txn.commit();
+    }
+
+    @Override
+    public List<OVFPropertyTO> listByTemplateId(long templateId) {
+        SearchCriteria<VMTemplateDetailVO> ssc = createSearchCriteria();
+        ssc.addAnd("resourceId", SearchCriteria.Op.EQ, templateId);
+        ssc.addAnd("name", SearchCriteria.Op.LIKE, ImageStore.OVF_PROPERTY_PREFIX + "%");
+
+        List<VMTemplateDetailVO> ovfProperties = search(ssc, null);
+        List<OVFPropertyTO> properties = new ArrayList<>();
+        for (VMTemplateDetailVO property : ovfProperties) {
+            OVFPropertyTO ovfPropertyTO = gson.fromJson(property.getValue(), OVFPropertyTO.class);
+            properties.add(ovfPropertyTO);
+        }
+        return properties;
     }
 }

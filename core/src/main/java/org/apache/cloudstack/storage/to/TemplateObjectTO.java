@@ -47,6 +47,7 @@ public class TemplateObjectTO implements DataTO {
     private boolean bootable;
     private String uniqueName;
     private boolean directDownload;
+    private boolean deployAsIs;
 
     public TemplateObjectTO() {
 
@@ -242,6 +243,14 @@ public class TemplateObjectTO implements DataTO {
 
     public void setDirectDownload(boolean directDownload) {
         this.directDownload = directDownload;
+    }
+
+    public boolean isDeployAsIs() {
+        return deployAsIs;
+    }
+
+    public void setDeployAsIs(boolean deployAsIs) {
+        this.deployAsIs = deployAsIs;
     }
 
     @Override
