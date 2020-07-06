@@ -4908,7 +4908,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
 
             if (morDatastore == null) {
-                morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
+                morDatastore = hyperHost.mountDatastore((pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup), pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
             }
 
             assert (morDatastore != null);
@@ -4924,6 +4924,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
 
             if (cmd.getAdd() && (pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup)) {
+                answer.setPoolType(dsMo.getDatastoreType());
                 answer.setLocalDatastoreName(morDatastore.getValue());
             }
 

@@ -18735,8 +18735,8 @@
                                                     description: "nfs"
                                                 });
                                                 items.push({
-                                                    id: "vmfs",
-                                                    description: "vmfs"
+                                                    id: "presetup",
+                                                    description: "presetup"
                                                 });
                                                 items.push({
                                                     id: "custom",
@@ -18885,7 +18885,7 @@
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
 
                                                     $form.find('.form-item[rel=glustervolume]').hide();
-                                                } else if (protocol == "PreSetup") {
+                                                } else if (protocol == "PreSetup" && selectedClusterObj.hypervisortype != "VMware") {
                                                     $form.find('.form-item[rel=server]').hide();
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
 
@@ -18983,7 +18983,7 @@
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
 
                                                     $form.find('.form-item[rel=glustervolume]').hide();
-                                                } else if (protocol == "vmfs") {
+                                                } else if (protocol == "presetup" && selectedClusterObj.hypervisortype == "VMware") {
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
 
@@ -19408,7 +19408,7 @@
                                         array1.push("&details[0].user=" + args.data.smbUsername);
                                         array1.push("&details[1].password=" + encodeURIComponent(args.data.smbPassword));
                                         array1.push("&details[2].domain=" + args.data.smbDomain);
-                                    } else if (args.data.protocol == "PreSetup") {
+                                    } else if (args.data.protocol == "PreSetup" && selectedClusterObj.hypervisortype != "VMware") {
                                         var path = args.data.path;
                                         if (path.substring(0, 1) != "/")
                                             path = "/" + path;
@@ -19434,12 +19434,12 @@
                                         var rbdid = args.data.rbdid;
                                         var rbdsecret = args.data.rbdsecret;
                                         url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
-                                    } else if (args.data.protocol == "vmfs") {
+                                    } else if (args.data.protocol == "presetup" && selectedClusterObj.hypervisortype == "VMware") {
                                         var path = args.data.vCenterDataCenter;
                                         if (path.substring(0, 1) != "/")
                                             path = "/" + path;
                                         path += "/" + args.data.vCenterDataStore;
-                                        url = vmfsURL("dummy", path);
+                                        url = presetupURL("dummy", path);
                                     } else if (args.data.protocol == "gluster") {
                                         var glustervolume = args.data.glustervolume;
 

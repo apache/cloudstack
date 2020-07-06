@@ -27,6 +27,7 @@ public class ModifyStoragePoolAnswer extends Answer {
     private StoragePoolInfo poolInfo;
     private Map<String, TemplateProp> templateInfo;
     private String localDatastoreName;
+    private String poolType;
 
     public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateProp> tInfo) {
         super(cmd);
@@ -60,5 +61,14 @@ public class ModifyStoragePoolAnswer extends Answer {
 
     public String getLocalDatastoreName() {
         return localDatastoreName;
+    }
+
+
+    public String getPoolType() {
+        return poolType;
+    }
+
+    public void setPoolType(String poolType) {
+        this.poolType = poolType;
     }
 }

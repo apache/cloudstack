@@ -614,6 +614,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 params.put("zoneId", host.getDataCenterId());
                 params.put("clusterId", host.getClusterId());
                 params.put("podId", host.getPodId());
+                params.put("hypervisorType", host.getHypervisorType());
                 params.put("url", pInfo.getPoolType().toString() + "://" + pInfo.getHost() + "/" + pInfo.getHostPath());
                 params.put("name", name);
                 params.put("localStorage", true);
@@ -699,6 +700,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     && hypervisorType != HypervisorType.Any) {
                 throw new InvalidParameterValueException("zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
+        } else {
+            ClusterVO clusterVO = _clusterDao.findById(clusterId);
+            hypervisorType = clusterVO.getHypervisorType();
         }
 
         Map<String, String> details = extractApiParamAsMap(cmd.getDetails());
@@ -716,6 +720,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("zoneId", zone.getId());
         params.put("clusterId", clusterId);
         params.put("podId", podId);
+        params.put("hypervisorType", hypervisorType.toString());
         params.put("url", cmd.getUrl());
         params.put("tags", cmd.getTags());
         params.put("name", cmd.getStoragePoolName());
