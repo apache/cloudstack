@@ -36,6 +36,9 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         cls.services["mode"] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.api_client)
+        cls._cleanup = []
+        if cls.hypervisor.lower() != 'simulator':
+            raise cls.skipTest("Skipping test cases which must only run for Simulator")
         cls.template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
         if cls.template == FAILED:
             assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
@@ -49,7 +52,6 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         cls._cleanup = [cls.offering, cls.account]
 
         # Check backup configuration values, set them to enable the dummy provider
-
         backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled', zoneid=cls.zone.id)
         backup_provider_cfg = Configurations.list(cls.api_client, name='backup.framework.provider.plugin', zoneid=cls.zone.id)
         cls.backup_enabled = backup_enabled_cfg[0].value
