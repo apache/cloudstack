@@ -1282,7 +1282,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     @Override
-    public boolean deleteVMSnapshotsFromDB(Long vmId) {
+    public boolean deleteVMSnapshotsFromDB(Long vmId, boolean unmanage) {
         List<VMSnapshotVO> listVmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (listVmSnapshots == null || listVmSnapshots.isEmpty()) {
             return true;
@@ -1290,7 +1290,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         for (VMSnapshotVO snapshot : listVmSnapshots) {
             try {
                 VMSnapshotStrategy strategy = findVMSnapshotStrategy(snapshot);
-                if (! strategy.deleteVMSnapshotFromDB(snapshot)) {
+                if (! strategy.deleteVMSnapshotFromDB(snapshot, unmanage)) {
                     s_logger.error("Couldn't delete vm snapshot with id " + snapshot.getId());
                     return false;
                 }

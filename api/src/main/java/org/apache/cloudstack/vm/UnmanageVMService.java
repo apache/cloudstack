@@ -17,13 +17,11 @@
 
 package org.apache.cloudstack.vm;
 
-import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
+public interface UnmanageVMService {
 
-public interface VmImportService {
-    ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd);
-    UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd);
+    /**
+     * Unmanage a guest VM from CloudStack
+     * @return true if the VM is successfully unmanaged, false if not.
+     */
+    boolean unmanageVMInstance(long vmId);
 }

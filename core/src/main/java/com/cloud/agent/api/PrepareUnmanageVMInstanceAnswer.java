@@ -14,16 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.agent.api;
 
-package org.apache.cloudstack.vm;
+public class PrepareUnmanageVMInstanceAnswer extends Answer {
 
-import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
+    public PrepareUnmanageVMInstanceAnswer() {
+    }
 
-public interface VmImportService {
-    ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd);
-    UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd);
+    public PrepareUnmanageVMInstanceAnswer(PrepareUnmanageVMInstanceCommand cmd, boolean result, String details) {
+        super(cmd, result, details);
+    }
 }

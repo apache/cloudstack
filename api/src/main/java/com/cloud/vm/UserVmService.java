@@ -517,4 +517,9 @@ public interface UserVmService {
                     final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey,
                     final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters, final VirtualMachine.PowerState powerState) throws InsufficientCapacityException;
 
+    /**
+     * Unmanage a guest VM from CloudStack
+     * @return true if the VM is successfully unmanaged, false if not.
+     */
+    boolean unmanageUserVM(Long vmId);
 }

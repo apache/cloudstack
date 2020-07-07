@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.deploy;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -49,4 +50,6 @@ public interface DeploymentPlanningManager extends Manager {
     void cleanupVMReservations();
 
     DeploymentPlanner getDeploymentPlannerByName(String plannerName);
+
+    void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids);
 }
