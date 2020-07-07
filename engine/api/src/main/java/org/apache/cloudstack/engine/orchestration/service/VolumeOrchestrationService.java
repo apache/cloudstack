@@ -149,4 +149,9 @@ public interface VolumeOrchestrationService {
      */
     DiskProfile importVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template,
                              Account owner, Long deviceId, Long poolId, String path, String chainInfo);
+
+    /**
+     * Unmanage VM volumes
+     */
+    void unmanageVolumes(long vmId);
 }

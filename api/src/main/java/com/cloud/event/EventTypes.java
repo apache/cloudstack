@@ -102,6 +102,7 @@ public class EventTypes {
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
     public static final String EVENT_VM_EXPUNGE = "VM.EXPUNGE";
     public static final String EVENT_VM_IMPORT = "VM.IMPORT";
+    public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -184,6 +185,7 @@ public class EventTypes {
     public static final String EVENT_ROLE_CREATE = "ROLE.CREATE";
     public static final String EVENT_ROLE_UPDATE = "ROLE.UPDATE";
     public static final String EVENT_ROLE_DELETE = "ROLE.DELETE";
+    public static final String EVENT_ROLE_IMPORT = "ROLE.IMPORT";
     public static final String EVENT_ROLE_PERMISSION_CREATE = "ROLE.PERMISSION.CREATE";
     public static final String EVENT_ROLE_PERMISSION_UPDATE = "ROLE.PERMISSION.UPDATE";
     public static final String EVENT_ROLE_PERMISSION_DELETE = "ROLE.PERMISSION.DELETE";
@@ -624,6 +626,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_RESTORE, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_EXPUNGE, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_IMPORT, VirtualMachine.class);
+        entityEventDetails.put(EVENT_VM_UNMANAGE, VirtualMachine.class);
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class);
@@ -689,6 +692,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROLE_CREATE, Role.class);
         entityEventDetails.put(EVENT_ROLE_UPDATE, Role.class);
         entityEventDetails.put(EVENT_ROLE_DELETE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_IMPORT, Role.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_CREATE, RolePermission.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_UPDATE, RolePermission.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_DELETE, RolePermission.class);

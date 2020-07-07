@@ -15,18 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.acl.dao;
+package com.cloud.agent.api;
 
-import com.cloud.utils.db.GenericDao;
+public class PrepareUnmanageVMInstanceCommand extends Command {
 
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.RoleVO;
+    private String instanceName;
 
-import java.util.List;
+    public PrepareUnmanageVMInstanceCommand() {
+    }
 
-public interface RoleDao extends GenericDao<RoleVO, Long> {
-    List<RoleVO> findAllByName(String roleName);
-    List<RoleVO> findAllByRoleType(RoleType type);
-    List<RoleVO> findByName(String roleName);
-    RoleVO findByNameAndType(String roleName, RoleType type);
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

@@ -15,18 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.acl.dao;
+package org.apache.cloudstack.vm;
 
-import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.RoleVO;
+public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService, PluggableService, Configurable {
 
-import java.util.List;
-
-public interface RoleDao extends GenericDao<RoleVO, Long> {
-    List<RoleVO> findAllByName(String roleName);
-    List<RoleVO> findAllByRoleType(RoleType type);
-    List<RoleVO> findByName(String roleName);
-    RoleVO findByNameAndType(String roleName, RoleType type);
+    ConfigKey<Boolean> UnmanageVMPreserveNic = new ConfigKey<>("Advanced", Boolean.class, "unmanage.vm.preserve.nics", "false",
+            "If set to true, do not remove VM nics (and its MAC addresses) when unmanaging a VM, leaving them allocated but not reserved. " +
+                    "If set to false, nics are removed and MAC addresses can be reassigned", true, ConfigKey.Scope.Zone);
 }

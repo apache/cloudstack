@@ -31,7 +31,10 @@ import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.NicDao;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
@@ -117,7 +120,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
 StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
-NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider {
+NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider{
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
     public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
@@ -163,6 +166,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     DataCenterDao _dcDao;
     @Inject
     NetworkModel _networkModel;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    VMTemplateDao _templateDao;
 
     @Inject
     NetworkTopologyContext networkTopologyContext;
@@ -766,6 +773,33 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     }
 
     @Override
+    public boolean saveHypervisorHostname(NicProfile nicProfile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+        if (_networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.VirtualRouter) && vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
+            VirtualMachine uvm = vm.getVirtualMachine();
+            UserVmVO destVm = _userVmDao.findById(uvm.getId());
+            VirtualMachineProfile profile = null;
+
+            if (destVm != null) {
+                destVm.setHostId(dest.getHost().getId());
+                _userVmDao.update(uvm.getId(), destVm);
+                profile = new VirtualMachineProfileImpl(destVm);
+                profile.setDisks(vm.getDisks());
+                profile.setNics(vm.getNics());
+                profile.setVmData(vm.getVmData());
+            } else {
+                profile = vm;
+            }
+
+            updateUserVmData(nicProfile, network, profile);
+            if (destVm != null) {
+                destVm.setHostId(uvm.getHostId());
+                _userVmDao.update(uvm.getId(), destVm);
+            }
+        }
+        return true;
+    }
+
+    @Override
     public boolean saveUserData(final Network network, final NicProfile nic, final VirtualMachineProfile vm) throws ResourceUnavailableException {
         if (!canHandle(network, null)) {
             return false;
@@ -1066,6 +1100,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             }
 
             final VirtualMachineProfile uservm = vm;
+            List<java.lang.String[]> vmData = uservm.getVmData();
+            uservm.setVmData(vmData);
 
             final List<DomainRouterVO> routers = getRouters(network, dest);
 
@@ -1202,6 +1238,19 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             }
         }
         return true;
+    }
+
+    private void updateUserVmData(final NicProfile nic, final Network network, final VirtualMachineProfile vm) throws ResourceUnavailableException {
+        if (_networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.UserData)) {
+            boolean result = saveUserData(network, nic, vm);
+            if (!result) {
+                s_logger.warn("Failed to update userdata for vm " + vm + " and nic " + nic);
+            } else {
+                s_logger.debug("Successfully saved user data to router");
+            }
+        } else {
+            s_logger.debug("Not applying userdata for nic id=" + nic.getId() + " in vm id=" + vm.getId() + " because it is not supported in network id=" + network.getId());
+        }
     }
 
     @Override
@@ -1351,5 +1400,4 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             _routerDao.persist(router);
         }
     }
-
 }

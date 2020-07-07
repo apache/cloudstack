@@ -24,4 +24,5 @@ public interface Role extends InternalIdentity, Identity {
     String getName();
     RoleType getRoleType();
     String getDescription();
+    boolean isDefault();
 }

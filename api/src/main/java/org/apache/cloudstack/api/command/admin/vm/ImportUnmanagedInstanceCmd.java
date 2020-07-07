@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.VmImportService;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -151,6 +152,11 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             type = CommandType.BOOLEAN,
             description = "vm and its volumes are allowed to migrate to different host/pool when offerings passed are incompatible with current host/pool")
     private Boolean migrateAllowed;
+
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            description = "VM is imported despite some of its NIC's MAC addresses are already present")
+    private Boolean forced;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -266,6 +272,10 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Importing unmanaged VM";
+    }
+
+    public boolean isForced() {
+        return BooleanUtils.isTrue(forced);
     }
 
     /////////////////////////////////////////////////////

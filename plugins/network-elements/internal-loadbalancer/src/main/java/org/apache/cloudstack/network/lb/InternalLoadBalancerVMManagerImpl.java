@@ -357,6 +357,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     }
 
     @Override
+    public void finalizeUnmanage(VirtualMachine vm) {
+    }
+
+    @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _instance = configs.get("instance.name");
