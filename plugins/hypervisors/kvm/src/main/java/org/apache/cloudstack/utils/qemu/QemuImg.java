@@ -245,7 +245,6 @@ public class QemuImg {
         // autodetect source format. Sometime int he future we may teach KVMPhysicalDisk about more formats, then we can explicitly pass them if necessary
         //s.add("-f");
         //s.add(srcFile.getFormat().toString());
-        script.add("-U");
         script.add("-O");
         script.add(destFile.getFormat().toString());
 
