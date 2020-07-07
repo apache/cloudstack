@@ -500,7 +500,7 @@ export default {
       }
 
       if (['listTemplates', 'listIsos', 'listVirtualMachinesMetrics'].includes(this.apiName) && !this.dataView) {
-        if (['Admin'].includes(this.$store.getters.userInfo.roletype) || this.apiName === 'listVirtualMachinesMetrics') {
+        if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) || this.apiName === 'listVirtualMachinesMetrics') {
           this.filters = ['all', ...this.filters]
           if (this.selectedFilter === '') {
             this.selectedFilter = 'all'

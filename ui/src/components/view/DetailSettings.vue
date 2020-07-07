@@ -47,6 +47,7 @@
           :dataSource="detailOptions[newKey]"
           :placeholder="$t('label.value')"
           @change="e => onAddInputChange(e, 'newValue')" />
+        <p v-if="error" style="color: red"> {{ $t(error) }} </p>
         <a-button type="primary" style="width: 25%" icon="plus" @click="addDetail">{{ $t('label.add.setting') }}</a-button>
         <a-button type="dashed" style="width: 25%" icon="close" @click="showAddDetail = false">{{ $t('label.cancel') }}</a-button>
       </div>
@@ -118,7 +119,8 @@ export default {
       newKey: '',
       newValue: '',
       loading: false,
-      resourceType: 'UserVm'
+      resourceType: 'UserVm',
+      error: false
     }
   },
   watch: {
@@ -217,6 +219,11 @@ export default {
       })
     },
     addDetail () {
+      if (this.newKey === '' || this.newValue === '') {
+        this.error = 'Must provide a valid key and value for setting'
+        return
+      }
+      this.error = false
       this.details.push({ name: this.newKey, value: this.newValue })
       this.runApi()
     },
