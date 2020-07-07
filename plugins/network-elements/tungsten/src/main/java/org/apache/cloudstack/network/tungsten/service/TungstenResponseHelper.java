@@ -62,6 +62,7 @@ public class TungstenResponseHelper {
     public static TungstenInstanceIpResponse createTungstenInstanceIpResponse(InstanceIp instanceIp){
         TungstenInstanceIpResponse tungstenInstanceIpResponse = new TungstenInstanceIpResponse();
         tungstenInstanceIpResponse.setName(instanceIp.getName());
+        tungstenInstanceIpResponse.setObjectName("tungstenInstanceIp");
         return tungstenInstanceIpResponse;
     }
 }

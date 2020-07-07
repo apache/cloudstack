@@ -8,7 +8,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class TungstenInstanceIpResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the tungsten network")
+    @Param(description = "name of the tungsten instance ip")
     private String name;
 
     public String getName() {
