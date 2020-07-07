@@ -47,8 +47,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.exception.UnsupportedServiceException;
-import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -135,6 +133,7 @@ import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -188,6 +187,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.gpu.GPU;
 import com.cloud.ha.HighAvailabilityManager;
@@ -195,6 +195,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
@@ -257,7 +258,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -268,7 +268,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -348,6 +348,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private DiskOfferingDao _diskOfferingDao;
     @Inject
     private VMTemplateDao _templateDao;
+    @Inject
+    private VMTemplateDetailsDao templateDetailsDao;
     @Inject
     private VMTemplateZoneDao _templateZoneDao;
     @Inject
@@ -500,8 +502,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private DpdkHelper dpdkHelper;
     @Inject
     private ResourceTagDao resourceTagDao;
-    @Inject
-    private TemplateOVFPropertiesDao templateOVFPropertiesDao;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -941,7 +941,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vm = _vmDao.findById(vmId);
 
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("reboot %s with enterSetup set to %s", vm.getInstanceName(), Boolean.toString(enterSetup)));
+            s_logger.trace(String.format("reboot %s with enterSetup set to %s", vm.getInstanceName(), enterSetup));
         }
 
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
@@ -981,7 +981,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 Map<VirtualMachineProfile.Param,Object> params = null;
                 if (enterSetup) {
-                    params = new HashMap();
+                    params = new HashMap<>();
                     params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace(String.format("Adding %s to paramlist", VirtualMachineProfile.Param.BootIntoSetup));
@@ -2486,13 +2486,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                 }
                 for (String detailName : details.keySet()) {
-                    if (detailName.startsWith(ApiConstants.OVF_PROPERTIES)) {
-                        // TODO FR37 do not replace the name
-                        String ovfPropKey = detailName.replace(ApiConstants.OVF_PROPERTIES + "-", "");
-                        // TODO FR37 get the vm_template_detail
-                        TemplateOVFPropertyVO ovfPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vmInstance.getTemplateId(), ovfPropKey);
-                        // TODO FR37 create the OvfProperertyTO from the value of the vm_template_detail and get isPassword from that
-                        if (ovfPropertyVO != null && ovfPropertyVO.isPassword()) {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace(String.format("looking for vm detail '%s'"));
+                    }
+                    if (detailName.startsWith(ApiConstants.ACS_PROPERTY)) {
+                        OVFPropertyTO propertyTO = templateDetailsDao.findByTemplateAndKey(vmInstance.getTemplateId(),detailName);
+                        if (propertyTO != null && propertyTO.isPassword()) {
                             details.put(detailName, DBEncryptionUtil.encrypt(details.get(detailName)));
                         }
                     }
@@ -3472,41 +3471,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
         long size = 0;
-        // custom root disk size, resizes base template to larger size
-        if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
-            // only KVM, XenServer and VMware supports rootdisksize override
-            if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.Simulator)) {
-                throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
-            }
+        size = getTotalSizeOnDeploy(diskOfferingId, diskSize, customParameters, template, hypervisorType);
 
-            Long rootDiskSize = NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1);
-            if (rootDiskSize <= 0) {
-                throw new InvalidParameterValueException("Root disk size should be a positive number.");
-            }
-            size = rootDiskSize * GiB_TO_BYTES;
-        } else {
-            // For baremetal, size can be null
-            Long templateSize = _templateDao.findById(template.getId()).getSize();
-            if (templateSize != null) {
-                size = templateSize;
-            }
-        }
-        if (diskOfferingId != null) {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            if (diskOffering != null && diskOffering.isCustomized()) {
-                if (diskSize == null) {
-                    throw new InvalidParameterValueException("This disk offering requires a custom size specified");
-                }
-                Long customDiskOfferingMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
-                Long customDiskOfferingMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
-                if ((diskSize < customDiskOfferingMinSize) || (diskSize > customDiskOfferingMaxSize)) {
-                    throw new InvalidParameterValueException("VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize
-                            + " Min:" + customDiskOfferingMinSize);
-                }
-                size += diskSize * GiB_TO_BYTES;
-            }
-            size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
-        }
         if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
             resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
@@ -3805,6 +3771,52 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
+    /**
+     * custom root disk size, resizes base template to larger size
+     */
+    private long getTotalSizeOnDeploy(Long diskOfferingId, Long diskSize, Map<String, String> customParameters, VMTemplateVO template, HypervisorType hypervisorType) {
+        long size = 0;
+        if (template.isDeployAsIs()) {
+            // just get the size from the template
+            return template.getSize();
+        }
+        if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+            // only KVM, XenServer and VMware supports rootdisksize override
+            if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.Simulator)) {
+                throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
+            }
+
+            Long rootDiskSize = NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1);
+            if (rootDiskSize <= 0) {
+                throw new InvalidParameterValueException("Root disk size should be a positive number.");
+            }
+            size = rootDiskSize * GiB_TO_BYTES;
+        } else {
+            // For baremetal, size can be null
+            Long templateSize = _templateDao.findById(template.getId()).getSize();
+            if (templateSize != null) {
+                size = templateSize;
+            }
+        }
+        if (diskOfferingId != null) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+            if (diskOffering != null && diskOffering.isCustomized()) {
+                if (diskSize == null) {
+                    throw new InvalidParameterValueException("This disk offering requires a custom size specified");
+                }
+                Long customDiskOfferingMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
+                Long customDiskOfferingMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
+                if ((diskSize < customDiskOfferingMinSize) || (diskSize > customDiskOfferingMaxSize)) {
+                    throw new InvalidParameterValueException("VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize
+                            + " Min:" + customDiskOfferingMinSize);
+                }
+                size += diskSize * GiB_TO_BYTES;
+            }
+            size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
+        }
+        return size;
+    }
+
     private void checkIfHostNameUniqueInNtwkDomain(String hostName, List<? extends Network> networkList) {
         // Check that hostName is unique in the network domain
         Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
@@ -3947,29 +3959,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 vm.setDetail(VmDetailConstants.DEPLOY_VM, "true");
 
-                if (MapUtils.isNotEmpty(userVmOVFPropertiesMap)) {
-                    for (String key : userVmOVFPropertiesMap.keySet()) {
-                        String detailKey = ApiConstants.OVF_PROPERTIES + "-" + key;
-                        String value = userVmOVFPropertiesMap.get(key);
-
-                        // Sanitize boolean values to expected format and encrypt passwords
-                        if (StringUtils.isNotBlank(value)) {
-                            if (value.equalsIgnoreCase("True")) {
-                                value = "True";
-                            } else if (value.equalsIgnoreCase("False")) {
-                                value = "False";
-                            } else {
-                                // TODO FR37 get the vm_template_detail
-                                // TODO FR37 create the OvfProperertyTO from the value of the vm_template_detail and get isPassword from that
-                                TemplateOVFPropertyVO ovfPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), key);
-                                if (ovfPropertyVO.isPassword()) {
-                                    value = DBEncryptionUtil.encrypt(value);
-                                }
-                            }
-                        }
-                        vm.setDetail(detailKey, value);
-                    }
-                }
+                setPropertiesOnVM(vm, userVmOVFPropertiesMap);
 
                 _vmDao.saveDetails(vm);
                 if (!isImport) {
@@ -4012,6 +4002,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return vm;
             }
         });
+    }
+
+    /**
+     * take the properties and set them on the vm
+     */
+    private void setPropertiesOnVM(UserVmVO vm, Map<String, String> userVmOVFPropertiesMap) {
+        if (MapUtils.isNotEmpty(userVmOVFPropertiesMap)) {
+            for (String key : userVmOVFPropertiesMap.keySet()) {
+                String detailKey = ApiConstants.ACS_PROPERTY + "-" + key;
+                String value = userVmOVFPropertiesMap.get(key);
+
+                // Sanitize boolean values to expected format and encrypt passwords
+                if (StringUtils.isNotBlank(value)) {
+                    if (value.equalsIgnoreCase("True")) {
+                        value = "True";
+                    } else if (value.equalsIgnoreCase("False")) {
+                        value = "False";
+                    } else {
+                        OVFPropertyTO propertyTO = templateDetailsDao.findByTemplateAndKey(vm.getTemplateId(), key);
+                        if (propertyTO != null && propertyTO.isPassword()) {
+                            value = DBEncryptionUtil.encrypt(value);
+                        }
+                    }
+                }
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("setting property '%s' as '%s' with value '%s'", key, detailKey, value));
+                }
+                vm.setDetail(detailKey, value);
+            }
+        }
     }
 
     private UserVmVO commitUserVm(final DataCenter zone, final VirtualMachineTemplate template, final String hostName, final String displayName, final Account owner,
@@ -5173,6 +5193,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         cmd.getCustomId(), cmd.getDhcpOptionsMap(), dataDiskTemplateToDiskOfferingMap, userVmOVFProperties);
             }
         }
+        // FR37 TODO: don't forget to handle not extracted disk definitions on 'deployAsIs'
         // check if this templateId has a child ISO
         List<VMTemplateVO> child_templates = _templateDao.listByParentTemplatetId(templateId);
         for (VMTemplateVO tmpl: child_templates){

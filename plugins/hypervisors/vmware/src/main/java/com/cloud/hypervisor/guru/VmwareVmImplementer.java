@@ -35,13 +35,12 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
@@ -89,9 +88,9 @@ class VmwareVmImplementer {
     @Inject
     PrimaryDataStoreDao storagePoolDao;
     @Inject
-    TemplateOVFPropertiesDao templateOVFPropertiesDao;
-    @Inject
     VMTemplatePoolDao templateStoragePoolDao;
+    @Inject
+    VMTemplateDetailsDao templateDetailsDao;
     @Inject
     VmwareManager vmwareMgr;
 
@@ -121,40 +120,12 @@ class VmwareVmImplementer {
         // FR37 if VmwareImplementAsIsAndReconsiliate add secondary storage or some other encoding of the OVA file to the start command,
         // FR37 so the url for the original OVA can be used for deployment
         if (deployOvaAsIs) {
-            if (LOGGER.isTraceEnabled()) {
-                // FR37 todo MAYBE add flag for deploy as is TO
-
-                // FR37 TODO add url for template in TO ???
-                // FR37 or the OVF file
-                // FR37 actually pass the location where the ovf will found once we get to it ????
-                // FR37 secStor/template/tmpl/<account>/<template>/<name>.ovf.orig
-                // FR37 or pass the content of the OVF?
-//                String relativeLocation = String.format("template%stmpl%s%s%s%s%s%s",
-//                        File.separator,
-//                        File.separator,
-//                        vm.getTemplate().getAccountId(),
-//                        File.separator,
-//                        vm.getTemplate().getId(),
-//                        File.separator,
-//                        vm.getTemplate().getName());
-//                storagePoolDao.findBy
-
-                VMTemplateStoragePoolVO templateStoragePoolVO =  templateStoragePoolDao.findByHostTemplate(host.getId(),vm.getTemplate().getId());
-                long storePoolId = templateStoragePoolVO.getDataStoreId();
-
-                StoragePoolVO storagePoolVO = storagePoolDao.findById(storePoolId);
-                String relativeLocation = storagePoolVO.getUuid();
-
-                to.setTemplateLocation(relativeLocation);
-                // FR37 TODO add usefull stuff in message
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("deploying OVA as is from %s.", relativeLocation));
-                }
-            }
+            // FR37 todo MAYBE add flag for deploy as is in TO
+            storeTemplateLocationInTO(vm, to, host.getId());
         }
         Map<String, String> details = to.getDetails();
         if (details == null)
-            details = new HashMap<String, String>();
+            details = new HashMap<>();
 
         VirtualMachine.Type vmType = vm.getType();
         boolean userVm = !(vmType.equals(VirtualMachine.Type.DomainRouter) || vmType.equals(VirtualMachine.Type.ConsoleProxy) || vmType.equals(VirtualMachine.Type.SecondaryStorageVm));
@@ -225,6 +196,20 @@ class VmwareVmImplementer {
         setDetails(to, details);
 
         return to;
+    }
+
+    private void storeTemplateLocationInTO(VirtualMachineProfile vm, VirtualMachineTO to, long hostId) {
+        VMTemplateStoragePoolVO templateStoragePoolVO =  templateStoragePoolDao.findByHostTemplate(hostId,vm.getTemplate().getId());
+        long storePoolId = templateStoragePoolVO.getDataStoreId();
+
+        StoragePoolVO storagePoolVO = storagePoolDao.findById(storePoolId);
+        String relativeLocation = storagePoolVO.getUuid();
+
+        to.setTemplateLocation(relativeLocation);
+        // FR37 TODO add usefull stuff in message
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("deploying OVA as is from %s.", relativeLocation));
+        }
     }
 
     private void setDetails(VirtualMachineTO to, Map<String, String> details) {
@@ -356,20 +341,14 @@ class VmwareVmImplementer {
     private List<OVFPropertyTO> getOvfPropertyList(VirtualMachineProfile vm, Map<String, String> details) {
         List<OVFPropertyTO> ovfProperties = new ArrayList<OVFPropertyTO>();
         for (String detailKey : details.keySet()) {
-            if (detailKey.startsWith(ApiConstants.OVF_PROPERTIES)) {
-                // get value from template details using key including ApiConstants.OVF_PROPERTIES prefix
-                // put the resulting json in a OVFPropertyTO named propertyTO
-                // setValue(details.get(detailKey)) on the resulting propTO
-                // skipp all upto ovfProperties.add(propertyTO);
-                String ovfPropKey = detailKey.replace(ApiConstants.ACS_PROPERTY + "-", "");
-                TemplateOVFPropertyVO templateOVFPropertyVO = templateOVFPropertiesDao.findByTemplateAndKey(vm.getTemplateId(), ovfPropKey);
-                if (templateOVFPropertyVO == null) {
-                    LOGGER.warn(String.format("OVF property %s not found on template, discarding", ovfPropKey));
+            if (detailKey.startsWith(ApiConstants.ACS_PROPERTY)) {
+                OVFPropertyTO propertyTO = templateDetailsDao.findByTemplateAndKey(vm.getTemplateId(), detailKey);
+                String vmPropertyKey = detailKey.replace(ApiConstants.ACS_PROPERTY + "-", "");
+                if (propertyTO == null) {
+                    LOGGER.warn(String.format("OVF property %s not found on template, discarding", vmPropertyKey));
                     continue;
                 }
-                String ovfValue = details.get(detailKey);
-                boolean isPassword = templateOVFPropertyVO.isPassword();
-                OVFPropertyTO propertyTO = new OVFPropertyTO(ovfPropKey, ovfValue, isPassword);
+                propertyTO.setKey(vmPropertyKey);
                 ovfProperties.add(propertyTO);
             }
         }
