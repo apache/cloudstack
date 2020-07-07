@@ -45,13 +45,9 @@ public class CreateRoleCmd extends RoleCmd {
             description = "creates a role with this unique name", validations = {ApiArgValidator.NotNullOrEmpty})
     private String roleName;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true,
-            description = "The type of the role, valid options are: Admin, ResourceAdmin, DomainAdmin, User",
-            validations = {ApiArgValidator.NotNullOrEmpty})
-    private String roleType;
-
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the role")
-    private String roleDescription;
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class,
+            description = "ID of the role to be cloned from. Either roleid or type must be passed in")
+    private Long roleId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -61,12 +57,8 @@ public class CreateRoleCmd extends RoleCmd {
         return roleName;
     }
 
-    public RoleType getRoleType() {
-        return RoleType.fromString(roleType);
-    }
-
-    public String getRoleDescription() {
-        return roleDescription;
+    public Long getRoleId() {
+        return roleId;
     }
 
     /////////////////////////////////////////////////////
@@ -85,11 +77,39 @@ public class CreateRoleCmd extends RoleCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Role: " + getRoleName() + ", type:" + getRoleType() + ", description: " + getRoleDescription());
-        final Role role = roleService.createRole(getRoleName(), getRoleType(), getRoleDescription());
+        validateRoleParameters();
+
+        Role role = null;
+        if (getRoleId() != null) {
+            Role existingRole = roleService.findRole(getRoleId());
+            if (existingRole == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
+            }
+
+            CallContext.current().setEventDetails("Role: " + getRoleName() + ", from role: " + getRoleId() + ", description: " + getRoleDescription());
+            role = roleService.createRole(getRoleName(), existingRole, getRoleDescription());
+        } else {
+            CallContext.current().setEventDetails("Role: " + getRoleName() + ", type: " + getRoleType() + ", description: " + getRoleDescription());
+            role = roleService.createRole(getRoleName(), getRoleType(), getRoleDescription());
+        }
+
         if (role == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create role");
         }
         setupResponse(role);
+    }
+
+    private void validateRoleParameters() {
+        if (getRoleType() == null && getRoleId() == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Neither role type nor role ID is provided");
+        }
+
+        if (getRoleType() != null && getRoleId() != null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Both role type and role ID should not be specified");
+        }
+
+        if (getRoleId() != null && getRoleId() < 1L) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
+        }
     }
 }
