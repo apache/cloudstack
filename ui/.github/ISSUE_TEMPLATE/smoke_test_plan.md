@@ -18,6 +18,13 @@ labels: testing
 | Add network to VM, change IP address, make it default, delete | | | |
 | Add/delete secondary IP address | | | |
 | | | | |
+| **Compute > Kubernetes** | | | |
+| Add Kubernetes cluster | | | |
+| Start/stop a Kubernetes cluster | | | |
+| Scale Kubernetes cluster | | | |
+| Upgrade Kubernetes cluster | | | |
+| Delete Kubernetes cluster | | | |
+| | | | |
 | **Add Instance groups** | | | |
 | Add/modify/delete instance group| | | |
 | | | | |
@@ -142,7 +149,11 @@ labels: testing
 | | | | |
 | **Backup offering** | | | |
 | Import offering | | | |
-| | | | |
+| Configure backup provider (Veeam) | | | |
+| Create backup offering | | | |
+| Assign VM to backup offering | | | |
+| Revert to backup | | | |
+| Delete backup | | | |
 | **Network offering** | | | |
 | Add isolated network with some supported services | | | |
 | Add L2 network | | | |
@@ -160,6 +171,7 @@ labels: testing
 | | | | |
 | **LDAP configuration** | | | |
 | Add LDAP configuration | | | |
+| Login with LDAP account | | | |
 | | | | |
 | **Common functionality** | | | |
 | Sorting | | | |
