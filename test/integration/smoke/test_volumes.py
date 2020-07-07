@@ -530,6 +530,7 @@ class TestVolumes(cloudstackTestCase):
         self.debug("Extract detached Volume ID: %s" % self.volume.id)
 
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        time.sleep(5)
         self.virtual_machine.detach_volume(self.apiClient, self.volume)
         self.attached = False
 
