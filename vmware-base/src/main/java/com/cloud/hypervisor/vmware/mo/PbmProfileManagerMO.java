@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 public class PbmProfileManagerMO extends BaseMO {
 
-    private static final Logger s_logger = Logger.getLogger(PbmProfileManagerMO.class);
+    private static final Logger LOGGER = Logger.getLogger(PbmProfileManagerMO.class);
 
     public PbmProfileManagerMO (VmwareContext context) {
         super(context, context.getPbmServiceContent().getProfileManager());
@@ -50,8 +50,8 @@ public class PbmProfileManagerMO extends BaseMO {
     }
 
     public List<PbmProfileId> getStorageProfileIds() throws Exception {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Querying vCenter " + _context.getServerAddress() + " for profiles");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Querying vCenter " + _context.getServerAddress() + " for profiles");
         }
         List<PbmProfileId> profileIds = _context.getPbmService().pbmQueryProfile(_mor, getStorageResourceType(), null);
         return profileIds;
@@ -76,7 +76,7 @@ public class PbmProfileManagerMO extends BaseMO {
 
         if (profileId == null) {
             String errMsg = String.format("Storage profile with id %s not found", storageProfileId);
-            s_logger.debug(errMsg);
+            LOGGER.debug(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
 

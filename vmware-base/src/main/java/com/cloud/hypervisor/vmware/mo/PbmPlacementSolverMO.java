@@ -30,7 +30,7 @@ import java.util.List;
 
 public class PbmPlacementSolverMO extends BaseMO {
 
-    private static final Logger s_logger = Logger.getLogger(PbmPlacementSolverMO.class);
+    private static final Logger LOGGER = Logger.getLogger(PbmPlacementSolverMO.class);
 
     public PbmPlacementSolverMO (VmwareContext context) {
         super(context, context.getPbmServiceContent().getPlacementSolver());
