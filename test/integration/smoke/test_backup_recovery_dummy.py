@@ -36,20 +36,12 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         cls.services["mode"] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.api_client)
-        cls._cleanup = []
-        if cls.hypervisor.lower() != 'simulator':
-            raise cls.skipTest("Skipping test cases which must only run for Simulator")
         cls.template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
         if cls.template == FAILED:
             assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = cls.template.id
-        cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
-        cls.offering = ServiceOffering.create(cls.api_client,cls.services["service_offerings"]["small"])
-        cls.vm = VirtualMachine.create(cls.api_client, cls.services["small"], accountid=cls.account.name,
-                                       domainid=cls.account.domainid, serviceofferingid=cls.offering.id,
-                                       mode=cls.services["mode"])
-        cls._cleanup = [cls.offering, cls.account]
+        cls._cleanup = []
 
         # Check backup configuration values, set them to enable the dummy provider
         backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled', zoneid=cls.zone.id)
@@ -61,7 +53,17 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
             Configurations.update(cls.api_client, 'backup.framework.enabled', value='true', zoneid=cls.zone.id)
         if cls.backup_provider != "dummy":
             Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value='dummy', zoneid=cls.zone.id)
-
+        
+        if cls.hypervisor.lower() != 'simulator':
+            return
+        
+        cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
+        cls.offering = ServiceOffering.create(cls.api_client,cls.services["service_offerings"]["small"])
+        cls.vm = VirtualMachine.create(cls.api_client, cls.services["small"], accountid=cls.account.name,
+                                       domainid=cls.account.domainid, serviceofferingid=cls.offering.id,
+                                       mode=cls.services["mode"])
+        cls._cleanup = [cls.offering, cls.account]
+        
         # Import a dummy backup offering to use on tests
 
         cls.provider_offerings = BackupOffering.listExternal(cls.api_client, cls.zone.id)
