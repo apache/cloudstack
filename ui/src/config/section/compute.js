@@ -63,15 +63,6 @@ export default {
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
-      related: [{
-        name: 'vmsnapshot',
-        title: 'label.vm.snapshots',
-        param: 'virtualmachineid'
-      }, {
-        name: 'backup',
-        title: 'label.backup',
-        param: 'virtualmachineid'
-      }],
       tabs: [{
         component: () => import('@/views/compute/InstanceTab.vue')
       }],
