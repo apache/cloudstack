@@ -736,7 +736,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     public boolean isDisabled(final Long zoneId) {
-        return !BackupFrameworkEnabled.valueIn(zoneId);
+        return !(BackupFrameworkEnabled.value() && BackupFrameworkEnabled.valueIn(zoneId));
     }
 
     private void validateForZone(final Long zoneId) {
@@ -769,6 +769,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        if (!BackupFrameworkEnabled.value()) {
+            return cmdList;
+        }
+
         // Offerings
         cmdList.add(ListBackupProvidersCmd.class);
         cmdList.add(ListBackupProviderOfferingsCmd.class);
