@@ -17,7 +17,7 @@
 
 <template>
   <div class="form-layout">
-    <a-spin :spinning="loading">
+    <a-spin :spinning="loading" v-if="!isSubmitted">
       <p v-html="$t('message.desc.create.ssh.key.pair')"></p>
       <a-form
         :form="form"
@@ -64,6 +64,14 @@
         </div>
       </a-form>
     </a-spin>
+    <div v-if="isSubmitted">
+      <p v-html="$t('message.desc.created.ssh.key.pair')"></p>
+      <div :span="24" class="action-button">
+        <a-button @click="notifyCopied" v-clipboard:copy="hiddenElement.innerHTML" type="primary">{{ 'Copy to clipboard' }}</a-button>
+        <a-button @click="downloadKey" type="primary">{{ this.$t('Download') }}</a-button>
+        <a-button @click="closeAction">{{ this.$t('label.close') }}</a-button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -78,7 +86,9 @@ export default {
       domains: [],
       domainLoading: false,
       selectedDomain: {},
-      loading: false
+      loading: false,
+      isSubmitted: false,
+      hiddenElement: null
     }
   },
   beforeCreate () {
@@ -176,20 +186,29 @@ export default {
           api('createSSHKeyPair', params).then(json => {
             this.$message.success('Successfully created SSH key pair: ' + values.name)
             if (json.createsshkeypairresponse && json.createsshkeypairresponse.keypair && json.createsshkeypairresponse.keypair.privatekey) {
-              this.$notification.info({
-                message: this.$t('label.create.ssh.key.pair'),
-                description: (<span domPropsInnerHTML={'<strong>' + values.name + '</strong><br/><pre>' + json.createsshkeypairresponse.keypair.privatekey + '</pre>'}></span>),
-                duration: 0
-              })
+              this.isSubmitted = true
+              const key = json.createsshkeypairresponse.keypair.privatekey
+              this.hiddenElement = document.createElement('a')
+              this.hiddenElement.href = 'data:text/plain;charset=utf-8,' + encodeURI(key)
+              this.hiddenElement.innerHTML = key
+              this.hiddenElement.target = '_blank'
+              this.hiddenElement.download = values.name + '.key'
             }
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {
             this.$emit('refresh-data')
             this.loading = false
-            this.closeAction()
           })
         }
+      })
+    },
+    downloadKey () {
+      this.hiddenElement.click()
+    },
+    notifyCopied () {
+      this.$notification.info({
+        message: this.$t('Copied Successfully to cilpboard')
       })
     },
     closeAction () {

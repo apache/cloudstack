@@ -27,7 +27,7 @@
           type="dashed"
           style="width: 100%"
           icon="plus"
-          :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis)"
+          :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
           @click="showAddDetail = true">
           {{ $t('label.add.setting') }}
         </a-button>
@@ -69,7 +69,7 @@
             <span v-else>{{ item.value }}</span>
           </span>
         </a-list-item-meta>
-        <div slot="actions" v-if="!disableSettings && 'updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis">
+        <div slot="actions" v-if="!disableSettings && 'updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner()">
           <a-button shape="circle" size="default" @click="updateDetail(index)" v-if="item.edit">
             <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
           </a-button>
@@ -82,7 +82,7 @@
             v-if="!item.edit"
             @click="showEditDetail(index)" />
         </div>
-        <div slot="actions" v-if="!disableSettings && 'updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis">
+        <div slot="actions" v-if="!disableSettings && 'updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner()">
           <a-popconfirm
             title="Delete setting?"
             @confirm="deleteDetail(index)"
@@ -168,6 +168,10 @@ export default {
     },
     onAddInputChange (val, obj) {
       this[obj] = val
+    },
+    isAdminOrOwner () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype) ||
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account)
     },
     runApi () {
       var apiName = ''
