@@ -30,7 +30,7 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class VirtualStorageObjectManagerMO extends BaseMO {
     @SuppressWarnings("unused")
-    private static final Logger s_logger = Logger.getLogger(VirtualStorageObjectManagerMO.class);
+    private static final Logger LOGGER = Logger.getLogger(VirtualStorageObjectManagerMO.class);
 
     public VirtualStorageObjectManagerMO(VmwareContext context) {
         super(context, context.getServiceContent().getVStorageObjectManager());
@@ -86,7 +86,7 @@ public class VirtualStorageObjectManagerMO extends BaseMO {
             vStorageObject = (VStorageObject)taskInfo.getResult();
 
         } else {
-            s_logger.error("VMware CreateDisk_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            LOGGER.error("VMware CreateDisk_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
         return vStorageObject;
