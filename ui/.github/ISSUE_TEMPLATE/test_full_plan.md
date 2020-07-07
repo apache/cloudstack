@@ -34,9 +34,16 @@ Note: for User role test exclude after Account/User feature, for DomainAdmin rol
 | Create new instance | || |
 | | | | |
 | **Compute > Kubernetes** | | | |
+| Basic search | | | |
+| Extended search | | | |
 | Sort | | | |
 | Links | | | |
-|Sub menus | | | |
+| Filter by | | | |
+| Add Kubernetes cluster | | | |
+| Start/stop a Kubernetes cluster | | | |
+| Scale Kubernetes cluster | | | |
+| Upgrade Kubernetes cluster | | | |
+| Delete Kubernetes cluster | | | |
 | | | | |
 | **Compute > Instances > selected instance** | | | |
 | View console | | | |
@@ -143,9 +150,13 @@ Note: for User role test exclude after Account/User feature, for DomainAdmin rol
 | Revert VM snapshot | | | |
 | Delete VM snapshot | | | |
 | | | | |
-| **Storage > VM Snapshots** | | | |
-| | | | |
 | **Storage > Backups** | | | |
+| Import offering | | | |
+| Configure backup provider (Veeam) | | | |
+| Create backup offering | | | |
+| Assign VM to backup offering | | | |
+| Revert to backup | | | |
+| Delete backup | | | |
 | | | | |
 | **Network > Guest networks** | | | |
 | Basic search | | | |
