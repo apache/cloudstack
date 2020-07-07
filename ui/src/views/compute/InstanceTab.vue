@@ -275,9 +275,6 @@ export default {
   watch: {
     resource: function (newItem, oldItem) {
       this.vm = newItem
-      if (newItem.id === oldItem.id) {
-        return
-      }
       this.fetchData()
     }
   },
