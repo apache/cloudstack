@@ -1343,6 +1343,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
+        if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
+            final DataCenterVO dc = _dcDao.findById(srcHost.getDataCenterId());
+            _dpMgr.checkForNonDedicatedResources(vmProfile, dc, excludes);
+        }
+
         for (final HostAllocator allocator : hostAllocators) {
             if (canMigrateWithStorage) {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts, HostAllocator.RETURN_UPTO_ALL, false);
