@@ -680,10 +680,6 @@ export default {
   watch: {
     resource: function (newItem, oldItem) {
       this.resource = newItem
-      if (newItem.id === oldItem.id) {
-        return
-      }
-
       this.resourceType = this.$route.meta.resourceType
       this.annotationType = ''
       this.showKeys = false
@@ -706,8 +702,7 @@ export default {
 
       if ('tags' in this.resource) {
         this.tags = this.resource.tags
-      }
-      if (this.resourceType) {
+      } else if (this.resourceType) {
         this.getTags()
       }
       if (this.annotationType) {
@@ -745,7 +740,15 @@ export default {
         return
       }
       this.tags = []
-      api('listTags', { listall: true, resourceid: this.resource.id, resourcetype: this.resourceType }).then(json => {
+      const params = {
+        listall: true,
+        resourceid: this.resource.id,
+        resourcetype: this.resourceType
+      }
+      if (this.$route.meta.name === 'project') {
+        params.projectid = this.resource.id
+      }
+      api('listTags', params).then(json => {
         if (json.listtagsresponse && json.listtagsresponse.tag) {
           this.tags = json.listtagsresponse.tag
         }
