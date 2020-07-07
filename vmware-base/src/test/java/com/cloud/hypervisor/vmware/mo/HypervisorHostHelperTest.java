@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,9 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.offering.NetworkOffering;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.BoolPolicy;
+import com.vmware.vim25.ClusterConfigInfoEx;
+import com.vmware.vim25.DatacenterConfigInfo;
+import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigSpec;
 import com.vmware.vim25.DVSSecurityPolicy;
@@ -62,6 +67,16 @@ public class HypervisorHostHelperTest {
     ServiceContent serviceContent;
     @Mock
     AboutInfo aboutInfo;
+    @Mock
+    private VirtualMachineConfigSpec vmSpec;
+    @Mock
+    private ClusterMO clusterMO;
+    @Mock
+    private DatacenterMO datacenterMO;
+    @Mock
+    private ClusterConfigInfoEx clusterConfigInfo;
+    @Mock
+    private DatacenterConfigInfo datacenterConfigInfo;
 
     String vSwitchName;
     Integer networkRateMbps;
@@ -70,10 +85,12 @@ public class HypervisorHostHelperTest {
     String svlanId = null;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
         when(context.getServiceContent()).thenReturn(serviceContent);
         when(serviceContent.getAbout()).thenReturn(aboutInfo);
+        when(clusterMO.getClusterConfigInfo()).thenReturn(clusterConfigInfo);
+        when(datacenterMO.getDatacenterConfigInfo()).thenReturn(datacenterConfigInfo);
     }
 
     @BeforeClass
@@ -882,5 +899,30 @@ public class HypervisorHostHelperTest {
         assertTrue(spec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec);
         assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getStart() == 0);
         assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getEnd() == 0);
+    }
+
+    @Test
+    public void testSetVMHardwareVersionClusterLevel() throws Exception {
+        when(clusterConfigInfo.getDefaultHardwareVersionKey()).thenReturn("vmx-11");
+        when(datacenterConfigInfo.getDefaultHardwareVersionKey()).thenReturn("vmx-9");
+        HypervisorHostHelper.setVMHardwareVersion(vmSpec, clusterMO, datacenterMO);
+        verify(vmSpec).setVersion("vmx-11");
+        verify(vmSpec, never()).setVersion("vmx-9");
+    }
+
+    @Test
+    public void testSetVMHardwareVersionDatacenterLevel() throws Exception {
+        when(clusterConfigInfo.getDefaultHardwareVersionKey()).thenReturn(null);
+        when(datacenterConfigInfo.getDefaultHardwareVersionKey()).thenReturn("vmx-9");
+        HypervisorHostHelper.setVMHardwareVersion(vmSpec, clusterMO, datacenterMO);
+        verify(vmSpec).setVersion("vmx-9");
+    }
+
+    @Test
+    public void testSetVMHardwareVersionUnset() throws Exception {
+        when(clusterConfigInfo.getDefaultHardwareVersionKey()).thenReturn(null);
+        when(datacenterConfigInfo.getDefaultHardwareVersionKey()).thenReturn(null);
+        HypervisorHostHelper.setVMHardwareVersion(vmSpec, clusterMO, datacenterMO);
+        verify(vmSpec, never()).setVersion(any());
     }
 }
