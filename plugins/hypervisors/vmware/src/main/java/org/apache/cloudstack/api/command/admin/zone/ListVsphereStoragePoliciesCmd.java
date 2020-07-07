@@ -48,7 +48,7 @@ import java.util.List;
         authorized = {RoleType.Admin})
 public class ListVsphereStoragePoliciesCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListVsphereStoragePoliciesCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(ListVsphereStoragePoliciesCmd.class.getName());
 
     public static final String APINAME = "listVsphereStoragePolicies";
 
