@@ -170,54 +170,32 @@ export default {
     }
   },
   created () {
-    if (this.isAdminOrDomainAdmin()) {
-      this.vmColumns = [
-        {
-          title: this.$t('label.name'),
-          dataIndex: 'name',
-          scopedSlots: { customRender: 'name' }
-        },
-        {
-          title: this.$t('label.state'),
-          dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
-        },
-        {
-          title: this.$t('label.instancename'),
-          dataIndex: 'instancename'
-        },
-        {
-          title: this.$t('label.ipaddress'),
-          dataIndex: 'ipaddress'
-        },
-        {
-          title: this.$t('label.zonename'),
-          dataIndex: 'zonename'
-        }
-      ]
-    } else {
-      this.vmColumns = [
-        {
-          title: this.$t('label.name'),
-          dataIndex: 'name'
-        },
-        {
-          title: this.$t('label.displayname'),
-          dataIndex: 'displayname'
-        },
-        {
-          title: this.$t('label.ipaddress'),
-          dataIndex: 'ipaddress'
-        },
-        {
-          title: this.$t('label.zonename'),
-          dataIndex: 'zonename'
-        },
-        {
-          title: this.$t('label.state'),
-          dataIndex: 'state'
-        }
-      ]
+    this.vmColumns = [
+      {
+        title: this.$t('label.name'),
+        dataIndex: 'name',
+        scopedSlots: { customRender: 'name' }
+      },
+      {
+        title: this.$t('label.state'),
+        dataIndex: 'state',
+        scopedSlots: { customRender: 'state' }
+      },
+      {
+        title: this.$t('label.instancename'),
+        dataIndex: 'instancename'
+      },
+      {
+        title: this.$t('label.ipaddress'),
+        dataIndex: 'ipaddress'
+      },
+      {
+        title: this.$t('label.zonename'),
+        dataIndex: 'zonename'
+      }
+    ]
+    if (!this.isAdmin()) {
+      this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
     }
   },
   mounted () {
@@ -231,6 +209,9 @@ export default {
     }
   },
   methods: {
+    isAdmin () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    },
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },

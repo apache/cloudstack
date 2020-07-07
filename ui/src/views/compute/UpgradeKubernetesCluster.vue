@@ -22,7 +22,13 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.kubernetesversionid')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.kubernetesversionid') }}
+            <a-tooltip :title="apiParams.kubernetesversionid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             id="version-selection"
             v-decorator="['kubernetesversionid', {

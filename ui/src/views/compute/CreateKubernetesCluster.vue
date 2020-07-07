@@ -22,21 +22,39 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.name')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.name') }}
+            <a-tooltip :title="apiParams.name.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: 'Please enter Kubernetes cluster name' }]
             }]"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.description')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.description') }}
+            <a-tooltip :title="apiParams.description.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['description', {
               rules: [{ required: true, message: 'Please enter Kubernetes cluster description' }]
             }]"
             :placeholder="apiParams.description.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.zoneid')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.zoneid') }}
+            <a-tooltip :title="apiParams.zoneid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
@@ -55,7 +73,13 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.kubernetesversionid')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.kubernetesversionid') }}
+            <a-tooltip :title="apiParams.kubernetesversionid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             id="version-selection"
             v-decorator="['kubernetesversionid', {
@@ -74,7 +98,13 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.serviceofferingid')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.serviceofferingid') }}
+            <a-tooltip :title="apiParams.serviceofferingid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             id="offering-selection"
             v-decorator="['serviceofferingid', {
@@ -92,7 +122,13 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.noderootdisksize')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.noderootdisksize') }}
+            <a-tooltip :title="apiParams.noderootdisksize.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['noderootdisksize', {
               rules: [{
@@ -106,7 +142,13 @@
             }]"
             :placeholder="apiParams.noderootdisksize.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.networkid')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.networkid') }}
+            <a-tooltip :title="apiParams.networkid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             id="network-selection"
             v-decorator="['networkid', {}]"
@@ -125,7 +167,13 @@
         <a-form-item :label="$t('label.haenable')" v-if="this.selectedKubernetesVersion != null && this.selectedKubernetesVersion != undefined && this.selectedKubernetesVersion.supportsha === true">
           <a-switch v-decorator="['haenable', {initialValue: this.haEnabled}]" :checked="this.haEnabled" @change="val => { this.haEnabled = val }" />
         </a-form-item>
-        <a-form-item :label="$t('label.masternodes')" v-if="this.haEnabled">
+        <a-form-item v-if="this.haEnabled">
+          <span slot="label">
+            {{ $t('label.masternodes') }}
+            <a-tooltip :title="apiParams.masternodes.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['masternodes', {
               initialValue: '1',
@@ -142,12 +190,24 @@
             }]"
             :placeholder="apiParams.masternodes.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.externalloadbalanceripaddress')" v-if="this.haEnabled">
+        <a-form-item v-if="this.haEnabled">
+          <span slot="label">
+            {{ $t('label.externalloadbalanceripaddress') }}
+            <a-tooltip :title="apiParams.externalloadbalanceripaddress.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['externalloadbalanceripaddress', {}]"
             :placeholder="apiParams.externalloadbalanceripaddress.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.cks.cluster.size')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.cks.cluster.size') }}
+            <a-tooltip :title="apiParams.size.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['size', {
               initialValue: '1',
@@ -164,7 +224,13 @@
             }]"
             :placeholder="apiParams.size.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.keypair')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.keypair') }}
+            <a-tooltip :title="apiParams.keypair.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             id="keypair-selection"
             v-decorator="['keypair', {}]"

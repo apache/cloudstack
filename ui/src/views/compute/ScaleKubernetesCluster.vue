@@ -22,7 +22,13 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.cks.cluster.size')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.cks.cluster.size') }}
+            <a-tooltip :title="apiParams.size.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['size', {
               initialValue: originalSize,
@@ -37,7 +43,13 @@
             }]"
             :placeholder="apiParams.size.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.serviceofferingid')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.serviceofferingid') }}
+            <a-tooltip :title="apiParams.serviceofferingid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             id="offering-selection"
             v-decorator="['serviceofferingid', {}]"

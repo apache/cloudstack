@@ -22,21 +22,39 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.semanticversion')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.semanticversion') }}
+            <a-tooltip :title="apiParams.semanticversion.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['semanticversion', {
               rules: [{ required: true, message: 'Please enter Kubernetes semantic version' }]
             }]"
             :placeholder="apiParams.semanticversion.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.name')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.name') }}
+            <a-tooltip :title="apiParams.name.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['name', {
               rules: [{ message: 'Please enter name' }]
             }]"
             :placeholder="$t('label.name')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.zoneid')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.zoneid') }}
+            <a-tooltip :title="apiParams.zoneid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
@@ -63,21 +81,39 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.url')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.url') }}
+            <a-tooltip :title="apiParams.url.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['url', {
               rules: [{ required: true, message: 'Please enter binaries ISO URL' }]
             }]"
             :placeholder="apiParams.url.description" />
         </a-form-item>
-        <a-form-item :label="$t('label.checksum')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.checksum') }}
+            <a-tooltip :title="apiParams.checksum.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['checksum', {
               rules: [{ required: false, message: 'Please enter input' }]
             }]"
             :placeholder="apiParams.checksum.description" />
         </a-form-item>
-        <a-form-item :label="$t('label.mincpunumber')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.mincpunumber') }}
+            <a-tooltip :title="apiParams.mincpunumber.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['mincpunumber', {
               rules: [{ required: true, message: 'Please enter value' },
@@ -93,7 +129,13 @@
             }]"
             :placeholder="apiParams.mincpunumber.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.minmemory')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.minmemory') }}
+            <a-tooltip :title="apiParams.minmemory.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['minmemory', {
               rules: [{ required: true, message: 'Please enter value' },
