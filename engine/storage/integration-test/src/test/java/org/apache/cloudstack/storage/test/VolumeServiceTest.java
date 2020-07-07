@@ -231,23 +231,7 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
             DataStore store = createImageStore();
             VMTemplateVO image = createImageData();
             TemplateInfo template = imageDataFactory.getTemplate(image.getId(), store);
-            // AsyncCallFuture<TemplateApiResult> future =
-            // imageService.createTemplateAsync(template, store);
-            // future.get();
             template = imageDataFactory.getTemplate(image.getId(), store);
-            /*
-             * imageProviderMgr.configure("image Provider", new HashMap<String,
-             * Object>()); VMTemplateVO image = createImageData();
-             * ImageDataStoreProvider defaultProvider =
-             * imageProviderMgr.getProvider("DefaultProvider");
-             * ImageDataStoreLifeCycle lifeCycle =
-             * defaultProvider.getLifeCycle(); ImageDataStore store =
-             * lifeCycle.registerDataStore("defaultHttpStore", new
-             * HashMap<String, String>());
-             * imageService.registerTemplate(image.getId(),
-             * store.getImageDataStoreId()); TemplateEntity te =
-             * imageService.getTemplateEntity(image.getId()); return te;
-             */
             return template;
         } catch (Exception e) {
             Assert.fail("failed", e);
