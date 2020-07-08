@@ -715,8 +715,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     dsMo.deleteFolder(folderToDelete, dcMo.getMor());
                 }
                 else {
+                    // FR37 TODO verify logic: createsnapshot should be true only if deployAsIs isn't
                     vmInfo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
-                            templateUuidName, true, _nfsVersion, template.isDeployAsIs());
+                            templateUuidName, ! template.isDeployAsIs(), _nfsVersion, template.isDeployAsIs());
                 }
             } else {
                 s_logger.info("Template " + templateInfo.second() + " has already been setup, skip the template setup process in primary storage");
