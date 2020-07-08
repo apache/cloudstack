@@ -89,12 +89,18 @@
                           :selected="tabKey"
                           :loading="loading.templates"
                           :preFillContent="dataPreFill"
-                          @update-template-iso="updateFieldValue"
-                        ></template-iso-selection>
+                          @update-template-iso="updateFieldValue" />
+                        <span>
+                          {{ $t('label.override.rootdisk.size') }}
+                          <a-switch @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                        </span>
                         <disk-size-selection
+                          v-show="showRootDiskSizeChanger"
                           input-decorator="rootdisksize"
                           :preFillContent="dataPreFill"
-                          @update-disk-size="updateFieldValue"/>
+                          :minDiskSize="dataPreFill.minrootdisksize"
+                          @update-disk-size="updateFieldValue"
+                          style="margin-top: 10px;"/>
                       </p>
                       <p v-else>
                         {{ $t('message.iso.desc') }}
@@ -204,24 +210,6 @@
                 </template>
               </a-step>
               <a-step
-                :title="this.$t('label.affinity.groups')"
-                :status="zoneSelected ? 'process' : 'wait'">
-                <template slot="description">
-                  <div v-if="zoneSelected">
-                    <affinity-group-selection
-                      :items="options.affinityGroups"
-                      :row-count="rowCount.affinityGroups"
-                      :zoneId="zoneId"
-                      :value="affinityGroupIds"
-                      :loading="loading.affinityGroups"
-                      :preFillContent="dataPreFill"
-                      @select-affinity-group-item="($event) => updateAffinityGroups($event)"
-                      @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"
-                    ></affinity-group-selection>
-                  </div>
-                </template>
-              </a-step>
-              <a-step
                 :title="this.$t('label.networks')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
@@ -265,25 +253,14 @@
                 </template>
               </a-step>
               <a-step
-                :title="this.$t('label.details')"
+                :title="$t('label.advanced.mode')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description" v-if="zoneSelected">
-                  {{ $t('message.vm.review.launch') }}
-                  <div style="margin-top: 15px">
-                    <a-form-item :label="$t('label.name.optional')">
-                      <a-input
-                        v-decorator="['name']"
-                      />
-                    </a-form-item>
-                    <a-form-item :label="$t('label.group.optional')">
-                      <a-input v-decorator="['group']" />
-                    </a-form-item>
-                    <a-form-item :label="$t('label.keyboard')">
-                      <a-select
-                        v-decorator="['keyboard']"
-                        :options="keyboardSelectOptions"
-                      ></a-select>
-                    </a-form-item>
+                  <span>
+                    {{ $t('label.isadvanced') }}
+                    <a-switch @change="val => { this.showDetails = val }" style="margin-left: 10px"/>
+                  </span>
+                  <div style="margin-top: 15px" v-show="this.showDetails">
                     <div
                       v-if="vm.templateid && ['KVM', 'VMware'].includes(hypervisor)">
                       <a-form-item :label="$t('label.vm.boottype')">
@@ -316,6 +293,40 @@
                       <a-textarea
                         v-decorator="['userdata']">
                       </a-textarea>
+                    </a-form-item>
+                    <a-form-item :label="this.$t('label.affinity.groups')">
+                      <affinity-group-selection
+                        :items="options.affinityGroups"
+                        :row-count="rowCount.affinityGroups"
+                        :zoneId="zoneId"
+                        :value="affinityGroupIds"
+                        :loading="loading.affinityGroups"
+                        :preFillContent="dataPreFill"
+                        @select-affinity-group-item="($event) => updateAffinityGroups($event)"
+                        @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"/>
+                    </a-form-item>
+                  </div>
+                </template>
+              </a-step>
+              <a-step
+                :title="this.$t('label.details')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template slot="description" v-if="zoneSelected">
+                  <div style="margin-top: 15px">
+                    {{ $t('message.vm.review.launch') }}
+                    <a-form-item :label="$t('label.name.optional')">
+                      <a-input
+                        v-decorator="['name']"
+                      />
+                    </a-form-item>
+                    <a-form-item :label="$t('label.group.optional')">
+                      <a-input v-decorator="['group']" />
+                    </a-form-item>
+                    <a-form-item :label="$t('label.keyboard')">
+                      <a-select
+                        v-decorator="['keyboard']"
+                        :options="keyboardSelectOptions"
+                      ></a-select>
                     </a-form-item>
                   </div>
                 </template>
@@ -505,7 +516,9 @@ export default {
         }
       ],
       tabKey: 'templateid',
-      dataPreFill: {}
+      dataPreFill: {},
+      showDetails: false,
+      showRootDiskSizeChanger: false
     }
   },
   computed: {
@@ -880,6 +893,10 @@ export default {
           templateid: value,
           isoid: null
         })
+        const templates = this.options.templates.filter(x => x.id === value)
+        if (templates.length > 0) {
+          this.dataPreFill.minrootdisksize = templates[0].size / (1024 * 1024 * 1024) || 0 // bytes to GB
+        }
       } else if (name === 'isoid') {
         this.tabKey = 'isoid'
         this.form.setFieldsValue({
