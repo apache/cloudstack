@@ -462,7 +462,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_USER_ADD, eventDescription = "adding user to project", async = true)
-    public boolean addUserToProject(Long projectId, Long userId, String email, Long projectRoleId, Role projectRole) {
+    public boolean addUserToProject(Long projectId, String username, String email, Long projectRoleId, Role projectRole) {
         Account caller = CallContext.current().getCallingAccount();
 
         Project project = getProject(projectId);
@@ -479,10 +479,11 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             throw ex;
         }
 
-        User user = userDao.findById(userId);
+
+        User user = userDao.getUserByName(username, project.getDomainId());
         if (user == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Invalid user ID provided");
-            ex.addProxyObject(String.valueOf(userId), "userId");
+            ex.addProxyObject(String.valueOf(username), "userId");
             throw ex;
         }
 
@@ -515,10 +516,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         if (_invitationRequired) {
             return inviteUserToProject(project, user, email, projectRole);
         } else {
-            if (userId == null) {
+            if (username == null) {
                 throw new InvalidParameterValueException("User information (ID) is required to add user to the project");
             }
-            if (assignUserToProject(project, userId, user.getAccountId(), projectRole,
+            if (assignUserToProject(project, user.getId(), user.getAccountId(), projectRole,
                     Optional.ofNullable(role).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             }

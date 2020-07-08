@@ -100,6 +100,6 @@ public interface ProjectService {
 
     Project findByProjectAccountIdIncludingRemoved(long projectAccountId);
 
-    boolean addUserToProject(Long projectId, Long userId, String email, Long projectRoleId, Role projectRole);
+    boolean addUserToProject(Long projectId, String username, String email, Long projectRoleId, Role projectRole);
 
 }

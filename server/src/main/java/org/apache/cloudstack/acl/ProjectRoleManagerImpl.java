@@ -46,6 +46,7 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.ListUtils;
@@ -68,6 +69,8 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     AccountDao accountDao;
     @Inject
     ProjectRolePermissionsDao projRolePermissionsDao;
+    @Inject
+    AccountService accountService;
 
     private static final Logger LOGGER = Logger.getLogger(ProjectRoleManagerImpl.class);
 
@@ -92,6 +95,10 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
 
         if (callerAcc == null || callerAcc.getRoleId() == null) {
             throw new PermissionDeniedException("Restricted API called by an invalid user account");
+        }
+
+        if (accountService.isRootAdmin(callerAcc.getId()) || accountService.isDomainAdmin(callerAcc.getAccountId())) {
+            return;
         }
 
         ProjectAccount projectAccount = projAccDao.findByProjectIdUserId(projectId, callerAcc.getAccountId(), user.getId());

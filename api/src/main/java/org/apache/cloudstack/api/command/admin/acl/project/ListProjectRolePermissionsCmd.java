@@ -89,7 +89,7 @@ public class ListProjectRolePermissionsCmd extends BaseCmd {
 
     private ProjectRolePermissionResponse setupResponse(ProjectRole role, ProjectRolePermission rolePermission) {
         final ProjectRolePermissionResponse rolePermissionResponse = new ProjectRolePermissionResponse();
-        rolePermissionResponse.setProjectId((rolePermission.getProjectId()));
+        rolePermissionResponse.setProjectId(_projectService.getProject(rolePermission.getProjectId()).getUuid());
         rolePermissionResponse.setProjectRoleId(role.getUuid());
         rolePermissionResponse.setProjectRoleName(role.getName());
         rolePermissionResponse.setId(rolePermission.getUuid());

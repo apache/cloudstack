@@ -93,6 +93,7 @@ public class CreateProjectRolePermissionCmd extends BaseRolePermissionCmd {
     private void setupResponse(final ProjectRolePermission rolePermission, final ProjectRole role) {
         final ProjectRolePermissionResponse response = new ProjectRolePermissionResponse();
         response.setId(rolePermission.getUuid());
+        response.setProjectId(_projectService.getProject(rolePermission.getProjectId()).getUuid());
         response.setProjectRoleId(role.getUuid());
         response.setRule(rolePermission.getRule());
         response.setRulePermission(rolePermission.getPermission());

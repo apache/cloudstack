@@ -36,7 +36,7 @@ public class ProjectRolePermissionResponse extends BaseRolePermissionResponse {
 
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the ID of the project")
-    private Long projectId;
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT_ROLE_NAME)
     @Param(description = "the name of the project role to which the role permission belongs")
@@ -51,11 +51,11 @@ public class ProjectRolePermissionResponse extends BaseRolePermissionResponse {
     }
 
 
-    public Long getProjectId() {
+    public String getProjectId() {
         return projectId;
     }
 
-    public void setProjectId(Long projectId) {
+    public void setProjectId(String projectId) {
         this.projectId = projectId;
     }
 

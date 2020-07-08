@@ -52,7 +52,7 @@ public abstract class ProjectRoleCmd extends BaseCmd {
     protected void setupProjectRoleResponse(final ProjectRole role) {
         final ProjectRoleResponse response = new ProjectRoleResponse();
         response.setId(role.getUuid());
-        response.setProjectId(role.getProjectId());
+        response.setProjectId(_projectService.getProject(role.getProjectId()).getUuid());
         response.setRoleName(role.getName());
         response.setDescription(role.getDescription());
         response.setResponseName(getCommandName());

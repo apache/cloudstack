@@ -28,13 +28,13 @@ import com.google.gson.annotations.SerializedName;
 public class ProjectRoleResponse extends BaseRoleResponse {
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the id of the project")
-    private Long projectId;
+    private String projectId;
 
-    public Long getProjectId() {
+    public String getProjectId() {
         return projectId;
     }
 
-    public void setProjectId(Long projectId) {
+    public void setProjectId(String projectId) {
         this.projectId = projectId;
     }
 }

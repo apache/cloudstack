@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 import javax.inject.Inject;
@@ -35,9 +36,14 @@ import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
+import com.cloud.projects.ProjectAccountVO;
+import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -52,6 +58,10 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
     private AccountJoinDao _accountJoinDao;
     @Inject
     private AccountDao _accountDao;
+    @Inject
+    private ProjectAccountDao projectAccountDao;
+    @Inject
+    private UserDao userDao;
 
     private final SearchBuilder<ProjectJoinVO> prjSearch;
 
@@ -70,6 +80,21 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         this._count = "select count(distinct id) from project_view WHERE ";
     }
 
+    private String getProjectOwners(List<ProjectAccountVO> projectAccounts) {
+        StringBuilder owner = new StringBuilder();
+        for (ProjectAccount projectAccount : projectAccounts) {
+            if (owner.length() != 0) {
+                owner.append(", ");
+            }
+            if (projectAccount.getUserId() != null) {
+                User user = userDao.findById(projectAccount.getUserId());
+                owner.append(_accountDao.findById(user.getAccountId()).getAccountName()).append("(").append(user.getUsername()).append(")");
+            } else {
+                owner.append(_accountDao.findById(projectAccount.getAccountId()).getAccountName());
+            }
+        }
+        return owner.toString();
+    }
     @Override
     public ProjectResponse newProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO proj) {
         ProjectResponse response = new ProjectResponse();
@@ -82,7 +107,12 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         response.setDomainId(proj.getDomainUuid());
         response.setDomain(proj.getDomainName());
 
-        response.setOwner(proj.getOwner());
+        List<ProjectAccountVO> projectAccounts = projectAccountDao.listByProjectId(proj.getId());
+        projectAccounts = projectAccounts.stream().filter(projectAccount -> {
+            return projectAccount.getAccountRole() == ProjectAccount.Role.Admin;
+        }).collect(Collectors.toList());
+        String owners = getProjectOwners(projectAccounts);
+        response.setOwner(owners);
 
         // update tag information
         List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(proj.getUuid(), ResourceObjectType.Project);

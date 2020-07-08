@@ -221,7 +221,7 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public boolean addUserToProject(Long projectId, Long userId, String email, Long projectRoleId, Role projectRole) {
+    public boolean addUserToProject(Long projectId, String username, String email, Long projectRoleId, Role projectRole) {
         // TODO Auto-generated method stub
         return false;
     }

@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ProjectRoleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.EnumUtils;
 
@@ -54,9 +53,8 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
             description = "ID of the project to add the user to")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.USER_ID, type = BaseCmd.CommandType.UUID, entityType = UserResponse.class,
-            description = "User UUID, required for adding account from external provisioning system")
-    private Long userId;
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Name of the user to be added to the project")
+    private String username;
 
     @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "email ID of user to which invitation to the project is going to be sent")
     private String email;
@@ -77,8 +75,8 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
         return projectId;
     }
 
-    public Long getUserId() {
-        return userId;
+    public String getUsername() {
+        return username;
     }
 
     public String getEmail() { return email; }
@@ -105,7 +103,7 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding user "+getUserId()+" to Project "+getProjectId();
+        return "Adding user "+getUsername()+" to Project "+getProjectId();
     }
 
     /////////////////////////////////////////////////////
@@ -115,7 +113,7 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
     @Override
     public void execute()  {
         validateInput();
-        boolean result = _projectService.addUserToProject(getProjectId(),  getUserId(), getEmail(), getProjectRoleId(), getRoleType());
+        boolean result = _projectService.addUserToProject(getProjectId(),  getUsername(), getEmail(), getProjectRoleId(), getRoleType());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -126,17 +124,14 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
     }
 
     private void validateInput() {
-        if (email == null && userId == null) {
-            throw new InvalidParameterValueException("Must specify atleast userID");
+        if (email == null && username == null) {
+            throw new InvalidParameterValueException("Must specify atleast username");
         }
-        if (email != null && userId == null) {
+        if (email != null && username == null) {
             throw new InvalidParameterValueException("Must specify userID for given email ID");
         }
         if (getProjectId() < 1L) {
             throw new InvalidParameterValueException("Invalid Project ID provided");
-        }
-        if (getUserId() < 1L) {
-            throw new InvalidParameterValueException("Invalid User ID provided");
         }
         if (projectRoleId != null && projectRoleId < 1L) {
             throw new InvalidParameterValueException("Invalid Project role ID provided");
