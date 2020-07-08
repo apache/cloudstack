@@ -16,6 +16,32 @@
 // under the License.
 package org.apache.cloudstack.network.ssl;
 
+import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.dao.LoadBalancerCertMapDao;
@@ -31,28 +57,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.mockito.Mockito.when;
 
 public class CertServiceTest {
 
@@ -108,17 +112,17 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         certService._accountDao = Mockito.mock(AccountDao.class);
-        when(certService._accountDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn((AccountVO)account);
+        when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -159,17 +163,17 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         certService._accountDao = Mockito.mock(AccountDao.class);
-        when(certService._accountDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn((AccountVO)account);
+        when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -209,17 +213,17 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         certService._accountDao = Mockito.mock(AccountDao.class);
-        when(certService._accountDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn((AccountVO)account);
+        when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
 
         //creating the command
         UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -256,11 +260,11 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
@@ -308,11 +312,11 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
@@ -358,11 +362,11 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
@@ -407,11 +411,11 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
@@ -450,11 +454,11 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
@@ -495,11 +499,11 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
@@ -539,11 +543,11 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
@@ -583,11 +587,11 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
@@ -622,20 +626,20 @@ public class CertServiceTest {
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.remove(Matchers.anyLong())).thenReturn(true);
-        when(certService._sslCertDao.findById(Matchers.anyLong())).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.remove(anyLong())).thenReturn(true);
+        when(certService._sslCertDao.findById(anyLong())).thenReturn(new SslCertVO());
 
         // a rule holding the cert
 
         certService._lbCertDao = Mockito.mock(LoadBalancerCertMapDao.class);
-        when(certService._lbCertDao.listByCertId(Matchers.anyLong())).thenReturn(null);
+        when(certService._lbCertDao.listByCertId(anyLong())).thenReturn(null);
 
         //creating the command
         final DeleteSslCertCmd deleteCmd = new DeleteSslCertCmdExtn();
@@ -660,15 +664,15 @@ public class CertServiceTest {
 
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.remove(Matchers.anyLong())).thenReturn(true);
-        when(certService._sslCertDao.findById(Matchers.anyLong())).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.remove(anyLong())).thenReturn(true);
+        when(certService._sslCertDao.findById(anyLong())).thenReturn(new SslCertVO());
 
         // rule holding the cert
         certService._lbCertDao = Mockito.mock(LoadBalancerCertMapDao.class);
@@ -677,10 +681,11 @@ public class CertServiceTest {
         lbMapList.add(new LoadBalancerCertMapVO());
 
         certService._lbCertDao = Mockito.mock(LoadBalancerCertMapDao.class);
-        when(certService._lbCertDao.listByCertId(Matchers.anyLong())).thenReturn(lbMapList);
+        when(certService._lbCertDao.listByCertId(anyLong())).thenReturn(lbMapList);
+
 
         certService._entityMgr = Mockito.mock(EntityManager.class);
-        when(certService._entityMgr.findById(Matchers.eq(LoadBalancerVO.class), Matchers.anyLong())).thenReturn(new LoadBalancerVO());
+        when(certService._entityMgr.findById(eq(LoadBalancerVO.class), nullable(Long.class))).thenReturn(new LoadBalancerVO());
 
         //creating the command
         final DeleteSslCertCmd deleteCmd = new DeleteSslCertCmdExtn();
@@ -708,19 +713,19 @@ public class CertServiceTest {
 
         certService._accountMgr = Mockito.mock(AccountManager.class);
         final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(Matchers.anyLong())).thenReturn(account);
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
         final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(domain);
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.remove(Matchers.anyLong())).thenReturn(true);
-        when(certService._sslCertDao.findById(Matchers.anyLong())).thenReturn(null);
+        when(certService._sslCertDao.remove(anyLong())).thenReturn(true);
+        when(certService._sslCertDao.findById(anyLong())).thenReturn(null);
 
         // no rule holding the cert
         certService._lbCertDao = Mockito.mock(LoadBalancerCertMapDao.class);
-        when(certService._lbCertDao.listByCertId(Matchers.anyLong())).thenReturn(null);
+        when(certService._lbCertDao.listByCertId(anyLong())).thenReturn(null);
 
         //creating the command
         final DeleteSslCertCmd deleteCmd = new DeleteSslCertCmdExtn();

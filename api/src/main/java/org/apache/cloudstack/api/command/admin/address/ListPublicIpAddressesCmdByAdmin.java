@@ -16,39 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.address;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
 import org.apache.cloudstack.api.response.IPAddressResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.network.IpAddress;
-import com.cloud.utils.Pair;
 
 @APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = {IpAddress.class})
-public class ListPublicIpAddressesCmdByAdmin extends ListPublicIpAddressesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmdByAdmin.class.getName());
-
-    @Override
-    public void execute(){
-        Pair<List<? extends IpAddress>, Integer> result = _mgr.searchForIPAddresses(this);
-        ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
-        List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
-        for (IpAddress ipAddress : result.first()) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Full, ipAddress);
-            ipResponse.setObjectName("publicipaddress");
-            ipAddrResponses.add(ipResponse);
-        }
-
-        response.setResponses(ipAddrResponses, result.second());
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
-    }
-
-}
+public class ListPublicIpAddressesCmdByAdmin extends ListPublicIpAddressesCmd implements AdminCmd {}

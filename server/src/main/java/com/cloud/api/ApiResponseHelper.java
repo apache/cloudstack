@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -44,11 +45,17 @@ import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceHostSkippedResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceHostUpdatedResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -61,6 +68,7 @@ import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
@@ -140,6 +148,10 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupSchedule;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -233,6 +245,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
@@ -376,6 +389,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     NetworkDetailsDao networkDetailsDao;
     @Inject
     private VMSnapshotDao vmSnapshotDao;
+    @Inject
+    private BackupOfferingDao backupOfferingDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -860,6 +875,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             Vpc vpc = ApiDBUtils.findVpcById(ipAddr.getVpcId());
             if (vpc != null) {
                 ipResponse.setVpcId(vpc.getUuid());
+                ipResponse.setVpcName(vpc.getName());
             }
         }
 
@@ -1349,6 +1365,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         return listVrs.get(0);
     }
 
+
     @Override
     public SystemVmResponse createSystemVmResponse(VirtualMachine vm) {
         SystemVmResponse vmResponse = new SystemVmResponse();
@@ -1361,11 +1378,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 HostPodVO pod = ApiDBUtils.findPodById(vm.getPodIdToDeployIn());
                 if (pod != null) {
                     vmResponse.setPodId(pod.getUuid());
+                    vmResponse.setPodName(pod.getName());
                 }
             }
             VMTemplateVO template = ApiDBUtils.findTemplateById(vm.getTemplateId());
             if (template != null) {
                 vmResponse.setTemplateId(template.getUuid());
+                vmResponse.setTemplateName(template.getName());
             }
             vmResponse.setCreated(vm.getCreated());
 
@@ -2884,6 +2903,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         VpcOffering voff = ApiDBUtils.findVpcOfferingById(vpc.getVpcOfferingId());
         if (voff != null) {
             response.setVpcOfferingId(voff.getUuid());
+            response.setVpcOfferingName(voff.getName());
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
@@ -2956,6 +2976,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (result.getVpcId() != null) {
             Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
 
         DataCenter zone = ApiDBUtils.findZoneById(result.getZoneId());
@@ -3146,6 +3167,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
         if (vpc != null) {
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
         response.setRemoved(result.getRemoved());
         response.setForDisplay(result.isDisplay());
@@ -3657,6 +3679,25 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
+        } else if (usageRecord.getUsageType() == UsageTypes.BACKUP) {
+            resourceType = ResourceObjectType.Backup;
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Backup usage of size ").append(usageRecord.getUsageDisplay());
+            if (vmInstance != null) {
+                resourceId = vmInstance.getId();
+                usageRecResponse.setResourceName(vmInstance.getInstanceName());
+                usageRecResponse.setUsageId(vmInstance.getUuid());
+                builder.append(" for VM ").append(vmInstance.getHostName())
+                        .append(" (").append(vmInstance.getUuid()).append(")");
+                final BackupOffering backupOffering = backupOfferingDao.findByIdIncludingRemoved(usageRecord.getOfferingId());
+                if (backupOffering != null) {
+                    builder.append(" and backup offering ").append(backupOffering.getName())
+                            .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
+                            .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
+                }
+
+            }
+            usageRecResponse.setDescription(builder.toString());
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             resourceType = ResourceObjectType.VMSnapshot;
             VMSnapshotVO vmSnapshotVO = null;
@@ -3669,6 +3710,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             usageRecResponse.setSize(usageRecord.getSize());
+            if (usageRecord.getVirtualSize() != null) {
+                usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
+            }
             if (usageRecord.getOfferingId() != null) {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
             }
@@ -4207,12 +4251,71 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomainName(domain.getName());
         return response;
     }
+
+    @Override
+    public BackupResponse createBackupResponse(Backup backup) {
+        return ApiDBUtils.newBackupResponse(backup);
+    }
+
+    @Override
+    public BackupScheduleResponse createBackupScheduleResponse(BackupSchedule schedule) {
+        return ApiDBUtils.newBackupScheduleResponse(schedule);
+    }
+
+    @Override
+    public BackupOfferingResponse createBackupOfferingResponse(BackupOffering policy) {
+        return ApiDBUtils.newBackupOfferingResponse(policy);
+    }
+
     public ManagementServerResponse createManagementResponse(ManagementServerHost mgmt) {
         ManagementServerResponse response = new ManagementServerResponse();
         response.setId(mgmt.getUuid());
         response.setName(mgmt.getName());
         response.setVersion(mgmt.getVersion());
         response.setState(mgmt.getState());
+        return response;
+    }
+
+    @Override
+    public List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults) {
+        List<RouterHealthCheckResultResponse> responses = new ArrayList<>(healthCheckResults.size());
+        for (RouterHealthCheckResult hcResult : healthCheckResults) {
+            RouterHealthCheckResultResponse healthCheckResponse = new RouterHealthCheckResultResponse();
+            healthCheckResponse.setObjectName("routerhealthchecks");
+            healthCheckResponse.setCheckName(hcResult.getCheckName());
+            healthCheckResponse.setCheckType(hcResult.getCheckType());
+            healthCheckResponse.setResult(hcResult.getCheckResult());
+            healthCheckResponse.setLastUpdated(hcResult.getLastUpdateTime());
+            healthCheckResponse.setDetails(hcResult.getParsedCheckDetails());
+            responses.add(healthCheckResponse);
+        }
+        return responses;
+    }
+
+    @Override
+    public RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details, List<RollingMaintenanceManager.HostUpdated> hostsUpdated, List<RollingMaintenanceManager.HostSkipped> hostsSkipped) {
+        RollingMaintenanceResponse response = new RollingMaintenanceResponse(success, details);
+        List<RollingMaintenanceHostUpdatedResponse> updated = new ArrayList<>();
+        for (RollingMaintenanceManager.HostUpdated h : hostsUpdated) {
+            RollingMaintenanceHostUpdatedResponse r = new RollingMaintenanceHostUpdatedResponse();
+            r.setHostId(h.getHost().getUuid());
+            r.setHostName(h.getHost().getName());
+            r.setStartDate(getDateStringInternal(h.getStart()));
+            r.setEndDate(getDateStringInternal(h.getEnd()));
+            r.setOutput(h.getOutputMsg());
+            updated.add(r);
+        }
+        List<RollingMaintenanceHostSkippedResponse> skipped = new ArrayList<>();
+        for (RollingMaintenanceManager.HostSkipped h : hostsSkipped) {
+            RollingMaintenanceHostSkippedResponse r = new RollingMaintenanceHostSkippedResponse();
+            r.setHostId(h.getHost().getUuid());
+            r.setHostName(h.getHost().getName());
+            r.setReason(h.getReason());
+            skipped.add(r);
+        }
+        response.setUpdatedHosts(updated);
+        response.setSkippedHosts(skipped);
+        response.setObjectName("rollingmaintenance");
         return response;
     }
 }

@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -53,7 +54,7 @@ import com.cloud.vm.VirtualMachine;
         entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
-public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
+public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMAffinityGroupCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";
 
@@ -148,8 +149,8 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
         dc.add(VMDetails.valueOf("affgrp"));
         EnumSet<VMDetails> details = EnumSet.copyOf(dc);
 
-        if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", details, result).get(0);
+        if (result != null) {
+            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

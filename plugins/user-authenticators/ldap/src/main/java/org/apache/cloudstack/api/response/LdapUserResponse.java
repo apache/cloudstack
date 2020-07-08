@@ -18,34 +18,40 @@ package org.apache.cloudstack.api.response;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import org.apache.cloudstack.api.LdapConstants;
 
 public class LdapUserResponse extends BaseResponse {
-    @SerializedName("email")
+    @SerializedName(ApiConstants.EMAIL)
     @Param(description = "The user's email")
     private String email;
 
-    @SerializedName("principal")
+    @SerializedName(LdapConstants.PRINCIPAL)
     @Param(description = "The user's principle")
     private String principal;
 
-    @SerializedName("firstname")
+    @SerializedName(ApiConstants.FIRSTNAME)
     @Param(description = "The user's firstname")
     private String firstname;
 
-    @SerializedName("lastname")
+    @SerializedName(ApiConstants.LASTNAME)
     @Param(description = "The user's lastname")
     private String lastname;
 
-    @SerializedName("username")
+    @SerializedName(ApiConstants.USERNAME)
     @Param(description = "The user's username")
     private String username;
 
-    @SerializedName("domain")
+    @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "The user's domain")
     private String domain;
+
+    @SerializedName(ApiConstants.USER_CONFLICT_SOURCE)
+    @Param(description = "The authentication source for this user as known to the system or empty if the user is not yet in cloudstack.")
+    private String userSource;
 
     public LdapUserResponse() {
         super();
@@ -59,6 +65,11 @@ public class LdapUserResponse extends BaseResponse {
         this.lastname = lastname;
         this.principal = principal;
         this.domain = domain;
+    }
+
+    public LdapUserResponse(final String username, final String email, final String firstname, final String lastname, final String principal, String domain, String userSource) {
+        this(username, email, firstname, lastname, principal, domain);
+        setUserSource(userSource);
     }
 
     public String getEmail() {
@@ -85,6 +96,10 @@ public class LdapUserResponse extends BaseResponse {
         return domain;
     }
 
+    public String getUserSource() {
+        return userSource;
+    }
+
     public void setEmail(final String email) {
         this.email = email;
     }
@@ -107,5 +122,68 @@ public class LdapUserResponse extends BaseResponse {
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+
+    public void setUserSource(String userSource) {
+        this.userSource = userSource;
+    }
+
+    public String toString() {
+        final String COLUMN = ": ";
+        final String COMMA = ", ";
+        StringBuilder selfRepresentation = new StringBuilder();
+        selfRepresentation.append(this.getClass().getName());
+        selfRepresentation.append('{');
+        boolean hascontent = false;
+        if (this.getUsername() != null) {
+            selfRepresentation.append(ApiConstants.USERNAME);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getUsername());
+            hascontent = true;
+        }
+        if (this.getFirstname() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.FIRSTNAME);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getFirstname());
+            hascontent = true;
+        }
+        if (this.getLastname() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.LASTNAME);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getLastname());
+            hascontent = true;
+        }
+        if(this.getDomain() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.DOMAIN);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getDomain());
+            hascontent = true;
+        }
+        if (this.getEmail() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.EMAIL);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getEmail());
+            hascontent = true;
+        }
+        if (this.getPrincipal() != null) {
+            if(hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(LdapConstants.PRINCIPAL);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getPrincipal());
+            hascontent = true;
+        }
+        if (this.getUserSource() != null) {
+            if (hascontent) selfRepresentation.append(COMMA);
+            selfRepresentation.append(ApiConstants.USER_CONFLICT_SOURCE);
+            selfRepresentation.append(COLUMN);
+            selfRepresentation.append(this.getUserSource());
+        }
+        selfRepresentation.append('}');
+
+        return selfRepresentation.toString();
     }
 }

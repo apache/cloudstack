@@ -34,7 +34,9 @@ from marvin.lib.base import (Account,
                              Network,
                              NetworkOffering,
                              LoadBalancerRule,
-                             Router)
+                             Router,
+                             NIC,
+                             Cluster)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_test_template,
@@ -47,6 +49,7 @@ from marvin.lib.common import (get_domain,
                                list_configurations,
                                verifyGuestTrafficPortGroups)
 from nose.plugins.attrib import attr
+from marvin.lib.decoratorGenerators import skipTestIf
 from ddt import ddt, data
 # Import System modules
 import time
@@ -1530,5 +1533,289 @@ class TestL2Networks(cloudstackTestCase):
             'Implemented'
             "Not the correct state"
         )
+
+        return
+
+class TestPrivateVlansL2Networks(cloudstackTestCase):
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+
+        self.cleanup = [
+        ]
+
+    def tearDown(self):
+        cleanup_resources(self.apiclient, self.cleanup)
+        return
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestPrivateVlansL2Networks, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = testClient.getHypervisorInfo()
+        cls.services['mode'] = cls.zone.networktype
+
+        # Supported hypervisor = Vmware using dvSwitches for guest traffic
+        isVmware = False
+        isDvSwitch = False
+        if cls.hypervisor.lower() in ["vmware"]:
+            isVmware = True
+            clusters = Cluster.list(cls.apiclient, zoneid=cls.zone.id, hypervisor=cls.hypervisor)
+            for cluster in clusters:
+                if cluster.resourcedetails.guestvswitchtype == "vmwaredvs":
+                    # Test only if cluster uses dvSwitch
+                    isDvSwitch = True
+                    break
+
+        supported = isVmware and isDvSwitch
+        cls.vmwareHypervisorDvSwitchesForGuestTrafficNotPresent = not supported
+
+        cls._cleanup = []
+
+        if supported:
+
+            cls.account = Account.create(
+                cls.apiclient,
+                cls.services["account"],
+                admin=True,
+                domainid=cls.domain.id
+            )
+            cls.template = get_test_template(
+                cls.apiclient,
+                cls.zone.id,
+                cls.hypervisor
+            )
+            cls.service_offering = ServiceOffering.create(
+                cls.apiclient,
+                cls.services["service_offerings"]["tiny"]
+            )
+            cls.services["network"]["zoneid"] = cls.zone.id
+            cls.services['mode'] = cls.zone.networktype
+            cls.services["small"]["zoneid"] = cls.zone.id
+            cls.services["small"]["template"] = cls.template.id
+            cls.services["l2-network-pvlan-community-1"] = {
+                "name": "Test Network L2 PVLAN Community 1",
+                "displaytext": "Test Network L2 PVLAN Community 1",
+                "vlan": 900,
+                "isolatedpvlan": "901",
+                "isolatedpvlantype": "community"
+            }
+            cls.services["l2-network-pvlan-community-2"] = {
+                "name": "Test Network L2 PVLAN Community 2",
+                "displaytext": "Test Network L2 PVLAN Community 2",
+                "vlan": 900,
+                "isolatedpvlan": "902",
+                "isolatedpvlantype": "community"
+            }
+            cls.services["l2-network-pvlan-promiscuous"] = {
+                "name": "Test Network L2 PVLAN Promiscuous",
+                "displaytext": "Test Network L2 PVLAN Promiscuous",
+                "vlan": 900,
+                "isolatedpvlan" : "900",
+                "isolatedpvlantype": "promiscuous"
+            }
+            cls.services["l2-network-pvlan-isolated"] = {
+                 "name": "Test Network L2 PVLAN Isolated",
+                 "displaytext": "Test Network L2 PVLAN Isolated",
+                 "vlan": 900,
+                 "isolatedpvlan": "903",
+                 "isolatedpvlantype": "isolated"
+             }
+
+            cls.l2_network_offering = NetworkOffering.create(
+                cls.apiclient,
+                cls.services["l2-network_offering"],
+                specifyvlan=True
+            )
+            cls.isolated_network_offering = NetworkOffering.create(
+                cls.apiclient,
+                cls.services["network_offering"]
+            )
+            cls.l2_network_offering.update(cls.apiclient, state='Enabled')
+            cls.isolated_network_offering.update(cls.apiclient, state='Enabled')
+
+            cls.l2_pvlan_community1 = Network.create(
+                cls.apiclient,
+                cls.services["l2-network-pvlan-community-1"],
+                zoneid=cls.zone.id,
+                networkofferingid=cls.l2_network_offering.id
+            )
+            cls.l2_pvlan_community2 = Network.create(
+                cls.apiclient,
+                cls.services["l2-network-pvlan-community-2"],
+                zoneid=cls.zone.id,
+                networkofferingid=cls.l2_network_offering.id
+            )
+            cls.l2_pvlan_isolated = Network.create(
+                cls.apiclient,
+                cls.services["l2-network-pvlan-isolated"],
+                zoneid=cls.zone.id,
+                networkofferingid=cls.l2_network_offering.id
+            )
+            cls.l2_pvlan_promiscuous = Network.create(
+                cls.apiclient,
+                cls.services["l2-network-pvlan-promiscuous"],
+                zoneid=cls.zone.id,
+                networkofferingid=cls.l2_network_offering.id
+            )
+            cls.isolated_network = Network.create(
+                cls.apiclient,
+                cls.services["isolated_network"],
+                zoneid=cls.zone.id,
+                networkofferingid=cls.isolated_network_offering.id,
+                accountid=cls.account.name,
+                domainid=cls.account.domainid
+            )
+
+            cls._cleanup = [
+                cls.l2_pvlan_promiscuous,
+                cls.l2_pvlan_isolated,
+                cls.l2_pvlan_community1,
+                cls.l2_pvlan_community2,
+                cls.isolated_network,
+                cls.l2_network_offering,
+                cls.isolated_network_offering,
+                cls.service_offering,
+                cls.account,
+            ]
+
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def deploy_vm_multiple_nics(self, name, l2net):
+        """
+        Deploy VM on L2 network and isolated network so VM can get an IP, to use with arping command for isolation test
+        """
+        self.services["small"]["name"] = name
+
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[self.isolated_network.id, l2net.id],
+            mode=self.services["mode"]
+        )
+
+        return vm
+
+    def is_vm_l2_isolated_from_dest(self, vm, eth_device, dest_ip):
+        """
+        True if VM is isolated from dest IP - using arping through the NIC on L2 network:
+        If arping can reach destination, then response is greater than 3 (no reply)
+        """
+        ssh_client = vm.get_ssh_client()
+        response = ssh_client.execute("/usr/sbin/arping -c 5 -I %s %s" % (eth_device, str(dest_ip)))
+        return len(response) == 3
+
+    def enable_l2_nic(self, vm):
+        vm_ip = list(filter(lambda x: x['networkid'] == self.isolated_network.id, vm.nic))[0]['ipaddress']
+        ssh_client = vm.get_ssh_client()
+        eth_device = "eth0"
+        if len(ssh_client.execute("/sbin/ifconfig %s | grep %s" % (eth_device, vm_ip))) > 0:
+            eth_device = "eth1"
+        ssh_client.execute("/sbin/ifconfig %s up" % eth_device)
+        return vm_ip, eth_device
+
+    @attr(tags=["advanced", "advancedns", "smoke", "pvlan"], required_hardware="true")
+    @skipTestIf("vmwareHypervisorDvSwitchesForGuestTrafficNotPresent")
+    def test_l2_network_pvlan_connectivity(self):
+        try:
+            vm_community1_one = self.deploy_vm_multiple_nics("vmcommunity1one", self.l2_pvlan_community1)
+            vm_community1_two = self.deploy_vm_multiple_nics("vmcommunity1two", self.l2_pvlan_community1)
+            vm_community2 = self.deploy_vm_multiple_nics("vmcommunity2", self.l2_pvlan_community2)
+
+            vm_isolated1 = self.deploy_vm_multiple_nics("vmisolated1", self.l2_pvlan_isolated)
+            vm_isolated2 = self.deploy_vm_multiple_nics("vmisolated2", self.l2_pvlan_isolated)
+
+            vm_promiscuous1 = self.deploy_vm_multiple_nics("vmpromiscuous1", self.l2_pvlan_promiscuous)
+            vm_promiscuous2 = self.deploy_vm_multiple_nics("vmpromiscuous2", self.l2_pvlan_promiscuous)
+
+            self.cleanup.append(vm_community1_one)
+            self.cleanup.append(vm_community1_two)
+            self.cleanup.append(vm_community2)
+            self.cleanup.append(vm_isolated1)
+            self.cleanup.append(vm_isolated2)
+            self.cleanup.append(vm_promiscuous1)
+            self.cleanup.append(vm_promiscuous2)
+
+            vm_community1_one_ip, vm_community1_one_eth = self.enable_l2_nic(vm_community1_one)
+            vm_community1_two_ip, vm_community1_two_eth = self.enable_l2_nic(vm_community1_two)
+            vm_community2_ip, vm_community2_eth = self.enable_l2_nic(vm_community2)
+            vm_isolated1_ip, vm_isolated1_eth = self.enable_l2_nic(vm_isolated1)
+            vm_isolated2_ip, vm_isolated2_eth = self.enable_l2_nic(vm_isolated2)
+            vm_promiscuous1_ip, vm_promiscuous1_eth = self.enable_l2_nic(vm_promiscuous1)
+            vm_promiscuous2_ip, vm_promiscuous2_eth = self.enable_l2_nic(vm_promiscuous2)
+
+            # Community PVLAN checks
+            different_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_community2_ip)
+            same_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_community1_two_ip)
+            community_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_promiscuous1_ip)
+            community_to_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_isolated1_ip)
+
+            self.assertTrue(
+                different_community_isolated,
+                "VMs on different community PVLANs must be isolated on layer 2"
+            )
+
+            self.assertFalse(
+                same_community_isolated,
+                "VMs on the same community PVLAN must not be isolated on layer 2"
+            )
+
+            self.assertFalse(
+                community_to_promiscuous_isolated,
+                "VMs on community PVLANs must not be isolated on layer 2 to VMs on promiscuous PVLAN"
+            )
+
+            self.assertTrue(
+                community_to_isolated,
+                "VMs on community PVLANs must be isolated on layer 2 to Vms on isolated PVLAN"
+            )
+
+            # Isolated PVLAN checks
+            same_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_isolated2_ip)
+            isolated_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_community1_one_ip)
+
+            self.assertTrue(
+                same_isolated,
+                "VMs on isolated PVLANs must be isolated on layer 2"
+            )
+            self.assertTrue(
+                isolated_to_community_isolated,
+                "VMs on isolated PVLANs must be isolated on layer 2 to Vms on community PVLAN"
+            )
+
+            # Promiscuous PVLAN checks
+            same_promiscuous = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth, vm_promiscuous2_ip)
+            prom_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth, vm_community1_one_ip)
+            prom_to_isolated = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth, vm_isolated1_ip)
+
+            self.assertFalse(
+                same_promiscuous,
+                "VMs on promiscuous PVLANs must not be isolated on layer 2"
+            )
+            self.assertFalse(
+                prom_to_community_isolated,
+                "VMs on promiscuous PVLANs must not be isolated on layer 2 to Vms on isolated PVLAN"
+            )
+            self.assertFalse(
+                prom_to_isolated,
+                "VMs on promiscuous PVLANs must not be isolated on layer 2 to Vms on community PVLAN"
+            )
+        except Exception as e:
+            self.fail("Failing test. Error: %s" % e)
 
         return

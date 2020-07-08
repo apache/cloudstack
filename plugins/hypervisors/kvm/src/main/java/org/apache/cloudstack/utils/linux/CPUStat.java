@@ -30,6 +30,7 @@ public class CPUStat {
     private UptimeStats _lastStats;
     private final String _sysfsCpuDir = "/sys/devices/system/cpu";
     private final String _uptimeFile = "/proc/uptime";
+    private final String _loadavgFile = "/proc/loadavg";
 
     class UptimeStats {
         public Double upTime = 0d;
@@ -78,6 +79,17 @@ public class CPUStat {
 
     public Integer getCores() {
         return _cores;
+    }
+
+    public Double getCpuLoadAverage() {
+        File f = new File(_loadavgFile);
+        String[] load = {"0.0"};
+        try (Scanner scanner = new Scanner(f,"UTF-8");) {
+            load = scanner.useDelimiter("\\Z").next().split("\\s+");
+        } catch (FileNotFoundException ex) {
+            s_logger.warn("File " + _uptimeFile + " not found:" + ex.toString());
+        }
+        return Double.parseDouble(load[0]);
     }
 
     public Double getCpuUsedPercent() {

@@ -82,11 +82,11 @@ public class XenServerGuruTest {
         Mockito.when(copyCommandMock.getDestTO()).thenReturn(destinationDataMock);
 
         Mockito.when(changedHost.getId()).thenReturn(changedHostId);
-        Mockito.when(defaultHost.getId()).thenReturn(defaultHostId);
+        Mockito.lenient().when(defaultHost.getId()).thenReturn(defaultHostId);
         Mockito.when(defaultHost.getDataCenterId()).thenReturn(zoneId);
 
         Mockito.when(hostDaoMock.findById(defaultHostId)).thenReturn(defaultHost);
-        Mockito.when(hostDaoMock.findById(changedHostId)).thenReturn(changedHost);
+        Mockito.lenient().when(hostDaoMock.findById(changedHostId)).thenReturn(changedHost);
     }
 
     @Test

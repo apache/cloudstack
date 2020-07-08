@@ -217,6 +217,11 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
+    public boolean unremove(Long id) {
+        return false;
+    }
+
+    @Override
     public <K> K getNextInSequence(Class<K> clazz, String name) {
         return null;
     }

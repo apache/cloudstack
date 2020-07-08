@@ -2085,6 +2085,11 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         final String controlIp = getRouterSshControlIp(cmd);
         final String config = cmd.getConfiguration();
+        if (org.apache.commons.lang.StringUtils.isBlank(config)) {
+            s_logger.error("SetMonitorServiceCommand should have config for this case");
+            return new Answer(cmd, false, "SetMonitorServiceCommand failed due to missing config");
+        }
+
         final String args = String.format(" %s %s", "-c", config);
 
         final String command = String.format("%s%s %s", "/opt/cloud/bin/", VRScripts.MONITOR_SERVICE, args);

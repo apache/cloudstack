@@ -49,6 +49,10 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
+import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
+import org.apache.cloudstack.diagnostics.DiagnosticsService;
+import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
@@ -200,6 +204,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
+    private final static String BASE_MOUNT_POINT_ON_REMOTE = "/var/cloud_mount/";
+
+    private final static int USER_DEVICE_START_ID = 3;
+
+    private final static String VM_NAME_ISO_SUFFIX = "-ISO";
+
+    private final static String VM_FILE_ISO_SUFFIX = ".iso";
 
     private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
@@ -1120,7 +1131,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException(errMsg);
     }
 
-    public VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
+    public VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi, int isoCount) throws XmlRpcException, XenAPIException {
         final Volume.Type type = volume.getType();
 
         if (vdi == null) {
@@ -1156,7 +1167,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (volume.getType() == Volume.Type.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
-            vbdr.userdevice = "3";
+            vbdr.userdevice = String.valueOf(USER_DEVICE_START_ID + isoCount);
         } else {
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
@@ -1404,7 +1415,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
         try {
-            finalizeVmMetaData(vm, conn, vmSpec);
+            finalizeVmMetaData(vm, vmr, conn, vmSpec);
         } catch (final Exception e) {
             throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
         }
@@ -1859,7 +1870,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected void finalizeVmMetaData(final VM vm, final Connection conn, final VirtualMachineTO vmSpec) throws Exception {
+    protected void finalizeVmMetaData(final VM vm, final VM.Record vmr, final Connection conn, final VirtualMachineTO vmSpec) throws Exception {
 
         final Map<String, String> details = vmSpec.getDetails();
         if (details != null) {
@@ -1889,6 +1900,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vm.setPlatform(conn, platform);
                 }
             }
+        }
+
+        // Add configuration settings VM record for User VM instances before creating VM
+        Map<String, String> extraConfig = vmSpec.getExtraConfig();
+        if (vmSpec.getType().equals(VirtualMachine.Type.User) && MapUtils.isNotEmpty(extraConfig)) {
+            s_logger.info("Appending user extra configuration settings to VM");
+            ExtraConfigurationUtility.setExtraConfigurationToVm(conn,vmr, vm, extraConfig);
         }
     }
 
@@ -3868,7 +3886,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return getVDIbyUuid(conn, volumePath);
     }
 
-    protected VDI mount(final Connection conn, final String vmName, final DiskTO volume) throws XmlRpcException, XenAPIException {
+    public VDI mount(final Connection conn, final String vmName, final DiskTO volume) throws XmlRpcException, XenAPIException {
         final DataTO data = volume.getData();
         final Volume.Type type = volume.getType();
         if (type == Volume.Type.ISO) {
@@ -3882,7 +3900,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // corer case, xenserver pv driver iso
             final String templateName = iso.getName();
-            if (templateName.startsWith("xs-tools")) {
+            if (templateName != null && templateName.startsWith("xs-tools")) {
                 try {
                     final String actualTemplateName = getActualIsoTemplate(conn);
                     final Set<VDI> vdis = VDI.getByNameLabel(conn, actualTemplateName);
@@ -3911,7 +3929,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } catch (final URISyntaxException e) {
                 throw new CloudRuntimeException("Incorrect uri " + mountpoint, e);
             }
-            final SR isoSr = createIsoSRbyURI(conn, uri, vmName, false);
+            final SR isoSr = createIsoSRbyURI(conn, uri, vmName, true);
 
             final String isoname = isoPath.substring(index + 1);
 
@@ -4097,17 +4115,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             throw new CloudRuntimeException("There are " + (vms == null ? "0" : vms.size()) + " VMs named " + vmName);
         }
         final VM vm = vms.iterator().next();
-
-        if (vmDataList != null) {
-            // create SR
-            SR sr = createLocalIsoSR(conn, _configDriveSRName + getHost().getIp());
-
-            // 1. create vm data files
-            createVmdataFiles(vmName, vmDataList, configDriveLabel);
-
-            // 2. copy config drive iso to host
-            copyConfigDriveIsoToHost(conn, sr, vmName);
-        }
 
         final Set<VBD> vbds = vm.getVBDs(conn);
         for (final VBD vbd : vbds) {
@@ -5449,7 +5456,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public SR createLocalIsoSR(final Connection conn, final String srName) throws XenAPIException, XmlRpcException {
 
         // if config drive sr already exists then return
-        SR sr = getSRByNameLabelandHost(conn, _configDriveSRName + _host.getIp());
+        SR sr = getSRByNameLabelandHost(conn, srName);
 
         if (sr != null) {
             s_logger.debug("Config drive SR already exist, returing it");
@@ -5542,10 +5549,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.debug("Attaching config drive iso device for the VM " + vmName + " In host " + ipAddr);
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
 
-            SR sr = getSRByNameLabel(conn, _configDriveSRName + ipAddr);
+            SR sr = getSRByNameLabel(conn, vmName + VM_NAME_ISO_SUFFIX);
             //Here you will find only two vdis with the <vmname>.iso.
             //one is from source host and second from dest host
-            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + ".iso");
+            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + VM_FILE_ISO_SUFFIX);
             if (vdis.isEmpty()) {
                 s_logger.debug("Could not find config drive ISO: " + vmName);
                 return false;
@@ -5604,4 +5611,67 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
+    /**
+     * Get Diagnostics Data API
+     * Copy zip file from system vm and copy file directly to secondary storage
+     */
+    public Answer copyDiagnosticsFileToSecondaryStorage(Connection conn, CopyToSecondaryStorageCommand cmd) {
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        String vmIP = cmd.getSystemVmIp();
+        String diagnosticsZipFile = cmd.getFileName();
+
+        String localDir = null;
+        boolean success;
+
+        // Mount Secondary storage
+        String secondaryStorageMountPath = null;
+        try {
+            URI uri = new URI(secondaryStorageUrl);
+            secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
+            String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir);
+            if (org.apache.commons.lang.StringUtils.isBlank(mountPoint)) {
+                return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
+            }
+
+            String dataDirectoryInSecondaryStore = localDir + File.separator + DiagnosticsService.DIAGNOSTICS_DIRECTORY;
+            final CopyToSecondaryStorageAnswer answer;
+            final String scpResult = callHostPlugin(conn, "vmops", "secureCopyToHost", "hostfilepath", dataDirectoryInSecondaryStore,
+                    "srcip", vmIP, "srcfilepath", cmd.getFileName()).toLowerCase();
+
+            if (scpResult.contains("success")) {
+                answer = new CopyToSecondaryStorageAnswer(cmd, true, "File copied to secondary storage successfully.");
+            } else {
+                answer = new CopyToSecondaryStorageAnswer(cmd, false, "Zip file " + diagnosticsZipFile.replace("/root/", "") + "could not be copied to secondary storage due to " + scpResult);
+            }
+            umountNfs(conn, secondaryStorageMountPath, localDir);
+            localDir = null;
+            return answer;
+        } catch (Exception e) {
+            String msg = "Exception caught zip file copy to secondary storage URI: " + secondaryStorageUrl + "Exception : " + e;
+            s_logger.error(msg, e);
+            return new CopyToSecondaryStorageAnswer(cmd, false, msg);
+        } finally {
+            if (localDir != null) umountNfs(conn, secondaryStorageMountPath, localDir);
+        }
+    }
+
+    private String mountNfs(Connection conn, String remoteDir, String localDir) {
+        if (localDir == null) {
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+        }
+        return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
+    }
+
+    // Unmount secondary storage from host
+    private void umountNfs(Connection conn, String remoteDir, String localDir) {
+        if (localDir == null) {
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+        }
+        String result = callHostPlugin(conn, "cloud-plugin-storage", "umountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
+        if (org.apache.commons.lang.StringUtils.isBlank(result)) {
+            String errMsg = "Could not umount secondary storage " + remoteDir + " on host " + localDir;
+            s_logger.warn(errMsg);
+        }
+    }
 }

@@ -165,7 +165,7 @@ public class DomainManagerImplTest {
     public void testFindDomainByIdOrPathValidId() {
         final DomainVO domain = new DomainVO("someDomain", 123, 1L, "network.domain");
         Mockito.when(_domainDao.findById(1L)).thenReturn(domain);
-        Mockito.when(_domainDao.findDomainByPath(Mockito.eq("/validDomain/"))).thenReturn(new DomainVO());
+        Mockito.lenient().when(_domainDao.findDomainByPath(Mockito.eq("/validDomain/"))).thenReturn(new DomainVO());
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, null));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, ""));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, " "));
@@ -246,7 +246,7 @@ public class DomainManagerImplTest {
         Mockito.when(_domainDao.findById(20l)).thenReturn(domain);
         Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
         Mockito.when(_domainDao.update(Mockito.eq(20l), Mockito.any(DomainVO.class))).thenReturn(true);
-        Mockito.when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<AccountVO>());
+        Mockito.lenient().when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_networkDomainDao.listNetworkIdsByDomain(Mockito.anyLong())).thenReturn(new ArrayList<Long>());
         Mockito.when(_accountDao.findCleanupsForRemovedAccounts(Mockito.anyLong())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());

@@ -1392,6 +1392,50 @@
                                     $(this).closest('div.select').hide();
                                 }
                             }
+
+                            var uefi = function(bootType){
+                                var $bootmode  = $step.find('select[name=bootmode]');
+
+                                if(bootType.toLowerCase() == 'uefi' ){
+                                    $bootmode.html('');
+                                    var $option = $('<option>');
+                                    var id = 'LEGACY';
+                                    var description = 'LEGACY';
+
+                                    $option.attr('value', id);
+                                    $option.html(description);
+                                    $option.appendTo($bootmode);
+
+                                    var $option2 = $('<option>');
+                                    var id2 = 'SECURE';
+                                    var description2 = 'SECURE';
+
+                                    $option2.attr('value', id2);
+                                    $option2.html(description2);
+                                    $option2.appendTo($bootmode);
+
+                                }
+
+                                if(bootType.toLowerCase() == 'bios' ){
+                                     $bootmode.html('');
+
+                                     var $option = $('<option>');
+                                     var id = 'LEGACY';
+                                     var description = 'LEGACY';
+
+                                     $option.attr('value', id);
+                                     $option.html(description);
+                                     $option.appendTo($bootmode);
+                                }
+
+                            }
+
+                            var $uefiselect  = $step.find('select[name=customboot]');
+                            $uefiselect.unbind('change');
+                            $uefiselect.change(function(){
+                                 uefi($uefiselect.val());
+                            });
+
                         });
                     }
                 };
@@ -1516,14 +1560,29 @@
 
                                 if (advSGFilter == 0) { //when total number of selected sg networks is 0, then 'Select Security Group' is skipped, go to step 6 directly
                                     showStep(6);
-                                } else { //when total number of selected sg networks > 0
+                                } else if (advSGFilter > 0) { //when total number of selected sg networks > 0
                                     if ($activeStep.find('input[type=checkbox]:checked').length > 1) { //when total number of selected networks > 1
                                         cloudStack.dialog.notice({
                                             message: "Can't create a vm with multiple networks one of which is Security Group enabled"
                                         });
                                         return false;
                                     }
+                                } else if (advSGFilter == -1) { // vm with multiple IPs is supported in KVM
+                                    var $selectNetwork = $activeStep.find('input[type=checkbox]:checked');
+                                    var myNetworkIps = [];
+                                    $selectNetwork.each(function() {
+                                        var $specifyIp = $(this).parent().find('.specify-ip input[type=text]');
+                                        myNetworkIps.push($specifyIp.val() == -1 ? null : $specifyIp.val());
+                                    });
+                                    $activeStep.closest('form').data('my-network-ips', myNetworkIps);
+                                    $selectNetwork.each(function() {
+                                        if ($(this).parent().find('input[type=radio]').is(':checked')) {
+                                            $activeStep.closest('form').data('defaultNetwork', $(this).val());
+                                            return;
+                                        }
+                                    })
                                 }
+
                             }
                         }
 

@@ -767,10 +767,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         command.add(systemVmIsoPath);
 
         final String result = command.execute();
-        s_logger.info("Injected public and private keys into systemvm iso with result : " + result);
+        s_logger.info("The script injectkeys.sh was run with result : " + result);
         if (result != null) {
-            s_logger.warn("Failed to inject generated public key into systemvm iso " + result);
-            throw new CloudRuntimeException("Failed to inject generated public key into systemvm iso " + result);
+            s_logger.warn("The script injectkeys.sh failed to run successfully : " + result);
+            throw new CloudRuntimeException("The script injectkeys.sh failed to run successfully : " + result);
         }
     }
 

@@ -44,6 +44,7 @@ public class UsageTypes {
     public static final int VM_SNAPSHOT = 25;
     public static final int VOLUME_SECONDARY = 26;
     public static final int VM_SNAPSHOT_ON_PRIMARY = 27;
+    public static final int BACKUP = 28;
 
     public static List<UsageTypeResponse> listUsageTypes() {
         List<UsageTypeResponse> responseList = new ArrayList<UsageTypeResponse>();
@@ -68,6 +69,7 @@ public class UsageTypes {
         responseList.add(new UsageTypeResponse(VM_SNAPSHOT, "VM Snapshot storage usage"));
         responseList.add(new UsageTypeResponse(VOLUME_SECONDARY, "Volume on secondary storage usage"));
         responseList.add(new UsageTypeResponse(VM_SNAPSHOT_ON_PRIMARY, "VM Snapshot on primary storage usage"));
+        responseList.add(new UsageTypeResponse(BACKUP, "Backup storage usage"));
         return responseList;
     }
 }

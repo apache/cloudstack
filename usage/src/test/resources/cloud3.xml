@@ -9,5 +9,6 @@
   governing permissions and limitations under the License. -->
 <!-- cloud -->
 <dataset>
-<volumes id="17" removed="0"/>
+    <volumes id="17" account_id="1" domain_id="1" size="1" data_center_id="1" volume_type="root" disk_offering_id="1" removed="2019-01-01 00:00:01"/>
+    <configuration instance="test" name="test"/>
 </dataset>

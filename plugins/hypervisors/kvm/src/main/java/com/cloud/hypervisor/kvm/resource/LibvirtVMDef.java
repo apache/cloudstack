@@ -57,7 +57,39 @@ public class LibvirtVMDef {
             }
         }
 
+        enum BootType {
+            UEFI("UEFI"), BIOS("BIOS");
+
+            String _type;
+
+            BootType(String type) {
+                _type = type;
+            }
+
+            @Override
+            public String toString() {
+                return _type;
+            }
+        }
+
+        enum BootMode {
+            LEGACY("LEGACY"), SECURE("SECURE");
+
+            String _mode;
+
+            BootMode(String mode) {
+                _mode = mode;
+            }
+
+            @Override
+            public String toString() {
+                return _mode;
+            }
+        }
+
         private GuestType _type;
+        private BootType _boottype;
+        private BootMode _bootmode;
         private String _arch;
         private String _loader;
         private String _kernel;
@@ -67,6 +99,14 @@ public class LibvirtVMDef {
         private String _uuid;
         private final List<BootOrder> _bootdevs = new ArrayList<BootOrder>();
         private String _machine;
+        private String _nvram;
+        private String _nvramTemplate;
+
+        public static final String GUEST_LOADER_SECURE = "guest.loader.secure";
+        public static final String GUEST_LOADER_LEGACY = "guest.loader.legacy";
+        public static final String GUEST_NVRAM_PATH = "guest.nvram.path";
+        public static final String GUEST_NVRAM_TEMPLATE_SECURE = "guest.nvram.template.secure";
+        public static final String GUEST_NVRAM_TEMPLATE_LEGACY = "guest.nvram.template.legacy";
 
         public void setGuestType(GuestType type) {
             _type = type;
@@ -75,6 +115,10 @@ public class LibvirtVMDef {
         public GuestType getGuestType() {
             return _type;
         }
+
+        public void setNvram(String nvram) { _nvram = nvram; }
+
+        public void setNvramTemplate(String nvramTemplate) { _nvramTemplate = nvramTemplate; }
 
         public void setGuestArch(String arch) {
             _arch = arch;
@@ -103,6 +147,22 @@ public class LibvirtVMDef {
             _uuid = uuid;
         }
 
+        public BootType getBootType() {
+            return _boottype;
+        }
+
+        public void setBootType(BootType boottype) {
+            this._boottype = boottype;
+        }
+
+        public BootMode getBootMode() {
+            return _bootmode;
+        }
+
+        public void setBootMode(BootMode bootmode) {
+            this._bootmode = bootmode;
+        }
+
         @Override
         public String toString() {
             if (_type == GuestType.KVM) {
@@ -125,12 +185,35 @@ public class LibvirtVMDef {
                     guestDef.append(" machine='" + _machine + "'");
                 }
                 guestDef.append(">hvm</type>\n");
+                if (_arch != null && _arch.equals("aarch64")) {
+                    guestDef.append("<loader readonly='yes' type='pflash'>/usr/share/AAVMF/AAVMF_CODE.fd</loader>\n");
+                }
+                if (_loader != null) {
+                    if (_bootmode == BootMode.LEGACY) {
+                        guestDef.append("<loader readonly='yes' secure='no' type='pflash'>" + _loader + "</loader>\n");
+                    } else if (_bootmode == BootMode.SECURE) {
+                        guestDef.append("<loader readonly='yes' secure='yes' type='pflash'>" + _loader + "</loader>\n");
+                    }
+                }
+                if (_nvram != null) {
+                    guestDef.append("<nvram ");
+                    if (_nvramTemplate != null) {
+                        guestDef.append("template='" + _nvramTemplate + "'>");
+                    } else {
+                        guestDef.append(">");
+                    }
+
+                    guestDef.append(_nvram);
+                    guestDef.append(_uuid + ".fd</nvram>");
+                }
                 if (!_bootdevs.isEmpty()) {
                     for (BootOrder bo : _bootdevs) {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                guestDef.append("<smbios mode='sysinfo'/>\n");
+                if (_arch == null || !_arch.equals("aarch64")) {
+                    guestDef.append("<smbios mode='sysinfo'/>\n");
+                }
                 guestDef.append("</os>\n");
                 return guestDef.toString();
             } else if (_type == GuestType.LXC) {
@@ -271,7 +354,11 @@ public class LibvirtVMDef {
             StringBuilder feaBuilder = new StringBuilder();
             feaBuilder.append("<features>\n");
             for (String feature : _features) {
-                feaBuilder.append("<" + feature + "/>\n");
+                if (feature.equalsIgnoreCase("smm")) {
+                    feaBuilder.append("<" + feature + " state=\'on\' " + "/>\n");
+                } else {
+                    feaBuilder.append("<" + feature + "/>\n");
+                }
             }
             if (hyperVEnlightenmentFeatureDef != null) {
                 String hpervF = hyperVEnlightenmentFeatureDef.toString();
@@ -503,7 +590,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskBus {
-            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc");
+            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata");
             String _bus;
 
             DiskBus(String bus) {
@@ -628,13 +715,17 @@ public class LibvirtVMDef {
                 return "sd" + getDevLabelSuffix(devId);
             } else if (bus == DiskBus.VIRTIO) {
                 return "vd" + getDevLabelSuffix(devId);
+            } else if (bus == DiskBus.SATA){
+                if (!forIso) {
+                    return "sda";
+                }
             }
             if (forIso) {
                 devId --;
             } else if(devId >= 2) {
                 devId += 2;
             }
-            return "hd" + getDevLabelSuffix(devId);
+            return (DiskBus.SATA == bus) ? "sdb" : "hd" + getDevLabelSuffix(devId);
 
         }
 
@@ -666,6 +757,23 @@ public class LibvirtVMDef {
 
         }
 
+        public void defFileBasedDisk(String filePath, int devId, DiskFmtType diskFmtType,boolean isWindowsOS) {
+
+            _diskType = DiskType.FILE;
+            _deviceType = DeviceType.DISK;
+            _diskCacheMode = DiskCacheMode.NONE;
+            _sourcePath = filePath;
+            _diskFmtType = diskFmtType;
+
+            if (isWindowsOS) {
+                _diskLabel = getDevLabel(devId, DiskBus.SATA, false); // Windows Secure VM
+                _bus = DiskBus.SATA;
+            } else {
+                _diskLabel = getDevLabel(devId, DiskBus.VIRTIO, false); // Linux Secure VM
+                _bus = DiskBus.VIRTIO;
+            }
+        }
+
         public void defISODisk(String volPath) {
             _diskType = DiskType.FILE;
             _deviceType = DeviceType.CDROM;
@@ -687,6 +795,26 @@ public class LibvirtVMDef {
                 _diskFmtType = DiskFmtType.RAW;
                 _diskCacheMode = DiskCacheMode.NONE;
                 _bus = DiskBus.IDE;
+            }
+        }
+
+        public void defISODisk(String volPath, Integer devId,boolean isSecure, boolean isWindowOs) {
+            if (!isSecure) {
+                defISODisk(volPath, devId);
+            } else {
+                _diskType = DiskType.FILE;
+                _deviceType = DeviceType.CDROM;
+                _sourcePath = volPath;
+                if (isWindowOs) {
+                    _diskLabel = getDevLabel(devId, DiskBus.SATA, true);
+                    _bus = DiskBus.SATA;
+                } else {
+                    _diskLabel = getDevLabel(devId, DiskBus.SCSI, true);
+                    _bus = DiskBus.SCSI;
+                }
+                _diskFmtType = DiskFmtType.RAW;
+                _diskCacheMode = DiskCacheMode.NONE;
+
             }
         }
 
@@ -780,6 +908,10 @@ public class LibvirtVMDef {
 
         public DiskBus getBusType() {
             return _bus;
+        }
+
+        public void setBusType(DiskBus busType) {
+            _bus = busType;
         }
 
         public DiskFmtType getDiskFormatType() {
@@ -1619,6 +1751,37 @@ public class LibvirtVMDef {
             if (this.queues > 0) {
                 scsiBuilder.append(String.format("<driver queues='%d'/>\n", this.queues));
             }
+            scsiBuilder.append("</controller>\n");
+            return scsiBuilder.toString();
+        }
+    }
+
+    public static class USBDef {
+        private short index = 0;
+        private int domain = 0;
+        private int bus = 0;
+        private int slot = 9;
+        private int function = 0;
+
+        public USBDef(short index, int domain, int bus, int slot, int function) {
+            this.index = index;
+            this.domain = domain;
+            this.bus = bus;
+            this.slot = slot;
+            this.function = function;
+        }
+
+        public USBDef() {
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder scsiBuilder = new StringBuilder();
+
+            scsiBuilder.append(String.format("<controller type='usb' index='%d' model='qemu-xhci'>\n", this.index));
+            scsiBuilder.append("<alias name='usb'/>");
+            scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
+                    this.domain, this.bus, this.slot, this.function ) );
             scsiBuilder.append("</controller>\n");
             return scsiBuilder.toString();
         }

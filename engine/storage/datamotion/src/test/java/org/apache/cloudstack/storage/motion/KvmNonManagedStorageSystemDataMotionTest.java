@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.motion;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
@@ -270,7 +271,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         sourceTemplate.setId(0l);
         TemplateObjectTO destTemplate = new TemplateObjectTO();
         ImageStoreVO dataStoreVO = Mockito.mock(ImageStoreVO.class);
-        Mockito.when(dataStoreVO.getId()).thenReturn(0l);
+        Mockito.lenient().when(dataStoreVO.getId()).thenReturn(0l);
 
         ImageStoreEntity destDataStore = Mockito.mock(ImageStoreImpl.class);
         Mockito.doReturn(0l).when(destDataStore).getId();
@@ -299,7 +300,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
     @Test
     public void copyTemplateToTargetStorageIfNeededTestTemplateAlreadyOnTargetHost() throws AgentUnavailableException, OperationTimedoutException {
         Answer copyCommandAnswer = Mockito.mock(Answer.class);
-        Mockito.when(copyCommandAnswer.getResult()).thenReturn(true);
+        Mockito.lenient().when(copyCommandAnswer.getResult()).thenReturn(true);
         configureAndTestcopyTemplateToTargetStorageIfNeeded(new VMTemplateStoragePoolVO(0l, 0l), StoragePoolType.Filesystem, 0);
     }
 
@@ -329,14 +330,14 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         StoragePool srcStoragePool = Mockito.mock(StoragePool.class);
 
         VolumeInfo destVolumeInfo = Mockito.mock(VolumeInfo.class);
-        Mockito.when(volumeDataFactory.getVolume(Mockito.anyLong(), Mockito.any(DataStore.class))).thenReturn(destVolumeInfo);
+        Mockito.lenient().when(volumeDataFactory.getVolume(Mockito.anyLong(), Mockito.any(DataStore.class))).thenReturn(destVolumeInfo);
 
         StoragePool destStoragePool = Mockito.mock(StoragePool.class);
         Mockito.when(destStoragePool.getId()).thenReturn(0l);
         Mockito.when(destStoragePool.getPoolType()).thenReturn(storagePoolType);
 
         DataStore sourceTemplateDataStore = Mockito.mock(DataStore.class);
-        Mockito.when(sourceTemplateDataStore.getName()).thenReturn("sourceTemplateName");
+        Mockito.lenient().when(sourceTemplateDataStore.getName()).thenReturn("sourceTemplateName");
 
         TemplateInfo sourceTemplateInfo = Mockito.mock(TemplateInfo.class);
         Mockito.when(sourceTemplateInfo.getInstallPath()).thenReturn("installPath");
@@ -357,7 +358,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         Mockito.when(templateDataFactory.getTemplate(Mockito.anyLong(), Mockito.eq(sourceTemplateDataStore))).thenReturn(sourceTemplateInfo);
         Mockito.when(templateDataFactory.getTemplate(Mockito.anyLong(), Mockito.eq(destDataStore))).thenReturn(sourceTemplateInfo);
         kvmNonManagedStorageDataMotionStrategy.copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, srcStoragePool, destDataStore, destStoragePool, destHost);
-        Mockito.doNothing().when(kvmNonManagedStorageDataMotionStrategy).updateTemplateReferenceIfSuccessfulCopy(Mockito.any(VolumeInfo.class), Mockito.any(StoragePool.class),
+        Mockito.lenient().doNothing().when(kvmNonManagedStorageDataMotionStrategy).updateTemplateReferenceIfSuccessfulCopy(Mockito.any(VolumeInfo.class), Mockito.any(StoragePool.class),
                 Mockito.any(TemplateInfo.class), Mockito.any(DataStore.class));
 
         InOrder verifyInOrder = Mockito.inOrder(vmTemplatePoolDao, dataStoreManagerImpl, templateDataFactory, kvmNonManagedStorageDataMotionStrategy);
@@ -384,23 +385,23 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         when(volumeInfo1.getDataStore()).thenReturn(dataStore1);
 
         when(volumeInfo2.getPoolId()).thenReturn(POOL_1_ID);
-        when(volumeInfo2.getDataStore()).thenReturn(dataStore1);
+        lenient().when(volumeInfo2.getDataStore()).thenReturn(dataStore1);
 
-        when(dataStore1.getId()).thenReturn(POOL_1_ID);
+        lenient().when(dataStore1.getId()).thenReturn(POOL_1_ID);
         when(pool1.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
         when(pool2.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
         when(pool2.getScope()).thenReturn(ScopeType.CLUSTER);
 
-        when(dataStore3.getId()).thenReturn(POOL_3_ID);
-        when(primaryDataStoreDao.findById(POOL_3_ID)).thenReturn(pool3);
-        when(pool3.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
-        when(pool3.getScope()).thenReturn(ScopeType.CLUSTER);
+        lenient().when(dataStore3.getId()).thenReturn(POOL_3_ID);
+        lenient().when(primaryDataStoreDao.findById(POOL_3_ID)).thenReturn(pool3);
+        lenient().when(pool3.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        lenient().when(pool3.getScope()).thenReturn(ScopeType.CLUSTER);
         when(host1.getId()).thenReturn(HOST_1_ID);
         when(host1.getClusterId()).thenReturn(CLUSTER_ID);
-        when(host1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        lenient().when(host1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(host2.getId()).thenReturn(HOST_2_ID);
         when(host2.getClusterId()).thenReturn(CLUSTER_ID);
-        when(host2.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        lenient().when(host2.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
     }
 
     @Test
@@ -424,7 +425,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
 
     @Test
     public void canHandleKVMLiveStorageMigrationMultipleSources() {
-        when(volumeInfo1.getDataStore()).thenReturn(dataStore2);
+        lenient().when(volumeInfo1.getDataStore()).thenReturn(dataStore2);
         StrategyPriority priority = kvmNonManagedStorageDataMotionStrategy.canHandleKVMNonManagedLiveNFSStorageMigration(migrationMap, host1, host2);
         assertEquals(StrategyPriority.HYPERVISOR, priority);
     }
@@ -438,7 +439,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
 
     @Test
     public void testCanHandleLiveMigrationUnmanagedStorage() {
-        when(pool2.isManaged()).thenReturn(false);
+        lenient().when(pool2.isManaged()).thenReturn(false);
         StrategyPriority priority = kvmNonManagedStorageDataMotionStrategy.canHandleKVMNonManagedLiveNFSStorageMigration(migrationMap, host1, host2);
         assertEquals(StrategyPriority.HYPERVISOR, priority);
     }
@@ -463,7 +464,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyLiveMigrationMapForKVMMixedManagedUnmagedStorage() {
         when(pool1.isManaged()).thenReturn(true);
-        when(pool2.isManaged()).thenReturn(false);
+        lenient().when(pool2.isManaged()).thenReturn(false);
         kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap, host2);
     }
 }

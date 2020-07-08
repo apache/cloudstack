@@ -27,8 +27,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.cloudstack.ha.HAResource;
-import org.apache.cloudstack.kernel.Partition;
 import org.junit.Test;
 
 import com.cloud.agent.api.CheckOnHostCommand;

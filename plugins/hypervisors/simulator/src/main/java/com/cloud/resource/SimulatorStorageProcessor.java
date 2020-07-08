@@ -264,4 +264,9 @@ public class SimulatorStorageProcessor implements StorageProcessor {
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
+        return null;
+    }
 }

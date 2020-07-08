@@ -23,14 +23,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.utils.testcase.Log4jEnabledTestCase;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Profiler.class})
+@PowerMockIgnore({ "javax.management.*", "com.sun.org.apache.xerces.*", "javax.xml.*",
+        "org.xml.*", "org.w3c.dom.*", "com.sun.org.apache.xalan.*", "javax.activation.*" })
+@PrepareForTest(Profiler.class)
 public class TestProfiler extends Log4jEnabledTestCase {
 
     private static final long SLEEP_TIME_NANO = 1000000000L;
@@ -39,8 +41,6 @@ public class TestProfiler extends Log4jEnabledTestCase {
     @Before
     public void setUp() {
         pf = new Profiler();
-        PowerMockito.mockStatic(System.class);
-        PowerMockito.when(System.nanoTime()).thenReturn(0L, SLEEP_TIME_NANO);
     }
 
     @Test
@@ -50,7 +50,9 @@ public class TestProfiler extends Log4jEnabledTestCase {
 
         //When
         pf.start();
+        pf.setStartTick(0); // mock start tick
         pf.stop();
+        pf.setStopTick(SLEEP_TIME_NANO); // mock stop tick
 
         //Then
         Assert.assertTrue(pf.getDurationInMillis() == sleepTimeMillis);
@@ -63,7 +65,9 @@ public class TestProfiler extends Log4jEnabledTestCase {
 
         //When
         pf.start();
+        pf.setStartTick(0); // mock start tick
         pf.stop();
+        pf.setStopTick(SLEEP_TIME_NANO); // mock stop tick
 
         //Then
         Assert.assertTrue(pf.getDuration() == sleepTimeNano);
@@ -76,6 +80,7 @@ public class TestProfiler extends Log4jEnabledTestCase {
 
         //When
         pf.stop();
+        pf.setStopTick(SLEEP_TIME_NANO); // mock stop tick
 
         //Then
         Assert.assertTrue(pf.getDurationInMillis() == expectedAnswer);

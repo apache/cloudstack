@@ -273,12 +273,12 @@ public class BridgeVifDriver extends VifDriverBase {
 
     @Override
     public void attach(LibvirtVMDef.InterfaceDef iface) {
-        Script.runSimpleBashScript("brctl addif " + iface.getBrName() + " " + iface.getDevName());
+        Script.runSimpleBashScript("ip link set " + iface.getDevName() + " master " +  iface.getBrName());
     }
 
     @Override
     public void detach(LibvirtVMDef.InterfaceDef iface) {
-        Script.runSimpleBashScript("test -d /sys/class/net/" + iface.getBrName() + "/brif/" + iface.getDevName() + " && brctl delif " + iface.getBrName() + " " + iface.getDevName());
+        Script.runSimpleBashScript("test -d /sys/class/net/" + iface.getBrName() + "/brif/" + iface.getDevName() + " && ip link set " + iface.getDevName() + " nomaster");
     }
 
     private String generateVnetBrName(String pifName, String vnetId) {

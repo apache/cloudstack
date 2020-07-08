@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.utils.Pair;
 import com.vmware.vim25.DVPortgroupConfigSpec;
 import com.vmware.vim25.DVSConfigInfo;
 import com.vmware.vim25.ManagedObjectReference;
@@ -31,8 +33,6 @@ import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.VMwareDVSConfigInfo;
 import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPvlanMapEntry;
-
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class DistributedVirtualSwitchMO extends BaseMO {
     @SuppressWarnings("unused")
@@ -169,4 +169,28 @@ public class DistributedVirtualSwitchMO extends BaseMO {
         return result;
     }
 
+    public Pair<Integer, HypervisorHostHelper.PvlanType> retrieveVlanFromPvlan(int pvlanid, ManagedObjectReference dvSwitchMor) throws Exception {
+        assert (dvSwitchMor != null);
+
+        Pair<Integer, HypervisorHostHelper.PvlanType> result = null;
+
+        VMwareDVSConfigInfo configinfo = (VMwareDVSConfigInfo)_context.getVimClient().getDynamicProperty(dvSwitchMor, "config");
+        List<VMwareDVSPvlanMapEntry> pvlanConfig = null;
+        pvlanConfig = configinfo.getPvlanConfig();
+
+        if (null == pvlanConfig || 0 == pvlanConfig.size()) {
+            return result;
+        }
+
+        // Iterate through the pvlanMapList and check if the specified pvlan id exist. If it does, set the fields in result accordingly.
+        for (VMwareDVSPvlanMapEntry mapEntry : pvlanConfig) {
+            int entryVlanid = mapEntry.getPrimaryVlanId();
+            int entryPvlanid = mapEntry.getSecondaryVlanId();
+            if (pvlanid == entryPvlanid) {
+                result = new Pair<>(entryVlanid, HypervisorHostHelper.PvlanType.valueOf(mapEntry.getPvlanType()));
+                break;
+            }
+        }
+        return result;
+    }
 }

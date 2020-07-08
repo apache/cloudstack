@@ -115,9 +115,9 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor ")
     private String cpuWithOverprovisioning;
 
-    @SerializedName("averageload")
+    @SerializedName(ApiConstants.CPU_LOAD_AVERAGE)
     @Param(description = "the cpu average load on the host")
-    private Long averageLoad;
+    private Double cpuloadaverage;
 
     @SerializedName("networkkbsread")
     @Param(description = "the incoming network traffic on the host")
@@ -244,6 +244,10 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the admin that annotated this host", since = "4.11")
     private String username;
 
+    @SerializedName("ueficapability")
+    @Param(description = "true if the host has capability to support UEFI boot")
+    private Boolean uefiCapabilty;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -333,8 +337,8 @@ public class HostResponse extends BaseResponse {
         this.cpuUsed = cpuUsed;
     }
 
-    public void setAverageLoad(Long averageLoad) {
-        this.averageLoad = averageLoad;
+    public void setCpuAverageLoad(Double averageLoad) {
+        this.cpuloadaverage = averageLoad;
     }
 
     public void setNetworkKbsRead(Long networkKbsRead) {
@@ -499,6 +503,14 @@ public class HostResponse extends BaseResponse {
         detailsCopy.remove("username");
         detailsCopy.remove("password");
 
+        if(detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
+            this.setUefiCapabilty(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_UEFI_ENABLE)));
+            detailsCopy.remove(Host.HOST_UEFI_ENABLE);
+        } else {
+            this.setUefiCapabilty(new Boolean(false)); // in case of existing host which is not scanned for UEFI capability
+        }
+
+
         this.details = detailsCopy;
     }
 
@@ -577,8 +589,8 @@ public class HostResponse extends BaseResponse {
         return cpuUsed;
     }
 
-    public Long getAverageLoad() {
-        return averageLoad;
+    public Double getAverageLoad() {
+        return cpuloadaverage;
     }
 
     public Long getNetworkKbsRead() {
@@ -667,5 +679,9 @@ public class HostResponse extends BaseResponse {
 
     public Boolean getHaHost() {
         return haHost;
+    }
+
+    public void setUefiCapabilty(Boolean hostCapability) {
+        this.uefiCapabilty = hostCapability;
     }
 }

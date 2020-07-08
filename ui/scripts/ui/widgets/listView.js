@@ -168,8 +168,11 @@
                 } else {
                     if (needsRefresh) {
                         var $loading = $('<div>').addClass('loading-overlay');
-
-                        $listView.prepend($loading);
+                        if ($listView) {
+                            $listView.prepend($loading);
+                        } else {
+                            $instanceRow.closest('.list-view').prepend($loading)
+                        }
                     }
 
                     var actionArgs = {

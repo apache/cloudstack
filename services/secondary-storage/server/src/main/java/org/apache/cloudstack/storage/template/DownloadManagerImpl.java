@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -60,6 +59,7 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.commons.collections.CollectionUtils;
@@ -82,7 +82,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.QCOW2Utils;
 import org.apache.cloudstack.utils.security.ChecksumValue;
@@ -850,8 +849,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         Script script = new Script(listVolScr, LOGGER);
         script.add("-r", rootdir);
-        ZfsPathParser zpp = new ZfsPathParser(rootdir);
+        PathParser zpp = new PathParser(rootdir);
         script.execute(zpp);
+        if (script.getExitValue() != 0) {
+            LOGGER.error("Error while executing script " + script.toString());
+            throw new CloudRuntimeException("Error while executing script " + script.toString());
+        }
         result.addAll(zpp.getPaths());
         LOGGER.info("found " + zpp.getPaths().size() + " volumes" + zpp.getPaths());
         return result;
@@ -862,8 +865,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         Script script = new Script(listTmpltScr, LOGGER);
         script.add("-r", rootdir);
-        ZfsPathParser zpp = new ZfsPathParser(rootdir);
+        PathParser zpp = new PathParser(rootdir);
         script.execute(zpp);
+        if (script.getExitValue() != 0) {
+            LOGGER.error("Error while executing script " + script.toString());
+            throw new CloudRuntimeException("Error while executing script " + script.toString());
+        }
         result.addAll(zpp.getPaths());
         LOGGER.info("found " + zpp.getPaths().size() + " templates" + zpp.getPaths());
         return result;
@@ -959,33 +966,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             LOGGER.debug("Added volume name: " + vInfo.getTemplateName() + ", path: " + vol);
         }
         return result;
-    }
-
-    public static class ZfsPathParser extends OutputInterpreter {
-        String _parent;
-        List<String> paths = new ArrayList<String>();
-
-        public ZfsPathParser(String parent) {
-            _parent = parent;
-        }
-
-        @Override
-        public String interpret(BufferedReader reader) throws IOException {
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                paths.add(line);
-            }
-            return null;
-        }
-
-        public List<String> getPaths() {
-            return paths;
-        }
-
-        @Override
-        public boolean drain() {
-            return true;
-        }
     }
 
     public DownloadManagerImpl() {

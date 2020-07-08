@@ -20,6 +20,7 @@
 package org.apache.cloudstack.api.command;
 
 import static org.junit.Assert.assertFalse;
+import static org.mockito.ArgumentMatchers.nullable;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -51,7 +52,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.AttributeStatement;
@@ -178,16 +179,16 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         providerMetadata.setSsoUrl("http://test.local");
         providerMetadata.setSloUrl("http://test.local");
 
-        Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(null);
+        Mockito.lenient().when(session.getAttribute(Mockito.anyString())).thenReturn(null);
 
-        Mockito.when(domain.getId()).thenReturn(1L);
-        Mockito.when(domainMgr.getDomain(Mockito.anyString())).thenReturn(domain);
+        Mockito.lenient().when(domain.getId()).thenReturn(1L);
+        Mockito.lenient().when(domainMgr.getDomain(Mockito.anyString())).thenReturn(domain);
         UserAccountVO user = new UserAccountVO();
         user.setId(1000L);
-        Mockito.when(userAccountDao.getUserAccount(Mockito.anyString(), Mockito.anyLong())).thenReturn(user);
-        Mockito.when(apiServer.verifyUser(Mockito.anyLong())).thenReturn(false);
+        Mockito.lenient().when(userAccountDao.getUserAccount(Mockito.anyString(), Mockito.anyLong())).thenReturn(user);
+        Mockito.lenient().when(apiServer.verifyUser(nullable(Long.class))).thenReturn(false);
         Mockito.when(samlAuthManager.getSPMetadata()).thenReturn(providerMetadata);
-        Mockito.when(samlAuthManager.getIdPMetadata(Mockito.anyString())).thenReturn(providerMetadata);
+        Mockito.when(samlAuthManager.getIdPMetadata(nullable(String.class))).thenReturn(providerMetadata);
 
         Map<String, Object[]> params = new HashMap<String, Object[]>();
 
@@ -197,7 +198,7 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
 
         // SSO SAMLResponse verification test, this should throw ServerApiException for auth failure
         params.put(SAMLPluginConstants.SAML_RESPONSE, new String[]{"Some String"});
-        Mockito.stub(cmd.processSAMLResponse(Mockito.anyString())).toReturn(buildMockResponse());
+        Mockito.when(cmd.processSAMLResponse(Mockito.anyString())).thenReturn(buildMockResponse());
         boolean failing = true;
         try {
             cmd.authenticate("command", params, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
@@ -272,7 +273,7 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
 
     private UserAccountVO configureTestWhenFailToAuthenticateThrowExceptionOrRedirectToUrl(String entity, String configurationValue, Boolean isUserAuthorized)
             throws IOException {
-        Mockito.when(samlAuthManager.isUserAuthorized(Mockito.anyLong(), Mockito.anyString())).thenReturn(isUserAuthorized);
+        Mockito.when(samlAuthManager.isUserAuthorized(nullable(Long.class), nullable(String.class))).thenReturn(isUserAuthorized);
         SAML2LoginAPIAuthenticatorCmd.saml2FailedLoginRedirectUrl = new ConfigKey<String>("Advanced", String.class, "saml2.failed.login.redirect.url", configurationValue,
                 "The URL to redirect the SAML2 login failed message (the default vaulue is empty).", true);
         UserAccountVO userAccount = new UserAccountVO();

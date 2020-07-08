@@ -20,6 +20,9 @@
 package com.cloud.agent.api.routing;
 
 import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.api.to.MonitorServiceTO;
 
@@ -29,13 +32,24 @@ import com.cloud.agent.api.to.MonitorServiceTO;
  * how to access the components inside the command.
  */
 public class SetMonitorServiceCommand extends NetworkElementCommand {
-    MonitorServiceTO[] services;
+    public static final String ROUTER_MONITORING_ENABLED = "router.monitor.enabled";
+    public static final String ROUTER_HEALTH_CHECKS_ENABLED = "router.health.checks.enabled";
+    public static final String ROUTER_HEALTH_CHECKS_BASIC_INTERVAL = "router.health.checks.basic.interval";
+    public static final String ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL = "router.health.checks.advanced.interval";
+    public static final String ROUTER_HEALTH_CHECKS_EXCLUDED = "router.health.checks.excluded";
+
+    private MonitorServiceTO[] services;
+    private Map<String, String> healthChecksConfig;
+    private boolean reconfigureAfterUpdate;
+    private boolean deleteFromProcessedCache;
 
     protected SetMonitorServiceCommand() {
     }
 
     public SetMonitorServiceCommand(List<MonitorServiceTO> services) {
-        this.services = services.toArray(new MonitorServiceTO[services.size()]);
+        if (CollectionUtils.isNotEmpty(services)) {
+            this.services = services.toArray(new MonitorServiceTO[services.size()]);
+        }
     }
 
     public MonitorServiceTO[] getRules() {
@@ -43,7 +57,9 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
     }
 
     public String getConfiguration() {
-
+        if (services == null) {
+            return null;
+        }
         StringBuilder sb = new StringBuilder();
         for (MonitorServiceTO service : services) {
             sb.append("[").append(service.getService()).append("]").append(":");
@@ -54,5 +70,29 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
         }
 
         return sb.toString();
+    }
+
+    public Map<String, String> getHealthChecksConfig() {
+        return healthChecksConfig;
+    }
+
+    public void setHealthChecksConfig(Map<String, String> healthChecksConfig) {
+        this.healthChecksConfig = healthChecksConfig;
+    }
+
+    public boolean shouldReconfigureAfterUpdate() {
+        return reconfigureAfterUpdate;
+    }
+
+    public void setReconfigureAfterUpdate(boolean reconfigureAfterUpdate) {
+        this.reconfigureAfterUpdate = reconfigureAfterUpdate;
+    }
+
+    public boolean shouldDeleteFromProcessedCache() {
+        return deleteFromProcessedCache;
+    }
+
+    public void setDeleteFromProcessedCache(boolean deleteFromProcessedCache) {
+        this.deleteFromProcessedCache = deleteFromProcessedCache;
     }
 }

@@ -396,7 +396,7 @@ public interface UserVmService {
      * @throws ResourceUnavailableException
      *             if the resources required the deploy the VM is not currently available.
      */
-    UserVm startVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    UserVm startVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a vm group.
@@ -512,5 +512,9 @@ public interface UserVmService {
     void collectVmDiskStatistics(UserVm userVm);
 
     void collectVmNetworkStatistics (UserVm userVm);
+
+    UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceName, final String displayName, final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
+                    final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey,
+                    final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters, final VirtualMachine.PowerState powerState) throws InsufficientCapacityException;
 
 }

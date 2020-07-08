@@ -110,6 +110,11 @@ cloudStack.docs = {
     },
 
     //Ldap
+    helpLdapUserFilter: {
+        desc: 'Filter to apply to listing of ldap accounts\n\t"NoFilter": no filtering is done\n\t"LocalDomain": shows only users not in the current or requested domain\n\t"AnyDomain": shows only users not currently known to cloudstack (in any domain)\n\t"PotentialImport": shows all users that (would be) automatically imported to cloudstack with their current usersource',
+        externalLink: ''
+    },
+
     helpLdapQueryFilter: {
 
         desc: 'Query filter is used to find a mapped user in the external LDAP server.Cloudstack provides some wildchars to represent the unique attributes in its database . Example - If Cloudstack account-name is same as the LDAP uid, then following will be a valid filter: Queryfilter :  (&(uid=%u) ,  Queryfilter: .incase of Active Directory , Email _ID :(&(mail=%e)) , displayName :(&(displayName=%u)',
@@ -127,7 +132,7 @@ cloudStack.docs = {
 
     helpIPReservationNetworkCidr: {
         desc: 'The CIDR of the entire network when IP reservation is configured',
-        externalLink: ' '
+        externalLink: ''
 
     },
 

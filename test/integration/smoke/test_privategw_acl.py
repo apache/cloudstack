@@ -639,6 +639,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         createPrivateGatewayCmd.netmask = "255.255.255.0"
         createPrivateGatewayCmd.ipaddress = ip_address
         createPrivateGatewayCmd.vlan = vlan
+        createPrivateGatewayCmd.bypassvlanoverlapcheck = "true"
         createPrivateGatewayCmd.vpcid = vpc.id
         createPrivateGatewayCmd.sourcenatsupported = "false"
         createPrivateGatewayCmd.aclid = aclId

@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.utils.db;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DriverLoader {
 
@@ -32,7 +33,7 @@ public class DriverLoader {
 
     static {
         DRIVERS = new HashMap<String, String>();
-        DRIVERS.put("jdbc:mysql", "com.mysql.jdbc.Driver");
+        DRIVERS.put("jdbc:mysql", "com.mysql.cj.jdbc.Driver");
         DRIVERS.put("jdbc:postgresql", "org.postgresql.Driver");
         DRIVERS.put("jdbc:h2", "org.h2.Driver");
 

@@ -28,6 +28,7 @@ public class HostStatsEntry implements HostStats {
     HostVO hostVo;
     String entityType;
     double cpuUtilization;
+    double averageLoad;
     double networkReadKBs;
     double networkWriteKBs;
     double totalMemoryKBs;
@@ -45,6 +46,7 @@ public class HostStatsEntry implements HostStats {
         this.networkWriteKBs = networkWriteKBs;
         this.totalMemoryKBs = totalMemoryKBs;
         this.freeMemoryKBs = freeMemoryKBs;
+        this.averageLoad = averageLoad;
     }
 
     @Override
@@ -99,6 +101,15 @@ public class HostStatsEntry implements HostStats {
 
     public void setCpuUtilization(double cpuUtilization) {
         this.cpuUtilization = cpuUtilization;
+    }
+
+    @Override
+    public double getLoadAverage() {
+        return this.averageLoad;
+    }
+
+    public void setAverageLoad(double cpuAvgLoad) {
+        this.averageLoad = cpuAvgLoad;
     }
 
     @Override

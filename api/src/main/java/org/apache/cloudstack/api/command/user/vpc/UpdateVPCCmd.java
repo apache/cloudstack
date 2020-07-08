@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.VpcResponse;
 
 import com.cloud.event.EventTypes;
@@ -37,7 +38,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "updateVPC", description = "Updates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = {Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
+public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVPCCmd.class.getName());
     private static final String s_name = "updatevpcresponse";
 
@@ -99,7 +100,7 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
     public void execute() {
         Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText(), getCustomId(), isDisplayVpc());
         if (result != null) {
-            VpcResponse response = _responseGenerator.createVpcResponse(ResponseView.Restricted, result);
+            VpcResponse response = _responseGenerator.createVpcResponse(getResponseView(), result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

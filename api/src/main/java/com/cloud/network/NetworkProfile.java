@@ -314,4 +314,9 @@ public class NetworkProfile implements Network {
         return externalId;
     }
 
+    @Override
+    public PVlanType getPvlanType() {
+        return null;
+    }
+
 }

@@ -58,6 +58,9 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> VmConfigDriveOnPrimaryPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.primarypool.enabled", "false",
             "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true);
 
+    ConfigKey<Boolean> ResoureCountRunningVMsonly = new ConfigKey<Boolean>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
+            "Count the resources of only running VMs in resource limitation.", true);
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }
@@ -152,7 +155,7 @@ public interface VirtualMachineManager extends Manager {
      * @param serviceOfferingId
      * @return
      */
-    boolean upgradeVmDb(long vmId, long serviceOfferingId);
+    boolean upgradeVmDb(long vmId, ServiceOffering newServiceOffering, ServiceOffering currentServiceOffering);
 
     /**
      * @param vm
@@ -201,7 +204,7 @@ public interface VirtualMachineManager extends Manager {
     boolean replugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException;
 
-    VirtualMachine reConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
+    VirtualMachine reConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, ServiceOffering newServiceOffering, Map<String, String> customParameters, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
             InsufficientServerCapacityException;
 
     void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,

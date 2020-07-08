@@ -234,6 +234,8 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     void expunge();
 
+    boolean unremove(ID id);
+
     public <K> K getNextInSequence(Class<K> clazz, String name);
 
     /**

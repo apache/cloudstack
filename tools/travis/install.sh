@@ -24,8 +24,19 @@ export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/
 
 set -e
 
+DIR=$(pwd)
+
+cd ~
+wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
+tar zxvf apache-maven-3.6.3-bin.tar.gz
+export PATH=`pwd`/apache-maven-3.6.3/bin:$PATH
+cd $DIR
+
+echo -e "\nJDK version"
+export JAVA_HOME=$(readlink -f /usr/lib/jvm/java-11-openjdk-amd64/bin/java | sed "s:bin/java::")
+mvn -v
+
 if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
-   DIR=$(pwd)
    # Pylint/pep8 systemvm python codebase
    cd systemvm/test && bash -x runtests.sh
    # Build noredist
@@ -36,7 +47,7 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
    mvn -q -B -P developer,systemvm -Dsimulator -Dnoredist clean install
 else
-   mvn -Pdeveloper -Dsimulator clean install -DskipTests -T4 | egrep "Building|Tests|SUCCESS|FAILURE"
+   mvn -Pdeveloper -Dsimulator clean install -DskipTests=true -T4
 fi
 
 # Install mysql-connector-python

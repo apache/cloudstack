@@ -61,7 +61,6 @@ function install_packages() {
     ipvsadm conntrackd libnetfilter-conntrack3 \
     keepalived irqbalance \
     ipcalc \
-    openjdk-8-jre-headless \
     ipset \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
@@ -73,7 +72,7 @@ function install_packages() {
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
 
-  apt-get -q -y -t stretch-backports install nftables
+  apt-get -q -y -t stretch-backports install nftables openjdk-11-jre-headless
 
   apt-get -y autoremove --purge
   apt-get clean

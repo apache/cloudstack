@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
@@ -34,7 +35,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "detachIso", description = "Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class DetachIsoCmd extends BaseAsyncCmd {
+public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(DetachIsoCmd.class.getName());
 
     private static final String s_name = "detachisoresponse";
@@ -89,7 +90,7 @@ public class DetachIsoCmd extends BaseAsyncCmd {
         boolean result = _templateService.detachIso(virtualMachineId);
         if (result) {
             UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);
-            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", userVm).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", userVm).get(0);
             response.setResponseName(DeployVMCmd.getResultObjectName());
             setResponseObject(response);
         } else {

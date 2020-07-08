@@ -79,4 +79,8 @@ public interface VolumeInfo extends DataObject, Volume {
     MigrationOptions getMigrationOptions();
 
     void setMigrationOptions(MigrationOptions migrationOptions);
+
+    boolean isDirectDownload();
+
+    void setDirectDownload(boolean directDownload);
 }

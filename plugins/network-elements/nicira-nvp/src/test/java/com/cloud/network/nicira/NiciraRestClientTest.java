@@ -47,6 +47,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -57,6 +58,7 @@ import com.cloud.utils.rest.HttpUriRequestBuilder;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(NiciraRestClient.class)
+@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.apache.log4j.*"})
 public class NiciraRestClientTest {
 
     private static final int HTTPS_PORT = 443;

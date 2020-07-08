@@ -73,6 +73,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdSearch;
 
+    private final SearchBuilder<TemplateJoinVO> tmpltIdsSearch;
+
     private final SearchBuilder<TemplateJoinVO> tmpltZoneSearch;
 
     private final SearchBuilder<TemplateJoinVO> activeTmpltSearch;
@@ -87,6 +89,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         tmpltIdSearch = createSearchBuilder();
         tmpltIdSearch.and("id", tmpltIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         tmpltIdSearch.done();
+
+        tmpltIdsSearch = createSearchBuilder();
+        tmpltIdsSearch.and("idsIN", tmpltIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        tmpltIdsSearch.groupBy(tmpltIdsSearch.entity().getId());
+        tmpltIdsSearch.done();
 
         tmpltZoneSearch = createSearchBuilder();
         tmpltZoneSearch.and("id", tmpltZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -479,6 +486,16 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         List<TemplateJoinVO> objects = searchIncludingRemoved(sc, filter, null, false);
         Integer count = getCount(sc);
         return new Pair<List<TemplateJoinVO>, Integer>(objects, count);
+    }
+
+    @Override
+    public List<TemplateJoinVO> findByDistinctIds(Long... ids) {
+        if (ids == null || ids.length == 0) {
+            return new ArrayList<TemplateJoinVO>();
+        }
+        SearchCriteria<TemplateJoinVO> sc = tmpltIdsSearch.create();
+        sc.setParameters("idsIN", ids);
+        return searchIncludingRemoved(sc, null, null, false);
     }
 
 }

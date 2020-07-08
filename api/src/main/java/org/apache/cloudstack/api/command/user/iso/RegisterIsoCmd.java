@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -39,7 +40,7 @@ import com.cloud.template.VirtualMachineTemplate;
 
 @APICommand(name = "registerIso", responseObject = TemplateResponse.class, description = "Registers an existing ISO into the CloudStack Cloud.", responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class RegisterIsoCmd extends BaseCmd {
+public class RegisterIsoCmd extends BaseCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 
     private static final String s_name = "registerisoresponse";
@@ -126,8 +127,16 @@ public class RegisterIsoCmd extends BaseCmd {
         return bootable;
     }
 
+    public void setBootable(Boolean bootable) {
+        this.bootable = bootable;
+    }
+
     public String getDisplayText() {
         return displayText;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
     }
 
     public Boolean isFeatured() {
@@ -138,12 +147,20 @@ public class RegisterIsoCmd extends BaseCmd {
         return publicIso;
     }
 
+    public void setPublic(Boolean publicIso) {
+        this.publicIso = publicIso;
+    }
+
     public Boolean isExtractable() {
         return extractable;
     }
 
     public String getIsoName() {
         return isoName;
+    }
+
+    public void setIsoName(String isoName) {
+        this.isoName = isoName;
     }
 
     public Long getOsTypeId() {
@@ -154,20 +171,40 @@ public class RegisterIsoCmd extends BaseCmd {
         return url;
     }
 
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
     }
 
     public Long getDomainId() {
         return domainId;
     }
 
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
     public String getAccountName() {
         return accountName;
     }
 
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
     public String getChecksum() {
         return checksum;
+    }
+
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
     }
 
     public String getImageStoreUuid() {
@@ -210,7 +247,7 @@ public class RegisterIsoCmd extends BaseCmd {
         VirtualMachineTemplate template = _templateService.registerIso(this);
         if (template != null) {
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(ResponseView.Restricted, template, zoneId, false);
+            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(getResponseView(), template, zoneId, false);
             response.setResponses(templateResponses);
             response.setResponseName(getCommandName());
             setResponseObject(response);

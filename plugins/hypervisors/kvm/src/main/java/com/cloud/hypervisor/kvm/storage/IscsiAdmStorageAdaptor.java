@@ -445,4 +445,9 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
         return null;
     }
+
+    @Override
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+        return null;
+    }
 }

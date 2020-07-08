@@ -19,8 +19,11 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
+
 public class RebootCommand extends Command {
     String vmName;
+    VirtualMachineTO vm;
     protected boolean executeInSequence = false;
 
     protected RebootCommand() {
@@ -33,6 +36,14 @@ public class RebootCommand extends Command {
 
     public String getVmName() {
         return this.vmName;
+    }
+
+    public void setVirtualMachine(VirtualMachineTO vm) {
+        this.vm = vm;
+    }
+
+    public VirtualMachineTO getVirtualMachine() {
+        return vm;
     }
 
     @Override

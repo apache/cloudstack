@@ -111,6 +111,14 @@
                 });
 
                 if (ldapStatus) {
+                    var userFilter = $wizard.find('#label_filterBy').val();
+                    if (userFilter == null) {
+                        userFilter = 'AnyDomain';
+                    }
+                    var domainId = $wizard.find('#label_domain').val();
+                    if (domainId == null) {
+                        domainId = $.cookie('domainid');
+                    }
                     var $table = $wizard.find('.ldap-account-choice tbody');
                     $("#label_ldap_group_name").on("keypress", function(event) {
                         if ($table.find("#tr-groupname-message").length === 0) {
@@ -125,94 +133,13 @@
                             $table.find("#tr-groupname-message").hide();
                         }
                     });
-                    $.ajax({
-                        url: createURL("listLdapUsers&listtype=new"),
+                    loadList = function() { $.ajax({
+                        url: createURL("listLdapUsers&listtype=new&domainid=" + domainId + "&userfilter=" + userFilter),
                         dataType: "json",
                         async: false,
                         success: function(json) {
-                            //for testing only (begin)
-                            /*
-                            json = {
-                                    "ldapuserresponse": {
-                                        "count": 11,
-                                        "LdapUser": [
-                                            {
-                                                "email": "test@test.com",
-                                                "principal": "CN=Administrator,CN=Users,DC=hyd-qa,DC=com",
-                                                "username": "Administrator",
-                                                "domain": "CN=Administrator"
-                                            },
-                                            {
-                                                "email": "test@test.com",
-                                                "principal": "CN=Guest,CN=Users,DC=hyd-qa,DC=com",
-                                                "username": "Guest",
-                                                "domain": "CN=Guest"
-                                            },
-                                            {
-                                                "email": "test@test.com",
-                                                "principal": "CN=IUSR_HYD-QA12,CN=Users,DC=hyd-qa,DC=com",
-                                                "username": "IUSR_HYD-QA12",
-                                                "domain": "CN=IUSR_HYD-QA12"
-                                            },
-                                            {
-                                                "email": "test@test.com",
-                                                "principal": "CN=IWAM_HYD-QA12,CN=Users,DC=hyd-qa,DC=com",
-                                                "username": "IWAM_HYD-QA12",
-                                                "domain": "CN=IWAM_HYD-QA12"
-                                            },
-                                            {
-                                                "email": "test@test.com",
-                                                "principal": "CN=SUPPORT_388945a0,CN=Users,DC=hyd-qa,DC=com",
-                                                "username": "SUPPORT_388945a0",
-                                                "domain": "CN=SUPPORT_388945a0"
-                                            },
-                                            {
-                                                "principal": "CN=jessica j,CN=Users,DC=hyd-qa,DC=com",
-                                                "firstname": "jessica",
-                                                "lastname": "j",
-                                                "username": "jessica",
-                                                "domain": "CN=jessica j"
-                                            },
-                                            {
-                                                "principal": "CN=krbtgt,CN=Users,DC=hyd-qa,DC=com",
-                                                "username": "krbtgt",
-                                                "domain": "CN=krbtgt"
-                                            },
-                                            {
-                                                "email": "sadhu@sadhu.com",
-                                                "principal": "CN=sadhu,CN=Users,DC=hyd-qa,DC=com",
-                                                "firstname": "sadhu",
-                                                "username": "sadhu",
-                                                "domain": "CN=sadhu"
-                                            },
-                                            {
-                                                "email": "test@test.com",
-                                                "principal": "CN=sangee1 hariharan,CN=Users,DC=hyd-qa,DC=com",
-                                                "firstname": "sangee1",
-                                                "lastname": "hariharan",
-                                                "username": "sangee1",
-                                                "domain": "CN=sangee1 hariharan"
-                                            },
-                                            {
-                                                "email": "test@test.com",
-                                                "principal": "CN=sanjeev n.,CN=Users,DC=hyd-qa,DC=com",
-                                                "firstname": "sanjeev",
-                                                "username": "sanjeev",
-                                                "domain": "CN=sanjeev n."
-                                            },
-                                            {
-                                                "email": "test@test.com",
-                                                "principal": "CN=test1dddd,CN=Users,DC=hyd-qa,DC=com",
-                                                "firstname": "test1",
-                                                "username": "test1dddd",
-                                                "domain": "CN=test1dddd"
-                                            }
-                                        ]
-                                    }
-                                };
-                            */
-                            //for testing only (end)
 
+                            $table.find('tr').remove();
                             if (json.ldapuserresponse.count > 0) {
                                 $(json.ldapuserresponse.LdapUser).each(function() {
                                     var $result = $('<tr>');
@@ -228,7 +155,9 @@
                                         $('<td>').addClass('username').html(_s(this.username))
                                             .attr('title', this.username),
                                         $('<td>').addClass('email').html(_s(this.email))
-                                            .attr('title', _s(this.email))
+                                            .attr('title', _s(this.email)),
+                                        $('<td>').addClass('email').html(_s(this.conflictingusersource))
+                                            .attr('title', _s(this.conflictingusersource))
                                     )
 
                                     $table.append($result);
@@ -243,14 +172,20 @@
                                 $table.append($result);
                             }
                         }
-                    });
+                    }) };
+                    loadList();
+
                 } else {
+                    var informationWithinLdapFields = $.extend(true,{},args.informationWithinLdap);
+                    // we are not in ldap so
+                    delete informationWithinLdapFields.conflictingusersource;
+
                     var informationWithinLdap = cloudStack.dialog.createForm({
                         context: context,
                         noDialog: true,
                         form: {
                             title: '',
-                            fields: args.informationWithinLdap
+                            fields: informationWithinLdapFields
                         }
                     });
 
@@ -267,13 +202,16 @@
                     $wizard.removeClass('multi-wizard');
                 }
 
+                var informationNotInLdap = $.extend(true,{},args.informationNotInLdap);
+
                 if (!ldapStatus) {
-                    delete args.informationNotInLdap.ldapGroupName;
+                    delete informationNotInLdap.filter;
+                    delete informationNotInLdap.ldapGroupName;
                 }
 
                 if (g_idpList == null) {
-                    delete args.informationNotInLdap.samlEnable;
-                    delete args.informationNotInLdap.samlEntity;
+                    delete informationNotInLdap.samlEnable;
+                    delete informationNotInLdap.samlEntity;
                 }
 
                 var informationNotInLdap = cloudStack.dialog.createForm({
@@ -281,12 +219,21 @@
                     noDialog: true,
                     form: {
                         title: '',
-                        fields: args.informationNotInLdap
+                        fields: informationNotInLdap
                     }
                 });
 
                 var informationNotInLdapForm = informationNotInLdap.$formContainer.find('form .form-item');
+                informationNotInLdapForm.find('.value #label_filterBy').addClass('required');
+                informationNotInLdapForm.find('.value #label_filterBy').change(function() {
+                    userFilter = $wizard.find('#label_filterBy').val();
+                    loadList();
+                });
                 informationNotInLdapForm.find('.value #label_domain').addClass('required');
+                informationNotInLdapForm.find('.value #label_domain').change(function() {
+                    domainId = $wizard.find('#label_domain').val();
+                    loadList();
+                });
                 informationNotInLdapForm.find('.value #label_type').addClass('required');
                 if (!ldapStatus) {
                     informationNotInLdapForm.css('background', 'none');

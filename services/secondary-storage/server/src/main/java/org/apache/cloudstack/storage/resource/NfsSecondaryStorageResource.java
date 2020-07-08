@@ -67,7 +67,7 @@ import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.storage.template.UploadManager;
 import org.apache.cloudstack.storage.template.UploadManagerImpl;
@@ -2905,7 +2905,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         script = new Script(!_inSystemVM, "mount", _timeout, s_logger);
 
         List<String> res = new ArrayList<String>();
-        ZfsPathParser parser = new ZfsPathParser(localRootPath);
+        PathParser parser = new PathParser(localRootPath);
         script.execute(parser);
         res.addAll(parser.getPaths());
         for (String s : res) {
@@ -3201,15 +3201,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         UploadEntity.ResourceType resourceType = uploadEntity.getResourceType();
 
         String fileSavedTempLocation = uploadEntity.getInstallPathPrefix() + "/" + filename;
-
-        String uploadedFileExtension = FilenameUtils.getExtension(filename);
-        String userSelectedFormat = uploadEntity.getFormat().toString();
-        if (uploadedFileExtension.equals("zip") || uploadedFileExtension.equals("bz2") || uploadedFileExtension.equals("gz")) {
-            userSelectedFormat += "." + uploadedFileExtension;
+        String dummyFileName = "dummy." + uploadEntity.getFormat().getFileExtension();
+        if (ImageStoreUtil.isCompressedExtension(filename)) {
+            String uploadedFileExtension = FilenameUtils.getExtension(filename);
+            dummyFileName += "." + uploadedFileExtension;
         }
-        String formatError = ImageStoreUtil.checkTemplateFormat(fileSavedTempLocation, userSelectedFormat);
+
+        String formatError = ImageStoreUtil.checkTemplateFormat(fileSavedTempLocation, dummyFileName);
         if (StringUtils.isNotBlank(formatError)) {
-            String errorString = "File type mismatch between uploaded file and selected format. Selected file format: " + userSelectedFormat + ". Received: " + formatError;
+            String errorString = "File type mismatch between uploaded file and selected format. Selected file format: " + uploadEntity.getFormat() + ". Received: " + formatError;
             s_logger.error(errorString);
             return errorString;
         }

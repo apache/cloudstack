@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -93,8 +94,8 @@ public class IpAddressManagerTest {
     public void testGetStaticNatSourceIps() {
         String publicIpAddress = "192.168.1.3";
         IPAddressVO vo = mock(IPAddressVO.class);
-        when(vo.getAddress()).thenReturn(new Ip(publicIpAddress));
-        when(vo.getId()).thenReturn(1l);
+        lenient().when(vo.getAddress()).thenReturn(new Ip(publicIpAddress));
+        lenient().when(vo.getId()).thenReturn(1l);
 
         when(ipAddressDao.findById(anyLong())).thenReturn(vo);
         StaticNat snat = new StaticNatImpl(1, 1, 1, 1, publicIpAddress, false);
@@ -154,14 +155,14 @@ public class IpAddressManagerTest {
     public void assertSourceNatImplementedNetwork() {
 
         NetworkVO networkImplemented = Mockito.mock(NetworkVO.class);
-        when(networkImplemented.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
-        when(networkImplemented.getNetworkOfferingId()).thenReturn(8L);
-        when(networkImplemented.getState()).thenReturn(Network.State.Implemented);
+        lenient().when(networkImplemented.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        lenient().when(networkImplemented.getNetworkOfferingId()).thenReturn(8L);
+        lenient().when(networkImplemented.getState()).thenReturn(Network.State.Implemented);
         when(networkImplemented.getGuestType()).thenReturn(Network.GuestType.Isolated);
         when(networkImplemented.getVpcId()).thenReturn(null);
         when(networkImplemented.getId()).thenReturn(1L);
 
-        Mockito.when(networkDao.findById(1L)).thenReturn(networkImplemented);
+        Mockito.lenient().when(networkDao.findById(1L)).thenReturn(networkImplemented);
         doReturn(null).when(ipAddressManager).getExistingSourceNatInNetwork(1L, 1L);
 
         boolean isSourceNat = ipAddressManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkImplemented);
@@ -173,14 +174,14 @@ public class IpAddressManagerTest {
     public void assertSourceNatAllocatedNetwork() {
 
         NetworkVO networkAllocated = Mockito.mock(NetworkVO.class);
-        when(networkAllocated.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        lenient().when(networkAllocated.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(networkAllocated.getNetworkOfferingId()).thenReturn(8L);
-        when(networkAllocated.getState()).thenReturn(Network.State.Allocated);
+        lenient().when(networkAllocated.getState()).thenReturn(Network.State.Allocated);
         when(networkAllocated.getGuestType()).thenReturn(Network.GuestType.Isolated);
         when(networkAllocated.getVpcId()).thenReturn(null);
         when(networkAllocated.getId()).thenReturn(2L);
 
-        Mockito.when(networkDao.findById(2L)).thenReturn(networkAllocated);
+        Mockito.lenient().when(networkDao.findById(2L)).thenReturn(networkAllocated);
         doReturn(null).when(ipAddressManager).getExistingSourceNatInNetwork(1L, 2L);
 
         assertTrue(ipAddressManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkAllocated));
@@ -190,17 +191,17 @@ public class IpAddressManagerTest {
     public void assertExistingSourceNatAllocatedNetwork() {
 
         NetworkVO networkNat = Mockito.mock(NetworkVO.class);
-        when(networkNat.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        lenient().when(networkNat.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(networkNat.getNetworkOfferingId()).thenReturn(8L);
-        when(networkNat.getState()).thenReturn(Network.State.Implemented);
-        when(networkNat.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        lenient().when(networkNat.getState()).thenReturn(Network.State.Implemented);
+        lenient().when(networkNat.getGuestType()).thenReturn(Network.GuestType.Isolated);
         when(networkNat.getId()).thenReturn(3L);
-        when(networkNat.getVpcId()).thenReturn(null);
+        lenient().when(networkNat.getVpcId()).thenReturn(null);
         when(networkNat.getId()).thenReturn(3L);
 
         IPAddressVO sourceNat = new IPAddressVO(new Ip("192.0.0.2"), 1L, 1L, 1L,true);
 
-        Mockito.when(networkDao.findById(3L)).thenReturn(networkNat);
+        Mockito.lenient().when(networkDao.findById(3L)).thenReturn(networkNat);
         doReturn(sourceNat).when(ipAddressManager).getExistingSourceNatInNetwork(1L, 3L);
 
         boolean isSourceNat = ipAddressManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkNat);

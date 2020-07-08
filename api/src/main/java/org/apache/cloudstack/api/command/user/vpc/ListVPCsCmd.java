@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
@@ -37,7 +38,7 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listVPCs", description = "Lists VPCs", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = {Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVPCsCmd extends BaseListTaggedResourcesCmd {
+public class ListVPCsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";
 
@@ -136,7 +137,7 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd {
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> vpcResponses = new ArrayList<VpcResponse>();
         for (Vpc vpc : vpcs.first()) {
-            VpcResponse offeringResponse = _responseGenerator.createVpcResponse(ResponseView.Restricted, vpc);
+            VpcResponse offeringResponse = _responseGenerator.createVpcResponse(getResponseView(), vpc);
             vpcResponses.add(offeringResponse);
         }
 

@@ -489,7 +489,7 @@ public class Link {
             try {
                 sslEngine.closeInbound();
             } catch (SSLException e) {
-                s_logger.warn("This SSL engine was forced to close inbound due to end of stream.");
+                s_logger.warn("This SSL engine was forced to close inbound due to end of stream.", e);
             }
             sslEngine.closeOutbound();
             // After closeOutbound the engine will be set to WRAP state,
@@ -608,8 +608,8 @@ public class Link {
         while (handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED
                 && handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
             final long timeTaken = System.currentTimeMillis() - startTimeMills;
-            if (timeTaken > 15000L) {
-                s_logger.warn("SSL Handshake has taken more than 15s to connect to: " + socketChannel.getRemoteAddress() +
+            if (timeTaken > 30000L) {
+                s_logger.warn("SSL Handshake has taken more than 30s to connect to: " + socketChannel.getRemoteAddress() +
                         ". Please investigate this connection.");
                 return false;
             }

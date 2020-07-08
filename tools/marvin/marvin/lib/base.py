@@ -181,7 +181,7 @@ class Account:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, admin=False, domainid=None, roleid=None):
+    def create(cls, apiclient, services, admin=False, domainid=None, roleid=None, account=None):
         """Creates an account"""
         cmd = createAccount.createAccountCmd()
 
@@ -212,6 +212,9 @@ class Account:
 
         if roleid:
             cmd.roleid = roleid
+
+        if account:
+            cmd.account = account
 
         account = apiclient.createAccount(cmd)
 
@@ -1077,6 +1080,19 @@ class Volume:
         cmd.id = self.id
         apiclient.deleteVolume(cmd)
 
+    def destroy(self, apiclient, expunge=False):
+        """Destroy Volume"""
+        cmd = destroyVolume.destroyVolumeCmd()
+        cmd.id = self.id
+        cmd.expunge = expunge
+        apiclient.destroyVolume(cmd)
+
+    def recover(self, apiclient):
+        """Recover Volume"""
+        cmd = recoverVolume.recoverVolumeCmd()
+        cmd.id = self.id
+        apiclient.recoverVolume(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all volumes matching criteria"""
@@ -1249,12 +1265,15 @@ class Template:
 
     @classmethod
     def create(cls, apiclient, services, volumeid=None,
-               account=None, domainid=None, projectid=None):
+               account=None, domainid=None, projectid=None, randomise=True):
         """Create template from Volume"""
         # Create template from Virtual machine and Volume ID
         cmd = createTemplate.createTemplateCmd()
         cmd.displaytext = services["displaytext"]
-        cmd.name = "-".join([services["name"], random_gen()])
+        if randomise:
+            cmd.name = "-".join([services["name"], random_gen()])
+        else:
+            cmd.name = services["name"]
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
         elif "ostype" in services:
@@ -1667,7 +1686,7 @@ class PublicIPAddress:
     @classmethod
     def create(cls, apiclient, accountid=None, zoneid=None, domainid=None,
                services=None, networkid=None, projectid=None, vpcid=None,
-               isportable=False):
+               isportable=False, ipaddress=None):
         """Associate Public IP address"""
         cmd = associateIpAddress.associateIpAddressCmd()
 
@@ -1697,6 +1716,9 @@ class PublicIPAddress:
 
         if vpcid:
             cmd.vpcid = vpcid
+
+        if ipaddress:
+            cmd.ipaddress = ipaddress
         return PublicIPAddress(apiclient.associateIpAddress(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -2145,7 +2167,7 @@ class ServiceOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, tags=None, domainid=None, **kwargs):
+    def create(cls, apiclient, services, tags=None, domainid=None, cacheMode=None, **kwargs):
         """Create Service offering"""
         cmd = createServiceOffering.createServiceOfferingCmd()
         cmd.cpunumber = services["cpunumber"]
@@ -2198,6 +2220,9 @@ class ServiceOffering:
         if domainid:
             cmd.domainid = domainid
 
+        if cacheMode:
+            cmd.cacheMode = cacheMode
+
         if tags:
             cmd.tags = tags
         elif "tags" in services:
@@ -2231,7 +2256,7 @@ class DiskOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, **kwargs):
+    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, cacheMode=None, **kwargs):
         """Create Disk offering"""
         cmd = createDiskOffering.createDiskOfferingCmd()
         cmd.displaytext = services["displaytext"]
@@ -2243,6 +2268,9 @@ class DiskOffering:
 
         if domainid:
             cmd.domainid = domainid
+
+        if cacheMode:
+            cmd.cacheMode = cacheMode
 
         if tags:
             cmd.tags = tags
@@ -3011,7 +3039,7 @@ class Network:
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
-               externalid=None):
+               externalid=None, bypassvlanoverlapcheck=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3048,6 +3076,10 @@ class Network:
             cmd.vlan = services["vlan"]
         if "acltype" in services:
             cmd.acltype = services["acltype"]
+        if "isolatedpvlan" in services:
+            cmd.isolatedpvlan = services["isolatedpvlan"]
+        if "isolatedpvlantype" in services:
+            cmd.isolatedpvlantype = services["isolatedpvlantype"]
 
         if accountid:
             cmd.account = accountid
@@ -3061,6 +3093,8 @@ class Network:
             cmd.aclid = aclid
         if externalid:
             cmd.externalid = externalid
+        if bypassvlanoverlapcheck:
+            cmd.bypassvlanoverlapcheck = bypassvlanoverlapcheck
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -4056,7 +4090,7 @@ class Configurations:
     """Manage Configuration"""
 
     @classmethod
-    def update(cls, apiclient, name, value=None, zoneid=None, clusterid=None, storageid=None):
+    def update(cls, apiclient, name, value=None, zoneid=None, clusterid=None, storageid=None, domainid=None, accountid=None):
         """Updates the specified configuration"""
 
         cmd = updateConfiguration.updateConfigurationCmd()
@@ -4069,6 +4103,10 @@ class Configurations:
             cmd.clusterid = clusterid
         if storageid:
             cmd.storageid = storageid
+        if domainid:
+            cmd.domainid = domainid
+        if accountid:
+            cmd.accountid = accountid
         apiclient.updateConfiguration(cmd)
 
     @classmethod
@@ -4519,7 +4557,7 @@ class PrivateGateway:
 
     @classmethod
     def create(cls, apiclient, gateway, ipaddress, netmask, vlan, vpcid,
-               physicalnetworkid=None, aclid=None):
+               physicalnetworkid=None, aclid=None, bypassvlanoverlapcheck=None):
         """Create private gateway"""
 
         cmd = createPrivateGateway.createPrivateGatewayCmd()
@@ -4532,6 +4570,8 @@ class PrivateGateway:
             cmd.physicalnetworkid = physicalnetworkid
         if aclid:
             cmd.aclid = aclid
+        if bypassvlanoverlapcheck:
+            cmd.bypassvlanoverlapcheck = bypassvlanoverlapcheck
 
         return PrivateGateway(apiclient.createPrivateGateway(cmd).__dict__)
 
@@ -5247,3 +5287,106 @@ class ResourceDetails:
         cmd.resourceid = resourceid
         cmd.resourcetype = resourcetype
         return (apiclient.removeResourceDetail(cmd))
+
+# Backup and Recovery
+
+class BackupOffering:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def importExisting(self, apiclient, zoneid, externalid, name, description, allowuserdrivenbackups=True):
+        """Import existing backup offering from the provider"""
+
+        cmd = importBackupOffering.importBackupOfferingCmd()
+        cmd.zoneid = zoneid
+        cmd.externalid = externalid
+        cmd.name = name
+        cmd.description = description
+        cmd.allowuserdrivenbackups = allowuserdrivenbackups
+        return BackupOffering(apiclient.importBackupOffering(cmd).__dict__)
+
+    @classmethod
+    def listById(self, apiclient, id):
+        """List imported backup policies by id"""
+
+        cmd = listBackupOfferings.listBackupOfferingsCmd()
+        cmd.id = id
+        return (apiclient.listBackupOfferings(cmd))
+
+    @classmethod
+    def listByZone(self, apiclient, zoneid):
+        """List imported backup policies"""
+
+        cmd = listBackupOfferings.listBackupOfferingsCmd()
+        cmd.zoneid = zoneid
+        return (apiclient.listBackupOfferings(cmd))
+
+    @classmethod
+    def listExternal(self, apiclient, zoneid):
+        """List external backup policies"""
+
+        cmd = listBackupProviderOfferings.listBackupProviderOfferingsCmd()
+        cmd.zoneid = zoneid
+        return (apiclient.listBackupProviderOfferings(cmd))
+
+    def delete(self, apiclient):
+        """Delete an imported backup offering"""
+
+        cmd = deleteBackupOffering.deleteBackupOfferingCmd()
+        cmd.id = self.id
+        return (apiclient.deleteBackupOffering(cmd))
+
+    def assignOffering(self, apiclient, vmid):
+        """Add a VM to a backup offering"""
+
+        cmd = assignVirtualMachineToBackupOffering.assignVirtualMachineToBackupOfferingCmd()
+        cmd.backupofferingid = self.id
+        cmd.virtualmachineid = vmid
+        return (apiclient.assignVirtualMachineToBackupOffering(cmd))
+
+    def removeOffering(self, apiclient, vmid, forced=True):
+        """Remove a VM from a backup offering"""
+
+        cmd = removeVirtualMachineFromBackupOffering.removeVirtualMachineFromBackupOfferingCmd()
+        cmd.virtualmachineid = vmid
+        cmd.forced = forced
+        return (apiclient.removeVirtualMachineFromBackupOffering(cmd))
+
+class Backup:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(self, apiclient, vmid):
+        """Create VM backup"""
+
+        cmd = createBackup.createBackupCmd()
+        cmd.virtualmachineid = vmid
+        return (apiclient.createBackup(cmd))
+
+    @classmethod
+    def delete(self, apiclient, id):
+        """Delete VM backup"""
+
+        cmd = deleteBackup.deleteBackupCmd()
+        cmd.id = id
+        return (apiclient.deleteBackup(cmd))
+
+    @classmethod
+    def list(self, apiclient, vmid):
+        """List VM backups"""
+
+        cmd = listBackups.listBackupsCmd()
+        cmd.virtualmachineid = vmid
+        cmd.listall = True
+        return (apiclient.listBackups(cmd))
+
+    def restoreVM(self, apiclient):
+        """Restore VM from backup"""
+
+        cmd = restoreBackup.restoreBackupCmd()
+        cmd.id = self.id
+        return (apiclient.restoreBackup(cmd))

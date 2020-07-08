@@ -91,7 +91,7 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         try {
-            final boolean result = _vpcService.restartVpc(getId(), getCleanup(), getMakeredundant());
+            final boolean result = _vpcService.restartVpc(this);
             if (result) {
                 final SuccessResponse response = new SuccessResponse(getCommandName());
                 setResponseObject(response);

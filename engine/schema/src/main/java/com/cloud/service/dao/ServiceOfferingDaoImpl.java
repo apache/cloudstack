@@ -51,6 +51,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
+    protected final SearchBuilder<ServiceOfferingVO> PublicCpuRamSearch;
 
     public ServiceOfferingDaoImpl() {
         super();
@@ -64,6 +65,12 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         ServiceOfferingsByKeywordSearch.or("name", ServiceOfferingsByKeywordSearch.entity().getName(), SearchCriteria.Op.EQ);
         ServiceOfferingsByKeywordSearch.or("displayText", ServiceOfferingsByKeywordSearch.entity().getDisplayText(), SearchCriteria.Op.EQ);
         ServiceOfferingsByKeywordSearch.done();
+
+        PublicCpuRamSearch = createSearchBuilder();
+        PublicCpuRamSearch.and("cpu", PublicCpuRamSearch.entity().getCpu(), SearchCriteria.Op.EQ);
+        PublicCpuRamSearch.and("ram", PublicCpuRamSearch.entity().getRamSize(), SearchCriteria.Op.EQ);
+        PublicCpuRamSearch.and("system_use", PublicCpuRamSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
+        PublicCpuRamSearch.done();
     }
 
     @Override
@@ -161,7 +168,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
                 throw new CloudRuntimeException("missing argument vmId");
             }
             Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
-            return getcomputeOffering(offering, dynamicOffering);
+            return getComputeOffering(offering, dynamicOffering);
         }
         return offering;
     }
@@ -175,7 +182,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
                 throw new CloudRuntimeException("missing argument vmId");
             }
             Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
-            return getcomputeOffering(offering, dynamicOffering);
+            return getComputeOffering(offering, dynamicOffering);
         }
         return offering;
     }
@@ -187,7 +194,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     }
 
     @Override
-    public ServiceOfferingVO getcomputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
+    public ServiceOfferingVO getComputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
         ServiceOfferingVO dummyoffering = new ServiceOfferingVO(serviceOffering);
         dummyoffering.setDynamicFlag(true);
         if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuNumber.name())) {
@@ -245,5 +252,14 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             throw new CloudRuntimeException(message);
         }
         return serviceOffering;
+    }
+
+    @Override
+    public List<ServiceOfferingVO> listPublicByCpuAndMemory(Integer cpus, Integer memory) {
+        SearchCriteria<ServiceOfferingVO> sc = PublicCpuRamSearch.create();
+        sc.setParameters("cpu", cpus);
+        sc.setParameters("ram", memory);
+        sc.setParameters("system_use", false);
+        return listBy(sc);
     }
 }

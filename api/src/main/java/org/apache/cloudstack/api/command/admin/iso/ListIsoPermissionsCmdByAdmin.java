@@ -18,16 +18,14 @@ package org.apache.cloudstack.api.command.admin.iso;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
-@APICommand(name = "listIsoPermissions", description = "List iso visibility and all accounts that have permissions to view this iso.", responseObject = TemplatePermissionsResponse.class, responseView = ResponseView.Full,
+@APICommand(name = "listIsoPermissions",
+        description = "List iso visibility and all accounts that have permissions to view this iso.",
+        responseObject = TemplatePermissionsResponse.class,
+        responseView = ResponseView.Full,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
-public class ListIsoPermissionsCmdByAdmin extends ListIsoPermissionsCmd {
-
-    @Override
-    public void execute() {
-        executeWithView(ResponseView.Full);
-    }
-}
+public class ListIsoPermissionsCmdByAdmin extends ListIsoPermissionsCmd implements AdminCmd {}

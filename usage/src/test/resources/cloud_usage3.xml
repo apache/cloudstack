@@ -9,5 +9,5 @@
   governing permissions and limitations under the License. -->
 <!-- cloud_usage -->
 <dataset>
-<cloud_usage usage_type="1" raw_usage="11" usage_id="8" id="8" start_date="1" zone_id="1"/>
+<cloud_usage usage_type="1"  account_id="1" domain_id="1" description="test" usage_display=" "  raw_usage="11" usage_id="8" id="8" start_date="2019-01-01 00:00:01" end_date="2019-01-01 00:00:01" zone_id="1"/>
 </dataset>

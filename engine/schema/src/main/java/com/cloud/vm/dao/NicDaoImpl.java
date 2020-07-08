@@ -69,6 +69,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.and("strategy", AllFieldsSearch.entity().getReservationStrategy(), Op.EQ);
         AllFieldsSearch.and("reserverName",AllFieldsSearch.entity().getReserver(),Op.EQ);
         AllFieldsSearch.and("macAddress", AllFieldsSearch.entity().getMacAddress(), Op.EQ);
+        AllFieldsSearch.and("deviceid", AllFieldsSearch.entity().getDeviceId(), Op.EQ);
         AllFieldsSearch.done();
 
         IpSearch = createSearchBuilder(String.class);
@@ -223,6 +224,14 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
+    public NicVO findFirstNicForVM(long instanceId) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("deviceid", 0);
+        return findOneBy(sc);
+    }
+
+    @Override
     public NicVO getControlNicForVM(long vmId){
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("instance", vmId);
@@ -354,5 +363,13 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("instance", instanceId);
         sc.setParameters("address", "%" + keyword + "%");
         return listBy(sc);
+    }
+
+    @Override
+    public NicVO findByInstanceIdAndMacAddress(long instanceId, String macAddress) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("macAddress", macAddress);
+        return findOneBy(sc);
     }
 }

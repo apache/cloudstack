@@ -32,7 +32,23 @@
         </list>
     </property>
   </bean>
-
+  <bean id="NetworkDao" class="com.cloud.network.dao.NetworkDaoImpl" />
+  <bean id="NetworkAccountDao" class="com.cloud.network.dao.NetworkAccountDaoImpl"/>
+  <bean id="NetworkDomainDao" class="com.cloud.network.dao.NetworkDomainDaoImpl"  />
+  <bean id="NetworkOpDao" class="com.cloud.network.dao.NetworkOpDaoImpl"/>
+  <bean id="NetworkServiceMapDao" class="com.cloud.network.dao.NetworkServiceMapDaoImpl"/>
+  <bean id="NetworkOfferingDao" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl"/>
+  <bean id="NetwrkOfferingDetailsDao" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl"/>
+  <bean id="NetworkOfferingServiceMapDa" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl"/>
+  <bean id="UsageEventDetailsDao" class="com.cloud.event.dao.UsageEventDetailsDaoImpl"/>
+  <bean id="HostDaoImpl" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl"/>
+  <bean id="VgpuTypesDao" class="com.cloud.gpu.dao.VGPUTypesDaoImpl"/>
+  <bean id="MgmtServiceCOnf" class="com.cloud.configuration.ManagementServiceConfigurationImpl"/>
+  <bean id="ClusterDetailsDao" class="com.cloud.dc.ClusterDetailsDaoImpl"/>
+  <bean id="AccountGuestVlanMapDao" class="com.cloud.network.dao.AccountGuestVlanMapDaoImpl"/>
+  <bean id="NicSecIpDao" class="com.cloud.vm.dao.NicSecondaryIpDaoImpl"/>
+  <bean id="ManagedContext" class="org.apache.cloudstack.managed.context.impl.DefaultManagedContext"/>
+  <bean id="SecurityGroupJoinDaoImpl" class="com.cloud.api.query.dao.ResourceTagJoinDaoImpl"/>
   <bean id="TestConfiguration"
     class="com.cloud.network.security.SecurityGroupManagerTestConfiguration" />
   <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor">

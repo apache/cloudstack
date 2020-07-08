@@ -17,6 +17,39 @@
 
 package com.cloud.resource;
 
+import static com.cloud.resource.ResourceState.Event.ErrorsCorrected;
+import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
+import static com.cloud.resource.ResourceState.Event.UnableToMaintain;
+import static com.cloud.resource.ResourceState.Event.UnableToMigrate;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.BDDMockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -35,38 +68,10 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
-import static com.cloud.resource.ResourceState.Event.UnableToMigrate;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ActionEventUtils.class, ResourceManagerImpl.class, SSHCmdHelper.class})
@@ -170,38 +175,98 @@ public class ResourceManagerImplTest {
     }
 
     @Test
-    public void testCheckAndMaintainEnterMaintenanceMode() throws NoTransitionException {
+    public void testCheckAndMaintainEnterMaintenanceModeNoVms() throws NoTransitionException {
+        // Test entering into maintenance with no VMs running on host.
         boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
-        verify(resourceManager).isHostInMaintenance(host, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        verify(resourceManager).attemptMaintain(host);
         verify(resourceManager).setHostIntoMaintenance(host);
+        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(anyObject(), anyObject());
+        verify(resourceManager, never()).setHostIntoErrorInMaintenance(anyObject(), anyObject());
+        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
         verify(resourceManager).resourceStateTransitTo(eq(host), eq(InternalEnterMaintenance), anyLong());
+
         Assert.assertTrue(enterMaintenanceMode);
     }
 
     @Test
+    public void testCheckAndMaintainProceedsWithPrepareForMaintenanceRunningVms() throws NoTransitionException {
+        // Test proceeding through with no events if pending migrating works / retries left.
+        setupRunningVMs();
+        setupPendingMigrationRetries();
+        verifyNoChangeInMaintenance();
+    }
+
+    @Test
     public void testCheckAndMaintainErrorInMaintenanceRunningVms() throws NoTransitionException {
-        when(vmInstanceDao.listByHostId(hostId)).thenReturn(Arrays.asList(vm1, vm2));
-        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
-        verify(resourceManager).isHostInMaintenance(host, Arrays.asList(vm1, vm2), new ArrayList<>(), new ArrayList<>());
-        Assert.assertFalse(enterMaintenanceMode);
+        // Test entering into ErrorInMaintenance when no pending migrations etc, and due to - Running VMs
+        setupRunningVMs();
+        setupNoPendingMigrationRetries();
+        verifyErrorInMaintenanceCalls();
     }
 
     @Test
-    public void testCheckAndMaintainErrorInMaintenanceMigratingVms() throws NoTransitionException {
-        when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(Arrays.asList(vm1, vm2));
-        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
-        verify(resourceManager).isHostInMaintenance(host, new ArrayList<>(), Arrays.asList(vm1, vm2), new ArrayList<>());
-        Assert.assertFalse(enterMaintenanceMode);
+    public void testCheckAndMaintainErrorInMaintenanceWithErrorVms() throws NoTransitionException {
+        // Test entering into ErrorInMaintenance when no pending migrations etc, and due to - no migrating but error VMs
+        setupErrorVms();
+        setupNoPendingMigrationRetries();
+        verifyErrorInMaintenanceCalls();
     }
 
     @Test
-    public void testCheckAndMaintainErrorInMaintenanceFailedMigrations() throws NoTransitionException {
-        when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(hostId)).thenReturn(Arrays.asList(vm1, vm2));
-        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
-        verify(resourceManager).isHostInMaintenance(host, new ArrayList<>(), new ArrayList<>(), Arrays.asList(vm1, vm2));
-        verify(resourceManager).setHostIntoErrorInMaintenance(host, Arrays.asList(vm1, vm2));
-        verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMigrate), anyLong());
-        Assert.assertFalse(enterMaintenanceMode);
+    public void testCheckAndMaintainErrorInPrepareForMaintenanceFailedMigrationsPendingRetries() throws NoTransitionException {
+        // Test entering into ErrorInPrepareForMaintenance when pending migrations retries and due to - Failed Migrations
+        setupFailedMigrations();
+        setupPendingMigrationRetries();
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Running)).thenReturn(Arrays.asList(vm2));
+        verifyErrorInPrepareForMaintenanceCalls();
+    }
+
+    @Test
+    public void testCheckAndMaintainErrorInPrepareForMaintenanceWithErrorVmsPendingRetries() throws NoTransitionException {
+        // Test entering into ErrorInMaintenance when pending migrations retries due to - no migrating but error VMs
+        setupErrorVms();
+        setupPendingMigrationRetries();
+        when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(Arrays.asList(vm2));
+        verifyErrorInPrepareForMaintenanceCalls();
+    }
+
+    @Test
+    public void testCheckAndMaintainErrorInPrepareForMaintenanceFailedMigrationsAndMigratingVms() throws NoTransitionException {
+        // Test entering into ErrorInPrepareForMaintenance when no pending migrations retries
+        // but executing migration and due to - Failed Migrations
+        setupFailedMigrations();
+        setupNoPendingMigrationRetries();
+        when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(Arrays.asList(vm2));
+        verifyErrorInPrepareForMaintenanceCalls();
+    }
+
+    @Test
+    public void testCheckAndMaintainErrorInPrepareForMaintenanceWithErrorVmsAndMigratingVms() throws NoTransitionException {
+        // Test entering into ErrorInPrepareForMaintenance when no pending migrations retries
+        // but executing migration and due to - Error Vms
+        setupErrorVms();
+        setupNoPendingMigrationRetries();
+        when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(Arrays.asList(vm2));
+        verifyErrorInPrepareForMaintenanceCalls();
+    }
+
+    @Test
+    public void testCheckAndMaintainErrorInPrepareForMaintenanceFailedMigrationsAndStoppingVms() throws NoTransitionException {
+        // Test entering into ErrorInPrepareForMaintenance when no pending migrations retries
+        // but stopping VMs and due to - Failed Migrations
+        setupFailedMigrations();
+        setupNoPendingMigrationRetries();
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Stopping)).thenReturn(Arrays.asList(vm2));
+        verifyErrorInPrepareForMaintenanceCalls();
+    }
+
+    @Test
+    public void testCheckAndMaintainReturnsToPrepareForMaintenanceRunningVms() throws NoTransitionException {
+        // Test switching back to PrepareForMaintenance
+        when(host.getResourceState()).thenReturn(ResourceState.ErrorInPrepareForMaintenance);
+        setupRunningVMs();
+        setupPendingMigrationRetries();
+        verifyReturnToPrepareForMaintenanceCalls();
     }
 
     @Test
@@ -217,23 +282,6 @@ public class ResourceManagerImplTest {
         verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.address"), eq(vm2VncAddress), anyBoolean());
         verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.port"), eq(String.valueOf(vm2VncPort)), anyBoolean());
         verify(agentManager).pullAgentToMaintenance(hostId);
-    }
-
-    @Test
-    public void testCheckAndMaintainErrorInMaintenanceRetries() throws NoTransitionException {
-        resourceManager.setHostMaintenanceRetries(host);
-
-        List<VMInstanceVO> failedMigrations = Arrays.asList(vm1, vm2);
-        when(vmInstanceDao.listByHostId(host.getId())).thenReturn(failedMigrations);
-        when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(host.getId())).thenReturn(failedMigrations);
-
-        Integer retries = ResourceManager.HostMaintenanceRetries.valueIn(host.getClusterId());
-        for (int i = 0; i <= retries; i++) {
-            resourceManager.checkAndMaintain(host.getId());
-        }
-
-        verify(resourceManager, times(retries + 1)).isHostInMaintenance(host, failedMigrations, new ArrayList<>(), failedMigrations);
-        verify(resourceManager).setHostIntoErrorInMaintenance(host, failedMigrations);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -306,5 +354,77 @@ public class ResourceManagerImplTest {
         resourceManager.handleAgentIfNotConnected(host, true);
         verify(resourceManager, never()).getHostCredentials(eq(host));
         verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
+    }
+
+    private void setupNoPendingMigrationRetries() {
+        when(haManager.hasPendingMigrationsWork(vm1.getId())).thenReturn(false);
+        when(haManager.hasPendingMigrationsWork(vm2.getId())).thenReturn(false);
+    }
+
+    private void setupRunningVMs() {
+        when(vmInstanceDao.listByHostId(hostId)).thenReturn(Arrays.asList(vm1, vm2));
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Migrating, VirtualMachine.State.Running, VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Error, VirtualMachine.State.Unknown)).thenReturn(Arrays.asList(vm1, vm2));
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Running)).thenReturn(Arrays.asList(vm1, vm2));
+    }
+
+    private void setupPendingMigrationRetries() {
+        when(haManager.hasPendingMigrationsWork(vm1.getId())).thenReturn(true);
+        when(haManager.hasPendingMigrationsWork(vm2.getId())).thenReturn(false);
+    }
+
+    private void setupFailedMigrations() {
+        when(vmInstanceDao.listByHostId(hostId)).thenReturn(Arrays.asList(vm1, vm2));
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Migrating, VirtualMachine.State.Running, VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Error, VirtualMachine.State.Unknown)).thenReturn(Arrays.asList(vm1, vm2));
+        when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(hostId)).thenReturn(Arrays.asList(vm1));
+    }
+
+    private void setupErrorVms() {
+        when(vmInstanceDao.listByHostId(hostId)).thenReturn(Arrays.asList(vm1, vm2));
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Migrating, VirtualMachine.State.Running, VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Error, VirtualMachine.State.Unknown)).thenReturn(Arrays.asList(vm1, vm2));
+        when(vmInstanceDao.findByHostInStates(hostId, VirtualMachine.State.Unknown, VirtualMachine.State.Error)).thenReturn(Arrays.asList(vm1));
+    }
+
+    private void verifyErrorInMaintenanceCalls() throws NoTransitionException {
+        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
+        verify(resourceManager).attemptMaintain(host);
+        verify(resourceManager).setHostIntoErrorInMaintenance(eq(host), anyObject());
+        verify(resourceManager, never()).setHostIntoMaintenance(anyObject());
+        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(anyObject(), anyObject());
+        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
+        verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMaintain), anyLong());
+        Assert.assertFalse(enterMaintenanceMode);
+    }
+
+    private void verifyErrorInPrepareForMaintenanceCalls() throws NoTransitionException {
+        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
+        verify(resourceManager).attemptMaintain(host);
+        verify(resourceManager).setHostIntoErrorInPrepareForMaintenance(eq(host), anyObject());
+        verify(resourceManager, never()).setHostIntoMaintenance(anyObject());
+        verify(resourceManager, never()).setHostIntoErrorInMaintenance(anyObject(), anyObject());
+        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
+        verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMigrate), anyLong());
+        Assert.assertFalse(enterMaintenanceMode);
+    }
+
+    private void verifyReturnToPrepareForMaintenanceCalls() throws NoTransitionException {
+        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
+        verify(resourceManager).attemptMaintain(host);
+        verify(resourceManager).setHostIntoPrepareForMaintenanceAfterErrorsFixed(eq(host));
+        verify(resourceManager).resourceStateTransitTo(eq(host), eq(ErrorsCorrected), anyLong());
+        verify(resourceManager, never()).setHostIntoMaintenance(anyObject());
+        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(anyObject(), anyObject());
+        verify(resourceManager, never()).setHostIntoErrorInMaintenance(anyObject(), anyObject());
+        Assert.assertFalse(enterMaintenanceMode);
+    }
+
+    private void verifyNoChangeInMaintenance() throws NoTransitionException {
+        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
+        verify(resourceManager).attemptMaintain(host);
+        verify(resourceManager, never()).setHostIntoMaintenance(anyObject());
+        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(anyObject(), anyObject());
+        verify(resourceManager, never()).setHostIntoErrorInMaintenance(anyObject(), anyObject());
+        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
+        verify(resourceManager, never()).resourceStateTransitTo(anyObject(), any(), anyLong());
+        Assert.assertFalse(enterMaintenanceMode);
     }
 }

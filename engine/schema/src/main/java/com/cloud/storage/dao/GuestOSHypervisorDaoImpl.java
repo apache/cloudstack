@@ -17,12 +17,14 @@
 package com.cloud.storage.dao;
 
 import java.util.Date;
+import java.util.List;
 
-
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSHypervisorVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -33,6 +35,7 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
     protected final SearchBuilder<GuestOSHypervisorVO> guestOsSearch;
     protected final SearchBuilder<GuestOSHypervisorVO> mappingSearch;
     protected final SearchBuilder<GuestOSHypervisorVO> userDefinedMappingSearch;
+    protected final SearchBuilder<GuestOSHypervisorVO> guestOsNameSearch;
 
     protected GuestOSHypervisorDaoImpl() {
         guestOsSearch = createSearchBuilder();
@@ -51,6 +54,12 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         userDefinedMappingSearch.and("hypervisor_version", userDefinedMappingSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
         userDefinedMappingSearch.and("is_user_defined", userDefinedMappingSearch.entity().getIsUserDefined(), SearchCriteria.Op.EQ);
         userDefinedMappingSearch.done();
+
+        guestOsNameSearch = createSearchBuilder();
+        guestOsNameSearch.and("guest_os_name", guestOsNameSearch.entity().getGuestOsName(), SearchCriteria.Op.EQ);
+        guestOsNameSearch.and("hypervisor_type", guestOsNameSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        guestOsNameSearch.and("hypervisor_version", guestOsNameSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
+        guestOsNameSearch.done();
     }
 
     @Override
@@ -95,6 +104,21 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         guestOsHypervisor.setRemoved(new Date());
         update(id, guestOsHypervisor);
         return super.remove(id);
+    }
+
+    @Override
+    public GuestOSHypervisorVO findByOsNameAndHypervisor(String guestOsName, String hypervisorType, String hypervisorVersion) {
+        SearchCriteria<GuestOSHypervisorVO> sc = guestOsNameSearch.create();
+        String version = "default";
+        if (!(hypervisorVersion == null || hypervisorVersion.isEmpty())) {
+            version = hypervisorVersion;
+        }
+        sc.setParameters("guest_os_name", guestOsName);
+        sc.setParameters("hypervisor_type", hypervisorType);
+        sc.setParameters("hypervisor_version", version);
+        final Filter filter = new Filter(GuestOSHypervisorVO.class, "guestOsId", true, null, null);
+        List<GuestOSHypervisorVO> results = listIncludingRemovedBy(sc, filter);
+        return CollectionUtils.isNotEmpty(results) ? results.get(0) : null;
     }
 
 }

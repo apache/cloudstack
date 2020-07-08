@@ -16,58 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.template;
 
-import java.util.List;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.context.CallContext;
-
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.template.VirtualMachineTemplate;
 
 @APICommand(name = "copyTemplate", description = "Copies a template from one zone to another.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CopyTemplateCmdByAdmin extends CopyTemplateCmd {
-    public static final Logger s_logger = Logger.getLogger(CopyTemplateCmdByAdmin.class.getName());
-
-    @Override
-    public void execute() throws ResourceAllocationException{
-        try {
-            if (destZoneId == null && (destZoneIds == null || destZoneIds.size() == 0))
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                        "Either destzoneid or destzoneids parameters have to be specified.");
-
-            if (destZoneId != null && destZoneIds != null && destZoneIds.size() != 0)
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                        "Both destzoneid and destzoneids cannot be specified at the same time.");
-
-            CallContext.current().setEventDetails(getEventDescription());
-            VirtualMachineTemplate template = _templateService.copyTemplate(this);
-
-            if (template != null){
-                List<TemplateResponse> listResponse = _responseGenerator.createTemplateResponses(ResponseView.Full, template,
-                        getDestinationZoneIds(), false);
-                TemplateResponse response = new TemplateResponse();
-                if (listResponse != null && !listResponse.isEmpty()) {
-                    response = listResponse.get(0);
-                }
-
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to copy template");
-            }
-        } catch (StorageUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        }
-    }
-}
+public class CopyTemplateCmdByAdmin extends CopyTemplateCmd {}
 

@@ -21,16 +21,75 @@
 from marvin.cloudstackTestCase import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
-from marvin.lib.common import (get_zone, get_pod, get_template)
+from marvin.lib.common import (get_zone, get_pod, get_template, list_ssvms)
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
 from distutils.util import strtobool
 from marvin.sshClient import SshClient
 
 _multiprocess_shared_ = False
+MIN_VMS_FOR_TEST = 3
+
+class TestHostMaintenanceBase(cloudstackTestCase):
+    def get_ssh_client(self, ip, username, password, retries=10):
+        """ Setup ssh client connection and return connection """
+        try:
+            ssh_client = SshClient(ip, 22, username, password, retries)
+        except Exception as e:
+            raise unittest.SkipTest("Unable to create ssh connection: " % e)
+
+        self.assertIsNotNone(
+            ssh_client, "Failed to setup ssh connection to ip=%s" % ip)
+
+        return ssh_client
+
+    def wait_until_host_is_in_state(self, hostid, resourcestate, interval=3, retries=20):
+        def check_resource_state():
+            response = Host.list(
+                self.apiclient,
+                id=hostid
+            )
+            if isinstance(response, list):
+                if response[0].resourcestate == resourcestate:
+                    self.logger.debug('Host with id %s is in resource state = %s' % (hostid, resourcestate))
+                    return True, None
+                else:
+                    self.logger.debug("Waiting for host " + hostid +
+                                      " to reach state " + resourcestate +
+                                      ", with current state " + response[0].resourcestate)
+            return False, None
+
+        done, _ = wait_until(interval, retries, check_resource_state)
+        if not done:
+            raise Exception("Failed to wait for host %s to be on resource state %s" % (hostid, resourcestate))
+        return True
+
+    def prepare_host_for_maintenance(self, hostid):
+        self.logger.debug("Sending Host with id %s to prepareHostForMaintenance" % hostid)
+        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
+        cmd.id = hostid
+        response = self.apiclient.prepareHostForMaintenance(cmd)
+        self.logger.debug("Host with id %s is in prepareHostForMaintenance" % hostid)
+        self.logger.debug(response)
+        return response
+
+    def cancel_host_maintenance(self, hostid):
+        self.logger.debug("Canceling Host with id %s from maintain" % hostid)
+        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
+        cmd.id = hostid
+        res = self.apiclient.cancelHostMaintenance(cmd)
+        self.logger.debug("Host with id %s is cancelling maintenance" % hostid)
+        return res
+
+    def revert_host_state_on_failure(self, hostId):
+        cmd = updateHost.updateHostCmd()
+        cmd.id = hostId
+        cmd.allocationstate = "Enable"
+        response = self.apiclient.updateHost(cmd)
+        self.assertEqual(response.resourcestate, "Enabled")
 
 
-class TestHostMaintenance(cloudstackTestCase):
+class TestHostMaintenance(TestHostMaintenanceBase):
 
     def setUp(self):
         self.logger = logging.getLogger('TestHM')
@@ -44,6 +103,8 @@ class TestHostMaintenance(cloudstackTestCase):
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
         self.cleanup = []
+        self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+
 
     def tearDown(self):
         try:
@@ -55,7 +116,7 @@ class TestHostMaintenance(cloudstackTestCase):
 
         return
     
-    def createVMs(self, hostId, number):
+    def createVMs(self, hostId, number, offering_key="tiny"):
         
         self.template = get_template(
             self.apiclient,
@@ -70,7 +131,7 @@ class TestHostMaintenance(cloudstackTestCase):
                 
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offerings"]["tiny"]
+            self.services["service_offerings"][offering_key]
         )
         self.logger.debug("Using service offering %s " % self.service_offering.id)
         self.network_offering = NetworkOffering.create(
@@ -106,7 +167,32 @@ class TestHostMaintenance(cloudstackTestCase):
         self.cleanup.append(self.network_offering)
         self.cleanup.append(self.service_offering)
         return vms
-    
+
+    def checkAllVmsRunningOnHost(self, hostId):
+        listVms1 = VirtualMachine.list(
+            self.apiclient,
+            hostid=hostId
+        )
+
+        if (listVms1 is not None):
+            self.logger.debug('Vms found to test all running = {} '.format(len(listVms1)))
+            for vm in listVms1:
+                if (vm.state != "Running"):
+                    self.logger.debug('VirtualMachine on Host with id = {} is in {}'.format(vm.id, vm.state))
+                    return (False, None)
+
+        response = list_ssvms(
+            self.apiclient,
+            hostid=hostId
+        )
+        if isinstance(response, list):
+            for systemvm in response:
+                if systemvm.state != 'Running':
+                    self.logger.debug("Found not running VM {}".format(systemvm.name))
+                    return (False, None)
+
+        return (True, None)
+
     def checkVmMigratingOnHost(self, hostId):
         vm_migrating=False
         listVms1 = VirtualMachine.list(
@@ -118,60 +204,60 @@ class TestHostMaintenance(cloudstackTestCase):
             self.logger.debug('Vms found = {} '.format(len(listVms1)))
             for vm in listVms1:
                 if (vm.state == "Migrating"):
-                    self.logger.debug('VirtualMachine on Hyp id = {} is in {}'.format(vm.id, vm.state))
+                    self.logger.debug('VirtualMachine on Host with id = {} is in {}'.format(vm.id, vm.state))
                     vm_migrating=True
                     break
 
         return (vm_migrating, None)
     
-    def checkNoVmMigratingOnHost(self, hostId):
-        no_vm_migrating=True
+    def migrationsFinished(self, hostId):
+        migrations_finished=True
         listVms1 = VirtualMachine.list(
                                    self.apiclient, 
                                    hostid=hostId
                                    )
 
         if (listVms1 is not None):
-            self.logger.debug('Vms found = {} '.format(len(listVms1)))
-            for vm in listVms1:
-                if (vm.state == "Migrating"):
-                    self.logger.debug('VirtualMachine on Hyp id = {} is in {}'.format(vm.id, vm.state))
-                    no_vm_migrating=False
-                    break
+            numVms = len(listVms1)
+            migrations_finished = (numVms == 0)
 
-        return (no_vm_migrating, None)
-    
+        return (migrations_finished, None)
+
     def noOfVMsOnHost(self, hostId):
         listVms = VirtualMachine.list(
                                        self.apiclient, 
                                        hostid=hostId
                                        )
         no_of_vms=0
+        self.logger.debug("Counting VMs on host " + hostId)
         if (listVms is not None):
             for vm in listVms:
-                self.logger.debug('VirtualMachine on Hyp 1 = {}'.format(vm.id))
+                self.logger.debug("VirtualMachine on Host " + hostId + " = " + vm.id)
                 no_of_vms=no_of_vms+1
-             
+        self.logger.debug("Found VMs on host " + str(no_of_vms))
         return no_of_vms
-    
-    def hostPrepareAndCancelMaintenance(self, target_host_id, other_host_id, checkVMMigration):
-        
-        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
-        cmd.id = target_host_id
-        response = self.apiclient.prepareHostForMaintenance(cmd)
-        
-        self.logger.debug('Host with id {} is in prepareHostForMaintenance'.format(target_host_id))
-        
-        vm_migrating = wait_until(1, 10, checkVMMigration, other_host_id)
-        
-        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
-        cmd.id = target_host_id
-        response = self.apiclient.cancelHostMaintenance(cmd)
-        
-        self.logger.debug('Host with id {} is in cancelHostMaintenance'.format(target_host_id) )
-        
-        return vm_migrating
-        
+
+    def hostPrepareAndCancelMaintenance(self, target_host_id, other_host_id):
+        # Wait for all VMs to complete any pending migrations.
+        if not wait_until(3, 100, self.checkAllVmsRunningOnHost, target_host_id) or \
+                not wait_until(3, 100, self.checkAllVmsRunningOnHost, other_host_id):
+            raise Exception("Failed to wait for all VMs to reach running state to execute test")
+
+        self.prepare_host_for_maintenance(target_host_id)
+        migrations_finished = wait_until(5, 200, self.migrationsFinished, target_host_id)
+
+        self.wait_until_host_is_in_state(target_host_id, "Maintenance", 5, 200)
+
+        vm_count_after_maintenance = self.noOfVMsOnHost(target_host_id)
+
+        self.cancel_host_maintenance(target_host_id)
+        self.wait_until_host_is_in_state(target_host_id, "Enabled", 5, 200)
+
+        if vm_count_after_maintenance != 0:
+            self.fail("Host to put to maintenance still has VMs running")
+
+        return migrations_finished
+
     @attr(
         tags=[
             "advanced",
@@ -182,42 +268,45 @@ class TestHostMaintenance(cloudstackTestCase):
             "sg"],
         required_hardware="true")
     def test_01_cancel_host_maintenace_with_no_migration_jobs(self):
+        """
+        Tests if putting a host with no migrations (0 VMs) work back and forth
+
+        1) Verify if there are at least 2 hosts in enabled state.
+        2) Put the host into maintenance verify success
+        3) Put the other host into maintenance, verify success
+        """
         listHost = Host.list(
             self.apiclient,
             type='Routing',
             zoneid=self.zone.id,
             podid=self.pod.id,
+            hypervisor=self.hypervisor,
+            resourcestate='Enabled',
+            state='Up'
         )
         for host in listHost:
-            self.logger.debug('1 Hypervisor = {}'.format(host.id))
-            
-                  
-        if (len(listHost) < 2):
-            raise unittest.SkipTest("Cancel host maintenance when VMs are migrating should be tested for 2 or more hosts");
-            return
+            self.logger.debug('Found Host = {}'.format(host.id))
 
-        vm_migrating=False
-        
+
+        if (len(listHost) < 2):
+            raise unittest.SkipTest("Canceling tests for host maintenance as we need 2 or more hosts up and enabled")
+
         try:
 
-           vm_migrating = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id, self.checkNoVmMigratingOnHost)
-           
-           vm_migrating = self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id, self.checkNoVmMigratingOnHost)
-           
+            migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id)
+
+            if migrations_finished:
+                self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id)
+            else:
+                raise unittest.SkipTest("VMs are still migrating so reverse migration /maintenace skipped")
+
         except Exception as e:
+            self.revert_host_state_on_failure(listHost[0].id)
+            self.revert_host_state_on_failure(listHost[1].id)
             self.logger.debug("Exception {}".format(e))
-            self.fail("Cancel host maintenance failed {}".format(e[0]))
-        
-
-        if (vm_migrating == True):
-            raise unittest.SkipTest("VMs are migrating and the test will not be able to check the conditions the test is intended for");
-                
-            
-        return
+            self.fail("Host maintenance test failed {}".format(e[0]))
 
 
-
-    
     @attr(
         tags=[
             "advanced",
@@ -228,53 +317,125 @@ class TestHostMaintenance(cloudstackTestCase):
             "sg"],
         required_hardware="true")
     def test_02_cancel_host_maintenace_with_migration_jobs(self):
-        
+        """
+        Tests if putting a host with migrations (3 VMs) work back and forth
+
+        1) Verify if there are at least 2 hosts in enabled state.
+        2) Deploy VMs if needed
+        3) Put the host into maintenance verify success -ensure existing host has zero running VMs
+        4) Put the other host into maintenance, verify success just as step 3
+        """
         listHost = Host.list(
             self.apiclient,
             type='Routing',
             zoneid=self.zone.id,
             podid=self.pod.id,
+            hypervisor=self.hypervisor,
+            resourcestate='Enabled',
+            state='Up'
         )
         for host in listHost:
-            self.logger.debug('2 Hypervisor = {}'.format(host.id))
-            
-        if (len(listHost) != 2):
-            raise unittest.SkipTest("Cancel host maintenance when VMs are migrating can only be tested with 2 hosts");
-            return
+            self.logger.debug('Found Host = {}'.format(host.id))
 
-        
+        if (len(listHost) < 2):
+            raise unittest.SkipTest("Canceling tests for host maintenance as we need 2 or more hosts up and enabled")
+
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
-        
+
         no_of_vms = no_of_vms + self.noOfVMsOnHost(listHost[1].id)
-                
-        if no_of_vms < 5:
+
+        if no_of_vms < MIN_VMS_FOR_TEST:
             self.logger.debug("Create VMs as there are not enough vms to check host maintenance")
-            no_vm_req = 5 - no_of_vms
+            no_vm_req = MIN_VMS_FOR_TEST - no_of_vms
             if (no_vm_req > 0):
                 self.logger.debug("Creating vms = {}".format(no_vm_req))
                 self.vmlist = self.createVMs(listHost[0].id, no_vm_req)
-        
-        vm_migrating=False
-        
+
         try:
-           
-           vm_migrating = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id, self.checkVmMigratingOnHost)
-           
-           vm_migrating = self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id, self.checkVmMigratingOnHost)
-           
+            migrations_finished = self.hostPrepareAndCancelMaintenance(listHost[0].id, listHost[1].id)
+
+            if migrations_finished:
+                self.hostPrepareAndCancelMaintenance(listHost[1].id, listHost[0].id)
+            else:
+                raise unittest.SkipTest("VMs are still migrating so reverse migration /maintenace skipped")
+
         except Exception as e:
+            self.revert_host_state_on_failure(listHost[0].id)
+            self.revert_host_state_on_failure(listHost[1].id)
             self.logger.debug("Exception {}".format(e))
-            self.fail("Cancel host maintenance failed {}".format(e[0]))
-        
+            self.fail("Host maintenance test failed {}".format(e[0]))
 
-        if (vm_migrating == False):
-            raise unittest.SkipTest("No VM is migrating and the test will not be able to check the conditions the test is intended for");
-                
-            
-        return
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg"],
+        required_hardware="true")
+    def test_03_cancel_host_maintenace_with_migration_jobs_failure(self):
+        """
+        Tests if putting a host with impossible migrations (2 VMs) work pushes to ErrorInMaintenance state
+
+        1) Verify if there are at least 2 hosts in enabled state.
+        2) Tag the host and deploy tagged VMs which cannot be migrated to other host without tags
+        3) Put the host into maintenance verify it fails with it reaching ErrorInMaintenance
+        """
+        listHost = Host.list(
+            self.apiclient,
+            type='Routing',
+            zoneid=self.zone.id,
+            podid=self.pod.id,
+            hypervisor=self.hypervisor,
+            resourcestate='Enabled',
+            state='Up'
+        )
+
+        for host in listHost:
+            self.logger.debug('Found Host = {}'.format(host.id))
+
+        if (len(listHost) < 2):
+            raise unittest.SkipTest("Canceling tests for host maintenance as we need 2 or more hosts up and enabled")
+
+        target_host_id = listHost[0].id
+
+        try:
+            Host.update(self.apiclient,
+                        id=target_host_id,
+                        hosttags=self.services["service_offerings"]["taggedsmall"]["hosttags"])
+
+            no_of_vms = self.noOfVMsOnHost(target_host_id)
+
+            # Need only 2 VMs for this case.
+            if no_of_vms < 2:
+                self.logger.debug("Create VMs as there are not enough vms to check host maintenance")
+                no_vm_req = 2 - no_of_vms
+                if (no_vm_req > 0):
+                    self.logger.debug("Creating vms = {}".format(no_vm_req))
+                    self.vmlist = self.createVMs(listHost[0].id, no_vm_req, "taggedsmall")
+
+            # Attempt putting host in maintenance and check if ErrorInMaintenance state is reached
+            self.prepare_host_for_maintenance(target_host_id)
+            error_in_maintenance_reached = self.wait_until_host_is_in_state(target_host_id, "ErrorInMaintenance", 5, 300)
+
+            self.cancel_host_maintenance(target_host_id)
+            self.wait_until_host_is_in_state(target_host_id, "Enabled", 5, 200)
+
+            Host.update(self.apiclient, id=target_host_id, hosttags="")
+
+            if not error_in_maintenance_reached:
+                self.fail("Error in maintenance state should have reached after ports block")
+
+        except Exception as e:
+            self.revert_host_state_on_failure(listHost[0].id)
+            self.revert_host_state_on_failure(listHost[1].id)
+            Host.update(self.apiclient, id=target_host_id, hosttags="")
+            self.logger.debug("Exception {}".format(e))
+            self.fail("Host maintenance test failed {}".format(e[0]))
 
 
-class TestHostMaintenanceAgents(cloudstackTestCase):
+class TestHostMaintenanceAgents(TestHostMaintenanceBase):
 
     @classmethod
     def setUpClass(cls):
@@ -371,29 +532,6 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
         value = "true" if on else "false"
         cls.updateConfiguration('kvm.ssh.to.agent', value)
 
-    def prepare_host_for_maintenance(self, hostid):
-        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
-        cmd.id = hostid
-        self.apiclient.prepareHostForMaintenance(cmd)
-        self.logger.debug('Host with id %s is in prepareHostForMaintenance' % hostid)
-
-    def wait_until_host_is_in_state(self, hostid, resourcestate, interval=3, retries=20):
-        def check_resource_state():
-            response = Host.list(
-                self.apiclient,
-                id=hostid
-            )
-            if isinstance(response, list):
-                if response[0].resourcestate == resourcestate:
-                    self.logger.debug('Host with id %s is in resource state = %s' % (hostid, resourcestate))
-                    return True, None
-            return False, None
-
-        done, _ = wait_until(interval, retries, check_resource_state)
-        if not done:
-            raise Exception("Failed to wait for host %s to be on resource state %s" % (hostid, resourcestate))
-        return True
-
     def wait_until_agent_is_in_state(self, hostid, state, interval=3, retries=20):
         def check_agent_state():
             response = Host.list(
@@ -411,12 +549,6 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             raise Exception("Failed to wait for host agent %s to be on state %s" % (hostid, state))
         return True
 
-    def cancel_host_maintenance(self, hostid):
-        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
-        cmd.id = hostid
-        self.apiclient.cancelHostMaintenance(cmd)
-        self.logger.debug('Host with id %s is cancelling maintenance' % hostid)
-
     def get_enabled_host_connected_agent(self):
         hosts = Host.list(
             self.apiclient,
@@ -428,7 +560,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             state='Up'
         )
         if len(hosts) < 2:
-            raise unittest.SkipTest("Cancel host maintenance must be tested for 2 or more hosts")
+            raise unittest.SkipTest("Host maintenance tests must be tested for 2 or more hosts")
         return hosts[0]
 
     def deploy_vm_on_host(self, hostid):
@@ -450,13 +582,6 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             "Check VM is running on the host"
         )
         self.cleanup.append(vm)
-
-    def revert_host_state_on_failure(self, host):
-        cmd = updateHost.updateHostCmd()
-        cmd.id = host.id
-        cmd.allocationstate = "Enable"
-        response = self.apiclient.updateHost(cmd)
-        self.assertEqual(response.resourcestate, "Enabled")
 
     @skipTestIf("hypervisorNotSupported")
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="true")
@@ -480,21 +605,8 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             self.wait_until_host_is_in_state(self.host.id, "Enabled")
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)
-
-    def get_ssh_client(self, ip, username, password, retries=10):
-        """ Setup ssh client connection and return connection """
-
-        try:
-            ssh_client = SshClient(ip, 22, username, password, retries)
-        except Exception as e:
-            raise unittest.SkipTest("Unable to create ssh connection: " % e)
-
-        self.assertIsNotNone(
-            ssh_client, "Failed to setup ssh connection to ip=%s" % ip)
-
-        return ssh_client
 
     @skipTestIf("hypervisorNotSupported")
     @attr(tags=["boris", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="true")
@@ -529,7 +641,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
 
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)
 
     @skipTestIf("hypervisorNotSupported")
@@ -554,7 +666,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             self.wait_until_host_is_in_state(self.host.id, "Enabled")
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)
 
     @skipTestIf("hypervisorNotSupported")
@@ -585,7 +697,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             ssh_client.execute("service cloudstack-agent stop")
             self.wait_until_agent_is_in_state(self.host.id, "Disconnected")
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)
 
         self.assertRaises(Exception, self.cancel_host_maintenance, self.host.id)
@@ -600,5 +712,5 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             self.wait_until_host_is_in_state(self.host.id, "Enabled")
             self.assert_host_is_functional_after_cancelling_maintenance(self.host.id)
         except Exception as e:
-            self.revert_host_state_on_failure(self.host)
+            self.revert_host_state_on_failure(self.host.id)
             self.fail(e)

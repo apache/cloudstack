@@ -15,6 +15,14 @@
 
 package com.cloud.vpc;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +55,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.vpc.NetworkACLItem;
@@ -134,8 +143,8 @@ public class NetworkACLManagerTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testApplyACL() throws Exception {
         final NetworkVO network = Mockito.mock(NetworkVO.class);
-        Mockito.when(_networkDao.findById(Matchers.anyLong())).thenReturn(network);
-        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(Matchers.anyLong(), Matchers.any(Network.Service.class), Matchers.any(Network.Provider.class))).thenReturn(true);
+        Mockito.when(_networkDao.findById(anyLong())).thenReturn(network);
+        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(anyLong(), Matchers.any(Network.Service.class), Matchers.any(Network.Provider.class))).thenReturn(true);
         Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Matchers.any(Network.class), Matchers.anyList())).thenReturn(true);
         assertTrue(_aclMgr.applyACLToNetwork(1L));
     }
@@ -161,16 +170,20 @@ public class NetworkACLManagerTest extends TestCase {
         final NetworkVO network = Mockito.mock(NetworkVO.class);
         final List<NetworkVO> networks = new ArrayList<NetworkVO>();
         networks.add(network);
-        Mockito.when(_networkDao.listByAclId(Matchers.anyLong())).thenReturn(networks);
-        Mockito.when(_networkDao.findById(Matchers.anyLong())).thenReturn(network);
-        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(Matchers.anyLong(), Matchers.any(Network.Service.class), Matchers.any(Network.Provider.class))).thenReturn(true);
-        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Matchers.any(Network.class), Matchers.anyList())).thenReturn(applyNetworkACLs);
+
+        NetworkServiceMapDao ntwkSrvcDao = mock(NetworkServiceMapDao.class);
+        when(ntwkSrvcDao.canProviderSupportServiceInNetwork(anyLong(), eq(Network.Service.NetworkACL), nullable(Network.Provider.class))).thenReturn(true);
+        Mockito.when(_networkDao.listByAclId(anyLong())).thenReturn(networks);
+        Mockito.when(_networkDao.findById(anyLong())).thenReturn(network);
+        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(anyLong(), any(Network.Service.class), any(Network.Provider.class))).thenReturn(true);
+        Mockito.when(_networkAclElements.get(0).getProvider()).thenReturn(Mockito.mock(Network.Provider.class));
+        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(any(Network.class), anyList())).thenReturn(applyNetworkACLs);
 
         // Make sure it applies ACL to private gateway
         final List<VpcGatewayVO> vpcGateways = new ArrayList<VpcGatewayVO>();
         final VpcGatewayVO vpcGateway = Mockito.mock(VpcGatewayVO.class);
         final PrivateGateway privateGateway = Mockito.mock(PrivateGateway.class);
-        Mockito.when(_vpcSvc.getVpcPrivateGateway(Mockito.anyLong())).thenReturn(privateGateway);
+        Mockito.when(_vpcSvc.getVpcPrivateGateway(anyLong())).thenReturn(privateGateway);
         vpcGateways.add(vpcGateway);
         Mockito.when(_vpcGatewayDao.listByAclIdAndType(aclId, VpcGateway.Type.Private)).thenReturn(vpcGateways);
 
@@ -213,7 +226,7 @@ public class NetworkACLManagerTest extends TestCase {
 
     @Test
     public void testRevokeACLItem() throws Exception {
-        Mockito.when(_networkACLItemDao.findById(Matchers.anyLong())).thenReturn(aclItem);
+        Mockito.when(_networkACLItemDao.findById(anyLong())).thenReturn(aclItem);
         assertTrue(_aclMgr.revokeNetworkACLItem(1L));
     }
 
@@ -221,12 +234,12 @@ public class NetworkACLManagerTest extends TestCase {
     public void deleteNonEmptyACL() throws Exception {
         final List<NetworkACLItemVO> aclItems = new ArrayList<NetworkACLItemVO>();
         aclItems.add(aclItem);
-        Mockito.when(_networkACLItemDao.listByACL(Matchers.anyLong())).thenReturn(aclItems);
+        Mockito.when(_networkACLItemDao.listByACL(anyLong())).thenReturn(aclItems);
         Mockito.when(acl.getId()).thenReturn(3l);
-        Mockito.when(_networkACLItemDao.findById(Matchers.anyLong())).thenReturn(aclItem);
+        Mockito.when(_networkACLItemDao.findById(anyLong())).thenReturn(aclItem);
         Mockito.when(aclItem.getState()).thenReturn(State.Add);
         Mockito.when(aclItem.getId()).thenReturn(3l);
-        Mockito.when(_networkACLDao.remove(Matchers.anyLong())).thenReturn(true);
+        Mockito.when(_networkACLDao.remove(anyLong())).thenReturn(true);
 
         final boolean result = _aclMgr.deleteNetworkACL(acl);
 

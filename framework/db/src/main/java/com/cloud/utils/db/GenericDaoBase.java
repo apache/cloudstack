@@ -22,6 +22,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1421,7 +1422,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     try {
                         if (_idField != null) {
                             if (id != null) {
-                                _idField.set(entity, id);
+                                if (id instanceof BigInteger) {
+                                    _idField.set(entity, ((BigInteger) id).longValue());
+                                } else {
+                                    _idField.set(entity, id);
+                                }
                             } else {
                                 id = (ID)_idField.get(entity);
                             }
@@ -1777,6 +1782,34 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             txn.commit();
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on " + pstmt, e);
+        }
+    }
+
+    @Override
+    public boolean unremove(ID id) {
+        if (_removed == null) {
+            return false;
+        }
+
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            pstmt = txn.prepareAutoCloseStatement(_removeSql.first());
+            final Attribute[] attrs = _removeSql.second();
+            pstmt.setObject(1, null);
+            for (int i = 0; i < attrs.length - 1; i++) {
+                prepareAttribute(i + 2, pstmt, attrs[i], id);
+            }
+
+            final int result = pstmt.executeUpdate();
+            txn.commit();
+            if (_cache != null) {
+                _cache.remove(id);
+            }
+            return result > 0;
+        } catch (final SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
         }
     }
 

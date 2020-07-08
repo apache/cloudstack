@@ -16,11 +16,12 @@
 # under the License.
 """ BVT tests for remote diagnostics of system VMs
 """
+import urllib
+
+from marvin.cloudstackAPI import (runDiagnostics, getDiagnosticsData)
+from marvin.cloudstackTestCase import cloudstackTestCase
 # Import Local Modules
 from marvin.codes import FAILED
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import runDiagnostics
-from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine)
@@ -29,7 +30,7 @@ from marvin.lib.common import (get_domain,
                                get_test_template,
                                list_ssvms,
                                list_routers)
-
+from marvin.lib.utils import (cleanup_resources)
 from nose.plugins.attrib import attr
 
 
@@ -536,4 +537,198 @@ class TestRemoteDiagnostics(cloudstackTestCase):
             '0',
             cmd_response.exitcode,
             'Failed to run remote Traceroute in CPVM'
+        )
+
+    '''
+    Add Get Diagnostics data BVT
+    '''
+
+    @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
+    def test_13_retrieve_vr_default_files(self):
+        list_router_response = list_routers(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.assertEqual(
+            isinstance(list_router_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        router = list_router_response[0]
+        self.debug('Setting up VR with ID %s' % router.id)
+        cmd = getDiagnosticsData.getDiagnosticsDataCmd()
+        cmd.targetid = router.id
+
+        response = self.apiclient.getDiagnosticsData(cmd)
+        is_valid_url = self.check_url(response.url)
+
+        self.assertEqual(
+            True,
+            is_valid_url,
+            msg="Failed to create valid download url response"
+        )
+
+    def check_url(self, url):
+        import urllib2
+        try:
+            r = urllib.urlopen(url)
+            if r.code == 200:
+                return True
+        except urllib2.HTTPError:
+            return False
+        except urllib2.URLError:
+            return False
+        return True
+
+    @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
+    def test_14_retrieve_vr_one_file(self):
+        list_router_response = list_routers(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.assertEqual(
+            isinstance(list_router_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        router = list_router_response[0]
+        self.debug('Setting up VR with ID %s' % router.id)
+        cmd = getDiagnosticsData.getDiagnosticsDataCmd()
+        cmd.targetid = router.id
+        cmd.type = "/var/log/cloud.log"
+
+        response = self.apiclient.getDiagnosticsData(cmd)
+
+        is_valid_url = self.check_url(response.url)
+
+        self.assertEqual(
+            True,
+            is_valid_url,
+            msg="Failed to create valid download url response"
+        )
+
+    @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
+    def test_15_retrieve_ssvm_default_files(self):
+        list_ssvm_response = list_ssvms(
+            self.apiclient,
+            systemvmtype='secondarystoragevm',
+            state='Running',
+        )
+
+        self.assertEqual(
+            isinstance(list_ssvm_response, list),
+            True,
+            'Check list response returns a valid list'
+        )
+        ssvm = list_ssvm_response[0]
+
+        self.debug('Setting up SSVM with ID %s' % ssvm.id)
+
+        cmd = getDiagnosticsData.getDiagnosticsDataCmd()
+        cmd.targetid = ssvm.id
+
+        response = self.apiclient.getDiagnosticsData(cmd)
+
+        is_valid_url = self.check_url(response.url)
+
+        self.assertEqual(
+            True,
+            is_valid_url,
+            msg="Failed to create valid download url response"
+        )
+
+    @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
+    def test_16_retrieve_ssvm_single_file(self):
+        list_ssvm_response = list_ssvms(
+            self.apiclient,
+            systemvmtype='secondarystoragevm',
+            state='Running',
+        )
+
+        self.assertEqual(
+            isinstance(list_ssvm_response, list),
+            True,
+            'Check list response returns a valid list'
+        )
+        ssvm = list_ssvm_response[0]
+
+        self.debug('Setting up SSVM with ID %s' % ssvm.id)
+
+        cmd = getDiagnosticsData.getDiagnosticsDataCmd()
+        cmd.targetid = ssvm.id
+        cmd.type = "/var/log/cloud.log"
+
+        response = self.apiclient.getDiagnosticsData(cmd)
+
+        is_valid_url = self.check_url(response.url)
+
+        self.assertEqual(
+            True,
+            is_valid_url,
+            msg="Failed to create valid download url response"
+        )
+
+    @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
+    def test_17_retrieve_cpvm_default_files(self):
+        list_cpvm_response = list_ssvms(
+            self.apiclient,
+            systemvmtype='consoleproxy',
+            state='Running',
+        )
+
+        self.assertEqual(
+            isinstance(list_cpvm_response, list),
+            True,
+            'Check list response returns a valid list'
+        )
+        cpvm = list_cpvm_response[0]
+
+        self.debug('Setting up CPVM with ID %s' % cpvm.id)
+
+        cmd = getDiagnosticsData.getDiagnosticsDataCmd()
+        cmd.targetid = cpvm.id
+
+        response = self.apiclient.getDiagnosticsData(cmd)
+
+        is_valid_url = self.check_url(response.url)
+
+        self.assertEqual(
+            True,
+            is_valid_url,
+            msg="Failed to create valid download url response"
+        )
+
+    @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
+    def test_18_retrieve_cpvm_single_file(self):
+        list_cpvm_response = list_ssvms(
+            self.apiclient,
+            systemvmtype='consoleproxy',
+            state='Running',
+        )
+
+        self.assertEqual(
+            isinstance(list_cpvm_response, list),
+            True,
+            'Check list response returns a valid list'
+        )
+        cpvm = list_cpvm_response[0]
+
+        self.debug('Setting up CPVM with ID %s' % cpvm.id)
+
+        cmd = getDiagnosticsData.getDiagnosticsDataCmd()
+        cmd.targetid = cpvm.id
+        cmd.type = "/var/log/cloud.log"
+
+        response = self.apiclient.getDiagnosticsData(cmd)
+
+        is_valid_url = self.check_url(response.url)
+
+        self.assertEqual(
+            True,
+            is_valid_url,
+            msg="Failed to create valid download url response"
         )

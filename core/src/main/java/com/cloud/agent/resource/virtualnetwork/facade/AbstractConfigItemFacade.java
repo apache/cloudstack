@@ -127,7 +127,10 @@ public abstract class AbstractConfigItemFacade {
         final ConfigItem configFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, remoteFilename, gson.toJson(configuration));
         cfg.add(configFile);
 
-        final ConfigItem updateCommand = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, remoteFilename);
+        // By default keep files in processed cache on VR
+        final String args = configuration.shouldDeleteFromProcessedCache() ? remoteFilename + " false" : remoteFilename;
+
+        final ConfigItem updateCommand = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, args);
         cfg.add(updateCommand);
 
         return cfg;

@@ -19,34 +19,84 @@
 
 package com.cloud.agent.resource.virtualnetwork.model;
 
+import java.util.Map;
+
 public class MonitorService extends ConfigBase {
     public String config, disableMonitoring;
+    public Boolean healthChecksEnabled;
+    public Integer healthChecksBasicRunInterval;
+    public Integer healthChecksAdvancedRunInterval;
+    public String excludedHealthChecks;
+    public Map<String, String> healthChecksConfig;
 
     public MonitorService() {
         super(ConfigBase.MONITORSERVICE);
     }
 
-    public MonitorService(String config, String disableMonitoring) {
+    public MonitorService(String config, String disableMonitoring, String healthChecksEnabled) {
         super(ConfigBase.MONITORSERVICE);
         this.config = config;
         this.disableMonitoring = disableMonitoring;
+        this.healthChecksEnabled = Boolean.parseBoolean(healthChecksEnabled);
     }
 
     public String getConfig() {
         return config;
     }
 
-    public void setConfig(String config) {
-        this.config = config;
-    }
-
     public String getDisableMonitoring() {
         return disableMonitoring;
+    }
+
+    public Boolean getHealthChecksEnabled() {
+        return healthChecksEnabled;
+    }
+
+    public Integer getHealthChecksBasicRunInterval() {
+        return healthChecksBasicRunInterval;
+    }
+
+    public Integer getHealthChecksAdvancedRunInterval() {
+        return healthChecksAdvancedRunInterval;
+    }
+
+    public String getExcludedHealthChecks() {
+        return excludedHealthChecks;
+    }
+
+    public Map<String, String> getHealthChecksConfig() {
+        return healthChecksConfig;
+    }
+
+    public void setConfig(String config) {
+        this.config = config;
     }
 
     public void setDisableMonitoring(String disableMonitoring) {
         this.disableMonitoring = disableMonitoring;
     }
 
+    public void setHealthChecksEnabled(Boolean healthChecksEnabled) {
+        this.healthChecksEnabled = healthChecksEnabled;
+    }
 
+    public void setHealthChecksBasicRunInterval(Integer healthChecksBasicRunInterval) {
+        this.healthChecksBasicRunInterval = healthChecksBasicRunInterval;
+    }
+
+    public void setHealthChecksAdvancedRunInterval(Integer healthChecksAdvancedRunInterval) {
+        this.healthChecksAdvancedRunInterval = healthChecksAdvancedRunInterval;
+    }
+
+    public void setExcludedHealthChecks(String excludedHealthChecks) {
+        this.excludedHealthChecks = excludedHealthChecks;
+    }
+
+    public void setHealthChecksConfig(Map<String, String> healthChecksConfig) {
+        this.healthChecksConfig = healthChecksConfig;
+    }
+
+    public void setDeleteFromProcessedCache(boolean deleteFromProcessedCache) {
+        this.deleteFromProcessedCache = deleteFromProcessedCache;
+    }
 }

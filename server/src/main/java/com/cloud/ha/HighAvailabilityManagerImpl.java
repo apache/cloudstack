@@ -105,6 +105,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     private static final int SECONDS_TO_MILLISECONDS_FACTOR = 1000;
 
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
+    private ConfigKey<Integer> MigrationMaxRetries = new ConfigKey<>("Advanced", Integer.class,
+            "vm.ha.migration.max.retries","5",
+            "Total number of attempts for trying migration of a VM.",
+            true, ConfigKey.Scope.Global);
+
     WorkerThread[] _workers;
     boolean _stopped;
     long _timeToSleep;
@@ -315,6 +320,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         if (vm.getHostId() != null) {
             final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated());
             _haDao.persist(work);
+            s_logger.info("Scheduled migration work of VM " + vm.getUuid() + " from host " + _hostDao.findById(vm.getHostId()) + " with HAWork " + work);
             wakeupWorkers();
         }
         return true;
@@ -630,23 +636,32 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     public Long migrate(final HaWorkVO work) {
         long vmId = work.getInstanceId();
-
         long srcHostId = work.getHostId();
+
+        VMInstanceVO vm = _instanceDao.findById(vmId);
+        if (vm == null) {
+            s_logger.info("Unable to find vm: " + vmId + ", skipping migrate.");
+            return null;
+        }
+        s_logger.info("Migration attempt: for VM " + vm.getUuid() + "from host id " + srcHostId +
+                ". Starting attempt: " + (1 + work.getTimesTried()) + "/" + _maxRetries + " times.");
         try {
             work.setStep(Step.Migrating);
             _haDao.update(work.getId(), work);
 
-            VMInstanceVO vm = _instanceDao.findById(vmId);
-            if (vm == null) {
-                return null;
-            }
             // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
             _itMgr.migrateAway(vm.getUuid(), srcHostId);
             return null;
         } catch (InsufficientServerCapacityException e) {
-            s_logger.warn("Insufficient capacity for migrating a VM.");
-            _resourceMgr.maintenanceFailed(srcHostId);
+            s_logger.warn("Migration attempt: Insufficient capacity for migrating a VM " +
+                    vm.getUuid() + " from source host id " + srcHostId +
+                    ". Exception: " + e.getMessage());
+            _resourceMgr.migrateAwayFailed(srcHostId, vmId);
             return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
+        } catch (Exception e) {
+            s_logger.warn("Migration attempt: Unexpected exception occurred when attempting migration of " +
+                    vm.getUuid() + e.getMessage());
+            throw e;
         }
     }
 
@@ -745,7 +760,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     @Override
     public void cancelScheduledMigrations(final HostVO host) {
         WorkType type = host.getType() == HostVO.Type.Storage ? WorkType.Stop : WorkType.Migration;
-
+        s_logger.info("Canceling all scheduled migrations from host " + host.getUuid());
         _haDao.deleteMigrationWorkItems(host.getId(), type, _serverId);
     }
 
@@ -763,7 +778,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     private void rescheduleWork(final HaWorkVO work, final long nextTime) {
-        s_logger.info("Rescheduling work " + work + " to try again at " + new Date(nextTime << 10));
         work.setTimeToTry(nextTime);
         work.setTimesTried(work.getTimesTried() + 1);
         work.setServerId(null);
@@ -804,7 +818,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             }
 
             if (nextTime == null) {
-                s_logger.info("Completed work " + work);
+                s_logger.info("Completed work " + work + ". Took " + (work.getTimesTried() + 1) + "/" + _maxRetries + " attempts.");
                 work.setStep(Step.Done);
             } else {
                 rescheduleWork(work, nextTime.longValue());
@@ -820,12 +834,18 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             VMInstanceVO vm = _instanceDao.findById(work.getInstanceId());
             work.setUpdateTime(vm.getUpdated());
             work.setPreviousState(vm.getState());
+        } finally {
+            if (!Step.Done.equals(work.getStep())) {
+                if (work.getTimesTried() >= _maxRetries) {
+                    s_logger.warn("Giving up, retried max " + work.getTimesTried() + "/" + _maxRetries + " times for work: " + work);
+                    work.setStep(Step.Done);
+                } else {
+                    s_logger.warn("Rescheduling work " + work + " to try again at " + new Date(work.getTimeToTry() << 10) +
+                            ". Finished attempt " + work.getTimesTried() + "/" + _maxRetries + " times.");
+                }
+            }
+            _haDao.update(work.getId(), work);
         }
-        if (!Step.Done.equals(work.getStep()) && work.getTimesTried() >= _maxRetries) {
-            s_logger.warn("Giving up, retried max. times for work: " + work);
-            work.setStep(Step.Done);
-        }
-        _haDao.update(work.getId(), work);
     }
 
     @Override
@@ -843,7 +863,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         _forceHA = ForceHA.value();
         _timeToSleep = TimeToSleep.value() * SECONDS_TO_MILLISECONDS_FACTOR;
-        _maxRetries = MaxRetries.value();
+        _maxRetries = MigrationMaxRetries.value();
         _timeBetweenFailures = TimeBetweenFailures.value() * SECONDS_TO_MILLISECONDS_FACTOR;
         _timeBetweenCleanups = TimeBetweenCleanup.value();
         _stopRetryInterval = StopRetryInterval.value();
@@ -988,6 +1008,20 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         return haWorks.size() > 0;
     }
 
+    @Override
+    public boolean hasPendingMigrationsWork(long vmId) {
+        List<HaWorkVO> haWorks = _haDao.listPendingMigrationsForVm(vmId);
+        for (HaWorkVO work : haWorks) {
+            if (work.getTimesTried() <= _maxRetries) {
+                return true;
+            } else {
+                s_logger.warn("HAWork Job of migration type " + work + " found in database which has max " +
+                        "retries more than " + _maxRetries + " but still not in Done, Cancelled, or Error State");
+            }
+        }
+        return false;
+    }
+
     /**
      * @return The name of the component that provided this configuration
      * variable.  This value is saved in the database so someone can easily
@@ -1003,7 +1037,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
      */
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] {TimeBetweenCleanup, MaxRetries, TimeToSleep, TimeBetweenFailures,
+        return new ConfigKey[] {TimeBetweenCleanup, MigrationMaxRetries, TimeToSleep, TimeBetweenFailures,
             StopRetryInterval, RestartRetryInterval, MigrateRetryInterval, InvestigateRetryInterval,
             HAWorkers, ForceHA};
     }

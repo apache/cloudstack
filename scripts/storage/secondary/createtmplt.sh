@@ -210,7 +210,6 @@ echo "filename=$tmpltname" > /$tmpltfs/template.properties
 echo "description=$descr" >> /$tmpltfs/template.properties
 # we need to rethink this property as it might get changed after download due to decompression
 # option is to recalcutate it here
-echo "checksum=$cksum" >> /$tmpltfs/template.properties
 echo "hvm=$hvm" >> /$tmpltfs/template.properties
 echo "size=$imgsize" >> /$tmpltfs/template.properties
 

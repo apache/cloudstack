@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
+import com.cloud.agent.api.RollingMaintenanceCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
@@ -117,7 +118,7 @@ public abstract class AgentAttache {
         StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(),
         ReadyCommand.class.toString(), ShutdownCommand.class.toString(), SetupCommand.class.toString(),
         CleanupNetworkRulesCmd.class.toString(), CheckNetworkCommand.class.toString(), PvlanSetupCommand.class.toString(), CheckOnHostCommand.class.toString(),
-        ModifyTargetsCommand.class.toString(), ModifySshKeysCommand.class.toString(), ModifyStoragePoolCommand.class.toString(), SetupMSListCommand.class.toString()};
+        ModifyTargetsCommand.class.toString(), ModifySshKeysCommand.class.toString(), ModifyStoragePoolCommand.class.toString(), SetupMSListCommand.class.toString(), RollingMaintenanceCommand.class.toString()};
     protected final static String[] s_commandsNotAllowedInConnectingMode = new String[] { StartCommand.class.toString(), CreateCommand.class.toString() };
     static {
         Arrays.sort(s_commandsAllowedInMaintenanceMode);

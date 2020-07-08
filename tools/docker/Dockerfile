@@ -20,7 +20,7 @@
 FROM ubuntu:16.04
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.13.1.0-SNAPSHOT"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.14.1.0-SNAPSHOT"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -32,7 +32,7 @@ RUN apt-get -y update && apt-get install -y \
     sudo \
     ipmitool \
     maven \
-    openjdk-8-jdk \
+    openjdk-11-jdk \
     python-dev \
     python-setuptools \
     python-pip \

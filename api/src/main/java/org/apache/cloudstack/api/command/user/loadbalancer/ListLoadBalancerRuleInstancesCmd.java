@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.vm.VirtualMachine;
+
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.LoadBalancerRuleVmMapResponse;
 import org.apache.log4j.Logger;
 
@@ -38,7 +40,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listLoadBalancerRuleInstances", description = "List all virtual machine instances that are assigned to a load balancer rule.", responseObject = LoadBalancerRuleVmMapResponse.class, responseView = ResponseView.Restricted,
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
-public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
+public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRuleInstancesCmd.class.getName());
 
     private static final String s_name = "listloadbalancerruleinstancesresponse";
@@ -121,7 +123,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
             List<LoadBalancerRuleVmMapResponse> listlbVmRes = new ArrayList<LoadBalancerRuleVmMapResponse>();
 
             if (result != null) {
-                vmResponses = _responseGenerator.createUserVmResponse(ResponseView.Full, "loadbalancerruleinstance", result.toArray(new UserVm[result.size()]));
+                vmResponses = _responseGenerator.createUserVmResponse(getResponseView(), "loadbalancerruleinstance", result.toArray(new UserVm[result.size()]));
 
 
                 List<String> ipaddr = null;

@@ -84,6 +84,12 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
     }
 
+    private boolean moveBetweenPrimaryDirectDownload(DataStore srcStore, DataStore destStore) {
+        DataStoreRole srcRole = srcStore.getRole();
+        DataStoreRole destRole = destStore.getRole();
+        return srcRole == DataStoreRole.Primary && destRole == DataStoreRole.Primary;
+    }
+
     protected boolean moveBetweenCacheAndImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
         DataStoreRole destRole = destStore.getRole();
@@ -182,6 +188,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
         DataStore destStore = destData.getDataStore();
         if (moveBetweenPrimaryImage(srcStore, destStore)) {
             return findEndPointForImageMove(srcStore, destStore);
+        } else if (moveBetweenPrimaryDirectDownload(srcStore, destStore)) {
+            return findEndPointForImageMove(srcStore, destStore);
         } else if (moveBetweenCacheAndImage(srcStore, destStore)) {
             // pick ssvm based on image cache dc
             DataStore selectedStore = null;
@@ -263,6 +271,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
         sc.and(sc.entity().getStatus(), Op.IN, Status.Up, Status.Connecting);
         sc.and(sc.entity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.list();
     }
 

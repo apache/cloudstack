@@ -17,6 +17,8 @@
 package org.apache.cloudstack.affinity;
 
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
@@ -42,6 +44,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -83,8 +86,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
-
-import org.junit.Assert;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -152,6 +153,7 @@ public class AffinityGroupServiceImplTest {
         when(_processor.getType()).thenReturn("mock");
         when(_accountDao.findByIdIncludingRemoved(0L)).thenReturn(acct);
 
+
         List<AffinityGroupProcessor> affinityProcessors = new ArrayList<AffinityGroupProcessor>();
         affinityProcessors.add(_processor);
         _affinityService.setAffinityGroupProcessors(affinityProcessors);
@@ -172,7 +174,7 @@ public class AffinityGroupServiceImplTest {
 
     @Test
     public void createAffinityGroupFromCmdTest() {
-        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        when(_acctMgr.finalizeOwner(any(Account.class), nullable(String.class), anyLong(), nullable(Long.class))).thenReturn(acct);
         when(_groupDao.isNameInUse(anyLong(), anyLong(), eq(AFFINITY_GROUP_NAME))).thenReturn(false);
         CreateAffinityGroupCmd mockCreateAffinityGroupCmd = Mockito.mock(CreateAffinityGroupCmd.class);
         when(mockCreateAffinityGroupCmd.getProjectId()).thenReturn(PROJECT_ID);
@@ -185,7 +187,7 @@ public class AffinityGroupServiceImplTest {
 
     @Test
     public void createAffinityGroupTest() {
-        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        when(_acctMgr.finalizeOwner(any(Account.class), anyString(), anyLong(), nullable(Long.class))).thenReturn(acct);
         when(_groupDao.isNameInUse(anyLong(), anyLong(), eq(AFFINITY_GROUP_NAME))).thenReturn(false);
         AffinityGroup group = _affinityService.createAffinityGroup(ACCOUNT_NAME, null, DOMAIN_ID, AFFINITY_GROUP_NAME, "mock", "affinity group one");
         assertNotNull("Affinity group 'group1' of type 'mock' failed to create ", group);
@@ -239,7 +241,7 @@ public class AffinityGroupServiceImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void uniqueAffinityNameTest() {
-        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        when(_acctMgr.finalizeOwner(any(Account.class), anyString(), anyLong(), nullable(Long.class))).thenReturn(acct);
         when(_groupDao.isNameInUse(anyLong(), anyLong(), eq(AFFINITY_GROUP_NAME))).thenReturn(true);
         _affinityService.createAffinityGroup(ACCOUNT_NAME, null, DOMAIN_ID, AFFINITY_GROUP_NAME, "mock", "affinity group two");
     }

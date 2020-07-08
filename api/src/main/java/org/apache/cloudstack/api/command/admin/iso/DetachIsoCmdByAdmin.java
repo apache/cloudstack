@@ -16,33 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.iso;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.iso.DetachIsoCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
-
-import com.cloud.uservm.UserVm;
 
 @APICommand(name = "detachIso", description = "Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class DetachIsoCmdByAdmin extends DetachIsoCmd {
-    public static final Logger s_logger = Logger.getLogger(DetachIsoCmdByAdmin.class.getName());
-
-    @Override
-    public void execute(){
-        boolean result = _templateService.detachIso(virtualMachineId);
-        if (result) {
-            UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);
-            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", userVm).get(0);
-            response.setResponseName(DeployVMCmd.getResultObjectName());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to detach iso");
-        }
-    }
-}
+public class DetachIsoCmdByAdmin extends DetachIsoCmd implements AdminCmd {}

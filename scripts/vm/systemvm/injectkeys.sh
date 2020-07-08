@@ -42,7 +42,7 @@ inject_into_iso() {
   [ ! -f $isofile ] && echo "$(basename $0): Could not find systemvm iso patch file $isofile" && return 1
   $SUDO mount -o loop $isofile $MOUNTPATH 
   [ $? -ne 0 ] && echo "$(basename $0): Failed to mount original iso $isofile" && clean_up && return 1
-  diff -q $MOUNTPATH/authorized_keys $newpubkey &> /dev/null && clean_up && return 0
+  diff -q $MOUNTPATH/authorized_keys $newpubkey &> /dev/null && echo "New public key is the same as the one in the systemvm.iso, not injecting it, not modifying systemvm.iso" && clean_up && return 0
   $SUDO cp -b $isofile $backup
   [ $? -ne 0 ] && echo "$(basename $0): Failed to backup original iso $isofile" && clean_up && return 1
   rm -rf $TMPDIR

@@ -146,6 +146,7 @@ public interface HighAvailabilityManager extends Manager {
 
     boolean hasPendingHaWork(long vmId);
 
+    boolean hasPendingMigrationsWork(long vmId);
     /**
      * @return
      */

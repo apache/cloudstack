@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -42,7 +43,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ResizeVolumeCmd extends BaseAsyncCmd {
+public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ResizeVolumeCmd.class.getName());
 
     private static final String s_name = "resizevolumeresponse";
@@ -178,7 +179,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
         }
 
         if (volume != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), volume);
             //FIXME - have to be moved to ApiResponseHelper
             response.setResponseName(getCommandName());
             setResponseObject(response);

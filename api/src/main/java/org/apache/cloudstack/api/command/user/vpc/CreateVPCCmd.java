@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
@@ -42,7 +43,7 @@ import com.cloud.network.vpc.Vpc;
 
 @APICommand(name = "createVPC", description = "Creates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = {Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateVPCCmd extends BaseAsyncCreateCmd {
+public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVPCCmd.class.getName());
     private static final String s_name = "createvpcresponse";
 
@@ -175,7 +176,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
         }
 
         if (vpc != null) {
-            VpcResponse response = _responseGenerator.createVpcResponse(ResponseView.Restricted, vpc);
+            VpcResponse response = _responseGenerator.createVpcResponse(getResponseView(), vpc);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

@@ -48,7 +48,7 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
         self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
 
         listConfigurationsCmd = listConfigurations.listConfigurationsCmd()
-        listConfigurationsCmd.cfgName = updateConfigurationResponse.name
+        listConfigurationsCmd.name = updateConfigurationResponse.name
         listConfigurationsCmd.scopename = "zone"
         listConfigurationsCmd.scopeid = 1
         listConfigurationsResponse = self.apiClient.listConfigurations(listConfigurationsCmd)

@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
@@ -33,7 +34,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {
         Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class MigrateVolumeCmd extends BaseAsyncCmd {
+public class MigrateVolumeCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "migratevolumeresponse";
 
     /////////////////////////////////////////////////////
@@ -112,7 +113,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
 
         result = _volumeService.migrateVolume(this);
         if (result != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

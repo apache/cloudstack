@@ -95,6 +95,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.host.dao.HostDetailsDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -108,6 +109,8 @@ public class FirstFitPlannerTest {
     ClusterDao clusterDao;
     @Inject
     UserVmDao vmDao;
+    @Inject
+    HostDetailsDao hostDetailsDao;
     @Inject
     UserVmDetailsDao vmDetailsDao;
     @Inject
@@ -354,6 +357,9 @@ public class FirstFitPlannerTest {
         public HostTagsDao hostTagsDao() {
             return Mockito.mock(HostTagsDao.class);
         }
+
+        @Bean
+        public HostDetailsDao hostDetailsDao() { return  Mockito.mock(HostDetailsDao.class); }
 
         @Bean
         public HostGpuGroupsDao hostGpuGroupsDao() {

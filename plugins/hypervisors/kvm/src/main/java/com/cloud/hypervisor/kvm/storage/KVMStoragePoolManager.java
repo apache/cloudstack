@@ -405,4 +405,9 @@ public class KVMStoragePoolManager {
         return adaptor.createDiskFromTemplateBacking(template, name, format, size, destPool, timeout);
     }
 
+    public KVMPhysicalDisk createPhysicalDiskFromDirectDownloadTemplate(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+        StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
+        return adaptor.createTemplateFromDirectDownloadFile(templateFilePath, destPool, isIso);
+    }
+
 }

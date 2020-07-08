@@ -25,12 +25,12 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.13.1.0-SNAPSHOT</version>
+        <version>4.14.1.0-SNAPSHOT</version>
     </parent>
     <repositories>
         <repository>
             <id>juniper-contrail</id>
-            <url>http://juniper.github.io/contrail-maven/snapshots</url>
+            <url>https://juniper.github.io/contrail-maven/snapshots</url>
         </repository>
     </repositories>
     <dependencies>
@@ -61,7 +61,6 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -479,6 +478,16 @@
             <artifactId>cloud-plugin-integrations-prometheus-exporter</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-backup-dummy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-integrations-kubernetes-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -537,9 +546,13 @@
                     </dependency>
                 </dependencies>
                 <configuration>
+                    <supportedPackagings>
+                      <supportedPackaging>jar</supportedPackaging>
+                    </supportedPackagings>
                     <scanIntervalSeconds>0</scanIntervalSeconds>
                     <stopPort>9966</stopPort>
                     <stopKey>stop-jetty</stopKey>
+                    <stopWait>10</stopWait>
                     <connectors>
                         <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
                             <port>8080</port>
@@ -548,11 +561,11 @@
                     </connectors>
                     <webXml>${project.build.directory}/classes/META-INF/webapp/WEB-INF/web.xml</webXml>
                     <webAppSourceDirectory>${project.build.directory}/classes/META-INF/webapp/</webAppSourceDirectory>
-                    <webAppConfig>
+                    <webApp>
                         <contextPath>/client</contextPath>
-                        <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/common;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+                        <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/common;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/;${project.build.directory}/cloud-client-ui-${project.version}.jar</extraClasspath>
                         <webInfIncludeJarPattern>.*/cloud.*jar$|.*/classes/.*</webInfIncludeJarPattern>
-                    </webAppConfig>
+                    </webApp>
                     <systemProperties>
                         <systemProperty>
                             <name>log4j.configuration</name>
@@ -698,6 +711,12 @@
                                     <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
+                                    <groupId>mysql</groupId>
+                                    <artifactId>mysql-connector-java</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
                                     <artifactId>bcprov-jdk15on</artifactId>
                                     <overWrite>false</overWrite>
@@ -737,7 +756,7 @@
                                     <exclude>org.mockito:mockito-all</exclude>
                                     <exclude>org.hamcrest:hamcrest-all</exclude>
                                     <exclude>org.powermock:powermock-module-junit4</exclude>
-                                    <exclude>org.powermock:powermock-api-mockito</exclude>
+                                    <exclude>org.powermock:powermock-api-mockito2</exclude>
                                     <exclude>org.springframework:spring-test</exclude>
                                     <exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
                                     <exclude>org.apache.geronimo.specs:geronimo-servlet_3.0_spec</exclude>
@@ -758,6 +777,33 @@
                                 </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/spring.schemas</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                  <resource>META-INF/services/com.sun.tools.xjc.Plugin</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                  <resource>META-INF/cxf/cxf.extension</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                  <resource>META-INF/extensions.xml</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                  <resource>META-INF/cxf/extensions.xml</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                  <resource>META-INF/cxf/bus-extensions.txt</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                  <resource>META-INF/cxf/bus-extensions.xml</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                  <resource>META-INF/wsdl.plugin.xml</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                  <resource>META-INF/tools.service.validator.xml</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                  <resource>META-INF/cxf/java2wsbeans.xml</resource>
                                 </transformer>
                             </transformers>
                             <filters>
@@ -893,6 +939,16 @@
                     <artifactId>cloud-plugin-network-cisco-vnmc</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-api-vmware-sioc</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-backup-veeam</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
@@ -906,21 +962,6 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-database-mysqlha</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>vmwaresioc</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.cloudstack</groupId>
-                    <artifactId>cloud-plugin-api-vmware-sioc</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

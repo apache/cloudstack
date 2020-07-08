@@ -142,11 +142,6 @@ perl -pi -e "s/Version=\"$currentversion\"/Version=\"$version\"/" tools/docker/D
 perl -pi -e "s/Version=\"$currentversion\"/Version=\"$version\"/" tools/docker/Dockerfile.marvin
 perl -pi -e "s/Marvin-(.*).tar.gz/Marvin-${version}.tar.gz/" tools/docker/Dockerfile.marvin
 
-# centos6 based Dockerfile
-perl -pi -e "s/Version=\"$currentversion\"/Version=\"$version\"/" tools/docker/Dockerfile.centos6
-perl -pi -e "s/cloudstack-common-(.*).el6.x86_64.rpm/cloudstack-common-${version}.el6.x86_64.rpm/" tools/docker/Dockerfile.centos6
-perl -pi -e "s/cloudstack-management-(.*)el6.x86_64.rpm/cloudstack-management-${version}.el6.x86_64.rpm/" tools/docker/Dockerfile.centos6
-
 # systemtpl.sh:  system vm template version without -SNAPSHOT
 
 git clean -f

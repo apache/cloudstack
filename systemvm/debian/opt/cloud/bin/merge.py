@@ -301,6 +301,7 @@ class QueueFile:
             if self.keep:
                 self.__moveFile(filename, self.configCache + "/processed")
             else:
+                logging.debug("Processed file deleted: %s and not kept in /processed", filename)
                 os.remove(filename)
             updateDataBag(self)
 

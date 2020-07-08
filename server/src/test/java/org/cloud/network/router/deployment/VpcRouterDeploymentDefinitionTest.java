@@ -22,6 +22,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -81,7 +82,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     protected void initMocks() {
         super.initMocks();
         when(mockVpc.getId()).thenReturn(VPC_ID);
-        when(mockVpc.getZoneId()).thenReturn(VPC_ID);
+        lenient().when(mockVpc.getZoneId()).thenReturn(VPC_ID);
         when(mockVpc.getVpcOfferingId()).thenReturn(VPC_OFFERING_ID);
     }
 
@@ -251,7 +252,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
         // Prepare
         final VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) deployment;
-        when(vpcDeployment.nwHelper.deployRouter(vpcDeployment, true)).thenReturn(router);
+        lenient().when(vpcDeployment.nwHelper.deployRouter(vpcDeployment, true)).thenReturn(router);
 
         // Execute
         vpcDeployment.deployAllVirtualRouters();

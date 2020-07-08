@@ -22,6 +22,7 @@ import hashlib
 import base64
 import traceback
 import logging
+import re
 
 from flask import Flask
 
@@ -147,11 +148,18 @@ server = None
 @app.route('/baremetal/provisiondone/<mac>', methods=['GET'])
 def notify_provisioning_done(mac):
     try:
+        if not is_a_mac(mac):
+            raise "there is an issue with that '%s'. Not a mac?" % mac
         return server.notify_provisioning_done(mac)
     except:
         logger.warn(traceback.format_exc())
         return ''
 
+def is_a_mac(mac):
+    if re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", mac.lower()):
+        return True
+    else:
+        return False
 
 if __name__ == '__main__':
     server = Server()

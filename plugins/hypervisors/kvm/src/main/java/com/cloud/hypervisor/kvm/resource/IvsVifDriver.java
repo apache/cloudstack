@@ -282,7 +282,7 @@ public class IvsVifDriver extends VifDriverBase {
     public void createControlNetwork(String privBrName) {
         deleteExitingLinkLocalRouteTable(privBrName);
         if (!isBridgeExists(privBrName)) {
-            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ip link set " + privBrName + " up");
+            Script.runSimpleBashScript("ip link add " + privBrName + " type bridge; ip link set " + privBrName + " up");
             Script.runSimpleBashScript("ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + privBrName, _timeout);
         }
     }

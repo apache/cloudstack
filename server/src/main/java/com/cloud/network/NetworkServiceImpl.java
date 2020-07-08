@@ -38,6 +38,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.Network.PVlanType;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -55,6 +56,8 @@ import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
@@ -107,6 +110,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -197,12 +201,20 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+
 /**
  * NetworkServiceImpl implements NetworkService.
  */
-public class NetworkServiceImpl extends ManagerBase implements NetworkService {
+public class NetworkServiceImpl extends ManagerBase implements NetworkService, Configurable {
     private static final Logger s_logger = Logger.getLogger(NetworkServiceImpl.class);
 
+    private static final ConfigKey<Boolean> AllowDuplicateNetworkName = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "allow.duplicate.networkname", "true", "Allow creating networks with same name in account", true, ConfigKey.Scope.Account);
+    private static final ConfigKey<Boolean> AllowEmptyStartEndIpAddress = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "allow.empty.start.end.ipaddress", "true", "Allow creating network without mentioning start and end IP address",
+            true, ConfigKey.Scope.Account);
     private static final long MIN_VLAN_ID = 0L;
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
     private static final long MIN_GRE_KEY = 0L;
@@ -313,6 +325,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     VpcOfferingDao _vpcOfferingDao;
     @Inject
     AccountService _accountService;
+    @Inject
+    NetworkAccountDao _networkAccountDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -520,7 +534,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp)
+    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp, String ipaddress)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
 
         Account caller = CallContext.current().getCallingAccount();
@@ -544,7 +558,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
                         }
-                        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp);
+                        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp, ipaddress);
                     } else {
                         throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone"
                                 + " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
@@ -555,7 +569,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             _accountMgr.checkAccess(caller, null, false, ipOwner);
         }
 
-        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp);
+        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp, ipaddress);
     }
 
     @Override
@@ -1052,6 +1066,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         Long aclId = cmd.getAclId();
         String isolatedPvlan = cmd.getIsolatedPvlan();
         String externalId = cmd.getExternalId();
+        String isolatedPvlanType = cmd.getIsolatedPvlanType();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1164,6 +1179,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             throw new InvalidParameterValueException("Parameter subDomainAccess can be specified only with aclType=Domain");
         }
 
+        if (aclType == ACLType.Domain) {
+            owner = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
+        }
+
+        // The network name is unique under the account
+        if (!AllowDuplicateNetworkName.valueIn(owner.getAccountId())) {
+            List<NetworkVO> existingNetwork = _networksDao.listByAccountIdNetworkName(owner.getId(), name);
+            if (!existingNetwork.isEmpty()) {
+                throw new InvalidParameterValueException("Another network with same name already exists within account: " + owner.getAccountName());
+            }
+        }
+
         boolean ipv4 = true, ipv6 = false;
         if (startIP != null) {
             ipv4 = true;
@@ -1185,6 +1212,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             } catch (UnknownHostException e) {
                 s_logger.error("Unable to convert gateway IP to a InetAddress", e);
                 throw new InvalidParameterValueException("Gateway parameter is invalid");
+            }
+        }
+
+        // Start and end IP address are mandatory for shared networks.
+        if (ntwkOff.getGuestType() == GuestType.Shared && vpcId == null) {
+            if (!AllowEmptyStartEndIpAddress.valueIn(owner.getAccountId()) &&
+                (startIP == null && endIP == null) &&
+                (startIPv6 == null && endIPv6 == null)) {
+                throw new InvalidParameterValueException("Either IPv4 or IPv6 start and end address are mandatory");
             }
         }
 
@@ -1239,13 +1275,23 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             }
         }
 
-        if (isolatedPvlan != null && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() != Network.GuestType.Shared)) {
-            throw new InvalidParameterValueException("Can only support create Private VLAN network with advance shared network!");
+        if (isNotBlank(isolatedPvlan) && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated)) {
+            throw new InvalidParameterValueException("Can only support create Private VLAN network with advanced shared or L2 network!");
         }
 
-        if (isolatedPvlan != null && ipv6) {
+        if (isNotBlank(isolatedPvlan) && ipv6) {
             throw new InvalidParameterValueException("Can only support create Private VLAN network with IPv4!");
         }
+
+        Pair<String, PVlanType> pvlanPair = getPrivateVlanPair(isolatedPvlan, isolatedPvlanType, vlanId);
+        String secondaryVlanId = pvlanPair.first();
+        PVlanType privateVlanType = pvlanPair.second();
+
+        if ((isNotBlank(secondaryVlanId) || privateVlanType != null) && isBlank(vlanId)) {
+            throw new InvalidParameterValueException("VLAN ID has to be set in order to configure a Private VLAN");
+        }
+
+        performBasicPrivateVlanChecks(vlanId, secondaryVlanId, privateVlanType);
 
         // Regular user can create Guest Isolated Source Nat enabled network only
         if (_accountMgr.isNormalUser(caller.getId()) && (ntwkOff.getTrafficType() != TrafficType.Guest
@@ -1278,7 +1324,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             throw new InvalidParameterValueException("Cannot support IPv6 on network offering with external devices!");
         }
 
-        if (isolatedPvlan != null && providersConfiguredForExternalNetworking(ntwkProviders)) {
+        if (isNotBlank(secondaryVlanId) && providersConfiguredForExternalNetworking(ntwkProviders)) {
             throw new InvalidParameterValueException("Cannot support private vlan on network offering with external devices!");
         }
 
@@ -1314,7 +1360,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
-                domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, isolatedPvlan, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
+                domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
                 externalId);
 
         if (hideIpAddressUsage) {
@@ -1348,11 +1394,54 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         return network;
     }
 
+    /**
+     * Retrieve information (if set) for private VLAN when creating the network
+     */
+    protected Pair<String, PVlanType> getPrivateVlanPair(String pvlanId, String pvlanTypeStr, String vlanId) {
+        String secondaryVlanId = pvlanId;
+        PVlanType type = null;
+
+        if (isNotBlank(pvlanTypeStr)) {
+            PVlanType providedType = PVlanType.fromValue(pvlanTypeStr);
+            type = providedType;
+        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId)) {
+            // Preserve the existing functionality
+            type = vlanId.equals(secondaryVlanId) ? PVlanType.Promiscuous : PVlanType.Isolated;
+        }
+
+        if (isBlank(secondaryVlanId) && type == PVlanType.Promiscuous) {
+            secondaryVlanId = vlanId;
+        }
+
+        if (isNotBlank(secondaryVlanId)) {
+            try {
+                Integer.parseInt(secondaryVlanId);
+            } catch (NumberFormatException e) {
+                throw new CloudRuntimeException("The secondary VLAN ID: " + secondaryVlanId + " is not in numeric format", e);
+            }
+        }
+
+        return new Pair<>(secondaryVlanId, type);
+    }
+
+    /**
+     * Basic checks for setting up private VLANs, considering the VLAN ID, secondary VLAN ID and private VLAN type
+     */
+    protected void performBasicPrivateVlanChecks(String vlanId, String secondaryVlanId, PVlanType privateVlanType) {
+        if (isNotBlank(vlanId) && isBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous) {
+            throw new InvalidParameterValueException("Private VLAN ID has not been set, therefore Promiscuous type is expected");
+        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId) && !vlanId.equalsIgnoreCase(secondaryVlanId) && privateVlanType == PVlanType.Promiscuous) {
+            throw new InvalidParameterValueException("Private VLAN type is set to Promiscuous, but VLAN ID and Secondary VLAN ID differ");
+        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous && vlanId.equalsIgnoreCase(secondaryVlanId)) {
+            throw new InvalidParameterValueException("Private VLAN type is set to " + privateVlanType + ", but VLAN ID and Secondary VLAN ID are equal");
+        }
+    }
+
     private Network commitNetwork(final Long networkOfferingId, final String gateway, final String startIP, final String endIP, final String netmask, final String networkDomain, final String vlanId,
-            final Boolean bypassVlanOverlapCheck, final String name, final String displayText, final Account caller, final Long physicalNetworkId, final Long zoneId, final Long domainId,
-            final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
-            final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
-            final String cidr, final boolean createVlan, final String externalId) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final Boolean bypassVlanOverlapCheck, final String name, final String displayText, final Account caller, final Long physicalNetworkId, final Long zoneId, final Long domainId,
+                                  final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
+                                  final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
+                                  final String cidr, final boolean createVlan, final String externalId) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -1407,7 +1496,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                         }
 
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
-                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, externalId);
+                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId);
                     }
 
                     if (_accountMgr.isRootAdmin(caller.getId()) && createVlan && network != null) {
@@ -1861,14 +1950,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
-    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup, boolean makeRedundant) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // This method restarts all network elements belonging to the network and re-applies all the rules
-        Long networkId = cmd.getNetworkId();
-
-        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-        Account callerAccount = _accountMgr.getActiveAccountById(callerUser.getAccountId());
-
-        // Check if network exists
+    public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throwInvalidIdException("Network with specified id doesn't exist", networkId.toString(), "networkId");
@@ -1888,8 +1970,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             throw new InvalidParameterException("Unable to restart a running SDN network.");
         }
 
+        Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
         _accountMgr.checkAccess(callerAccount, null, true, network);
-
         if (!network.isRedundant() && makeRedundant) {
             network.setRedundant(true);
             if (!_networksDao.update(network.getId(), network)) {
@@ -1898,8 +1980,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             cleanup = true;
         }
 
-        boolean success = _networkMgr.restartNetwork(networkId, callerAccount, callerUser, cleanup);
-
+        boolean success = _networkMgr.restartNetwork(networkId, callerAccount, user, cleanup);
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
         } else {
@@ -1907,6 +1988,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         return success;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
+    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // This method restarts all network elements belonging to the network and re-applies all the rules
+        Long networkId = cmd.getNetworkId();
+        boolean cleanup = cmd.getCleanup();
+        boolean makeRedundant = cmd.getMakeRedundant();
+        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        return restartNetwork(networkId, cleanup, makeRedundant, callerUser);
     }
 
     @Override
@@ -4319,7 +4411,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     @Override
     @DB
     public Network createPrivateNetwork(final String networkName, final String displayText, long physicalNetworkId, String broadcastUriString, final String startIp, String endIp, final String gateway,
-            String netmask, final long networkOwnerId, final Long vpcId, final Boolean sourceNat, final Long networkOfferingId)
+            String netmask, final long networkOwnerId, final Long vpcId, final Boolean sourceNat, final Long networkOfferingId, final Boolean bypassVlanOverlapCheck)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
         final Account owner = _accountMgr.getAccount(networkOwnerId);
@@ -4377,11 +4469,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                     DataCenterVO dc = _dcDao.lockRow(pNtwk.getDataCenterId(), true);
 
                     //check if we need to create guest network
-                    Network privateNetwork = _networksDao.getPrivateNetwork(uriString, cidr, networkOwnerId, pNtwk.getDataCenterId(), networkOfferingId);
+                    Network privateNetwork = _networksDao.getPrivateNetwork(uriString, cidr, networkOwnerId, pNtwk.getDataCenterId(), networkOfferingId, vpcId);
                     if (privateNetwork == null) {
                         //create Guest network
-                        privateNetwork = _networkMgr.createGuestNetwork(ntwkOffFinal.getId(), networkName, displayText, gateway, cidr, uriString, false, null, owner, null, pNtwk,
-                                pNtwk.getDataCenterId(), ACLType.Account, null, vpcId, null, null, true, null, null);
+                        privateNetwork = _networkMgr.createPrivateNetwork(ntwkOffFinal.getId(), networkName, displayText, gateway, cidr, uriString, bypassVlanOverlapCheck, owner, pNtwk, vpcId);
                         if (privateNetwork != null) {
                             s_logger.debug("Successfully created guest network " + privateNetwork);
                         } else {
@@ -4390,10 +4481,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                     } else {
                         s_logger.debug("Private network already exists: " + privateNetwork);
                         //Do not allow multiple private gateways with same Vlan within a VPC
-                        if (vpcId != null && vpcId.equals(privateNetwork.getVpcId())) {
-                            throw new InvalidParameterValueException("Private network for the vlan: " + uriString + " and cidr  " + cidr + "  already exists " + "for Vpc " + vpcId + " in zone "
+                        throw new InvalidParameterValueException("Private network for the vlan: " + uriString + " and cidr  " + cidr + "  already exists " + "for Vpc " + vpcId + " in zone "
                                     + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
-                        }
                     }
                     if (vpcId != null) {
                         //add entry to private_ip_address table
@@ -4532,6 +4621,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
         _ipAddrMgr.releasePodIp(ip.getId());
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return NetworkService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress};
     }
 
 }

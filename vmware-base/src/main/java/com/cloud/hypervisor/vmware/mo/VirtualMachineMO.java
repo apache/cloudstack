@@ -492,7 +492,6 @@ public class VirtualMachineMO extends BaseMO {
     public ManagedObjectReference createSnapshotGetReference(String snapshotName, String snapshotDescription, boolean dumpMemory, boolean quiesce) throws Exception {
         long apiTimeout = _context.getVimClient().getVcenterSessionTimeout();
         ManagedObjectReference morTask = _context.getService().createSnapshotTask(_mor, snapshotName, snapshotDescription, dumpMemory, quiesce);
-
         boolean result = _context.getVimClient().waitForTask(morTask);
 
         if (result) {

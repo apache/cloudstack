@@ -52,7 +52,8 @@ addVlan() {
 	
 	if [ ! -d /sys/class/net/$vlanBr ]
 	then
-		brctl addbr $vlanBr > /dev/null
+		ip link add name $vlanBr type bridge
+		ip link set $vlanBr up
 	
 		if [ $? -gt 0 ]
 		then
@@ -62,15 +63,13 @@ addVlan() {
 				return 2
 			fi
 		fi
-
-		brctl setfd $vlanBr 0
 	fi
 	
 	#pif is eslaved into vlanBr?
 	ls /sys/class/net/$vlanBr/brif/ |grep -w "$vlanDev" > /dev/null 
 	if [ $? -gt 0 ]
 	then
-		brctl addif $vlanBr $vlanDev > /dev/null
+		ip link set $vlanDev master $vlanBr
 		if [ $? -gt 0 ]
 		then
 			ls /sys/class/net/$vlanBr/brif/ |grep -w "$vlanDev" > /dev/null 
@@ -108,7 +107,7 @@ deleteVlan() {
 		return 1
 	fi
 	
-	brctl delbr $vlanBr
+	ip link delete $vlanBr type bridge
 	
 	if [ $? -gt 0 ]
 	then

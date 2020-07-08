@@ -15,15 +15,8 @@ was tested against a CentOS 7 x86_64 setup.
 
 Install tools and dependencies used for development:
 
-    $ yum install git java-1.8.0-openjdk java-1.8.0-openjdk-devel \
-    mysql mysql-server mkisofs gcc python MySQL-python openssh-clients wget
-
-    # yum -y update
-    # yum -y install java-1.8.0-openjdk
-    # yum -y install java-1.8.0-openjdk-devel
-    # yum -y install mysql-server
-    # yum -y install git
-    # yum -y install genisoimage
+    # yum -y install git java-11-openjdk java-11-openjdk-devel \
+      mysql mysql-server mkisofs git gcc python MySQL-python openssh-clients wget
 
 Set up Maven (3.6.0):
 

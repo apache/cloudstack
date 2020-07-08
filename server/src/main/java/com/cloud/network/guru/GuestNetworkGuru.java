@@ -214,6 +214,10 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             if (offering.isSpecifyVlan()) {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
                 network.setState(State.Setup);
+                if (userSpecified.getPvlanType() != null) {
+                    network.setBroadcastDomainType(BroadcastDomainType.Pvlan);
+                    network.setPvlanType(userSpecified.getPvlanType());
+                }
             }
         } else {
             final String guestNetworkCidr = dc.getGuestNetworkCidr();
@@ -368,12 +372,15 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
                 if (isGateway) {
                     guestIp = network.getGateway();
+                } else if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
+                    guestIp = _ipAddrMgr.acquireGuestIpAddressByPlacement(network, nic.getRequestedIPv4());
                 } else {
                     guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIPv4());
-                    if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
-                        throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
-                                dc.getId());
-                    }
+                }
+
+                if (!isGateway && guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+                    throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
+                            dc.getId());
                 }
 
                 nic.setIPv4Address(guestIp);
@@ -460,6 +467,6 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSystemGuestVlans};
+        return new ConfigKey<?>[]{UseSystemGuestVlans};
     }
 }

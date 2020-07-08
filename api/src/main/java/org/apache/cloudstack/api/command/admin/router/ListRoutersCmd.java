@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -80,6 +81,10 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.VERSION, type = CommandType.STRING, description = "list virtual router elements by version")
     private String version;
 
+    @Parameter(name = ApiConstants.FETCH_ROUTER_HEALTH_CHECK_RESULTS, type = CommandType.BOOLEAN, since = "4.14",
+            description = "if true is passed for this parameter, also fetch last executed health check results for the router. Default is false")
+    private Boolean fetchHealthCheckResults;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -131,6 +136,11 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public String getRole() {
         return Role.VIRTUAL_ROUTER.toString();
     }
+
+    public boolean shouldFetchHealthCheckResults() {
+        return BooleanUtils.isTrue(fetchHealthCheckResults);
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

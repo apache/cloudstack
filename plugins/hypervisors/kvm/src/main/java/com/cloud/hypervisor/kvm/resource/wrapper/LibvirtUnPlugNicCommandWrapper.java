@@ -55,6 +55,9 @@ public final class LibvirtUnPlugNicCommandWrapper extends CommandWrapper<UnPlugN
 
             for (final InterfaceDef pluggedNic : pluggedNics) {
                 if (pluggedNic.getMacAddress().equalsIgnoreCase(nic.getMac())) {
+                    if (nic.isSecurityGroupEnabled()) {
+                        libvirtComputingResource.destroyNetworkRulesForNic(conn, vmName, nic);
+                    }
                     vm.detachDevice(pluggedNic.toString());
                     // We don't know which "traffic type" is associated with
                     // each interface at this point, so inform all vif drivers

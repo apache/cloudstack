@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -63,7 +64,7 @@ import com.cloud.user.Account;
         responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
-public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
+public class AssociateIPAddrCmd extends BaseAsyncCreateCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
     private static final String s_name = "associateipaddressresponse";
 
@@ -124,6 +125,9 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="IP Address to be associated")
+    private String ipAddress;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -175,6 +179,10 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     public Integer getRegionId() {
         return regionId;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
     }
 
     public Long getNetworkId() {
@@ -305,7 +313,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             IpAddress ip = null;
 
             if (!isPortable()) {
-                ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNetworkId(), getDisplayIp());
+                ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNetworkId(), getDisplayIp(), ipAddress);
             } else {
                 ip = _networkService.allocatePortableIP(_accountService.getAccount(getEntityOwnerId()), 1, getZoneId(), getNetworkId(), getVpcId());
             }
@@ -339,7 +347,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         }
 
         if (result != null) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
+            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(getResponseView(), result);
             ipResponse.setResponseName(getCommandName());
             setResponseObject(ipResponse);
         } else {

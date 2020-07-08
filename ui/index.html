@@ -480,6 +480,31 @@
                                         </div>
                                     </div>
 
+                                    <!--  UEFI Boot -->
+                                    <div class="select" odd>
+                                        <div class="name">
+                                            <span><translate key="label.vm.boottype" /></span>
+                                        </div>
+                                        <div class="value">
+                                            <select name="customboot" id="customboot">
+                                                <option value="BIOS">BIOS</option>
+                                                <option value="UEFI">UEFI</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="select field hide-if-unselected">
+                                        <div class="name">
+                                            <span><translate key="label.vm.bootmode" /></span>
+                                        </div>
+                                        <div class="value">
+                                            <select name="bootmode" id="bootmode">
+                                                <option value="LEGACY">LEGACY</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+
                                     <!-- Zone -->
                                     <div class="select">
                                         <div class="name">
@@ -639,6 +664,7 @@
                                             <th><translate key="label.name"/></th>
                                             <th><translate key="label.username"/></th>
                                             <th><translate key="label.email"/></th>
+                                            <th><translate key="label.user.conflict"/></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1918,6 +1944,7 @@
         <script type="text/javascript" src="scripts/ui-custom/affinity.js"></script>
         <script type="text/javascript" src="scripts/ui-custom/migrate.js"></script>
         <script type="text/javascript" src="scripts/ui-custom/copyTemplate.js"></script>
+        <script type="text/javascript" src="scripts/ui-custom/backupSchedule.js"></script>
         <script type="text/javascript" src="scripts/instances.js"></script>
         <script type="text/javascript" src="scripts/events.js"></script>
         <script type="text/javascript" src="scripts/regions.js"></script>

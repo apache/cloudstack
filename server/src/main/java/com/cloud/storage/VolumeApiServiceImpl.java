@@ -109,11 +109,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
@@ -274,6 +276,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.url.check", "true",
             "Check the url for a volume before downloading it from the management server. Set to false when you managment has no internet access.", true);
+
+    public static final ConfigKey<Boolean> AllowUserExpungeRecoverVolume = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.expunge.recover.volume", "true",
+            "Determines whether users can expunge or recover their volume", true, ConfigKey.Scope.Account);
 
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
@@ -1187,6 +1192,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (currentSize != newSize && _volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer && !userVm.getState().equals(State.Stopped)) {
                 throw new InvalidParameterValueException(errorMsg);
             }
+
+            /* Do not resize volume of running vm on KVM host if host is not Up or not Enabled */
+            if (currentSize != newSize && userVm.getState() == State.Running && userVm.getHypervisorType() == HypervisorType.KVM) {
+                if (userVm.getHostId() == null) {
+                    throw new InvalidParameterValueException("Cannot find the hostId of running vm " + userVm.getUuid());
+                }
+                HostVO host = _hostDao.findById(userVm.getHostId());
+                if (host == null) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running does not exist");
+                } else if (host.getStatus() != Status.Up) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running is not Up");
+                } else if (host.getResourceState() != ResourceState.Enabled) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running is not Enabled");
+                }
+            }
         }
 
         ResizeVolumePayload payload = new ResizeVolumePayload(newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk, instanceName, hosts, isManaged);
@@ -1261,20 +1281,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * Otherwise, after the removal in the database, we will try to remove the volume from both primary and secondary storage.
      */
     public boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException {
-        VolumeVO volume = retrieveAndValidateVolume(volumeId, caller);
+        Volume volume = destroyVolume(volumeId, caller, true, true);
+        return (volume != null);
+    }
+
+    private boolean deleteVolumeFromStorage(VolumeVO volume, Account caller) throws ConcurrentOperationException {
         try {
-            destroyVolumeIfPossible(volume);
-            // Mark volume as removed if volume has not been created on primary or secondary
-            if (volume.getState() == Volume.State.Allocated) {
-                _volsDao.remove(volumeId);
-                stateTransitTo(volume, Volume.Event.DestroyRequested);
-                return true;
-            }
             expungeVolumesInPrimaryStorageIfNeeded(volume);
             expungeVolumesInSecondaryStorageIfNeeded(volume);
             cleanVolumesCache(volume);
             return true;
-        } catch (InterruptedException | ExecutionException | NoTransitionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             s_logger.warn("Failed to expunge volume: " + volume.getUuid(), e);
             return false;
         }
@@ -1301,7 +1318,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!_snapshotMgr.canOperateOnVolume(volume)) {
             throw new InvalidParameterValueException("There are snapshot operations in progress on the volume, unable to delete it");
         }
-        if (volume.getInstanceId() != null) {
+        if (volume.getInstanceId() != null && volume.getState() != Volume.State.Expunged) {
             throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
         }
         if (volume.getState() == Volume.State.UploadOp) {
@@ -1334,12 +1351,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * The volume is destroyed via {@link VolumeService#destroyVolume(long)} method.
      */
     protected void destroyVolumeIfPossible(VolumeVO volume) {
-        if (volume.getState() != Volume.State.Destroy && volume.getState() != Volume.State.Expunging && volume.getState() != Volume.State.Expunged) {
+        if (volume.getState() != Volume.State.Destroy && volume.getState() != Volume.State.Expunging && volume.getState() != Volume.State.Expunged && volume.getState() != Volume.State.Allocated && volume.getState() != Volume.State.Uploaded) {
             volService.destroyVolume(volume.getId());
-
-            // Decrement the resource count for volumes and primary storage belonging user VM's only
-            _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplayVolume());
-            _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), volume.getSize());
         }
     }
 
@@ -1387,6 +1400,89 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     protected boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException {
         return _volStateMachine.transitTo(vol, event, null, _volsDao);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DESTROY, eventDescription = "destroying a volume")
+    public Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge) {
+        VolumeVO volume = retrieveAndValidateVolume(volumeId, caller);
+
+        if (expunge) {
+            // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVolume is false for the caller.
+            final Long userId = caller.getAccountId();
+            if (!forceExpunge && !_accountMgr.isAdmin(userId) && !AllowUserExpungeRecoverVolume.valueIn(userId)) {
+                throw new PermissionDeniedException("Expunging a volume can only be done by an Admin. Or when the allow.user.expunge.recover.volume key is set.");
+            }
+        } else if (volume.getState() == Volume.State.Allocated || volume.getState() == Volume.State.Uploaded) {
+            throw new InvalidParameterValueException("The volume in Allocated/Uploaded state can only be expunged not destroyed/recovered");
+        }
+
+        destroyVolumeIfPossible(volume);
+
+        if (expunge) {
+            // Mark volume as removed if volume has not been created on primary or secondary
+            if (volume.getState() == Volume.State.Allocated) {
+                _volsDao.remove(volume.getId());
+                try {
+                    stateTransitTo(volume, Volume.Event.DestroyRequested);
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Failed to destroy volume" + volume.getId(), e);
+                    return null;
+                }
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
+                return volume;
+            }
+            if (!deleteVolumeFromStorage(volume, caller)) {
+                s_logger.warn("Failed to expunge volume: " + volumeId);
+                return null;
+            }
+        }
+
+        return volume;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_RECOVER, eventDescription = "recovering a volume in Destroy state")
+    public Volume recoverVolume(long volumeId) {
+        Account caller = CallContext.current().getCallingAccount();
+        final Long userId = caller.getAccountId();
+
+        // Verify input parameters
+        final VolumeVO volume = _volsDao.findById(volumeId);
+
+        if (volume == null) {
+            throw new InvalidParameterValueException("Unable to find a volume with id " + volume);
+        }
+
+        // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVolume is false for the caller.
+        if (!_accountMgr.isAdmin(userId) && !AllowUserExpungeRecoverVolume.valueIn(userId)) {
+            throw new PermissionDeniedException("Recovering a volume can only be done by an Admin. Or when the allow.user.expunge.recover.volume key is set.");
+        }
+
+        _accountMgr.checkAccess(caller, null, true, volume);
+
+        if (volume.getState() != Volume.State.Destroy) {
+            throw new InvalidParameterValueException("Please specify a volume in Destroy state.");
+        }
+
+        try {
+            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()), ResourceType.primary_storage, volume.isDisplayVolume(), volume.getSize());
+        } catch (ResourceAllocationException e) {
+            s_logger.error("primary storage resource limit check failed", e);
+            throw new InvalidParameterValueException(e.getMessage());
+        }
+
+        try {
+            stateTransitTo(volume, Volume.Event.RecoverRequested);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Failed to recover volume" + volume.getId(), e);
+            throw new CloudRuntimeException("Failed to recover volume" + volume.getId(), e);
+        }
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
+
+        return volume;
     }
 
     @Override
@@ -1556,6 +1652,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (vmSnapshots.size() > 0) {
             throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have VM snapshots");
+        }
+
+        // if target VM has backups
+        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
+            throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have any backups");
         }
 
         // permission check
@@ -1796,6 +1897,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (vmSnapshots.size() > 0) {
             throw new InvalidParameterValueException("Unable to detach volume, please specify a VM that does not have VM snapshots");
+        }
+
+        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
+            throw new InvalidParameterValueException("Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering.");
         }
 
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -3409,6 +3514,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore};
+        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore, AllowUserExpungeRecoverVolume};
     }
 }

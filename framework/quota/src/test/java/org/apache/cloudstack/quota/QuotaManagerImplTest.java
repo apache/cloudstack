@@ -16,14 +16,18 @@
 // under the License.
 package org.apache.cloudstack.quota;
 
-import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.TransactionLegacy;
-import junit.framework.TestCase;
+import static org.mockito.ArgumentMatchers.nullable;
+
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
@@ -42,14 +46,15 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.naming.ConfigurationException;
-import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.usage.UsageVO;
+import com.cloud.usage.dao.UsageDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.TransactionLegacy;
+
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaManagerImplTest extends TestCase {
@@ -163,7 +168,7 @@ public class QuotaManagerImplTest extends TestCase {
 
         QuotaTariffVO tariffVO = new QuotaTariffVO();
         tariffVO.setCurrencyValue(new BigDecimal(1));
-        Mockito.when(quotaTariffDao.findTariffPlanByUsageType(Mockito.anyInt(), Mockito.any(Date.class))).thenReturn(tariffVO);
+        Mockito.when(quotaTariffDao.findTariffPlanByUsageType(nullable(Integer.class), nullable(Date.class))).thenReturn(tariffVO);
 
         QuotaUsageVO qu = quotaManager.updateQuotaNetwork(usageVO, UsageTypes.NETWORK_BYTES_SENT);
         assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);

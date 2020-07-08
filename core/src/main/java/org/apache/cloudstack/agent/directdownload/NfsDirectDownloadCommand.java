@@ -18,14 +18,14 @@
 //
 package org.apache.cloudstack.agent.directdownload;
 
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-
 import java.util.Map;
+
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 public class NfsDirectDownloadCommand extends DirectDownloadCommand {
 
     public NfsDirectDownloadCommand(final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers) {
-        super(url, templateId, destPool, checksum, headers);
+        super(url, templateId, destPool, checksum, headers, null, null, null);
     }
 
 }

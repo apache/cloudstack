@@ -35,7 +35,6 @@ import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.consoleproxy.util.Logger;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.ReflectUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
 
@@ -74,7 +73,7 @@ public class ConsoleProxy {
     static String encryptorPassword = "Dummy";
 
     private static void configLog4j() {
-        final ClassLoader loader = ReflectUtil.getClassLoaderForName("conf");
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
         URL configUrl = loader.getResource("/conf/log4j-cloud.xml");
         if (configUrl == null)
             configUrl = ClassLoader.getSystemResource("log4j-cloud.xml");
@@ -249,7 +248,7 @@ public class ConsoleProxy {
         ConsoleProxy.ksBits = ksBits;
         ConsoleProxy.ksPassword = ksPassword;
         try {
-            final ClassLoader loader = ReflectUtil.getClassLoaderForName("agent");
+            final ClassLoader loader = Thread.currentThread().getContextClassLoader();
             Class<?> contextClazz = loader.loadClass("com.cloud.agent.resource.consoleproxy.ConsoleProxyResource");
             authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class, String.class, String.class, String.class, Boolean.class);
             reportMethod = contextClazz.getDeclaredMethod("reportLoadInfo", String.class);

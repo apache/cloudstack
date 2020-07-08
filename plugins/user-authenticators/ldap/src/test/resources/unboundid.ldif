@@ -1,0 +1,311 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+version: 1
+
+dn: dc=cloudstack,dc=org
+objectClass: dcObject
+objectClass: organization
+dc: cloudstack
+o: cloudstack
+
+dn: cn=Ryan Murphy,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Ryan Murphy
+sn: Murphy
+givenName: Ryan
+mail: rmurphy@cloudstack.org
+uid: rmurphy
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Barbara Brewer,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Barbara Brewer
+sn: Brewer
+mail: bbrewer@cloudstack.org
+uid: bbrewer
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Zak Wilkinson,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Zak Wilkinson
+givenname: Zak
+sn: Wilkinson
+uid: zwilkinson
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Archie Shingleton,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Archie Shingleton
+sn: Shingleton
+givenName: Archie
+mail: ashingleton@cloudstack.org
+uid: ashingleton
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Cletus Pears,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Cletus Pears
+sn: Pears
+givenName: Cletus
+mail: cpears@cloudstack.org
+uid: cpears
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Teisha Milewski,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Teisha Milewski
+sn: Milewski
+givenName: Teisha
+mail: tmilewski@cloudstack.org
+uid: tmilewski
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Eloy Para,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Eloy Para
+sn: Para
+givenName: Eloy
+mail: epara@cloudstack.org
+uid: epara
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Elaine Lamb,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Elaine Lamb
+sn: Lamb
+givenName: Elaine
+mail: elamb@cloudstack.org
+uid: elamb
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Soon Griffen,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Soon Griffen
+sn: Griffen
+givenName: Soon
+mail: sgriffen@cloudstack.org
+uid: sgriffen
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Tran Neisler,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Tran Neisler
+sn: Neisler
+givenName: Tran
+mail: tneisler@cloudstack.org
+uid: tneisler
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Mirella Zeck,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Mirella Zeck
+sn: Zeck
+givenName: Mirella
+mail: mzeck@cloudstack.org
+uid: mzeck
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Greg Hoskin,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Greg Hoskin
+sn: Hoskin
+givenName: Greg
+mail: ghoskin@cloudstack.org
+uid: ghoskin
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Johanne Runyon,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Johanne Runyon
+sn: Runyon
+givenName: Johanne
+mail: jrunyon@cloudstack.org
+uid: jrunyon
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Mabelle Waiters,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Mabelle Waiters
+sn: Waiters
+givenName: Mabelle
+mail: mwaiters@cloudstack.org
+uid: mwaiters
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Phillip Fruge,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Phillip Fruge
+sn: Fruge
+givenName: Phillip
+mail: pfruge@cloudstack.org
+uid: pfruge
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Jayna Ridenhour,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Jayna Ridenhour
+sn: Ridenhour
+givenName: Jayna
+mail: jridenhour@cloudstack.org
+uid: jridenhour
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Marlyn Mandujano,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Marlyn Mandujano
+sn: Mandujano
+givenName: Marlyn
+mail: mmandujano@cloudstack.org
+uid: mmandujano
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Shaunna Scherer,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Shaunna Scherer
+sn: Scherer
+givenName: Shaunna
+mail: sscherer@cloudstack.org
+uid: sscherer
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Adriana Bozek,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Adriana Bozek
+sn: Bozek
+givenName: Adriana
+mail: abozek@cloudstack.org
+uid: abozek
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Silvana Chipman,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Silvana Chipman
+sn: Chipman
+givenName: Silvana
+mail: schipman@cloudstack.org
+uid: schipman
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Marion Wasden,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Marion Wasden
+sn: Wasden
+givenName: Marion
+mail: mwasden@cloudstack.org
+uid: mwasden
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Anisa Casson,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Anisa Casson
+sn: Casson
+givenName: Anisa
+mail: acasson@cloudstack.org
+uid: acasson
+userpassword:: cGFzc3dvcmQ=
+
+dn: cn=Noel King,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Noel King
+sn: King
+givenName: Noel
+mail: nking@cloudstack.org
+uid: nking
+userpassword:: cGFzc3dvcmQ=
+
+
+dn: cn=Cammy Petri,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Cammy Petri
+sn: Petri
+givenName: Cammy
+mail: cpetri@cloudstack.org
+uid: cpetri
+userpassword:: cGFzc3dvcmQ=
+

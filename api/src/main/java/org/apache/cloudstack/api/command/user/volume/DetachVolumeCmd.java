@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -40,7 +41,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "detachVolume", description = "Detaches a disk volume from a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class DetachVolumeCmd extends BaseAsyncCmd {
+public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(DetachVolumeCmd.class.getName());
     private static final String s_name = "detachvolumeresponse";
 
@@ -143,7 +144,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
         CallContext.current().setEventDetails(getEventDescription());
         Volume result = _volumeService.detachVolumeFromVM(this);
         if (result != null){
-            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), result);
             response.setResponseName("volume");
             setResponseObject(response);
         } else {

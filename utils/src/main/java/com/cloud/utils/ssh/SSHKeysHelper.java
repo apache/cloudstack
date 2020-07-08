@@ -88,7 +88,13 @@ public class SSHKeysHelper {
         if (!keyMaterial.contains(" "))
             keyMaterial = new String(Base64.decodeBase64(keyMaterial.getBytes()));
 
-        if ((!keyMaterial.startsWith("ssh-rsa") && !keyMaterial.startsWith("ssh-dss")) || !keyMaterial.contains(" "))
+        if ((!keyMaterial.startsWith("ssh-rsa")
+             && !keyMaterial.startsWith("ssh-dss")
+             && !keyMaterial.startsWith("ecdsa-sha2-nistp256")
+             && !keyMaterial.startsWith("ecdsa-sha2-nistp384")
+             && !keyMaterial.startsWith("ecdsa-sha2-nistp521")
+             && !keyMaterial.startsWith("ssh-ed25519"))
+             || !keyMaterial.contains(" "))
             return null;
 
         String[] key = keyMaterial.split(" ");

@@ -211,6 +211,15 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "service_offering_name")
     private String serviceOfferingName;
 
+    @Column(name = "backup_offering_id")
+    private Long backupOfferingId;
+
+    @Column(name = "backup_offering_uuid")
+    private String backupOfferingUuid;
+
+    @Column(name = "backup_offering_name")
+    private String backupOfferingName;
+
     @Column(name = "cpu")
     private int cpu;
 
@@ -597,6 +606,14 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getServiceOfferingName() {
         return serviceOfferingName;
+    }
+
+    public String getBackupOfferingUuid() {
+        return backupOfferingUuid;
+    }
+
+    public String getBackupOfferingName() {
+        return backupOfferingName;
     }
 
     public int getCpu() {

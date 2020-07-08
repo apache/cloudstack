@@ -62,7 +62,7 @@ def _configure_timeout(hypervisor):
     return timeout
 
 
-def _execute_ssh_command(hostip, port, username, password, ssh_command):
+def _execute_ssh_command(hostip, port, username, password, ssh_command, timeout=5):
     #SSH to the machine
     ssh = SshClient(hostip, port, username, password)
     # Ensure the SSH login is successful
@@ -230,6 +230,10 @@ def get_host_credentials(config, hostip):
                         raise Exception("Unresolvable host %s error is %s" % (hostip, e))
     raise KeyError("Please provide the marvin configuration file with credentials to your hosts")
 
+def execute_command_in_host(hostip, port, username, password, command, hypervisor=None):
+    timeout = _configure_timeout(hypervisor)
+    result = _execute_ssh_command(hostip, port, username, password, command)
+    return result
 
 def get_process_status(hostip, port, username, password, linklocalip, command, hypervisor=None):
     """Double hop and returns a command execution result"""

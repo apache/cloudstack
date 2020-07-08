@@ -46,6 +46,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findByInstanceAndType(long id, Volume.Type vType);
 
+    List<VolumeVO> findIncludingRemovedByInstanceAndType(long id, Volume.Type vType);
+
     List<VolumeVO> findByInstanceIdAndPoolId(long instanceId, long poolId);
 
     List<VolumeVO> findByInstanceIdDestroyed(long vmId);
@@ -95,6 +97,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId);
 
     List<Long> listZoneWidePoolIdsByVolumeCount(long dcId, long accountId);
+
+    List<VolumeVO> findIncludingRemovedByZone(long zoneId);
 
     /**
      * Gets the Total Primary Storage space allocated for an account
