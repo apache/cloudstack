@@ -19,6 +19,7 @@
 
 # Import System modules
 # Import Local Modules
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
 from marvin.lib.base import *
 from marvin.lib.common import *
@@ -41,7 +42,21 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         self.pod = get_pod(self.apiclient, self.zone.id)
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.domain = get_domain(self.apiclient)
-        self.template = get_template(self.apiclient, self.zone.id, self.services["ostype"])
+        self.template = FAILED
+        if self.hypervisor.lower() in ["xenserver"]:
+            self.template = get_test_template(
+                self.apiclient,
+                self.zone.id,
+                self.hypervisor
+            )
+        if self.template == FAILED:
+            self.template = get_template(
+                self.apiclient,
+                self.zone.id,
+                self.services["ostype"]
+            )
+        if self.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % self.services["ostype"]
 
         return
 
@@ -371,7 +386,21 @@ class TestStorageTags(cloudstackTestCase):
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.apiclient)
-        cls.template = get_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
+        cls.template = FAILED
+        if cls.hypervisor.lower() in ["xenserver"]:
+            cls.template = get_test_template(
+                cls.apiclient,
+                cls.zone.id,
+                cls.hypervisor
+            )
+        if cls.template == FAILED:
+            cls.template = get_template(
+                cls.apiclient,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.services["storage_tags"] = StorageTagsServices().storage_tags
