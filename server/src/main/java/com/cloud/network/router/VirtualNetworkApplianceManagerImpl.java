@@ -1823,10 +1823,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
                             .append(",algorithm=").append(loadBalancerVO.getAlgorithm())
                             .append(",protocol=").append(loadBalancerVO.getLbProtocol());
-                    final LbSslCert sslCert = _lbMgr.getLbSslCert(firewallRuleVO.getId());
-                    if (sslCert != null && ! sslCert.isRevoked()) {
-                        loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
-                                .append(loadBalancerVO.getSourcePortStart()).append(".pem");
+                    if (loadBalancerVO.getLbProtocol() != null && loadBalancerVO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
+                        final LbSslCert sslCert = _lbMgr.getLbSslCert(firewallRuleVO.getId());
+                        if (sslCert != null && ! sslCert.isRevoked()) {
+                            loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
+                                    .append(loadBalancerVO.getSourcePortStart()).append(".pem");
+                        }
                     }
                 } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
                     ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
