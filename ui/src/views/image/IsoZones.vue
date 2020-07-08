@@ -228,8 +228,7 @@ export default {
     isActionPermitted () {
       return (['Admin'].includes(this.$store.getters.userInfo.roletype) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account)) &&
-        !(this.resource.account !== 'SYSTEM' && this.resource.domainid === 1) &&
-        this.resource.isready
+        !(this.resource.account !== 'SYSTEM' && this.resource.domainid === 1)
     },
     deleteIso (record) {
       const params = {
