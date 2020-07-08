@@ -34,7 +34,9 @@ public class ProjectRolePermissionVO extends RolePermissionBaseVO implements Pro
     @Column(name = "sort_order")
     private long sortOrder = 0;
 
-    public ProjectRolePermissionVO() { super(); }
+    public ProjectRolePermissionVO() {
+        super();
+    }
 
     public ProjectRolePermissionVO(final long projectId, final long projectRoleId, final String rule, final Permission permission, final String description) {
         super(rule, permission, description);
@@ -43,9 +45,13 @@ public class ProjectRolePermissionVO extends RolePermissionBaseVO implements Pro
     }
 
     @Override
-    public long getProjectRoleId() { return projectRoleId; }
+    public long getProjectRoleId() {
+        return projectRoleId;
+    }
 
-    public void setProjectRoleId(long projectRoleId) { this.projectRoleId = projectRoleId; }
+    public void setProjectRoleId(long projectRoleId) {
+        this.projectRoleId = projectRoleId;
+    }
 
     @Override
     public long getProjectId() {

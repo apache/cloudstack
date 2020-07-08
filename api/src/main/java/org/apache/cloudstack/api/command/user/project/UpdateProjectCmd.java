@@ -37,6 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
+import com.google.common.base.Strings;
 
 @APICommand(name = "updateProject", description = "Updates a project", responseObject = ProjectResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -109,7 +110,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     }
 
     public ProjectAccount.Role getAccountRole() {
-        if (roleType != null) {
+        if (!Strings.isNullOrEmpty(roleType)) {
             return getRoleType(roleType);
         }
         return ProjectAccount.Role.Regular;
@@ -125,11 +126,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     }
 
     public Boolean isSwapOwner() {
-        if (swapOwner != null) {
-            return swapOwner;
-        } else {
-            return true;
-        }
+        return swapOwner != null ? swapOwner : true;
     }
 
     @Override
@@ -155,7 +152,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceAllocationException {
         CallContext.current().setEventDetails("Project id: " + getId());
-        if (getAccountName() != null && (getUserId() != null)) {
+        if (getAccountName() != null && getUserId() != null) {
             throw new InvalidParameterValueException("Account name and user ID are mutually exclusive. Provide either account name" +
                     "to update account or user ID to update the user of the project");
         }
