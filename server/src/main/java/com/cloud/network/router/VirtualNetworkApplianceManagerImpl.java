@@ -1841,6 +1841,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 loadBalancingData.append(",stickiness=").append(getStickinessPolicies(firewallRuleVO.getId()));
                 if (isHttp != null) {
                     loadBalancingData.append(",http=").append(isHttp);
+                } else if (firewallRuleVO.getSourcePortStart() == NetUtils.HTTP_PORT) {
+                    loadBalancingData.append(",http=").append(true);
                 }
                 if (isHttpKeepalive != null) {
                     loadBalancingData.append(",keepAliveEnabled=").append(isHttpKeepalive);

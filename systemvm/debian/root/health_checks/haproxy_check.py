@@ -87,15 +87,6 @@ def checkBackendLbValues(lbSection, cfgSection):
             if cfgSection["fullconn"][0] != lbSection["lb.fullconn"]:
                 print("fullconn value in %s doesnt match with %s" % (lbSection, cfgSection))
 
-    if "http" in lbSection:
-        if "mode" not in cfgSection:
-            print("mode http is enabled but not configured in haproxy rule %s" % cfgSection)
-            correct = False
-        else:
-            if lbSection["http"] == 'true' and cfgSection["mode"][0] != 'http':
-                print("http mode value mismatch in rule %s" % cfgSection)
-                correct = False
-
     if "lb.timeout.connect" in lbSection:
         if "timeout" not in cfgSection:
             print("timeout is enabled but not configured in haproxy rule %s" % cfgSection)
@@ -209,10 +200,16 @@ def checkLoadBalance(haproxyData, haCfgSections):
                     print "Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + "."
                     correct = False
 
-                if (lbSec["sourcePortStart"] == "80" and lbSec["sourcePortEnd"] == "80" and lbSec["keepAliveEnabled"] == "false") \
-                        or (lbSec["stickiness"].find("AppCookie") != -1 or lbSec["stickiness"].find("LbCookie") != -1):
+                if ("http" in lbSec and lbSec["http"] == 'true') \
+                        or lbSec.has_key("sslcert") \
+                        or lbSec["stickiness"].find("AppCookie") != -1 \
+                        or lbSec["stickiness"].find("LbCookie") != -1:
                     if not ("mode" in cfgSection and cfgSection["mode"][0] == "http"):
                         print "Expected HTTP mode but not found"
+                        correct = False
+                    if lbSec["keepAliveEnabled"] == "false" \
+                            and not ("option" in cfgSection and cfgSection["option"][0] == "httpclose"):
+                        print "Expected 'option httpclose' but not found"
                         correct = False
 
                 expectedServerIps = lbSec["vmIps"].split(" ")
