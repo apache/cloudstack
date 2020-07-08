@@ -4065,13 +4065,13 @@ class Project:
         cmd.account = account
         return apiclient.deleteAccountFromProject(cmd)
 
-    def addUser(self, apiclient, userid=None, email=None, projectroleid=None, roletype=None):
+    def addUser(self, apiclient, username=None, email=None, projectroleid=None, roletype=None):
         """Add user to project"""
 
         cmd = addUserToProject.addUserToProjectCmd()
         cmd.projectid = self.id
-        if userid:
-            cmd.userid = userid
+        if username:
+            cmd.username = username
         if email:
             cmd.email = email
         if projectroleid:

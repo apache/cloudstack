@@ -171,7 +171,7 @@ class TestRoleBasedUsersInProjects(cloudstackTestCase):
         # Add account to the project
         self.project.addUser(
             self.apiclient,
-            userid=self.useraccount.user[0].id,
+            username=self.useraccount.user[0].username,
             projectroleid=self.projectrole.id
         )
         Project.listAccounts(self.apiclient, projectid=self.project.id)
@@ -226,8 +226,8 @@ class TestRoleBasedUsersInProjects(cloudstackTestCase):
             account=self.useraccount1.name,
             projectroleid=self.projectrole.id
         )
-        project_accounts = Project.listAccounts(self.apiclient, projectid=self.project.id, role='Admin')
 
+        project_accounts = Project.listAccounts(self.apiclient, projectid=self.project.id, role='Admin')
         self.assertEqual(len(project_accounts), 2, "account not added with admin Role")
 
         self.userapiclientAdminRole = self.testClient.getUserApiClient(
