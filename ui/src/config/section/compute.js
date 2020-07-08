@@ -491,21 +491,21 @@ export default {
         {
           api: 'createInstanceGroup',
           icon: 'plus',
-          label: 'New Instance Group',
+          label: 'label.new.instance.group',
           listView: true,
           args: ['name']
         },
         {
           api: 'updateInstanceGroup',
           icon: 'edit',
-          label: 'Update Instance Group',
+          label: 'label.update.instance.group',
           dataView: true,
           args: ['name']
         },
         {
           api: 'deleteInstanceGroup',
           icon: 'delete',
-          label: 'Delete Instance Group',
+          label: 'label.delete.instance.group',
           dataView: true
         }
       ]
