@@ -17,6 +17,7 @@
 """ P1 tests for Snapshots
 """
 # Import Local Modules
+from marvin.codes import FAILED
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import deleteVolume
@@ -38,6 +39,7 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template,
+                               get_test_template,
                                find_storage_pool_type)
 
 
@@ -136,12 +138,22 @@ class TestVmUsage(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-
-        template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        template = FAILED
+        if cls.hypervisor.lower() in ["xenserver"]:
+            template = get_test_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.hypervisor
+            )
+        if template == FAILED:
+            template = get_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
@@ -335,12 +347,22 @@ class TestPublicIPUsage(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-
-        template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        template = FAILED
+        if cls.hypervisor.lower() in ["xenserver"]:
+            template = get_test_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.hypervisor
+            )
+        if template == FAILED:
+            template = get_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
@@ -508,11 +530,22 @@ class TestVolumeUsage(cloudstackTestCase):
             cls.services["disk_offering"]
         )
         cls._cleanup.append(cls.disk_offering)
-        template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+
+        template = FAILED
+        if cls.hypervisor.lower() in ["xenserver"]:
+            template = get_test_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.hypervisor
+            )
+        if template == FAILED:
+            template = get_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["server"]["diskoffering"] = cls.disk_offering.id
         cls.services["template"] = template.id
@@ -803,11 +836,22 @@ class TestTemplateUsage(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services["server"]["zoneid"] = cls.zone.id
-        template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+
+        template = FAILED
+        if cls.hypervisor.lower() in ["xenserver"]:
+            template = get_test_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.hypervisor
+            )
+        if template == FAILED:
+            template = get_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["server"]["zoneid"] = cls.zone.id
         cls._cleanup = []
         try:
@@ -1131,11 +1175,23 @@ class TestLBRuleUsage(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        template = FAILED
+        if cls.hypervisor.lower() in ["xenserver"]:
+            template = get_test_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.hypervisor
+            )
+        if template == FAILED:
+            template = get_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
@@ -1307,11 +1363,21 @@ class TestSnapshotUsage(cloudstackTestCase):
             cls.unsupportedHypervisor = True
             return
 
-        template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+        template = FAILED
+        if cls.hypervisor.lower() in ["xenserver"]:
+            template = get_test_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.hypervisor
+            )
+        if template == FAILED:
+            template = get_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
@@ -1488,11 +1554,23 @@ class TestNatRuleUsage(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        template = FAILED
+        if cls.hypervisor.lower() in ["xenserver"]:
+            template = get_test_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.hypervisor
+            )
+        if template == FAILED:
+            template = get_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
@@ -1657,11 +1735,23 @@ class TestVpnUsage(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        template = FAILED
+        if cls.hypervisor.lower() in ["xenserver"]:
+            template = get_test_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.hypervisor
+            )
+        if template == FAILED:
+            template = get_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id

@@ -21,7 +21,7 @@
 from marvin.cloudstackTestCase import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
-from marvin.lib.common import (get_zone, get_pod, get_template, list_ssvms)
+from marvin.lib.common import (get_zone, get_pod, get_template, get_test_template, list_ssvms)
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
 from distutils.util import strtobool
@@ -117,12 +117,19 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         return
     
     def createVMs(self, hostId, number, offering_key="tiny"):
-        
-        self.template = get_template(
-            self.apiclient,
-            self.zone.id,
-            self.hypervisor
-        )
+        self.template = FAILED
+        if self.hypervisor.lower() in ["xenserver"]:
+            self.template = get_test_template(
+                self.apiclient,
+                self.zone.id,
+                self.hypervisor
+            )
+        if self.template == FAILED:
+            self.template = get_template(
+                self.apiclient,
+                self.zone.id,
+                self.hypervisor
+            )
             
         if self.template == FAILED:
             assert False, "get_template() failed to return template"
@@ -459,11 +466,20 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
 
         if not cls.hypervisorNotSupported:
             cls.initialsshvalue = cls.is_ssh_enabled()
-            cls.template = get_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.hypervisor
-            )
+
+            cls.template = FAILED
+            if cls.hypervisor.lower() in ["xenserver"]:
+                cls.template = get_test_template(
+                    cls.apiclient,
+                    cls.zone.id,
+                    cls.hypervisor
+                )
+            if cls.template == FAILED:
+                cls.template = get_template(
+                    cls.apiclient,
+                    cls.zone.id,
+                    cls.hypervisor
+                )
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["virtual_machine"]["template"] = cls.template.id
             cls.services["virtual_machine"]["hypervisor"] = cls.hypervisor
