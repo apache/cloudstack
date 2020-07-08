@@ -530,6 +530,7 @@
 "label.clustertype": "Cluster Type",
 "label.clvm": "CLVM",
 "label.code": "Code",
+"label.comments": "Comments",
 "label.community": "Community",
 "label.compute": "Compute",
 "label.compute.and.storage": "Compute and Storage",
