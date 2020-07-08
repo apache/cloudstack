@@ -94,7 +94,7 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
         return null;
     }
 
-    private ClusterConfigInfoEx getClusterConfigInfo() throws Exception {
+    public ClusterConfigInfoEx getClusterConfigInfo() throws Exception {
         ClusterConfigInfoEx configInfo = (ClusterConfigInfoEx)_context.getVimClient().getDynamicProperty(_mor, "configurationEx");
         return configInfo;
     }
