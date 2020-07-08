@@ -83,6 +83,7 @@ public class TemplateObjectTO implements DataTO {
             this.imageDataStore = template.getDataStore().getTO();
         }
         this.hypervisorType = template.getHypervisorType();
+        this.deployAsIs = template.isDeployAsIs();
     }
 
     @Override

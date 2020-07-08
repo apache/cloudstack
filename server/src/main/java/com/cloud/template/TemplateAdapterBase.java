@@ -283,6 +283,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             throw new InvalidParameterValueException("Hypervisor Type: " + cmd.getHypervisor() + " is invalid. Supported Hypervisor types are "
                     + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
         }
+        // for OVA, deploy as is will be default and only root can override
         boolean deployAsIs = true;
         if (cmd instanceof RegisterTemplateCmdByAdmin) {
             deployAsIs = ((RegisterTemplateCmdByAdmin)cmd).isDeployAsIs();

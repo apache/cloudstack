@@ -641,7 +641,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.parentTemplateId = parentTemplateId;
     }
 
-    public boolean isDeployAsIs() {
+    @Override public boolean isDeployAsIs() {
         return deployAsIs;
     }
 

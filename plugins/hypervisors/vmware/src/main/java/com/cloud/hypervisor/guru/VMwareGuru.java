@@ -264,8 +264,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
             }
 
-            if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary && srcData.getObjectType() == DataObjectType.TEMPLATE
-                    && srcStoreTO.getRole() == DataStoreRole.Primary) {
+            if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary
+                    && srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
+                needDelegation = false;
+            } else
+                // FR37 TODO remove or as possible improvement: check if the template is meant to be deployed as is and delegate if it isn't
+                if (destData.getObjectType() == DataObjectType.TEMPLATE && destStoreTO.getRole() == DataStoreRole.Primary
+                    && srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Image) {
                 needDelegation = false;
             } else {
                 needDelegation = true;

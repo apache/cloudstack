@@ -495,8 +495,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private Pair<VirtualMachineMO, Long> copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl, String templatePathAtSecondaryStorage, String templateName, String templateUuid,
             boolean createSnapshot, Integer nfsVersion, boolean deployAsIs) throws Exception {
-        s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
-                templatePathAtSecondaryStorage + ", templateName: " + templateName);
+        s_logger.info(String.format("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: %s, templatePathAtSecondaryStorage: %s, templateName: %s, deployAsIs: %s",
+                secondaryStorageUrl, templatePathAtSecondaryStorage, templateName, deployAsIs));
 
         String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, nfsVersion);
         s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
@@ -528,41 +528,29 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         String vmName = templateUuid;
+        VirtualMachineMO vmMo = null;
+        VmConfigInfo vAppConfig = null;
 
         if (s_logger.isTraceEnabled()) {
             s_logger.trace(String.format("deploying new style == %b", deployAsIs));
         }
         if (deployAsIs) {
-            // FR37 TODO: Uncomment this to use content library to import vm from ovf
-            String storeName = getSecondaryDatastoreUUID(secondaryStorageUrl);
-            ManagedObjectReference morSecDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storeName);
-            if (morSecDatastore == null) {
-                morSecDatastore = prepareSecondaryDatastoreOnHost(secondaryStorageUrl);
-            }
-            DatastoreMO secDsMo = new DatastoreMO(datastoreMo.getContext(), morSecDatastore);
-            DatastoreSummary secDatastoresummary = secDsMo.getSummary();
-
-            String ovfFile = getOVFFile(srcOVAFileName);
-            boolean importResult = true;//contentLibraryService.importOvf(datastoreMo.getContext(), secDatastoresummary.getUrl() + templatePathAtSecondaryStorage, ovfFile, datastoreMo.getName(), templateUuid);
-            if (!importResult) {
-                s_logger.warn("Failed to import ovf into the content library: " + srcFileName);
-            }
+            deployTemplateToContentLibrary(hyperHost, datastoreMo, secondaryStorageUrl, templatePathAtSecondaryStorage, templateUuid, srcOVAFileName, srcFileName);
         } else {
             hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin", true);
-        }
-
-        VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
-        VmConfigInfo vAppConfig;
-        if (vmMo == null) {
-            String msg =
-                    "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
-                            ", templateName: " + templateName + ", templateUuid: " + templateUuid;
-            s_logger.error(msg);
-            throw new Exception(msg);
-        } else {
-            vAppConfig = vmMo.getConfigInfo().getVAppConfig();
-            if (vAppConfig != null) {
-                s_logger.info("Found vApp configuration");
+            // FR37 TODO fix checking for result on deployAsIs as no vmMo will be found for a template
+            vmMo = hyperHost.findVmOnHyperHost(vmName);
+            if (vmMo == null) {
+                String msg =
+                        "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
+                                ", templateName: " + templateName + ", templateUuid: " + templateUuid;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            } else {
+                vAppConfig = vmMo.getConfigInfo().getVAppConfig();
+                if (vAppConfig != null) {
+                    s_logger.info("Found vApp configuration");
+                }
             }
         }
 
@@ -572,6 +560,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         processor.configure("OVA Processor", params);
         long virtualSize = processor.getTemplateVirtualSize(secondaryMountPoint + "/" + templatePathAtSecondaryStorage, templateName);
 
+        // FR37 TODO fix checking for result on deployAsIs as no snapshot will be created for a template
         if (createSnapshot) {
             if (vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
                 // the same template may be deployed with multiple copies at per-datastore per-host basis,
@@ -592,6 +581,23 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         return new Pair<>(vmMo, virtualSize);
+    }
+
+    private void deployTemplateToContentLibrary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl, String templatePathAtSecondaryStorage,
+            String templateUuid, String srcOVAFileName, String srcFileName) throws Exception {
+        String storeName = getSecondaryDatastoreUUID(secondaryStorageUrl);
+        ManagedObjectReference morSecDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storeName);
+        if (morSecDatastore == null) {
+            morSecDatastore = prepareSecondaryDatastoreOnHost(secondaryStorageUrl);
+        }
+        DatastoreMO secDsMo = new DatastoreMO(datastoreMo.getContext(), morSecDatastore);
+        DatastoreSummary secDatastoresummary = secDsMo.getSummary();
+
+        String ovfFile = getOVFFile(srcOVAFileName);
+        boolean importResult = true;//contentLibraryService.importOvf(datastoreMo.getContext(), secDatastoresummary.getUrl() + templatePathAtSecondaryStorage, ovfFile, datastoreMo.getName(), templateUuid);
+        if (!importResult) {
+            s_logger.warn("Failed to import ovf into the content library: " + srcFileName);
+        }
     }
 
     @Override
