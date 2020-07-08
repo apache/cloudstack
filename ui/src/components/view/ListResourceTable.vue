@@ -16,23 +16,54 @@
 // under the License.
 
 <template>
-  <a-table
-    size="small"
-    :columns="fetchColumns()"
-    :dataSource="items"
-    :rowKey="item => item.id"
-    :loading="loading"
-    :pagination="false" >
+  <div>
+    <a-input-search
+      v-if="showSearch"
+      style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
+      :placeholder="$t('label.search')"
+      v-model="filter"
+      @search="handleSearch" />
 
-    <template v-if="routerlink" :slot="routerlink.name" slot-scope="text, item">
-      <router-link :to="{ path: routerlink.prefix + item.id }" v-if="routerlink.prefix">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
-    </template>
-    <template slot="state" slot-scope="text">
-      <status :text="text ? text : ''" />{{ text }}
-    </template>
+    <a-table
+      size="small"
+      :columns="fetchColumns()"
+      :dataSource="items"
+      :rowKey="item => item.id"
+      :loading="loading"
+      :pagination="false"
+      @change="handleTableChange"
+      @handle-search-filter="handleTableChange" >
 
-  </a-table>
+      <template v-for="(column, index) in Object.keys(routerlinks({}))" :slot="column" slot-scope="text, item" >
+        <span :key="index">
+          <router-link :set="routerlink = routerlinks(item)" :to="{ path: routerlink[column] }" >{{ text }}</router-link>
+        </span>
+      </template>
+
+      <template slot="state" slot-scope="text">
+        <status :text="text ? text : ''" />{{ text }}
+      </template>
+
+      <template slot="status" slot-scope="text">
+        <status :text="text ? text : ''" />{{ text }}
+      </template>
+
+    </a-table>
+
+    <div style="display: block; text-align: right; margin-top: 10px;">
+      <a-pagination
+        size="small"
+        :current="options.page"
+        :pageSize="options.pageSize"
+        :total="total"
+        :showTotal="total => `Total ${total} items`"
+        :pageSizeOptions="['10', '20', '40']"
+        @change="handleTableChange"
+        @showSizeChange="handlePageSizeChange"
+        showSizeChanger />
+    </div>
+  </div>
+
 </template>
 
 <script>
@@ -45,13 +76,17 @@ export default {
     Status
   },
   props: {
+    resource: {
+      type: Object,
+      default: () => {}
+    },
     apiName: {
       type: String,
       required: true
     },
-    routerlink: {
-      type: Object,
-      default: () => {}
+    routerlinks: {
+      type: Function,
+      default: () => { return {} }
     },
     params: {
       type: Object,
@@ -60,12 +95,35 @@ export default {
     columns: {
       type: Array,
       required: true
+    },
+    showSearch: {
+      type: Boolean,
+      default: true
     }
   },
   data () {
     return {
       loading: false,
-      items: []
+      items: [],
+      total: 0,
+      filter: '',
+      options: {
+        page: 1,
+        pageSize: 10,
+        keyword: null
+      }
+    }
+  },
+  watch: {
+    resource (newItem, oldItem) {
+      if (newItem !== oldItem) {
+        this.fetchData()
+      }
+    },
+    '$i18n.locale' (to, from) {
+      if (to !== from) {
+        this.fetchData()
+      }
     }
   },
   mounted () {
@@ -74,11 +132,11 @@ export default {
   methods: {
     fetchData () {
       this.loading = true
-      var params = this.params
+      var params = { ...this.params, ...this.options }
       params.listall = true
       params.response = 'json'
       params.details = 'min'
-      api(this.apiName, this.params).then(json => {
+      api(this.apiName, params).then(json => {
         var responseName
         var objectName
         for (const key in json) {
@@ -89,6 +147,7 @@ export default {
         }
         for (const key in json[responseName]) {
           if (key === 'count') {
+            this.total = json[responseName][key]
             continue
           }
           objectName = key
@@ -112,6 +171,23 @@ export default {
         })
       }
       return columns
+    },
+    handleSearch (value) {
+      this.filter = value
+      this.options.page = 1
+      this.options.pageSize = 10
+      this.options.keyword = this.filter
+      this.fetchData()
+    },
+    handleTableChange (page, pagesize) {
+      this.options.page = page
+      this.options.pageSize = pagesize
+      this.fetchData()
+    },
+    handlePageSizeChange (page, pagesize) {
+      this.options.page = 1
+      this.options.pageSize = pagesize
+      this.fetchData()
     }
   }
 }

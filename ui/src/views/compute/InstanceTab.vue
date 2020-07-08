@@ -118,16 +118,19 @@
       <a-tab-pane :tab="$t('label.vm.snapshots')" key="vmsnapshots" v-if="'listVMSnapshot' in $store.getters.apis">
         <ListResourceTable
           apiName="listVMSnapshot"
+          :resource="resource"
           :params="{virtualmachineid: this.resource.id}"
-          :columns="['name', 'state', 'type', 'created']"
-          :routerlink="{name: 'name', prefix: '/vmsnapshot/'}"/>
+          :columns="['displayname', 'state', 'type', 'created']"
+          :routerlinks="(record) => { return { displayname: '/vmsnapshot/' + record.id } }"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.backup')" key="backups" v-if="'listBackups' in $store.getters.apis">
         <ListResourceTable
           apiName="listBackups"
+          :resource="resource"
           :params="{virtualmachineid: this.resource.id}"
-          :columns="['id', 'state', 'type', 'created']"
-          :routerlink="{name: 'id', prefix: '/backup/'}"/>
+          :columns="['id', 'status', 'type', 'created']"
+          :routerlinks="(record) => { return { id: '/backup/' + record.id } }"
+          :showSearch="false"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="resource" :loading="loading" />
