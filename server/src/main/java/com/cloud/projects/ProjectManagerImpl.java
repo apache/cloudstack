@@ -194,6 +194,20 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         return user;
     }
 
+    private User validateUser(Long userId, Long domainId) {
+        User user = null;
+        if (userId != null) {
+            user = userDao.findById(userId);
+            if (user == null) {
+                throw new InvalidParameterValueException("Invalid user ID provided");
+            }
+            if (_accountDao.findById(user.getAccountId()).getDomainId() != domainId) {
+                throw new InvalidParameterValueException("User doesn't belong to the specified account or domain");
+            }
+        }
+        return user;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project", create = true)
     @DB
@@ -656,7 +670,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async = true)
     public Project updateProject(final long projectId, final String displayText, final String newOwnerName, Long userId,
-                                 Long accountId, Long domainId, Role newRole) throws ResourceAllocationException {
+                                 Role newRole) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
@@ -696,9 +710,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                     }
                     updateProjectAccount(newProjectAcc, newRole, updatedAcc.getId());
                 } else if (userId != null) {
-                    User user = validateUser(userId, accountId, domainId);
+                    User user = validateUser(userId, project.getDomainId());
                     if (user == null) {
-                        throw new InvalidParameterValueException("Unable to find user= " + user.getUsername() + " in domain id = " + domainId);
+                        throw new InvalidParameterValueException("Unable to find user= " + user.getUsername() + " in domain id = " + project.getDomainId());
                     }
                     ProjectAccountVO newProjectUser = _projectAccountDao.findByProjectIdUserId(projectId, user.getAccountId(), userId);
                     if (newProjectUser == null) {

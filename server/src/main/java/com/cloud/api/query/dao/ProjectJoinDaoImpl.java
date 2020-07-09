@@ -18,7 +18,9 @@ package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -80,21 +82,6 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         this._count = "select count(distinct id) from project_view WHERE ";
     }
 
-    private String getProjectOwners(List<ProjectAccountVO> projectAccounts) {
-        StringBuilder owner = new StringBuilder();
-        for (ProjectAccount projectAccount : projectAccounts) {
-            if (owner.length() != 0) {
-                owner.append(", ");
-            }
-            if (projectAccount.getUserId() != null) {
-                User user = userDao.findById(projectAccount.getUserId());
-                owner.append(_accountDao.findById(user.getAccountId()).getAccountName()).append("(").append(user.getUsername()).append(")");
-            } else {
-                owner.append(_accountDao.findById(projectAccount.getAccountId()).getAccountName());
-            }
-        }
-        return owner.toString();
-    }
     @Override
     public ProjectResponse newProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO proj) {
         ProjectResponse response = new ProjectResponse();
@@ -108,11 +95,21 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         response.setDomain(proj.getDomainName());
 
         List<ProjectAccountVO> projectAccounts = projectAccountDao.listByProjectId(proj.getId());
-        projectAccounts = projectAccounts.stream().filter(projectAccount -> {
-            return projectAccount.getAccountRole() == ProjectAccount.Role.Admin;
-        }).collect(Collectors.toList());
-        String owners = getProjectOwners(projectAccounts);
-        response.setOwner(owners);
+        projectAccounts = projectAccounts.stream().filter(projectAccount -> projectAccount.getAccountRole() == ProjectAccount.Role.Admin).collect(Collectors.toList());
+        List<Map<String, String>> ownersList = new ArrayList<>();
+        for (ProjectAccount projectAccount: projectAccounts) {
+            Map<String, String> ownerDetails = new HashMap<>();
+            if (projectAccount.getUserId() != null) {
+                User user = userDao.findById(projectAccount.getUserId());
+                ownerDetails.put("account", _accountDao.findById(projectAccount.getAccountId()).getAccountName());
+                ownerDetails.put("user", user.getUsername());
+                ownerDetails.put("userid", user.getUuid());
+            } else {
+                ownerDetails.put("account", _accountDao.findById(projectAccount.getAccountId()).getAccountName());
+            }
+            ownersList.add(ownerDetails);
+        }
+        response.setOwners(ownersList);
 
         // update tag information
         List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(proj.getUuid(), ResourceObjectType.Project);

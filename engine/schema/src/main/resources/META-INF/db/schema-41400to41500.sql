@@ -137,6 +137,7 @@ ALTER VIEW `cloud`.`project_account_view` AS
         account.type account_type,
         user.id user_id,
         user.uuid user_uuid,
+        user.username user_name,
         project_account.account_role,
         project_role.id project_role_id,
         project_role.uuid project_role_uuid,

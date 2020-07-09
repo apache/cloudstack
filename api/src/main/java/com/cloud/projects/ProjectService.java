@@ -80,7 +80,7 @@ public interface ProjectService {
 
     Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException;
 
-    Project updateProject(long id, String displayText, String newOwnerName, Long userId, Long accountId, Long domainId, Role newRole) throws ResourceAllocationException;
+    Project updateProject(long id, String displayText, String newOwnerName, Long userId, Role newRole) throws ResourceAllocationException;
 
     boolean addAccountToProject(long projectId, String accountName, String email, Long projectRoleId, Role projectRoleType);
 

@@ -45,6 +45,10 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     @Param(description = "the name of the account")
     private String accountName;
 
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "Name of the user")
+    private String username;
+
     @SerializedName(ApiConstants.ACCOUNT_TYPE)
     @Param(description = "account type (admin, domain-admin, user)")
     private Short accountType;
@@ -118,5 +122,9 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

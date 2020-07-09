@@ -75,6 +75,9 @@ public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity
     @Column(name = "user_id")
     private Long userId;
 
+    @Column(name = "user_name")
+    private String username;
+
     @Column(name = "project_role_id")
     private Long projectRoleId;
 
@@ -151,4 +154,9 @@ public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity
     }
 
     public String getUserUuid() { return userUuid; }
+
+    public String getUsername() {
+        return username;
+    }
+
 }

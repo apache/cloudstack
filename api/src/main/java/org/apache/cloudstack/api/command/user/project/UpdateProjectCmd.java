@@ -24,8 +24,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -62,12 +60,6 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "ID of the user to be promoted/demoted")
     private Long userId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "ID of the user to be promoted/demoted")
-    private Long domainId;
-
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account owning a project")
-    private Long accountId;
-
     @Parameter(name = ApiConstants.ROLE_TYPE, type = CommandType.STRING, description = "Account level role to be assigned to the user/account : Admin/Regular")
     private String roleType;
 
@@ -94,13 +86,6 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
         return userId;
     }
 
-    public Long getDomainId() {
-        if (domainId != null) {
-            return domainId;
-        }
-        return CallContext.current().getCallingAccount().getDomainId();
-    }
-
     public ProjectAccount.Role getRoleType(String role) {
         String type = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
         if (!EnumUtils.isValidEnum(ProjectAccount.Role.class, type)) {
@@ -114,10 +99,6 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
             return getRoleType(roleType);
         }
         return ProjectAccount.Role.Regular;
-    }
-
-    public Long getAccountId() {
-        return accountId;
     }
 
     @Override
@@ -157,20 +138,11 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
                     "to update account or user ID to update the user of the project");
         }
 
-        if (getUserId() != null) {
-            if (getDomainId() == null) {
-                throw new InvalidParameterValueException("Domain ID needs to be provided when User ID is provided");
-            }
-            if (getAccountId() == null) {
-                throw new InvalidParameterValueException("Account ID needs to be provided when User ID is provided");
-            }
-        }
-
         Project project = null;
         if (isSwapOwner()) {
             project = _projectService.updateProject(getId(), getDisplayText(), getAccountName());
         }  else {
-            project = _projectService.updateProject(getId(), getDisplayText(), getAccountName(), getUserId(), getAccountId(), getDomainId(), getAccountRole());
+            project = _projectService.updateProject(getId(), getDisplayText(), getAccountName(), getUserId(), getAccountRole());
         }
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
