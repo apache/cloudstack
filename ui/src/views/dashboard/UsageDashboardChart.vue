@@ -28,7 +28,7 @@
         :bordered="false"
         :loading="loading"
         :style="stat.bgcolor ? { 'background-color': stat.bgcolor } : {}">
-        <router-link :to="{ name: stat.path }">
+        <router-link :to="{ path: stat.path }">
           <div
             class="usage-dashboard-chart-card-inner">
             <h3>{{ stat.name }}</h3>
