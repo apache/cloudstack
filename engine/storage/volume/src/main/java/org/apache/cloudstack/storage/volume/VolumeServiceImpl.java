@@ -121,6 +121,8 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
+import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
+
 @Component
 public class VolumeServiceImpl implements VolumeService {
     private static final Logger s_logger = Logger.getLogger(VolumeServiceImpl.class);
@@ -750,7 +752,7 @@ public class VolumeServiceImpl implements VolumeService {
             // hack for Vmware: host is down, previously download template to the host needs to be re-downloaded, so we need to reset
             // template_spool_ref entry here to NOT_DOWNLOADED and Allocated state
             Answer ans = result.getAnswer();
-            if (ans != null && ans instanceof CopyCmdAnswer && ans.getDetails().contains("request template reload")) {
+            if (ans != null && ans instanceof CopyCmdAnswer && ans.getDetails().contains(REQUEST_TEMPLATE_RELOAD)) {
                 if (tmplOnPrimary != null) {
                     s_logger.info("Reset template_spool_ref entry so that vmware template can be reloaded in next try");
                     VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(tmplOnPrimary.getDataStore().getId(), tmplOnPrimary.getId());

@@ -33,6 +33,9 @@ import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import com.cloud.agent.api.Answer;
 
 public interface StorageProcessor {
+    String REQUEST_TEMPLATE_RELOAD = "request template reload";
+    String COPY_NOT_NEEDED_FOR_DEPLOY_AS_IS = "copy volume not needed for deploy as is";
+
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd);
 
     public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd);

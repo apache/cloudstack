@@ -114,12 +114,12 @@ class VmwareVmImplementer {
     }
 
     VirtualMachineTO implement(VirtualMachineProfile vm, VirtualMachineTO to, long clusterId, Boolean deployOvaAsIs) {
-        to.setBootloader(VirtualMachineTemplate.BootloaderType.HVM);
+            to.setBootloader(VirtualMachineTemplate.BootloaderType.HVM);
 
         HostVO host = hostDao.findById(vm.getVirtualMachine().getHostId());
         // FR37 if VmwareImplementAsIsAndReconsiliate add secondary storage or some other encoding of the OVA file to the start command,
         // FR37 so the url for the original OVA can be used for deployment
-        if (deployOvaAsIs) {
+        if (deployOvaAsIs || vm.getTemplate().isDeployAsIs()) {
             // FR37 todo MAYBE add flag for deploy as is in TO
             storeTemplateLocationInTO(vm, to, host.getId());
         }

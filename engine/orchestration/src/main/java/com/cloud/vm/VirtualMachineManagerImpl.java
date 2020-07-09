@@ -1096,7 +1096,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         //do not enter volume reuse for next retry, since we want to look for resources outside the volume's cluster
                         reuseVolume = false;
                         continue;
-                    }
+                    } // this is the one that gets thrown for all kinds of reasons and might not have to do with capacity :
                     throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId(),
                             areAffinityGroupsAssociated(vmProfile));
                 }
@@ -1136,7 +1136,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 try {
                     _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null, dest.getStorageForDisks()), ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        volumeMgr.prepare(vmProfile, dest);
+                        // FR37 TODO do not create a copy volume task for deploy as is on vmware ?
+                        if (vmProfile.getTemplate().isDeployAsIs()) {
+                            s_logger.info("skipping prepare volume for a vApp (deploy as is) template");
+                        } else {
+                            volumeMgr.prepare(vmProfile, dest);
+                        }
                     }
 
                     //since StorageMgr succeeded in volume creation, reuse Volume for further tries until current cluster has capacity

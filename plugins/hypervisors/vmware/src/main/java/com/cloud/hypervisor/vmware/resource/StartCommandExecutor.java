@@ -117,7 +117,7 @@ class StartCommandExecutor {
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
 
         boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
-        // FR37 if startcommand contains a template url deploy OVA as is
+        // FR37 if startcommand contains enough info: a template url/-location and flag; deploy OVA as is
         if (installAsIs) {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("deploying OVA from %s as is", vmSpec.getTemplateLocation()));
@@ -709,13 +709,11 @@ class StartCommandExecutor {
             }
             tearDownVm(vmMo);
         } else if (installAsIs) {
-            // FR37 create blank or install as is ???? needs to be replaced with the proceudre at
-            // https://code.vmware.com/docs/5540/vsphere-automation-sdks-programming-guide/doc/GUID-82084C78-49FC-4B7F-BD89-F90D5AA22631.html
-            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, vmSpec.getTemplateLocation());
-            DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
+            String storename = vmSpec.getTemplateLocation();
+            DatastoreMO dsMo = dataStoresDetails.get(storename).second();
             // FR37 this happens at the MS so format should not be "[%s] %s" but some local file (on secStor)
-
-            vmMo = vmwareResource.contentLibraryService.deployOvf(context, vmSpec.getTemplateLocation(), vmInternalCSName, hyperHost, dsMo);
+            // FR37 TODO template name on primary data store is not known here!
+            vmMo = vmwareResource.contentLibraryService.deployOvf(context, storename, vmInternalCSName, hyperHost, dsMo);
 
             if(LOGGER.isTraceEnabled()) {
                 vmMo.getVmdkFileBaseNames();
