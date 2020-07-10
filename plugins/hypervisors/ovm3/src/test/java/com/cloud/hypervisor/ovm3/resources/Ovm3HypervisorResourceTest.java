@@ -328,7 +328,7 @@ public class Ovm3HypervisorResourceTest {
         VirtualMachineTO vmspec = createVm(vmName);
         hypervisor = vmActionPreparation();
         StartCommand cmd = new StartCommand(vmspec,
-                getHost(hypervisor.getName()), true);
+                getHost(hypervisor.getName()), true, true);
         Answer ra = hypervisor.executeRequest(cmd);
         results.basicBooleanTest(ra.getResult());
     }
@@ -340,7 +340,7 @@ public class Ovm3HypervisorResourceTest {
         vmspec.setOs("bogus");
         hypervisor = vmActionPreparation();
         StartCommand cmd = new StartCommand(vmspec,
-                getHost(hypervisor.getName()), true);
+                getHost(hypervisor.getName()), true, true);
         Answer ra = hypervisor.executeRequest(cmd);
         results.basicBooleanTest(ra.getResult());
     }

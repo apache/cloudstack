@@ -4689,7 +4689,7 @@ public class LibvirtComputingResourceTest {
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
 
-        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence, true);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
@@ -4743,7 +4743,7 @@ public class LibvirtComputingResourceTest {
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
 
-        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence, true);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
@@ -4788,7 +4788,7 @@ public class LibvirtComputingResourceTest {
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
 
-        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence, true);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
@@ -4839,7 +4839,7 @@ public class LibvirtComputingResourceTest {
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
 
-        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence, true);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
@@ -4890,7 +4890,7 @@ public class LibvirtComputingResourceTest {
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
 
-        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence, true);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
@@ -4964,7 +4964,7 @@ public class LibvirtComputingResourceTest {
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
 
-        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence, true);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
@@ -5044,7 +5044,7 @@ public class LibvirtComputingResourceTest {
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
 
-        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence, true);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
