@@ -961,7 +961,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "test"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_09_list_templates_download_details(self):
         """Test if list templates returns download details"""
 
