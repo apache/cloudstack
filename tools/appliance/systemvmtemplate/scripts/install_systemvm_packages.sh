@@ -71,6 +71,7 @@ function install_packages() {
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
     python-flask \
+    haproxy \
     haveged \
     radvd \
     sharutils genisoimage aria2 \
