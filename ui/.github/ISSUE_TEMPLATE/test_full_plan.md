@@ -19,7 +19,7 @@ Note: for User role test exclude after Account/User feature, for DomainAdmin rol
 - [ ] Context-sensitive help
 
 **Dashboard**
-- [ ] Fetch latest
+- [ ] Fetch latest (only on Admin dashboard)
 - [ ] View hosts in alert state
 - [ ] View alerts
 - [ ] View events
@@ -33,6 +33,7 @@ Note: for User role test exclude after Account/User feature, for DomainAdmin rol
 - [ ] Create new instance
 
 **Compute > Kubernetes**
+This requires configuring and setting up CKS: http://docs.cloudstack.apache.org/en/latest/plugins/cloudstack-kubernetes-service.html
 - [ ] Basic search
 - [ ] Extended search
 - [ ] Sort
@@ -58,7 +59,7 @@ Note: for User role test exclude after Account/User feature, for DomainAdmin rol
 - [ ] Change affinity
 - [ ] Change service offering
 - [ ] Reset Instance Password
-- [ ] Assign Instance to Another Account
+- [ ] Assign Instance to Another Account (VM must be stopped)
 - [ ] Network adapters
 - [ ] 	- Add network to VM
 - [ ] 	- Set default NIC
@@ -171,10 +172,9 @@ Note: for User role test exclude after Account/User feature, for DomainAdmin rol
 - [ ] Restart network
 - [ ] Delete network
 - [ ] Acquire new IP (only for isolated networks)
-- [ ] Replace ACL list(only for isolated networks)
+- [ ] Replace ACL list(only for VPC isolated networks)
 - [ ] Delete public IP address (only for isolated networks)
 - [ ] Add/delete egress rule (only for isolated networks)
-- [ ] Add/delete egress tags (only for isolated networks)
 
 **Network > VPC **
 - [ ] Basic search
