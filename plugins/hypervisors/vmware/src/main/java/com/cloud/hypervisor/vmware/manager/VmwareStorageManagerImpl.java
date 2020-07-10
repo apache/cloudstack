@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -273,7 +274,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
-            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
+            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset())).toString();
             // truncate template name to 32 chars to ensure they work well with vSphere API's.
             templateUuidName = templateUuidName.replace("-", "");
 
@@ -801,7 +802,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties"), "UTF-8"));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties"), Charset.defaultCharset()));
             out.write("filename=" + templateName + ".ova");
             out.newLine();
             out.write("description=");
@@ -841,7 +842,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta"), "UTF-8"));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta"), Charset.defaultCharset()));
             out.write("ova.filename=" + templateName + ".ova");
             out.newLine();
             out.write("version=1.0");
@@ -987,7 +988,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private Pair<String, String> copyVolumeToSecStorage(VmwareHostService hostService, VmwareHypervisorHost hyperHost, CopyVolumeCommand cmd, String vmName, long volumeId,
             String poolId, String volumePath, String secStorageUrl, String workerVmName, Integer nfsVersion) throws Exception {
 
-        String volumeFolder = String.valueOf(volumeId) + "/";
+        String volumeFolder = volumeId + "/";
         VirtualMachineMO workerVm = null;
         VirtualMachineMO vmMo = null;
         String exportName = UUID.randomUUID().toString();
@@ -1052,7 +1053,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, long volumeId, DatastoreMO dsMo, String secStorageUrl, String exportName,
             Integer nfsVersion) throws Exception {
 
-        String volumeFolder = String.valueOf(volumeId) + "/";
+        String volumeFolder = volumeId + "/";
         String newVolume = UUID.randomUUID().toString().replace("-", "");
         restoreVolumeFromSecStorage(hyperHost, dsMo, newVolume, secStorageUrl, "volumes/" + volumeFolder, exportName, nfsVersion);
 
@@ -1066,7 +1067,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         Properties props = null;
         String ovaFileName = "";
         s_logger.info("Creating OVA using MetaFile: " + metafileName);
-        try (FileInputStream strm = new FileInputStream(ova_metafile);) {
+        try (FileInputStream strm = new FileInputStream(ova_metafile)) {
 
             s_logger.info("loading properties from ova meta file: " + metafileName);
             props = new Properties();
@@ -1192,7 +1193,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             List<ManagedObjectReference> tasks = context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
 
             for (ManagedObjectReference taskMor : tasks) {
-                TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
+                TaskInfo info = context.getVimClient().getDynamicProperty(taskMor, "info");
 
                 if (info.getEntityName().equals(cmd.getVmName()) && StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
                     if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
@@ -1407,7 +1408,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             List<ManagedObjectReference> tasks = context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
 
             for (ManagedObjectReference taskMor : tasks) {
-                TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
+                TaskInfo info = context.getVimClient().getDynamicProperty(taskMor, "info");
 
                 if (info.getEntityName().equals(cmd.getVmName()) && StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")) {
                     s_logger.debug("There is already a VM snapshot task running, wait for it");
