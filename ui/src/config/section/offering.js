@@ -28,8 +28,8 @@ export default {
       icon: 'cloud',
       permission: ['listServiceOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
-      columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone', 'created'],
+      columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
+      details: ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -74,8 +74,8 @@ export default {
       docHelp: 'adminguide/service_offerings.html#system-service-offerings',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
-      columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'tags', 'order'],
-      details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'tags', 'domain', 'zone', 'created'],
+      columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
+      details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created'],
       actions: [{
         api: 'createServiceOffering',
         icon: 'plus',
@@ -110,7 +110,7 @@ export default {
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       permission: ['listDiskOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
-      columns: ['name', 'displaytext', 'disksize', 'tags', 'domain', 'zone', 'order'],
+      columns: ['name', 'displaytext', 'disksize', 'domain', 'zone', 'order'],
       details: ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'tags', 'domain', 'zone', 'created'],
       related: [{
         name: 'volume',
@@ -181,8 +181,8 @@ export default {
       docHelp: 'adminguide/networking.html#network-offerings',
       permission: ['listNetworkOfferings', 'listInfrastructure'],
       params: { isrecursive: 'true' },
-      columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'tags', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'tags', 'service', 'domain', 'zone'],
+      columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
+      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
       actions: [{
         api: 'createNetworkOffering',
         icon: 'plus',
