@@ -5775,10 +5775,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     }
 
-    private boolean isVMUsingLocalStorage(VMInstanceVO vm) {
+    public boolean isVMUsingLocalStorage(long vmId) {
         boolean usesLocalStorage = false;
 
-        List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
         for (VolumeVO vol : volumes) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
             if (diskOffering.isUseLocalStorage()) {
@@ -5838,7 +5838,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
-        if (isVMUsingLocalStorage(vm)) {
+        if (isVMUsingLocalStorage(vm.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
             }
@@ -6262,6 +6262,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
         Map<Long, Long> volToPoolObjectMap = new HashMap<Long, Long>();
+
         if (!isVMUsingLocalStorage(vm) && MapUtils.isEmpty(volumeToPool)
             && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isVmVolumesOnZoneWideStore(vm))){
             // If volumes do not have to be migrated
