@@ -56,13 +56,13 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
     private static final String SSL_CERTS_DIR = "/etc/ssl/cloudstack/";
 
-    private static String sslConfigurationOld = "no-sslv3 no-tls-tickets ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256" +
+    private static String sslConfigurationOld = " no-sslv3 no-tls-tickets ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256" +
             ":ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256" +
             ":DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA" +
             ":ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256" +
             ":AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA";
 
-    private static String sslConfigurationIntermediate = "no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets ciphers ECDHE-ECDSA-AES128-GCM-SHA256" +
+    private static String sslConfigurationIntermediate = " no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets ciphers ECDHE-ECDSA-AES128-GCM-SHA256" +
             ":ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305" +
             ":DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
 
@@ -483,6 +483,16 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         return sb.toString();
     }
 
+    private String getCustomizedSslConfigs(HashMap<String, String> lbConfigsMap){
+        String lbSslConfiguration = lbConfigsMap.get(LoadBalancerConfigKey.LbSslConfiguration.key());
+        if ("old".equalsIgnoreCase(lbSslConfiguration)) {
+            return sslConfigurationOld;
+        } else if ("intermediate".equalsIgnoreCase(lbSslConfiguration)) {
+            return sslConfigurationIntermediate;
+        }
+        return "";
+    }
+
     private List<String> getRulesForPool(final LoadBalancerTO lbTO, boolean keepAliveEnabled, final String networkCidr, HashMap<String, String> networkLbConfigsMap) {
         StringBuilder sb = new StringBuilder();
         final String poolName = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
@@ -523,13 +533,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 sb.append(" alpn h2,http/1.1");
             }
 
-            // Sina
-            String lbSslConfiguration = lbConfigsMap.get(LoadBalancerConfigKey.LbSslConfiguration.key());
-            if ("old".equalsIgnoreCase(lbSslConfiguration)) {
-                sb.append(" ").append(sslConfigurationOld);
-            } else if ("intermediate".equalsIgnoreCase(lbSslConfiguration)) {
-                sb.append(" ").append(sslConfigurationIntermediate);
-            }
+            sb.append(getCustomizedSslConfigs(lbConfigsMap));
+
             sb.append("\n\thttp-request add-header X-Forwarded-Proto https");
         }
         frontendConfigs.add(sb.toString());
@@ -598,6 +603,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             } else {
                 sb.append(" check");
             }
+
+            sb.append(getCustomizedSslConfigs(lbConfigsMap));
+
 
             if (lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()) != null) {
                 long maxConnEach = Long.parseLong(lbConfigsMap.get(LoadBalancerConfigKey.LbServerMaxConn.key()));
