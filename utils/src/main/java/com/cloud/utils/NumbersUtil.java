@@ -43,6 +43,8 @@ public class NumbersUtil {
         return NumberUtils.toFloat(s, defaultValue);
     }
 
+    public static Boolean enableHumanReadableSizes = true;
+
     /**
      * Converts bytes to long on input.
      */
@@ -91,6 +93,17 @@ public class NumbersUtil {
         }
         format.close();
         return builder.toString();
+    }
+
+    public static String toHumanReadableSize(long size) {
+        if (enableHumanReadableSizes){
+            return ((Long)size).toString() + " (" + toReadableSize(size) + ")";
+        }
+        return ((Long)size).toString();
+    }
+
+    public static String toHumanReadableSize(int size) {
+        return toHumanReadableSize(new Long(size));
     }
 
     /**

@@ -341,6 +341,8 @@ import com.vmware.vim25.VmfsDatastoreInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
     public static final String VMDK_EXTENSION = ".vmdk";
@@ -2624,7 +2626,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      */
     protected void modifyVmVideoCardVRamSize(VirtualMachineVideoCard videoCard, VirtualMachineMO vmMo, long svgaVmramSize, VirtualMachineConfigSpec vmConfigSpec) {
         if (videoCard.getVideoRamSizeInKB().longValue() != svgaVmramSize) {
-            s_logger.info("Video card memory was set " + videoCard.getVideoRamSizeInKB().longValue() + "kb instead of " + svgaVmramSize + "kb");
+           s_logger.info("Video card memory was set " + toHumanReadableSize(videoCard.getVideoRamSizeInKB().longValue()) + " instead of " + toHumanReadableSize(svgaVmramSize)); //untested
             configureSpecVideoCardNewVRamSize(videoCard, svgaVmramSize, vmConfigSpec);
         }
     }
@@ -5309,7 +5311,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Datastore summary info, storageId: " + cmd.getStorageId() + ", localPath: " + cmd.getLocalPath() + ", poolType: " + cmd.getPooltype()
-                            + ", capacity: " + capacity + ", free: " + free + ", used: " + used);
+                            + ", capacity: " + toHumanReadableSize(capacity) + ", free: " + toHumanReadableSize(free) + ", used: " + toHumanReadableSize(used));
                 }
 
                 if (summary.getCapacity() <= 0) {

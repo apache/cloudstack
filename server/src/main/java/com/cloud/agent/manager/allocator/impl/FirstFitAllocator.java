@@ -64,6 +64,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
@@ -299,7 +301,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize());
+            s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + toHumanReadableSize(offering.getRamSize())); //untested
         }
 
         long serviceOfferingId = offering.getId();

@@ -3163,7 +3163,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         if (defaultMaxAccountSecondaryStorageInGB != Resource.RESOURCE_UNLIMITED && (accountDirSizeInGB + contentLengthInGB) > defaultMaxAccountSecondaryStorageInGB) {
             s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxAccountSecondaryStorageInGB: " + defaultMaxAccountSecondaryStorageInGB + " contentLengthInGB:"
-                    + contentLengthInGB);
+                    + contentLengthInGB); // extra attention
             String errorMessage = "Maximum number of resources of type secondary_storage for account has exceeded";
             updateStateMapWithError(cmd.getEntityUUID(), errorMessage);
             throw new InvalidParameterValueException(errorMessage);

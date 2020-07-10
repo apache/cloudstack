@@ -37,6 +37,8 @@ import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.db.SearchCriteria;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class NetworkUsageParser {
     public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.getName());
@@ -101,8 +103,8 @@ public class NetworkUsageParser {
 
             if ((totalBytesSent > 0L) || (totalBytesReceived > 0L)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating usage record, total bytes sent:" + totalBytesSent + ", total bytes received: " + totalBytesReceived + " for account: " +
-                        account.getId() + " in availability zone " + networkInfo.getZoneId() + ", start: " + startDate + ", end: " + endDate);
+                    s_logger.debug("Creating usage record, total bytes sent:" + toHumanReadableSize(totalBytesSent) + ", total bytes received: " + toHumanReadableSize(totalBytesReceived) + " for account: " +
+                        account.getId() + " in availability zone " + networkInfo.getZoneId() + ", start: " + startDate + ", end: " + endDate); //untested
                 }
 
                 Long hostId = null;

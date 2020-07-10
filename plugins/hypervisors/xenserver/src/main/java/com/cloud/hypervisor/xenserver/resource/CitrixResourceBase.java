@@ -164,6 +164,8 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.XenAPIObject;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process to
  * perform the required functionalities for CloudStack.
@@ -3329,13 +3331,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                 VDI memoryVDI = vmsnap.getSuspendVDI(conn);
                                 if (!isRefNull(memoryVDI)) {
                                     size = size + memoryVDI.getPhysicalUtilisation(conn);
-                                    s_logger.debug("memoryVDI size :" + size);
+                                    s_logger.debug("memoryVDI size :" + toHumanReadableSize(size)); //untested
                                     String parentUuid = memoryVDI.getSmConfig(conn).get("vhd-parent");
                                     VDI pMemoryVDI = VDI.getByUuid(conn, parentUuid);
                                     if (!isRefNull(pMemoryVDI)) {
                                         size = size + pMemoryVDI.getPhysicalUtilisation(conn);
                                     }
-                                    s_logger.debug("memoryVDI size+parent :" + size);
+                                    s_logger.debug("memoryVDI size+parent :" + toHumanReadableSize(size)); //untested
                                 }
                             }
                         } catch (Exception e) {
@@ -4215,7 +4217,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             final long vdiVirtualSize = vdi.getVirtualSize(conn);
 
             if (vdiVirtualSize != volumeSize) {
-                s_logger.info("Resizing the data disk (VDI) from vdiVirtualSize: " + vdiVirtualSize + " to volumeSize: " + volumeSize);
+                s_logger.info("Resizing the data disk (VDI) from vdiVirtualSize: " + toHumanReadableSize(vdiVirtualSize) + " to volumeSize: " + toHumanReadableSize(volumeSize)); //untested
 
                 try {
                     vdi.resize(conn, volumeSize);

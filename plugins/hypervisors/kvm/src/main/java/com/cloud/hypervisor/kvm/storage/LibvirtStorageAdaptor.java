@@ -65,6 +65,8 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class LibvirtStorageAdaptor implements StorageAdaptor {
     private static final Logger s_logger = Logger.getLogger(LibvirtStorageAdaptor.class);
     private StorageLayer _storageLayer;
@@ -493,9 +495,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             pool.setAvailable(storage.getInfo().available);
 
             s_logger.debug("Succesfully refreshed pool " + uuid +
-                           " Capacity: " + storage.getInfo().capacity +
+                           " Capacity: " + toHumanReadableSize(storage.getInfo().capacity) +
                            " Used: " + storage.getInfo().allocation +
-                           " Available: " + storage.getInfo().available);
+                           " Available: " + toHumanReadableSize(storage.getInfo().available));
 
             return pool;
         } catch (LibvirtException e) {
@@ -1145,7 +1147,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             RbdImage diskImage = rbd.open(disk.getName());
                             diskImage.resize(disk.getVirtualSize());
                             rbd.close(diskImage);
-                            s_logger.debug("Resized " + disk.getName() + " to " + disk.getVirtualSize());
+                            s_logger.debug("Resized " + disk.getName() + " to " + toHumanReadableSize(disk.getVirtualSize())); //untested
                         }
 
                     }
@@ -1251,7 +1253,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;
-        s_logger.debug("copyPhysicalDisk: disk size:" + disk.getSize() + ", virtualsize:" + disk.getVirtualSize()+" format:"+disk.getFormat());
+        s_logger.debug("copyPhysicalDisk: disk size:" + toHumanReadableSize(disk.getSize()) + ", virtualsize:" + toHumanReadableSize(disk.getVirtualSize())+" format:"+disk.getFormat()); //untested
         if (destPool.getType() != StoragePoolType.RBD) {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize());
@@ -1345,7 +1347,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 RbdImageInfo rbdInfo = image.stat();
                 newDisk.setSize(rbdInfo.size);
                 newDisk.setVirtualSize(rbdInfo.size);
-                s_logger.debug("After copy the resulting RBD image " + rbdDestPath + " is " + rbdInfo.size + " bytes long");
+                s_logger.debug("After copy the resulting RBD image " + rbdDestPath + " is " + toHumanReadableSize(rbdInfo.size) + " bytes long"); //untested
                 rbd.close(image);
 
                 r.ioCtxDestroy(io);
