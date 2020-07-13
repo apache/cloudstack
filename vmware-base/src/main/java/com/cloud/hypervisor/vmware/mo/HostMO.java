@@ -16,15 +16,10 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.storage.Storage;
+import com.cloud.utils.Pair;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
@@ -63,9 +58,14 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.utils.Pair;
+import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 public class HostMO extends BaseMO implements VmwareHypervisorHost {
     private static final Logger s_logger = Logger.getLogger(HostMO.class);
@@ -870,12 +870,15 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             } else {
                 morDatastore = _context.getDatastoreMorByPath(poolPath);
                 if (morDatastore == null) {
-                    String msg = "Unable to create VMFS datastore. host: " + poolHostAddress + ", port: " + poolHostPort + ", path: " + poolPath + ", uuid: " + poolUuid;
-                    s_logger.error(msg);
+                    morDatastore = findDatastore(_context.getDatastoreNameFromPath(poolPath));
+                    if (morDatastore == null) {
+                        String msg = "Unable to create VMFS datastore. host: " + poolHostAddress + ", port: " + poolHostPort + ", path: " + poolPath + ", uuid: " + poolUuid;
+                        s_logger.error(msg);
 
-                    if (s_logger.isTraceEnabled())
-                        s_logger.trace("vCenter API trace - mountDatastore() done(failed)");
-                    throw new Exception(msg);
+                        if (s_logger.isTraceEnabled())
+                            s_logger.trace("vCenter API trace - mountDatastore() done(failed)");
+                        throw new Exception(msg);
+                    }
                 }
 
                 dsMo = new DatastoreMO(_context, morDatastore);
@@ -884,7 +887,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
 
         if (dsMo != null) {
-            HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this);
+            HypervisorHostHelper.createBaseFolder(dsMo, this, "StoragePod".equals(morDatastore.getType()) ? Storage.StoragePoolType.DatastoreCluster: null);
         }
 
         if (s_logger.isTraceEnabled())
