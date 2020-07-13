@@ -31,9 +31,6 @@ import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateDetailVO;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
-import com.cloud.storage.TemplateOVFPropertyVO;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
@@ -110,8 +107,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     AccountDao _accountDao;
     @Inject
     ResourceLimitService _resourceLimitMgr;
-    @Inject
-    TemplateOVFPropertiesDao templateOvfPropertiesDao;
 
     protected String _proxy = null;
 
@@ -195,36 +190,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 LOGGER.trace(String.format("saving property %s for template %d as detail", property.getKey(), templateId));
             }
             persistOvfPropertyAsSetOfTemplateDetails(templateId, property);
-        }
-        persistOvfPropertiesInDedicatedTable(ovfProperties, templateId);
-    }
-
-    @Deprecated(since = "now", forRemoval = true)
-    private void persistOvfPropertiesInDedicatedTable(List<OVFPropertyTO> ovfProperties, long templateId) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("saving properties for template %d in dedicated table", templateId));
-        }
-        List<TemplateOVFPropertyVO> listToPersist = new ArrayList<>();
-        for (OVFPropertyTO property : ovfProperties) {
-            if (!templateOvfPropertiesDao.existsOption(templateId, property.getKey())) {
-                TemplateOVFPropertyVO option = new TemplateOVFPropertyVO(templateId, property.getKey(), property.getType(),
-                        property.getValue(), property.getQualifiers(), property.isUserConfigurable(),
-                        property.getLabel(), property.getDescription(), property.isPassword());
-                if (property.isPassword()) {
-                    String encryptedPassword = DBEncryptionUtil.encrypt(property.getValue());
-                    option.setValue(encryptedPassword);
-                }
-                listToPersist.add(option);
-            }
-        }
-        storeToDedicatedTable(templateId, listToPersist);
-    }
-
-    @Deprecated(since = "now", forRemoval = true)
-    private void storeToDedicatedTable(long templateId, List<TemplateOVFPropertyVO> listToPersist) {
-        if (CollectionUtils.isNotEmpty(listToPersist)) {
-            LOGGER.debug("Persisting " + listToPersist.size() + " OVF properties for template " + templateId);
-            templateOvfPropertiesDao.saveOptions(listToPersist);
         }
     }
 

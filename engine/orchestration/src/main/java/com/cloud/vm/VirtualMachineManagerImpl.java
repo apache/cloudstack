@@ -1138,6 +1138,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         // FR37 TODO do not create a copy volume task for deploy as is on vmware ?
                         if (vmProfile.getTemplate().isDeployAsIs()) {
+                            volumeMgr.prepare(vmProfile, dest);
                             s_logger.info("skipping prepare volume for a vApp (deploy as is) template");
                         } else {
                             volumeMgr.prepare(vmProfile, dest);

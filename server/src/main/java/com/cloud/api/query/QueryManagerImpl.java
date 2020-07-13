@@ -217,7 +217,6 @@ import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -400,9 +399,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     ManagementServerHostDao managementServerHostDao;
-
-    @Inject
-    TemplateOVFPropertiesDao templateOVFPropertiesDao;
 
     @Inject VMTemplateDetailsDao vmTemplateDetailsDao;
 

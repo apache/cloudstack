@@ -81,7 +81,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
-
+        // FR37 I should get here!
         if (srcData.getObjectType() == DataObjectType.TEMPLATE &&
             (srcData.getDataStore().getRole() == DataStoreRole.Image || srcData.getDataStore().getRole() == DataStoreRole.ImageCache) &&
             destData.getDataStore().getRole() == DataStoreRole.Primary) {
@@ -89,7 +89,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return processor.copyTemplateToPrimaryStorage(cmd);
         } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary &&
             destDataStore.getRole() == DataStoreRole.Primary) {
-            //clone template to a volume
+            // FR37 pretend to clone template to a volume but actually create a cloned vm
             return processor.cloneVolumeFromBaseTemplate(cmd);
         } else if (srcData.getObjectType() == DataObjectType.VOLUME &&
             (srcData.getDataStore().getRole() == DataStoreRole.ImageCache || srcDataStore.getRole() == DataStoreRole.Image)) {
