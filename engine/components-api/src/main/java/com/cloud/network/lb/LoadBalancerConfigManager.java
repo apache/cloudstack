@@ -19,8 +19,17 @@ package com.cloud.network.lb;
 import java.util.List;
 
 import com.cloud.network.rules.LoadBalancerConfig;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
-public interface LoadBalancerConfigManager {
+public interface LoadBalancerConfigManager extends Configurable {
+
+    static final String DefaultLbSSLConfigurationCK = "default.lb.ssl.configuration";
+
+    static final ConfigKey<String> DefaultLbSSLConfiguration = new ConfigKey<>("Advanced", String.class,
+            DefaultLbSSLConfigurationCK, "none",
+            "Default value of load balancer ssl configuration, could be 'none', 'old' or 'intermediate'",
+            true, ConfigKey.Scope.Global);
 
     List<? extends LoadBalancerConfig> getNetworkLbConfigs(Long networkId);
 

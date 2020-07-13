@@ -20,13 +20,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.LoadBalancerConfig.Scope;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 
-public enum LoadBalancerConfigKey implements Configurable {
+public enum LoadBalancerConfigKey {
 
     LbStatsEnable(Category.Stats, "lb.stats.enable", "LB stats enable", Boolean.class, "true", "Enable statistics reporting with default settings, default is 'true'", Scope.Network, Scope.Vpc),
 
@@ -66,22 +63,7 @@ public enum LoadBalancerConfigKey implements Configurable {
 
     LbServerMaxQueue(Category.LoadBalancer, "lb.server.maxqueue", "Max conn wait in queue per server", Long.class, "<0 means unlimited in haproxy>", "Maximum number of connections which will wait in queue for this server, default is ''", Scope.LoadBalancerRule),
 
-    LbSslConfiguration(Category.LoadBalancer, "lb.ssl.configuration", "SSL configuration, could be 'none', 'old' or 'intermediate'", String.class, "none" , "if 'none', no SSL configurations will be added, if 'old', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=old&openssl-version=1.0.2l if 'intermediate', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=intermediate&openssl-version=1.0.2l default value is 'none'", Scope.LoadBalancerRule);
-
-    private static final String DefaultValueOfSSLCustomizationCK = "default.value.of.ssl.customization";
-
-    private static final ConfigKey<String> DefaultValueOfSALCustomization = new ConfigKey<>("Advanced", String.class, DefaultValueOfSSLCustomizationCK, "none",
-            "Control default value of load balancer ssl customization", true, ConfigKey.Scope.Global);
-
-    @Override
-    public String getConfigComponentName() {
-        return LoadBalancerConfigKey.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[]{DefaultValueOfSALCustomization};
-    }
+    LbSslConfiguration(Category.LoadBalancer, "lb.ssl.configuration", "SSL configuration, could be 'none', 'old' or 'intermediate'", String.class, "Inherited from global setting" , "if 'none', no SSL configurations will be added, if 'old', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=old&openssl-version=1.0.2l if 'intermediate', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=intermediate&openssl-version=1.0.2l default value is 'none'", Scope.LoadBalancerRule);
 
     public static enum Category {
         General, Advanced, Stats, LoadBalancer
@@ -122,8 +104,6 @@ public enum LoadBalancerConfigKey implements Configurable {
     }
 
     public String defaultValue() {
-        if(key().equals("lb.ssl.configuration"))
-            return DefaultValueOfSALCustomization.value();
         return _defaultValue;
     }
 
@@ -220,8 +200,8 @@ public enum LoadBalancerConfigKey implements Configurable {
             }
         }
 
-        if(key.equals("lb.ssl.configuration")){
-            if ( !("none".equalsIgnoreCase(value) || "old".equalsIgnoreCase(value) || "intermediate".equalsIgnoreCase(value)) ){
+        if (LbSslConfiguration.key().equals(key)) {
+            if (! "none".equalsIgnoreCase(value) && ! "old".equalsIgnoreCase(value) && ! "intermediate".equalsIgnoreCase(value)) {
                 return new Pair<>(null, "Please enter either 'none', 'old' or 'intermediate' for parameter " + key);
             }
         }

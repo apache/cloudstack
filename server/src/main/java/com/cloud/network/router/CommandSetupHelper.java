@@ -374,6 +374,7 @@ public class CommandSetupHelper {
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
         cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
         cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbSslConfiguration = _configDao.getValue("default.lb.ssl.configuration");
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));

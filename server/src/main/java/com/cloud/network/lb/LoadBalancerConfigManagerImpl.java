@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerConfi
 import org.apache.cloudstack.api.command.user.loadbalancer.ReplaceLoadBalancerConfigsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerConfigCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
 import org.apache.log4j.Logger;
 
@@ -384,4 +385,15 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             throw new CloudRuntimeException("Failed to apply LB configs in virtual router on network: " + networkId);
         }
     }
+
+    @Override
+    public String getConfigComponentName() {
+        return LoadBalancerConfigManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{ DefaultLbSSLConfiguration };
+    }
+
 }

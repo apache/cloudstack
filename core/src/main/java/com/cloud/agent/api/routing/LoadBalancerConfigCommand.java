@@ -43,6 +43,7 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     public String lbStatsUri = "/admin?stats";
     public String maxconn = "";
     public String lbProtocol;
+    public String lbSslConfiguration = "";
     public boolean keepAliveEnabled = false;
     NicTO nic;
     Long vpcId;
