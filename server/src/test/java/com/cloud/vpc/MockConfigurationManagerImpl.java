@@ -515,6 +515,14 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationManager#updateVlanAndPublicIpRange(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+     */
+    @Override
+    public Vlan updateVlanAndPublicIpRange(long id, String startIp, String endIp, String gateway, String netmask) throws ConcurrentOperationException {
+        return null;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationManager#createDefaultSystemNetworks(long)
      */
     @Override
