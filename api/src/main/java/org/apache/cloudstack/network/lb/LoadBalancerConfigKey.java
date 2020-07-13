@@ -20,10 +20,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.LoadBalancerConfig.Scope;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
-public enum LoadBalancerConfigKey {
+public enum LoadBalancerConfigKey implements Configurable {
 
     LbStatsEnable(Category.Stats, "lb.stats.enable", "LB stats enable", Boolean.class, "true", "Enable statistics reporting with default settings, default is 'true'", Scope.Network, Scope.Vpc),
 
@@ -63,7 +66,22 @@ public enum LoadBalancerConfigKey {
 
     LbServerMaxQueue(Category.LoadBalancer, "lb.server.maxqueue", "Max conn wait in queue per server", Long.class, "<0 means unlimited in haproxy>", "Maximum number of connections which will wait in queue for this server, default is ''", Scope.LoadBalancerRule),
 
-    LbSslConfiguration(Category.LoadBalancer, "lb.ssl.configuration", "SSL configuration, could be 'none', 'old' or 'intermediate'", String.class, "none", "if 'none', no SSL configurations will be added, if 'old', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=old&openssl-version=1.0.2l if 'intermediate', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=intermediate&openssl-version=1.0.2l default value is 'none'", Scope.LoadBalancerRule);
+    LbSslConfiguration(Category.LoadBalancer, "lb.ssl.configuration", "SSL configuration, could be 'none', 'old' or 'intermediate'", String.class, "none" , "if 'none', no SSL configurations will be added, if 'old', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=old&openssl-version=1.0.2l if 'intermediate', refer to https://ssl-config.mozilla.org/#server=haproxy&server-version=1.8.17&config=intermediate&openssl-version=1.0.2l default value is 'none'", Scope.LoadBalancerRule);
+
+    private static final String DefaultValueOfSSLCustomizationCK = "default.value.of.ssl.customization";
+
+    private static final ConfigKey<String> DefaultValueOfSALCustomization = new ConfigKey<>("Advanced", String.class, DefaultValueOfSSLCustomizationCK, "none",
+            "Control default value of load balancer ssl customization", true, ConfigKey.Scope.Global);
+
+    @Override
+    public String getConfigComponentName() {
+        return LoadBalancerConfigKey.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{DefaultValueOfSALCustomization};
+    }
 
     public static enum Category {
         General, Advanced, Stats, LoadBalancer
@@ -104,6 +122,8 @@ public enum LoadBalancerConfigKey {
     }
 
     public String defaultValue() {
+        if(key().equals("lb.ssl.configuration"))
+            return DefaultValueOfSALCustomization.value();
         return _defaultValue;
     }
 
