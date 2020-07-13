@@ -323,10 +323,10 @@ public class IPRangeConfig {
             conn = txn.getConnection();
         }
         catch (SQLException e) {
-            System.out.println("deletePublicIPRange. Exception: " +e.getMessage());
+            System.out.println("deletePublicIPRange. Exception: " + e.getMessage());
             return null;
         }
-        try(PreparedStatement stmt = conn.prepareStatement(deleteSql);
+        try (PreparedStatement stmt = conn.prepareStatement(deleteSql);
             PreparedStatement isAllocatedStmt = conn.prepareStatement(isPublicIPAllocatedSelectSql);) {
             while (startIP <= endIP) {
                 if (!isPublicIPAllocated(NetUtils.long2Ip(startIP), vlanDbId, isAllocatedStmt)) {
@@ -334,14 +334,14 @@ public class IPRangeConfig {
                         stmt.setString(1, NetUtils.long2Ip(startIP));
                         stmt.setLong(2, vlanDbId);
                         stmt.executeUpdate();
-                    }
+                }
                 else {
                     problemIPs.add(NetUtils.long2Ip(startIP));
                 }
                 startIP += 1;
             }
-        }catch (Exception ex) {
-           System.out.println("deletePublicIPRange. Exception: " +ex.getMessage());
+        } catch (Exception ex) {
+           System.out.println("deletePublicIPRange. Exception: " + ex.getMessage());
            return null;
         }
 
@@ -372,7 +372,7 @@ public class IPRangeConfig {
                 System.out.println("deletePrivateIPRange. Exception: " + e.getMessage());
                 printError("deletePrivateIPRange. Exception: " + e.getMessage());
             }
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             System.out.println("deletePrivateIPRange. Exception: " + e.getMessage());
             printError("deletePrivateIPRange. Exception: " + e.getMessage());
         }
@@ -380,21 +380,22 @@ public class IPRangeConfig {
     }
 
     private boolean isPublicIPAllocated(String ip, long vlanDbId, PreparedStatement stmt) {
-       try{
+       try {
            stmt.clearParameters();
            stmt.setString(1, ip);
            stmt.setLong(2, vlanDbId);
-           try(ResultSet rs = stmt.executeQuery();) {
+           try (ResultSet rs = stmt.executeQuery()) {
            if (rs.next()) {
                return (rs.getString("allocated") != null);
            } else {
                return false;
            }
-       }
+           }
        catch (SQLException ex) {
            System.out.println(ex.getMessage());
            return true;
-       }}catch (SQLException ex) {
+       }
+       } catch (SQLException ex) {
            System.out.println(ex.getMessage());
            return true;
        }

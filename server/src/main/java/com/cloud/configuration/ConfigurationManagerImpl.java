@@ -40,8 +40,7 @@ import java.util.Vector;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import com.cloud.network.IpAddress;
-import com.google.common.collect.Sets;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -165,6 +164,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -1774,7 +1774,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
     }
-
 
     private void checkIpRange(final String startIp, final String endIp, final String cidrAddress, final long cidrSize) {
         //Checking not null for start IP as well. Previously we assumed to be not null always.
@@ -4082,7 +4081,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
-            ResourceUnavailableException,ResourceAllocationException{
+            ResourceUnavailableException,ResourceAllocationException {
 
         return  updateVlanAndPublicIpRange(cmd.getId(), cmd.getStartIp(),cmd.getEndIp(),
                 cmd.getGateway(),cmd.getNetmask());
@@ -4094,7 +4093,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public Vlan updateVlanAndPublicIpRange(final long id, String startIp,
                                            String endIp,
                                            String gateway,
-                                           String netmask) throws ConcurrentOperationException{
+                                           String netmask) throws ConcurrentOperationException {
 
         VlanVO vlanRange = _vlanDao.findById(id);
         if (vlanRange == null) {
@@ -4110,15 +4109,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final String[] existingVlanIPRangeArray = vlanRange.getIpRange().split("-");
-        final String currentStartIP= existingVlanIPRangeArray[0];
+        final String currentStartIP = existingVlanIPRangeArray[0];
         final String currentEndIP = existingVlanIPRangeArray [1];
 
-        if(startIp == null){
-            startIp= currentStartIP;
+        if(startIp == null) {
+            startIp = currentStartIP;
         }
 
-        if(endIp == null){
-            endIp= currentEndIP;
+        if(endIp == null) {
+            endIp = currentEndIP;
         }
 
         final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(id);
@@ -4136,8 +4135,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         VlanVO range;
         try {
-            final String newStartIP= startIp;
-            final String newEndIP= endIp;
+            final String newStartIP = startIp;
+            final String newEndIP = endIp;
 
             range = _vlanDao.acquireInLockTable(id, 30);
             if (range == null) {
@@ -4153,19 +4152,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } catch (final Exception e) {
             s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to edit VlanRange. Please contact Cloud Support.");
-        }finally {
+        } finally {
             _vlanDao.releaseFromLockTable(id);
         }
 
         return vlanRange;
     }
     private VlanVO commitUpdateVlanAndIpRange(final Long id, final String newStartIP, final String newEndIP,final String currentStartIP, final String currentEndIP, final boolean ipv4) {
+
         return Transaction.execute(new TransactionCallback<VlanVO>() {
             @Override
             public VlanVO doInTransaction(final TransactionStatus status) {
                 VlanVO vlanRange = _vlanDao.findById(id);
                 s_logger.debug("Updating vlan range " + vlanRange.getId());
-                vlanRange.setIpRange(vlanRange.getIpRange().replace(currentStartIP+"-", newStartIP+"-").replace(currentEndIP,
+                vlanRange.setIpRange(vlanRange.getIpRange().replace(currentStartIP + "-" , newStartIP + "-" ).replace(currentEndIP,
                         newEndIP));
                 _vlanDao.update(vlanRange.getId(), vlanRange);
 
@@ -4180,46 +4180,47 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         });
 
     }
+
     private boolean checkIfVlanRangeIsForSystemVM(final long vlanId) {
         List<IPAddressVO> existingPublicIPs = _publicIpAddressDao.listByVlanId(vlanId);
         boolean initialIsSystemVmValue = existingPublicIPs.get(0).isForSystemVms();
-        for(IPAddressVO existingIPs : existingPublicIPs){
-            if(initialIsSystemVmValue != existingIPs.isForSystemVms()){
+        for (IPAddressVO existingIPs : existingPublicIPs) {
+            if (initialIsSystemVmValue != existingIPs.isForSystemVms()) {
                 throw new CloudRuntimeException("Your \"For System VM\" value seems to be inconsistent with the rest of the recods. Please contact Cloud Support");
             }
         }
         return initialIsSystemVmValue;
     }
 
-    private void checkAllocatedIpsAreWithinVlanRange(List<IPAddressVO> ips, String startIp, String endIp){
-        // Check if the VLAN has any allocated public IPs
+    private void checkAllocatedIpsAreWithinVlanRange(List<IPAddressVO> ips, String startIp, String endIp) {
+
         List<IPAddressVO> listAllocatedIPs = new ArrayList<>();
         for (final IPAddressVO ip : ips) {
-            if (ip.getState()== IpAddress.State.Allocated){
+            if (ip.getState() == IpAddress.State.Allocated) {
                 listAllocatedIPs.add(ip);
             }
         }
         Collections.sort(listAllocatedIPs, Comparator.comparing(IPAddressVO::getAddress));
-        for (IPAddressVO allocatedIP : listAllocatedIPs){
+        for (IPAddressVO allocatedIP : listAllocatedIPs) {
             if (!Strings.isNullOrEmpty(startIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(allocatedIP.getAddress().addr())) {
-                throw new InvalidParameterValueException("The start IP address must have a lower IP address value " +
-                        "than "+ allocatedIP.getAddress() + " which is already in use. The end IP must have a " +
-                        "higher IP address than "+ listAllocatedIPs.get(listAllocatedIPs.size() - 1).getAddress()+" .IPs " +
-                        "already allocated in this range: "+listAllocatedIPs.size());
+                throw new InvalidParameterValueException("The start IP address must have a lower IP address value "
+                        + "than " + allocatedIP.getAddress() + " which is already in use. The end IP must have a "
+                        + "higher IP address than " + listAllocatedIPs.get(listAllocatedIPs.size() - 1).getAddress() + " .IPs "
+                        + "already allocated in this range: " + listAllocatedIPs.size());
             }
             if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(endIp) < NetUtils.ip2Long(allocatedIP.getAddress().addr())) {
-                throw new InvalidParameterValueException("The start IP address must have a lower IP address value " +
-                        "than "+ listAllocatedIPs.get(0).getAddress() + " which is already in use. The end IP must have a " +
-                        "higher IP address than "+  allocatedIP.getAddress()+" .IPs " +
-                        "already allocated in this range: "+listAllocatedIPs.size());
+                throw new InvalidParameterValueException("The start IP address must have a lower IP address value "
+                        + "than " + listAllocatedIPs.get(0).getAddress() + " which is already in use. The end IP must have a "
+                        + "higher IP address than " +  allocatedIP.getAddress() + " .IPs "
+                        + "already allocated in this range: " + listAllocatedIPs.size());
             }
         }
     }
 
-    private void checkGatewayOverlap(String startIp, String endIp, String gateway){
+    private void checkGatewayOverlap(String startIp, String endIp, String gateway) {
         if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
-            throw new InvalidParameterValueException("The gateway shouldn't overlap the new start/end ip " +
-                    "addresses");
+            throw new InvalidParameterValueException("The gateway shouldn't overlap the new start/end ip "
+                    + "addresses");
         }
     }
 
@@ -4276,7 +4277,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + " as ip " + ip
                                 + " belonging to the range has firewall rules applied. Cleanup the rules first");
                     }
-                    if (ip.getAllocatedTime() != null) {// This means IP is allocated
+                    if (ip.getAllocatedTime() != null) {
+                        // This means IP is allocated
                         // release public ip address here
                         success = _ipAddrMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
                     }
