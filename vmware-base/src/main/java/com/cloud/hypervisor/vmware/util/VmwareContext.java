@@ -321,6 +321,24 @@ public class VmwareContext {
         return dcMo.findDatastore(tokens[1]);
     }
 
+    // path in format of <datacenter name>/<datastore name>
+    public String getDatastoreNameFromPath(String inventoryPath) throws Exception {
+        assert (inventoryPath != null);
+
+        String[] tokens;
+        if (inventoryPath.startsWith("/"))
+            tokens = inventoryPath.substring(1).split("/");
+        else
+            tokens = inventoryPath.split("/");
+
+        if (tokens == null || tokens.length != 2) {
+            s_logger.error("Invalid datastore inventory path. path: " + inventoryPath);
+            return null;
+        }
+
+        return tokens[1];
+    }
+
     public void waitForTaskProgressDone(ManagedObjectReference morTask) throws Exception {
         while (true) {
             TaskInfo tinfo = (TaskInfo)_vimClient.getDynamicProperty(morTask, "info");
