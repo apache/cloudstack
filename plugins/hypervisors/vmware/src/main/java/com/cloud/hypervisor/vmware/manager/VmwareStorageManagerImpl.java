@@ -241,6 +241,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     @Override
+    @Deprecated(since = "ages, look at VmwareStorageProcessor for this logic", forRemoval = true)
     public Answer execute(VmwareHostService hostService, PrimaryStorageDownloadCommand cmd) {
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         assert (secondaryStorageUrl != null);

@@ -83,8 +83,11 @@ public class VirtualMachineTO {
     Map<String, String> extraConfig = new HashMap<>();
     @LogLevel(LogLevel.Log4jLevel.Off)
     Pair<String, List<OVFPropertyTO>> ovfProperties;
-    // FR37 todo change to URL?
+    /**
+     * to locate the template on primary storage to use for deploy as is
+     */
     String templateLocation = null;
+    String templateName = null;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -413,4 +416,11 @@ public class VirtualMachineTO {
         this.templateLocation = templateLocation;
     }
 
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
+    }
 }

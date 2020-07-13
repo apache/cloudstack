@@ -154,7 +154,7 @@ class StartCommandExecutor {
             assert (disks.length > 0);
 
             NicTO[] nics = vmSpec.getNics();
-
+            // FR37 TODO if deployasis a new VM no datastores are known (yet) and we need to get the data store from the tvmspec content library / template location
             HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails = inferDatastoreDetailsFromDiskInfo(hyperHost, context, disks, cmd);
             if ((dataStoresDetails == null) || (dataStoresDetails.isEmpty())) {
                 String msg = "Unable to locate datastore details of the volumes to be attached";
@@ -709,16 +709,18 @@ class StartCommandExecutor {
             }
             tearDownVm(vmMo);
         } else if (installAsIs) {
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            // FR37 fill the spec with diskTOs?
+//            fillSpecFromTO(vmConfigSpec, vmSpec);
+            if (!hyperHost.createVm(vmConfigSpec)) {
+                throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
+            }
+            String templatename = vmSpec.getTemplateName();
             String storename = vmSpec.getTemplateLocation();
             DatastoreMO dsMo = dataStoresDetails.get(storename).second();
             // FR37 this happens at the MS so format should not be "[%s] %s" but some local file (on secStor)
             // FR37 TODO template name on primary data store is not known here!
-            vmMo = vmwareResource.contentLibraryService.deployOvf(context, storename, vmInternalCSName, hyperHost, dsMo);
-
-            if(LOGGER.isTraceEnabled()) {
-                vmMo.getVmdkFileBaseNames();
-                LOGGER.trace(String.format("", vmMo.getVmdkFileBaseNames()));
-            }
+            vmMo = vmwareResource.contentLibraryService.deployOvf(context, templatename, vmInternalCSName, hyperHost, dsMo);
             // FR37 importUnmanaged code must be called
             // FR37 this must be called before starting
             // FR37 existing serviceOffering with the right (minimum) dimensions must exist

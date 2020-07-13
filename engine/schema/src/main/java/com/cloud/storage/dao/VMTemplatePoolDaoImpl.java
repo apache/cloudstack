@@ -264,7 +264,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     @Override
     public VMTemplateStoragePoolVO findByHostTemplate(Long hostId, Long templateId) {
         List<VMTemplateStoragePoolVO> result = listByHostTemplate(hostId, templateId);
-        return (result.size() == 0) ? null : result.get(1);
+        return (result.size() == 0) ? null : result.get(0); // Not sure how this index outofbound has survived the years, or what the rationale was getting the second/result.get(1)
     }
 
     @Override

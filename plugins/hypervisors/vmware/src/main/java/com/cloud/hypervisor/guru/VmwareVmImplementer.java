@@ -33,6 +33,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -55,6 +56,7 @@ import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
@@ -113,14 +115,14 @@ class VmwareVmImplementer {
         this.globalNestedVPerVMEnabled = globalNestedVPerVMEnabled;
     }
 
-    VirtualMachineTO implement(VirtualMachineProfile vm, VirtualMachineTO to, long clusterId, Boolean deployOvaAsIs) {
+    VirtualMachineTO implement(VirtualMachineProfile vm, VirtualMachineTO to, long clusterId, boolean deployAsIs) {
             to.setBootloader(VirtualMachineTemplate.BootloaderType.HVM);
-
+        deployAsIs |= vm.getTemplate().isDeployAsIs();
         HostVO host = hostDao.findById(vm.getVirtualMachine().getHostId());
         // FR37 if VmwareImplementAsIsAndReconsiliate add secondary storage or some other encoding of the OVA file to the start command,
         // FR37 so the url for the original OVA can be used for deployment
-        if (deployOvaAsIs || vm.getTemplate().isDeployAsIs()) {
-            // FR37 todo MAYBE add flag for deploy as is in TO
+        if (deployAsIs) {
+            // FR37 we need to make sure the primary storage for the template is known and whether this is a new deployment
             storeTemplateLocationInTO(vm, to, host.getId());
         }
         Map<String, String> details = to.getDetails();
@@ -199,17 +201,49 @@ class VmwareVmImplementer {
     }
 
     private void storeTemplateLocationInTO(VirtualMachineProfile vm, VirtualMachineTO to, long hostId) {
-        VMTemplateStoragePoolVO templateStoragePoolVO =  templateStoragePoolDao.findByHostTemplate(hostId,vm.getTemplate().getId());
-        long storePoolId = templateStoragePoolVO.getDataStoreId();
+        VMTemplateStoragePoolVO templateStoragePoolVO = templateStoragePoolDao.findByHostTemplate(hostId, vm.getTemplate().getId());
+        if (templateStoragePoolVO != null) {
+            long storePoolId = templateStoragePoolVO.getDataStoreId();
 
-        StoragePoolVO storagePoolVO = storagePoolDao.findById(storePoolId);
-        String relativeLocation = storagePoolVO.getUuid();
+            StoragePoolVO storagePoolVO = storagePoolDao.findById(storePoolId);
+            String relativeLocation = storagePoolVO.getUuid();
 
-        to.setTemplateLocation(relativeLocation);
-        // FR37 TODO add usefull stuff in message
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("deploying OVA as is from %s.", relativeLocation));
+            String templateName = vm.getTemplate().getName(); // FR37 TODO get name on pool from templateSpoolRef
+            createDiskTOForTemplateOVA(vm, storagePoolVO);
+
+            to.setTemplateName(templateName);
+            to.setTemplateLocation(relativeLocation);
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("deploying '%s' OVA as is from %s.", templateName, relativeLocation));
+            }
         }
+    }
+
+    private void createDiskTOForTemplateOVA(VirtualMachineProfile vm, StoragePoolVO storagePoolVO) {
+        // FR37 store template in diskto with the pool as location
+        DiskTO disk = new DiskTO();
+        TemplateObjectTO data = new TemplateObjectTO(vm.getTemplate());
+        DataStoreTO store = new DataStoreTO() {
+            @Override public DataStoreRole getRole() {
+                return DataStoreRole.ImageCache;
+            }
+
+            @Override public String getUuid() {
+                return storagePoolVO.getUuid();
+            }
+
+            @Override public String getUrl() {
+                return null;
+            }
+
+            @Override public String getPathSeparator() {
+                return "/";
+            }
+        };
+        data.setDataStore(store);
+        disk.setData(data);
+
+        vm.addDisk(disk);
     }
 
     private void setDetails(VirtualMachineTO to, Map<String, String> details) {
@@ -337,7 +371,7 @@ class VmwareVmImplementer {
         }
     }
 
-    // TODO FR37 phase out ovf properties in favor of template details
+    // TODO FR37 phase out ovf properties in favor of template details; propertyTO remains
     private List<OVFPropertyTO> getOvfPropertyList(VirtualMachineProfile vm, Map<String, String> details) {
         List<OVFPropertyTO> ovfProperties = new ArrayList<OVFPropertyTO>();
         for (String detailKey : details.keySet()) {

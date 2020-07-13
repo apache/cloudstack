@@ -20,7 +20,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.rmi.RemoteException;
@@ -480,7 +479,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private String getOVFFile(String srcOVAFileName) {
         File file = new File(srcOVAFileName);
-        assert (_storage != null);
+
         String[] files = _storage.listFiles(file.getParent());
         if (files != null) {
             for (String fileName : files) {
@@ -504,7 +503,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String srcOVAFileName =
                 VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templatePathAtSecondaryStorage, templateName,
                         ImageFormat.OVA.getFileExtension());
-
+        // FR37 consider extension: ova or ovf?
         String srcFileName = getOVFFilePath(srcOVAFileName);
         if (srcFileName == null) {
             Script command = new Script("tar", 0, s_logger);
@@ -519,7 +518,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
         }
-
+        // FR37 we don't need ot on deploy as is
         srcFileName = getOVFFilePath(srcOVAFileName);
         if (srcFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
@@ -527,30 +526,24 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception(msg);
         }
 
-        String vmName = templateUuid;
-        VirtualMachineMO vmMo = null;
-        VmConfigInfo vAppConfig = null;
+        VirtualMachineMO vmMo;
+        VmConfigInfo vAppConfig;
 
         if (s_logger.isTraceEnabled()) {
             s_logger.trace(String.format("deploying new style == %b", deployAsIs));
         }
-        if (deployAsIs) {
-            deployTemplateToContentLibrary(hyperHost, datastoreMo, secondaryStorageUrl, templatePathAtSecondaryStorage, templateUuid, srcOVAFileName, srcFileName);
+        hyperHost.importVmFromOVF(srcFileName, templateUuid, datastoreMo, "thin", !deployAsIs);
+        vmMo = hyperHost.findVmOnHyperHost(templateUuid);
+        if (vmMo == null) {
+            String msg =
+                    "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
+                            ", templateName: " + templateName + ", templateUuid: " + templateUuid;
+            s_logger.error(msg);
+            throw new Exception(msg);
         } else {
-            hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin", true);
-            // FR37 TODO fix checking for result on deployAsIs as no vmMo will be found for a template
-            vmMo = hyperHost.findVmOnHyperHost(vmName);
-            if (vmMo == null) {
-                String msg =
-                        "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
-                                ", templateName: " + templateName + ", templateUuid: " + templateUuid;
-                s_logger.error(msg);
-                throw new Exception(msg);
-            } else {
-                vAppConfig = vmMo.getConfigInfo().getVAppConfig();
-                if (vAppConfig != null) {
-                    s_logger.info("Found vApp configuration");
-                }
+            vAppConfig = vmMo.getConfigInfo().getVAppConfig();
+            if (vAppConfig != null) {
+                s_logger.info("Found vApp configuration");
             }
         }
 
@@ -560,7 +553,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
         processor.configure("OVA Processor", params);
         long virtualSize = processor.getTemplateVirtualSize(secondaryMountPoint + "/" + templatePathAtSecondaryStorage, templateName);
 
-        // FR37 TODO fix checking for result on deployAsIs as no snapshot will be created for a template
         if (createSnapshot) {
             if (vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
                 // the same template may be deployed with multiple copies at per-datastore per-host basis,
@@ -614,7 +606,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
         NfsTO nfsImageStore = (NfsTO)srcStore;
         DataTO destData = cmd.getDestTO();
         DataStoreTO destStore = destData.getDataStore();
-        DataStoreTO primaryStore = destStore;
 
         String secondaryStorageUrl = nfsImageStore.getUrl();
 
@@ -671,7 +662,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         DatastoreMO dsMo = null;
 
         try {
-            String storageUuid = managed ? managedStoragePoolName : primaryStore.getUuid();
+            String storageUuid = managed ? managedStoragePoolName : destStore.getUuid();
             String templateUuidName = deriveTemplateUuidOnHost(hyperHost, storageUuid, templateInfo.second());
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             VirtualMachineMO templateMo = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templateUuidName), true);
@@ -715,9 +706,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     dsMo.deleteFolder(folderToDelete, dcMo.getMor());
                 }
                 else {
-                    // FR37 TODO verify logic: createsnapshot should be true only if deployAsIs isn't
                     vmInfo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
-                            templateUuidName, ! template.isDeployAsIs(), _nfsVersion, template.isDeployAsIs());
+                            templateUuidName, true, _nfsVersion, template.isDeployAsIs());
                 }
             } else {
                 s_logger.info("Template " + templateInfo.second() + " has already been setup, skip the template setup process in primary storage");
@@ -1126,7 +1116,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties"),"UTF-8"));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties"), Charset.defaultCharset()));
             out.write("filename=" + templateName + ".ova");
             out.newLine();
             out.write("description=");
@@ -1305,7 +1295,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta"),"UTF-8"));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta"), Charset.defaultCharset()));
             out.write("ova.filename=" + templateName + ".ova");
             out.newLine();
             out.write("version=1.0");
@@ -2152,11 +2142,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private static String getSecondaryDatastoreUUID(String storeUrl) {
         String uuid = null;
-        try{
-            uuid=UUID.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
-        }catch(UnsupportedEncodingException e){
-            s_logger.warn("Failed to create UUID from string " + storeUrl + ". Bad storeUrl or UTF-8 encoding error." );
-        }
+        uuid=UUID.nameUUIDFromBytes(storeUrl.getBytes(Charset.defaultCharset())).toString();
         return uuid;
     }
 
@@ -3588,13 +3574,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private static String deriveTemplateUuidOnHost(VmwareHypervisorHost hyperHost, String storeIdentifier, String templateName) {
         String templateUuid;
-        try {
-            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
-        } catch(UnsupportedEncodingException e){
-            s_logger.warn("unexpected encoding error, using default Charset: " + e.getLocalizedMessage());
-            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset()))
-                    .toString();
-        }
+        templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset())).toString();
         templateUuid = templateUuid.replaceAll("-", "");
         return templateUuid;
     }
