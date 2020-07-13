@@ -16,50 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URL;
-import java.nio.channels.SocketChannel;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.naming.ConfigurationException;
-import javax.xml.datatype.XMLGregorianCalendar;
-
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
-import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-import org.joda.time.Duration;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -297,6 +256,7 @@ import com.vmware.vim25.PerfMetricIntSeries;
 import com.vmware.vim25.PerfMetricSeries;
 import com.vmware.vim25.PerfQuerySpec;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.StoragePodSummary;
 import com.vmware.vim25.ToolsUnavailableFaultMsg;
 import com.vmware.vim25.VAppOvfSectionInfo;
 import com.vmware.vim25.VAppOvfSectionSpec;
@@ -340,6 +300,46 @@ import com.vmware.vim25.VmConfigSpec;
 import com.vmware.vim25.VmfsDatastoreInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+import org.joda.time.Duration;
+
+import javax.naming.ConfigurationException;
+import javax.xml.datatype.XMLGregorianCalendar;
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URL;
+import java.nio.channels.SocketChannel;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 
 import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
@@ -4901,7 +4901,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             StorageFilerTO pool = cmd.getPool();
 
-            if (pool.getType() != StoragePoolType.NetworkFilesystem && pool.getType() != StoragePoolType.VMFS && pool.getType() != StoragePoolType.PreSetup) {
+            if (pool.getType() != StoragePoolType.NetworkFilesystem && pool.getType() != StoragePoolType.VMFS && pool.getType() != StoragePoolType.PreSetup && pool.getType() != StoragePoolType.DatastoreCluster) {
                 throw new Exception("Unsupported storage pool type " + pool.getType());
             }
 
@@ -4914,16 +4914,24 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             assert (morDatastore != null);
 
             DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
-            HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost);
+            HypervisorHostHelper.createBaseFolder(dsMo, hyperHost, pool.getType());
 
-            DatastoreSummary summary = dsMo.getSummary();
-            long capacity = summary.getCapacity();
-            long available = summary.getFreeSpace();
+            long capacity = 0;
+            long available = 0;
+            if (pool.getType() == StoragePoolType.DatastoreCluster) {
+                StoragePodSummary summary = dsMo.getDatastoreClusterSummary();
+                capacity = summary.getCapacity();
+                available = summary.getFreeSpace();
+            } else {
+                DatastoreSummary summary = dsMo.getDatastoreSummary();
+                capacity = summary.getCapacity();
+                available = summary.getFreeSpace();
+            }
 
             Map<String, TemplateProp> tInfo = new HashMap<>();
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
 
-            if (cmd.getAdd() && (pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup)) {
+            if (cmd.getAdd() && (pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup) && pool.getType() != StoragePoolType.DatastoreCluster) {
                 answer.setPoolType(dsMo.getDatastoreType());
                 answer.setLocalDatastoreName(morDatastore.getValue());
             }
@@ -5305,11 +5313,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             if (morDs != null) {
                 DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
-                DatastoreSummary summary = datastoreMo.getSummary();
-                assert (summary != null);
+                long capacity = 0;
+                long free = 0;
+                if (cmd.getPooltype() == StoragePoolType.DatastoreCluster) {
+                    StoragePodSummary summary = datastoreMo.getDatastoreClusterSummary();
+                    capacity = summary.getCapacity();
+                    free = summary.getFreeSpace();
+                } else {
+                    DatastoreSummary summary = datastoreMo.getDatastoreSummary();
+                    capacity = summary.getCapacity();
+                    free = summary.getFreeSpace();
+                }
 
-                long capacity = summary.getCapacity();
-                long free = summary.getFreeSpace();
                 long used = capacity - free;
 
                 if (s_logger.isDebugEnabled()) {
@@ -5317,7 +5332,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             + ", capacity: " + toHumanReadableSize(capacity) + ", free: " + toHumanReadableSize(free) + ", used: " + toHumanReadableSize(used));
                 }
 
-                if (summary.getCapacity() <= 0) {
+                if (capacity <= 0) {
                     s_logger.warn("Something is wrong with vSphere NFS datastore, rebooting ESX(ESXi) host should help");
                 }
 
@@ -5839,7 +5854,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         dsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, poolUuid);
                     }
 
-                    DatastoreSummary dsSummary = dsMo.getSummary();
+                    DatastoreSummary dsSummary = dsMo.getDatastoreSummary();
                     String address = hostMo.getHostName();
                     StoragePoolInfo pInfo = new StoragePoolInfo(poolUuid, address, dsMo.getMor().getValue(), "", StoragePoolType.VMFS, dsSummary.getCapacity(),
                             dsSummary.getFreeSpace());
@@ -6555,6 +6570,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(context, context.getServiceContent().getCustomFieldsManager());
             cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
+            cfmMo.ensureCustomFieldDef("StoragePod", CustomFieldConstants.CLOUD_UUID);
+
             if (_publicTrafficInfo != null && _publicTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch
                     || _guestTrafficInfo != null && _guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
                 cfmMo.ensureCustomFieldDef("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);

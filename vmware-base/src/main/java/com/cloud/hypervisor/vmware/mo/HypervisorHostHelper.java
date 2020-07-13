@@ -54,6 +54,7 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -172,7 +173,6 @@ public class HypervisorHostHelper {
         if (morDs == null)
             morDs = hyperHost.findDatastore(uuidName);
 
-        DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
         return morDs;
     }
 
@@ -2086,7 +2086,19 @@ public class HypervisorHostHelper {
         return DiskControllerType.getType(controller) == DiskControllerType.ide;
     }
 
-    public static void createBaseFolderInDatastore(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
+    public static void createBaseFolder(DatastoreMO dsMo, VmwareHypervisorHost hyperHost, StoragePoolType poolType) throws Exception {
+        if (poolType != null && poolType == StoragePoolType.DatastoreCluster) {
+            List<ManagedObjectReference> datastoresInCluster = hyperHost.getContext().getVimClient().getDynamicProperty(dsMo.getMor(), "childEntity");
+            for (ManagedObjectReference datastore : datastoresInCluster) {
+                DatastoreMO childDsMo = new DatastoreMO(hyperHost.getContext(), datastore);
+                createBaseFolderInDatastore(childDsMo, hyperHost);
+            }
+        } else {
+            createBaseFolderInDatastore(dsMo, hyperHost);
+        }
+    }
+
+    private static void createBaseFolderInDatastore(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
         String dsPath = String.format("[%s]", dsMo.getName());
         String folderPath = String.format("[%s] %s", dsMo.getName(), VSPHERE_DATASTORE_BASE_FOLDER);
 

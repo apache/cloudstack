@@ -2962,7 +2962,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception("Unable to create a dummy VM for volume creation");
         }
 
-        Long volumeSizeToUse = volumeSize < dsMo.getSummary().getFreeSpace() ? volumeSize : dsMo.getSummary().getFreeSpace();
+        Long volumeSizeToUse = volumeSize < dsMo.getDatastoreSummary().getFreeSpace() ? volumeSize : dsMo.getDatastoreSummary().getFreeSpace();
 
         vmMo.createDisk(vmdkDatastorePath, getMBsFromBytes(volumeSizeToUse), dsMo.getMor(), vmMo.getScsiDeviceControllerKey());
         vmMo.detachDisk(vmdkDatastorePath, false);

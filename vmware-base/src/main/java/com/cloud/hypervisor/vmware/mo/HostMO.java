@@ -28,6 +28,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.storage.Storage;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
@@ -873,12 +874,15 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             } else {
                 morDatastore = _context.getDatastoreMorByPath(poolPath);
                 if (morDatastore == null) {
-                    String msg = "Unable to create VMFS datastore. host: " + poolHostAddress + ", port: " + poolHostPort + ", path: " + poolPath + ", uuid: " + poolUuid;
-                    s_logger.error(msg);
+                    morDatastore = findDatastore(_context.getDatastoreNameFromPath(poolPath));
+                    if (morDatastore == null) {
+                        String msg = "Unable to create VMFS datastore. host: " + poolHostAddress + ", port: " + poolHostPort + ", path: " + poolPath + ", uuid: " + poolUuid;
+                        s_logger.error(msg);
 
-                    if (s_logger.isTraceEnabled())
-                        s_logger.trace("vCenter API trace - mountDatastore() done(failed)");
-                    throw new Exception(msg);
+                        if (s_logger.isTraceEnabled())
+                            s_logger.trace("vCenter API trace - mountDatastore() done(failed)");
+                        throw new Exception(msg);
+                    }
                 }
 
                 dsMo = new DatastoreMO(_context, morDatastore);
@@ -887,7 +891,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
 
         if (dsMo != null) {
-            HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this);
+            HypervisorHostHelper.createBaseFolder(dsMo, this, "StoragePod".equals(morDatastore.getType()) ? Storage.StoragePoolType.DatastoreCluster: null);
         }
 
         if (s_logger.isTraceEnabled())
