@@ -338,7 +338,6 @@ class TestSecStorageServices(cloudstackTestCase):
         # Migration to a secondary storage with less space should be refused
         # NOTE: This test requires more than one secondary storage in the system
         # 1. Try complete migration from a storage with more (or equal) free space - migration should be refused
-        # 2. Try balanced migration from a storage with more (or equal) free space - migration should be refused
 
         storages = self.list_secondary_storages(self.apiclient)
         if (len(storages)) < 2:
@@ -354,6 +353,10 @@ class TestSecStorageServices(cloudstackTestCase):
 
         first_storage_freespace = first_storage_disksizetotal - first_storage_disksizeused
         second_storage_freespace = second_storage_disksizetotal - second_storage_disksizeused
+
+        if first_storage_freespace == second_storage_freespace:
+            self.skipTest(
+                "This test requires two secondary storages with different free space")
 
         # Setting the storage with more free space as source storage
         if first_storage_freespace > second_storage_freespace:
@@ -373,18 +376,6 @@ class TestSecStorageServices(cloudstackTestCase):
             with less space was not refused. Here is the command output : " + str(response))
 
         self.assertEqual(success, True, "Secondary storage complete migration to a storage\
-                        with less space was properly refused.")
-
-        response = self.migrate_secondary_storage(self.apiclient, src_storage, dst_storage, "balance")
-
-        success = False
-        if re.search("Migration not required as system seems balanced", str(response)):
-            success = True
-        else:
-            self.debug("Secondary storage balanced migration to a storage \
-            with less space was not refused. Here is the command output : " + str(response))
-
-        self.assertEqual(success, True, "Secondary storage balanced migration to a storage\
                         with less space was properly refused.")
 
     def list_secondary_storages(self, apiclient, id=None, readonly=None):
