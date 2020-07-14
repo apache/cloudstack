@@ -519,7 +519,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
         }
-        // FR37 we don't need ot on deploy as is
+
         srcFileName = getOVFFilePath(srcOVAFileName);
         if (srcFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
@@ -864,12 +864,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     }
                     ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                     ManagedObjectReference morFolder = hyperHost.getHyperHostOwnerResourcePool();
-                    createLinkedOrFullClone(template, volume, dcMo, vmMo, morDatastore, dsMo, vmdkName, morPool);
-                    // FR37 TODO make a
-//                    createVMFullClone(vmMo, dcMo, dsMo, vmdkName, morDatastore, morPool);
-                    // FR37 TODO or a
-//                    createVMLinkedClone(vmMo, dcMo, vmdkName, morDatastore, morPool);
-                    vmMo = hyperHost.findVmOnHyperHost(vmdkName);
+                    vmMo = hyperHost.findVmOnHyperHost(template.getPath());
+                    String cloneVMName = "CloneVM-" + vmdkName;
+                    createLinkedOrFullClone(template, volume, dcMo, vmMo, morDatastore, dsMo, cloneVMName, morPool);
+                    vmMo = hyperHost.findVmOnHyperHost(cloneVMName);
+                    // At this point vmMo points to the cloned VM
                     vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
                 } else {
                     VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templatePath), true);

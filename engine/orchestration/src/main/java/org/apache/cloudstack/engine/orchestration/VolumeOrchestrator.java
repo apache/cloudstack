@@ -1337,7 +1337,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     if (result.getResult().contains(REQUEST_TEMPLATE_RELOAD) && (i == 0)) {
                         s_logger.debug("Retry template re-deploy for vmware");
                         continue;
-                    } else if (result.getResult().contains(COPY_NOT_NEEDED_FOR_DEPLOY_AS_IS)) {
+                    } else if (result.getResult().contains(COPY_NOT_NEEDED_FOR_DEPLOY_AS_IS)) { // FR37 can be removed again ?
                         s_logger.debug("template should be used from content library");
                         break;
                     } else {
