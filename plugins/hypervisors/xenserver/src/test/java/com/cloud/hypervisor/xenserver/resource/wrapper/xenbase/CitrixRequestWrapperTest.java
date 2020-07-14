@@ -681,7 +681,7 @@ public class CitrixRequestWrapperTest {
         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
 
-        final StartCommand startCommand = new StartCommand(vm, host, false, true);
+        final StartCommand startCommand = new StartCommand(vm, host, false);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);

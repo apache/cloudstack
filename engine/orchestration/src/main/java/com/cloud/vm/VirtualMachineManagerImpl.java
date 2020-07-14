@@ -235,7 +235,6 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.common.base.Strings;
-import com.cloud.utils.NumbersUtil;
 
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, VmWorkJobHandler, Listener, Configurable {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
@@ -1156,7 +1155,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     cmds = new Commands(Command.OnError.Stop);
 
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType()), NumbersUtil.enableHumanReadableSizes));
+                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
