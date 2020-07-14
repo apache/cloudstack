@@ -67,6 +67,6 @@ public class StorageTest {
         Assert.assertFalse(StoragePoolType.SMB.supportsOverProvisioning());
         Assert.assertFalse(StoragePoolType.Gluster.supportsOverProvisioning());
         Assert.assertFalse(StoragePoolType.ManagedNFS.supportsOverProvisioning());
-        Assert.assertFalse(StoragePoolType.DatastoreCluster.supportsOverProvisioning());
+        Assert.assertTrue(StoragePoolType.DatastoreCluster.supportsOverProvisioning());
     }
 }
