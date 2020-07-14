@@ -130,18 +130,10 @@ export default {
 
 <style lang="less" scoped>
   .radio-group {
-    display: block;
+    margin: 0.5rem 0;
 
     /deep/.ant-radio {
-      width: 35px;
-    }
-
-    &__radio {
-      margin: 0.5rem 0;
-
-      /deep/span:last-child {
-        display: inline-block;
-      }
+      margin-right: 20px;
     }
 
     &__os-logo {
