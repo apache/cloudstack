@@ -38,6 +38,7 @@ import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
 import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule.SslCertEntry;
+import com.cloud.network.rules.LoadBalancerConfig.SSLConfiguration;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.utils.Pair;
@@ -488,9 +489,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if (lbSslConfiguration == null) {
             lbSslConfiguration = lbCmd.lbSslConfiguration;
         }
-        if ("old".equalsIgnoreCase(lbSslConfiguration)) {
+        if (SSLConfiguration.OLD.toString().equalsIgnoreCase(lbSslConfiguration)) {
             return sslConfigurationOld;
-        } else if ("intermediate".equalsIgnoreCase(lbSslConfiguration)) {
+        } else if (SSLConfiguration.INTERMEDIATE.toString().equalsIgnoreCase(lbSslConfiguration)) {
             return sslConfigurationIntermediate;
         }
         return "";

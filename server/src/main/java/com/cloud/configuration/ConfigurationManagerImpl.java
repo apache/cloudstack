@@ -183,6 +183,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.lb.LoadBalancerConfigManager;
+import com.cloud.network.rules.LoadBalancerConfig.SSLConfiguration;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -878,6 +880,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
             s_logger.error(errMsg);
             return errMsg;
+        }
+
+        if (LoadBalancerConfigManager.DefaultLbSSLConfiguration.key().equalsIgnoreCase(name)) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(value) || ! SSLConfiguration.validate(value.toLowerCase())) {
+                final String msg = "Please enter valid value in " + String.join(",", SSLConfiguration.getValues());
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
         }
 
         if (value == null) {

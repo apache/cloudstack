@@ -16,12 +16,46 @@
 // under the License.
 package com.cloud.network.rules;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface LoadBalancerConfig extends Identity, InternalIdentity {
+
+    public enum SSLConfiguration {
+        NONE("none"), OLD("old"), INTERMEDIATE("intermediate");
+
+        String _config;
+
+        SSLConfiguration(String config) {
+            _config = config;
+        }
+
+        @Override
+        public String toString() {
+            return _config;
+        }
+
+        public static boolean validate(String value) {
+            for (SSLConfiguration config : SSLConfiguration.values()) {
+                if (config.toString().equals(value)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static List<String> getValues() {
+            ArrayList values = new ArrayList<String>();
+            for (SSLConfiguration config : SSLConfiguration.values()) {
+                values.add(config.toString());
+            }
+            return values;
+        }
+    }
 
     public enum Scope {
         Network, Vpc, LoadBalancerRule;

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.cloud.network.rules.LoadBalancerConfig.SSLConfiguration;
 import com.cloud.network.rules.LoadBalancerConfig.Scope;
 import com.cloud.utils.Pair;
 
@@ -201,8 +202,8 @@ public enum LoadBalancerConfigKey {
         }
 
         if (LbSslConfiguration.key().equals(key)) {
-            if (! "none".equalsIgnoreCase(value) && ! "old".equalsIgnoreCase(value) && ! "intermediate".equalsIgnoreCase(value)) {
-                return new Pair<>(null, "Please enter either 'none', 'old' or 'intermediate' for parameter " + key);
+            if (value == null || ! SSLConfiguration.validate(value.toLowerCase())) {
+                return new Pair<>(null, "Please enter valid value in " + String.join(",", SSLConfiguration.getValues()) + " for parameter " + key);
             }
         }
 
