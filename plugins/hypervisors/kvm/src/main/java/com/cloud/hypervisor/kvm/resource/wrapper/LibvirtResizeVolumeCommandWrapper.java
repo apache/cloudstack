@@ -61,7 +61,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
 
         if ( currentSize == newSize) {
             // nothing to do
-            s_logger.info("No need to resize volume: current size " + toHumanReadableSize(currentSize) + " is same as new size " + toHumanReadableSize(newSize)); //untested
+            s_logger.info("No need to resize volume: current size " + toHumanReadableSize(currentSize) + " is same as new size " + toHumanReadableSize(newSize));
             return new ResizeVolumeAnswer(command, true, "success", currentSize);
         }
 
@@ -82,7 +82,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                 s_logger.debug("Volume " + path + " is on a RBD storage pool. No need to query for additional information.");
             }
 
-            s_logger.debug("Resizing volume: " + path + "," + toHumanReadableSize(currentSize) + "," + toHumanReadableSize(newSize) + "," + type + "," + vmInstanceName + "," + shrinkOk); //untested
+            s_logger.debug("Resizing volume: " + path + ", from: " + toHumanReadableSize(currentSize) + ", to: " + toHumanReadableSize(newSize) + ", type: " + type + ", name: " + vmInstanceName + ", shrinkOk: " + shrinkOk);
 
             /* libvirt doesn't support resizing (C)LVM devices, and corrupts QCOW2 in some scenarios, so we have to do these via Bash script */
             if (pool.getType() != StoragePoolType.CLVM && vol.getFormat() != PhysicalDiskFormat.QCOW2) {
@@ -129,7 +129,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             pool = storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
             pool.refresh();
             final long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
-            s_logger.debug("after resize, size reports as " + toHumanReadableSize(finalSize) + ", requested " + toHumanReadableSize(newSize)); //untested
+            s_logger.debug("after resize, size reports as: " + toHumanReadableSize(finalSize) + ", requested: " + toHumanReadableSize(newSize));
             return new ResizeVolumeAnswer(command, true, "success", finalSize);
         } catch (final CloudRuntimeException e) {
             final String error = "Failed to resize volume: " + e.getMessage();

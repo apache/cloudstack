@@ -28,7 +28,6 @@ public class StartCommand extends Command {
     VirtualMachineTO vm;
     String hostIp;
     boolean executeInSequence = false;
-    boolean enableHumanReadableSizes;
     String secondaryStorage;
 
     public VirtualMachineTO getVirtualMachine() {
@@ -47,12 +46,11 @@ public class StartCommand extends Command {
     protected StartCommand() {
     }
 
-    public StartCommand(VirtualMachineTO vm, Host host, boolean executeInSequence, boolean enableHumanReadableSizes) {
+    public StartCommand(VirtualMachineTO vm, Host host, boolean executeInSequence) {
         this.vm = vm;
         this.hostIp = host.getPrivateIpAddress();
         this.executeInSequence = executeInSequence;
         this.secondaryStorage = null;
-        this.enableHumanReadableSizes = enableHumanReadableSizes;
     }
 
     public String getHostIp() {
