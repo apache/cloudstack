@@ -196,7 +196,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
                     bindStr += " ssl crt " + SSL_CERTS_DIR + lbSec["sslcert"]
                     if "http2" in lbSec and lbSec["http2"].lower() == 'true':
                         bindStr += " alpn h2,http/1.1"
-                if cfgSection["bind"][0] != bindStr:
+                if not cfgSection["bind"][0].startswith(bindStr):
                     print "Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + "."
                     correct = False
 
