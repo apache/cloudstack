@@ -107,17 +107,17 @@
           <p class="add-tags__label">{{ $t('label.value') }}</p>
           <a-input v-model="newTag.value"></a-input>
         </div>
-        <a-button type="primary" :disabled="!('createTag' in $store.getters.apis)" @click="() => handleAddTag()" :loading="addTagLoading">{{ $t('label.add') }}</a-button>
+        <a-button type="primary" :disabled="!('createTags' in $store.getters.apis)" @click="() => handleAddTag()" :loading="addTagLoading">{{ $t('label.add') }}</a-button>
       </div>
 
       <a-divider></a-divider>
 
       <div class="tags-container">
-        <div class="tags" v-for="(tag, index) in tags" :key="index">
-          <a-tag :key="index" :closable="'deleteTag' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+        <template class="tags" v-for="(tag) in tags">
+          <a-tag :key="tag.key" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
-        </div>
+        </template>
       </div>
 
       <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('label.done') }}</a-button>
@@ -296,7 +296,7 @@ export default {
         resourceType: 'FirewallRule',
         listAll: true
       }).then(response => {
-        this.tags = response.listtagsresponse.tag
+        this.tags = response.listtagsresponse.tag || []
       }).catch(error => {
         this.$notifyError(error)
         this.closeModal()
