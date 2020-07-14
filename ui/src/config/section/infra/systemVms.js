@@ -56,7 +56,13 @@ export default {
       message: 'message.confirm.scale.up.system.vm',
       dataView: true,
       show: (record) => { return record.hypervisor !== 'KVM' },
-      args: ['serviceofferingid']
+      args: ['serviceofferingid'],
+      mapping: {
+        serviceofferingid: {
+          api: 'listServiceOfferings',
+          params: (record) => { return { virtualmachineid: record.virtualmachineid, issystem: true, systemvmtype: record.systemvmtype } }
+        }
+      }
     },
     {
       api: 'migrateSystemVm',

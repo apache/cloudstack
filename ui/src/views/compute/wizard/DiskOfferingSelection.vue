@@ -157,10 +157,8 @@ export default {
       }
     },
     items (newData, oldData) {
-      if (newData && newData.length > 0) {
-        this.initDataItem()
-        this.dataItems = this.dataItems.concat(newData)
-      }
+      this.initDataItem()
+      this.dataItems = this.dataItems.concat(newData)
     },
     loading () {
       if (!this.loading) {

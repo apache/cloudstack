@@ -81,9 +81,10 @@
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
-    <a slot="username" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-    </a>
+    <span slot="username" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
+    </span>
     <a slot="ipaddress" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       <span v-if="record.issourcenat">

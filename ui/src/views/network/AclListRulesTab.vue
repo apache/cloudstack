@@ -133,7 +133,7 @@
     <a-modal :title="ruleModalTitle" v-model="ruleModalVisible" @ok="handleRuleModalForm">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
         <a-form-item :label="$t('label.number')">
-          <a-input v-decorator="['number']" />
+          <a-input-number style="width: 100%" v-decorator="['number']" />
         </a-form-item>
         <a-form-item :label="$t('label.cidrlist')">
           <a-input v-decorator="['cidr']" />
