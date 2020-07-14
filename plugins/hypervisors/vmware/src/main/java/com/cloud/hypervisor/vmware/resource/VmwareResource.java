@@ -143,7 +143,6 @@ import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
-import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -1590,19 +1589,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new ScaleVmAnswer(cmd, false, "Unable to execute ScaleVmCommand due to " + e.toString());
         }
         return new ScaleVmAnswer(cmd, true, null);
-    }
-
-    protected StartAnswer execute(StartCommand cmd) {
-
-        // FR37 if startcommand contains a secendary storage URL or some flag or other type of indicator, deploy OVA as is
-
-        // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
-        // This helps avoid mix of different scsi subtype controllers in instance.
-
-        // Validate the controller types
-
-        // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name.
-        return startCommandExecutor.execute(cmd);
     }
 
     /**
@@ -3319,6 +3305,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 _storageProcessor.prepareManagedDatastore(context, getHyperHost(context), cmd.getDetails().get(CreateStoragePoolCommand.DATASTORE_NAME),
                         cmd.getDetails().get(CreateStoragePoolCommand.IQN), cmd.getDetails().get(CreateStoragePoolCommand.STORAGE_HOST),
                         Integer.parseInt(cmd.getDetails().get(CreateStoragePoolCommand.STORAGE_PORT)));
+
+                // TODO we might want to integrate content library soon,
+// like:               contentLibraryService.createContentLibrary(context, cmd.getDetails().get(CreateStoragePoolCommand.DATASTORE_NAME));
             } catch (Exception ex) {
                 return new Answer(cmd, false, "Issue creating datastore");
             }
@@ -3381,6 +3370,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             assert (morDatastore != null);
 
             DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
+            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
+            //HypervisorHostHelper.createBaseFolder(dsMo, hyperHost, pool.getType());
+// in the 9hopefully near) future we will integrate            contentLibraryService.createContentLibrary(getServiceContext(), dsMo.getName());
 
             long capacity = summary.getCapacity();
             long available = summary.getFreeSpace();
@@ -3426,6 +3418,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         try {
             if (cmd.getRemoveDatastore()) {
+// not yet needed as it is not yet used                contentLibraryService.deleteContentLibrary(context, cmd.getDetails().get(DeleteStoragePoolCommand.DATASTORE_NAME));
                 _storageProcessor.handleDatastoreAndVmdkDetach(cmd, cmd.getDetails().get(DeleteStoragePoolCommand.DATASTORE_NAME),
                         cmd.getDetails().get(DeleteStoragePoolCommand.IQN), cmd.getDetails().get(DeleteStoragePoolCommand.STORAGE_HOST),
                         Integer.parseInt(cmd.getDetails().get(DeleteStoragePoolCommand.STORAGE_PORT)));
@@ -3438,6 +3431,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 // VmwareHypervisorHost hyperHost = this.getHyperHost(getServiceContext());
                 // hyperHost.unmountDatastore(pool.getUuid());
 
+                VmwareContext context = null;
+                VmwareHypervisorHost hyperHost = getHyperHost(context);
+                StorageFilerTO pool = cmd.getPool();
+                ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
+                if (morDatastore != null) {
+                    DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
+// this is not created yet                    contentLibraryService.deleteContentLibrary(context, dsMo.getName());
+                }
                 return new Answer(cmd, true, "success");
             }
         } catch (Throwable e) {

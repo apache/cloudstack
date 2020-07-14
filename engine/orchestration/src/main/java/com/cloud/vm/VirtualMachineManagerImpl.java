@@ -1160,7 +1160,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
 
                     cmds = new Commands(Command.OnError.Stop);
-
+                    // FR37 TODO decide on extra info to put in start command for deployAsIs
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);

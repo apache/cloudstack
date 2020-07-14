@@ -136,7 +136,6 @@ class StartCommandExecutor {
 
         Boolean systemVm = vmSpec.getType().isUsedBySystem();
 
-        // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name. FR37 this is an out of place comment
         VmwareContext context = vmwareResource.getServiceContext();
         DatacenterMO dcMo = null;
         try {
@@ -709,21 +708,12 @@ class StartCommandExecutor {
             }
             tearDownVm(vmMo);
         } else if (installAsIs) {
-            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            // FR37 fill the spec with diskTOs?
-//            fillSpecFromTO(vmConfigSpec, vmSpec);
-            if (!hyperHost.createVm(vmConfigSpec)) {
-                throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
-            }
-            String templatename = vmSpec.getTemplateName();
-            String storename = vmSpec.getTemplateLocation();
-            DatastoreMO dsMo = dataStoresDetails.get(storename).second();
-            // FR37 this happens at the MS so format should not be "[%s] %s" but some local file (on secStor)
-            // FR37 TODO template name on primary data store is not known here!
-            vmMo = vmwareResource.contentLibraryService.deployOvf(context, templatename, vmInternalCSName, hyperHost, dsMo);
-            // FR37 importUnmanaged code must be called
-            // FR37 this must be called before starting
-            // FR37 existing serviceOffering with the right (minimum) dimensions must exist
+// first get all the MORs            ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+// get the base VM            vmMo = hyperHost.findVmOnHyperHost(vm.template.getPath());
+// do            templateVm.createLinkedClone(vmInternalCSName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)
+// or           hyperHost....createLinkedOrFullClone(templateVm, volume, dcMo, vmMo, morDatastore, dsMo, vmInternalCSName, morPool);
+            vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+            // At this point vmMo points to the cloned VM
         } else {
             if (!hyperHost
                     .createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmwareResource.getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / Resource.ResourceType.bytesToMiB), vmwareResource.getReservedMemoryMb(vmSpec), guestOsId,
