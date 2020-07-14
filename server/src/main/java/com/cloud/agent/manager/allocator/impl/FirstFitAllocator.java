@@ -64,8 +64,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
