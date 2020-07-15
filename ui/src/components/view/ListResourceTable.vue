@@ -56,11 +56,15 @@
         :current="options.page"
         :pageSize="options.pageSize"
         :total="total"
-        :showTotal="total => `Total ${total} items`"
+        :showTotal="total => `Total ${total} ${$t('label.items')}`"
         :pageSizeOptions="['10', '20', '40']"
         @change="handleTableChange"
         @showSizeChange="handlePageSizeChange"
-        showSizeChanger />
+        showSizeChanger>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{$t('label.page')}}</span>
+          </template>
+      </a-pagination>
     </div>
   </div>
 

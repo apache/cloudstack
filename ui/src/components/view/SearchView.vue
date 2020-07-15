@@ -32,7 +32,7 @@
       <a-input-search
         allowClear
         class="input-search"
-        placeholder="Search"
+        :placeholder="$t('label.search')"
         v-model="searchQuery"
         @search="onSearch">
         <a-popover

@@ -305,12 +305,16 @@
         :current="page"
         :pageSize="pageSize"
         :total="itemCount"
-        :showTotal="total => `Showing ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} of ${total} items`"
+        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
         :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '500'] : ['10', '20', '50', '100', '500']"
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger
-        showQuickJumper />
+        showQuickJumper>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{$t('label.page')}}</span>
+          </template>
+      </a-pagination>
     </div>
   </div>
 </template>

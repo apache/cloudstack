@@ -77,11 +77,15 @@
       :current="page"
       :pageSize="pageSize"
       :total="items.length"
-      :showTotal="total => `Total ${total} items`"
+      :showTotal="total => `Total ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="changePage"
       @showSizeChange="changePageSize"
-      showSizeChanger/>
+      showSizeChanger>
+        <template slot="buildOptionText" slot-scope="props">
+          <span>{{ props.value }} / {{$t('label.page')}}</span>
+        </template>
+    </a-pagination>
 
     <a-modal v-model="accountModal" v-if="selectedItem" @ok="accountModal = false">
       <div>

@@ -60,11 +60,15 @@
           :current="page"
           :pageSize="pageSize"
           :total="itemCounts.networkAcls"
-          :showTotal="total => `Total ${total} items`"
+          :showTotal="total => `Total ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
           @change="changePage"
           @showSizeChange="changePageSize"
-          showSizeChanger/>
+          showSizeChanger>
+            <template slot="buildOptionText" slot-scope="props">
+              <span>{{ props.value }} / {{$t('label.page')}}</span>
+            </template>
+        </a-pagination>
         <a-modal
           v-model="modals.networkAcl"
           :title="$t('label.add.acl.list')"
@@ -107,11 +111,15 @@
           :current="page"
           :pageSize="pageSize"
           :total="itemCounts.privateGateways"
-          :showTotal="total => `Total ${total} items`"
+          :showTotal="total => `Total ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
           @change="changePage"
           @showSizeChange="changePageSize"
-          showSizeChanger/>
+          showSizeChanger>
+            <template slot="buildOptionText" slot-scope="props">
+              <span>{{ props.value }} / {{$t('label.page')}}</span>
+            </template>
+        </a-pagination>
 
         <a-modal v-model="modals.gateway" :title="$t('label.add.new.gateway')" @ok="handleGatewayFormSubmit">
           <a-spin :spinning="modals.gatewayLoading">
@@ -225,11 +233,15 @@
           :current="page"
           :pageSize="pageSize"
           :total="itemCounts.vpnConnections"
-          :showTotal="total => `Total ${total} items`"
+          :showTotal="total => `Total ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
           @change="changePage"
           @showSizeChange="changePageSize"
-          showSizeChanger/>
+          showSizeChanger>
+            <template slot="buildOptionText" slot-scope="props">
+              <span>{{ props.value }} / {{$t('label.page')}}</span>
+            </template>
+        </a-pagination>
         <a-modal v-model="modals.vpnConnection" :title="$t('label.create.vpn.connection')" @ok="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">

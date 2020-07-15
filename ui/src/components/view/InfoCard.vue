@@ -617,7 +617,7 @@
               rows="4"
               @change="handleNoteChange"
               :value="annotation"
-              placeholder="Add Note" />
+              :placeholder="$t('label.add.note')" />
             <a-button
               style="margin-top: 10px"
               @click="saveNote"

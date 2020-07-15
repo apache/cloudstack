@@ -99,11 +99,15 @@
                 :current="page"
                 :pageSize="pageSize"
                 :total="itemCounts.vms[network.id]"
-                :showTotal="total => `Total ${total} items`"
+                :showTotal="total => `Total ${total} ${$t('label.items')}`"
                 :pageSizeOptions="['10', '20', '40', '80', '100']"
                 @change="changePage"
                 @showSizeChange="changePageSize"
-                showSizeChanger/>
+                showSizeChanger>
+                  <template slot="buildOptionText" slot-scope="props">
+                    <span>{{ props.value }} / {{$t('label.page')}}</span>
+                  </template>
+              </a-pagination>
             </a-collapse-panel>
             <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :disabled="!showIlb(network)" >
               <a-button
@@ -135,11 +139,15 @@
                 :current="page"
                 :pageSize="pageSize"
                 :total="itemCounts.internalLB[network.id]"
-                :showTotal="total => `Total ${total} items`"
+                :showTotal="total => `Total ${total} ${$t('label.items')}`"
                 :pageSizeOptions="['10', '20', '40', '80', '100']"
                 @change="changePage"
                 @showSizeChange="changePageSize"
-                showSizeChanger/>
+                showSizeChanger>
+                  <template slot="buildOptionText" slot-scope="props">
+                    <span>{{ props.value }} / {{$t('label.page')}}</span>
+                  </template>
+              </a-pagination>
             </a-collapse-panel>
           </a-collapse>
         </div>

@@ -61,11 +61,15 @@
       :current="page"
       :pageSize="pageSize"
       :total="totalCount"
-      :showTotal="total => `Total ${total} items`"
+      :showTotal="total => `Total ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
-      showSizeChanger/>
+      showSizeChanger>
+        <template slot="buildOptionText" slot-scope="props">
+          <span>{{ props.value }} / {{$t('label.page')}}</span>
+        </template>
+    </a-pagination>
 
     <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
       <a-button type="primary" :disabled="!selectedHost.id" @click="submitForm">
