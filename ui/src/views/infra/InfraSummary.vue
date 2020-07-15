@@ -48,7 +48,13 @@
             </p>
 
             <a-form @submit.prevent="handleSslFormSubmit" ref="sslForm" :form="form">
-              <a-form-item :label="$t('label.root.certificate')" :required="true">
+              <a-form-item :required="true">
+                <span slot="label">
+                  {{ $t('label.root.certificate') }}
+                  <a-tooltip placement="bottom" :title="apiParams.name.description">
+                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </span>
                 <a-textarea
                   id="rootCert"
                   rows="2"
@@ -66,8 +72,13 @@
                 <a-form-item
                   v-for="(item, index) in intermediateCertificates"
                   :key="`key-${index}`"
-                  class="intermediate-certificate"
-                  :label="$t('label.intermediate.certificate') + ` ${index + 1}`">
+                  class="intermediate-certificate">
+                  <span slot="label">
+                    {{ $t('label.intermediate.certificate') + ` ${index + 1} ` }}
+                    <a-tooltip placement="bottom" :title="apiParams.id.description">
+                      <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    </a-tooltip>
+                  </span>
                   <a-textarea
                     :id="`intermediateCert${index}`"
                     rows="2"
@@ -88,7 +99,13 @@
                 </a-button>
               </a-form-item>
 
-              <a-form-item :label="$t('label.server.certificate')" :required="true">
+              <a-form-item :required="true">
+                <span slot="label">
+                  {{ $t('label.server.certificate') }}
+                  <a-tooltip placement="bottom" :title="apiParams.certificate.description">
+                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </span>
                 <a-textarea
                   id="serverCert"
                   rows="2"
@@ -101,7 +118,13 @@
                 ></a-textarea>
               </a-form-item>
 
-              <a-form-item :label="$t('label.pkcs.private.certificate')" :required="true">
+              <a-form-item :required="true">
+                <span slot="label">
+                  {{ $t('label.pkcs.private.certificate') }}
+                  <a-tooltip placement="bottom" :title="apiParams.privatekey.description">
+                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </span>
                 <a-textarea
                   id="pkcsKey"
                   rows="2"
@@ -114,7 +137,13 @@
                 ></a-textarea>
               </a-form-item>
 
-              <a-form-item :label="$t('label.domain.suffix')" :required="true">
+              <a-form-item :required="true">
+                <span slot="label">
+                  {{ $t('label.domain.suffix') }}
+                  <a-tooltip placement="bottom" :title="apiParams.domainsuffix.description">
+                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </span>
                 <a-input
                   id="dnsSuffix"
                   :placeholder="$t('label.domain.suffix')"
@@ -184,6 +213,11 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+    this.apiParams = {}
+    var apiConfig = this.$store.getters.apis.uploadCustomCertificate || {}
+    apiConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
   },
   mounted () {
     this.fetchData()

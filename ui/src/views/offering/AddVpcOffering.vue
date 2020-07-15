@@ -22,21 +22,39 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.name')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.name') }}
+            <a-tooltip :title="apiParams.name.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: 'Please enter name' }]
             }]"
             :placeholder="this.$t('label.name')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.displaytext')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.displaytext') }}
+            <a-tooltip :title="apiParams.displaytext.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: 'Please enter description' }]
             }]"
             :placeholder="this.$t('label.displaytext')"/>
         </a-form-item>
-        <a-form-item :label="$t('label.supportedservices')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.supportedservices') }}
+            <a-tooltip :title="apiParams.supportedservices.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <div class="supported-services-container" scroll-to="last-child">
             <a-list itemLayout="horizontal" :dataSource="this.supportedServices">
               <a-list-item slot="renderItem" slot-scope="item">
@@ -64,7 +82,13 @@
         <a-form-item :label="$t('label.ispublic')" v-if="this.isAdmin()">
           <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :defaultChecked="this.isPublic" @change="val => { this.isPublic = val }" />
         </a-form-item>
-        <a-form-item :label="$t('label.domainid')" v-if="!this.isPublic">
+        <a-form-item v-if="!this.isPublic">
+          <span slot="label">
+            {{ $t('label.domainid') }}
+            <a-tooltip :title="apiParams.domainid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             mode="multiple"
             v-decorator="['domainid', {
@@ -87,7 +111,13 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.zoneid')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.zoneid') }}
+            <a-tooltip :title="apiParams.zoneid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -152,6 +182,11 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+    this.apiParams = {}
+    var apiConfig = this.$store.getters.apis.createVPCOffering || {}
+    apiConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
   },
   created () {
     this.zones = [
