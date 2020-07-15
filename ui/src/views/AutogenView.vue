@@ -45,7 +45,7 @@
                 <a-select
                   v-if="!dataView && $route.meta.filters && $route.meta.filters.length > 0"
                   :placeholder="$t('label.filterby')"
-                  :value="$route.query.filter"
+                  :value="$route.query.filter || 'self'"
                   style="min-width: 100px; margin-left: 10px"
                   @change="changeFilter">
                   <a-icon slot="suffixIcon" type="filter" />
@@ -534,6 +534,10 @@ export default {
         })
       }
 
+      if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
+        delete params.showunique
+      }
+
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
@@ -569,10 +573,6 @@ export default {
         this.items = json[responseName][objectName]
         if (!this.items || this.items.length === 0) {
           this.items = []
-        }
-
-        if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
-          this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
         }
 
         for (let idx = 0; idx < this.items.length; idx++) {
