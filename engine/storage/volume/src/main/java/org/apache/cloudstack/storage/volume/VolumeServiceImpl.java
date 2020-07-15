@@ -574,7 +574,7 @@ public class VolumeServiceImpl implements VolumeService {
                 s_logger.info("Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId);
             }
             templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId());
-            if (templatePoolRef != null && templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+            if (templatePoolRef != null && templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready && !template.isDeployAsIs()) {
                 s_logger.info(
                         "Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId + ", But Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
                 createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
@@ -587,7 +587,7 @@ public class VolumeServiceImpl implements VolumeService {
             s_logger.info("lock is acquired for VMTemplateStoragePool " + templatePoolRefId);
         }
         try {
-            if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+            if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready && !template.isDeployAsIs()) {
                 s_logger.info("Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
                 createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
                 return;
@@ -734,6 +734,11 @@ public class VolumeServiceImpl implements VolumeService {
 
         motionSrv.copyAsync(context.templateOnStore, volumeOnPrimaryStorage, caller);
         return;
+    }
+
+    @DB
+    protected Void createTemplateAsIsCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, AsyncCallFuture<VolumeApiResult> context) {
+        return null;
     }
 
     @DB
@@ -1199,14 +1204,20 @@ public class VolumeServiceImpl implements VolumeService {
     public AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, TemplateInfo template) {
         PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStoreId);
         TemplateInfo templateOnPrimaryStore = pd.getTemplate(template.getId());
-        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
+        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
 
         if (templateOnPrimaryStore == null) {
             createBaseImageAsync(volume, pd, template, future);
             return future;
         }
 
-        createVolumeFromBaseImageAsync(volume, templateOnPrimaryStore, pd, future);
+        if (template.isDeployAsIs()) {
+            //Dont need to create volume, as the VM will be cloned from the template on StartCommand
+            VolumeApiResult result = new VolumeApiResult(volume);
+            future.complete(result);
+        } else {
+            createVolumeFromBaseImageAsync(volume, templateOnPrimaryStore, pd, future);
+        }
         return future;
     }
 

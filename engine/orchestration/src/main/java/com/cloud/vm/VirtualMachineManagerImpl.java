@@ -1137,12 +1137,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null, dest.getStorageForDisks()), ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         // FR37 TODO do not create a copy volume task for deploy as is on vmware ?
-                        if (vmProfile.getTemplate().isDeployAsIs()) {
-                            // FR37 TODO decide whether to skip this step now
-                            s_logger.info("skipping prepare volume for a vApp (deploy as is) template");
-                        } else {
-                            volumeMgr.prepare(vmProfile, dest);
-                        }
+                        volumeMgr.prepare(vmProfile, dest);
                     }
 
                     //since StorageMgr succeeded in volume creation, reuse Volume for further tries until current cluster has capacity

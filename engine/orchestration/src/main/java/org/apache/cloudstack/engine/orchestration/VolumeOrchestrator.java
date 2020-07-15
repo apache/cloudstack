@@ -1422,14 +1422,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 vol = result.first();
             }
 
-            VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
-            DataTO volTO = volumeInfo.getTO();
-            DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
-            DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
+            if (!vm.getTemplate().isDeployAsIs()) {
+                VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+                DataTO volTO = volumeInfo.getTO();
+                DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
+                DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
 
-            disk.setDetails(getDetails(volumeInfo, dataStore));
+                disk.setDetails(getDetails(volumeInfo, dataStore));
 
-            vm.addDisk(disk);
+                vm.addDisk(disk);
+            }
 
             // If hypervisor is vSphere, check for clone type setting.
             if (vm.getHypervisorType().equals(HypervisorType.VMware)) {

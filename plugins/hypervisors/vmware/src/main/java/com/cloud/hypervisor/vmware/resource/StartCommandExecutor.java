@@ -116,14 +116,6 @@ class StartCommandExecutor {
 
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
 
-        boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
-        // FR37 if startcommand contains enough info: a template url/-location and flag; deploy OVA as is
-        if (installAsIs) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("deploying OVA from %s as is", vmSpec.getTemplateLocation()));
-            }
-        }
-
         VirtualMachineData existingVm = null;
 
         Pair<String, String> names = composeVmNames(vmSpec);
@@ -145,6 +137,16 @@ class StartCommandExecutor {
             dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
 
             checkIfVmExistsInVcenter(vmInternalCSName, vmNameOnVcenter, dcMo);
+
+            boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
+            // FR37 if startcommand contains enough info: a template url/-location and flag; deploy OVA as is
+            if (installAsIs) {
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(String.format("deploying OVA from %s as is", vmSpec.getTemplateLocation()));
+                }
+                getStorageProcessor().cloneVMFromTemplate(vmSpec.getTemplateName(), vmInternalCSName, vmSpec.getTemplatePrimaryStoreUuid());
+                // FR37 we are not using it yet, but at this methods response points to the cloned VM
+            }
 
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
             // FR37 disks should not yet be our concern

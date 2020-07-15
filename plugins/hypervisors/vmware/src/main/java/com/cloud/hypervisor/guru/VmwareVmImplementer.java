@@ -208,11 +208,12 @@ class VmwareVmImplementer {
             StoragePoolVO storagePoolVO = storagePoolDao.findById(storePoolId);
             String relativeLocation = storagePoolVO.getUuid();
 
-            String templateName = vm.getTemplate().getName(); // FR37 TODO get name on pool from templateSpoolRef
+            String templateName = templateStoragePoolVO.getInstallPath();
             createDiskTOForTemplateOVA(vm, storagePoolVO);
 
             to.setTemplateName(templateName);
             to.setTemplateLocation(relativeLocation);
+            to.setTemplatePrimaryStoreUuid(storagePoolVO.getUuid());
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("deploying '%s' OVA as is from %s.", templateName, relativeLocation));
             }

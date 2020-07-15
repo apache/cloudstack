@@ -858,18 +858,20 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 // FR37 check for deployasis and deploy from content library if possible
                 String templatePath = template.getPath();
                 if (template.isDeployAsIs()) {
-                    // FR37 TODO we should not even have been called in this case
-                    if(s_logger.isTraceEnabled()) {
-                        s_logger.trace(String.format("importing OVA from OVF path '%s' with root disk '%s'", templatePath, vmdkName));
+                    if(s_logger.isDebugEnabled()) {
+                        s_logger.trace(String.format("No need to create volume as template is already copied in primary storage"));
                     }
-                    ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+                    return new CopyCmdAnswer(template);
+                    // FR37 TODO we should not even have been called in this case
+
+                    /**ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                     ManagedObjectReference morFolder = hyperHost.getHyperHostOwnerResourcePool();
                     vmMo = hyperHost.findVmOnHyperHost(template.getPath());
                     String cloneVMName = "CloneVM-" + vmdkName;
                     createLinkedOrFullClone(template, volume, dcMo, vmMo, morDatastore, dsMo, cloneVMName, morPool);
                     vmMo = hyperHost.findVmOnHyperHost(cloneVMName);
                     // At this point vmMo points to the cloned VM
-                    vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
+                    vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);**/
                 } else {
                     VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templatePath), true);
                     if (vmTemplate == null) {
@@ -3621,5 +3623,35 @@ public class VmwareStorageProcessor implements StorageProcessor {
     @Override
     public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
         return null;
+    }
+
+    /**
+     * Return the cloned VM from the template
+     */
+    public VirtualMachineMO cloneVMFromTemplate(String templateName, String cloneName, String templatePrimaryStoreUuid) {
+        try {
+            VmwareContext context = hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
+            DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
+            VirtualMachineMO templateMo = dcMo.findVm(templateName);
+            if (templateMo == null) {
+                throw new VmwareResourceException(String.format("Unable to find template %s in vSphere", templateName));
+            }
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, templatePrimaryStoreUuid);
+            DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
+            ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+            if (morDatastore == null) {
+                throw new VmwareResourceException("Unable to find datastore in vSphere");
+            }
+            if (!_fullCloneFlag) {
+                createVMLinkedClone(templateMo, dcMo, cloneName, morDatastore, morPool);
+            } else {
+                createVMFullClone(templateMo, dcMo, dsMo, cloneName, morDatastore, morPool);
+            }
+            return dcMo.findVm(cloneName);
+        } catch (Throwable e) {
+            s_logger.error(String.format("Error cloning VM from template in primary storage: %s", e.getMessage()), e);
+            throw new VmwareResourceException(String.format("Unable to find template %s in vSphere", templateName));
+        }
     }
 }
