@@ -104,9 +104,9 @@
                 @change="changePage"
                 @showSizeChange="changePageSize"
                 showSizeChanger>
-                  <template slot="buildOptionText" slot-scope="props">
-                    <span>{{ props.value }} / {{$t('label.page')}}</span>
-                  </template>
+                <template slot="buildOptionText" slot-scope="props">
+                  <span>{{ props.value }} / {{ $t('label.page') }}</span>
+                </template>
               </a-pagination>
             </a-collapse-panel>
             <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :disabled="!showIlb(network)" >
@@ -144,9 +144,9 @@
                 @change="changePage"
                 @showSizeChange="changePageSize"
                 showSizeChanger>
-                  <template slot="buildOptionText" slot-scope="props">
-                    <span>{{ props.value }} / {{$t('label.page')}}</span>
-                  </template>
+                <template slot="buildOptionText" slot-scope="props">
+                  <span>{{ props.value }} / {{ $t('label.page') }}</span>
+                </template>
               </a-pagination>
             </a-collapse-panel>
           </a-collapse>

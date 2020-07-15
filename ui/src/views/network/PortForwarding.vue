@@ -118,9 +118,9 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
-          <span>{{ props.value }} / {{$t('label.page')}}</span>
-        </template>
+      <template slot="buildOptionText" slot-scope="props">
+        <span>{{ props.value }} / {{ $t('label.page') }}</span>
+      </template>
     </a-pagination>
 
     <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal">
@@ -229,9 +229,9 @@
           @change="handleChangePage"
           @showSizeChange="handleChangePageSize"
           showSizeChanger>
-            <template slot="buildOptionText" slot-scope="props">
-              <span>{{ props.value }} / {{$t('label.page')}}</span>
-            </template>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
         </a-pagination>
       </div>
     </a-modal>

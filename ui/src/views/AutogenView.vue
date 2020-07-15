@@ -311,9 +311,9 @@
         @showSizeChange="changePageSize"
         showSizeChanger
         showQuickJumper>
-          <template slot="buildOptionText" slot-scope="props">
-            <span>{{ props.value }} / {{$t('label.page')}}</span>
-          </template>
+        <template slot="buildOptionText" slot-scope="props">
+          <span>{{ props.value }} / {{ $t('label.page') }}</span>
+        </template>
       </a-pagination>
     </div>
   </div>

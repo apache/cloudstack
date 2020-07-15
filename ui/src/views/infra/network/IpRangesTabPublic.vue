@@ -82,9 +82,9 @@
       @change="changePage"
       @showSizeChange="changePageSize"
       showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
-          <span>{{ props.value }} / {{$t('label.page')}}</span>
-        </template>
+      <template slot="buildOptionText" slot-scope="props">
+        <span>{{ props.value }} / {{ $t('label.page') }}</span>
+      </template>
     </a-pagination>
 
     <a-modal v-model="accountModal" v-if="selectedItem" @ok="accountModal = false">

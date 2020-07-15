@@ -65,9 +65,9 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-            <template slot="buildOptionText" slot-scope="props">
-              <span>{{ props.value }} / {{$t('label.page')}}</span>
-            </template>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
         </a-pagination>
         <a-modal
           v-model="modals.networkAcl"
@@ -116,9 +116,9 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-            <template slot="buildOptionText" slot-scope="props">
-              <span>{{ props.value }} / {{$t('label.page')}}</span>
-            </template>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
         </a-pagination>
 
         <a-modal v-model="modals.gateway" :title="$t('label.add.new.gateway')" @ok="handleGatewayFormSubmit">
@@ -238,9 +238,9 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-            <template slot="buildOptionText" slot-scope="props">
-              <span>{{ props.value }} / {{$t('label.page')}}</span>
-            </template>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
         </a-pagination>
         <a-modal v-model="modals.vpnConnection" :title="$t('label.create.vpn.connection')" @ok="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
