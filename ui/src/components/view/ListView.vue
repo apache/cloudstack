@@ -82,7 +82,8 @@
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
     <span slot="username" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
+      <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
+      <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
     <a slot="ipaddress" slot-scope="text, record" href="javascript:;">
