@@ -800,7 +800,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return true;
     }
 
-    // FR37 TODO: Remove this method after deploying VM from OVF directly using content library
     // FR37 TODO: OR make sure deploy is done in this method from template
     @Override
     public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
@@ -859,9 +858,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 String templatePath = template.getPath();
                 if (template.isDeployAsIs()) {
                     if(s_logger.isDebugEnabled()) {
-                        s_logger.trace(String.format("No need to create volume as template is already copied in primary storage"));
+                        s_logger.trace("No need to create volume as template is already copied in primary storage");
                     }
-                    return new CopyCmdAnswer(template);
+                    // FR37 - should we clone the VM here instead if that it simpler?
+                    VolumeObjectTO newVol = new VolumeObjectTO();
+                    if (template.getSize() != null){
+                        newVol.setSize(template.getSize());
+                    }
+                    return new CopyCmdAnswer(newVol);
                     // FR37 TODO we should not even have been called in this case
 
                     /**ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();

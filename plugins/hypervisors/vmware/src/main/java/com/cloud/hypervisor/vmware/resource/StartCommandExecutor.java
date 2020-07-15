@@ -16,6 +16,25 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import java.io.File;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
@@ -80,24 +99,6 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.storage.configdrive.ConfigDrive;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import java.io.File;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 class StartCommandExecutor {
     private static final Logger LOGGER = Logger.getLogger(StartCommandExecutor.class);
@@ -155,25 +156,30 @@ class StartCommandExecutor {
             assert (disks.length > 0);
 
             NicTO[] nics = vmSpec.getNics();
+            // FIXME: disks logic here, why is disks/volumes during copy not set with pool ID?
             // FR37 TODO if deployasis a new VM no datastores are known (yet) and we need to get the data store from the tvmspec content library / template location
             HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails = inferDatastoreDetailsFromDiskInfo(hyperHost, context, disks, cmd);
             if ((dataStoresDetails == null) || (dataStoresDetails.isEmpty())) {
                 String msg = "Unable to locate datastore details of the volumes to be attached";
                 LOGGER.error(msg);
                 // throw a more specific Exception
-                throw new Exception(msg);
+                // FR37 - this may not be necessary the cloned VM will have disks and knowledge of datastore paths/location?
+                // throw new Exception(msg);
             }
 
-            DatastoreMO dsRootVolumeIsOn = getDatastoreThatRootDiskIsOn(dataStoresDetails, disks);
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+            // FR37 - this may need checking, if the first datastore is the right one - ideally it should be datastore where first disk is hosted
+            DatastoreMO dsRootVolumeIsOn = null; //getDatastoreThatRootDiskIsOn(dataStoresDetails, disks);
+            /*
             if (dsRootVolumeIsOn == null) {
                 String msg = "Unable to locate datastore details of root volume";
                 LOGGER.error(msg);
                 // throw a more specific Exception
                 throw new Exception(msg);
             }
+            */
 
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             DiskControllerType systemVmScsiControllerType = DiskControllerType.lsilogic;
             int firstScsiControllerBusNum = 0;
             int numScsiControllerForSystemVm = 1;
@@ -186,10 +192,13 @@ class StartCommandExecutor {
                 // retrieve disk information before we tear down
                 diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 hasSnapshot = vmMo.hasSnapshot();
+                // FR37 - don't tear devices, maybe nics are OK?
+                /*
                 if (!hasSnapshot)
                     vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class, VirtualEthernetCard.class});
                 else
                     vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
+                 */
                 if (systemVm) {
                     ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
                 } else {
