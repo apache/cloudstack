@@ -81,7 +81,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
-        // FR37 I should get here!
+
         if (srcData.getObjectType() == DataObjectType.TEMPLATE &&
             (srcData.getDataStore().getRole() == DataStoreRole.Image || srcData.getDataStore().getRole() == DataStoreRole.ImageCache) &&
             destData.getDataStore().getRole() == DataStoreRole.Primary) {

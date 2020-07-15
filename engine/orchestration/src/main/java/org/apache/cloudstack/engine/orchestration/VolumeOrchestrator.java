@@ -140,7 +140,6 @@ import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 
-import static com.cloud.storage.resource.StorageProcessor.COPY_NOT_NEEDED_FOR_DEPLOY_AS_IS;
 import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
@@ -1337,9 +1336,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     if (result.getResult().contains(REQUEST_TEMPLATE_RELOAD) && (i == 0)) {
                         s_logger.debug("Retry template re-deploy for vmware");
                         continue;
-                    } else if (result.getResult().contains(COPY_NOT_NEEDED_FOR_DEPLOY_AS_IS)) { // FR37 can be removed again ?
-                        s_logger.debug("template should be used from content library");
-                        break;
                     } else {
                         s_logger.debug("Unable to create " + newVol + ":" + result.getResult());
                         throw new StorageUnavailableException("Unable to create " + newVol + ":" + result.getResult(), destPool.getId());

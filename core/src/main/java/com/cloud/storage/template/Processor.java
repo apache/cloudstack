@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
@@ -57,6 +58,7 @@ public interface Processor extends Adapter {
         public boolean isCorrupted;
         public List<OVFPropertyTO> ovfProperties;
         public List<NetworkPrerequisiteTO> networks;
+        public List<DatadiskTO> disks;
     }
 
     long getVirtualSize(File file) throws IOException;

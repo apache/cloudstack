@@ -212,11 +212,23 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("saving property %s for template %d as detail", network.getName(), templateId));
             }
-            persistRequiredNetworkAsSetOfTemplateDetails(templateId, network);
+            persistRequiredNetworkAsASingleTemplateDetail(templateId, network);
         }
     }
 
-    private void persistRequiredNetworkAsSetOfTemplateDetails(long templateId, NetworkPrerequisiteTO network) {
+    private void persistDiskDefinitions(List<DatadiskTO> disks, long templateId) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("saving disk definitionsn for template %d as details", templateId));
+        }
+        for (DatadiskTO disk : disks) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("saving property %s for template %d as detail", disk.getDiskId(), templateId));
+            }
+            persistDiskDefinitionAsASingleTemplateDetail(templateId, disk);
+        }
+    }
+
+    private void persistRequiredNetworkAsASingleTemplateDetail(long templateId, NetworkPrerequisiteTO network) {
         String key = network.getName();
         String propKey = ImageStore.REQUIRED_NETWORK_PREFIX + key;
         try {
@@ -224,6 +236,17 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             savePropertyAttribute(templateId, propKey, propValue);
         } catch (RuntimeException re) {
             LOGGER.warn("gson marshalling of network object fails: " + propKey,re);
+        }
+    }
+
+    private void persistDiskDefinitionAsASingleTemplateDetail(long templateId, DatadiskTO disk) {
+        String key = disk.getDiskId();
+        String propKey = ImageStore.DISK_DEFINITION_PREFIX + key;
+        try {
+            String propValue = gson.toJson(disk);
+            savePropertyAttribute(templateId, propKey, propValue);
+        } catch (RuntimeException re) {
+            LOGGER.warn("gson marshalling of disk definition object fails: " + propKey,re);
         }
     }
 
@@ -250,11 +273,12 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         DataStore store = obj.getDataStore();
         List<OVFPropertyTO> ovfProperties = answer.getOvfProperties();
         List<NetworkPrerequisiteTO> networkRequirements = answer.getNetworkRequirements();
+        List<DatadiskTO> disks = answer.getDisks();
 
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                persistExtraDetails(obj, ovfProperties, networkRequirements);
+                persistExtraDetails(obj, ovfProperties, networkRequirements, disks);
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
@@ -294,7 +318,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
             }
-            persistExtraDetails(obj, ovfProperties, networkRequirements);
+            persistExtraDetails(obj, ovfProperties, networkRequirements, disks);
 
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
@@ -302,7 +326,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-    private void persistExtraDetails(DataObject obj, List<OVFPropertyTO> ovfProperties, List<NetworkPrerequisiteTO> networkRequirements) {
+    private void persistExtraDetails(DataObject obj, List<OVFPropertyTO> ovfProperties, List<NetworkPrerequisiteTO> networkRequirements, List<DatadiskTO> disks) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("saving %d ovf properties for template '%s' as details", ovfProperties != null ? ovfProperties.size() : 0, obj.getUuid()));
         }
@@ -314,6 +338,12 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
         if (CollectionUtils.isNotEmpty(networkRequirements)) {
             persistNetworkRequirements(networkRequirements, obj.getId());
+        }
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("saving %d disks definitions for template '%s' as details", disks != null ? disks.size() : 0, obj.getUuid()));
+        }
+        if (CollectionUtils.isNotEmpty(disks)) {
+            persistDiskDefinitions(disks, obj.getId());
         }
     }
 

@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.S3TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader;
@@ -128,6 +129,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private final ResourceType resourceType;
         private List<OVFPropertyTO> ovfProperties;
         private List<NetworkPrerequisiteTO> networks;
+        private List<DatadiskTO> disks;
 
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
                 String installPathPrefix, ResourceType resourceType) {
@@ -237,6 +239,14 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         public void setNetworks(List<NetworkPrerequisiteTO> networks) {
             this.networks = networks;
+        }
+
+        public List<DatadiskTO> getDisks() {
+            return disks;
+        }
+
+        public void setDisks(List<DatadiskTO> disks) {
+            this.disks = disks;
         }
     }
 
@@ -536,6 +546,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 }
                 if (CollectionUtils.isNotEmpty(info.networks)) {
                     dnld.setNetworks(info.networks);
+                }
+                if (CollectionUtils.isNotEmpty(info.disks)) {
+                    dnld.setDisks(info.disks);
                 }
                 break;
             }
@@ -842,6 +855,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             }
             if (CollectionUtils.isNotEmpty(dj.getNetworks())) {
                 answer.setNetworkRequirements(dj.getNetworks());
+            }
+            if (CollectionUtils.isNotEmpty(dj.getDisks())) {
+                answer.setDisks(dj.getDisks());
             }
             jobs.remove(jobId);
             return answer;

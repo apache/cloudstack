@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.vmware.VmwareResourceException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -169,15 +170,17 @@ class StartCommandExecutor {
 
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             // FR37 - this may need checking, if the first datastore is the right one - ideally it should be datastore where first disk is hosted
-            DatastoreMO dsRootVolumeIsOn = null; //getDatastoreThatRootDiskIsOn(dataStoresDetails, disks);
-            /*
-            if (dsRootVolumeIsOn == null) {
-                String msg = "Unable to locate datastore details of root volume";
-                LOGGER.error(msg);
-                // throw a more specific Exception
-                throw new Exception(msg);
+            DatastoreMO dsRootVolumeIsOn = null; //
+            if (! installAsIs) {
+                dsRootVolumeIsOn = getDatastoreThatRootDiskIsOn(dataStoresDetails, disks);
+
+                if (dsRootVolumeIsOn == null) {
+                    String msg = "Unable to locate datastore details of root volume";
+                    LOGGER.error(msg);
+                    // throw a more specific Exception
+                    throw new VmwareResourceException(msg);
+                }
             }
-            */
 
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
             DiskControllerType systemVmScsiControllerType = DiskControllerType.lsilogic;

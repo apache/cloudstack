@@ -25,6 +25,7 @@ import java.util.List;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
@@ -44,6 +45,8 @@ public class DownloadAnswer extends Answer {
     private List<OVFPropertyTO> ovfProperties;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private List<NetworkPrerequisiteTO> networkRequirements;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private List<DatadiskTO> disks;
 
     public String getCheckSum() {
         return checkSum;
@@ -168,5 +171,13 @@ public class DownloadAnswer extends Answer {
 
     public void setNetworkRequirements(List<NetworkPrerequisiteTO> networkRequirements) {
         this.networkRequirements = networkRequirements;
+    }
+
+    public List<DatadiskTO> getDisks() {
+        return disks;
+    }
+
+    public void setDisks(List<DatadiskTO> disks) {
+        this.disks = disks;
     }
 }

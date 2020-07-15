@@ -78,7 +78,8 @@ public class OVAProcessor extends AdapterBase implements Processor {
         setFileSystemAccessRights(templatePath);
 
         FormatInfo info = createFormatInfo(templatePath, templateName, templateFilePath, templateFileFullPath);
-        // The intention is to use the ova file as is for deployment and use done processing only for
+
+        // The intention is to use the ova file as is for deployment and use processing result only for
         // - property assessment and
         // - reconsiliation of
         // - - disks,
@@ -112,6 +113,9 @@ public class OVAProcessor extends AdapterBase implements Processor {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("Found %d disks in template %s", CollectionUtils.isNotEmpty(disks) ? disks.size() : 0, ovfFilePath));
         }
+        if (CollectionUtils.isNotEmpty(disks)) {
+            info.disks = disks;
+        }
         List<NetworkPrerequisiteTO> nets = ovfHelper.getNetPrerequisitesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(nets)) {
             LOGGER.info("Found " + nets.size() + " prerequisite networks");
@@ -126,9 +130,6 @@ public class OVAProcessor extends AdapterBase implements Processor {
         } else if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("no ovf properties found in template %s", ovfFilePath));
         }
-            // FR37 TODO if something is bad something will have been thrown above
-//            LOGGER.info("The ovf file " + ovfFilePath + " is invalid ", e);
-//            throw new InternalErrorException("OVA package has bad ovf file " + e.getMessage(), e);
     }
 
     private void setFileSystemAccessRights(String templatePath) {
