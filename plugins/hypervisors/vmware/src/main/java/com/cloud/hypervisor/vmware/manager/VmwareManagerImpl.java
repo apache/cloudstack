@@ -1184,6 +1184,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             }
             context = null;
         }
+        importVsphereStoragePoliciesInternal(zoneId, vmwareDc.getId());
         return vmwareDc;
     }
 
@@ -1244,6 +1245,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             hostDetailsDao.persist(host.getId(), hostDetails);
                         }
                     }
+                    importVsphereStoragePoliciesInternal(zoneId, vmwareDc.getId());
                     return vmwareDc;
                 }
                 return null;
@@ -1400,13 +1402,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Validate Id of zone
         doesZoneExist(zoneId);
 
-        // Get DC associated with this zone
-        VmwareDatacenterVO vmwareDatacenter;
-        String vmwareDcName;
-        String vCenterHost;
-        String userName;
-        String password;
-        DatacenterMO dcMo = null;
         final VmwareDatacenterZoneMapVO vmwareDcZoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
         // Check if zone is associated with VMware DC
         if (vmwareDcZoneMap == null) {
@@ -1414,16 +1409,24 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         final long vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
-        vmwareDatacenter = vmwareDcDao.findById(vmwareDcId);
-        vmwareDcName = vmwareDatacenter.getVmwareDatacenterName();
-        vCenterHost = vmwareDatacenter.getVcenterHost();
-        userName = vmwareDatacenter.getUser();
-        password = vmwareDatacenter.getPassword();
+        return importVsphereStoragePoliciesInternal(zoneId, vmwareDcId);
+    }
+
+    public List<? extends VsphereStoragePolicy> importVsphereStoragePoliciesInternal(Long zoneId, Long vmwareDcId) {
+
+        // Get DC associated with this zone
+        VmwareDatacenterVO vmwareDatacenter = vmwareDcDao.findById(vmwareDcId);
+        String vmwareDcName = vmwareDatacenter.getVmwareDatacenterName();
+        String vCenterHost = vmwareDatacenter.getVcenterHost();
+        String userName = vmwareDatacenter.getUser();
+        String password = vmwareDatacenter.getPassword();
         List<PbmProfile> storageProfiles = null;
         try {
+            s_logger.debug(String.format("Importing vSphere Storage Policies for the vmware DC %d in zone %d", vmwareDcId, zoneId));
             VmwareContext context = VmwareContextFactory.getContext(vCenterHost, userName, password);
             PbmProfileManagerMO profileManagerMO = new PbmProfileManagerMO(context);
             storageProfiles = profileManagerMO.getStorageProfiles();
+            s_logger.debug(String.format("Import vSphere Storage Policies for the vmware DC %d in zone %d is successful", vmwareDcId, zoneId));
         } catch (Exception e) {
             String msg = String.format("Unable to list storage profiles from DC %s due to : %s", vmwareDcName, VmwareHelper.getExceptionMessage(e));
             s_logger.error(msg);
