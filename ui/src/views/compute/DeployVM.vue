@@ -253,6 +253,68 @@
                 </template>
               </a-step>
               <a-step
+                :title="$t('label.ovf.properties')"
+                :status="zoneSelected ? 'process' : 'wait'"
+                v-if="vm.templateid && template.properties && template.properties.length > 0">
+                <template slot="description">
+                  <div>
+                    <a-form-item
+                      v-for="(property, propertyIndex) in template.properties"
+                      :key="propertyIndex"
+                      :v-bind="property.key" >
+                      <span slot="label">
+                        {{ property.label }}
+                        <a-tooltip :title="property.description">
+                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                        </a-tooltip>
+                      </span>
+
+                      <span v-if="property.type && property.type==='boolean'">
+                        <a-switch
+                          v-decorator="['properties.' + property.key, { initialValue: property.value==='TRUE'?true:false}]"
+                          :defaultChecked="property.value==='TRUE'?true:false"
+                          :placeholder="property.description"
+                        />
+                      </span>
+                      <span v-else-if="property.type && (property.type==='int' || property.type==='real')">
+                        <a-input-number
+                          v-decorator="['properties.'+property.key]"
+                          :defaultValue="property.value"
+                          :placeholder="property.description"
+                          :min="property.qualifiers && property.qualifiers.includes('MinValue') && property.qualifiers.includes('MaxValue')?property.qualifiers.split(',')[0].replace('MinValue(','').slice(0, -1):0"
+                          :max="property.qualifiers && property.qualifiers.includes('MinValue') && property.qualifiers.includes('MaxValue')?property.qualifiers.split(',')[1].replace('MaxValue(','').slice(0, -1):property.type==='real'?1:Number.MAX_SAFE_INTEGER" />
+                      </span>
+                      <span v-else-if="property.type && property.type==='string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')">
+                        <a-select
+                          showSearch
+                          optionFilterProp="children"
+                          v-decorator="['properties.' + property.key, { initialValue: property.value }]"
+                          :placeholder="property.description"
+                          :filterOption="(input, option) => {
+                            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          }"
+                        >
+                          <a-select-option :v-if="property.value===''" key="">{{ }}</a-select-option>
+                          <a-select-option v-for="opt in property.qualifiers.replace('ValueMap','').substr(1).slice(0, -1).split(',')" :key="removeQuotes(opt)">
+                            {{ removeQuotes(opt) }}
+                          </a-select-option>
+                        </a-select>
+                      </span>
+                      <span v-else-if="property.type && property.type==='string' && property.password">
+                        <a-input-password
+                          v-decorator="['properties.' + property.key, { initialValue: property.value }]"
+                          :placeholder="property.description" />
+                      </span>
+                      <span v-else>
+                        <a-input
+                          v-decorator="['properties.' + property.key, { initialValue: property.value }]"
+                          :placeholder="property.description" />
+                      </span>
+                    </a-form-item>
+                  </div>
+                </template>
+              </a-step>
+              <a-step
                 :title="$t('label.advanced.mode')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description" v-if="zoneSelected">
@@ -805,6 +867,9 @@ export default {
     }
   },
   methods: {
+    removeQuotes (value) {
+      return value.replace(/"/g, '')
+    },
     fillValue (field) {
       this.form.getFieldDecorator([field], { initialValue: this.dataPreFill[field] })
     },
@@ -1059,6 +1124,13 @@ export default {
         deployVmData.name = values.name
         deployVmData.displayname = values.name
         // step 8: enter setup
+        if ('properties' in values) {
+          const keys = Object.keys(values.properties)
+          for (var i = 0; i < keys.length; ++i) {
+            deployVmData['properties[' + i + '].key'] = keys[i]
+            deployVmData['properties[' + i + '].value'] = values.properties[keys[i]]
+          }
+        }
         if ('bootintosetup' in values) {
           deployVmData.bootintosetup = values.bootintosetup
         }
