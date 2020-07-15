@@ -260,7 +260,6 @@ public class ApiConstants {
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
     public static final String OUTPUT = "output";
-    public static final String OVF_PROPERTIES = "ovfproperties";
     public static final String PROPERTIES = "properties";
     public static final String ACS_PROPERTY = "ACS-property";
     public static final String PARAMS = "params";

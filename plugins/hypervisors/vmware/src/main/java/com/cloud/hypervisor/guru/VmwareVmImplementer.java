@@ -443,7 +443,7 @@ class VmwareVmImplementer {
     private void removeOvfPropertiesFromDetails(List<OVFPropertyTO> ovfProperties, Map<String, String> details) {
         for (OVFPropertyTO propertyTO : ovfProperties) {
             String key = propertyTO.getKey();
-            details.remove(ApiConstants.OVF_PROPERTIES + "-" + key);
+            details.remove(ApiConstants.PROPERTIES + "-" + key);
         }
     }
 
