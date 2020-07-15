@@ -3979,7 +3979,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         SearchCriteria<VMTemplateDetailVO> ssc = vmTemplateDetailsDao.createSearchCriteria();
         ssc.addAnd("resourceId", Op.EQ, templateId);
-        ssc.addAnd("name", SearchCriteria.Op.LIKE, ImageStore.OVF_PROPERTY_PREFIX + "%");
+        ssc.addAnd("name", SearchCriteria.Op.LIKE, ImageStore.ACS_PROPERTY_PREFIX + "%");
 
         List<VMTemplateDetailVO> ovfProperties = vmTemplateDetailsDao.search(ssc, null);
 

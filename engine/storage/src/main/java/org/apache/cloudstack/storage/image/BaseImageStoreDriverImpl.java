@@ -195,7 +195,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private void persistOvfPropertyAsSetOfTemplateDetails(long templateId, OVFPropertyTO property) {
         String key = property.getKey();
-        String propKey = ImageStore.OVF_PROPERTY_PREFIX + key;
+        String propKey = ImageStore.ACS_PROPERTY_PREFIX + key;
         try {
             String propValue = gson.toJson(property);
             savePropertyAttribute(templateId, propKey, propValue);

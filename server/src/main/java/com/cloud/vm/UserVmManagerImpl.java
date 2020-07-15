@@ -47,6 +47,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.storage.VMTemplateDetailVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -3959,6 +3960,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 vm.setDetail(VmDetailConstants.DEPLOY_VM, "true");
 
+                copyDiskDetailsToVm(vm, template);
+
                 setPropertiesOnVM(vm, userVmOVFPropertiesMap);
 
                 _vmDao.saveDetails(vm);
@@ -4002,6 +4005,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return vm;
             }
         });
+    }
+
+    private void copyDiskDetailsToVm(UserVmVO vm, VirtualMachineTemplate template) {
+        if (template.isDeployAsIs()) { // FR37 should be always when we are done
+            List<VMTemplateDetailVO> details = templateDetailsDao.listDetails(template.getId());
+            for (VMTemplateDetailVO detail : details) {
+                vm.setDetail(detail.getName(), detail.getValue());
+            }
+        }
     }
 
     /**
@@ -5193,11 +5205,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         cmd.getCustomId(), cmd.getDhcpOptionsMap(), dataDiskTemplateToDiskOfferingMap, userVmProperties);
             }
         }
-        // FR37 TODO: don't forget to handle not extracted disk definitions on 'deployAsIs'
         // check if this templateId has a child ISO
         List<VMTemplateVO> child_templates = _templateDao.listByParentTemplatetId(templateId);
         for (VMTemplateVO tmpl: child_templates){
-            if (tmpl.getFormat() == Storage.ImageFormat.ISO){
+            if (tmpl.getFormat() == Storage.ImageFormat.ISO){ // FR37 why only ISO?
                 s_logger.info("MDOV trying to attach disk to the VM " + tmpl.getId() + " vmid=" + vm.getId());
                 _tmplService.attachIso(tmpl.getId(), vm.getId());
             }

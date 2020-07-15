@@ -301,7 +301,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         String key = template.getDetailName();
         if (key != null) {
             // FR37 TODO check properties and network prerequisites and if details is one of those fill those instead of detail
-            if (key.startsWith(ImageStore.OVF_PROPERTY_PREFIX)) {
+            if (key.startsWith(ImageStore.ACS_PROPERTY_PREFIX)) {
                 try {
                     OVFPropertyTO property = gson.fromJson(template.getDetailValue(), OVFPropertyTO.class);
                     templateResponse.addProperty(createTemplateOVFPropertyResponse(property));

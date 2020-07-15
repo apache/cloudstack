@@ -18,6 +18,7 @@ package com.cloud.storage.dao;
 
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.storage.ImageStore;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -91,10 +92,10 @@ public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateD
     }
 
     @Override
-    public List<OVFPropertyTO> listByTemplateId(long templateId) {
+    public List<OVFPropertyTO> listPropertiesByTemplateId(long templateId) {
         SearchCriteria<VMTemplateDetailVO> ssc = createSearchCriteria();
         ssc.addAnd("resourceId", SearchCriteria.Op.EQ, templateId);
-        ssc.addAnd("name", SearchCriteria.Op.LIKE, ImageStore.OVF_PROPERTY_PREFIX + "%");
+        ssc.addAnd("name", SearchCriteria.Op.LIKE, ImageStore.ACS_PROPERTY_PREFIX + "%");
 
         List<VMTemplateDetailVO> ovfProperties = search(ssc, null);
         List<OVFPropertyTO> properties = new ArrayList<>();
@@ -103,5 +104,20 @@ public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateD
             properties.add(ovfPropertyTO);
         }
         return properties;
+    }
+
+    @Override
+    public List<DatadiskTO> listDisksByTemplateId(long templateId) {
+        SearchCriteria<VMTemplateDetailVO> ssc = createSearchCriteria();
+        ssc.addAnd("resourceId", SearchCriteria.Op.EQ, templateId);
+        ssc.addAnd("name", SearchCriteria.Op.LIKE, ImageStore.DISK_DEFINITION_PREFIX + "%");
+
+        List<VMTemplateDetailVO> diskDefinitions = search(ssc, null);
+        List<DatadiskTO> disks = new ArrayList<>();
+        for (VMTemplateDetailVO detail : diskDefinitions) {
+            DatadiskTO datadiskTO = gson.fromJson(detail.getValue(), DatadiskTO.class);
+            disks.add(datadiskTO);
+        }
+        return disks;
     }
 }

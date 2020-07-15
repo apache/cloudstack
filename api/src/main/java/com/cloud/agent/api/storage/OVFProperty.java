@@ -19,6 +19,7 @@
 
 package com.cloud.agent.api.storage;
 
+// FR37 rename
 public interface OVFProperty {
 
     Long getTemplateId();

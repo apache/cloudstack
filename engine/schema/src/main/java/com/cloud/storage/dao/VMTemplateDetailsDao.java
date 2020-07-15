@@ -17,6 +17,7 @@
 package com.cloud.storage.dao;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.DatadiskTO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.storage.VMTemplateDetailVO;
@@ -29,5 +30,7 @@ public interface VMTemplateDetailsDao extends GenericDao<VMTemplateDetailVO, Lon
     boolean existsOption(long templateId, String key);
     OVFPropertyTO findByTemplateAndKey(long templateId, String key);
     void saveOptions(List<OVFPropertyTO> opts);
-    List<OVFPropertyTO> listByTemplateId(long templateId);
+    List<OVFPropertyTO> listPropertiesByTemplateId(long templateId);
+
+    List<DatadiskTO> listDisksByTemplateId(long templateId);
 }

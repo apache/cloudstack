@@ -141,20 +141,20 @@ class StartCommandExecutor {
             checkIfVmExistsInVcenter(vmInternalCSName, vmNameOnVcenter, dcMo);
 
             boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
+            DiskTO[] disks = null;
             // FR37 if startcommand contains enough info: a template url/-location and flag; deploy OVA as is
             if (installAsIs) {
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace(String.format("deploying OVA from %s as is", vmSpec.getTemplateLocation()));
                 }
                 getStorageProcessor().cloneVMFromTemplate(vmSpec.getTemplateName(), vmInternalCSName, vmSpec.getTemplatePrimaryStoreUuid());
-                // FR37 we are not using it yet, but at this methods response points to the cloned VM
+                // FR37 handle template vm does not exist! retry fetching the VM after the clone, we are not using it yet, but at this methods response points to the cloned VM
+
+            } else {
+                disks = validateDisks(vmSpec.getDisks());
             }
 
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
-            // FR37 disks should not yet be our concern
-            DiskTO[] disks = validateDisks(vmSpec.getDisks());
-            // FR37 this assert is not usefull if disks may be reconsiled later
-            assert (disks.length > 0);
 
             NicTO[] nics = vmSpec.getNics();
             // FIXME: disks logic here, why is disks/volumes during copy not set with pool ID?
