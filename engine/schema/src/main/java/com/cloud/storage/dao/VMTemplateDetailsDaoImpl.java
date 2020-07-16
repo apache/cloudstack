@@ -60,14 +60,14 @@ public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateD
 
     @Override
     public boolean existsOption(long templateId, String key) {
-        return findByTemplateAndKey(templateId, key) != null;
+        return findPropertyByTemplateAndKey(templateId, key) != null;
     }
 
     @Override
-    public OVFPropertyTO findByTemplateAndKey(long templateId, String key) {
+    public OVFPropertyTO findPropertyByTemplateAndKey(long templateId, String key) {
         SearchCriteria<VMTemplateDetailVO> sc = OptionsSearchBuilder.create();
         sc.setParameters("resourceId", templateId);
-        sc.setParameters("name", ApiConstants.ACS_PROPERTY + "-" + key);
+        sc.setParameters("name", key.startsWith(ApiConstants.ACS_PROPERTY) ? key : ApiConstants.ACS_PROPERTY + "-" + key);
         OVFPropertyTO property = null;
         VMTemplateDetailVO detail = findOneBy(sc);
         if (detail != null) {

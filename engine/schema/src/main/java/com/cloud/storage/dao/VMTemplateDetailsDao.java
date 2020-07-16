@@ -28,7 +28,7 @@ import java.util.List;
 public interface VMTemplateDetailsDao extends GenericDao<VMTemplateDetailVO, Long>, ResourceDetailsDao<VMTemplateDetailVO> {
 
     boolean existsOption(long templateId, String key);
-    OVFPropertyTO findByTemplateAndKey(long templateId, String key);
+    OVFPropertyTO findPropertyByTemplateAndKey(long templateId, String key);
     void saveOptions(List<OVFPropertyTO> opts);
     List<OVFPropertyTO> listPropertiesByTemplateId(long templateId);
 

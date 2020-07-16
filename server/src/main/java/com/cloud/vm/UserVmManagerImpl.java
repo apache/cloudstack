@@ -2491,7 +2491,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         s_logger.trace(String.format("looking for vm detail '%s'"));
                     }
                     if (detailName.startsWith(ApiConstants.ACS_PROPERTY)) {
-                        OVFPropertyTO propertyTO = templateDetailsDao.findByTemplateAndKey(vmInstance.getTemplateId(),detailName);
+                        OVFPropertyTO propertyTO = templateDetailsDao.findPropertyByTemplateAndKey(vmInstance.getTemplateId(),detailName);
                         if (propertyTO != null && propertyTO.isPassword()) {
                             details.put(detailName, DBEncryptionUtil.encrypt(details.get(detailName)));
                         }
@@ -4032,7 +4032,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     } else if (value.equalsIgnoreCase("False")) {
                         value = "False";
                     } else {
-                        OVFPropertyTO propertyTO = templateDetailsDao.findByTemplateAndKey(vm.getTemplateId(), key);
+                        OVFPropertyTO propertyTO = templateDetailsDao.findPropertyByTemplateAndKey(vm.getTemplateId(), key);
                         if (propertyTO != null && propertyTO.isPassword()) {
                             value = DBEncryptionUtil.encrypt(value);
                         }

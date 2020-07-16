@@ -377,7 +377,7 @@ class VmwareVmImplementer {
         List<OVFPropertyTO> ovfProperties = new ArrayList<OVFPropertyTO>();
         for (String detailKey : details.keySet()) {
             if (detailKey.startsWith(ApiConstants.ACS_PROPERTY)) {
-                OVFPropertyTO propertyTO = templateDetailsDao.findByTemplateAndKey(vm.getTemplateId(), detailKey);
+                OVFPropertyTO propertyTO = templateDetailsDao.findPropertyByTemplateAndKey(vm.getTemplateId(), detailKey);
                 String vmPropertyKey = detailKey.replace(ApiConstants.ACS_PROPERTY + "-", "");
                 if (propertyTO == null) {
                     LOGGER.warn(String.format("OVF property %s not found on template, discarding", vmPropertyKey));
