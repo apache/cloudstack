@@ -960,7 +960,8 @@ export default {
         })
         const templates = this.options.templates.filter(x => x.id === value)
         if (templates.length > 0) {
-          this.dataPreFill.minrootdisksize = templates[0].size / (1024 * 1024 * 1024) || 0 // bytes to GB
+          var size = templates[0].size / (1024 * 1024 * 1024) || 0 // bytes to GB
+          this.dataPreFill.minrootdisksize = Math.ceil(size)
         }
       } else if (name === 'isoid') {
         this.tabKey = 'isoid'
@@ -1065,7 +1066,7 @@ export default {
         } else {
           deployVmData.templateid = values.isoid
         }
-        if (values.rootdisksize && values.rootdisksize > 0) {
+        if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
         }
         if (values.hypervisor && values.hypervisor.length > 0) {

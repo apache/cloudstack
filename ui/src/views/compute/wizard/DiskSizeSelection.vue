@@ -53,8 +53,9 @@ export default {
   },
   watch: {
     minDiskSize (newItem) {
-      if (this.inputValue < newItem) {
+      if (newItem && newItem > 0) {
         this.inputValue = newItem
+        this.updateDiskSize(newItem)
       }
     }
   },
