@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.hypervisor.vmware.VmwareResourceException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -46,6 +45,7 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Resource;
+import com.cloud.hypervisor.vmware.VmwareResourceException;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
@@ -134,29 +134,25 @@ class StartCommandExecutor {
         DatacenterMO dcMo = null;
         try {
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
             VmwareHypervisorHost hyperHost = vmwareResource.getHyperHost(context);
             dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
 
-            checkIfVmExistsInVcenter(vmInternalCSName, vmNameOnVcenter, dcMo);
+            // checkIfVmExistsInVcenter(vmInternalCSName, vmNameOnVcenter, dcMo);
+            // FR37 - We expect VM to be already cloned and available at this point
+            VirtualMachineMO vmMo = dcMo.findVm(vmInternalCSName);
+            if (vmMo == null) {
+                vmMo = dcMo.findVm(vmNameOnVcenter);
+            }
+            // VM may not have been cloned on the same host, relocate to expected host
+            vmMo.relocate(hyperHost.getMor());
+            // Get updated MO
+            vmMo = hyperHost.findVmOnHyperHost(vmMo.getVmName());
 
             boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
-            DiskTO[] disks = null;
-            // FR37 if startcommand contains enough info: a template url/-location and flag; deploy OVA as is
-            if (installAsIs) {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("deploying OVA from %s as is", vmSpec.getTemplateLocation()));
-                }
-                getStorageProcessor().cloneVMFromTemplate(vmSpec.getTemplateName(), vmInternalCSName, vmSpec.getTemplatePrimaryStoreUuid());
-                // FR37 handle template vm does not exist! retry fetching the VM after the clone, we are not using it yet, but at this methods response points to the cloned VM
-
-            } else {
-                disks = validateDisks(vmSpec.getDisks());
-            }
-
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
-
+            DiskTO[] disks = validateDisks(vmSpec.getDisks());
             NicTO[] nics = vmSpec.getNics();
+
             // FIXME: disks logic here, why is disks/volumes during copy not set with pool ID?
             // FR37 TODO if deployasis a new VM no datastores are known (yet) and we need to get the data store from the tvmspec content library / template location
             HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails = inferDatastoreDetailsFromDiskInfo(hyperHost, context, disks, cmd);
@@ -168,7 +164,6 @@ class StartCommandExecutor {
                 // throw new Exception(msg);
             }
 
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             // FR37 - this may need checking, if the first datastore is the right one - ideally it should be datastore where first disk is hosted
             DatastoreMO dsRootVolumeIsOn = null; //
             if (! installAsIs) {

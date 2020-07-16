@@ -753,12 +753,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private boolean createVMLinkedClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, String vmdkName, ManagedObjectReference morDatastore,
+    private boolean createVMLinkedClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, String cloneName, ManagedObjectReference morDatastore,
                                         ManagedObjectReference morPool) throws Exception {
-        return createVMLinkedClone(vmTemplate, dcMo, vmdkName, morDatastore, morPool, null);
+        return createVMLinkedClone(vmTemplate, dcMo, cloneName, morDatastore, morPool, null);
     }
 
-    private boolean createVMLinkedClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, String vmdkName, ManagedObjectReference morDatastore,
+    private boolean createVMLinkedClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, String cloneName, ManagedObjectReference morDatastore,
                                         ManagedObjectReference morPool, ManagedObjectReference morBaseSnapshot) throws Exception {
         if (morBaseSnapshot == null) {
             morBaseSnapshot = vmTemplate.getSnapshotMor("cloud.template.base");
@@ -774,7 +774,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         s_logger.info("creating linked clone from template");
 
-        if (!vmTemplate.createLinkedClone(vmdkName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
+        if (!vmTemplate.createLinkedClone(cloneName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
             String msg = "Unable to clone from the template";
 
             s_logger.error(msg);
@@ -785,11 +785,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return true;
     }
 
-    private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo, String vmdkName, ManagedObjectReference morDatastore,
+    private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo, String cloneName, ManagedObjectReference morDatastore,
                                       ManagedObjectReference morPool) throws Exception {
         s_logger.info("creating full clone from template");
 
-        if (!vmTemplate.createFullClone(vmdkName, dcMo.getVmFolder(), morPool, morDatastore)) {
+        if (!vmTemplate.createFullClone(cloneName, dcMo.getVmFolder(), morPool, morDatastore)) {
             String msg = "Unable to create full clone from the template";
 
             s_logger.error(msg);
@@ -823,6 +823,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
 
+            String cloneVMName = volume.getVmName();
             String vmdkName = volume.getName();
             String vmdkFileBaseName = null;
             if (srcStore == null) {
@@ -860,22 +861,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     if(s_logger.isDebugEnabled()) {
                         s_logger.trace("No need to create volume as template is already copied in primary storage");
                     }
-                    // FR37 - should we clone the VM here instead if that it simpler?
-                    VolumeObjectTO newVol = new VolumeObjectTO();
-                    if (template.getSize() != null){
-                        newVol.setSize(template.getSize());
-                    }
-                    return new CopyCmdAnswer(newVol);
-                    // FR37 TODO we should not even have been called in this case
 
-                    /**ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-                    ManagedObjectReference morFolder = hyperHost.getHyperHostOwnerResourcePool();
+                    ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                     vmMo = hyperHost.findVmOnHyperHost(template.getPath());
-                    String cloneVMName = "CloneVM-" + vmdkName;
                     createLinkedOrFullClone(template, volume, dcMo, vmMo, morDatastore, dsMo, cloneVMName, morPool);
-                    vmMo = hyperHost.findVmOnHyperHost(cloneVMName);
                     // At this point vmMo points to the cloned VM
-                    vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);**/
+                    // TODO: should we check if vmMo has no vmdks i.e. a template with iso only?
+                    vmMo = dcMo.findVm(cloneVMName);
+                    vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
                 } else {
                     VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templatePath), true);
                     if (vmTemplate == null) {
@@ -884,7 +877,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         return new CopyCmdAnswer(msg);
                     }
 
-                    vmdkFileBaseName = cloneAndGetVmdkName(template, volume, searchExcludedFolders, context, hyperHost, dcMo, morDatastore, dsMo, vmdkName, vmTemplate);
+                    vmdkFileBaseName = cloneAndGetVmdkName(template, volume, searchExcludedFolders, context, hyperHost, dcMo, morDatastore, dsMo, cloneVMName, vmTemplate);
                 }
             }
             if (!template.isDeployAsIs()) { // will have to be reconsiled in case of deployAsIs
@@ -912,14 +905,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private void createLinkedOrFullClone(TemplateObjectTO template, VolumeObjectTO volume, DatacenterMO dcMo, VirtualMachineMO vmMo, ManagedObjectReference morDatastore,
-            DatastoreMO dsMo, String vmdkName, ManagedObjectReference morPool) throws Exception {
+            DatastoreMO dsMo, String cloneName, ManagedObjectReference morPool) throws Exception {
         if (template.getSize() != null) {
-            _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
+            _fullCloneFlag = volume.getSize() > template.getSize() || _fullCloneFlag;
         }
         if (!_fullCloneFlag) {
-            createVMLinkedClone(vmMo, dcMo, vmdkName, morDatastore, morPool);
+            createVMLinkedClone(vmMo, dcMo, cloneName, morDatastore, morPool);
         } else {
-            createVMFullClone(vmMo, dcMo, dsMo, vmdkName, morDatastore, morPool);
+            createVMFullClone(vmMo, dcMo, dsMo, cloneName, morDatastore, morPool);
         }
     }
 
@@ -936,35 +929,35 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private String cloneAndGetVmdkName(TemplateObjectTO template, VolumeObjectTO volume, String searchExcludedFolders, VmwareContext context, VmwareHypervisorHost hyperHost,
-            DatacenterMO dcMo, ManagedObjectReference morDatastore, DatastoreMO dsMo, String vmdkName, VirtualMachineMO vmTemplate) throws Exception {
+            DatacenterMO dcMo, ManagedObjectReference morDatastore, DatastoreMO dsMo, String cloneName, VirtualMachineMO vmTemplate) throws Exception {
         VirtualMachineMO vmMo;
         String vmdkFileBaseName;
         ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
         ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-        createLinkedOrFullClone(template, volume, dcMo, vmTemplate, morDatastore, dsMo, vmdkName, morPool);
+        createLinkedOrFullClone(template, volume, dcMo, vmTemplate, morDatastore, dsMo, cloneName, morPool);
 
-        vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
+        vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(cloneName);
         assert (vmMo != null);
 
         vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
         s_logger.info("Move volume out of volume-wrapper VM " + vmdkFileBaseName);
-        String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
-        String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
+        String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, cloneName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
+        String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, cloneName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
 
         dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
         dsMo.moveDatastoreFile(vmwareLayoutFilePair[1], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[1], dcMo.getMor(), true);
 
-        s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
+        s_logger.info("detach disks from volume-wrapper VM " + cloneName);
         vmMo.detachAllDisks();
 
-        s_logger.info("destroy volume-wrapper VM " + vmdkName);
+        s_logger.info("destroy volume-wrapper VM " + cloneName);
         vmMo.destroy();
 
-        String srcFile = dsMo.getDatastorePath(vmdkName, true);
+        String srcFile = dsMo.getDatastorePath(cloneName, true);
 
         dsMo.deleteFile(srcFile, dcMo.getMor(), true, searchExcludedFolders);
 
-        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
+        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), cloneName)) {
             dsMo.deleteFolder(srcFile, dcMo.getMor());
         }
         return vmdkFileBaseName;
