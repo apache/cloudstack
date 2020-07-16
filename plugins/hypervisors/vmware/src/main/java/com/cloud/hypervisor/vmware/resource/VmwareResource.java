@@ -1609,10 +1609,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Map<String, Pair<String, Boolean>> getOVFMap(List<OVFPropertyTO> props) {
         Map<String, Pair<String, Boolean>> map = new HashMap<>();
         for (OVFPropertyTO prop : props) {
-            Pair<String, Boolean> pair = new Pair<>(prop.getValue(), prop.isPassword());
+            String value = getPropertyValue(prop);
+            Pair<String, Boolean> pair = new Pair<>(value, prop.isPassword());
             map.put(prop.getKey(), pair);
         }
         return map;
+    }
+
+    private String getPropertyValue(OVFPropertyTO prop) {
+        String type = prop.getType();
+        String value = prop.getValue();
+        if ("boolean".equalsIgnoreCase(type)) {
+            value = Boolean.parseBoolean(value) ? "True" : "False";
+        }
+        return value;
     }
 
     /**
