@@ -143,10 +143,12 @@ class StartCommandExecutor {
             if (vmMo == null) {
                 vmMo = dcMo.findVm(vmNameOnVcenter);
             }
-            // VM may not have been cloned on the same host, relocate to expected host
-            vmMo.relocate(hyperHost.getMor());
-            // Get updated MO
-            vmMo = hyperHost.findVmOnHyperHost(vmMo.getVmName());
+            // VM may not have been on the same host, relocate to expected host
+            if (vmMo != null) {
+                vmMo.relocate(hyperHost.getMor());
+                // Get updated MO
+                vmMo = hyperHost.findVmOnHyperHost(vmMo.getVmName());
+            }
 
             boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
