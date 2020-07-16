@@ -143,6 +143,17 @@ class StartCommandExecutor {
             if (vmMo == null) {
                 vmMo = dcMo.findVm(vmNameOnVcenter);
             }
+
+            boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
+            // FR37 if startcommand contains enough info: a template url/-location and flag; deploy OVA as is
+            if (vmMo == null && installAsIs) {
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(String.format("deploying OVA from %s as is", vmSpec.getTemplateLocation()));
+                }
+                getStorageProcessor().cloneVMFromTemplate(vmSpec.getTemplateName(), vmInternalCSName, vmSpec.getTemplatePrimaryStoreUuid());
+                vmMo = dcMo.findVm(vmInternalCSName);
+            }
+
             // VM may not have been on the same host, relocate to expected host
             if (vmMo != null) {
                 vmMo.relocate(hyperHost.getMor());
@@ -150,7 +161,6 @@ class StartCommandExecutor {
                 vmMo = hyperHost.findVmOnHyperHost(vmMo.getVmName());
             }
 
-            boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             NicTO[] nics = vmSpec.getNics();
