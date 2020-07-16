@@ -30,6 +30,9 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VMTemplateDetailVO;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
@@ -198,6 +201,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     protected UserVmCloneSettingDao _vmCloneSettingDao;
     @Inject
     StorageStrategyFactory _storageStrategyFactory;
+    @Inject
+    VMTemplateDetailsDao templateDetailsDao;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -708,63 +713,75 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-            Account owner) {
+    public List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
+                                                      Account owner) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
 
-        Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
-        if (rootDisksize != null) {
-            rootDisksize = rootDisksize * 1024 * 1024 * 1024;
-            if (rootDisksize > size) {
-                s_logger.debug("Using root disk size of " + rootDisksize + " Bytes for volume " + name);
-                size = rootDisksize;
+        int volNumber = 1;
+        if (template.isDeployAsIs()) {
+            VMTemplateDetailVO detail = templateDetailsDao.findDetail(template.getId(), VmDetailConstants.OVA_DEPLOY_AS_IS_DISKS);
+            volNumber = detail != null ? Integer.valueOf(detail.getValue()) : volNumber;
+        }
+
+        List<DiskProfile> profiles = new ArrayList<>();
+
+        for (int number = 0; number < volNumber; number++) {
+            Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
+            if (rootDisksize != null) {
+                rootDisksize = rootDisksize * 1024 * 1024 * 1024;
+                if (rootDisksize > size) {
+                    s_logger.debug("Using root disk size of " + rootDisksize + " Bytes for volume " + name);
+                    size = rootDisksize;
+                } else {
+                    s_logger.debug("Using root disk size of " + size + " Bytes for volume " + name + "since specified root disk size of " + rootDisksize + " Bytes is smaller than template");
+                }
+            }
+
+            minIops = minIops != null ? minIops : offering.getMinIops();
+            maxIops = maxIops != null ? maxIops : offering.getMaxIops();
+
+            String volName = template.isDeployAsIs() ? name + number : name;
+            VolumeVO vol = new VolumeVO(type, volName, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), offering.getProvisioningType(), size, minIops, maxIops, null);
+            vol.setFormat(getSupportedImageFormatForCluster(template.getHypervisorType()));
+            if (vm != null) {
+                vol.setInstanceId(vm.getId());
+            }
+            vol.setTemplateId(template.getId());
+
+            if (type.equals(Type.ROOT)) {
+                vol.setDeviceId(0l);
+                if (!vm.getType().equals(VirtualMachine.Type.User)) {
+                    vol.setRecreatable(true);
+                }
             } else {
-                s_logger.debug("Using root disk size of " + size + " Bytes for volume " + name + "since specified root disk size of " + rootDisksize + " Bytes is smaller than template");
-            }
-        }
-
-        minIops = minIops != null ? minIops : offering.getMinIops();
-        maxIops = maxIops != null ? maxIops : offering.getMaxIops();
-
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), offering.getProvisioningType(), size, minIops, maxIops, null);
-        vol.setFormat(getSupportedImageFormatForCluster(template.getHypervisorType()));
-        if (vm != null) {
-            vol.setInstanceId(vm.getId());
-        }
-        vol.setTemplateId(template.getId());
-
-        if (type.equals(Type.ROOT)) {
-            vol.setDeviceId(0l);
-            if (!vm.getType().equals(VirtualMachine.Type.User)) {
-                vol.setRecreatable(true);
-            }
-        } else {
-            vol.setDeviceId(1l);
-        }
-
-        if (vm.getType() == VirtualMachine.Type.User) {
-            UserVmVO userVm = _userVmDao.findById(vm.getId());
-            vol.setDisplayVolume(userVm.isDisplayVm());
-        }
-
-        vol = _volsDao.persist(vol);
-
-        // Create event and update resource count for volumes if vm is a user vm
-        if (vm.getType() == VirtualMachine.Type.User) {
-
-            Long offeringId = null;
-
-            if (offering.getType() == DiskOffering.Type.Disk) {
-                offeringId = offering.getId();
+                vol.setDeviceId(1l);
             }
 
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, vol.getTemplateId(), size,
-                    Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
+            if (vm.getType() == VirtualMachine.Type.User) {
+                UserVmVO userVm = _userVmDao.findById(vm.getId());
+                vol.setDisplayVolume(userVm.isDisplayVm());
+            }
 
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, vol.isDisplayVolume(), new Long(vol.getSize()));
+            vol = _volsDao.persist(vol);
+
+            // Create event and update resource count for volumes if vm is a user vm
+            if (vm.getType() == VirtualMachine.Type.User) {
+
+                Long offeringId = null;
+
+                if (offering.getType() == DiskOffering.Type.Disk) {
+                    offeringId = offering.getId();
+                }
+
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, vol.getTemplateId(), size,
+                        Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
+
+                _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
+                _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, vol.isDisplayVolume(), new Long(vol.getSize()));
+            }
+            profiles.add(toDiskProfile(vol, offering));
         }
-        return toDiskProfile(vol, offering);
+        return profiles;
     }
 
     private ImageFormat getSupportedImageFormatForCluster(HypervisorType hyperType) {

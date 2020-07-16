@@ -411,8 +411,8 @@ public class TemplateServiceImpl implements TemplateService {
                                     if (tmplt.getState() == VirtualMachineTemplate.State.NotUploaded || tmplt.getState() == VirtualMachineTemplate.State.UploadInProgress) {
                                         VirtualMachineTemplate.Event event = VirtualMachineTemplate.Event.OperationSucceeded;
                                         // For multi-disk OVA, check and create data disk templates
-                                        if (tmplt.getFormat().equals(ImageFormat.OVA) && !tmplt.isDeployAsIs()) {
-                                            if (!createOvaDataDiskTemplates(_templateFactory.getTemplate(tmlpt.getId(), store))) {
+                                        if (tmplt.getFormat().equals(ImageFormat.OVA)) {
+                                            if (!createOvaDataDiskTemplates(_templateFactory.getTemplate(tmlpt.getId(), store), tmplt.isDeployAsIs())) {
                                                 event = VirtualMachineTemplate.Event.OperationFailed;
                                             }
                                         }
@@ -709,8 +709,8 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         // For multi-disk OVA, check and create data disk templates
-        if (template.getFormat().equals(ImageFormat.OVA) && !template.isDeployAsIs()) {
-            if (!createOvaDataDiskTemplates(template)) {
+        if (template.getFormat().equals(ImageFormat.OVA)) {
+            if (!createOvaDataDiskTemplates(template, template.isDeployAsIs())) {
                 template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
                 result.setResult(callbackResult.getResult());
                 if (parentCallback != null) {
@@ -737,7 +737,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate) {
+    public boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate, boolean deployAsIs) {
         try {
             // Get Datadisk template (if any) for OVA
             List<DatadiskTO> dataDiskTemplates = new ArrayList<DatadiskTO>();
@@ -754,23 +754,31 @@ public class TemplateServiceImpl implements TemplateService {
                     details = new HashMap<>();
                 }
             }
+
             for (DatadiskTO diskTemplate : dataDiskTemplates) {
-                if (!diskTemplate.isBootable()) {
-                    createChildDataDiskTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
-                    if (!diskTemplate.isIso() && Strings.isNullOrEmpty(details.get(VmDetailConstants.DATA_DISK_CONTROLLER))){
-                        details.put(VmDetailConstants.DATA_DISK_CONTROLLER, getOvaDiskControllerDetails(diskTemplate, false));
-                        details.put(VmDetailConstants.DATA_DISK_CONTROLLER + diskTemplate.getDiskId(), getOvaDiskControllerDetails(diskTemplate, false));
-                    }
-                } else {
-                    finalizeParentTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
-                    if (Strings.isNullOrEmpty(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
-                        final String rootDiskController = getOvaDiskControllerDetails(diskTemplate, true);
-                        if (!Strings.isNullOrEmpty(rootDiskController)) {
-                            details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
+                if (!deployAsIs) {
+                    if (!diskTemplate.isBootable()) {
+                        createChildDataDiskTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
+                        if (!diskTemplate.isIso() && Strings.isNullOrEmpty(details.get(VmDetailConstants.DATA_DISK_CONTROLLER))){
+                            details.put(VmDetailConstants.DATA_DISK_CONTROLLER, getOvaDiskControllerDetails(diskTemplate, false));
+                            details.put(VmDetailConstants.DATA_DISK_CONTROLLER + diskTemplate.getDiskId(), getOvaDiskControllerDetails(diskTemplate, false));
+                        }
+                    } else {
+                        finalizeParentTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
+                        if (Strings.isNullOrEmpty(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
+                            final String rootDiskController = getOvaDiskControllerDetails(diskTemplate, true);
+                            if (!Strings.isNullOrEmpty(rootDiskController)) {
+                                details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
+                            }
                         }
                     }
                 }
             }
+
+            if (deployAsIs) {
+                details.put(VmDetailConstants.OVA_DEPLOY_AS_IS_DISKS, String.valueOf(dataDiskTemplates.size()));
+            }
+
             templateVO.setDetails(details);
             _templateDao.saveDetails(templateVO);
             return true;
