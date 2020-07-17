@@ -27,6 +27,7 @@ public class DatadiskTO {
     private boolean isIso;
     private String diskController;
     private String diskControllerSubType;
+    private int diskNumber;
 
     public DatadiskTO() {
     }
@@ -38,7 +39,8 @@ public class DatadiskTO {
         this.bootable = bootable;
     }
 
-    public DatadiskTO(String path, long virtualSize, long fileSize, String diskId, boolean isIso, boolean bootable, String controller, String controllerSubType) {
+    public DatadiskTO(String path, long virtualSize, long fileSize, String diskId, boolean isIso, boolean bootable,
+                      String controller, String controllerSubType, int diskNumber) {
         this.path = path;
         this.virtualSize = virtualSize;
         this.fileSize = fileSize;
@@ -47,6 +49,7 @@ public class DatadiskTO {
         this.isIso = isIso;
         this.diskController = controller;
         this.diskControllerSubType = controllerSubType;
+        this.diskNumber = diskNumber;
     }
 
     public String getPath() {
@@ -105,4 +108,7 @@ public class DatadiskTO {
         this.diskControllerSubType = diskControllerSubType;
     }
 
+    public int getDiskNumber() {
+        return this.diskNumber;
+    }
 }

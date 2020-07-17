@@ -204,6 +204,7 @@ public class OVFHelper {
 
     private List<DatadiskTO> matchDisksToFilesAndGenerateDiskTOs(File ovfFile, List<OVFFile> vf, List<OVFDisk> vd) throws InternalErrorException {
         List<DatadiskTO> diskTOs = new ArrayList<>();
+        int diskNumber = 1;
         for (OVFFile of : vf) {
             if (StringUtils.isBlank(of._id)){
                 LOGGER.error("The ovf file info is incomplete file info");
@@ -229,7 +230,8 @@ public class OVFHelper {
                 LOGGER.error("One of the attached disk or iso does not exists " + dataDiskPath);
                 throw new InternalErrorException("One of the attached disk or iso as stated on OVF does not exists " + dataDiskPath);
             }
-            diskTOs.add(new DatadiskTO(dataDiskPath, capacity, of._size, of._id, of.isIso, of._bootable, controller, controllerSubType));
+            diskTOs.add(new DatadiskTO(dataDiskPath, capacity, of._size, of._id, of.isIso, of._bootable, controller, controllerSubType, diskNumber));
+            diskNumber++;
         }
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("found %d file definitions in %s",diskTOs.size(), ovfFile.getPath()));

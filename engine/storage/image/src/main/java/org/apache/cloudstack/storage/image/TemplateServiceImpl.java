@@ -737,6 +737,12 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
+    public List<DatadiskTO> getTemplateDatadisksOnImageStore(TemplateInfo templateInfo) {
+        ImageStoreEntity tmpltStore = (ImageStoreEntity)templateInfo.getDataStore();
+        return tmpltStore.getDataDiskTemplates(templateInfo);
+    }
+
+    @Override
     public boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate, boolean deployAsIs) {
         try {
             // Get Datadisk template (if any) for OVA
