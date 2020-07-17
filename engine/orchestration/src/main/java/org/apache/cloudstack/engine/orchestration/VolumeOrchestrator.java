@@ -740,7 +740,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             minIops = minIops != null ? minIops : offering.getMinIops();
             maxIops = maxIops != null ? maxIops : offering.getMaxIops();
 
-            String volName = template.isDeployAsIs() ? name + number : name;
+            String volName = template.isDeployAsIs() ? name + "-" + number : name;
             VolumeVO vol = new VolumeVO(type, volName, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), offering.getProvisioningType(), size, minIops, maxIops, null);
             vol.setFormat(getSupportedImageFormatForCluster(template.getHypervisorType()));
             if (vm != null) {
