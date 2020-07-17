@@ -27,6 +27,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
@@ -237,14 +239,14 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         sb.and("display_name", sb.entity().getDisplayName(), SearchCriteria.Op.EQ);
         sb.and("account_id", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
 
-        if (tags != null && !tags.isEmpty()) {
+        if (MapUtils.isNotEmpty(tags)) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
             for (int count = 0; count < tags.size(); count++) {
-                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.or().op(ApiConstants.KEY + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and(ApiConstants.VALUE + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
                 tagSearch.cp();
             }
-            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            tagSearch.and(ApiConstants.RESOURCE_TYPE, tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
             sb.groupBy(sb.entity().getId());
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
@@ -252,12 +254,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         SearchCriteria<VMSnapshotVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
-        if (tags != null && !tags.isEmpty()) {
+        if (MapUtils.isNotEmpty(tags)) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", ResourceTag.ResourceObjectType.VMSnapshot.toString());
+            sc.setJoinParameters("tagSearch", ApiConstants.RESOURCE_TYPE, ResourceTag.ResourceObjectType.VMSnapshot.toString());
             for (String key : tags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                sc.setJoinParameters("tagSearch", ApiConstants.KEY + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", ApiConstants.VALUE + String.valueOf(count), tags.get(key));
                 count++;
             }
         }
