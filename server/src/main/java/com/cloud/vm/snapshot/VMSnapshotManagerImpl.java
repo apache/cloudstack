@@ -67,6 +67,7 @@ import com.cloud.gpu.GPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -80,6 +81,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -93,6 +96,7 @@ import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -147,6 +151,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     EntityManager _entityMgr;
     @Inject
     AsyncJobManager _jobMgr;
+    @Inject
+    ResourceTagDao _resourceTagDao;
 
     @Inject
     VmWorkJobDao _workJobDao;
@@ -206,6 +212,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         String keyword = cmd.getKeyword();
         String name = cmd.getVmSnapshotName();
         String accountName = cmd.getAccountName();
+        Map<String, String> tags = cmd.getTags();
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
@@ -229,10 +236,31 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("display_name", sb.entity().getDisplayName(), SearchCriteria.Op.EQ);
         sb.and("account_id", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.done();
+
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count = 0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<VMSnapshotVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceTag.ResourceObjectType.VMSnapshot.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
 
         if (accountName != null && cmd.getDomainId() != null) {
             Account account = _accountMgr.getActiveAccountByName(accountName, cmd.getDomainId());
