@@ -54,9 +54,7 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
     public Pair<List<RoleVO>, Integer> findAllByName(final String roleName, Long offset, Long limit) {
         SearchCriteria<RoleVO> sc = RoleByNameSearch.create();
         sc.setParameters("roleName", "%" + roleName + "%");
-        Pair<List<RoleVO>, Integer> result = searchAndCount(sc, new Filter(RoleVO.class, "id", true, offset, limit));
-        System.out.println("Result : " + result);
-        return result;
+        return searchAndCount(sc, new Filter(RoleVO.class, "id", true, offset, limit));
     }
 
     @Override
