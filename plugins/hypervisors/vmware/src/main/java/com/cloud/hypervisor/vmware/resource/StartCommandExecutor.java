@@ -202,7 +202,8 @@ class StartCommandExecutor {
                 // retrieve disk information before we tear down
                 diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 hasSnapshot = vmMo.hasSnapshot();
-                // FR37 - don't tear devices, maybe nics are OK?
+                // FR37 - only tear nics, and add nics per the provided nics list
+                vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
                 /*
                 if (!hasSnapshot)
                     vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class, VirtualEthernetCard.class});
