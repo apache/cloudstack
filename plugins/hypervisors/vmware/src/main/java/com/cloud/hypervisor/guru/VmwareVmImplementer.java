@@ -345,12 +345,8 @@ class VmwareVmImplementer {
         if (CollectionUtils.isNotEmpty(ovfProperties)) {
             removeOvfPropertiesFromDetails(ovfProperties, details);
             String templateInstallPath = null;
-            List<DiskTO> rootDiskList = vm.getDisks().stream().filter(x -> x.getType() == Volume.Type.ROOT).collect(Collectors.toList());
-            if (rootDiskList.size() != 1) {
-                throw new CloudRuntimeException("Did not find only one root disk for VM " + vm.getHostName());
-            }
+            DiskTO rootDiskTO = getRootDiskTOFromVM(vm);
 
-            DiskTO rootDiskTO = rootDiskList.get(0);
             DataStoreTO dataStore = rootDiskTO.getData().getDataStore();
             StoragePoolVO storagePoolVO = storagePoolDao.findByUuid(dataStore.getUuid());
             long dataCenterId = storagePoolVO.getDataCenterId();
@@ -370,6 +366,24 @@ class VmwareVmImplementer {
             Pair<String, List<OVFPropertyTO>> pair = new Pair<String, List<OVFPropertyTO>>(templateInstallPath, ovfProperties);
             to.setOvfProperties(pair);
         }
+    }
+
+    private DiskTO getRootDiskTOFromVM(VirtualMachineProfile vm) {
+        DiskTO rootDiskTO;
+        List<DiskTO> rootDiskList;
+        rootDiskList = vm.getDisks().stream().filter(x -> x.getType() == Volume.Type.ROOT).collect(Collectors.toList());
+        if (rootDiskList.size() != 1) {
+            if (vm.getTemplate().isDeployAsIs()) { // FR37 dirty hack to avoid ISOs, the start command should have added a root disk to
+                rootDiskList = vm.getDisks().stream().filter(x -> x.getType() == null).collect(Collectors.toList());
+                if (rootDiskList.size() < 1) {
+                    throw new CloudRuntimeException("Did not find a template to serve as root disk for VM " + vm.getHostName());
+                }
+            } else {
+                throw new CloudRuntimeException("Did not find only one root disk for VM " + vm.getHostName());
+            }
+        }
+        rootDiskTO = rootDiskList.get(0);
+        return rootDiskTO;
     }
 
     // TODO FR37 phase out ovf properties in favor of template details; propertyTO remains
