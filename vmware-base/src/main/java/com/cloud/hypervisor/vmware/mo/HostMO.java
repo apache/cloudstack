@@ -28,7 +28,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.Storage;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
@@ -890,8 +889,8 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             }
         }
 
-        if (dsMo != null) {
-            HypervisorHostHelper.createBaseFolder(dsMo, this, "StoragePod".equals(morDatastore.getType()) ? Storage.StoragePoolType.DatastoreCluster: null);
+        if (dsMo != null && !"StoragePod".equals(morDatastore.getType())) {
+            HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this);
         }
 
         if (s_logger.isTraceEnabled())

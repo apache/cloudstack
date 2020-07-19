@@ -33,7 +33,6 @@ import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
-import com.vmware.vim25.StoragePodSummary;
 import com.vmware.vim25.TraversalSpec;
 import org.apache.log4j.Logger;
 
@@ -66,10 +65,6 @@ public class DatastoreMO extends BaseMO {
 
     public DatastoreSummary getDatastoreSummary() throws Exception {
         return (DatastoreSummary)_context.getVimClient().getDynamicProperty(_mor, "summary");
-    }
-
-    public StoragePodSummary getDatastoreClusterSummary() throws Exception {
-        return (StoragePodSummary)_context.getVimClient().getDynamicProperty(_mor, "summary");
     }
 
     public HostDatastoreBrowserMO getHostDatastoreBrowserMO() throws Exception {

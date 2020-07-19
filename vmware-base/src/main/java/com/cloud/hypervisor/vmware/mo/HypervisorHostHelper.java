@@ -2088,7 +2088,8 @@ public class HypervisorHostHelper {
 
     public static void createBaseFolder(DatastoreMO dsMo, VmwareHypervisorHost hyperHost, StoragePoolType poolType) throws Exception {
         if (poolType != null && poolType == StoragePoolType.DatastoreCluster) {
-            List<ManagedObjectReference> datastoresInCluster = hyperHost.getContext().getVimClient().getDynamicProperty(dsMo.getMor(), "childEntity");
+            StoragepodMO storagepodMO = new StoragepodMO(hyperHost.getContext(), dsMo.getMor());
+            List<ManagedObjectReference> datastoresInCluster = storagepodMO.getDatastoresInDatastoreCluster();
             for (ManagedObjectReference datastore : datastoresInCluster) {
                 DatastoreMO childDsMo = new DatastoreMO(hyperHost.getContext(), datastore);
                 createBaseFolderInDatastore(childDsMo, hyperHost);
@@ -2098,7 +2099,7 @@ public class HypervisorHostHelper {
         }
     }
 
-    private static void createBaseFolderInDatastore(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
+    public static void createBaseFolderInDatastore(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
         String dsPath = String.format("[%s]", dsMo.getName());
         String folderPath = String.format("[%s] %s", dsMo.getName(), VSPHERE_DATASTORE_BASE_FOLDER);
 
