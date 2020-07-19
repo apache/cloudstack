@@ -177,6 +177,7 @@ import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
+import com.cloud.hypervisor.vmware.mo.StoragepodMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
@@ -4918,11 +4919,43 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             long capacity = 0;
             long available = 0;
+            List<ModifyStoragePoolAnswer> childDatastoresModifyStoragePoolAnswers = new ArrayList<>();
             if (pool.getType() == StoragePoolType.DatastoreCluster) {
-                StoragePodSummary summary = dsMo.getDatastoreClusterSummary();
-                capacity = summary.getCapacity();
-                available = summary.getFreeSpace();
+                StoragepodMO datastoreClusterMo = new StoragepodMO(getServiceContext(), morDatastore);
+                StoragePodSummary dsClusterSummary = datastoreClusterMo.getDatastoreClusterSummary();
+                capacity = dsClusterSummary.getCapacity();
+                available = dsClusterSummary.getFreeSpace();
+
+                List<ManagedObjectReference> childDatastoreMors = datastoreClusterMo.getDatastoresInDatastoreCluster();
+                for (ManagedObjectReference childDsMor : childDatastoreMors) {
+                    DatastoreMO childDsMo = new DatastoreMO(getServiceContext(), childDsMor);
+
+                    Map<String, TemplateProp> tInfo = new HashMap<>();
+                    DatastoreSummary summary = childDsMo.getDatastoreSummary();;
+                    ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, summary.getCapacity(), summary.getFreeSpace(), tInfo);
+                    StoragePoolInfo poolInfo = answer.getPoolInfo();
+                    poolInfo.setName(summary.getName());
+                    String datastoreClusterPath = pool.getPath();
+                    int pathstartPosition = datastoreClusterPath.lastIndexOf('/');
+                    String datacenterName = datastoreClusterPath.substring(0, pathstartPosition+1);
+                    String childPath = datacenterName + summary.getName();
+                    poolInfo.setHostPath(childPath);
+                    String uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
+                    poolInfo.setUuid(uuid);
+                    poolInfo.setLocalPath(cmd.LOCAL_PATH_PREFIX + File.separator + uuid);
+
+                    answer.setPoolInfo(poolInfo);
+                    answer.setPoolType(summary.getType());
+                    answer.setLocalDatastoreName(morDatastore.getValue());
+
+                    childDsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, uuid);
+                    HypervisorHostHelper.createBaseFolderInDatastore(childDsMo, hyperHost);
+
+                    childDatastoresModifyStoragePoolAnswers.add(answer);
+                }
             } else {
+                HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost);
+
                 DatastoreSummary summary = dsMo.getDatastoreSummary();
                 capacity = summary.getCapacity();
                 available = summary.getFreeSpace();
@@ -4930,6 +4963,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             Map<String, TemplateProp> tInfo = new HashMap<>();
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
+            answer.setDatastoreClusterChildren(childDatastoresModifyStoragePoolAnswers);
 
             if (cmd.getAdd() && (pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup) && pool.getType() != StoragePoolType.DatastoreCluster) {
                 answer.setPoolType(dsMo.getDatastoreType());
@@ -5312,14 +5346,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getStorageId());
 
             if (morDs != null) {
-                DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
                 long capacity = 0;
                 long free = 0;
                 if (cmd.getPooltype() == StoragePoolType.DatastoreCluster) {
-                    StoragePodSummary summary = datastoreMo.getDatastoreClusterSummary();
+                    StoragepodMO datastoreClusterMo = new StoragepodMO(getServiceContext(), morDs);
+                    StoragePodSummary summary = datastoreClusterMo.getDatastoreClusterSummary();
                     capacity = summary.getCapacity();
                     free = summary.getFreeSpace();
                 } else {
+                    DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
                     DatastoreSummary summary = datastoreMo.getDatastoreSummary();
                     capacity = summary.getCapacity();
                     free = summary.getFreeSpace();

@@ -18,7 +18,6 @@ package com.cloud.hypervisor.vmware.mo;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
@@ -886,8 +885,8 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             }
         }
 
-        if (dsMo != null) {
-            HypervisorHostHelper.createBaseFolder(dsMo, this, "StoragePod".equals(morDatastore.getType()) ? Storage.StoragePoolType.DatastoreCluster: null);
+        if (dsMo != null && !"StoragePod".equals(morDatastore.getType())) {
+            HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this);
         }
 
         if (s_logger.isTraceEnabled())
