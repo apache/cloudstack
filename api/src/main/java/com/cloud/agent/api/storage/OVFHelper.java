@@ -255,13 +255,16 @@ public class OVFHelper {
 
                 long units = 1;
                 if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
-                    units = ResourceType.bytesToKiB;
+                    units = 1024 * 1024;
                 } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
-                    units = ResourceType.bytesToMiB;
+                    units = 1024;
                 } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
-                    units = ResourceType.bytesToGiB;
+                    units = 1;
+                } else if (allocationUnits.equalsIgnoreCase("B") || allocationUnits.equalsIgnoreCase("Bytes") || allocationUnits.equalsIgnoreCase("byte")) {
+                    units = 1024 * 1024 * 1024;
                 }
-                od._capacity = od._capacity * units;
+                // Send capacity in GB
+                od._capacity = Long.divideUnsigned(od._capacity, units);
             }
             od._controller = getControllerType(items, od._diskId);
             vd.add(od);
