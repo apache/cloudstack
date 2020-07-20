@@ -1054,8 +1054,8 @@
                     }
                 });
                 for (var k = 0; k < deployOvfProperties.length; k++) {
-                    deployVmData["ovfproperties[" + k + "].key"] = deployOvfProperties[k].key;
-                    deployVmData["ovfproperties[" + k + "].value"] = deployOvfProperties[k].value;
+                    deployVmData["properties[" + k + "].key"] = deployOvfProperties[k].key;
+                    deployVmData["properties[" + k + "].value"] = deployOvfProperties[k].value;
                 }
             }
 
