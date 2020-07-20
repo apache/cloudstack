@@ -27,6 +27,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
@@ -63,7 +64,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private String downloadUrl;
     private String toFile;
     public TemplateDownloader.Status status;
-    public String errorString = " ";
+    private String errorString = null;
     private long remoteSize = 0;
     public long downloadTime = 0;
     public long totalBytes;
@@ -218,7 +219,10 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             errorString = hte.getMessage();
         } catch (IOException ioe) {
             status = TemplateDownloader.Status.UNRECOVERABLE_ERROR; //probably a file write error?
-            errorString = ioe.getMessage();
+            // Let's not overwrite the original error message.
+            if (errorString == null) {
+                errorString = ioe.getMessage();
+            }
         } finally {
             if (status == Status.UNRECOVERABLE_ERROR && file.exists() && !file.isDirectory()) {
                 file.delete();
@@ -243,7 +247,6 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 offset = writeBlock(bytes, out, block, offset);
                 if (!verifyFormat.isVerifiedFormat() && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
                     verifyFormat.invoke();
-                    if (verifyFormat.isInvalid()) return true;
                 }
             } else {
                 done = true;
@@ -443,7 +446,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
 
     @Override
     public String getDownloadError() {
-        return errorString;
+        return errorString == null ? " " : errorString;
     }
 
     @Override
@@ -495,17 +498,12 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     }
 
     private class VerifyFormat {
-        private boolean invalidFormat;
         private File file;
         private boolean verifiedFormat;
 
         public VerifyFormat(File file) {
             this.file = file;
             this.verifiedFormat = false;
-        }
-
-        boolean isInvalid() {
-            return invalidFormat;
         }
 
         public boolean isVerifiedFormat() {
@@ -529,11 +527,10 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 }
                 status = Status.UNRECOVERABLE_ERROR;
                 errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
-                invalidFormat = true;
+                throw new CloudRuntimeException(errorString);
             } else {
                 s_logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");
                 verifiedFormat = true;
-                invalidFormat = false;
             }
             return this;
         }
