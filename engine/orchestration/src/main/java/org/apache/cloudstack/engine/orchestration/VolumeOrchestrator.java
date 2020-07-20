@@ -720,12 +720,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
         if (rootDisksize != null) {
-            rootDisksize = rootDisksize * 1024 * 1024 * 1024;
-            if (rootDisksize > size) {
-                s_logger.debug("Using root disk size of " + rootDisksize + " Bytes for volume " + name);
+            if (template.isDeployAsIs()) {
+                // Volume size specified from template deploy-as-is
                 size = rootDisksize;
             } else {
-                s_logger.debug("Using root disk size of " + size + " Bytes for volume " + name + "since specified root disk size of " + rootDisksize + " Bytes is smaller than template");
+                rootDisksize = rootDisksize * 1024 * 1024 * 1024;
+                if (rootDisksize > size) {
+                    s_logger.debug("Using root disk size of " + rootDisksize + " Bytes for volume " + name);
+                    size = rootDisksize;
+                } else {
+                    s_logger.debug("Using root disk size of " + size + " Bytes for volume " + name + "since specified root disk size of " + rootDisksize + " Bytes is smaller than template");
+                }
             }
         }
 
