@@ -308,17 +308,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 } catch (JsonSyntaxException e) {
                     s_logger.warn(String.format("found an unexpected property for template '%s'; %s: %s",
                             template.getUuid(), template.getDetailName(), template.getDetailValue()));
-                    templateResponse.addDetail(key, template.getDetailValue());
                 }
-            } else if (key.startsWith(ImageStore.REQUIRED_NETWORK_PREFIX)) {
-                // FR37 TODO do similar as above
-                    s_logger.warn(String.format("not encoding network definition for template '%s'; %s: %s",
-                            template.getUuid(), template.getDetailName(), template.getDetailValue()));
-                    templateResponse.addDetail(key, template.getDetailValue());
-
-            } else {
-                templateResponse.addDetail(key, template.getDetailValue());
             }
+            templateResponse.addDetail(key, template.getDetailValue());
         }
 
         // update tag information
