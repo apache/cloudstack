@@ -397,7 +397,10 @@ class VmwareVmImplementer {
                     LOGGER.warn(String.format("OVF property %s not found on template, discarding", vmPropertyKey));
                     continue;
                 }
+                // FR37 the key is without acs prefix (in the TO)
                 propertyTO.setKey(vmPropertyKey);
+                // FR37 if the UI send the whole json we should just copy it otherwise take the json from the template and set the value on it
+                propertyTO.setValue(details.get(detailKey));
                 ovfProperties.add(propertyTO);
             }
         }
