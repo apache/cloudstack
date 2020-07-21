@@ -181,6 +181,7 @@ import com.cloud.hypervisor.vmware.mo.StoragepodMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
+import com.cloud.hypervisor.vmware.mo.VirtualStorageObjectManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
@@ -226,6 +227,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
+import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.ArrayUpdateOperation;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.ComputeResourceSummary;
@@ -245,6 +247,7 @@ import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostHostBusAdapter;
 import com.vmware.vim25.HostInternetScsiHba;
 import com.vmware.vim25.HostPortGroupSpec;
+import com.vmware.vim25.ID;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.ObjectContent;
@@ -266,6 +269,8 @@ import com.vmware.vim25.VAppProductSpec;
 import com.vmware.vim25.VAppPropertyInfo;
 import com.vmware.vim25.VAppPropertySpec;
 import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VStorageObject;
+import com.vmware.vim25.VStorageObjectConfigInfo;
 import com.vmware.vim25.VimPortType;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
@@ -746,6 +751,24 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else if (newSize == oldSize) {
                 return new ResizeVolumeAnswer(cmd, true, "success", newSize * ResourceType.bytesToKiB);
             }
+            /*
+            // FR41 this is yet to fix
+            ManagedObjectReference morDS1 = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
+            DatastoreMO dsMo1 = new DatastoreMO(hyperHost.getContext(), morDS1);
+            vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo1, path + VMDK_EXTENSION);
+            DatastoreFile dsFile1 = new DatastoreFile(vmdkDataStorePath);
+
+            s_logger.debug("vDiskid does not exist for volume " + vmdkDataStorePath + " registering the disk now");
+            VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(getServiceContext());
+            try {
+                VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsFile1, null, dsMo1.getOwnerDatacenter().second());
+                VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
+                ID vdiskId = diskConfigInfo.getId();
+            } catch (Throwable e) {
+                if (e instanceof AlreadyExistsFaultMsg) {
+
+                }
+            }*/
 
             if (vmName.equalsIgnoreCase("none")) {
                 // OfflineVmwareMigration: we need to refactor the worker vm creation out for use in migration methods as well as here
