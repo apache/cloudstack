@@ -232,4 +232,6 @@ public interface StorageManager extends StorageService {
 
     DiskTO getDiskWithThrottling(DataTO volTO, Volume.Type volumeType, long deviceId, String path, long offeringId, long diskOfferingId);
 
+    boolean isStoragePoolDatastoreClusterParent(StoragePool pool);
+
 }

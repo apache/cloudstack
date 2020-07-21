@@ -217,6 +217,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         List<Volume> requestVolumes = new ArrayList<>();
         requestVolumes.add(volume);
         if (dskCh.getHypervisorType() == HypervisorType.VMware) {
+            // Skip the parent datastore cluster, consider only child storage pools in it
+            if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster && storageMgr.isStoragePoolDatastoreClusterParent(pool)) {
+                return false;
+            }
+
             try {
                 boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, pool);
                 if (!isStoragePoolStoragepolicyComplaince) {
