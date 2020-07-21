@@ -2613,6 +2613,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return disk;
     }
 
+    @Override
+    public boolean isStoragePoolDatastoreClusterParent(StoragePool pool) {
+        List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(pool.getId());
+        if (childStoragePools != null && !childStoragePools.isEmpty()) {
+            return true;
+        }
+        return false;
+    }
+
     private void setVolumeObjectTOThrottling(VolumeObjectTO volumeTO, final ServiceOffering offering, final DiskOffering diskOffering) {
         volumeTO.setBytesReadRate(getDiskBytesReadRate(offering, diskOffering));
         volumeTO.setBytesWriteRate(getDiskBytesWriteRate(offering, diskOffering));
