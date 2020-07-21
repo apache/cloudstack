@@ -108,7 +108,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         String ovfFilePath = getOVFFilePath(templateFileFullPath);
         OVFHelper ovfHelper = new OVFHelper();
         Document doc = ovfHelper.getDocumentFromFile(ovfFilePath);
-        // FR37 TODO assess side effects of this call, remove capture of return value and optionally remove or simplify called method
+
         List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, doc);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("Found %d disks in template %s", CollectionUtils.isNotEmpty(disks) ? disks.size() : 0, ovfFilePath));
@@ -116,6 +116,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         if (CollectionUtils.isNotEmpty(disks)) {
             info.disks = disks;
         }
+
         List<NetworkPrerequisiteTO> nets = ovfHelper.getNetPrerequisitesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(nets)) {
             LOGGER.info("Found " + nets.size() + " prerequisite networks");
@@ -123,6 +124,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         } else if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("no net prerequisites found in template %s", ovfFilePath));
         }
+
         List<OVFPropertyTO> ovfProperties = ovfHelper.getConfigurableOVFPropertiesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(ovfProperties)) {
             LOGGER.info("Found " + ovfProperties.size() + " configurable OVF properties");
@@ -130,6 +132,8 @@ public class OVAProcessor extends AdapterBase implements Processor {
         } else if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("no ovf properties found in template %s", ovfFilePath));
         }
+
+        // FR37 TODO add any user queries that are required for this OVA
     }
 
     private void setFileSystemAccessRights(String templatePath) {
