@@ -5115,7 +5115,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         //Verify that all objects exist before passing them to the service
         Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
 
-        verifyDetails(cmd.getDetails());
+        verifyIopsFromDetails(cmd.getDetails());
 
         Long zoneId = cmd.getZoneId();
 
@@ -5474,7 +5474,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     // this is an opportunity to verify that parameters that came in via the Details Map are OK
     // for example, minIops and maxIops should either both be specified or neither be specified and,
     // if specified, minIops should be <= maxIops
-    private void verifyDetails(Map<String,String> details) {
+    private void verifyIopsFromDetails(Map<String,String> details) {
         if (details != null) {
             String minIops = details.get("minIops");
             String maxIops = details.get("maxIops");
