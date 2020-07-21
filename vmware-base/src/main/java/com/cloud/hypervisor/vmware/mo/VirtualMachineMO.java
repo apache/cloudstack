@@ -2436,13 +2436,7 @@ public class VirtualMachineMO extends BaseMO {
                                     String deviceNumbering = getDeviceBusName(devices, device);
 
                                     s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
-                                    if (((VirtualDisk) device).getVDiskId() == null) {
-                                        s_logger.debug("vDiskid does not exist for volume " + vmdkDatastorePath + " registering the disk now");
-                                        VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(getOwnerDatacenter().first().getContext());
-                                        VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsBackingFile, null, getOwnerDatacenter().first().getName());
-                                        VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
-                                        ((VirtualDisk) device).setVDiskId(diskConfigInfo.getId());
-                                    }
+                                    registerVirtualDisk((VirtualDisk) device, dsBackingFile);
                                     return new Pair<>((VirtualDisk)device, deviceNumbering);
                                 }
 
@@ -2513,15 +2507,17 @@ public class VirtualMachineMO extends BaseMO {
                             if (matchExactly) {
                                 if (backingBaseName.equalsIgnoreCase(srcBaseName)) {
                                     String deviceNumbering = getDeviceBusName(devices, device);
-
                                     s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
+
+                                    registerVirtualDisk((VirtualDisk) device, dsBackingFile);
                                     return new Pair<VirtualDisk, String>((VirtualDisk)device, deviceNumbering);
                                 }
                             } else {
                                 if (backingBaseName.contains(trimmedSrcBaseName)) {
                                     String deviceNumbering = getDeviceBusName(devices, device);
-
                                     s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
+
+                                    registerVirtualDisk((VirtualDisk) device, dsBackingFile);
                                     return new Pair<VirtualDisk, String>((VirtualDisk)device, deviceNumbering);
                                 }
                             }
@@ -2534,6 +2530,20 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         return null;
+    }
+
+    public void registerVirtualDisk(VirtualDisk device, DatastoreFile dsBackingFile) {
+        if (((VirtualDisk) device).getVDiskId() == null) {
+            try {
+                s_logger.debug("vDiskid does not exist for volume " + dsBackingFile.getFileName() + " registering the disk now");
+                VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(getOwnerDatacenter().first().getContext());
+                VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsBackingFile, null, getOwnerDatacenter().first().getName());
+                VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
+                ((VirtualDisk) device).setVDiskId(diskConfigInfo.getId());
+            } catch (Exception e) {
+                s_logger.warn("Exception while trying to register a disk as first class disk to get the unique identifier, main operation still continues: " + e.getMessage());
+            }
+        }
     }
 
     public String getDiskCurrentTopBackingFileInChain(String deviceBusName) throws Exception {
@@ -2591,6 +2601,8 @@ public class VirtualMachineMO extends BaseMO {
                             builder.addDisk(deviceBusName, diskBackingInfo.getFileName());
                             diskBackingInfo = diskBackingInfo.getParent();
                         }
+                        DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
+                        registerVirtualDisk((VirtualDisk) device, dsBackingFile);
                     }
                 }
             }
@@ -2609,6 +2621,8 @@ public class VirtualMachineMO extends BaseMO {
                     VirtualDeviceBackingInfo backingInfo = ((VirtualDisk)device).getBacking();
                     if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
                         VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+                        DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
+                        registerVirtualDisk((VirtualDisk) device, dsBackingFile);
                         disks.add(new Pair<Integer, ManagedObjectReference>(new Integer(device.getKey()), diskBackingInfo.getDatastore()));
                     }
                 }
@@ -2717,6 +2731,10 @@ public class VirtualMachineMO extends BaseMO {
 
         for (VirtualDevice device : devices) {
             if (device instanceof VirtualDisk) {
+                VirtualDeviceBackingInfo backingInfo = device.getBacking();
+                VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+                DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
+                registerVirtualDisk((VirtualDisk) device, dsBackingFile);
                 virtualDisks.add((VirtualDisk)device);
             }
         }
@@ -2751,6 +2769,7 @@ public class VirtualMachineMO extends BaseMO {
 
                     reConfigSpec.getDeviceChange().add(deviceConfigSpec);
                 }
+                registerVirtualDisk((VirtualDisk) device, dsBackingFile);
             }
         }
 
@@ -2778,6 +2797,23 @@ public class VirtualMachineMO extends BaseMO {
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
                 if (device instanceof VirtualDisk) {
+                    if (((VirtualDisk) device).getVDiskId() == null) {
+                        try {
+                            // Register as first class disk
+                            VirtualDeviceBackingInfo backingInfo = device.getBacking();
+                            if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+                                VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo) backingInfo;
+                                DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
+                                s_logger.debug("vDiskid does not exist for volume " + diskBackingInfo.getFileName() + " registering the disk now");
+                                VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(getOwnerDatacenter().first().getContext());
+                                VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsBackingFile, null, getOwnerDatacenter().first().getName());
+                                VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
+                                ((VirtualDisk) device).setVDiskId(diskConfigInfo.getId());
+                            }
+                        } catch (Exception e) {
+                            s_logger.warn("Exception while trying to register a disk as first class disk to get the unique identifier, main operation still continues: " + e.getMessage());
+                        }
+                    }
                     deviceList.add((VirtualDisk)device);
                 }
             }
