@@ -21,6 +21,7 @@ from utility import getHealthChecksData, formatPort
 
 SSL_CERTS_DIR = "/etc/ssl/cloudstack/"
 
+
 def checkGlobal(haproxyData, haCfgSections):
     if "global.maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
         if haproxyData["global.maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
@@ -33,26 +34,28 @@ def checkGlobal(haproxyData, haCfgSections):
 
     return True
 
+
 def checkDefaults(haproxyData, haCfgSections):
     if "timeout" in haCfgSections["defaults"]:
         timeouts = haCfgSections["defaults"]["timeout"]
         if "default.timeout.connect" in haproxyData:
             timeout = "connect    %s" % haproxyData["default.timeout.connect"]
             if timeout not in timeouts:
-                 print "default timeout connect mismatch occured"
-                 return False
+                print "default timeout connect mismatch occured"
+                return False
         if "default.timeout.server" in haproxyData:
             timeout = "server     %s" % haproxyData["default.timeout.server"]
             if timeout not in timeouts:
-                 print "default timeout server mismatch occured"
-                 return False
+                print "default timeout server mismatch occured"
+                return False
         if "default.timeout.client" in haproxyData:
             timeout = "client     %s" % haproxyData["default.timeout.client"]
             if timeout not in timeouts:
-                 print "default timeout client mismatch occured"
-                 return False
+                print "default timeout client mismatch occured"
+                return False
 
     return True
+
 
 def checkFrontendLbValues(lbSection, cfgSection):
     correct = True
@@ -67,6 +70,7 @@ def checkFrontendLbValues(lbSection, cfgSection):
                 correct = False
 
     return correct
+
 
 def checkBackendLbValues(lbSection, cfgSection):
     correct = True
@@ -112,6 +116,7 @@ def checkBackendLbValues(lbSection, cfgSection):
 
     return correct
 
+
 def checkServerValues(haproxyData, serverSections):
     correct = True
     serverArray = serverSections[0].split(" ")
@@ -150,14 +155,14 @@ def checkServerValues(haproxyData, serverSections):
 
     return correct
 
+
 def checkLoadBalance(haproxyData, haCfgSections):
     correct = True
     for lbSec in haproxyData:
         if "global.maxconn" in lbSec:   # Ignore first part (global and default settings)
             continue
         srcServer = lbSec["sourceIp"].replace('.', '_') + "-" + \
-                    formatPort(lbSec["sourcePortStart"],
-                               lbSec["sourcePortEnd"])
+            formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
         secName = "listen " + srcServer
         secFrontend = "frontend " + srcServer
         secBackend = "backend " + srcServer + "-backend"
@@ -192,7 +197,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
                     correct = False
 
                 bindStr = lbSec["sourceIp"] + ":" + formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
-                if lbSec.has_key("sslcert"):
+                if "sslcert" in lbSec:
                     bindStr += " ssl crt " + SSL_CERTS_DIR + lbSec["sslcert"]
                     if "http2" in lbSec and lbSec["http2"].lower() == 'true':
                         bindStr += " alpn h2,http/1.1"
@@ -201,7 +206,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
                     correct = False
 
                 if ("http" in lbSec and lbSec["http"] == 'true') \
-                        or lbSec.has_key("sslcert") \
+                        or "sslcert" in lbSec \
                         or lbSec["stickiness"].find("AppCookie") != -1 \
                         or lbSec["stickiness"].find("LbCookie") != -1:
                     if not ("mode" in cfgSection and cfgSection["mode"][0] == "http"):

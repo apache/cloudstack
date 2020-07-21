@@ -29,6 +29,7 @@ HAPROXY_CONF_P = "/etc/haproxy/haproxy.cfg"
 SSL_CERTS_DIR = "/etc/ssl/cloudstack/"
 CsHelper.execute("mkdir -p %s" % SSL_CERTS_DIR)
 
+
 class CsLoadBalancer(CsDataBag):
     """ Manage Load Balancer entries """
 
@@ -94,7 +95,7 @@ class CsLoadBalancer(CsDataBag):
     def _configure_firewall_for_transparent(self, is_transparent):
         tableNo = 99
         firewall = self.config.get_fw()
-        if is_transparent is None or is_transparent == False:
+        if is_transparent is None or not is_transparent:
             if ["mangle", "", "-A PREROUTING -p tcp -m socket -j DIVERT"] in firewall:
                 firewall.remove(["mangle", "", "-A PREROUTING -p tcp -m socket -j DIVERT"])
                 firewall.remove(["mangle", "", "-A DIVERT -j MARK --set-xmark %s/0xffffffff" % hex(tableNo)])
@@ -103,7 +104,7 @@ class CsLoadBalancer(CsDataBag):
             if CsHelper.execute("ip rule show fwmark %s lookup %s" % (tableNo, tableNo)):
                 CsHelper.execute("ip route del local 0.0.0.0/0 dev lo table %s" % tableNo)
                 CsHelper.execute("ip rule del fwmark %s lookup %s" % (tableNo, tableNo))
-        elif is_transparent == True:
+        elif is_transparent:
             if ["mangle", "", "-A PREROUTING -p tcp -m socket -j DIVERT"] not in firewall:
                 firewall.append(["mangle", "", "-N DIVERT"])
                 firewall.append(["mangle", "", "-A PREROUTING -p tcp -m socket -j DIVERT"])
@@ -120,10 +121,10 @@ class CsLoadBalancer(CsDataBag):
             cert_names.append(cert['name'] + ".pem")
             file = CsFile("%s/%s.pem" % (SSL_CERTS_DIR, cert['name']))
             file.empty()
-            file.add("%s\n" % cert['cert'].replace("\r\n","\n"))
+            file.add("%s\n" % cert['cert'].replace("\r\n", "\n"))
             if 'chain' in cert.keys():
-                file.add("%s\n" % cert['chain'].replace("\r\n","\n"))
-            file.add("%s\n" % cert['key'].replace("\r\n","\n"))
+                file.add("%s\n" % cert['chain'].replace("\r\n", "\n"))
+            file.add("%s\n" % cert['key'].replace("\r\n", "\n"))
             file.commit()
         for f in listdir(SSL_CERTS_DIR):
             if f not in cert_names:
