@@ -203,6 +203,14 @@ class StartCommandExecutor {
                 diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 hasSnapshot = vmMo.hasSnapshot();
                 // FR37 - only tear nics, and add nics per the provided nics list
+                if (LOGGER.isTraceEnabled()) {
+                    String netMsg = "tearing down networks :";
+                    for (VirtualDevice nic : vmMo.getNicDevices()) {
+                        netMsg += nic.getDeviceInfo().getLabel()+":";
+                    }
+                    LOGGER.trace(netMsg);
+                }
+                // FR37 save vmMo.getNicDevices() to ensure recreation?
                 vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
                 /*
                 if (!hasSnapshot)
