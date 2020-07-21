@@ -2402,6 +2402,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
         sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
+        sb.and("parent", sb.entity().getParent(), Op.EQ);
 
         SearchCriteria<StoragePoolJoinVO> sc = sb.create();
 
@@ -2439,6 +2440,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (scopeType != null) {
             sc.setParameters("scope", scopeType.toString());
         }
+        sc.setParameters("parent", 0);
 
         // search Pool details by ids
         Pair<List<StoragePoolJoinVO>, Integer> uniquePoolPair = _poolJoinDao.searchAndCount(sc, searchFilter);
