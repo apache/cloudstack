@@ -125,4 +125,6 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     void deletePoolTags(long poolId);
 
     List<StoragePoolVO> listChildStoragePoolsInDatastoreCluster(long poolId);
+
+    Integer countAll();
 }

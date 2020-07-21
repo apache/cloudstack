@@ -557,5 +557,14 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     public List<StoragePoolVO> listChildStoragePoolsInDatastoreCluster(long poolId) {
         QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
         sc.and(sc.entity().getParent(), Op.EQ, poolId);
-        return sc.list();    }
+        return sc.list();
+    }
+
+    @Override
+    public Integer countAll() {
+        SearchCriteria<StoragePoolVO> sc = createSearchCriteria();
+        sc.addAnd("parent", SearchCriteria.Op.EQ, 0);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
+        return getCount(sc);
+    }
 }
