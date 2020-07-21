@@ -552,4 +552,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     public void deletePoolTags(long poolId) {
         _tagsDao.deleteTags(poolId);
     }
+
+    @Override
+    public List<StoragePoolVO> listChildStoragePoolsInDatastoreCluster(long poolId) {
+        QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+        sc.and(sc.entity().getParent(), Op.EQ, poolId);
+        return sc.list();    }
 }
