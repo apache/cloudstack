@@ -786,7 +786,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (template.isDeployAsIs()) {
             templateAsIsDisks = _tmpltMgr.getTemplateDisksOnImageStore(template.getId(), DataStoreRole.Image);
             if (CollectionUtils.isNotEmpty(templateAsIsDisks)) {
-                templateAsIsDisks = templateAsIsDisks.stream().sorted(Comparator.comparing(DatadiskTO::getDiskNumber)).collect(Collectors.toList());
+                templateAsIsDisks = templateAsIsDisks.stream()
+                        .filter(x -> !x.isIso())
+                        .sorted(Comparator.comparing(DatadiskTO::getDiskNumber))
+                        .collect(Collectors.toList());
             }
             volumesNumber = templateAsIsDisks.size();
         }
@@ -801,7 +804,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             String volumeName = name;
             Long volumeSize = rootDisksize;
             if (template.isDeployAsIs()) {
-                volumeName += "-" + templateAsIsDisks.get(number).getDiskNumber();
+                int volumeNameSuffix = templateAsIsDisks.get(number).getDiskNumber();
+                volumeName = String.format("%s-%d", volumeName, volumeNameSuffix);
                 volumeSize = templateAsIsDisks.get(number).getVirtualSize();
             }
             profiles.add(allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops, template, vm, owner));
