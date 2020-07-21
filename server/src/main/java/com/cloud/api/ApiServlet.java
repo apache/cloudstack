@@ -355,6 +355,7 @@ public class ApiServlet extends HttpServlet {
         }
 
         final String commandName = command[0];
+        CallContext.current().setApiName(commandName);
         for (Map.Entry<String, Object[]> entry: requestParameters.entrySet()) {
             if (entry.getKey().equals(ApiConstants.PROJECT_ID) || isSpecificAPI(commandName)) {
                 String projectId = null;
