@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -64,6 +65,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class CloudOrchestrator implements OrchestrationService {
+    private static final Logger LOGGER = Logger.getLogger(CloudOrchestrator.class);
 
     @Inject
     private VMEntityManager vmEntityManager;
@@ -99,6 +101,7 @@ public class CloudOrchestrator implements OrchestrationService {
     VolumeOrchestrationService _volumeMgr;
 
     public CloudOrchestrator() {
+        LOGGER.info("We are starting to use the cloud orchestrator \\o/");
     }
 
     public VirtualMachineEntity createFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory,
@@ -159,8 +162,7 @@ public class CloudOrchestrator implements OrchestrationService {
         int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan,
         Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap) throws InsufficientCapacityException {
 
-        // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks,
-        // vmEntityManager);
+        LOGGER.info(String.format("creating virtual machine %s using template %s with hostname %s", templateId, hostName));
 
         LinkedHashMap<NetworkVO, List<? extends NicProfile>> networkIpMap = new LinkedHashMap<NetworkVO, List<? extends NicProfile>>();
         for (String uuid : networkNicMap.keySet()) {

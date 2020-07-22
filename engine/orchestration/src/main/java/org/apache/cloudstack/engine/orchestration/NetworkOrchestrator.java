@@ -747,6 +747,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public void allocate(final VirtualMachineProfile vm, final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final Map<String, Map<Integer, String>> extraDhcpOptions) throws InsufficientCapacityException,
     ConcurrentOperationException {
 
+        if (s_logger.isTraceEnabled()) {
+            // FR37 TODO get getwork requirements from template/vm and compare to networks(.size())
+            s_logger.trace(String.format("allocating networks for %s(template %s); %d networks",vm.getInstanceName(), vm.getTemplate().getUuid(), networks.size()));
+        }
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) throws InsufficientCapacityException {

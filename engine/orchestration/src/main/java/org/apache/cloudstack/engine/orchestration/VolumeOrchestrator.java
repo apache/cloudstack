@@ -808,6 +808,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 volumeName = String.format("%s-%d", volumeName, volumeNameSuffix);
                 volumeSize = templateAsIsDisks.get(number).getVirtualSize();
             }
+            s_logger.info(String.format("adding disk object %s to %s", volumeName, vm.getInstanceName()));
             profiles.add(allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops, template, vm, owner));
         }
         return profiles;

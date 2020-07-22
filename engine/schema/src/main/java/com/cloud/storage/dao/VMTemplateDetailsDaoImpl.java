@@ -25,6 +25,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.google.gson.Gson;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -93,11 +94,7 @@ public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateD
 
     @Override
     public List<OVFPropertyTO> listPropertiesByTemplateId(long templateId) {
-        SearchCriteria<VMTemplateDetailVO> ssc = createSearchCriteria();
-        ssc.addAnd("resourceId", SearchCriteria.Op.EQ, templateId);
-        ssc.addAnd("name", SearchCriteria.Op.LIKE, ImageStore.ACS_PROPERTY_PREFIX + "%");
-
-        List<VMTemplateDetailVO> ovfProperties = search(ssc, null);
+        List<VMTemplateDetailVO> ovfProperties = listDetailsByTemplateId(templateId, ImageStore.ACS_PROPERTY_PREFIX);
         List<OVFPropertyTO> properties = new ArrayList<>();
         for (VMTemplateDetailVO property : ovfProperties) {
             OVFPropertyTO ovfPropertyTO = gson.fromJson(property.getValue(), OVFPropertyTO.class);
@@ -107,17 +104,33 @@ public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateD
     }
 
     @Override
-    public List<DatadiskTO> listDisksByTemplateId(long templateId) {
-        SearchCriteria<VMTemplateDetailVO> ssc = createSearchCriteria();
-        ssc.addAnd("resourceId", SearchCriteria.Op.EQ, templateId);
-        ssc.addAnd("name", SearchCriteria.Op.LIKE, ImageStore.DISK_DEFINITION_PREFIX + "%");
+    public List<NetworkPrerequisiteTO> listNetworkRequirementsByTemplateId(long templateId) {
+        List<VMTemplateDetailVO> networkDetails = listDetailsByTemplateId(templateId, ImageStore.REQUIRED_NETWORK_PREFIX);
+        List<NetworkPrerequisiteTO> networkPrereqs = new ArrayList<>();
+        for (VMTemplateDetailVO property : networkDetails) {
+            NetworkPrerequisiteTO ovfPropertyTO = gson.fromJson(property.getValue(), NetworkPrerequisiteTO.class);
+            networkPrereqs.add(ovfPropertyTO);
+        }
+        return networkPrereqs;
+    }
 
-        List<VMTemplateDetailVO> diskDefinitions = search(ssc, null);
+    @Override
+    public List<DatadiskTO> listDisksByTemplateId(long templateId) {
+        List<VMTemplateDetailVO> diskDefinitions = listDetailsByTemplateId(templateId, ImageStore.DISK_DEFINITION_PREFIX);
         List<DatadiskTO> disks = new ArrayList<>();
         for (VMTemplateDetailVO detail : diskDefinitions) {
             DatadiskTO datadiskTO = gson.fromJson(detail.getValue(), DatadiskTO.class);
             disks.add(datadiskTO);
         }
         return disks;
+    }
+
+    @Override
+    public List<VMTemplateDetailVO> listDetailsByTemplateId(long templateId, String prefix) {
+        SearchCriteria<VMTemplateDetailVO> ssc = createSearchCriteria();
+        ssc.addAnd("resourceId", SearchCriteria.Op.EQ, templateId);
+        ssc.addAnd("name", SearchCriteria.Op.LIKE, prefix + "%");
+
+        return search(ssc, null);
     }
 }

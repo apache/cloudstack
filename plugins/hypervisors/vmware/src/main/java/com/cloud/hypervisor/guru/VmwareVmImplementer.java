@@ -192,8 +192,9 @@ class VmwareVmImplementer {
         }
 
         List<OVFPropertyTO> ovfProperties = getOvfPropertyList(vm, details);
-
         handleOvfProperties(vm, to, details, ovfProperties);
+
+        // FR37 TODO add required nics here or let the start executor copy them from the base template?
 
         setDetails(to, details);
 
