@@ -26,6 +26,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
@@ -111,7 +112,7 @@ public class DefaultHostListener implements HypervisorHostListener {
             dataStoreVO = new StoragePoolVO();
             dataStoreVO.setStorageProviderName(poolVO.getStorageProviderName());
             dataStoreVO.setHostAddress(childStoragePoolInfo.getHost());
-            dataStoreVO.setPoolType(poolVO.getPoolType());
+            dataStoreVO.setPoolType(Storage.StoragePoolType.PreSetup);
             dataStoreVO.setPath(childStoragePoolInfo.getHostPath());
             dataStoreVO.setPort(poolVO.getPort());
             dataStoreVO.setName(childStoragePoolInfo.getName());
@@ -127,6 +128,7 @@ public class DefaultHostListener implements HypervisorHostListener {
             dataStoreVO.setUsedBytes(childDataStoreAnswer.getPoolInfo().getCapacityBytes() - childDataStoreAnswer.getPoolInfo().getAvailableBytes());
             dataStoreVO.setHypervisor(poolVO.getHypervisor());
             dataStoreVO.setScope(poolVO.getScope());
+            dataStoreVO.setParent(poolVO.getId());
 
             Map<String, String> details = new HashMap<>();
             if(StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
