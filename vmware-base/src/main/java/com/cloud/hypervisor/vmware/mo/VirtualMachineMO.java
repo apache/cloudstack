@@ -2595,13 +2595,13 @@ public class VirtualMachineMO extends BaseMO {
                     VirtualDeviceBackingInfo backingInfo = ((VirtualDisk)device).getBacking();
                     if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
                         VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
-
+                        String diskBackingFileName = diskBackingInfo.getFileName();
                         while (diskBackingInfo != null) {
                             String deviceBusName = getDeviceBusName(devices, device);
                             builder.addDisk(deviceBusName, diskBackingInfo.getFileName());
                             diskBackingInfo = diskBackingInfo.getParent();
                         }
-                        DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
+                        DatastoreFile dsBackingFile = new DatastoreFile(diskBackingFileName);
                         registerVirtualDisk((VirtualDisk) device, dsBackingFile);
                     }
                 }
