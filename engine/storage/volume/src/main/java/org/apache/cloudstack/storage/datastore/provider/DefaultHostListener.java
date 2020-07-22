@@ -136,7 +136,6 @@ public class DefaultHostListener implements HypervisorHostListener {
             }
 
             List<String> storageTags = storagePoolTagsDao.getStoragePoolTags(poolId);
-            storageTags.add("DataStoreCluster-" + poolVO.getUuid());
             primaryStoreDao.persist(dataStoreVO, details, storageTags);
 
             updateStoragePoolHostVOAndDetails(dataStoreVO, hostId, childDataStoreAnswer);

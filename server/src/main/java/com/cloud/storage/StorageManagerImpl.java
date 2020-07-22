@@ -822,6 +822,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Updating Storage Pool Tags to :" + storagePoolTags);
             }
+            if (pool.getPoolType() == StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(pool.getId());
+                for (StoragePoolVO childPool : childStoragePools) {
+                    _storagePoolTagsDao.persist(childPool.getId(), storagePoolTags);
+                }
+            }
             _storagePoolTagsDao.persist(pool.getId(), storagePoolTags);
         }
 
@@ -918,10 +924,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             s_logger.warn("Unable to delete storage id: " + id + " due to it is not in Maintenance state");
             throw new InvalidParameterValueException("Unable to delete storage due to it is not in Maintenance state, id: " + id);
         }
-        Pair<Long, Long> vlms = _volsDao.getCountAndTotalByPool(id);
+
+        if (sPool.getPoolType() == StoragePoolType.DatastoreCluster) {
+            // FR41 yet to handle on failure of deletion of any of the child storage pool
+            List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(sPool.getId());
+            for (StoragePoolVO childPool : childStoragePools) {
+                deleteDataStoreInternal(childPool, forced);
+            }
+        }
+        return deleteDataStoreInternal(sPool, forced);
+
+    }
+
+    private boolean deleteDataStoreInternal(StoragePoolVO sPool, boolean forced) {
+        Pair<Long, Long> vlms = _volsDao.getCountAndTotalByPool(sPool.getId());
         if (forced) {
             if (vlms.first() > 0) {
-                Pair<Long, Long> nonDstrdVlms = _volsDao.getNonDestroyedCountAndTotalByPool(id);
+                Pair<Long, Long> nonDstrdVlms = _volsDao.getNonDestroyedCountAndTotalByPool(sPool.getId());
                 if (nonDstrdVlms.first() > 0) {
                     throw new CloudRuntimeException("Cannot delete pool " + sPool.getName() + " as there are associated " + "non-destroyed vols for this pool");
                 }
@@ -957,7 +976,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         _storagePoolDao.releaseFromLockTable(lock.getId());
-        s_logger.trace("Released lock for storage pool " + id);
+        s_logger.trace("Released lock for storage pool " + sPool.getId());
 
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(sPool.getStorageProviderName());
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
@@ -1486,6 +1505,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
         DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
         DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
+
+        if (primaryStorage.getPoolType() == StoragePoolType.DatastoreCluster) {
+            // Before preparing the datastorecluster to maintenance mode, the storagepools in the datastore cluster needs to put in maintenance
+            List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(primaryStorageId);
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    for (StoragePoolVO childDatastore : childDatastores) {
+                        // set the pool state to prepare for maintenance, so that VMs will not migrate to the storagepools in the same cluster
+                        childDatastore.setStatus(StoragePoolStatus.PrepareForMaintenance);
+                        _storagePoolDao.update(childDatastore.getId(), childDatastore);
+                    }
+                }
+            });
+            for (StoragePoolVO childDatastore : childDatastores) {
+                //FR41 need to handle when one of the primary stores is unable to put in maintenance mode
+                DataStore childStore = _dataStoreMgr.getDataStore(childDatastore.getId(), DataStoreRole.Primary);
+                lifeCycle.maintain(childStore);
+            }
+        }
         lifeCycle.maintain(store);
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
@@ -1513,6 +1552,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
         DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
         DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
+        if (primaryStorage.getPoolType() == StoragePoolType.DatastoreCluster) {
+            //FR41 need to handle when one of the primary stores is unable to cancel the maintenance mode
+            List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(primaryStorageId);
+            for (StoragePoolVO childDatastore : childDatastores) {
+                DataStore childStore = _dataStoreMgr.getDataStore(childDatastore.getId(), DataStoreRole.Primary);
+                lifeCycle.cancelMaintain(childStore);
+            }
+        }
         lifeCycle.cancelMaintain(store);
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
