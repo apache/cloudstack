@@ -120,7 +120,7 @@ public class StoragePoolVO implements StoragePool {
     private HypervisorType hypervisor;
 
     @Column(name = "parent")
-    private Long parent;
+    private Long parent = 0L;
 
     @Override
     public long getId() {
