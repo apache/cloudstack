@@ -190,39 +190,18 @@ class StartCommandExecutor {
             }
 
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
+            VirtualDevice[] nicDevices = null;
             DiskControllerType systemVmScsiControllerType = DiskControllerType.lsilogic;
             int firstScsiControllerBusNum = 0;
             int numScsiControllerForSystemVm = 1;
             boolean hasSnapshot = false;
             if (vmMo != null) {
-                LOGGER.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
-                if (VmwareResource.getVmPowerState(vmMo) != VirtualMachine.PowerState.PowerOff)
-                    vmMo.safePowerOff(vmwareResource.getShutdownWaitMs());
-
-                // retrieve disk information before we tear down
-                diskInfoBuilder = vmMo.getDiskInfoBuilder();
-                hasSnapshot = vmMo.hasSnapshot();
-                // FR37 - only tear nics, and add nics per the provided nics list
-                if (LOGGER.isTraceEnabled()) {
-                    String netMsg = "tearing down networks :";
-                    for (VirtualDevice nic : vmMo.getNicDevices()) {
-                        netMsg += nic.getDeviceInfo().getLabel()+":";
-                    }
-                    LOGGER.trace(netMsg);
-                }
-                // FR37 save vmMo.getNicDevices() to ensure recreation?
-                vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
-                /*
-                if (!hasSnapshot)
-                    vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class, VirtualEthernetCard.class});
-                else
-                    vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
-                 */
-                if (systemVm) {
-                    ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
-                } else {
-                    ensureDiskControllers(vmMo, controllerInfo);
-                }
+                PrepareRunningVMForConfiguration prepareRunningVMForConfiguration = new PrepareRunningVMForConfiguration(vmInternalCSName, controllerInfo, systemVm, vmMo,
+                        systemVmScsiControllerType, firstScsiControllerBusNum, numScsiControllerForSystemVm);
+                prepareRunningVMForConfiguration.invoke();
+                diskInfoBuilder = prepareRunningVMForConfiguration.getDiskInfoBuilder();
+                nicDevices = prepareRunningVMForConfiguration.getNicDevices();
+                hasSnapshot = prepareRunningVMForConfiguration.isHasSnapshot();
             } else {
                 ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
                 assert (morDc != null);
@@ -234,8 +213,10 @@ class StartCommandExecutor {
                     virtualMachineRecycler.invoke();
                     diskInfoBuilder = virtualMachineRecycler.getDiskInfoBuilder();
                     hasSnapshot = virtualMachineRecycler.isHasSnapshot();
+                    nicDevices = virtualMachineRecycler.getNicDevices();
                 } else {
-                    existingVm = unregisterButHoldOnToOldVmData(vmInternalCSName, dcMo);
+                    // FR37 we just didn't find a VM by name 'vmInternalCSName', so why is this here?
+                    existingVm = unregisterOnOtherClusterButHoldOnToOldVmData(vmInternalCSName, dcMo);
 
                     createNewVm(context, vmSpec, installAsIs, vmInternalCSName, vmNameOnVcenter, controllerInfo, systemVm, mgr, hyperHost, guestOsId, disks, dataStoresDetails,
                             dsRootVolumeIsOn);
@@ -246,12 +227,13 @@ class StartCommandExecutor {
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
             }
-
+            // vmMo should now be a stopped VM on the intended host
             int totalChangeDevices = disks.length + nics.length;
+            int chackDeviceCount = diskInfoBuilder.getDiskCount() + nicDevices.length;
             // vApp cdrom device
             // HACK ALERT: ovf properties might not be the only or defining feature of vApps; needs checking
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("adding device to device count for vApp config ISO");
+                LOGGER.trace(String.format("current count(s) desired: %d/ found:%d. now adding device to device count for vApp config ISO", totalChangeDevices, chackDeviceCount));
             }
             if (vmSpec.getOvfProperties() != null) {
                 totalChangeDevices++;
@@ -272,17 +254,7 @@ class StartCommandExecutor {
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmwareResource.getReservedCpuMHZ(vmSpec), (int)(vmSpec.getMaxRam() / (1024 * 1024)),
                     vmwareResource.getReservedMemoryMb(vmSpec), guestOsId, vmSpec.getLimitCpuUse());
 
-            // Check for multi-cores per socket settings
-            int numCoresPerSocket = 1;
-            String coresPerSocket = vmSpec.getDetails().get(VmDetailConstants.CPU_CORE_PER_SOCKET);
-            if (coresPerSocket != null) {
-                String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
-                // Property 'numCoresPerSocket' is supported since vSphere API 5.0
-                if (apiVersion.compareTo("5.0") >= 0) {
-                    numCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, 1);
-                    vmConfigSpec.setNumCoresPerSocket(numCoresPerSocket);
-                }
-            }
+            int numCoresPerSocket = adjustNumberOfCoresPerSocket(vmSpec, vmMo, vmConfigSpec);
 
             // Check for hotadd settings
             vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId));
@@ -303,97 +275,12 @@ class StartCommandExecutor {
             int ideUnitNumber = 0;
             int scsiUnitNumber = 0;
             int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-            int scsiControllerKey = 0;//vmMo.getGenericScsiDeviceControllerKeyNoException();
-            int controllerKey;
+            int scsiControllerKey = vmMo.getScsiDeviceControllerKeyNoException();
 
-            //
-            // Setup ISO device
-            //
-
-            // vAPP ISO
-            // FR37 the native deploy mechs should create this for us
-            if (vmSpec.getOvfProperties() != null) {
-                if (LOGGER.isTraceEnabled()) {
-                    // FR37 TODO add more usefull info (if we keep this bit
-                    LOGGER.trace("adding iso for properties for 'xxx'");
-                }
-                deviceConfigSpecArray[deviceCount] = new VirtualDeviceConfigSpec();
-                Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, null, true, true, ideUnitNumber++, deviceCount + 1);
-                deviceConfigSpecArray[deviceCount].setDevice(isoInfo.first());
-                if (isoInfo.second()) {
-                    if (LOGGER.isDebugEnabled())
-                        LOGGER.debug("Prepare vApp ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
-
-                    deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.ADD);
-                } else {
-                    if (LOGGER.isDebugEnabled())
-                        LOGGER.debug("Prepare vApp ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
-
-                    deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-                }
-                deviceCount++;
-            }
-
-            // prepare systemvm patch ISO
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
-                PrepareSytemVMPatchISOMethod prepareSytemVm = new PrepareSytemVMPatchISOMethod(mgr, hyperHost, vmMo, deviceConfigSpecArray, deviceCount, ideUnitNumber);
-                prepareSytemVm.invoke();
-                deviceCount = prepareSytemVm.getI();
-                ideUnitNumber = prepareSytemVm.getIdeUnitNumber();
-            } else {
-                // Note: we will always plug a CDROM device
-                if (volIso != null) {
-                    for (DiskTO vol : disks) {
-                        if (vol.getType() == Volume.Type.ISO) {
-
-                            TemplateObjectTO iso = (TemplateObjectTO)vol.getData();
-
-                            if (iso.getPath() != null && !iso.getPath().isEmpty()) {
-                                DataStoreTO imageStore = iso.getDataStore();
-                                if (!(imageStore instanceof NfsTO)) {
-                                    LOGGER.debug("unsupported protocol");
-                                    throw new Exception("unsupported protocol");
-                                }
-                                NfsTO nfsImageStore = (NfsTO)imageStore;
-                                String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
-                                Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, isoPath);
-                                assert (isoDatastoreInfo != null);
-                                assert (isoDatastoreInfo.second() != null);
-
-                                deviceConfigSpecArray[deviceCount] = new VirtualDeviceConfigSpec();
-                                Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper
-                                        .prepareIsoDevice(vmMo, isoDatastoreInfo.first(), isoDatastoreInfo.second(), true, true, ideUnitNumber++, deviceCount + 1);
-                                deviceConfigSpecArray[deviceCount].setDevice(isoInfo.first());
-                                if (isoInfo.second()) {
-                                    if (LOGGER.isDebugEnabled())
-                                        LOGGER.debug("Prepare ISO volume at new device " + vmwareResource.getGson().toJson(isoInfo.first()));
-                                    deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.ADD);
-                                } else {
-                                    if (LOGGER.isDebugEnabled())
-                                        LOGGER.debug("Prepare ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
-                                    deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-                                }
-                            }
-                            deviceCount++;
-                        }
-                    }
-                } else {
-                    deviceConfigSpecArray[deviceCount] = new VirtualDeviceConfigSpec();
-                    Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, null, true, true, ideUnitNumber++, deviceCount + 1);
-                    deviceConfigSpecArray[deviceCount].setDevice(isoInfo.first());
-                    if (isoInfo.second()) {
-                        if (LOGGER.isDebugEnabled())
-                            LOGGER.debug("Prepare ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
-
-                        deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.ADD);
-                    } else {
-                        if (LOGGER.isDebugEnabled())
-                            LOGGER.debug("Prepare ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
-                        deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-                    }
-                    deviceCount++;
-                }
-            }
+            IsoSetup isoSetup = new IsoSetup(vmSpec, mgr, hyperHost, vmMo, disks, volIso, deviceConfigSpecArray, deviceCount, ideUnitNumber);
+            isoSetup.invoke();
+            deviceCount = isoSetup.getDeviceCount();
+            ideUnitNumber = isoSetup.getIdeUnitNumber();
 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("setting up %d disks with root from %s", diskInfoBuilder.getDiskCount(), vmwareResource.getGson().toJson(rootDiskTO)));
@@ -413,7 +300,7 @@ class StartCommandExecutor {
 
             deviceCount += setupUsbDevicesAndGetCount(vmInternalCSName, vmMo, guestOsId, deviceConfigSpecArray, deviceCount);
 
-            NicSetup nicSetup = new NicSetup(cmd, vmSpec, vmInternalCSName, context, mgr, hyperHost, vmMo, nics, deviceConfigSpecArray, deviceCount);
+            NicSetup nicSetup = new NicSetup(cmd, vmSpec, vmInternalCSName, context, mgr, hyperHost, vmMo, nics, deviceConfigSpecArray, deviceCount, nicDevices);
             nicSetup.invoke();
 
             deviceCount = nicSetup.getDeviceCount();
@@ -554,6 +441,21 @@ class StartCommandExecutor {
         }
     }
 
+    private int adjustNumberOfCoresPerSocket(VirtualMachineTO vmSpec, VirtualMachineMO vmMo, VirtualMachineConfigSpec vmConfigSpec) throws Exception {
+        // Check for multi-cores per socket settings
+        int numCoresPerSocket = 1;
+        String coresPerSocket = vmSpec.getDetails().get(VmDetailConstants.CPU_CORE_PER_SOCKET);
+        if (coresPerSocket != null) {
+            String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
+            // Property 'numCoresPerSocket' is supported since vSphere API 5.0
+            if (apiVersion.compareTo("5.0") >= 0) {
+                numCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, 1);
+                vmConfigSpec.setNumCoresPerSocket(numCoresPerSocket);
+            }
+        }
+        return numCoresPerSocket;
+    }
+
     /**
     // Setup USB devices
     */
@@ -621,7 +523,7 @@ class StartCommandExecutor {
     /**
      * If a VM with the same name is found in a different cluster in the DC, unregister the old VM and configure a new VM (cold-migration).
      */
-    private VirtualMachineData unregisterButHoldOnToOldVmData(String vmInternalCSName, DatacenterMO dcMo) throws Exception {
+    private VirtualMachineData unregisterOnOtherClusterButHoldOnToOldVmData(String vmInternalCSName, DatacenterMO dcMo) throws Exception {
         VirtualMachineMO existingVmInDc = dcMo.findVm(vmInternalCSName);
         VirtualMachineData existingVm = null;
         if (existingVmInDc != null) {
@@ -998,33 +900,6 @@ class StartCommandExecutor {
             }
         }
         return null;
-    }
-
-    // isoUrl sample content :
-    // nfs://192.168.10.231/export/home/kelven/vmware-test/secondary/template/tmpl/2/200//200-2-80f7ee58-6eff-3a2d-bcb0-59663edf6d26.iso
-    private Pair<String, ManagedObjectReference> getIsoDatastoreInfo(VmwareHypervisorHost hyperHost, String isoUrl) throws Exception {
-
-        assert (isoUrl != null);
-        int isoFileNameStartPos = isoUrl.lastIndexOf("/");
-        if (isoFileNameStartPos < 0) {
-            throw new Exception("Invalid ISO path info");
-        }
-
-        String isoFileName = isoUrl.substring(isoFileNameStartPos);
-
-        int templateRootPos = isoUrl.indexOf("template/tmpl");
-        templateRootPos = (templateRootPos < 0 ? isoUrl.indexOf(ConfigDrive.CONFIGDRIVEDIR) : templateRootPos);
-        if (templateRootPos < 0) {
-            throw new Exception("Invalid ISO path info");
-        }
-
-        String storeUrl = isoUrl.substring(0, templateRootPos - 1);
-        String isoPath = isoUrl.substring(templateRootPos, isoFileNameStartPos);
-
-        ManagedObjectReference morDs = vmwareResource.prepareSecondaryDatastoreOnHost(storeUrl);
-        DatastoreMO dsMo = new DatastoreMO(vmwareResource.getServiceContext(), morDs);
-
-        return new Pair<String, ManagedObjectReference>(String.format("[%s] %s%s", dsMo.getName(), isoPath, isoFileName), morDs);
     }
 
     private static DiskTO[] sortVolumesByDeviceId(DiskTO[] volumes) {
@@ -1489,6 +1364,7 @@ class StartCommandExecutor {
         private int numScsiControllerForSystemVm;
         private VirtualMachineDiskInfoBuilder diskInfoBuilder;
         private boolean hasSnapshot;
+        private VirtualDevice[] nicDevices;
 
         public VirtualMachineRecycler(String vmInternalCSName, Pair<String, String> controllerInfo, Boolean systemVm, VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo,
                 DiskControllerType systemVmScsiControllerType, int firstScsiControllerBusNum, int numScsiControllerForSystemVm) {
@@ -1522,6 +1398,7 @@ class StartCommandExecutor {
 
             diskInfoBuilder = vmMo.getDiskInfoBuilder();
             hasSnapshot = vmMo.hasSnapshot();
+            nicDevices = vmMo.getNicDevices();
             if (!hasSnapshot)
                 vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class, VirtualEthernetCard.class});
             else
@@ -1556,6 +1433,10 @@ class StartCommandExecutor {
                 return vmMo;
             }
             return null;
+        }
+
+        public VirtualDevice[] getNicDevices() {
+            return nicDevices;
         }
     }
 
@@ -1924,9 +1805,10 @@ class StartCommandExecutor {
         private int nicMask;
         private int nicCount;
         private Map<String, String> nicUuidToDvSwitchUuid;
+        private VirtualDevice[] nicDevices;
 
         public NicSetup(StartCommand cmd, VirtualMachineTO vmSpec, String vmInternalCSName, VmwareContext context, VmwareManager mgr, VmwareHypervisorHost hyperHost,
-                VirtualMachineMO vmMo, NicTO[] nics, VirtualDeviceConfigSpec[] deviceConfigSpecArray, int deviceCount) {
+                VirtualMachineMO vmMo, NicTO[] nics, VirtualDeviceConfigSpec[] deviceConfigSpecArray, int deviceCount, VirtualDevice[] nicDevices) {
             this.cmd = cmd;
             this.vmSpec = vmSpec;
             this.vmInternalCSName = vmInternalCSName;
@@ -1937,6 +1819,7 @@ class StartCommandExecutor {
             this.nics = nics;
             this.deviceConfigSpecArray = deviceConfigSpecArray;
             this.deviceCount = deviceCount;
+            this.nicDevices = nicDevices;
         }
 
         public int getDeviceCount() {
@@ -1972,9 +1855,10 @@ class StartCommandExecutor {
             NiciraNvpApiVersion.logNiciraApiVersion();
 
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.debug("VM " + vmInternalCSName + " will be started with NIC device type: " + nicDeviceType);
+                LOGGER.debug(String.format("deciding for VM '%s' to use orchestrated NICs or as is.", vmInternalCSName));
             }
             nicUuidToDvSwitchUuid = new HashMap<>();
+            LOGGER.info(String.format("adding %d nics to VM '%s'", nics.length, vmInternalCSName));
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 LOGGER.info("Prepare NIC device based on NicTO: " + vmwareResource.getGson().toJson(nicTo));
 
@@ -2050,6 +1934,228 @@ class StartCommandExecutor {
                     }
                 }
             }
+        }
+    }
+
+    private class IsoSetup {
+        private VirtualMachineTO vmSpec;
+        private VmwareManager mgr;
+        private VmwareHypervisorHost hyperHost;
+        private VirtualMachineMO vmMo;
+        private DiskTO[] disks;
+        private DiskTO volIso;
+        private VirtualDeviceConfigSpec[] deviceConfigSpecArray;
+        private int deviceCount;
+        private int ideUnitNumber;
+
+        public IsoSetup(VirtualMachineTO vmSpec, VmwareManager mgr, VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, DiskTO[] disks, DiskTO volIso,
+                VirtualDeviceConfigSpec[] deviceConfigSpecArray, int deviceCount, int ideUnitNumber) {
+            this.vmSpec = vmSpec;
+            this.mgr = mgr;
+            this.hyperHost = hyperHost;
+            this.vmMo = vmMo;
+            this.disks = disks;
+            this.volIso = volIso;
+            this.deviceConfigSpecArray = deviceConfigSpecArray;
+            this.deviceCount = deviceCount;
+            this.ideUnitNumber = ideUnitNumber;
+        }
+
+        public int getDeviceCount() {
+            return deviceCount;
+        }
+
+        public int getIdeUnitNumber() {
+            return ideUnitNumber;
+        }
+
+        public IsoSetup invoke() throws Exception {
+            //
+            // Setup ISO device
+            //
+
+            // vAPP ISO
+            // FR37 the native deploy mechs should create this for us
+            if (vmSpec.getOvfProperties() != null) {
+                if (LOGGER.isTraceEnabled()) {
+                    // FR37 TODO add more usefull info (if we keep this bit
+                    LOGGER.trace("adding iso for properties for 'xxx'");
+                }
+                deviceConfigSpecArray[deviceCount] = new VirtualDeviceConfigSpec();
+                Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, null, true, true, ideUnitNumber++, deviceCount + 1);
+                deviceConfigSpecArray[deviceCount].setDevice(isoInfo.first());
+                if (isoInfo.second()) {
+                    if (LOGGER.isDebugEnabled())
+                        LOGGER.debug("Prepare vApp ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
+
+                    deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+                } else {
+                    if (LOGGER.isDebugEnabled())
+                        LOGGER.debug("Prepare vApp ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
+
+                    deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+                }
+                deviceCount++;
+            }
+
+            // prepare systemvm patch ISO
+            if (vmSpec.getType() != VirtualMachine.Type.User) {
+                PrepareSytemVMPatchISOMethod prepareSytemVm = new PrepareSytemVMPatchISOMethod(mgr, hyperHost, vmMo, deviceConfigSpecArray, deviceCount, ideUnitNumber);
+                prepareSytemVm.invoke();
+                deviceCount = prepareSytemVm.getI();
+                ideUnitNumber = prepareSytemVm.getIdeUnitNumber();
+            } else {
+                // Note: we will always plug a CDROM device
+                if (volIso != null) {
+                    for (DiskTO vol : disks) {
+                        if (vol.getType() == Volume.Type.ISO) {
+
+                            TemplateObjectTO iso = (TemplateObjectTO)vol.getData();
+
+                            if (iso.getPath() != null && !iso.getPath().isEmpty()) {
+                                DataStoreTO imageStore = iso.getDataStore();
+                                if (!(imageStore instanceof NfsTO)) {
+                                    LOGGER.debug("unsupported protocol");
+                                    throw new Exception("unsupported protocol");
+                                }
+                                NfsTO nfsImageStore = (NfsTO)imageStore;
+                                String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
+                                Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, isoPath);
+                                assert (isoDatastoreInfo != null);
+                                assert (isoDatastoreInfo.second() != null);
+
+                                deviceConfigSpecArray[deviceCount] = new VirtualDeviceConfigSpec();
+                                Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper
+                                        .prepareIsoDevice(vmMo, isoDatastoreInfo.first(), isoDatastoreInfo.second(), true, true, ideUnitNumber++, deviceCount + 1);
+                                deviceConfigSpecArray[deviceCount].setDevice(isoInfo.first());
+                                if (isoInfo.second()) {
+                                    if (LOGGER.isDebugEnabled())
+                                        LOGGER.debug("Prepare ISO volume at new device " + vmwareResource.getGson().toJson(isoInfo.first()));
+                                    deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+                                } else {
+                                    if (LOGGER.isDebugEnabled())
+                                        LOGGER.debug("Prepare ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
+                                    deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+                                }
+                            }
+                            deviceCount++;
+                        }
+                    }
+                } else {
+                    deviceConfigSpecArray[deviceCount] = new VirtualDeviceConfigSpec();
+                    Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, null, true, true, ideUnitNumber++, deviceCount + 1);
+                    deviceConfigSpecArray[deviceCount].setDevice(isoInfo.first());
+                    if (isoInfo.second()) {
+                        if (LOGGER.isDebugEnabled())
+                            LOGGER.debug("Prepare ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
+
+                        deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+                    } else {
+                        if (LOGGER.isDebugEnabled())
+                            LOGGER.debug("Prepare ISO volume at existing device " + vmwareResource.getGson().toJson(isoInfo.first()));
+
+                        deviceConfigSpecArray[deviceCount].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+                    }
+                    deviceCount++;
+                }
+            }
+            return this;
+        }
+
+        // isoUrl sample content :
+        // nfs://192.168.10.231/export/home/kelven/vmware-test/secondary/template/tmpl/2/200//200-2-80f7ee58-6eff-3a2d-bcb0-59663edf6d26.iso
+        private Pair<String, ManagedObjectReference> getIsoDatastoreInfo(VmwareHypervisorHost hyperHost, String isoUrl) throws Exception {
+
+            assert (isoUrl != null);
+            int isoFileNameStartPos = isoUrl.lastIndexOf("/");
+            if (isoFileNameStartPos < 0) {
+                throw new Exception("Invalid ISO path info");
+            }
+
+            String isoFileName = isoUrl.substring(isoFileNameStartPos);
+
+            int templateRootPos = isoUrl.indexOf("template/tmpl");
+            templateRootPos = (templateRootPos < 0 ? isoUrl.indexOf(ConfigDrive.CONFIGDRIVEDIR) : templateRootPos);
+            if (templateRootPos < 0) {
+                throw new Exception("Invalid ISO path info");
+            }
+
+            String storeUrl = isoUrl.substring(0, templateRootPos - 1);
+            String isoPath = isoUrl.substring(templateRootPos, isoFileNameStartPos);
+
+            ManagedObjectReference morDs = vmwareResource.prepareSecondaryDatastoreOnHost(storeUrl);
+            DatastoreMO dsMo = new DatastoreMO(vmwareResource.getServiceContext(), morDs);
+
+            return new Pair<String, ManagedObjectReference>(String.format("[%s] %s%s", dsMo.getName(), isoPath, isoFileName), morDs);
+        }
+    }
+
+    private class PrepareRunningVMForConfiguration {
+        private String vmInternalCSName;
+        private Pair<String, String> controllerInfo;
+        private Boolean systemVm;
+        private VirtualMachineMO vmMo;
+        private DiskControllerType systemVmScsiControllerType;
+        private int firstScsiControllerBusNum;
+        private int numScsiControllerForSystemVm;
+        private VirtualMachineDiskInfoBuilder diskInfoBuilder;
+        private VirtualDevice[] nicDevices;
+        private boolean hasSnapshot;
+
+        public PrepareRunningVMForConfiguration(String vmInternalCSName, Pair<String, String> controllerInfo, Boolean systemVm, VirtualMachineMO vmMo,
+                DiskControllerType systemVmScsiControllerType, int firstScsiControllerBusNum, int numScsiControllerForSystemVm) {
+            this.vmInternalCSName = vmInternalCSName;
+            this.controllerInfo = controllerInfo;
+            this.systemVm = systemVm;
+            this.vmMo = vmMo;
+            this.systemVmScsiControllerType = systemVmScsiControllerType;
+            this.firstScsiControllerBusNum = firstScsiControllerBusNum;
+            this.numScsiControllerForSystemVm = numScsiControllerForSystemVm;
+        }
+
+        public VirtualMachineDiskInfoBuilder getDiskInfoBuilder() {
+            return diskInfoBuilder;
+        }
+
+        public VirtualDevice[] getNicDevices() {
+            return nicDevices;
+        }
+
+        public boolean isHasSnapshot() {
+            return hasSnapshot;
+        }
+
+        public PrepareRunningVMForConfiguration invoke() throws Exception {
+            LOGGER.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
+            if (VmwareResource.getVmPowerState(vmMo) != VirtualMachine.PowerState.PowerOff)
+                vmMo.safePowerOff(vmwareResource.getShutdownWaitMs());
+
+            // retrieve disk information before we tear down
+            diskInfoBuilder = vmMo.getDiskInfoBuilder();
+            hasSnapshot = vmMo.hasSnapshot();
+            nicDevices = vmMo.getNicDevices();
+            // FR37 - only tear nics, and add nics per the provided nics list
+            if (LOGGER.isTraceEnabled()) {
+                String netMsg = "tearing down networks :";
+                for (VirtualDevice nic : vmMo.getNicDevices()) {
+                    netMsg += nic.getDeviceInfo().getLabel()+":";
+                }
+                LOGGER.trace(netMsg);
+            }
+            // FR37 save vmMo.getNicDevices() to ensure recreation?
+            vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
+                /*
+                if (!hasSnapshot) {
+                    // FR37 do we need to do this, ever?:
+                    vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class});
+                 }
+                 */
+            if (systemVm) {
+                ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
+            } else {
+                ensureDiskControllers(vmMo, controllerInfo);
+            }
+            return this;
         }
     }
 }
