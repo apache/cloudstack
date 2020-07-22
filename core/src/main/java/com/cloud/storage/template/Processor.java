@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
 import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -59,6 +60,7 @@ public interface Processor extends Adapter {
         public List<OVFPropertyTO> ovfProperties;
         public List<NetworkPrerequisiteTO> networks;
         public List<DatadiskTO> disks;
+        public OVFVirtualHardwareSectionTO hardwareSection;
     }
 
     long getVirtualSize(File file) throws IOException;

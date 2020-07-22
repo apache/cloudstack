@@ -17,7 +17,7 @@
 package com.cloud.agent.api.storage;
 
 // From: https://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData.xsd
-public class OVFVirtualHardwareItem {
+public class OVFVirtualHardwareItemTO {
 
     //From: https://schemas.dmtf.org/wbem/cim-html/2/CIM_ResourceAllocationSettingData.html
     public enum HardwareResourceType {
@@ -63,6 +63,10 @@ public class OVFVirtualHardwareItem {
         HardwareResourceType(String name, int id) {
             this.name = name;
             this.id = id;
+        }
+
+        public String getName() {
+            return name;
         }
     }
 

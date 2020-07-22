@@ -47,6 +47,8 @@ public class DownloadAnswer extends Answer {
     private List<NetworkPrerequisiteTO> networkRequirements;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private List<DatadiskTO> disks;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private OVFVirtualHardwareSectionTO ovfHardwareSection;
 
     public String getCheckSum() {
         return checkSum;
@@ -179,5 +181,13 @@ public class DownloadAnswer extends Answer {
 
     public void setDisks(List<DatadiskTO> disks) {
         this.disks = disks;
+    }
+
+    public OVFVirtualHardwareSectionTO getOvfHardwareSection() {
+        return ovfHardwareSection;
+    }
+
+    public void setOvfHardwareSection(OVFVirtualHardwareSectionTO ovfHardwareSection) {
+        this.ovfHardwareSection = ovfHardwareSection;
     }
 }

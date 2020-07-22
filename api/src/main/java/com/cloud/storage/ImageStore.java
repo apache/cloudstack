@@ -24,6 +24,8 @@ public interface ImageStore extends Identity, InternalIdentity {
     String ACS_PROPERTY_PREFIX = "ACS-property-";
     String REQUIRED_NETWORK_PREFIX = "ACS-network-";
     String DISK_DEFINITION_PREFIX = "ACS-disk-";
+    String OVF_HARDWARE_CONFIGURATION_PREFIX = "ACS-configuration-";
+    String OVF_HARDWARE_ITEM_PREFIX = "ACS-hardware-item-";
 
     /**
      * @return name of the object store.

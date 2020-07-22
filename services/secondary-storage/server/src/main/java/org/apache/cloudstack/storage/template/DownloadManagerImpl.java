@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
 import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.S3TemplateDownloader;
@@ -130,6 +131,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private List<OVFPropertyTO> ovfProperties;
         private List<NetworkPrerequisiteTO> networks;
         private List<DatadiskTO> disks;
+        private OVFVirtualHardwareSectionTO hardwareSection;
 
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
                 String installPathPrefix, ResourceType resourceType) {
@@ -247,6 +249,14 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         public void setDisks(List<DatadiskTO> disks) {
             this.disks = disks;
+        }
+
+        public void setVirtualHardwareSection(OVFVirtualHardwareSectionTO section) {
+            this.hardwareSection = hardwareSection;
+        }
+
+        public OVFVirtualHardwareSectionTO getVirtualHardwareSection() {
+            return this.hardwareSection;
         }
     }
 
@@ -550,6 +560,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 if (CollectionUtils.isNotEmpty(info.disks)) {
                     dnld.setDisks(info.disks);
                 }
+                dnld.setVirtualHardwareSection(info.hardwareSection);
                 break;
             }
         }
@@ -859,6 +870,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             if (CollectionUtils.isNotEmpty(dj.getDisks())) {
                 answer.setDisks(dj.getDisks());
             }
+            answer.setOvfHardwareSection(dj.getVirtualHardwareSection());
             jobs.remove(jobId);
             return answer;
         default:

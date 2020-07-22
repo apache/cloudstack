@@ -28,8 +28,10 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.agent.api.storage.OVFConfigurationTO;
 import com.cloud.agent.api.storage.OVFPropertyTO;
-import com.cloud.agent.api.storage.OVFVirtualHardwareItem;
+import com.cloud.agent.api.storage.OVFVirtualHardwareItemTO;
+import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
 import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -134,15 +136,16 @@ public class OVAProcessor extends AdapterBase implements Processor {
             LOGGER.trace(String.format("no ovf properties found in template %s", ovfFilePath));
         }
 
-        OVFHelper.OVFVirtualHardwareSection hardwareSection = ovfHelper.getVirtualHardwareSectionFromDocument(doc);
-        List<OVFHelper.OVFConfiguration> configurations = hardwareSection.getConfigurations();
+        OVFVirtualHardwareSectionTO hardwareSection = ovfHelper.getVirtualHardwareSectionFromDocument(doc);
+        List<OVFConfigurationTO> configurations = hardwareSection.getConfigurations();
         if (CollectionUtils.isNotEmpty(configurations)) {
             LOGGER.info("Found " + configurations.size() + " deployment option configurations");
         }
-        List<OVFVirtualHardwareItem> hardwareItems = hardwareSection.getCommonHardwareItems();
+        List<OVFVirtualHardwareItemTO> hardwareItems = hardwareSection.getCommonHardwareItems();
         if (CollectionUtils.isNotEmpty(hardwareItems)) {
             LOGGER.info("Found " + hardwareItems.size() + " virtual hardware items");
         }
+        info.hardwareSection = hardwareSection;
 
         // FR37 TODO add any user queries that are required for this OVA
     }

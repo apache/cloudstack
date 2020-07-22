@@ -27,7 +27,10 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.storage.OVFConfigurationTO;
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.storage.OVFVirtualHardwareItemTO;
+import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateDetailVO;
@@ -274,11 +277,12 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         List<OVFPropertyTO> ovfProperties = answer.getOvfProperties();
         List<NetworkPrerequisiteTO> networkRequirements = answer.getNetworkRequirements();
         List<DatadiskTO> disks = answer.getDisks();
+        OVFVirtualHardwareSectionTO ovfHardwareSection = answer.getOvfHardwareSection();
 
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                persistExtraDetails(obj, ovfProperties, networkRequirements, disks);
+                persistExtraDetails(obj, ovfProperties, networkRequirements, disks, ovfHardwareSection);
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
@@ -318,7 +322,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
             }
-            persistExtraDetails(obj, ovfProperties, networkRequirements, disks);
+            persistExtraDetails(obj, ovfProperties, networkRequirements, disks, ovfHardwareSection);
 
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
@@ -326,7 +330,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-    private void persistExtraDetails(DataObject obj, List<OVFPropertyTO> ovfProperties, List<NetworkPrerequisiteTO> networkRequirements, List<DatadiskTO> disks) {
+    private void persistExtraDetails(DataObject obj, List<OVFPropertyTO> ovfProperties, List<NetworkPrerequisiteTO> networkRequirements, List<DatadiskTO> disks, OVFVirtualHardwareSectionTO ovfHardwareSection) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("saving %d ovf properties for template '%s' as details", ovfProperties != null ? ovfProperties.size() : 0, obj.getUuid()));
         }
@@ -344,6 +348,36 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
         if (CollectionUtils.isNotEmpty(disks)) {
             persistDiskDefinitions(disks, obj.getId());
+        }
+        persistOVFHardwareSectionAsTemplateDetails(ovfHardwareSection, obj.getId());
+    }
+
+    private void persistOVFHardwareSectionAsTemplateDetails(OVFVirtualHardwareSectionTO ovfHardwareSection, long templateId) {
+        if (ovfHardwareSection != null) {
+            if (CollectionUtils.isNotEmpty(ovfHardwareSection.getConfigurations())) {
+                for (OVFConfigurationTO configuration : ovfHardwareSection.getConfigurations()) {
+                    String key = configuration.getId();
+                    String propKey = ImageStore.OVF_HARDWARE_CONFIGURATION_PREFIX + key;
+                    try {
+                        String propValue = gson.toJson(configuration);
+                        savePropertyAttribute(templateId, propKey, propValue);
+                    } catch (RuntimeException re) {
+                        LOGGER.error("gson marshalling of property object fails: " + propKey,re);
+                    }
+                }
+            }
+            if (CollectionUtils.isNotEmpty(ovfHardwareSection.getCommonHardwareItems())) {
+                for (OVFVirtualHardwareItemTO item : ovfHardwareSection.getCommonHardwareItems()) {
+                    String key = item.getResourceType().getName() + "-" + item.getInstanceId();
+                    String propKey = ImageStore.OVF_HARDWARE_ITEM_PREFIX + key;
+                    try {
+                        String propValue = gson.toJson(item);
+                        savePropertyAttribute(templateId, propKey, propValue);
+                    } catch (RuntimeException re) {
+                        LOGGER.error("gson marshalling of property object fails: " + propKey,re);
+                    }
+                }
+            }
         }
     }
 

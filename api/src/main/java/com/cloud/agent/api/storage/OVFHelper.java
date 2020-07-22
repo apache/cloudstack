@@ -162,13 +162,13 @@ public class OVFHelper {
         return getConfigurableOVFPropertiesFromDocument(doc);
     }
 
-    protected List<OVFConfiguration> getOVFDeploymentOptionsFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
+    protected List<OVFConfigurationTO> getOVFDeploymentOptionsFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
         InputSource is = new InputSource(new StringReader(ovfString));
         final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
         return getDeploymentOptionsFromDocumentTree(doc);
     }
 
-    protected List<OVFVirtualHardwareItem> getOVFVirtualHardwareSectionFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
+    protected List<OVFVirtualHardwareItemTO> getOVFVirtualHardwareSectionFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
         InputSource is = new InputSource(new StringReader(ovfString));
         final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
         return getVirtualHardwareItemsFromDocumentTree(doc);
@@ -596,26 +596,26 @@ public class OVFHelper {
     /**
      * Retrieve the virtual hardware section and its deployment options as configurations
      */
-    public OVFVirtualHardwareSection getVirtualHardwareSectionFromDocument(Document doc) {
-        List<OVFConfiguration> configurations = getDeploymentOptionsFromDocumentTree(doc);
-        List<OVFVirtualHardwareItem> items = getVirtualHardwareItemsFromDocumentTree(doc);
+    public OVFVirtualHardwareSectionTO getVirtualHardwareSectionFromDocument(Document doc) {
+        List<OVFConfigurationTO> configurations = getDeploymentOptionsFromDocumentTree(doc);
+        List<OVFVirtualHardwareItemTO> items = getVirtualHardwareItemsFromDocumentTree(doc);
         if (CollectionUtils.isNotEmpty(configurations)) {
-            for (OVFConfiguration configuration : configurations) {
-                List<OVFVirtualHardwareItem> confItems = items.stream().
+            for (OVFConfigurationTO configuration : configurations) {
+                List<OVFVirtualHardwareItemTO> confItems = items.stream().
                         filter(x -> x.getConfigurationIds().contains(configuration.getId().toLowerCase()))
                         .collect(Collectors.toList());
                 configuration.setHardwareItems(confItems);
             }
         }
-        List<OVFVirtualHardwareItem> commonItems = null;
+        List<OVFVirtualHardwareItemTO> commonItems = null;
         if (CollectionUtils.isNotEmpty(items)) {
              commonItems = items.stream().filter(x -> StringUtils.isBlank(x.getConfigurationIds())).collect(Collectors.toList());
         }
-        return new OVFVirtualHardwareSection(configurations, commonItems);
+        return new OVFVirtualHardwareSectionTO(configurations, commonItems);
     }
 
-    private List<OVFConfiguration> getDeploymentOptionsFromDocumentTree(Document doc) {
-        List<OVFConfiguration> options = new ArrayList<>();
+    private List<OVFConfigurationTO> getDeploymentOptionsFromDocumentTree(Document doc) {
+        List<OVFConfigurationTO> options = new ArrayList<>();
         NodeList deploymentOptionSection = doc.getElementsByTagName("DeploymentOptionSection");
         if (deploymentOptionSection.getLength() == 0) {
             return options;
@@ -630,15 +630,15 @@ public class OVFHelper {
                 String description = getChildNodeValue(configuration, "Description");
                 String label = getChildNodeValue(configuration, "Label");
                 //getVirtualHardwareItemsFromDocumentTree(doc);
-                OVFConfiguration option = new OVFConfiguration(configurationId, label, description);
+                OVFConfigurationTO option = new OVFConfigurationTO(configurationId, label, description);
                 options.add(option);
             }
         }
         return options;
     }
 
-    private List<OVFVirtualHardwareItem> getVirtualHardwareItemsFromDocumentTree(Document doc) {
-        List<OVFVirtualHardwareItem> items = new LinkedList<>();
+    private List<OVFVirtualHardwareItemTO> getVirtualHardwareItemsFromDocumentTree(Document doc) {
+        List<OVFVirtualHardwareItemTO> items = new LinkedList<>();
         NodeList hardwareSection = doc.getElementsByTagName("VirtualHardwareSection");
         if (hardwareSection.getLength() == 0) {
             return items;
@@ -658,7 +658,7 @@ public class OVFHelper {
                 String reservation = getChildNodeValue(configuration, "Reservation");
                 String resourceType = getChildNodeValue(configuration, "ResourceType");
                 String virtualQuantity = getChildNodeValue(configuration, "VirtualQuantity");
-                OVFVirtualHardwareItem item = new OVFVirtualHardwareItem();
+                OVFVirtualHardwareItemTO item = new OVFVirtualHardwareItemTO();
                 item.setConfigurationIds(configurationIds);
                 item.setAllocationUnits(allocationUnits);
                 item.setDescription(description);
@@ -668,7 +668,7 @@ public class OVFHelper {
                 item.setReservation(getLongValueFromString(reservation));
                 Integer resType = getIntValueFromString(resourceType);
                 if (resType != null) {
-                    item.setResourceType(OVFVirtualHardwareItem.getResourceTypeFromId(resType));
+                    item.setResourceType(OVFVirtualHardwareItemTO.getResourceTypeFromId(resType));
                 }
                 item.setVirtualQuantity(getLongValueFromString(virtualQuantity));
                 items.add(item);
@@ -722,56 +722,5 @@ public class OVFHelper {
     class OVFDiskController {
         public String _name;
         public String _subType;
-    }
-
-    public class OVFConfiguration {
-        private String id;
-        private String label;
-        private String description;
-        private List<OVFVirtualHardwareItem> hardwareItems;
-
-        public OVFConfiguration(String id, String label, String description) {
-            this.id = id.toLowerCase();
-            this.label = label;
-            this.description = description;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public void setHardwareItems(List<OVFVirtualHardwareItem> items) {
-            this.hardwareItems = items;
-        }
-
-        public List<OVFVirtualHardwareItem> getHardwareItems() {
-            return hardwareItems;
-        }
-    }
-
-    public class OVFVirtualHardwareSection {
-        private List<OVFConfiguration> configurations;
-        private List<OVFVirtualHardwareItem> commonHardwareItems;
-
-        public OVFVirtualHardwareSection(List<OVFConfiguration> configurations, List<OVFVirtualHardwareItem> commonHardwareItems) {
-            this.configurations = configurations;
-            this.commonHardwareItems = commonHardwareItems;
-        }
-
-        public List<OVFConfiguration> getConfigurations() {
-            return configurations;
-        }
-
-        public List<OVFVirtualHardwareItem> getCommonHardwareItems() {
-            return commonHardwareItems;
-        }
     }
 }
