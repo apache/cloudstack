@@ -227,6 +227,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -416,6 +417,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     private ProjectInvitationDao projectInvitationDao;
 
+    @Inject
+    private UserDao userDao;
     /*
      * (non-Javadoc)
      *
@@ -1394,6 +1397,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String displayText = cmd.getDisplayText();
         String state = cmd.getState();
         String accountName = cmd.getAccountName();
+        String username = cmd.getUsername();
         Long domainId = cmd.getDomainId();
         String keyword = cmd.getKeyword();
         Long startIndex = cmd.getStartIndex();
@@ -1402,8 +1406,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean isRecursive = cmd.isRecursive();
         cmd.getTags();
 
+
         Account caller = CallContext.current().getCallingAccount();
+        User user = CallContext.current().getCallingUser();
         Long accountId = null;
+        Long userId = null;
         String path = null;
 
         Filter searchFilter = new Filter(ProjectJoinVO.class, "id", false, startIndex, pageSize);
@@ -1427,11 +1434,23 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     }
                     accountId = owner.getId();
                 }
+                if (!Strings.isNullOrEmpty(username)) {
+                    User owner = userDao.getUserByName(username, domainId);
+                    if (owner == null) {
+                        throw new InvalidParameterValueException("Unable to find user " + username + " in domain " + domainId);
+                    }
+                    userId = owner.getId();
+                    if (accountName == null) {
+                        accountId = owner.getAccountId();
+                    }
+                }
             } else { // domainId == null
                 if (accountName != null) {
                     throw new InvalidParameterValueException("could not find account " + accountName + " because domain is not specified");
                 }
-
+                if (!Strings.isNullOrEmpty(username)) {
+                    throw new InvalidParameterValueException("could not find user " + username + " because domain is not specified");
+                }
             }
         } else {
             if (accountName != null && !accountName.equals(caller.getAccountName())) {
@@ -1442,11 +1461,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new PermissionDeniedException("Can't list domain id= " + domainId + " projects; unauthorized");
             }
 
+            if (!Strings.isNullOrEmpty(username) && !username.equals(user.getUsername())) {
+                throw new PermissionDeniedException("Can't list user " + username + " projects; unauthorized");
+            }
+
             accountId = caller.getId();
+            userId = user.getId();
         }
 
         if (domainId == null && accountId == null && (_accountMgr.isNormalUser(caller.getId()) || !listAll)) {
             accountId = caller.getId();
+            userId = user.getId();
         } else if (_accountMgr.isDomainAdmin(caller.getId()) || (isRecursive && !listAll)) {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
             path = domain.getPath();
@@ -1458,6 +1483,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (accountId != null) {
             sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        }
+
+        if (userId != null) {
+            sb.and().op("userId", sb.entity().getUserId(), Op.EQ);
+            sb.or("userIdNull", sb.entity().getUserId(), Op.NULL);
+            sb.cp();
+        } else {
+            sb.and("userIdNull", sb.entity().getUserId(), Op.NULL);
         }
 
         SearchCriteria<ProjectJoinVO> sc = sb.create();
@@ -1480,6 +1513,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
+        }
+
+        if (userId != null) {
+            sc.setParameters("userId", userId);
         }
 
         if (state != null) {
