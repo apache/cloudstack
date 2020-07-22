@@ -39,7 +39,7 @@ public class IscsiStorageCleanupMonitor implements Runnable{
     private static final String KEYWORD_ISCSI = "iscsi";
     private static final String KEYWORD_IQN = "iqn";
     private static final String KEYWORD_PART = "part";
-    private static final String REGEX_PART = "\S+part\d+$";
+    private static final String REGEX_PART = "\\S+part\\d+$";
 
     private IscsiAdmStorageAdaptor iscsiStorageAdaptor;
 
