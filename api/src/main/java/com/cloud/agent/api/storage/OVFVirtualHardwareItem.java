@@ -19,13 +19,64 @@ package com.cloud.agent.api.storage;
 // From: https://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData.xsd
 public class OVFVirtualHardwareItem {
 
+    //From: https://schemas.dmtf.org/wbem/cim-html/2/CIM_ResourceAllocationSettingData.html
     public enum HardwareResourceType {
-        Other, ComputerSystem, Processor, Memory, IDEController, ParallelSCSIHBA, FC_HBA,
-        iSCSI_HBA, IB_HCA, EthernetAdapter, OtherNetworkAdapter, IO_Slot, IO_Device,
-        FloppyDrive, CDDrive, DVDdrive, DiskDrive, TapeDrive, StorageExtent, OtherStorageDevice, SerialPort,
-        ParallelPort, USBController, GraphicsController, IEEE_1394_Controller, PartitionableUnit,
-        BasePartitionableUnit, PowerSupply, CoolingDevice, PS2Controller, SIOController, Keyboard, PointingDevice,
-        PCIController, DMTF_reserved, VendorReserved;
+        Other("Other", 1),
+        ComputerSystem ("Computer System", 2),
+        Processor("Processor", 3),
+        Memory("Memory", 4),
+        IDEController("IDE Controller", 5),
+        ParallelSCSIHBA("Parallel SCSI HBA", 6),
+        FC_HBA("FC HBA", 7),
+        iSCSI_HBA("iSCSI HBA", 8),
+        IB_HCA("IB HCA", 9),
+        EthernetAdapter("Ethernet Adaptor", 10),
+        OtherNetworkAdapter("Other Network Adaptor", 11),
+        IO_Slot("I/O Slot", 12),
+        IO_Device("I/O Device", 13),
+        FloppyDrive("Floppy Drive", 14),
+        CD_Drive("CD Drive", 15),
+        DVD_Drive("DVD Drive", 16),
+        DiskDrive("Disk Drive", 17),
+        TapeDrive("Tape Drive", 18),
+        StorageExtent("Storage Extent", 19),
+        OtherStorageDevice("Other Storage Device", 20),
+        SerialPort("Serial Port", 21),
+        ParallelPort("Parallel Port", 22),
+        USBController("USB Controller", 23),
+        GraphicsController("Graphics Controller", 24),
+        IEEE_1394_Controller("IEEE 1394 Controller", 25),
+        PartitionableUnit("Partitionable Unit", 26),
+        BasePartitionableUnit("base Partitionable Unit", 27),
+        PowerSupply("Power", 28),
+        CoolingCapacity("Cooling Capacity", 29),
+        EthernetSwitchPort("Ethernet Switch Port", 30),
+        LogicalDisk("Logical Disk", 31),
+        StorageVolume("Storage Volume", 32),
+        EthernetConnection("Ethernet Connection", 33),
+        DMTF_reserved("DMTF Reserved", 35),
+        VendorReserved("Vendor Reserved", 32768);
+
+        private String name;
+        private int id;
+
+        HardwareResourceType(String name, int id) {
+            this.name = name;
+            this.id = id;
+        }
+    }
+
+    public static HardwareResourceType getResourceTypeFromId(int id) {
+        if (id <= 33) {
+            for (HardwareResourceType type : HardwareResourceType.values()) {
+                if (type.id == id) {
+                    return type;
+                }
+            }
+        } else if (id <= 32767) {
+            return HardwareResourceType.DMTF_reserved;
+        }
+        return HardwareResourceType.VendorReserved;
     }
 
     public enum CustomerVisibility {
@@ -65,6 +116,16 @@ public class OVFVirtualHardwareItem {
     private Long virtualQuantity;
     private String virtualQuantityUnits;
     private int weight;
+
+    private String configurationIds;
+
+    public String getConfigurationIds() {
+        return configurationIds;
+    }
+
+    public void setConfigurationIds(String configurationIds) {
+        this.configurationIds = configurationIds;
+    }
 
     public String getAddress() {
         return address;

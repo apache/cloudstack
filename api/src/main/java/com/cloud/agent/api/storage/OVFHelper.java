@@ -24,8 +24,10 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -39,6 +41,7 @@ import javax.xml.transform.stream.StreamResult;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.exception.InternalErrorException;
 import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -92,7 +95,9 @@ public class OVFHelper {
             NodeList childNodes = node.getChildNodes();
             for (int i = 0; i < childNodes.getLength(); i++) {
                 Node value = childNodes.item(i);
-                if (value != null && value.getNodeName().equals(childNodeName)) {
+                // Also match if the child's name has a suffix:
+                // Example: <rasd:AllocationUnits>
+                if (value != null && (value.getNodeName().equals(childNodeName)) || value.getNodeName().endsWith(":" + childNodeName)) {
                     return value.getTextContent();
                 }
             }
@@ -155,6 +160,18 @@ public class OVFHelper {
         InputSource is = new InputSource(new StringReader(ovfString));
         final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
         return getConfigurableOVFPropertiesFromDocument(doc);
+    }
+
+    protected List<OVFConfiguration> getOVFDeploymentOptionsFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
+        InputSource is = new InputSource(new StringReader(ovfString));
+        final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+        return getDeploymentOptionsFromDocumentTree(doc);
+    }
+
+    protected List<OVFVirtualHardwareItem> getOVFVirtualHardwareSectionFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
+        InputSource is = new InputSource(new StringReader(ovfString));
+        final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+        return getVirtualHardwareItemsFromDocumentTree(doc);
     }
 
     public List<DatadiskTO> getOVFVolumeInfoFromFile(final String ovfFilePath) throws InternalErrorException {
@@ -576,6 +593,112 @@ public class OVFHelper {
         return nets;
     }
 
+    /**
+     * Retrieve the virtual hardware section and its deployment options as configurations
+     */
+    public OVFVirtualHardwareSection getVirtualHardwareSectionFromDocument(Document doc) {
+        List<OVFConfiguration> configurations = getDeploymentOptionsFromDocumentTree(doc);
+        List<OVFVirtualHardwareItem> items = getVirtualHardwareItemsFromDocumentTree(doc);
+        if (CollectionUtils.isNotEmpty(configurations)) {
+            for (OVFConfiguration configuration : configurations) {
+                List<OVFVirtualHardwareItem> confItems = items.stream().
+                        filter(x -> x.getConfigurationIds().contains(configuration.getId().toLowerCase()))
+                        .collect(Collectors.toList());
+                configuration.setHardwareItems(confItems);
+            }
+        }
+        List<OVFVirtualHardwareItem> commonItems = null;
+        if (CollectionUtils.isNotEmpty(items)) {
+             commonItems = items.stream().filter(x -> StringUtils.isBlank(x.getConfigurationIds())).collect(Collectors.toList());
+        }
+        return new OVFVirtualHardwareSection(configurations, commonItems);
+    }
+
+    private List<OVFConfiguration> getDeploymentOptionsFromDocumentTree(Document doc) {
+        List<OVFConfiguration> options = new ArrayList<>();
+        NodeList deploymentOptionSection = doc.getElementsByTagName("DeploymentOptionSection");
+        if (deploymentOptionSection.getLength() == 0) {
+            return options;
+        }
+        Node hardwareSectionNode = deploymentOptionSection.item(0);
+        NodeList childNodes = hardwareSectionNode.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node node = childNodes.item(i);
+            if (node != null && node.getNodeName().equals("Configuration")) {
+                Element configuration = (Element) node;
+                String configurationId = configuration.getAttribute("ovf:id");
+                String description = getChildNodeValue(configuration, "Description");
+                String label = getChildNodeValue(configuration, "Label");
+                //getVirtualHardwareItemsFromDocumentTree(doc);
+                OVFConfiguration option = new OVFConfiguration(configurationId, label, description);
+                options.add(option);
+            }
+        }
+        return options;
+    }
+
+    private List<OVFVirtualHardwareItem> getVirtualHardwareItemsFromDocumentTree(Document doc) {
+        List<OVFVirtualHardwareItem> items = new LinkedList<>();
+        NodeList hardwareSection = doc.getElementsByTagName("VirtualHardwareSection");
+        if (hardwareSection.getLength() == 0) {
+            return items;
+        }
+        Node hardwareSectionNode = hardwareSection.item(0);
+        NodeList childNodes = hardwareSectionNode.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node node = childNodes.item(i);
+            if (node != null && node.getNodeName().equals("Item")) {
+                Element configuration = (Element) node;
+                String configurationIds = configuration.getAttribute("ovf:configuration");
+                String allocationUnits = getChildNodeValue(configuration, "AllocationUnits");
+                String description = getChildNodeValue(configuration, "Description");
+                String elementName = getChildNodeValue(configuration, "ElementName");
+                String instanceID = getChildNodeValue(configuration, "InstanceID");
+                String limit = getChildNodeValue(configuration, "Limit");
+                String reservation = getChildNodeValue(configuration, "Reservation");
+                String resourceType = getChildNodeValue(configuration, "ResourceType");
+                String virtualQuantity = getChildNodeValue(configuration, "VirtualQuantity");
+                OVFVirtualHardwareItem item = new OVFVirtualHardwareItem();
+                item.setConfigurationIds(configurationIds);
+                item.setAllocationUnits(allocationUnits);
+                item.setDescription(description);
+                item.setElementName(elementName);
+                item.setInstanceId(instanceID);
+                item.setLimit(getLongValueFromString(limit));
+                item.setReservation(getLongValueFromString(reservation));
+                Integer resType = getIntValueFromString(resourceType);
+                if (resType != null) {
+                    item.setResourceType(OVFVirtualHardwareItem.getResourceTypeFromId(resType));
+                }
+                item.setVirtualQuantity(getLongValueFromString(virtualQuantity));
+                items.add(item);
+            }
+        }
+        return items;
+    }
+
+    private Long getLongValueFromString(String value) {
+        if (StringUtils.isNotBlank(value)) {
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException e) {
+                LOGGER.debug("Could not parse the value: " + value + ", ignoring it");
+            }
+        }
+        return null;
+    }
+
+    private Integer getIntValueFromString(String value) {
+        if (StringUtils.isNotBlank(value)) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                LOGGER.debug("Could not parse the value: " + value + ", ignoring it");
+            }
+        }
+        return null;
+    }
+
     class OVFFile {
         // <File ovf:href="i-2-8-VM-disk2.vmdk" ovf:id="file1" ovf:size="69120" />
         public String _href;
@@ -599,5 +722,56 @@ public class OVFHelper {
     class OVFDiskController {
         public String _name;
         public String _subType;
+    }
+
+    public class OVFConfiguration {
+        private String id;
+        private String label;
+        private String description;
+        private List<OVFVirtualHardwareItem> hardwareItems;
+
+        public OVFConfiguration(String id, String label, String description) {
+            this.id = id.toLowerCase();
+            this.label = label;
+            this.description = description;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setHardwareItems(List<OVFVirtualHardwareItem> items) {
+            this.hardwareItems = items;
+        }
+
+        public List<OVFVirtualHardwareItem> getHardwareItems() {
+            return hardwareItems;
+        }
+    }
+
+    public class OVFVirtualHardwareSection {
+        private List<OVFConfiguration> configurations;
+        private List<OVFVirtualHardwareItem> commonHardwareItems;
+
+        public OVFVirtualHardwareSection(List<OVFConfiguration> configurations, List<OVFVirtualHardwareItem> commonHardwareItems) {
+            this.configurations = configurations;
+            this.commonHardwareItems = commonHardwareItems;
+        }
+
+        public List<OVFConfiguration> getConfigurations() {
+            return configurations;
+        }
+
+        public List<OVFVirtualHardwareItem> getCommonHardwareItems() {
+            return commonHardwareItems;
+        }
     }
 }

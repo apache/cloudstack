@@ -29,6 +29,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.storage.OVFVirtualHardwareItem;
 import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -131,6 +132,16 @@ public class OVAProcessor extends AdapterBase implements Processor {
             info.ovfProperties = ovfProperties;
         } else if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("no ovf properties found in template %s", ovfFilePath));
+        }
+
+        OVFHelper.OVFVirtualHardwareSection hardwareSection = ovfHelper.getVirtualHardwareSectionFromDocument(doc);
+        List<OVFHelper.OVFConfiguration> configurations = hardwareSection.getConfigurations();
+        if (CollectionUtils.isNotEmpty(configurations)) {
+            LOGGER.info("Found " + configurations.size() + " deployment option configurations");
+        }
+        List<OVFVirtualHardwareItem> hardwareItems = hardwareSection.getCommonHardwareItems();
+        if (CollectionUtils.isNotEmpty(hardwareItems)) {
+            LOGGER.info("Found " + hardwareItems.size() + " virtual hardware items");
         }
 
         // FR37 TODO add any user queries that are required for this OVA
