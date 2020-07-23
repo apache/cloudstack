@@ -781,10 +781,6 @@ public class TemplateServiceImpl implements TemplateService {
                 }
             }
 
-            if (deployAsIs) {
-                details.put(VmDetailConstants.OVA_DEPLOY_AS_IS_DISKS, String.valueOf(dataDiskTemplates.size()));
-            }
-
             templateVO.setDetails(details);
             _templateDao.saveDetails(templateVO);
             return true;
