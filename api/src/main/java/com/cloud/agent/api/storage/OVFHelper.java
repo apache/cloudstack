@@ -602,7 +602,8 @@ public class OVFHelper {
         if (CollectionUtils.isNotEmpty(configurations)) {
             for (OVFConfigurationTO configuration : configurations) {
                 List<OVFVirtualHardwareItemTO> confItems = items.stream().
-                        filter(x -> x.getConfigurationIds().contains(configuration.getId().toLowerCase()))
+                        filter(x -> StringUtils.isNotBlank(x.getConfigurationIds())
+                                && x.getConfigurationIds().toLowerCase().contains(configuration.getId()))
                         .collect(Collectors.toList());
                 configuration.setHardwareItems(confItems);
             }
