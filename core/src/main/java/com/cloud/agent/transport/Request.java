@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import com.cloud.utils.HumanReadableJson;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -395,7 +396,7 @@ public class Request {
         return log("", true, Level.DEBUG);
     }
 
-    protected String log(String msg, boolean logContent, Level level) {
+    protected String  log(String msg, boolean logContent, Level level) {
         StringBuilder content = new StringBuilder();
         if (logContent) {
             if (_cmds == null) {
@@ -417,6 +418,7 @@ public class Request {
                 assert false : "More gson errors on " + buff.toString();
                 return "";
             }
+            content = new StringBuilder(HumanReadableJson.getHumanReadableBytesJson(content.toString()));
             if (content.length() <= (1 + _cmds.length * 3)) {
                 return null;
             }

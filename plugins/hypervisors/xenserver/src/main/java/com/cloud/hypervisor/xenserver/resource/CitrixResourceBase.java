@@ -3331,13 +3331,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                 VDI memoryVDI = vmsnap.getSuspendVDI(conn);
                                 if (!isRefNull(memoryVDI)) {
                                     size = size + memoryVDI.getPhysicalUtilisation(conn);
-                                    s_logger.debug("memoryVDI size :" + toHumanReadableSize(size)); //untested
+                                    s_logger.debug("memoryVDI size :" + toHumanReadableSize(size));
                                     String parentUuid = memoryVDI.getSmConfig(conn).get("vhd-parent");
                                     VDI pMemoryVDI = VDI.getByUuid(conn, parentUuid);
                                     if (!isRefNull(pMemoryVDI)) {
                                         size = size + pMemoryVDI.getPhysicalUtilisation(conn);
                                     }
-                                    s_logger.debug("memoryVDI size+parent :" + toHumanReadableSize(size)); //untested
+                                    s_logger.debug("memoryVDI size+parent :" + toHumanReadableSize(size));
                                 }
                             }
                         } catch (Exception e) {
@@ -4217,7 +4217,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             final long vdiVirtualSize = vdi.getVirtualSize(conn);
 
             if (vdiVirtualSize != volumeSize) {
-                s_logger.info("Resizing the data disk (VDI) from vdiVirtualSize: " + toHumanReadableSize(vdiVirtualSize) + " to volumeSize: " + toHumanReadableSize(volumeSize)); //untested
+                s_logger.info("Resizing the data disk (VDI) from vdiVirtualSize: " + toHumanReadableSize(vdiVirtualSize) + " to volumeSize: " + toHumanReadableSize(volumeSize));
 
                 try {
                     vdi.resize(conn, volumeSize);

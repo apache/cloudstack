@@ -271,7 +271,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         TemplateDownloader td = dj.getTemplateDownloader();
         LOGGER.info("Download Completion for jobId: " + jobId + ", status=" + status);
         LOGGER.info("local: " + td.getDownloadLocalPath() + ", bytes=" + toHumanReadableSize(td.getDownloadedBytes()) + ", error=" + td.getDownloadError() + ", pct=" +
-                td.getDownloadPercent()); //untested
+                td.getDownloadPercent());
 
         switch (status) {
         case ABORTED:

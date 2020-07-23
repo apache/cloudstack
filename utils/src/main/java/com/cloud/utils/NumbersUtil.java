@@ -97,13 +97,9 @@ public class NumbersUtil {
 
     public static String toHumanReadableSize(long size) {
         if (enableHumanReadableSizes){
-            return ((Long)size).toString() + " (" + toReadableSize(size) + ")";
+            return "(" + toReadableSize(size) + ") " + ((Long)size).toString();
         }
         return ((Long)size).toString();
-    }
-
-    public static String toHumanReadableSize(int size) {
-        return toHumanReadableSize(new Long(size));
     }
 
     /**

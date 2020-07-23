@@ -108,9 +108,9 @@ public class VmDiskUsageParser {
 
             if ((ioRead > 0L) || (ioWrite > 0L) || (bytesRead > 0L) || (bytesWrite > 0L)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating vm disk usage record, io read:" + toHumanReadableSize(ioRead) + ", io write: " + toHumanReadableSize(ioWrite) + "bytes read:" + toHumanReadableSize(bytesRead) + ", bytes write: " +
-                            toHumanReadableSize(bytesWrite) + "for account: " + account.getId() + " in availability zone " + vmDiskInfo.getZoneId() + ", start: " + startDate + ", end: " +
-                        endDate); //untested
+                    s_logger.debug("Creating vm disk usage record, io read:" + toHumanReadableSize(ioRead) + ", io write: " + toHumanReadableSize(ioWrite) + ", bytes read:" + toHumanReadableSize(bytesRead) + ", bytes write: " +
+                            toHumanReadableSize(bytesWrite) + " for account: " + account.getId() + " in availability zone " + vmDiskInfo.getZoneId() + ", start: " + startDate + ", end: " +
+                        endDate);
                 }
 
                 Long vmId = null;

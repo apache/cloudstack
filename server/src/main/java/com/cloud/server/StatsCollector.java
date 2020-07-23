@@ -741,8 +741,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                                     if (isCurrentVmDiskStatsDifferentFromPrevious(previousVmDiskStats, vmDiskStat_lock)) {
                                         s_logger.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " + "Ignoring current answer. Host: " + host.getName()
-                                                + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + vmDiskStat.getBytesRead() + " write(Bytes): " + vmDiskStat.getBytesWrite()
-                                                + " Read(IO): " + vmDiskStat.getIORead() + " write(IO): " + vmDiskStat.getIOWrite());
+                                                + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " write(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesWrite())
+                                                + " Read(IO): " + toHumanReadableSize(vmDiskStat.getIORead()) + " write(IO): " + toHumanReadableSize(vmDiskStat.getIOWrite()));
                                         continue;
                                     }
 
@@ -750,7 +750,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Read # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
                                                     + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " Stored: "
-                                                    + vmDiskStat_lock.getCurrentBytesRead()); //untested
+                                                    + vmDiskStat_lock.getCurrentBytesRead());
                                         }
                                         vmDiskStat_lock.setNetBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
                                     }
@@ -759,7 +759,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Write # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
                                                     + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesWrite()) + " Stored: "
-                                                    + toHumanReadableSize(vmDiskStat_lock.getCurrentBytesWrite())); //untested
+                                                    + toHumanReadableSize(vmDiskStat_lock.getCurrentBytesWrite()));
                                         }
                                         vmDiskStat_lock.setNetBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
                                     }

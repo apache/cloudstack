@@ -44,6 +44,7 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.utils.HumanReadableJson;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -1712,7 +1713,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected StartAnswer execute(StartCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource StartCommand: " + _gson.toJson(cmd));
+            s_logger.info("Executing resource StartCommand: " + HumanReadableJson.getHumanReadableBytesJson(_gson.toJson(cmd)));
         }
 
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
@@ -2626,7 +2627,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      */
     protected void modifyVmVideoCardVRamSize(VirtualMachineVideoCard videoCard, VirtualMachineMO vmMo, long svgaVmramSize, VirtualMachineConfigSpec vmConfigSpec) {
         if (videoCard.getVideoRamSizeInKB().longValue() != svgaVmramSize) {
-           s_logger.info("Video card memory was set " + toHumanReadableSize(videoCard.getVideoRamSizeInKB().longValue()) + " instead of " + toHumanReadableSize(svgaVmramSize)); //untested
+           s_logger.info("Video card memory was set " + toHumanReadableSize(videoCard.getVideoRamSizeInKB().longValue()) + " instead of " + toHumanReadableSize(svgaVmramSize));
             configureSpecVideoCardNewVRamSize(videoCard, svgaVmramSize, vmConfigSpec);
         }
     }

@@ -618,7 +618,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 usedSpaceBytes += templatePoolRef.getTemplateSize();
             }
         }
-        s_logger.debug("usedSpaceBytes: " + toHumanReadableSize(usedSpaceBytes)); //untested
+        s_logger.debug("usedSpaceBytes: " + toHumanReadableSize(usedSpaceBytes));
 
         return usedSpaceBytes;
     }
@@ -659,7 +659,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 hypervisorSnapshotReserve = Math.max(hypervisorSnapshotReserve, s_lowestHypervisorSnapshotReserve);
                 volumeSize += volumeSize * (hypervisorSnapshotReserve / 100f);
             }
-            s_logger.debug("Volume size:" + toHumanReadableSize(volumeSize)); //untested
+            s_logger.debug("Volume size: " + toHumanReadableSize(volumeSize));
             break;
 
         case TEMPLATE:
@@ -672,7 +672,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             } else {
                 volumeSize = (long) (templateSize + templateSize * (s_lowestHypervisorSnapshotReserve / 100f));
             }
-            s_logger.debug("Template volume size:" + toHumanReadableSize(volumeSize)); //untested
+            s_logger.debug("Template volume size:" + toHumanReadableSize(volumeSize));
 
             break;
         }
@@ -1093,7 +1093,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             long templateSizeBytes = getDataObjectSizeIncludingHypervisorSnapshotReserve(templateInfo,
                     storagePoolDao.findById(storagePoolId));
 
-            s_logger.debug("cached VM template sizeBytes: " + toHumanReadableSize(templateSizeBytes)); //untested
+            s_logger.debug("cached VM template sizeBytes: " + toHumanReadableSize(templateSizeBytes));
 
             int templateSizeGib = DateraUtil.bytesToGib(templateSizeBytes);
 

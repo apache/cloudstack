@@ -201,7 +201,7 @@ public class TemplateLocation {
 
         if (!checkFormatValidity(newInfo)) {
             s_logger.warn("Format is invalid");
-            s_logger.debug("Format: " + newInfo.format + " size: " + toHumanReadableSize(newInfo.size) + " virtualsize: " + toHumanReadableSize(newInfo.virtualSize) + " filename: " + newInfo.filename); //untested
+            s_logger.debug("Format: " + newInfo.format + " size: " + toHumanReadableSize(newInfo.size) + " virtualsize: " + toHumanReadableSize(newInfo.virtualSize) + " filename: " + newInfo.filename);
             s_logger.debug("format, filename cannot be null and size, virtual size should be  > 0 ");
             return false;
         }

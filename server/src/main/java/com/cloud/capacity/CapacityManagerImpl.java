@@ -219,7 +219,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     long totalCpu = (long)(actualTotalCpu * cpuOvercommitRatio);
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Hosts's actual total CPU: " + actualTotalCpu + " and CPU after applying overprovisioning: " + totalCpu);
-                        s_logger.debug("Hosts's actual total RAM: " + actualTotalMem + " and RAM after applying overprovisioning: " + totalMem);
+                        s_logger.debug("Hosts's actual total RAM: " + toHumanReadableSize(actualTotalMem) + " and RAM after applying overprovisioning: " + toHumanReadableSize(totalMem));
                     }
 
                     if (!moveFromReserved) {
@@ -259,8 +259,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         ", total with overprovisioning: " + totalCpu + "; new used: " + capacityCpu.getUsedCapacity() + ",reserved:" + capacityCpu.getReservedCapacity() +
                         "; movedfromreserved: " + moveFromReserved + ",moveToReservered" + moveToReservered);
 
-                    s_logger.debug("release mem from host: " + hostId + ", old used: " + usedMem + ",reserved: " + reservedMem + ", total: " + totalMem + "; new used: " +
-                        capacityMemory.getUsedCapacity() + ",reserved:" + capacityMemory.getReservedCapacity() + "; movedfromreserved: " + moveFromReserved +
+                    s_logger.debug("release mem from host: " + hostId + ", old used: " + toHumanReadableSize(usedMem) + ",reserved: " + toHumanReadableSize(reservedMem) + ", total: " + toHumanReadableSize(totalMem) + "; new used: " +
+                            toHumanReadableSize(capacityMemory.getUsedCapacity()) + ",reserved:" + toHumanReadableSize(capacityMemory.getReservedCapacity()) + "; movedfromreserved: " + moveFromReserved +
                         ",moveToReservered" + moveToReservered);
 
                     _capacityDao.update(capacityCpu.getId(), capacityCpu);
@@ -334,7 +334,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("We are allocating VM, increasing the used capacity of this host:" + hostId);
                         s_logger.debug("Current Used CPU: " + usedCpu + " , Free CPU:" + freeCpu + " ,Requested CPU: " + cpu);
-                        s_logger.debug("Current Used RAM: " + usedMem + " , Free RAM:" + freeMem + " ,Requested RAM: " + ram);
+                        s_logger.debug("Current Used RAM: " + toHumanReadableSize(usedMem) + " , Free RAM:" + toHumanReadableSize(freeMem) + " ,Requested RAM: " + toHumanReadableSize(ram));
                     }
                     capacityCpu.setUsedCapacity(usedCpu + cpu);
                     capacityMem.setUsedCapacity(usedMem + ram);
@@ -345,7 +345,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("We are allocating VM to the last host again, so adjusting the reserved capacity if it is not less than required");
                             s_logger.debug("Reserved CPU: " + reservedCpu + " , Requested CPU: " + cpu);
-                            s_logger.debug("Reserved RAM: " + reservedMem + " , Requested RAM: " + ram);
+                            s_logger.debug("Reserved RAM: " + toHumanReadableSize(reservedMem) + " , Requested RAM: " + toHumanReadableSize(ram));
                         }
                         if (reservedCpu >= cpu && reservedMem >= ram) {
                             capacityCpu.setReservedCapacity(reservedCpu - cpu);
@@ -366,8 +366,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         actualTotalCpu + ", total with overprovisioning: " + totalCpu + "; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" +
                         capacityCpu.getReservedCapacity() + "; requested cpu:" + cpu + ",alloc_from_last:" + fromLastHost);
 
-                    s_logger.debug("RAM STATS after allocation: for host: " + hostId + ", old used: " + usedMem + ", old reserved: " + reservedMem + ", total: " +
-                        totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " + capacityMem.getReservedCapacity() + "; requested mem: " + ram +
+                    s_logger.debug("RAM STATS after allocation: for host: " + hostId + ", old used: " + toHumanReadableSize(usedMem) + ", old reserved: " + toHumanReadableSize(reservedMem) + ", total: " +
+                            toHumanReadableSize(totalMem) + "; new used: " + toHumanReadableSize(capacityMem.getUsedCapacity()) + ", reserved: " + toHumanReadableSize(capacityMem.getReservedCapacity()) + "; requested mem: " + toHumanReadableSize(ram) +
                         ",alloc_from_last:" + fromLastHost);
 
                     long cluster_id = host.getClusterId();
@@ -476,7 +476,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("We need to allocate to the last host again, so checking if there is enough reserved capacity");
                 s_logger.debug("Reserved CPU: " + freeCpu + " , Requested CPU: " + cpu);
-                s_logger.debug("Reserved RAM: " + freeMem + " , Requested RAM: " + ram);
+                s_logger.debug("Reserved RAM: " + toHumanReadableSize(freeMem) + " , Requested RAM: " + toHumanReadableSize(ram));
             }
             /* alloc from reserved */
             if (reservedCpu >= cpu) {
@@ -505,7 +505,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Free CPU: " + freeCpu + " , Requested CPU: " + cpu);
-                s_logger.debug("Free RAM: " + freeMem + " , Requested RAM: " + ram);
+                s_logger.debug("Free RAM: " + toHumanReadableSize(freeMem) + " , Requested RAM: " + toHumanReadableSize(ram));
             }
             /* alloc from free resource */
             if ((reservedCpuValueToUse + usedCpu + cpu <= totalCpu)) {
@@ -534,7 +534,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
             if (checkFromReservedCapacity) {
                 s_logger.debug("STATS: Failed to alloc resource from host: " + hostId + " reservedCpu: " + reservedCpu + ", requested cpu: " + cpu + ", reservedMem: " +
-                    reservedMem + ", requested mem: " + ram);
+                        toHumanReadableSize(reservedMem) + ", requested mem: " + toHumanReadableSize(ram));
             } else {
                 s_logger.debug("STATS: Failed to alloc resource from host: " + hostId + ", reservedCpu: " + reservedCpu + ", used cpu: " + usedCpu + ", requested cpu: " +
                     cpu + ", actual total cpu: " + actualTotalCpu + ", total cpu with overprovisioning: " + totalCpu + ", reservedMem: " + toHumanReadableSize(reservedMem) + ", used Mem: " +
@@ -824,8 +824,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             }
 
             if (memCap.getTotalCapacity() != host.getTotalMemory()) {
-                s_logger.debug("Calibrate total memory for host: " + host.getId() + " old total memory:" + memCap.getTotalCapacity() + " new total memory:" +
-                    host.getTotalMemory());
+                s_logger.debug("Calibrate total memory for host: " + host.getId() + " old total memory:" + toHumanReadableSize(memCap.getTotalCapacity()) + " new total memory:" +
+                        toHumanReadableSize(host.getTotalMemory()));
                 memCap.setTotalCapacity(host.getTotalMemory());
 
             }
@@ -850,7 +850,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                      * state(starting/migrating) that I don't know on which host
                      * they are allocated
                      */
-                    s_logger.debug("Calibrate used memory for host: " + host.getId() + " old usedMem: " + memCap.getUsedCapacity() + " new usedMem: " + usedMemory);
+                    s_logger.debug("Calibrate used memory for host: " + host.getId() + " old usedMem: " + toHumanReadableSize(memCap.getUsedCapacity()) + " new usedMem: " + toHumanReadableSize(usedMemory));
                     memCap.setUsedCapacity(usedMemory);
                 }
             }
@@ -1024,7 +1024,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     CapacityVOMem.setReservedCapacity(0);
                     CapacityVOMem.setTotalCapacity(newTotalMem);
                 } else {
-                    s_logger.debug("What? new cpu is :" + newTotalMem + ", old one is " + CapacityVOMem.getUsedCapacity() + "," + CapacityVOMem.getReservedCapacity() +
+                    s_logger.debug("What? new mem is :" + newTotalMem + ", old one is " + CapacityVOMem.getUsedCapacity() + "," + CapacityVOMem.getReservedCapacity() +
                         "," + CapacityVOMem.getTotalCapacity());
                 }
                 _capacityDao.update(CapacityVOMem.getId(), CapacityVOMem);

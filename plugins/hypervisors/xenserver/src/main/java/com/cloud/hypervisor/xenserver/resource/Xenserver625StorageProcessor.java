@@ -667,7 +667,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 newSnapshot.setParentSnapshotPath(prevBackupUuid);
             }
             s_logger.info("New snapshot details: " + newSnapshot.toString());
-            s_logger.info("New snapshot physical utilization: " + toHumanReadableSize(physicalSize)); //untested
+            s_logger.info("New snapshot physical utilization: " + toHumanReadableSize(physicalSize));
 
             return new CopyCmdAnswer(newSnapshot);
         } catch (final Exception e) {

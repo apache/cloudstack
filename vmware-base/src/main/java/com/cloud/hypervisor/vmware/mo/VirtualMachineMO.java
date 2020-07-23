@@ -1746,7 +1746,7 @@ public class VirtualMachineMO extends BaseMO {
                                 @Override
                                 public void action(Long param) {
                                     if (s_logger.isTraceEnabled()) {
-                                        s_logger.trace("Download progress " + param + "/" + toHumanReadableSize(totalBytes)); //untested
+                                        s_logger.trace("Download progress " + param + "/" + toHumanReadableSize(totalBytes));
                                     }
                                     progressReporter.reportProgress((int)(param * 100 / totalBytes));
                                 }

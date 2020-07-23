@@ -1906,7 +1906,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (totalOverProvCapacity < (allocatedSizeWithTemplate + totalAskingSize)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation, not enough storage, maxSize : " + toHumanReadableSize(totalOverProvCapacity)
-                        + ", totalAllocatedSize : " + toHumanReadableSize(allocatedSizeWithTemplate) + ", askingSize : " + toHumanReadableSize(totalAskingSize)); //untested
+                        + ", totalAllocatedSize : " + toHumanReadableSize(allocatedSizeWithTemplate) + ", askingSize : " + toHumanReadableSize(totalAskingSize));
             }
 
             return false;

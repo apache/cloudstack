@@ -116,7 +116,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
             throw new InternalErrorException(msg);
         }
 
-        s_logger.debug("vmdk file had size=" + toHumanReadableSize(virtualSize)); //untested
+        s_logger.debug("vmdk file had size=" + toHumanReadableSize(virtualSize));
         return virtualSize;
     }
 

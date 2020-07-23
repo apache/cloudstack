@@ -368,7 +368,7 @@ public class DatastoreMO extends BaseMO {
             List<FileInfo> info = result.getFile();
             for (FileInfo fi : info) {
                 if (file.getFileName().equals(fi.getPath())) {
-                    s_logger.debug("File found = " + fi.getPath() + ", size=" + toHumanReadableSize(fi.getFileSize())); //untested
+                    s_logger.debug("File found = " + fi.getPath() + ", size=" + toHumanReadableSize(fi.getFileSize()));
                     return fi.getFileSize();
                 }
             }

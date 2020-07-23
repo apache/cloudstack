@@ -795,7 +795,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                                     if (s_logger.isDebugEnabled()) {
                                                         s_logger.debug("Received # of bytes that's less than the last one.  "
                                                                 + "Assuming something went wrong and persisting it. Router: " + answerFinal.getRouterName() + " Reported: "
-                                                                + toHumanReadableSize(answerFinal.getBytesReceived()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesReceived())); // untested
+                                                                + toHumanReadableSize(answerFinal.getBytesReceived()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesReceived()));
                                                     }
                                                     stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
                                                 }
@@ -804,7 +804,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                                     if (s_logger.isDebugEnabled()) {
                                                         s_logger.debug("Received # of bytes that's less than the last one.  "
                                                                 + "Assuming something went wrong and persisting it. Router: " + answerFinal.getRouterName() + " Reported: "
-                                                                + toHumanReadableSize(answerFinal.getBytesSent()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesSent())); //untested
+                                                                + toHumanReadableSize(answerFinal.getBytesSent()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesSent()));
                                                     }
                                                     stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                                                 }
@@ -820,7 +820,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                                     } catch (final Exception e) {
                                         s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + toHumanReadableSize(answer.getBytesReceived()) + "; Tx: "
-                                                + toHumanReadableSize(answer.getBytesSent())); //untested
+                                                + toHumanReadableSize(answer.getBytesSent()));
                                     }
                                 }
                             }
@@ -3119,7 +3119,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                     if (stats.getCurrentBytesReceived() > answerFinal.getBytesReceived()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Router: "
-                                                    + answerFinal.getRouterName() + " Reported: " + toHumanReadableSize(answerFinal.getBytesReceived()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesReceived())); //untested
+                                                    + answerFinal.getRouterName() + " Reported: " + toHumanReadableSize(answerFinal.getBytesReceived()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesReceived()));
                                         }
                                         stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
                                     }
@@ -3127,7 +3127,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                     if (stats.getCurrentBytesSent() > answerFinal.getBytesSent()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Router: "
-                                                    + answerFinal.getRouterName() + " Reported: " + toHumanReadableSize(answerFinal.getBytesSent()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesSent())); //untested
+                                                    + answerFinal.getRouterName() + " Reported: " + toHumanReadableSize(answerFinal.getBytesSent()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesSent()));
                                         }
                                         stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                                     }
@@ -3142,7 +3142,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             });
                         } catch (final Exception e) {
                             s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + toHumanReadableSize(answer.getBytesReceived()) + "; Tx: "
-                                    + toHumanReadableSize(answer.getBytesSent())); //untested
+                                    + toHumanReadableSize(answer.getBytesSent()));
                         }
                     }
                 }

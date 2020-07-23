@@ -52,7 +52,7 @@ public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<Resiz
         try {
 
             if (command.getCurrentSize() >= newSize) {
-                s_logger.info("No need to resize volume: " + volId +", current size " + toHumanReadableSize(command.getCurrentSize()) + " is same as  new size " + toHumanReadableSize(newSize)); //untested
+                s_logger.info("No need to resize volume: " + volId +", current size " + toHumanReadableSize(command.getCurrentSize()) + " is same as  new size " + toHumanReadableSize(newSize));
                 return new ResizeVolumeAnswer(command, true, "success", newSize);
             }
             if (command.isManaged()) {

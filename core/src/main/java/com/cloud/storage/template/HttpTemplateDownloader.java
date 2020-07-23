@@ -207,7 +207,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             ) {
                 out.seek(localFileSize);
 
-                s_logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + toHumanReadableSize(remoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes)); //untested
+                s_logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + toHumanReadableSize(remoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes));
 
                 if (copyBytes(file, in, out)) return 0;
 
@@ -270,14 +270,14 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         String downloaded = "(incomplete download)";
         if (totalBytes >= remoteSize) {
             status = Status.DOWNLOAD_FINISHED;
-            downloaded = "(download complete remote=" + remoteSize + "bytes)";
+            downloaded = "(download complete remote=" + toHumanReadableSize(remoteSize) + "bytes)";
         }
-        errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
+        errorString = "Downloaded " + toHumanReadableSize(totalBytes) + " bytes " + downloaded;
     }
 
     private boolean canHandleDownloadSize() {
         if (remoteSize > maxTemplateSizeInBytes) {
-            s_logger.info("Remote size is too large: " + toHumanReadableSize(remoteSize) + " , max=" + toHumanReadableSize(maxTemplateSizeInBytes)); //untested
+            s_logger.info("Remote size is too large: " + toHumanReadableSize(remoteSize) + " , max=" + toHumanReadableSize(maxTemplateSizeInBytes));
             status = Status.UNRECOVERABLE_ERROR;
             errorString = "Download file size is too large";
             return false;

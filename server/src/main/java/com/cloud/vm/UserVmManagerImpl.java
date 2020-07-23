@@ -4029,8 +4029,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     {
         // rootdisksize must be larger than template.
         if ((rootDiskSize << 30) < templateVO.getSize()) {
-            Long templateVOSizeGB = templateVO.getSize() / GiB_TO_BYTES;
-            String error = "Unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)";
+            String error = "Unsupported: rootdisksize override is smaller than template size " + toHumanReadableSize(templateVO.getSize());
             s_logger.error(error);
             throw new InvalidParameterValueException(error);
         } else if ((rootDiskSize << 30) > templateVO.getSize()) {
@@ -4180,7 +4179,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                 if (s_logger.isDebugEnabled()) {
                                    s_logger.debug("Sent # of bytes that's less than the last one.  " +
                                             "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmNetworkStat.getVmName() +
-                                            " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesSent()) + " Stored: " + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesSent())); //untested
+                                            " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesSent()) + " Stored: " + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesSent()));
                                 }
                                 vmNetworkStat_lock.setNetBytesSent(vmNetworkStat_lock.getNetBytesSent() + vmNetworkStat_lock.getCurrentBytesSent());
                             }
@@ -4190,7 +4189,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Received # of bytes that's less than the last one.  " +
                                             "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmNetworkStat.getVmName() +
-                                            " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesReceived()) + " Stored: " + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesReceived())); //untested
+                                            " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesReceived()) + " Stored: " + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesReceived()));
                                 }
                                 vmNetworkStat_lock.setNetBytesReceived(vmNetworkStat_lock.getNetBytesReceived() + vmNetworkStat_lock.getCurrentBytesReceived());
                             }

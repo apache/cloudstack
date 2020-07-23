@@ -1310,12 +1310,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         if (bytesSent < 0) {
             s_logger.warn("Calculated negative value for bytes sent: " + toHumanReadableSize(bytesSent) + ", user stats say: " + toHumanReadableSize(userStat.getAggBytesSent()) +
-                    ", previous network usage was: " + toHumanReadableSize(currentAccountedBytesSent)); //untested
+                    ", previous network usage was: " + toHumanReadableSize(currentAccountedBytesSent));
             bytesSent = 0;
         }
         if (bytesReceived < 0) {
             s_logger.warn("Calculated negative value for bytes received: " + toHumanReadableSize(bytesReceived) + ", user stats say: " + toHumanReadableSize(userStat.getAggBytesReceived()) +
-                    ", previous network usage was: " + toHumanReadableSize(currentAccountedBytesReceived)); //untested
+                    ", previous network usage was: " + toHumanReadableSize(currentAccountedBytesReceived));
             bytesReceived = 0;
         }
 
@@ -1345,7 +1345,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("getting current accounted bytes for... accountId: " + usageVmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() +
                         "; aiw: " + toHumanReadableSize(vmDiskStat.getAggIOWrite()) + "; air: " + toHumanReadableSize(usageVmDiskStat.getAggIORead()) + "; abw: " + toHumanReadableSize(vmDiskStat.getAggBytesWrite()) + "; abr: " +
-                        toHumanReadableSize(usageVmDiskStat.getAggBytesRead())); //untested
+                        toHumanReadableSize(usageVmDiskStat.getAggBytesRead()));
             }
             currentAccountedIORead = usageVmDiskStat.getAggIORead();
             currentAccountedIOWrite = usageVmDiskStat.getAggIOWrite();
@@ -1359,22 +1359,22 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         if (ioRead < 0) {
             s_logger.warn("Calculated negative value for io read: " + toHumanReadableSize(ioRead) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggIORead()) + ", previous vm disk usage was: " +
-                    toHumanReadableSize(currentAccountedIORead)); //untested
+                    toHumanReadableSize(currentAccountedIORead));
             ioRead = 0;
         }
         if (ioWrite < 0) {
             s_logger.warn("Calculated negative value for io write: " + toHumanReadableSize(ioWrite) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggIOWrite()) + ", previous vm disk usage was: " +
-                    toHumanReadableSize(currentAccountedIOWrite)); //untested
+                    toHumanReadableSize(currentAccountedIOWrite));
             ioWrite = 0;
         }
         if (bytesRead < 0) {
             s_logger.warn("Calculated negative value for bytes read: " + toHumanReadableSize(bytesRead) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggBytesRead()) +
-                    ", previous vm disk usage was: " + toHumanReadableSize(currentAccountedBytesRead)); //untested
+                    ", previous vm disk usage was: " + toHumanReadableSize(currentAccountedBytesRead));
             bytesRead = 0;
         }
         if (bytesWrite < 0) {
             s_logger.warn("Calculated negative value for bytes write: " + toHumanReadableSize(bytesWrite) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggBytesWrite()) +
-                    ", previous vm disk usage was: " + toHumanReadableSize(currentAccountedBytesWrite)); //untested
+                    ", previous vm disk usage was: " + toHumanReadableSize(currentAccountedBytesWrite));
             bytesWrite = 0;
         }
 
@@ -1389,9 +1389,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         vmDiskStat.getAggIOWrite(), bytesRead, bytesWrite, vmDiskStat.getAggBytesRead(), vmDiskStat.getAggBytesWrite(), timestamp);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("creating vmDiskHelperEntry... accountId: " + vmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() + "; aiw: " +
-                    vmDiskStat.getAggIOWrite() + "; air: " + vmDiskStat.getAggIORead() + "; curAIR: " + currentAccountedIORead + "; curAIW: " + currentAccountedIOWrite +
-                    "; uir: " + ioRead + "; uiw: " + ioWrite + "; abw: " + vmDiskStat.getAggBytesWrite() + "; abr: " + vmDiskStat.getAggBytesRead() + "; curABR: " +
-                    currentAccountedBytesRead + "; curABW: " + currentAccountedBytesWrite + "; ubr: " + bytesRead + "; ubw: " + bytesWrite);
+                    toHumanReadableSize(vmDiskStat.getAggIOWrite()) + "; air: " + toHumanReadableSize(vmDiskStat.getAggIORead()) + "; curAIR: " + toHumanReadableSize(currentAccountedIORead) + "; curAIW: " + toHumanReadableSize(currentAccountedIOWrite) +
+                    "; uir: " + toHumanReadableSize(ioRead) + "; uiw: " + toHumanReadableSize(ioWrite) + "; abw: " + toHumanReadableSize(vmDiskStat.getAggBytesWrite()) + "; abr: " + toHumanReadableSize(vmDiskStat.getAggBytesRead()) + "; curABR: " +
+                    toHumanReadableSize(currentAccountedBytesRead) + "; curABW: " + toHumanReadableSize(currentAccountedBytesWrite) + "; ubr: " + toHumanReadableSize(bytesRead) + "; ubw: " + toHumanReadableSize(bytesWrite));
         }
         usageVmDisks.add(usageVmDiskVO);
     }

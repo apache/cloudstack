@@ -441,7 +441,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
         TemplateUploader tu = uj.getTemplateUploader();
         s_logger.warn("Upload Completion for jobId: " + jobId + ", status=" + status);
-        s_logger.warn("UploadedBytes=" + toHumanReadableSize(tu.getUploadedBytes()) + ", error=" + tu.getUploadError() + ", pct=" + tu.getUploadPercent()); //untested
+        s_logger.warn("UploadedBytes=" + toHumanReadableSize(tu.getUploadedBytes()) + ", error=" + tu.getUploadError() + ", pct=" + tu.getUploadPercent());
 
         switch (status) {
         case ABORTED:

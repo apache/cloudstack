@@ -103,8 +103,8 @@ public class NetworkUsageParser {
 
             if ((totalBytesSent > 0L) || (totalBytesReceived > 0L)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating usage record, total bytes sent:" + toHumanReadableSize(totalBytesSent) + ", total bytes received: " + toHumanReadableSize(totalBytesReceived) + " for account: " +
-                        account.getId() + " in availability zone " + networkInfo.getZoneId() + ", start: " + startDate + ", end: " + endDate); //untested
+                    s_logger.debug("Creating usage record, total bytes sent: " + toHumanReadableSize(totalBytesSent) + ", total bytes received: " + toHumanReadableSize(totalBytesReceived) + " for account: " +
+                        account.getId() + " in availability zone " + networkInfo.getZoneId() + ", start: " + startDate + ", end: " + endDate);
                 }
 
                 Long hostId = null;

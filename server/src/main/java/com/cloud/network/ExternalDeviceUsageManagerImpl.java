@@ -314,13 +314,13 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
                     userStats.setCurrentBytesSent(newCurrentBytesSent);
                     if (oldCurrentBytesSent > newCurrentBytesSent) {
-                        s_logger.warn(warning + "Stored bytes sent: " + toHumanReadableSize(oldCurrentBytesSent) + ", new bytes sent: " + toHumanReadableSize(newCurrentBytesSent) + "."); //untested
+                        s_logger.warn(warning + "Stored bytes sent: " + toHumanReadableSize(oldCurrentBytesSent) + ", new bytes sent: " + toHumanReadableSize(newCurrentBytesSent) + ".");
                         userStats.setNetBytesSent(oldNetBytesSent + oldCurrentBytesSent);
                     }
 
                     userStats.setCurrentBytesReceived(newCurrentBytesReceived);
                     if (oldCurrentBytesReceived > newCurrentBytesReceived) {
-                        s_logger.warn(warning + "Stored bytes received: " + toHumanReadableSize(oldCurrentBytesReceived) + ", new bytes received: " + toHumanReadableSize(newCurrentBytesReceived) + "."); //untested
+                        s_logger.warn(warning + "Stored bytes received: " + toHumanReadableSize(oldCurrentBytesReceived) + ", new bytes received: " + toHumanReadableSize(newCurrentBytesReceived) + ".");
                         userStats.setNetBytesReceived(oldNetBytesReceived + oldCurrentBytesReceived);
                     }
 
@@ -533,7 +533,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
             userStats.setCurrentBytesSent(newCurrentBytesSent);
             if (oldCurrentBytesSent > newCurrentBytesSent) {
-                s_logger.warn(warning + "Stored bytes sent: " + toHumanReadableSize(oldCurrentBytesSent) + ", new bytes sent: " + toHumanReadableSize(newCurrentBytesSent) + "."); //untested
+                s_logger.warn(warning + "Stored bytes sent: " + toHumanReadableSize(oldCurrentBytesSent) + ", new bytes sent: " + toHumanReadableSize(newCurrentBytesSent) + ".");
                 userStats.setNetBytesSent(oldNetBytesSent + oldCurrentBytesSent);
             }
 

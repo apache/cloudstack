@@ -732,7 +732,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
 
         s_logger.info("Attempting to create volume " + name + " (" + pool.getType().toString() + ") in pool "
-                + pool.getUuid() + " with size " + size);
+                + pool.getUuid() + " with size " + toHumanReadableSize(size));
 
         switch (pool.getType()) {
             case RBD:
@@ -964,7 +964,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout) {
 
         s_logger.info("Creating volume " + name + " from template " + template.getName() + " in pool " + destPool.getUuid() +
-                " (" + destPool.getType().toString() + ") with size " + size);
+                " (" + destPool.getType().toString() + ") with size " + toHumanReadableSize(size));
 
         KVMPhysicalDisk disk = null;
 
@@ -1101,7 +1101,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     if (srcImage.isOldFormat()) {
                         /* The source image is RBD format 1, we have to do a regular copy */
                         s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
-                                " is RBD format 1. We have to perform a regular copy (" + disk.getVirtualSize() + " bytes)");
+                                " is RBD format 1. We have to perform a regular copy (" + toHumanReadableSize(disk.getVirtualSize()) + " bytes)");
 
                         rbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
                         RbdImage destImage = rbd.open(disk.getName());
@@ -1147,7 +1147,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             RbdImage diskImage = rbd.open(disk.getName());
                             diskImage.resize(disk.getVirtualSize());
                             rbd.close(diskImage);
-                            s_logger.debug("Resized " + disk.getName() + " to " + toHumanReadableSize(disk.getVirtualSize())); //untested
+                            s_logger.debug("Resized " + disk.getName() + " to " + toHumanReadableSize(disk.getVirtualSize()));
                         }
 
                     }
@@ -1347,7 +1347,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 RbdImageInfo rbdInfo = image.stat();
                 newDisk.setSize(rbdInfo.size);
                 newDisk.setVirtualSize(rbdInfo.size);
-                s_logger.debug("After copy the resulting RBD image " + rbdDestPath + " is " + toHumanReadableSize(rbdInfo.size) + " bytes long"); //untested
+                s_logger.debug("After copy the resulting RBD image " + rbdDestPath + " is " + toHumanReadableSize(rbdInfo.size) + " bytes long");
                 rbd.close(image);
 
                 r.ioCtxDestroy(io);

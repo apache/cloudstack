@@ -90,7 +90,7 @@ public class XcpServerResource extends CitrixResourceBase {
         //setMemoryLimits(staticMin, staticMax, dynamicMin, dynamicMax)
         if (s_logger.isDebugEnabled()) {
            s_logger.debug("Memory Limits for VM [" + vm.getNameLabel(conn) + "[staticMin:" + toHumanReadableSize(mem_32m) + ", staticMax:" + toHumanReadableSize(maxMemsize) + ", dynamicMin: " + toHumanReadableSize(minMemsize) +
-                    ", dynamicMax:" + toHumanReadableSize(maxMemsize) + "]]"); //untested
+                    ", dynamicMax:" + toHumanReadableSize(maxMemsize) + "]]");
         }
         vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }

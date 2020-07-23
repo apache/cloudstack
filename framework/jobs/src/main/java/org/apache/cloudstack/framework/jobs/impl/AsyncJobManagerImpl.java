@@ -95,6 +95,8 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.storage.dao.VolumeDao;
 
+import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
+
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
     public static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
@@ -257,6 +259,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     public void completeAsyncJob(final long jobId, final Status jobStatus, final int resultCode, final String resultObject) {
         if (s_logger.isDebugEnabled()) {
             String resultObj = obfuscatePassword(resultObject, HidePassword.value());
+            resultObj = convertHumanReadableJson(resultObj);
             s_logger.debug("Complete async job-" + jobId + ", jobStatus: " + jobStatus + ", resultCode: " + resultCode + ", result: " + resultObj);
         }
 
@@ -341,6 +344,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 }
         */
         _messageBus.publish(null, AsyncJob.Topics.JOB_STATE, PublishScope.GLOBAL, jobId);
+    }
+
+    private String convertHumanReadableJson(String resultObj) {
+
+        if (resultObj != null && resultObj.contains("/") && resultObj.contains("{")){
+            resultObj = resultObj.substring(0, resultObj.indexOf("{")) + getHumanReadableBytesJson(resultObj.substring(resultObj.indexOf("{")));
+        }
+
+        return resultObj;
     }
 
     @Override

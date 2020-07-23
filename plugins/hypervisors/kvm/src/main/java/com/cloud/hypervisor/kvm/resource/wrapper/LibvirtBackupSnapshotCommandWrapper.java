@@ -123,7 +123,7 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                             bos.write(buf, 0, bytes);
                             offset += bytes;
                         }
-                        s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + toHumanReadableSize(offset)); //untested
+                        s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + toHumanReadableSize(offset));
                     }catch(final IOException ex)
                     {
                         s_logger.error("BackupSnapshotAnswer:Exception:"+ ex.getMessage());

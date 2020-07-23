@@ -264,7 +264,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
 
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " +
-                                toHumanReadableSize(usedCapacity) + " Bytes"); //untested
+                                toHumanReadableSize(usedCapacity) + " Bytes");
                     }
                 } else if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
                     usedCapacity += so.getCpu() * so.getSpeed();
