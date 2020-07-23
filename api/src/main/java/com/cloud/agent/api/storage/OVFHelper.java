@@ -617,6 +617,9 @@ public class OVFHelper {
 
     private List<OVFConfigurationTO> getDeploymentOptionsFromDocumentTree(Document doc) {
         List<OVFConfigurationTO> options = new ArrayList<>();
+        if (doc == null) {
+            return options;
+        }
         NodeList deploymentOptionSection = doc.getElementsByTagName("DeploymentOptionSection");
         if (deploymentOptionSection.getLength() == 0) {
             return options;
@@ -640,6 +643,9 @@ public class OVFHelper {
 
     private List<OVFVirtualHardwareItemTO> getVirtualHardwareItemsFromDocumentTree(Document doc) {
         List<OVFVirtualHardwareItemTO> items = new LinkedList<>();
+        if (doc == null) {
+            return items;
+        }
         NodeList hardwareSection = doc.getElementsByTagName("VirtualHardwareSection");
         if (hardwareSection.getLength() == 0) {
             return items;
