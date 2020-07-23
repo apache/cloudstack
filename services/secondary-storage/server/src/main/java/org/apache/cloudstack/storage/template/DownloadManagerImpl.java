@@ -252,7 +252,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
 
         public void setVirtualHardwareSection(OVFVirtualHardwareSectionTO section) {
-            this.hardwareSection = hardwareSection;
+            this.hardwareSection = section;
         }
 
         public OVFVirtualHardwareSectionTO getVirtualHardwareSection() {
