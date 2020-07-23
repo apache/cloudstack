@@ -162,7 +162,9 @@ public class CloudOrchestrator implements OrchestrationService {
         int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan,
         Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap) throws InsufficientCapacityException {
 
-        LOGGER.info(String.format("creating virtual machine %s using template %s with hostname %s", templateId, hostName));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("creating virtual machine using template %s with hostname %s", templateId, hostName));
+        }
 
         LinkedHashMap<NetworkVO, List<? extends NicProfile>> networkIpMap = new LinkedHashMap<NetworkVO, List<? extends NicProfile>>();
         for (String uuid : networkNicMap.keySet()) {
