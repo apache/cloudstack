@@ -180,10 +180,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
-                Float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
-                String cpuAlloc = decimalFormat.format(((float)cpu / cpuWithOverprovisioning * 100f)) + "%";
-                hostResponse.setCpuAllocated(cpuAlloc);
-                hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning.toString());
+                float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
+                hostResponse.setCpuAllocated(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
+                hostResponse.setCpuWithOverprovisioning(Float.toString(cpuWithOverprovisioning));
             }
 
             if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)) {
@@ -330,9 +329,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
-                float cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId()));
-                String cpuAlloc = decimalFormat.format(((float)cpu / cpuWithOverprovisioning * 100f)) + "%";
-                hostResponse.setCpuAllocated(cpuAlloc);
+                float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
+                hostResponse.setCpuAllocated(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
                 hostResponse.setCpuWithOverprovisioning(Float.toString(cpuWithOverprovisioning));
             }
 
@@ -459,6 +457,11 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         sc.setParameters("clusterId", clusterId);
         sc.setParameters("type", type);
         return listBy(sc);
+    }
+
+    private String calculateResourceAllocatedPercentage(float resource, float resourceWithOverProvision) {
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        return decimalFormat.format(((float)resource / resourceWithOverProvision * 100.0f)) + "%";
     }
 
 }
