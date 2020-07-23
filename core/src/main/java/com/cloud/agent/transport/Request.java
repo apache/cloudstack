@@ -396,7 +396,7 @@ public class Request {
         return log("", true, Level.DEBUG);
     }
 
-    protected String log(String msg, boolean logContent, Level level) {
+    protected String  log(String msg, boolean logContent, Level level) {
         StringBuilder content = new StringBuilder();
         if (logContent) {
             if (_cmds == null) {

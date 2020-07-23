@@ -52,8 +52,6 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 public class ElastistorUtil {
 
     private static final Logger s_logger = Logger.getLogger(ElastistorUtil.class);
@@ -2497,7 +2495,7 @@ public class ElastistorUtil {
          }else{
             quotasize = String.valueOf(quotasize) + "G";
          }
-         s_logger.info("elastistor tsm storage is updating to " + toHumanReadableSize(size)); //Check this logic - changed to size from quotasize - Untested
+         s_logger.info("elastistor tsm storage is updating to " + quotasize);
          UpdateTsmStorageCmd updateTsmStorageCmd = new UpdateTsmStorageCmd();
 
          updateTsmStorageCmd.putCommandParameter("id", uuid);
