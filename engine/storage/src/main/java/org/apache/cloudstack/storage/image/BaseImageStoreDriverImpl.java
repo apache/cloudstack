@@ -448,7 +448,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             }
             if (CollectionUtils.isNotEmpty(ovfHardwareSection.getCommonHardwareItems())) {
                 for (OVFVirtualHardwareItemTO item : ovfHardwareSection.getCommonHardwareItems()) {
-                    String key = item.getResourceType().getName().trim() + "-" + item.getInstanceId();
+                    String key = item.getResourceType().getName().trim().replaceAll("\\s","") + "-" + item.getInstanceId();
                     String propKey = ImageStore.OVF_HARDWARE_ITEM_PREFIX + key;
                     persistTemplateDetailGsonEncoded(templateId, propKey, item);
                 }
