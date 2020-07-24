@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.resource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -228,7 +229,7 @@ public class VmwareStorageLayoutHelper implements Configurable {
 
         DatastoreFile srcDsFile = new DatastoreFile(fileDsFullPath);
 
-        List<String> vSphereFileExtensions = Arrays.asList(VsphereLinkedCloneExtensions.value().trim().split("\\s*,\\s*"));
+        List<String> vSphereFileExtensions = new ArrayList<>(Arrays.asList(VsphereLinkedCloneExtensions.value().trim().split("\\s*,\\s*")));
         // add flat file format to the above list
         vSphereFileExtensions.add("flat.vmdk");
         for (String linkedCloneExtension :  vSphereFileExtensions) {
@@ -267,7 +268,7 @@ public class VmwareStorageLayoutHelper implements Configurable {
                         s_logger.info("Move " + file.getPath() + " -> " + targetFile.getPath());
                         dsMo.moveDatastoreFile(file.getPath(), dcMo.getMor(), dsMo.getMor(), targetFile.getPath(), dcMo.getMor(), true);
 
-                        List<String> vSphereFileExtensions = Arrays.asList(VsphereLinkedCloneExtensions.value().trim().split("\\s*,\\s*"));
+                        List<String> vSphereFileExtensions = new ArrayList<>(Arrays.asList(VsphereLinkedCloneExtensions.value().trim().split("\\s*,\\s*")));
                         // add flat file format to the above list
                         vSphereFileExtensions.add("flat.vmdk");
                         for (String linkedCloneExtension :  vSphereFileExtensions) {
@@ -353,7 +354,7 @@ public class VmwareStorageLayoutHelper implements Configurable {
             s_logger.warn("Unable to locate VMDK file: " + fileName);
         }
 
-        List<String> vSphereFileExtensions = Arrays.asList(VsphereLinkedCloneExtensions.value().trim().split("\\s*,\\s*"));
+        List<String> vSphereFileExtensions = new ArrayList<>(Arrays.asList(VsphereLinkedCloneExtensions.value().trim().split("\\s*,\\s*")));
         vSphereFileExtensions.add("flat.vmdk");
         for (String linkedCloneExtension :  vSphereFileExtensions) {
             fileFullPath = getLegacyDatastorePathFromVmdkFileName(dsMo, String.format("%s-%s", volumeName, linkedCloneExtension));
