@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from netaddr import *
+from ipaddress import *
 
 
 def merge(dbag, data):

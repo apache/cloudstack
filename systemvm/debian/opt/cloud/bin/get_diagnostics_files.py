@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -65,7 +65,7 @@ def zip_files(files):
         cleanup(files_from_shell_commands)
         generate_retrieved_files_txt(zf, files_found_list, files_not_found_list)
         zf.close()
-        print zf_name
+        print(zf_name)
 
 
 def get_cmd(script):

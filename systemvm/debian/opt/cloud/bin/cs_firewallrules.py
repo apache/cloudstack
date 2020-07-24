@@ -25,8 +25,8 @@ def merge(dbag, data):
     for rule in data['rules']:
         id = str(rule['id'])
         if rule['revoked']:
-            if id in dbagc.keys():
+            if id in list(dbagc.keys()):
                 del(dbagc[id])
-        elif id not in dbagc.keys():
+        elif id not in list(dbagc.keys()):
             dbagc[id] = rule
     return dbagc

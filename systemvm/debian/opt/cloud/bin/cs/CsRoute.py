@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
+from . import CsHelper
 import logging
 
 
@@ -116,7 +116,7 @@ class CsRoute:
         route_found = CsHelper.execute("ip -4 route list 0/0")
 
         if len(route_found) > 0:
-            logging.info("Default route found: " + route_found[0])
+            logging.info("Default route found: " + route_found[0].decode())
             return True
         else:
             logging.warn("No default route found!")
@@ -124,6 +124,6 @@ class CsRoute:
 
     def findRule(self, rule):
         for i in CsHelper.execute("ip rule show"):
-            if rule in i.strip():
+            if rule in i.decode().strip():
                 return True
         return False

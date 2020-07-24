@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -17,7 +17,7 @@
 # under the License.
 
 from os import sys, path, statvfs
-from utility import getHealthChecksData
+from .utility import getHealthChecksData
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
         data = entries[0]
 
     if "minDiskNeeded" not in data:
-        print "Missing minDiskNeeded in health_checks_data systemThresholds, skipping"
+        print("Missing minDiskNeeded in health_checks_data systemThresholds, skipping")
         exit(0)
 
     minDiskNeeded = float(data["minDiskNeeded"]) * 1024
@@ -35,10 +35,10 @@ def main():
     freeSpace = (s.f_bavail * s.f_frsize) / 1024
 
     if (freeSpace < minDiskNeeded):
-        print "Insufficient free space is " + str(freeSpace/1024) + " MB"
+        print("Insufficient free space is " + str(freeSpace/1024) + " MB")
         exit(1)
     else:
-        print "Sufficient free space is " + str(freeSpace/1024) + " MB"
+        print("Sufficient free space is " + str(freeSpace/1024) + " MB")
         exit(0)
 
 

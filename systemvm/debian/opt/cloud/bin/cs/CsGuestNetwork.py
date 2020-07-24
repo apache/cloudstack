@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 from merge import DataBag
-import CsHelper
+from . import CsHelper
 
 
 class CsGuestNetwork:
@@ -27,7 +27,7 @@ class CsGuestNetwork:
         db.load()
         dbag = db.getDataBag()
         self.config = config
-        if device in dbag.keys() and len(dbag[device]) != 0:
+        if device in list(dbag.keys()) and len(dbag[device]) != 0:
             self.data = dbag[device][0]
         else:
             self.guest = False

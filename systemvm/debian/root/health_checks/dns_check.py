@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -17,14 +17,14 @@
 # under the License.
 
 from os import sys, path
-from utility import getHealthChecksData
+from .utility import getHealthChecksData
 
 
 def main():
     vMs = getHealthChecksData("virtualMachines")
 
     if vMs is None or len(vMs) == 0:
-        print "No VMs running data available, skipping"
+        print("No VMs running data available, skipping")
         exit(0)
 
     with open('/etc/hosts', 'r') as hostsFile:
@@ -47,10 +47,10 @@ def main():
             failureMessage = failureMessage + vM["ip"] + " " + vM["vmName"] + ", "
 
     if failedCheck:
-        print failureMessage[:-2]
+        print(failureMessage[:-2])
         exit(1)
     else:
-        print "All " + str(len(vMs)) + " VMs are present in /etc/hosts"
+        print("All " + str(len(vMs)) + " VMs are present in /etc/hosts")
         exit(0)
 
 
