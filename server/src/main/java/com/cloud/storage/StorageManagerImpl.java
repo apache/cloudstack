@@ -1393,8 +1393,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
 
                         _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
-                        SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findBySnapshot(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Primary);
+                        SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findDestroyedReferenceBySnapshot(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Primary);
                         if (snapshotOnPrimary != null) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Deleting snapshot on primary store reference DB entry: " + snapshotOnPrimary);
+                            }
                             _snapshotStoreDao.remove(snapshotOnPrimary.getId());
                         }
                         _snapshotStoreDao.remove(destroyedSnapshotStoreVO.getId());

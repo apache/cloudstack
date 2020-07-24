@@ -74,4 +74,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<SnapshotDataStoreVO> listByState(ObjectInDataStoreStateMachine.State... states);
 
     List<SnapshotDataStoreVO> findSnapshots(Long storeId, Date start, Date end);
+
+    SnapshotDataStoreVO findDestroyedReferenceBySnapshot(long snapshotId, DataStoreRole role);
 }
