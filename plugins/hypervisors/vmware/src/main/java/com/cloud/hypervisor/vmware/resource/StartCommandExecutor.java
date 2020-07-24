@@ -406,21 +406,7 @@ class StartCommandExecutor {
 
             startAnswer.setIqnToData(iqnToData);
 
-            // Since VM was successfully powered-on, if there was an existing VM in a different cluster that was unregistered, delete all the files associated with it.
-            if (existingVm != null && existingVm.vmName != null && existingVm.vmFileLayout != null) {
-                List<String> vmDatastoreNames = new ArrayList<>();
-                for (DatastoreMO vmDatastore : vmMo.getAllDatastores()) {
-                    vmDatastoreNames.add(vmDatastore.getName());
-                }
-                // Don't delete files that are in a datastore that is being used by the new VM as well (zone-wide datastore).
-                List<String> skipDatastores = new ArrayList<>();
-                for (DatastoreMO existingDatastore : existingVm.datastores) {
-                    if (vmDatastoreNames.contains(existingDatastore.getName())) {
-                        skipDatastores.add(existingDatastore.getName());
-                    }
-                }
-                vmwareResource.deleteUnregisteredVmFiles(existingVm.vmFileLayout, dcMo, true, skipDatastores);
-            }
+            deleteOldVersionOfTheStartedVM(existingVm, dcMo, vmMo);
 
             return startAnswer;
         } catch (Throwable e) {
@@ -442,6 +428,24 @@ class StartCommandExecutor {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("finally done with %s",  vmwareResource.getGson().toJson(cmd)));
             }
+        }
+    }
+
+    private void deleteOldVersionOfTheStartedVM(VirtualMachineData existingVm, DatacenterMO dcMo, VirtualMachineMO vmMo) throws Exception {
+        // Since VM was successfully powered-on, if there was an existing VM in a different cluster that was unregistered, delete all the files associated with it.
+        if (existingVm != null && existingVm.vmName != null && existingVm.vmFileLayout != null) {
+            List<String> vmDatastoreNames = new ArrayList<>();
+            for (DatastoreMO vmDatastore : vmMo.getAllDatastores()) {
+                vmDatastoreNames.add(vmDatastore.getName());
+            }
+            // Don't delete files that are in a datastore that is being used by the new VM as well (zone-wide datastore).
+            List<String> skipDatastores = new ArrayList<>();
+            for (DatastoreMO existingDatastore : existingVm.datastores) {
+                if (vmDatastoreNames.contains(existingDatastore.getName())) {
+                    skipDatastores.add(existingDatastore.getName());
+                }
+            }
+            vmwareResource.deleteUnregisteredVmFiles(existingVm.vmFileLayout, dcMo, true, skipDatastores);
         }
     }
 
