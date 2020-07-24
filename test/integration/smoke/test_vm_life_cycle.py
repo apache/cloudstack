@@ -25,7 +25,9 @@ from marvin.cloudstackAPI import (recoverVirtualMachine,
                                   provisionCertificate,
                                   updateConfiguration,
                                   migrateVirtualMachine,
-                                  migrateVirtualMachineWithVolume)
+                                  migrateVirtualMachineWithVolume,
+                                  unmanageVirtualMachine,
+                                  listUnmanagedInstances)
 from marvin.lib.utils import *
 
 from marvin.lib.base import (Account,
@@ -37,13 +39,17 @@ from marvin.lib.base import (Account,
                              Configurations,
                              StoragePool,
                              Volume,
-                             DiskOffering)
+                             DiskOffering,
+                             NetworkOffering,
+                             Network)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
-                               list_hosts)
+                               list_hosts,
+                               list_virtual_machines)
 from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
+from marvin.lib.decoratorGenerators import skipTestIf
 # Import System modules
 import time
 
@@ -1512,3 +1518,152 @@ class TestKVMLiveMigration(cloudstackTestCase):
                          target_host.id,
                          "HostID not as expected")
 
+
+class TestUnmanageVM(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestUnmanageVM, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+        cls._cleanup = []
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            hypervisor=cls.hypervisor.lower()
+        )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
+        cls.hypervisorNotSupported = cls.hypervisor.lower() != "vmware"
+
+        cls.services["small"]["zoneid"] = cls.zone.id
+        cls.services["small"]["template"] = cls.template.id
+
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
+
+        cls.small_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["small"]
+        )
+
+        cls.network_offering = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["l2-network_offering"],
+        )
+        cls.network_offering.update(cls.apiclient, state='Enabled')
+
+        cls._cleanup = [
+            cls.small_offering,
+            cls.network_offering,
+            cls.account
+        ]
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.services["network"]["networkoffering"] = self.network_offering.id
+
+        self.network = Network.create(
+            self.apiclient,
+            self.services["l2-network"],
+            zoneid=self.zone.id,
+            networkofferingid=self.network_offering.id
+        )
+
+        self.cleanup = [
+            self.network
+        ]
+
+    @attr(tags=["advanced", "advancedns", "smoke", "sg"], required_hardware="false")
+    @skipTestIf("hypervisorNotSupported")
+    def test_01_unmanage_vm_cycle(self):
+        """
+        Test the following:
+        1. Deploy VM
+        2. Unmanage VM
+        3. Verify VM is not listed in CloudStack
+        4. Verify VM is listed as part of the unmanaged instances
+        5. Import VM
+        6. Destroy VM
+        """
+
+        # 1 - Deploy VM
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            serviceofferingid=self.small_offering.id,
+            networkids=self.network.id,
+            zoneid=self.zone.id
+        )
+        vm_id = self.virtual_machine.id
+        vm_instance_name = self.virtual_machine.instancename
+        hostid = self.virtual_machine.hostid
+        hosts = Host.list(
+            self.apiclient,
+            id=hostid
+        )
+        host = hosts[0]
+        clusterid = host.clusterid
+
+        list_vm = list_virtual_machines(
+            self.apiclient,
+            id=vm_id
+        )
+        self.assertEqual(
+            isinstance(list_vm, list),
+            True,
+            "Check if virtual machine is present"
+        )
+        vm_response = list_vm[0]
+
+        self.assertEqual(
+            vm_response.state,
+            "Running",
+            "VM state should be running after deployment"
+        )
+
+        # 2 - Unmanage VM from CloudStack
+        self.virtual_machine.unmanage(self.apiclient)
+
+        list_vm = list_virtual_machines(
+            self.apiclient,
+            id=vm_id
+        )
+
+        self.assertEqual(
+            list_vm,
+            None,
+            "VM should not be listed"
+        )
+
+        unmanaged_vms = VirtualMachine.listUnmanagedInstances(
+            self.apiclient,
+            clusterid=clusterid,
+            name=vm_instance_name
+        )
+
+        self.assertEqual(
+            len(unmanaged_vms),
+            1,
+            "Unmanaged VMs matching instance name list size is 1"
+        )
+
+        unmanaged_vm = unmanaged_vms[0]
+        self.assertEqual(
+            unmanaged_vm.powerstate,
+            "PowerOn",
+            "Unmanaged VM is still running"
+        )

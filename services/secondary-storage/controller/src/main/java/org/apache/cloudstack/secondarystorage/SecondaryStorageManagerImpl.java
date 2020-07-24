@@ -1499,6 +1499,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     }
 
+    @Override
+    public void finalizeUnmanage(VirtualMachine vm) {
+    }
+
     public List<SecondaryStorageVmAllocator> getSecondaryStorageVmAllocators() {
         return _ssVmAllocators;
     }

@@ -18,6 +18,7 @@
 package org.apache.cloudstack.acl;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -39,13 +40,17 @@ public interface RoleService {
 
     Role createRole(String name, RoleType roleType, String description);
 
+    Role createRole(String name, Role role, String description);
+
+    Role importRole(String name, RoleType roleType, String description, List<Map<String, Object>> rules, boolean forced);
+
     Role updateRole(Role role, String name, RoleType roleType, String description);
 
     boolean deleteRole(Role role);
 
     RolePermission findRolePermission(Long id);
 
-    RolePermission findRolePermissionByUuid(String uuid);
+    RolePermission findRolePermissionByRoleIdAndRule(Long roleId, String rule);
 
     RolePermission createRolePermission(Role role, Rule rule, Permission permission, String description);
 
@@ -77,4 +82,6 @@ public interface RoleService {
     List<Role> findRolesByType(RoleType roleType);
 
     List<RolePermission> findAllPermissionsBy(Long roleId);
+
+    Permission getRolePermission(String permission);
 }

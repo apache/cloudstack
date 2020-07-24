@@ -362,9 +362,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             }
         }
 
-        if (vm.getType() == VirtualMachine.Type.User) {
-            checkForNonDedicatedResources(vmProfile, dc, avoids);
-        }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
         }
@@ -572,7 +569,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         return null;
     }
 
-    private void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
+    @Override
+    public void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
         boolean isExplicit = false;
         VirtualMachine vm = vmProfile.getVirtualMachine();
 

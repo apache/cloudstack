@@ -129,6 +129,8 @@ import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PrepareUnmanageVMInstanceAnswer;
+import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
@@ -561,6 +563,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((UnregisterNicCommand) cmd);
             } else if (clz == GetUnmanagedInstancesCommand.class) {
                 answer = execute((GetUnmanagedInstancesCommand) cmd);
+            } else if (clz == PrepareUnmanageVMInstanceCommand.class) {
+                answer = execute((PrepareUnmanageVMInstanceCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1945,7 +1949,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int ideUnitNumber = 0;
             int scsiUnitNumber = 0;
             int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-            int scsiControllerKey = vmMo.getGenericScsiDeviceControllerKeyNoException();
+            int scsiControllerKey = vmMo.getScsiDeviceControllerKeyNoException();
             int controllerKey;
 
             //
@@ -2068,13 +2072,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
                     }
                 } else {
-                    controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController);
+                    if (VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber)) {
+                        scsiUnitNumber++;
+                    }
+
+                    controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController, scsiUnitNumber);
                     if (controllerKey == -1) {
                         // This may happen for ROOT legacy VMs which doesn't have recommended disk controller when global configuration parameter 'vmware.root.disk.controller' is set to "osdefault"
                         // Retrieve existing controller and use.
                         Ternary<Integer, Integer, DiskControllerType> vmScsiControllerInfo = vmMo.getScsiControllerInfo();
                         DiskControllerType existingControllerType = vmScsiControllerInfo.third();
-                        controllerKey = vmMo.getScsiDiskControllerKeyNoException(existingControllerType.toString());
+                        controllerKey = vmMo.getScsiDiskControllerKeyNoException(existingControllerType.toString(), scsiUnitNumber);
                     }
                 }
                 if (!hasSnapshot) {
@@ -2098,10 +2106,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     assert (volumeDsDetails != null);
 
                     String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, vol, matchingExistingDisk, dataStoresDetails);
-                    if (controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
+
+                    int deviceNumber = -1;
+                    if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) {
+                        deviceNumber = ideUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_IDE_CONTROLLER;
+                        ideUnitNumber++;
+                    } else {
+                        deviceNumber = scsiUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_SCSI_CONTROLLER;
                         scsiUnitNumber++;
-                    VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(),
-                            (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) ? ((ideUnitNumber++) % VmwareHelper.MAX_IDE_CONTROLLER_COUNT) : scsiUnitNumber++, i + 1);
+                    }
+
+                    VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1);
 
                     if (vol.getType() == Volume.Type.ROOT)
                         rootDiskTO = vol;
@@ -2113,8 +2128,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     i++;
                 } else {
-                    if (controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
-                        scsiUnitNumber++;
                     if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber))
                         ideUnitNumber++;
                     else
@@ -7147,5 +7160,27 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("GetUnmanagedInstancesCommand failed due to " + VmwareHelper.getExceptionMessage(e));
         }
         return new GetUnmanagedInstancesAnswer(cmd, "", unmanagedInstances);
+    }
+
+    private Answer execute(PrepareUnmanageVMInstanceCommand cmd) {
+        s_logger.debug("Verify VMware instance: " + cmd.getInstanceName() + " is available before unmanaging VM");
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+        String instanceName = cmd.getInstanceName();
+
+        try {
+            ManagedObjectReference  dcMor = hyperHost.getHyperHostDatacenter();
+            DatacenterMO dataCenterMo = new DatacenterMO(getServiceContext(), dcMor);
+            VirtualMachineMO vm = dataCenterMo.findVm(instanceName);
+            if (vm == null) {
+                return new PrepareUnmanageVMInstanceAnswer(cmd, false, "Cannot find VM with name " + instanceName +
+                        " in datacenter " + dataCenterMo.getName());
+            }
+        } catch (Exception e) {
+            s_logger.error("Error trying to verify if VM to unmanage exists", e);
+            return new PrepareUnmanageVMInstanceAnswer(cmd, false, "Error: " + e.getMessage());
+        }
+
+        return new PrepareUnmanageVMInstanceAnswer(cmd, true, "OK");
     }
 }

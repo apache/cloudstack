@@ -102,11 +102,28 @@ class Role:
         """Create role"""
         cmd = createRole.createRoleCmd()
         cmd.name = services["name"]
-        cmd.type = services["type"]
+        if "type" in services:
+            cmd.type = services["type"]
+        if "roleid" in services:
+            cmd.roleid = services["roleid"]
         if "description" in services:
             cmd.description = services["description"]
 
         return Role(apiclient.createRole(cmd).__dict__)
+
+    @classmethod
+    def importRole(cls, apiclient, services, domainid=None):
+        """Import role"""
+        cmd = importRole.importRoleCmd()
+        cmd.name = services["name"]
+        cmd.type = services["type"]
+        cmd.rules = services["rules"]
+        if "description" in services:
+            cmd.description = services["description"]
+        if "forced" in services:
+            cmd.type = services["forced"]
+
+        return Role(apiclient.importRole(cmd).__dict__)
 
     def delete(self, apiclient):
         """Delete Role"""
@@ -965,6 +982,20 @@ class VirtualMachine:
         if custommemory:
             cmd.details[0]["memory"] = custommemory
         return apiclient.scaleVirtualMachine(cmd)
+
+    def unmanage(self, apiclient):
+        """Unmanage a VM from CloudStack (currently VMware only)"""
+        cmd = unmanageVirtualMachine.unmanageVirtualMachineCmd()
+        cmd.id = self.id
+        return apiclient.unmanageVirtualMachine(cmd)
+
+    @classmethod
+    def listUnmanagedInstances(cls, apiclient, clusterid, name = None):
+        """List unmanaged VMs (currently VMware only)"""
+        cmd = listUnmanagedInstances.listUnmanagedInstancesCmd()
+        cmd.clusterid = clusterid
+        cmd.name = name
+        return apiclient.listUnmanagedInstances(cmd)
 
 
 class Volume:
