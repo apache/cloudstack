@@ -32,13 +32,13 @@
 # -------------------------------------------------------------------- #
 import os
 import logging
-import CsHelper
-from CsFile import CsFile
-from CsProcess import CsProcess
-from CsApp import CsPasswdSvc
-from CsAddress import CsDevice
-from CsRoute import CsRoute
-from CsStaticRoutes import CsStaticRoutes
+from . import CsHelper
+from .CsFile import CsFile
+from .CsProcess import CsProcess
+from .CsApp import CsPasswdSvc
+from .CsAddress import CsDevice
+from .CsRoute import CsRoute
+from .CsStaticRoutes import CsStaticRoutes
 import socket
 from time import sleep
 
@@ -111,9 +111,9 @@ class CsRedundant(object):
             CsHelper.service("keepalived", "stop")
             return
 
-        CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
+        CsHelper.mkdir(self.CS_RAMDISK_DIR, 0o755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
-        CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
+        CsHelper.mkdir(self.CS_ROUTER_DIR, 0o755, False)
         for s in self.CS_TEMPLATES:
             d = s
             if s.endswith(".templ"):
@@ -222,10 +222,10 @@ class CsRedundant(object):
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 s.bind('/tmp/master_lock')
                 return s
-            except socket.error, e:
+            except socket.error as e:
                 error_code = e.args[0]
                 error_string = e.args[1]
-                print "Process already running (%d:%s). Exiting" % (error_code, error_string)
+                print("Process already running (%d:%s). Exiting" % (error_code, error_string))
                 logging.info("Master is already running, waiting")
                 sleep(time_between)
 

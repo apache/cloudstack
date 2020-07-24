@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
+from . import CsHelper
 import logging
 
 
@@ -57,6 +57,6 @@ class CsRule:
     def findMark(self):
         srch = "from all fwmark %s lookup %s" % (hex(self.tableNo), self.table)
         for i in CsHelper.execute("ip rule show"):
-            if srch in i.strip():
+            if srch in i.decode().strip():
                 return True
         return False

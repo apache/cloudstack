@@ -25,7 +25,7 @@ import sys
 import os.path
 import re
 import shutil
-from netaddr import *
+from ipaddress import *
 
 PUBLIC_INTERFACES = {"router": "eth2", "vpcrouter": "eth1"}
 
@@ -86,7 +86,7 @@ def mkdir(name, mode, fatal):
         os.makedirs(name, mode)
     except OSError as e:
         if e.errno != 17:
-            print "failed to make directories " + name + " due to :" + e.strerror
+            print("failed to make directories " + name + " due to :" + e.strerror)
             if(fatal):
                 sys.exit(1)
 
@@ -119,7 +119,7 @@ def get_device_info():
             to = {}
             to['ip'] = vals[1]
             to['dev'] = vals[-1]
-            to['network'] = IPNetwork(to['ip'])
+            to['network'] = ip_network(to['ip'])
             to['dnsmasq'] = False
             list.append(to)
     return list

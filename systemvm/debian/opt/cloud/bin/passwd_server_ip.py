@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -31,10 +31,10 @@ import os
 import sys
 import syslog
 import threading
-import urlparse
+import urllib.parse
 
-from BaseHTTPServer   import BaseHTTPRequestHandler, HTTPServer
-from SocketServer     import ThreadingMixIn #, ForkingMixIn
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn #, ForkingMixIn
 
 
 passMap = {}
@@ -79,7 +79,7 @@ def savePasswordFile():
                 for ip in passMap:
                     f.write('%s=%s\n' % (ip, passMap[ip]))
             f.close()
-        except IOError, e:
+        except IOError as e:
             syslog.syslog('serve_password: Unable to save to password file %s' % e)
 
 def getPassword(ip):
@@ -192,7 +192,7 @@ def serve(HandlerClass = PasswordRequestHandler,
     except KeyboardInterrupt:
         syslog.syslog('serve_password shutting down')
         passwordServer.socket.close()
-    except Exception, e:
+    except Exception as e:
         syslog.syslog('serve_password hit exception %s -- died' % e)
         passwordServer.socket.close()
 

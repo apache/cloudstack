@@ -17,7 +17,7 @@
 # under the License.
 import os
 import re
-import CsHelper
+from . import CsHelper
 import logging
 
 
@@ -42,12 +42,14 @@ class CsProcess(object):
         self.pid = []
         for i in CsHelper.execute("ps aux"):
             items = len(self.search)
-            proc = re.split(r"\s+", i)[items*-1:]
+            decodedItem = i.decode()
+            proc = re.split(r"\s+", decodedItem)[items*-1:]
             matches = len([m for m in proc if m in self.search])
             if matches == items:
-                self.pid.append(re.split(r"\s+", i)[1])
+                self.pid.append(re.split(r"\s+", decodedItem)[1])
 
-        logging.debug("CsProcess:: Searching for process ==> %s and found PIDs ==> %s", self.search, self.pid)
+        log_str = "CsProcess:: Searching for process ==> %s and found PIDs ==> %s" % ("self.search", "self.pid")
+        logging.debug(log_str)
         return self.pid
 
     def find(self):

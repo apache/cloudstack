@@ -16,7 +16,7 @@
 # under the License.
 import logging
 from cs.CsDatabag import CsDataBag
-from CsFile import CsFile
+from .CsFile import CsFile
 import json
 
 MON_CONFIG = "/etc/monitor.conf"
@@ -48,13 +48,13 @@ class CsMonitor(CsDataBag):
         cron_rep_basic = self.get_basic_check_interval()
         cron_rep_advanced = self.get_advanced_check_interval()
         cron = CsFile("/etc/cron.d/process")
-        cron.deleteLine("root /usr/bin/python /root/monitorServices.py")
+        cron.deleteLine("root /usr/bin/python3 /root/monitorServices.py")
         cron.add("SHELL=/bin/bash", 0)
         cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
         if cron_rep_basic > 0:
-            cron.add("*/" + str(cron_rep_basic) + " * * * * root /usr/bin/python /root/monitorServices.py basic", -1)
+            cron.add("*/" + str(cron_rep_basic) + " * * * * root /usr/bin/python3 /root/monitorServices.py basic", -1)
         if cron_rep_advanced > 0:
-            cron.add("*/" + str(cron_rep_advanced) + " * * * * root /usr/bin/python /root/monitorServices.py advanced", -1)
+            cron.add("*/" + str(cron_rep_advanced) + " * * * * root /usr/bin/python3 /root/monitorServices.py advanced", -1)
         cron.commit()
 
     def setupHealthChecksConfigFile(self):

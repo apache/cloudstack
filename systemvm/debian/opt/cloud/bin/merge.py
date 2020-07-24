@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -156,7 +156,7 @@ class updateDataBag:
         dp = PrivateGatewayHack.update_network_type_for_privategateway(dbag, dp)
         qf = QueueFile()
         qf.load({'ip_address': [dp], 'type': 'ips'})
-        if 'domain_name' not in d.keys() or d['domain_name'] == '':
+        if 'domain_name' not in list(d.keys()) or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
 
         d = PrivateGatewayHack.update_network_type_for_privategateway(dbag, d)
@@ -249,7 +249,7 @@ class updateDataBag:
     def process_ipaliases(self, dbag):
         nic_dev = None
         # Should be a way to deal with this better
-        for intf, data in dbag.items():
+        for intf, data in list(dbag.items()):
             if intf == 'id':
                 continue
             elif any([net['nw_type'] == 'guest' for net in data]):
@@ -335,7 +335,7 @@ class PrivateGatewayHack:
 
     @classmethod
     def update_network_type_for_privategateway(cls, dbag, data):
-        ip = data['router_guest_ip'] if 'router_guest_ip' in data.keys() else data['public_ip']
+        ip = data['router_guest_ip'] if 'router_guest_ip' in list(data.keys()) else data['public_ip']
 
         initial_data = cls.load_inital_data()
         has_private_gw_ip = cls.if_config_has_privategateway(initial_data)
@@ -350,7 +350,7 @@ class PrivateGatewayHack:
 
     @classmethod
     def if_config_has_privategateway(cls, dbag):
-        return 'privategateway' in dbag['config'].keys() and dbag['config']['privategateway'] != "None"
+        return 'privategateway' in list(dbag['config'].keys()) and dbag['config']['privategateway'] != "None"
 
     @classmethod
     def ip_matches_private_gateway_ip(cls, ip, private_gateway_ip):
