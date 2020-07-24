@@ -44,7 +44,6 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.cloud.utils.HumanReadableJson;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -342,6 +341,7 @@ import com.vmware.vim25.VmfsDatastoreInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
+import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
@@ -1713,7 +1713,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected StartAnswer execute(StartCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource StartCommand: " + HumanReadableJson.getHumanReadableBytesJson(_gson.toJson(cmd)));
+            s_logger.info("Executing resource StartCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
         }
 
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
@@ -3928,7 +3928,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(RebootCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource RebootCommand: " + _gson.toJson(cmd));
+            s_logger.info("Executing resource RebootCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
         }
 
         boolean toolsInstallerMounted = false;
@@ -4051,7 +4051,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(PrepareForMigrationCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource PrepareForMigrationCommand: " + _gson.toJson(cmd));
+            s_logger.info("Executing resource PrepareForMigrationCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
         }
 
         VirtualMachineTO vm = cmd.getVirtualMachine();
@@ -4278,7 +4278,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(MigrateCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource MigrateCommand: " + _gson.toJson(cmd));
+            s_logger.info("Executing resource MigrateCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
         }
 
         final String vmName = cmd.getVmName();
@@ -4321,7 +4321,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected Answer execute(MigrateWithStorageCommand cmd) {
 
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource MigrateWithStorageCommand: " + _gson.toJson(cmd));
+            s_logger.info("Executing resource MigrateWithStorageCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
         }
 
         VirtualMachineTO vmTo = cmd.getVirtualMachine();
@@ -6772,7 +6772,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public Answer execute(DestroyCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource DestroyCommand to evict template from storage pool: " + _gson.toJson(cmd));
+            s_logger.info("Executing resource DestroyCommand to evict template from storage pool: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
         }
 
         try {
