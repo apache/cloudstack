@@ -2514,7 +2514,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 KvmAutoConvergence,
                 MaxNumberOfManagedClusteredFileSystems,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
-                SecStorageMaxMigrateSessions
+                SecStorageMaxMigrateSessions,
+                MaxDataMigrationWaitTime
         };
     }
 
