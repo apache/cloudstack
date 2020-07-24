@@ -24,12 +24,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.OVFConfigurationTO;
 import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.agent.api.storage.OVFVirtualHardwareItemTO;
+import com.cloud.agent.api.storage.OVFVirtualHardwareItemTO.HardwareResourceType;
 import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Upload;
@@ -38,6 +40,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -283,6 +286,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                 persistExtraDetails(obj, ovfProperties, networkRequirements, disks, ovfHardwareSection);
+                processOVFHardwareSection(ovfHardwareSection, obj.getId());
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
@@ -323,6 +327,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 _templateDao.update(obj.getId(), templateDaoBuilder);
             }
             persistExtraDetails(obj, ovfProperties, networkRequirements, disks, ovfHardwareSection);
+            processOVFHardwareSection(ovfHardwareSection, obj.getId());
 
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
@@ -352,30 +357,100 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         persistOVFHardwareSectionAsTemplateDetails(ovfHardwareSection, obj.getId());
     }
 
+    /**
+     * Process the OVF hardware section containing available deployment options (configuration) by matching them to service offerings
+     */
+    private void processOVFHardwareSection(OVFVirtualHardwareSectionTO hardwareSectionTO, long templateId) {
+        if (hardwareSectionTO != null) {
+            LOGGER.debug("Processing the OVF hardware section for template with ID " + templateId);
+            List<OVFConfigurationTO> configurations = hardwareSectionTO.getConfigurations();
+            processOVFConfigurations(configurations, templateId);
+        }
+    }
+
+    private long calculateUnitsMultiplier(String allocationUnits, HardwareResourceType resourceType) {
+        long unitsMultiplier = 1;
+        if (StringUtils.isNotBlank(allocationUnits)) {
+            String[] split = allocationUnits.split("\\*");
+            if (split.length > 1) {
+                String unit = split[0].trim();
+                String prefix = split[1].trim();
+                if (resourceType == HardwareResourceType.Processor && unit.equalsIgnoreCase("hertz")) {
+                    if (prefix.equals("10^9")) {
+                        // GHz - multiply by 1000 to get MHz
+                        unitsMultiplier = 1000;
+                    }
+                } else if (resourceType == HardwareResourceType.Memory && unit.equalsIgnoreCase("byte")) {
+                    if (prefix.equals("2^20")) {
+                        //MB - multiply by 1024 * 1024 to get bytes
+                        unitsMultiplier = 1024 * 1024;
+                    }
+                }
+            }
+        }
+        return unitsMultiplier;
+    }
+
+    private void processOVFConfigurationItem(OVFVirtualHardwareItemTO item) {
+        String elementName = item.getElementName();
+        Long limit = item.getLimit();
+        Long reservation = item.getReservation();
+        String allocationUnits = item.getAllocationUnits();
+        Long virtualQuantity = item.getVirtualQuantity();
+        long unitsMultiplier = calculateUnitsMultiplier(allocationUnits, item.getResourceType());
+        long limitValue = limit * unitsMultiplier;
+        long reservationValue = reservation * unitsMultiplier;
+        LOGGER.info(String.format("Configuration name %s: - quantity: %s - limit: %s - reservation: %s",
+                elementName, virtualQuantity, limitValue, reservationValue));
+    }
+
+    private void processOVFConfigurations(List<OVFConfigurationTO> configurations, long templateId) {
+        if (CollectionUtils.isNotEmpty(configurations)) {
+            LOGGER.debug("Processing the OVF configurations for template with ID " + templateId);
+            for (OVFConfigurationTO configuration : configurations) {
+                LOGGER.debug(String.format("Processing the OVF configuration: %s (%s)", configuration.getId(), configuration.getLabel()));
+                List<OVFVirtualHardwareItemTO> hardwareItems = configuration.getHardwareItems();
+                if (CollectionUtils.isNotEmpty(hardwareItems)) {
+                    LOGGER.debug("Found " + hardwareItems.size() + " hardware items for the configuration " + configuration.getId() +
+                            ", filtering CPU and memory items");
+                    List<OVFVirtualHardwareItemTO> filteredItems = hardwareItems.stream()
+                            .filter(x -> x.getResourceType() == HardwareResourceType.Processor
+                                        || x.getResourceType() == HardwareResourceType.Memory)
+                            .collect(Collectors.toList());
+                    for (OVFVirtualHardwareItemTO item : filteredItems) {
+                        processOVFConfigurationItem(item);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Persist template details for template with ID=templateId, with name=key and value=json(object)
+     */
+    private void persistTemplateDetailGsonEncoded(long templateId, String key, Object object) {
+        try {
+            String propValue = gson.toJson(object);
+            savePropertyAttribute(templateId, key, propValue);
+        } catch (RuntimeException re) {
+            LOGGER.error("gson marshalling of property object fails: " + key, re);
+        }
+    }
+
     private void persistOVFHardwareSectionAsTemplateDetails(OVFVirtualHardwareSectionTO ovfHardwareSection, long templateId) {
         if (ovfHardwareSection != null) {
             if (CollectionUtils.isNotEmpty(ovfHardwareSection.getConfigurations())) {
                 for (OVFConfigurationTO configuration : ovfHardwareSection.getConfigurations()) {
                     String key = configuration.getId();
                     String propKey = ImageStore.OVF_HARDWARE_CONFIGURATION_PREFIX + key;
-                    try {
-                        String propValue = gson.toJson(configuration);
-                        savePropertyAttribute(templateId, propKey, propValue);
-                    } catch (RuntimeException re) {
-                        LOGGER.error("gson marshalling of property object fails: " + propKey,re);
-                    }
+                    persistTemplateDetailGsonEncoded(templateId, propKey, configuration);
                 }
             }
             if (CollectionUtils.isNotEmpty(ovfHardwareSection.getCommonHardwareItems())) {
                 for (OVFVirtualHardwareItemTO item : ovfHardwareSection.getCommonHardwareItems()) {
                     String key = item.getResourceType().getName().trim() + "-" + item.getInstanceId();
                     String propKey = ImageStore.OVF_HARDWARE_ITEM_PREFIX + key;
-                    try {
-                        String propValue = gson.toJson(item);
-                        savePropertyAttribute(templateId, propKey, propValue);
-                    } catch (RuntimeException re) {
-                        LOGGER.error("gson marshalling of property object fails: " + propKey,re);
-                    }
+                    persistTemplateDetailGsonEncoded(templateId, propKey, item);
                 }
             }
         }
