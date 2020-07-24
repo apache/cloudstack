@@ -79,7 +79,6 @@ import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -2490,7 +2489,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 for (String detailName : details.keySet()) {
                     if (s_logger.isTraceEnabled()) {
-                        s_logger.trace(String.format("looking for vm detail '%s'"));
+                        s_logger.trace(String.format("looking for vm detail '%s'", detailName));
                     }
                     if (detailName.startsWith(ApiConstants.ACS_PROPERTY)) {
                         OVFPropertyTO propertyTO = templateDetailsDao.findPropertyByTemplateAndKey(vmInstance.getTemplateId(),detailName);
@@ -3307,12 +3306,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 NetworkVO network = getNetworkToAddToNetworkList(template, owner, hypervisor, vpcSupportedHTypes, networkId);
                 networkList.add(network);
             }
-        }
-        List<NetworkPrerequisiteTO> netprereqs = templateDetailsDao.listNetworkRequirementsByTemplateId(template.getId());
-        // FR37 hack: add last network untill enough ids
-        for (int i = networkList.size() ; i < netprereqs.size() ; ++i) {
-            NetworkVO network = getNetworkToAddToNetworkList(template, owner, hypervisor, vpcSupportedHTypes, networkList.get(0).getId());
-            networkList.add(network);
         }
 
         verifyExtraDhcpOptionsNetwork(dhcpOptionsMap, networkList);

@@ -229,11 +229,15 @@ class StartCommandExecutor {
             }
             // vmMo should now be a stopped VM on the intended host
             int totalChangeDevices = disks.length + nics.length;
-            int chackDeviceCount = diskInfoBuilder.getDiskCount() + nicDevices.length;
+            int hackDeviceCount = 0;
+            if (diskInfoBuilder != null) {
+                hackDeviceCount += diskInfoBuilder.getDiskCount();
+            }
+            hackDeviceCount += nicDevices.length;
             // vApp cdrom device
             // HACK ALERT: ovf properties might not be the only or defining feature of vApps; needs checking
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("current count(s) desired: %d/ found:%d. now adding device to device count for vApp config ISO", totalChangeDevices, chackDeviceCount));
+                LOGGER.trace(String.format("current count(s) desired: %d/ found:%d. now adding device to device count for vApp config ISO", totalChangeDevices, hackDeviceCount));
             }
             if (vmSpec.getOvfProperties() != null) {
                 totalChangeDevices++;
