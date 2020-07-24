@@ -278,6 +278,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
     private static final String CONNECTIVITY_TEST = "connectivity.test";
+    private static final String BACKUP_ROUTER_EXCLUDED_TESTS = "gateways_check.py";
 
     @Inject private EntityManager _entityMgr;
     @Inject private DataCenterDao _dcDao;
@@ -1632,7 +1633,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
-        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
+        String excludedTests = RouterHealthChecksToExclude.valueIn(router.getDataCenterId());
+        if (router.getIsRedundantRouter() && RedundantState.BACKUP.equals(router.getRedundantState())) {
+            excludedTests = excludedTests.isEmpty() ? BACKUP_ROUTER_EXCLUDED_TESTS : excludedTests + "," + BACKUP_ROUTER_EXCLUDED_TESTS;
+        }
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, excludedTests);
         command.setHealthChecksConfig(getRouterHealthChecksConfig(router));
         command.setReconfigureAfterUpdate(reconfigure);
         command.setDeleteFromProcessedCache(deleteFromProcessedCache); // As part of updating

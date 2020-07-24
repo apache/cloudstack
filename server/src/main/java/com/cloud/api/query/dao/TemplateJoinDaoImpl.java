@@ -145,18 +145,18 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     @Override
     public TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO template) {
-        List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplate(template.getId());
-        List dowloadProgressDetails = new ArrayList();
+        List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId());
+        List<Map<String, String>> downloadProgressDetails = new ArrayList();
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
             downloadDetailInImageStores.put("datastore", dataStoreDao.findById(templateInStore.getDataStoreId()).getName());
-            downloadDetailInImageStores.put("dowloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
-            downloadDetailInImageStores.put("dowloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
-            dowloadProgressDetails.add(downloadDetailInImageStores);
+            downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
+            downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
+            downloadProgressDetails.add(downloadDetailInImageStores);
         }
         TemplateResponse templateResponse = new TemplateResponse();
-        templateResponse.setDownloadProgress(dowloadProgressDetails);
+        templateResponse.setDownloadProgress(downloadProgressDetails);
         templateResponse.setId(template.getUuid());
         templateResponse.setName(template.getName());
         templateResponse.setDisplayText(template.getDisplayText());

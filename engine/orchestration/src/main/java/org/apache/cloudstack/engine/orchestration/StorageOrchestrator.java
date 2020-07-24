@@ -64,7 +64,6 @@ import com.cloud.storage.StorageService;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -160,7 +159,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             storageService.updateImageStoreStatus(srcDataStoreId, true);
         }
 
-        storageCapacities = getStorageCapacities(storageCapacities);
+        storageCapacities = getStorageCapacities(storageCapacities, srcDataStoreId);
         double meanstddev = getStandardDeviation(storageCapacities);
         double threshold = ImageStoreImbalanceThreshold.value();
         MigrationResponse response = null;
@@ -180,11 +179,11 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 chosenFileForMigration = files.remove(0);
             }
 
-            storageCapacities = getStorageCapacities(storageCapacities);
+            storageCapacities = getStorageCapacities(storageCapacities, srcDataStoreId);
             List<Long> orderedDS = migrationHelper.sortDataStores(storageCapacities);
             Long destDatastoreId = orderedDS.get(0);
 
-            if (chosenFileForMigration == null || destDatastoreId == null || destDatastoreId == srcDatastore.getId()) {
+            if (chosenFileForMigration == null || destDatastoreId == null || destDatastoreId == srcDatastore.getId() ) {
                 Pair<String, Boolean> result = migrateCompleted(destDatastoreId, srcDatastore, files, migrationPolicy);
                 message = result.first();
                 success = result.second();
@@ -197,14 +196,13 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (shouldMigrate(chosenFileForMigration, srcDatastore.getId(), destDatastoreId, storageCapacities, snapshotChains, migrationPolicy)) {
-                migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, srcDatastore, destDatastoreId, executor, futures);
+                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, srcDatastore, destDatastoreId, executor, futures);
             } else {
                 if (migrationPolicy == MigrationPolicy.BALANCE) {
-                    message = "Migration completed and has successfully balanced the data objects among stores:  " + StringUtils.join(storageCapacities.keySet(), ",");
-                } else {
-                    message = "Complete migration failed. Please set the source Image store to read-write mode if you want to continue using it";
-                    success = false;
+                    continue;
                 }
+                message = "Complete migration failed. Please set the source Image store to read-write mode if you want to continue using it";
+                success = false;
                 break;
             }
         }
@@ -219,7 +217,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         if (destDatastoreId == srcDatastore.getId() && !files.isEmpty()) {
             if (migrationPolicy == MigrationPolicy.BALANCE) {
                 s_logger.debug("Migration completed : data stores have been balanced ");
-                message = "Image stores have been balanced";
+                if (destDatastoreId == srcDatastore.getId()) {
+                    message = "Seems like source datastore has more free capacity than the destination(s)";
+                }
+                message += "Image stores have been attempted to be balanced";
                 success = true;
             } else {
                 message = "Files not completely migrated from "+ srcDatastore.getId() + ". Datastore (source): " + srcDatastore.getId() + "has equal or more free space than destination."+
@@ -232,7 +233,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         return new Pair<String, Boolean>(message, success);
     }
 
-    protected void migrateAway(DataObject chosenFileForMigration, Map<Long, Pair<Long, Long>> storageCapacities,
+    protected Map<Long, Pair<Long, Long>> migrateAway(DataObject chosenFileForMigration, Map<Long, Pair<Long, Long>> storageCapacities,
                                Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, DataStore srcDatastore, Long destDatastoreId, ThreadPoolExecutor executor,
     List<Future<AsyncCallFuture<DataObjectResult>>> futures) {
         Long fileSize = migrationHelper.getFileSize(chosenFileForMigration, snapshotChains);
@@ -251,6 +252,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
         futures.add((executor.submit(task)));
         s_logger.debug("Migration of file  " + chosenFileForMigration.getId() + " is initiated");
+        return storageCapacities;
     }
 
 
@@ -301,7 +303,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
     }
 
-    private Map<Long, Pair<Long, Long>> getStorageCapacities(Map<Long, Pair<Long, Long>> storageCapacities) {
+    private Map<Long, Pair<Long, Long>> getStorageCapacities(Map<Long, Pair<Long, Long>> storageCapacities, Long srcDataStoreId) {
         Map<Long, Pair<Long, Long>> capacities = new Hashtable<>();
         for (Long storeId : storageCapacities.keySet()) {
             StorageStats stats = statsCollector.getStorageStats(storeId);
@@ -311,10 +313,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 } else {
                     long totalCapacity = stats.getCapacityBytes();
                     Long freeCapacity = totalCapacity - stats.getByteUsed();
-                    if (freeCapacity >= storageCapacities.get(storeId).first()) {
-                        capacities.put(storeId, storageCapacities.get(storeId));
-                    } else {
+                    if (storeId.equals(srcDataStoreId) || freeCapacity < storageCapacities.get(storeId).first()) {
                         capacities.put(storeId, new Pair<>(freeCapacity, totalCapacity));
+                    } else {
+                        capacities.put(storeId, storageCapacities.get(storeId));
                     }
                 }
             } else {

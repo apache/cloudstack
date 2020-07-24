@@ -2833,7 +2833,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Boolean enterSetup = cmd.getBootIntoSetup();
         if (enterSetup != null && !HypervisorType.VMware.equals(vmInstance.getHypervisorType())) {
-            throw new InvalidParameterValueException("booting into a hardware setup menu does not make sense on " + vmInstance.getHypervisorType());
+            throw new InvalidParameterValueException("Booting into a hardware setup menu is not implemented on " + vmInstance.getHypervisorType());
         }
         UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, enterSetup == null ? false : cmd.getBootIntoSetup());
         if (userVm != null ) {

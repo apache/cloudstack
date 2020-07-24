@@ -58,8 +58,12 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private String broadcastUri;
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "VPC the private gateaway belongs to")
+    @Param(description = "VPC id the private gateway belongs to")
     private String vpcId;
+
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "VPC name the private gateway belongs to", since = "4.13.2")
+    private String vpcName;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
     @Param(description = "the physical network id")
@@ -128,6 +132,10 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
 
     public void setVpcId(String vpcId) {
         this.vpcId = vpcId;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
     }
 
     public void setAddress(String address) {

@@ -1084,7 +1084,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (final AffinityConflictException e2) {
                     s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
                     throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
-
                 }
 
                 if (dest == null) {
