@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -249,10 +250,7 @@ public class VmwareHelper {
 
         backingInfo.setFileName(vmdkDatastorePathChain[0]);
         if (vmdkDatastorePathChain.length > 1) {
-            String[] parentDisks = new String[vmdkDatastorePathChain.length - 1];
-            for (int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
-                parentDisks[i] = vmdkDatastorePathChain[i + 1];
-
+            String[] parentDisks = Arrays.copyOfRange(vmdkDatastorePathChain, 1, vmdkDatastorePathChain.length);
             setParentBackingInfo(backingInfo, morDs, parentDisks);
         }
 
