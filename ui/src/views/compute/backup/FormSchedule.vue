@@ -58,7 +58,7 @@
                   <a-input-number
                     style="width: 100%"
                     v-decorator="['time', {
-                      rules: [{required: true, message: 'Please enter input'}]
+                      rules: [{required: true, message: $t('message.error.required.input')}]
                     }]"
                     :min="1"
                     :max="59"/>
@@ -76,7 +76,7 @@
                     rules: [{
                       type: 'object',
                       required: true,
-                      message: 'Please select time'
+                      message: $t('message.error.time')
                     }]
                   }]" />
               </a-form-item>
@@ -269,7 +269,7 @@ export default {
         api('createBackupSchedule', params).then(json => {
           this.$notification.success({
             message: this.$t('label.scheduled.backups'),
-            description: 'Successfully Configure VM backup schedule'
+            description: this.$t('message.success.config.backup.schedule')
           })
           this.refreshSchedule()
           this.resetForm()

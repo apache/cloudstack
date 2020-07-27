@@ -58,7 +58,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="items.length"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="changePage"
       @showSizeChange="changePageSize"
@@ -78,7 +78,7 @@
         <a-form-item :label="$t('label.podid')" class="form__item">
           <a-select
             v-decorator="['pod', {
-              rules: [{ required: true, message: `${this.$t('label.required')}` }]
+              rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
           >
             <a-select-option v-for="item in items" :key="item.id" :value="item.id">{{ item.name }}</a-select-option>
@@ -86,12 +86,12 @@
         </a-form-item>
         <a-form-item :label="$t('label.gateway')" class="form__item">
           <a-input
-            v-decorator="['gateway', { rules: [{ required: true, message: `${this.$t('label.required')}` }] }]">
+            v-decorator="['gateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
         <a-form-item :label="$t('label.netmask')" class="form__item">
           <a-input
-            v-decorator="['netmask', { rules: [{ required: true, message: `${this.$t('label.required')}` }] }]">
+            v-decorator="['netmask', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
         <a-form-item :label="$t('label.vlan')" class="form__item">
@@ -101,12 +101,12 @@
         </a-form-item>
         <a-form-item :label="$t('label.startip')" class="form__item">
           <a-input
-            v-decorator="['startip', { rules: [{ required: true, message: `${this.$t('label.required')}` }] }]">
+            v-decorator="['startip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
         <a-form-item :label="$t('label.endip')" class="form__item">
           <a-input
-            v-decorator="['endip', { rules: [{ required: true, message: `${this.$t('label.required')}` }] }]">
+            v-decorator="['endip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
         <a-form-item :label="$t('label.system.vms')" class="form__item">
@@ -249,7 +249,7 @@ export default {
         vlan: record.vlanid
       }).then(response => {
         this.$store.dispatch('AddAsyncJob', {
-          title: `Successfully removed IP Range`,
+          title: this.$t('message.success.remove.iprange'),
           jobid: response.deletemanagementnetworkiprangeresponse.jobid,
           status: 'progress'
         })
@@ -259,13 +259,13 @@ export default {
             this.componentLoading = false
             this.fetchData()
           },
-          errorMessage: 'Removing failed',
+          errorMessage: this.$t('message.remove.failed'),
           errorMethod: () => {
             this.componentLoading = false
             this.fetchData()
           },
-          loadingMessage: `Removing IP Range...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.remove.iprange.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.componentLoading = false
             this.fetchData()
@@ -293,7 +293,7 @@ export default {
           vlan: values.vlan || null
         }).then(response => {
           this.$store.dispatch('AddAsyncJob', {
-            title: `Successfully added IP Range`,
+            title: this.$t('message.success.add.iprange'),
             jobid: response.createmanagementnetworkiprangeresponse.jobid,
             status: 'progress'
           })
@@ -303,13 +303,13 @@ export default {
               this.componentLoading = false
               this.fetchData()
             },
-            errorMessage: 'Adding failed',
+            errorMessage: this.$t('message.add.failed'),
             errorMethod: () => {
               this.componentLoading = false
               this.fetchData()
             },
-            loadingMessage: `Adding IP Range...`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.add.iprange.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.componentLoading = false
               this.fetchData()

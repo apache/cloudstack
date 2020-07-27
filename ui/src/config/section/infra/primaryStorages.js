@@ -50,6 +50,7 @@ export default {
     {
       api: 'createStoragePool',
       icon: 'plus',
+      docHelp: 'installguide/configuration.html#add-primary-storage',
       label: 'label.add.primary.storage',
       listView: true,
       popup: true,

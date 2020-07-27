@@ -22,39 +22,41 @@
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
           <a-input v-model="newRule.name"></a-input>
-          <span class="error-text">Required</span>
+          <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item" ref="newRulePublicPort">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.publicport') }}</div>
           <a-input v-model="newRule.publicport"></a-input>
-          <span class="error-text">Required</span>
+          <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item" ref="newRulePrivatePort">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.privateport') }}</div>
           <a-input v-model="newRule.privateport"></a-input>
-          <span class="error-text">Required</span>
+          <span class="error-text">{{ $t('label.required') }}</span>
         </div>
       </div>
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.algorithm') }}</div>
           <a-select v-model="newRule.algorithm">
-            <a-select-option value="roundrobin">Round-robin</a-select-option>
-            <a-select-option value="leastconn">Least connections</a-select-option>
-            <a-select-option value="source">Source</a-select-option>
+            <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
+            <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
+            <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select v-model="newRule.protocol" style="min-width: 100px">
-            <a-select-option value="tcp-proxy">TCP Proxy</a-select-option>
-            <a-select-option value="tcp">TCP</a-select-option>
-            <a-select-option value="udp">UDP</a-select-option>
+            <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
+            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
-          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">Add</a-button>
+          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">
+            {{ $t('label.add') }}
+          </a-button>
         </div>
       </div>
     </div>
@@ -113,8 +115,8 @@
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
-            okText="Yes"
-            cancelText="No"
+            :okText="$t('label.yes')"
+            :cancelText="$t('label.no')"
           >
             <a-button :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" shape="circle" type="danger" icon="delete" />
           </a-popconfirm>
@@ -127,7 +129,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="totalCount"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
@@ -146,13 +148,13 @@
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-form-item>
-            <a-input v-decorator="['key', { rules: [{ required: true, message: 'Please specify a tag key'}] }]" />
+            <a-input v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
           </a-form-item>
         </div>
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.value') }}</p>
           <a-form-item>
-            <a-input v-decorator="['value', { rules: [{ required: true, message: 'Please specify a tag value'}] }]" />
+            <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
           </a-form-item>
         </div>
         <a-button :disabled="!('createTags' in $store.getters.apis)" type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
@@ -185,17 +187,17 @@
       <a-form :form="stickinessPolicyForm" @submit="handleSubmitStickinessForm" class="custom-ant-form">
         <a-form-item :label="$t('label.stickiness.method')">
           <a-select v-decorator="['methodname']" @change="handleStickinessMethodSelectChange">
-            <a-select-option value="LbCookie">LbCookie</a-select-option>
-            <a-select-option value="AppCookie">AppCookie</a-select-option>
-            <a-select-option value="SourceBased">SourceBased</a-select-option>
-            <a-select-option value="none">None</a-select-option>
+            <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
+            <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
+            <a-select-option value="SourceBased">{{ $t('label.source.based') }}</a-select-option>
+            <a-select-option value="none">{{ $t('label.none') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item
           :label="$t('label.sticky.name')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie' || stickinessPolicyMethod === 'SourceBased'">
-          <a-input v-decorator="['name', { rules: [{ required: true, message: 'Please specify a sticky name'}] }]" />
+          <a-input v-decorator="['name', { rules: [{ required: true, message: $t('message.error.specify.sticky.name')}] }]" />
         </a-form-item>
         <a-form-item
           :label="$t('label.sticky.cookie-name')"
@@ -239,7 +241,7 @@
         <a-form-item :label="$t('label.sticky.expire')" v-show="stickinessPolicyMethod === 'SourceBased'">
           <a-input v-decorator="['expire']" />
         </a-form-item>
-        <a-button type="primary" html-type="submit">OK</a-button>
+        <a-button type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
       </a-form>
     </a-modal>
 
@@ -256,24 +258,24 @@
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
           <a-select v-model="editRuleDetails.algorithm">
-            <a-select-option value="roundrobin">Round-robin</a-select-option>
-            <a-select-option value="leastconn">Least connections</a-select-option>
-            <a-select-option value="source">Source</a-select-option>
+            <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
+            <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
+            <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
           </a-select>
         </div>
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
           <a-select v-model="editRuleDetails.protocol">
-            <a-select-option value="tcp-proxy">TCP proxy</a-select-option>
-            <a-select-option value="tcp">TCP</a-select-option>
-            <a-select-option value="udp">UDP</a-select-option>
+            <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
+            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
       </div>
     </a-modal>
 
     <a-modal
-      title="Add VMs"
+      :title="$t('label.add.vms')"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
@@ -300,7 +302,7 @@
         </span>
         <a-input-search
           class="input-search"
-          placeholder="Search"
+          :placeholder="$t('label.search')"
           v-model="searchQuery"
           allowClear
           @search="onSearch" />
@@ -325,7 +327,7 @@
               v-model="newRule.vmguestip[index]"
             >
               <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
-                {{ nic }}{{ nicIndex === 0 ? ' (Primary)' : null }}
+                {{ nic }}{{ nicIndex === 0 ? ` (${this.$t('label.primary')})` : null }}
               </a-select-option>
             </a-select>
           </div>
@@ -344,7 +346,7 @@
           :current="vmPage"
           :pageSize="vmPageSize"
           :total="vmCount"
-          :showTotal="total => `Total ${total} ${$t('label.items')}`"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
           @change="handleChangePage"
           @showSizeChange="handleChangePageSize"
@@ -514,7 +516,7 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return 'All'
+      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -652,20 +654,20 @@ export default {
         }).then(response => {
           this.$pollJob({
             jobId: response.createtagsresponse.jobid,
-            successMessage: `Successfully added tag`,
+            successMessage: this.$t('message.success.add.tag'),
             successMethod: () => {
               this.parentFetchData()
               this.parentToggleLoading()
               this.openTagsModal(this.selectedRule)
             },
-            errorMessage: 'Failed to add new tag',
+            errorMessage: this.$t('message.add.tag.failed'),
             errorMethod: () => {
               this.parentFetchData()
               this.parentToggleLoading()
               this.closeModal()
             },
-            loadingMessage: `Adding tag...`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.add.tag.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.parentFetchData()
               this.parentToggleLoading()
@@ -688,20 +690,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.deletetagsresponse.jobid,
-          successMessage: `Successfully removed tag`,
+          successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
-          errorMessage: 'Failed to remove tag',
+          errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
-          loadingMessage: `Removing tag...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.delete.tag.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -746,22 +748,22 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.createLBStickinessPolicy.jobid,
-          successMessage: `Successfully configured sticky policy`,
+          successMessage: this.$t('message.success.config.sticky.policy'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          errorMessage: 'Failed to configure sticky policy',
+          errorMessage: this.$t('message.config.sticky.policy.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          loadingMessage: `Updating sticky policy...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.config.sticky.policy.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -779,22 +781,22 @@ export default {
       api('deleteLBStickinessPolicy', { id: this.selectedStickinessPolicy.id }).then(response => {
         this.$pollJob({
           jobId: response.deleteLBstickinessrruleresponse.jobid,
-          successMessage: `Successfully removed sticky policy`,
+          successMessage: this.$t('message.success.remove.sticky.policy'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          errorMessage: 'Failed to remove sticky policy',
+          errorMessage: this.$t('message.remove.sticky.policy.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          loadingMessage: `Removing sticky policy...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.remove.sticky.policy.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -857,16 +859,16 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.removefromloadbalancerruleresponse.jobid,
-          successMessage: `Successfully removed instance from rule`,
+          successMessage: this.$t('message.success.remove.instance.rule'),
           successMethod: () => {
             this.fetchData()
           },
-          errorMessage: 'Failed to remove instance',
+          errorMessage: this.$t('message.remove.instance.failed'),
           errorMethod: () => {
             this.fetchData()
           },
-          loadingMessage: `Removing...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.remove.instance.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.fetchData()
           }
@@ -892,22 +894,22 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.updateloadbalancerruleresponse.jobid,
-          successMessage: `Successfully edited rule`,
+          successMessage: this.$t('message.success.edit.rule'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          errorMessage: 'Failed to edit rule',
+          errorMessage: this.$t('message.edit.rule.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          loadingMessage: `Updating rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.edit.rule.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -928,22 +930,22 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.deleteloadbalancerruleresponse.jobid,
-          successMessage: `Successfully deleted rule`,
+          successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          errorMessage: 'Failed to delete rule',
+          errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          loadingMessage: `Deleting rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.delete.rule.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -1061,22 +1063,22 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.assigntoloadbalancerruleresponse.jobid,
-          successMessage: `Successfully assigned VM`,
+          successMessage: this.$t('message.success.asign.vm'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          errorMessage: 'Failed to assign VM',
+          errorMessage: this.$t('message.assign.vm.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
-          loadingMessage: `Assigning VM...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.assign.vm.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()

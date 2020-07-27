@@ -110,7 +110,7 @@ export default {
               })
             }
           }).catch(function (e) {
-            console.log('Error encountered while fetching async job result' + e)
+            console.log(this.$t('error.fetching.async.job.result') + e)
           })
         }
       }

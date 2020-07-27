@@ -50,7 +50,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="totalInstances"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="changePage"
       @showSizeChange="changePageSize"
@@ -130,18 +130,18 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.removefromloadbalancerruleresponse.jobid,
-          successMessage: `Successfully removed IP ${vm.name} from ${this.resource.name}`,
+          successMessage: `${this.$t('message.success.remove.ip')} ${vm.name} ${this.$t('label.from')} ${this.resource.name}`,
           successMethod: () => {
             this.fetchLoading = false
             this.fetchData()
           },
-          errorMessage: `Failed to remove ${vm.name} from the LB`,
+          errorMessage: `${this.$t('message.failed.to.remove')} ${vm.name} ${this.$t('label.from.lb')}`,
           errorMethod: () => {
             this.fetchLoading = false
             this.fetchData()
           },
-          loadingMessage: `Removing ${vm.name} from LB is in progress`,
-          catchMessage: 'Error encountered while fetching async job result'
+          loadingMessage: `${this.$t('label.removing')} ${vm.name} ${this.$t('label.from.lb')} ${this.$t('label.in.progress')}`,
+          catchMessage: this.$t('error.fetching.async.job.result')
         })
       })
     },

@@ -31,7 +31,7 @@
           </span>
           <a-input-password
             v-decorator="['currentpassword', {
-              rules: [{ required: true, message: 'Please enter current password' }]
+              rules: [{ required: true, message: $t('message.error.current.password') }]
             }]"
             :placeholder="apiParams.currentpassword.description"/>
         </a-form-item>
@@ -44,7 +44,7 @@
           </span>
           <a-input-password
             v-decorator="['password', {
-              rules: [{ required: true, message: 'Please enter new password' }]
+              rules: [{ required: true, message: $t('message.error.new.password') }]
             }]"
             :placeholder="apiParams.password.description"/>
         </a-form-item>
@@ -60,7 +60,7 @@
               rules: [
                 {
                   required: true,
-                  message: 'Please confirm new password'
+                  message: $t('message.error.confirm.password')
                 },
                 {
                   validator: validateTwoPassword
@@ -143,7 +143,7 @@ export default {
         api('updateUser', params).then(json => {
           this.$notification.success({
             message: this.$t('label.action.change.password'),
-            description: 'Successfully changed password for user "' + this.resource.username + '"'
+            description: `${this.$t('message.success.change.password')} ${this.resource.username}`
           })
         }).catch(error => {
           this.$notifyError(error)

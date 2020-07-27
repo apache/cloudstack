@@ -19,7 +19,7 @@
   <div class="form-layout">
     <span v-if="uploadPercentage > 0">
       <a-icon type="loading" />
-      Do not close this form, file upload is in progress...
+      {{ $t('message.upload.file.processing') }}
       <a-progress :percent="uploadPercentage" />
     </span>
     <a-spin :spinning="loading" v-else>
@@ -52,7 +52,7 @@
                 <a-icon type="cloud-upload" />
               </p>
               <p class="ant-upload-text" v-if="fileList.length === 0">
-                Click or drag file to this area to upload
+                {{ $t('label.volume.volumefileupload.description') }}
               </p>
             </a-upload-dragger>
           </a-form-item>
@@ -476,14 +476,14 @@ export default {
           timeout: 86400000
         }).then((json) => {
         this.$notification.success({
-          message: 'Upload Successful',
-          description: 'This template file has been uploaded. Please check its status at Templates menu'
+          message: this.$t('message.success.upload'),
+          description: this.$t('message.success.upload.template.description')
         })
         this.closeAction()
       }).catch(e => {
         this.$notification.error({
-          message: 'Upload Failed',
-          description: `Failed to upload Template -  ${e}`,
+          message: this.$t('message.upload.failed'),
+          description: `${this.$t('message.upload.template.failed.description')} -  ${e}`,
           duration: 0
         })
         this.closeAction()
@@ -854,8 +854,8 @@ export default {
           api('registerTemplate', params).then(json => {
             this.$emit('refresh-data')
             this.$notification.success({
-              message: 'Register Template',
-              description: 'Successfully registered template ' + params.name
+              message: this.$t('label.register.template'),
+              description: `${this.$t('message.success.register.template')} ${params.name}`
             })
           }).catch(error => {
             this.$notifyError(error)
@@ -867,8 +867,8 @@ export default {
           this.loading = true
           if (this.fileList.length > 1) {
             this.$notification.error({
-              message: 'Template Upload Failed',
-              description: 'Only one template can be uploaded at a time',
+              message: this.$t('message.error.upload.template'),
+              description: this.$t('message.error.upload.template.description'),
               duration: 0
             })
           }
@@ -894,7 +894,7 @@ export default {
 
       if (allZoneExists.length > 0 && zones.length > 1) {
         this.zoneError = 'error'
-        this.zoneErrorMessage = this.$t('label.error.zone.combined')
+        this.zoneErrorMessage = this.$t('message.error.zone.combined')
       }
     },
     closeAction () {

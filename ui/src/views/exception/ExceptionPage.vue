@@ -48,7 +48,7 @@
       <h1>{{ config[type].title }}</h1>
       <div class="desc">{{ config[type].desc }}</div>
       <div class="action">
-        <a-button type="primary" @click="handleToHome">Go Back</a-button>
+        <a-button type="primary" @click="handleToHome">{{ $t('label.go.back') }}</a-button>
       </div>
     </div>
   </div>

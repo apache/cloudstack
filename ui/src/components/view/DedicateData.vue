@@ -20,7 +20,7 @@
     <div>
       <div style="margin-bottom: 10px;">
         <strong>{{ $t('label.dedicated') }}</strong>
-        <div>Yes</div>
+        <div>{{ $t('label.yes') }}</div>
       </div>
       <p>
         <strong>{{ $t('label.domainid') }}</strong><br/>
@@ -38,7 +38,7 @@
   <a-list-item v-else>
     <div>
       <strong>{{ $t('label.dedicated') }}</strong>
-      <div>No</div>
+      <div>{{ $t('label.no') }}</div>
       <a-button type="primary" style="margin-top: 10px; margin-bottom: 10px;" @click="modalActive = true" :disabled="!dedicateButtonAvailable">
         {{ dedicatedButtonLabel }}
       </a-button>
@@ -71,9 +71,9 @@ export default {
     return {
       modalActive: false,
       dedicateButtonAvailable: true,
-      dedicatedButtonLabel: 'Dedicate',
-      releaseButtonLabel: 'Release',
-      dedicatedModalLabel: 'Dedicate',
+      dedicatedButtonLabel: this.$t('label.dedicate'),
+      releaseButtonLabel: this.$t('label.release'),
+      dedicatedModalLabel: this.$t('label.dedicate'),
       dedicatedDomainId: null,
       dedicatedAccountId: null
     }
@@ -185,12 +185,12 @@ export default {
               status: 'progress'
             })
           },
-          errorMessage: 'Failed to release dedicated zone',
+          errorMessage: this.$t('error.release.dedicate.zone'),
           errorMethod: () => {
             this.parentFetchData()
           },
           loadingMessage: this.$t('message.releasing.dedicated.zone'),
-          catchMessage: 'Error encountered while fetching async job result',
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
           }
@@ -215,12 +215,12 @@ export default {
               status: 'progress'
             })
           },
-          errorMessage: 'Failed to release dedicated pod',
+          errorMessage: this.$t('error.release.dedicate.pod'),
           errorMethod: () => {
             this.parentFetchData()
           },
           loadingMessage: this.$t('message.releasing.dedicated.pod'),
-          catchMessage: 'Error encountered while fetching async job result',
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
           }
@@ -245,12 +245,12 @@ export default {
               status: 'progress'
             })
           },
-          errorMessage: 'Failed to release dedicated cluster',
+          errorMessage: this.$t('error.release.dedicate.cluster'),
           errorMethod: () => {
             this.parentFetchData()
           },
           loadingMessage: this.$t('message.releasing.dedicated.cluster'),
-          catchMessage: 'Error encountered while fetching async job result',
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
           }
@@ -275,12 +275,12 @@ export default {
               status: 'progress'
             })
           },
-          errorMessage: 'Failed to release dedicated host',
+          errorMessage: this.$t('error.release.dedicate.host'),
           errorMethod: () => {
             this.parentFetchData()
           },
           loadingMessage: this.$t('message.releasing.dedicated.host'),
-          catchMessage: 'Error encountered while fetching async job result',
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
           }

@@ -26,7 +26,7 @@
           v-decorator="['zoneType', {
             rules: [{
               required: true,
-              message: 'Please select zone type',
+              message: $t('message.error.zone.type'),
               initialValue: zoneType
             }]
           }]">

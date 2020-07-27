@@ -20,10 +20,10 @@
 
     <div>
       <div style="margin-bottom: 20px;">
-        <div class="form__label">Add by:</div>
+        <div class="form__label">{{ $t('label.add.by') }}:</div>
         <a-radio-group @change="resetAllRules" v-model="addType">
-          <a-radio value="cidr">CIDR</a-radio>
-          <a-radio value="account">Account</a-radio>
+          <a-radio value="cidr">{{ $t('label.cidr') }}</a-radio>
+          <a-radio value="account">{{ $t('label.account') }}</a-radio>
         </a-radio-group>
       </div>
 
@@ -59,11 +59,11 @@
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item" v-if="addType === 'cidr'">
-          <div class="form__label">CIDR</div>
+          <div class="form__label">{{ $t('label.cidr') }}</div>
           <a-input v-model="newRule.cidrlist"></a-input>
         </div>
         <div class="form__item" v-if="addType === 'account'">
-          <div class="form__label">Account, Security Group</div>
+          <div class="form__label">{{ $t('label.account.and.security.group') }}</div>
           <div style="display:flex;">
             <a-input v-model="newRule.usersecuritygrouplist.account" style="margin-right: 10px;"></a-input>
             <a-input v-model="newRule.usersecuritygrouplist.group"></a-input>
@@ -103,8 +103,8 @@
         <a-popconfirm
           :title="$t('label.delete') + '?'"
           @confirm="handleDeleteRule(record)"
-          okText="Yes"
-          cancelText="No"
+          :okText="$t('label.yes')"
+          :cancelText="$t('label.no')"
         >
           <a-button :disabled="!('revokeSecurityGroupIngress' in $store.getters.apis) && !('revokeSecurityGroupEgress' in $store.getters.apis)" shape="circle" type="danger" icon="delete" class="rule-action" />
         </a-popconfirm>
@@ -119,13 +119,13 @@
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
-              <a-input v-decorator="['key', { rules: [{ required: true, message: 'Please specify a tag key'}] }]" />
+              <a-input v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
             <a-form-item>
-              <a-input v-decorator="['value', { rules: [{ required: true, message: 'Please specify a tag value'}] }]" />
+              <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
             </a-form-item>
           </div>
           <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
@@ -205,19 +205,19 @@ export default {
           scopedSlots: { customRender: 'endport' }
         },
         {
-          title: 'ICMP Type',
+          title: this.$t('label.icmptype'),
           dataIndex: 'icmptype'
         },
         {
-          title: 'ICMP Code',
+          title: this.$t('label.icmpcode'),
           dataIndex: 'icmpcode'
         },
         {
-          title: 'CIDR',
+          title: this.$t('label.cidr'),
           dataIndex: 'cidr'
         },
         {
-          title: 'Account, Security Group',
+          title: this.$t('label.account.and.security.group'),
           scopedSlots: { customRender: 'account' }
         },
         {
@@ -238,7 +238,7 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return 'All'
+      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -268,18 +268,18 @@ export default {
         this.$pollJob({
           jobId: this.tabType === 'ingress' ? response.authorizesecuritygroupingressresponse.jobid
             : response.authorizesecuritygroupegressresponse.jobid,
-          successMessage: `Successfully added new rule`,
+          successMessage: this.$t('message.success.add.rule'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          errorMessage: 'Failed to add new rule',
+          errorMessage: this.$t('message.add.rule.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          loadingMessage: `Adding new security-group rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.add.rule.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -300,18 +300,18 @@ export default {
         this.$pollJob({
           jobId: this.tabType === 'ingress' ? response.revokesecuritygroupingressresponse.jobid
             : response.revokesecuritygroupegressresponse.jobid,
-          successMessage: `Successfully deleted rule`,
+          successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          errorMessage: 'Failed to delete rule',
+          errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          loadingMessage: `Deleting security-group rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.remove.securitygroup.rule.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -344,22 +344,22 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.deletetagsresponse.jobid,
-          successMessage: `Successfully deleted tag`,
+          successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchTags(this.selectedRule)
             this.tagsLoading = false
           },
-          errorMessage: 'Failed to delete tag',
+          errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.fetchTags(this.selectedRule)
             this.tagsLoading = false
           },
-          loadingMessage: `Deleting tag...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.delete.tag.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -392,22 +392,22 @@ export default {
         }).then(response => {
           this.$pollJob({
             jobId: response.createtagsresponse.jobid,
-            successMessage: `Successfully added new tag`,
+            successMessage: this.$t('message.success.add.tag'),
             successMethod: () => {
               this.parentFetchData()
               this.parentToggleLoading()
               this.fetchTags(this.selectedRule)
               this.tagsLoading = false
             },
-            errorMessage: 'Failed to add new tag',
+            errorMessage: this.$t('message.add.tag.failed'),
             errorMethod: () => {
               this.parentFetchData()
               this.parentToggleLoading()
               this.fetchTags(this.selectedRule)
               this.tagsLoading = false
             },
-            loadingMessage: `Adding new tag...`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.add.tag.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.parentFetchData()
               this.parentToggleLoading()

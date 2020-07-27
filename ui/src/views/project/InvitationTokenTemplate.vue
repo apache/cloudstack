@@ -77,7 +77,7 @@ export default {
 
         const title = this.$t('label.accept.project.invitation')
         const description = this.$t('label.projectid') + ' ' + values.projectid
-        const loading = this.$message.loading(title + 'in progress for ' + description, 0)
+        const loading = this.$message.loading(title + `${this.$t('label.in.progress.for')} ` + description, 0)
 
         this.loading = true
 

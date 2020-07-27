@@ -65,9 +65,9 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="this.$t('label.systemvmtype')">
-            <a-select-option key="domainrouter">Domain Router</a-select-option>
-            <a-select-option key="consoleproxy">Console Proxy</a-select-option>
-            <a-select-option key="secondarystoragevm">Secondary Storage VM</a-select-option>
+            <a-select-option key="domainrouter">{{ $t('label.domain.router') }}</a-select-option>
+            <a-select-option key="consoleproxy">{{ $t('label.console.proxy') }}</a-select-option>
+            <a-select-option key="secondarystoragevm">{{ $t('label.secondary.storage.vm') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
@@ -676,7 +676,7 @@
                 {
                   validator: (rule, value, callback) => {
                     if (value && value.length > 1 && value.indexOf(0) !== -1) {
-                      callback(this.$t('label.error.zone.combined'))
+                      callback(this.$t('message.error.zone.combined'))
                     }
                     callback()
                   }
@@ -740,7 +740,7 @@ export default {
       gpuTypes: [
         {
           value: '',
-          title: 'None',
+          title: this.$t('label.none'),
           vgpu: []
         },
         {
@@ -1017,7 +1017,10 @@ export default {
           params.zoneid = zoneId
         }
         api('createServiceOffering', params).then(json => {
-          this.$message.success((this.isSystem ? 'Service offering created: ' : 'Compute offering created: ') + values.name)
+          const message = this.isSystem
+            ? `${this.$t('message.create.service.offering')}: `
+            : `${this.$t('message.create.compute.offering')}: `
+          this.$message.success(message + values.name)
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

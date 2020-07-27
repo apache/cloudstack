@@ -28,7 +28,7 @@
       </a-button>
 
       <a-button type="dashed" @click="exportAclList" style="width: 100%" icon="download">
-        Export ACLs
+        {{ $t('label.acl.export') }}
       </a-button>
     </div>
 
@@ -104,13 +104,13 @@
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
-              <a-input v-decorator="['key', { rules: [{ required: true, message: 'Please specify a tag key'}] }]" />
+              <a-input v-decorator="['key', { rules: [{ required: true, message: $t('message.specifiy.tag.key')}] }]" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
             <a-form-item>
-              <a-input v-decorator="['value', { rules: [{ required: true, message: 'Please specify a tag value'}] }]" />
+              <a-input v-decorator="['value', { rules: [{ required: true, message: $t('message.specifiy.tag.value')}] }]" />
             </a-form-item>
           </div>
           <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
@@ -140,22 +140,22 @@
         </a-form-item>
         <a-form-item :label="$t('label.action')">
           <a-select v-decorator="['action']">
-            <a-select-option value="allow">Allow</a-select-option>
-            <a-select-option value="deny">Deny</a-select-option>
+            <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
+            <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.protocol')">
           <a-select v-decorator="['protocol']">
-            <a-select-option value="tcp">TCP</a-select-option>
-            <a-select-option value="udp">UDP</a-select-option>
-            <a-select-option value="icmp">ICMP</a-select-option>
-            <a-select-option value="all">ALL</a-select-option>
-            <a-select-option value="protocolnumber">Protocol number</a-select-option>
+            <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
+            <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
+            <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
+            <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
+            <a-select-option value="protocolnumber">{{ $t('label.protocol.number') }}</a-select-option>
           </a-select>
         </a-form-item>
 
         <a-form-item v-if="ruleForm.getFieldValue('protocol') === 'protocolnumber'" :label="$t('label.protocolnumber')">
-          <a-input v-decorator="['protocolnumber' , { rules: [{ required: true, message: `${this.$t('label.required')}` }]}]" />
+          <a-input v-decorator="['protocolnumber' , { rules: [{ required: true, message: `${$t('label.required')}` }]}]" />
         </a-form-item>
 
         <div v-if="ruleForm.getFieldValue('protocol') === 'icmp' || ruleForm.getFieldValue('protocol') === 'protocolnumber'">
@@ -178,8 +178,8 @@
 
         <a-form-item :label="$t('label.traffictype')">
           <a-select v-decorator="['traffictype']">
-            <a-select-option value="ingress">Ingress</a-select-option>
-            <a-select-option value="egress">Egress</a-select-option>
+            <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
+            <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.reason')">
@@ -235,6 +235,12 @@ export default {
       if (!newData && this.resource.id) {
         this.fetchData()
       }
+    }
+  },
+  filters: {
+    capitalise: val => {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     }
   },
   methods: {
@@ -307,24 +313,24 @@ export default {
         resourceType: 'NetworkACL'
       }).then(response => {
         this.$store.dispatch('AddAsyncJob', {
-          title: `Remove tag for NetworkACL`,
+          title: this.$t('message.delete.tag.for.networkacl'),
           jobid: response.deletetagsresponse.jobid,
           status: 'progress'
         })
         this.$pollJob({
           jobId: response.deletetagsresponse.jobid,
-          successMessage: `Successfully deleted tag`,
+          successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
             this.fetchTags(this.selectedAcl)
             this.tagsLoading = false
           },
-          errorMessage: 'Failed to delete tag',
+          errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
             this.fetchTags(this.selectedAcl)
             this.tagsLoading = false
           },
-          loadingMessage: `Deleting tag...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.delete.tag.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.fetchTags(this.selectedAcl)
             this.tagsLoading = false
@@ -352,24 +358,24 @@ export default {
           resourceType: 'NetworkACL'
         }).then(response => {
           this.$store.dispatch('AddAsyncJob', {
-            title: `Add tag for NetworkACL`,
+            title: this.$t('message.add.tag.for.networkacl'),
             jobid: response.createtagsresponse.jobid,
             status: 'progress'
           })
           this.$pollJob({
             jobId: response.createtagsresponse.jobid,
-            successMessage: `Successfully added new tag`,
+            successMessage: this.$t('message.success.add.tag'),
             successMethod: () => {
               this.fetchTags(this.selectedAcl)
               this.tagsLoading = false
             },
-            errorMessage: 'Failed to add new tag',
+            errorMessage: this.$t('message.add.tag.failed'),
             errorMethod: () => {
               this.fetchTags(this.selectedAcl)
               this.tagsLoading = false
             },
-            loadingMessage: `Adding new tag...`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.add.tag.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchTags(this.selectedAcl)
               this.tagsLoading = false
@@ -382,7 +388,7 @@ export default {
       })
     },
     openEditRuleModal (acl) {
-      this.ruleModalTitle = 'Edit rule'
+      this.ruleModalTitle = this.$t('label.edit.rule')
       this.ruleFormMode = 'edit'
       this.ruleForm.resetFields()
       this.ruleModalVisible = true
@@ -426,18 +432,18 @@ export default {
           })
           this.$pollJob({
             jobId: response.createnetworkaclresponse.jobid,
-            successMessage: `Successfully edited ACL rule`,
+            successMessage: this.$t('message.success.edit.acl'),
             successMethod: () => {
               this.fetchData()
               this.fetchLoading = false
             },
-            errorMessage: 'Failed to edit ACL rule',
+            errorMessage: this.$t('message.edit.acl.failed'),
             errorMethod: () => {
               this.fetchData()
               this.fetchLoading = false
             },
-            loadingMessage: `Editing ACL rule...`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.edit.acl.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchData()
               this.fetchLoading = false
@@ -453,24 +459,24 @@ export default {
       this.fetchLoading = true
       api('deleteNetworkACL', { id }).then(response => {
         this.$store.dispatch('AddAsyncJob', {
-          title: `Remove ACL rule`,
+          title: this.$t('message.delete.acl.rule'),
           jobid: response.deletenetworkaclresponse.jobid,
           status: 'progress'
         })
         this.$pollJob({
           jobId: response.deletenetworkaclresponse.jobid,
-          successMessage: `Successfully removed ACL rule`,
+          successMessage: this.$t('message.success.delete.acl.rule'),
           successMethod: () => {
             this.fetchData()
             this.fetchLoading = false
           },
-          errorMessage: 'Failed to remove ACL rule',
+          errorMessage: this.$t('message.delete.acl.rule.failed'),
           errorMethod: () => {
             this.fetchData()
             this.fetchLoading = false
           },
-          loadingMessage: `Removing ACL rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.delete.acl.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.fetchData()
             this.fetchLoading = false
@@ -489,7 +495,7 @@ export default {
       if (this.ruleFormMode === 'add') this.handleAddRule(e)
     },
     openAddRuleModal () {
-      this.ruleModalTitle = 'Add rule'
+      this.ruleModalTitle = this.$t('label.add.rule')
       this.ruleModalVisible = true
       this.ruleFormMode = 'add'
       this.ruleForm.resetFields()
@@ -535,8 +541,8 @@ export default {
 
         api('createNetworkACL', {}, 'POST', data).then(() => {
           this.$notification.success({
-            message: 'Success',
-            description: 'Successfully added new rule'
+            message: this.$t('label.success'),
+            description: this.$t('message.success.add.rule')
           })
         }).catch(error => {
           this.$notifyError(error)
@@ -562,24 +568,24 @@ export default {
         nextaclruleid
       }).then(response => {
         this.$store.dispatch('AddAsyncJob', {
-          title: `Move ACL rule order`,
+          title: this.$t('message.move.acl.order'),
           jobid: response.moveNetworkAclItemResponse.jobid,
           status: 'progress'
         })
         this.$pollJob({
           jobId: response.moveNetworkAclItemResponse.jobid,
-          successMessage: `Successfully moved ACL rule`,
+          successMessage: this.$t('message.success.move.acl.order'),
           successMethod: () => {
             this.fetchData()
             this.fetchLoading = false
           },
-          errorMessage: 'Failed to move ACL rule',
+          errorMessage: this.$t('message.move.acl.order.failed'),
           errorMethod: () => {
             this.fetchData()
             this.fetchLoading = false
           },
-          loadingMessage: `Moving ACL rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.move.acl.order.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.fetchData()
             this.fetchLoading = false

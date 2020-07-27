@@ -25,10 +25,10 @@
         <strong>
           {{ $t('label.' + item + 'limit') }}
         </strong>
-        ({{ resource[item + 'available'] === '-1' ? 'Unlimited' : resource[item + 'available'] }} {{ $t('label.available') }})
+        ({{ resource[item + 'available'] === '-1' ? $t('label.unlimited') : resource[item + 'available'] }} {{ $t('label.available') }})
         <div class="list-item__vals">
           <div class="list-item__data">
-            {{ $t('label.used') }} / {{ $t('label.limit') }} : {{ resource[item + 'total'] }} / {{ resource[item + 'limit'] === '-1' ? 'Unlimited' : resource[item + 'limit'] }}
+            {{ $t('label.used') }} / {{ $t('label.limit') }} : {{ resource[item + 'total'] }} / {{ resource[item + 'limit'] === '-1' ? $t('label.unlimited') : resource[item + 'limit'] }}
           </div>
           <a-progress
             status="normal"

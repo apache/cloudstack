@@ -439,7 +439,7 @@ export default {
         const project = json.listprojectsresponse.project[0]
         this.$store.dispatch('SetProject', project)
         this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
-        this.$message.success(`Switched to "${project.name}"`)
+        this.$message.success(`${this.$t('message.switch.to')} "${project.name}"`)
         const query = Object.assign({}, this.$route.query)
         delete query.projectid
         this.$router.replace({ query })
@@ -767,7 +767,7 @@ export default {
         },
         errorMethod: () => this.fetchData(),
         loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
-        catchMessage: 'Error encountered while fetching async job result',
+        catchMessage: this.$t('error.fetching.async.job.result'),
         action
       })
     },

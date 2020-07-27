@@ -31,7 +31,7 @@
           </span>
           <a-input
             v-decorator="['name', {
-              rules: [{ required: true, message: 'Please enter Kubernetes cluster name' }]
+              rules: [{ required: true, message: $t('message.error.kubecluster.name') }]
             }]"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
@@ -44,7 +44,7 @@
           </span>
           <a-input
             v-decorator="['description', {
-              rules: [{ required: true, message: 'Please enter Kubernetes cluster description' }]
+              rules: [{ required: true, message: $t('message.error.cluster.description') }]
             }]"
             :placeholder="apiParams.description.description"/>
         </a-form-item>
@@ -58,7 +58,7 @@
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
-              rules: [{ required: true, message: 'Please select zone for Kubernetes cluster' }]
+              rules: [{ required: true, message: $t('message.error.zone.for.cluster') }]
             }]"
             showSearch
             optionFilterProp="children"
@@ -83,7 +83,7 @@
           <a-select
             id="version-selection"
             v-decorator="['kubernetesversionid', {
-              rules: [{ required: true, message: 'Please select Kubernetes version for Kubernetes cluster' }]
+              rules: [{ required: true, message: $t('message.error.version.for.cluster') }]
             }]"
             showSearch
             optionFilterProp="children"
@@ -108,7 +108,7 @@
           <a-select
             id="offering-selection"
             v-decorator="['serviceofferingid', {
-              rules: [{ required: true, message: 'Please select service offering for Kubernetes cluster' }]
+              rules: [{ required: true, message: $t('message.error.serviceoffering.for.cluster') }]
             }]"
             showSearch
             optionFilterProp="children"
@@ -134,7 +134,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.validate.number'))
                   }
                   callback()
                 }
@@ -177,11 +177,11 @@
           <a-input
             v-decorator="['masternodes', {
               initialValue: '1',
-              rules: [{ required: true, message: 'Please enter value' },
+              rules: [{ required: true, message: $t('message.error.input.value') },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
+                            callback(this.$t('message.validate.number'))
                           }
                           callback()
                         }
@@ -211,11 +211,11 @@
           <a-input
             v-decorator="['size', {
               initialValue: '1',
-              rules: [{ required: true, message: 'Please enter size for Kubernetes cluster' },
+              rules: [{ required: true, message: $t('message.error.size.for.cluster') },
                       {
                         validator: (rule, value, callback) => {
                           if (value && (isNaN(value) || value <= 0)) {
-                            callback('Please enter a valid number')
+                            callback(this.$t('message.validate.number'))
                           }
                           callback()
                         }
@@ -478,9 +478,9 @@ export default {
           })
           this.$pollJob({
             jobId,
-            loadingMessage: `Create Kubernetes cluster ${values.name} in progress`,
-            catchMessage: 'Error encountered while fetching async job result',
-            successMessage: `Successfully created Kubernetes cluster ${values.name}`,
+            loadingMessage: `${this.$t('label.kubernetes.cluster.create')} ${values.name} ${this.$t('label.in.progress')}`,
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name,
             successMethod: result => {
               this.$emit('refresh-data')
             }

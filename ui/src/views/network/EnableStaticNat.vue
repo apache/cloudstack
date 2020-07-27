@@ -19,7 +19,7 @@
   <div class="list" :loading="loading">
     <div class="list__header">
       <div class="list__header__col" v-if="tiersSelect">
-        <a-select @change="handleTierSelect" v-model="vpcTiers" placeholder="Select a tier">
+        <a-select @change="handleTierSelect" v-model="vpcTiers" :placeholder="$t('label.select.tier')">
           <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
             {{ network.name }}
           </a-select-option>
@@ -74,7 +74,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="vmsList.length"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="changePage"
       @showSizeChange="changePageSize"
@@ -138,7 +138,7 @@ export default {
           dataIndex: 'zonename'
         },
         {
-          title: 'Select',
+          title: this.$t('label.select'),
           dataIndex: 'id',
           scopedSlots: { customRender: 'radio' }
         }

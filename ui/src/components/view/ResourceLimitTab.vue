@@ -105,7 +105,7 @@ export default {
         this.formLoading = false
       } catch (e) {
         this.$notification.error({
-          message: 'Request Failed',
+          message: this.$t('message.request.failed'),
           description: e
         })
         this.formLoading = false
@@ -134,7 +134,7 @@ export default {
         this.formLoading = true
 
         Promise.all(arrAsync).then(() => {
-          this.$message.success('Apply Successful')
+          this.$message.success(this.$t('message.apply.success'))
           this.fetchData()
         }).catch(error => {
           this.$notifyError(error)

@@ -48,7 +48,7 @@ router.beforeEach((to, from, next) => {
       if (Object.keys(store.getters.apis).length === 0) {
         const cachedApis = Vue.ls.get(APIS, {})
         if (Object.keys(cachedApis).length > 0) {
-          message.loading('Loading...', 1.5)
+          message.loading(`${i18n.t('label.loading')}...`, 1.5)
         }
         store
           .dispatch('GetInfo')
@@ -66,7 +66,7 @@ router.beforeEach((to, from, next) => {
           .catch(() => {
             notification.error({
               message: 'Error',
-              description: 'Exception caught while discoverying features'
+              description: i18n.t('message.error.discovering.feature')
             })
             store.dispatch('Logout').then(() => {
               next({ path: '/user/login', query: { redirect: to.fullPath } })

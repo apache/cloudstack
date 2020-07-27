@@ -35,8 +35,8 @@
         <a-popconfirm
           :title="`${$t('label.delete')}?`"
           @confirm="handleDelete(record)"
-          okText="Yes"
-          cancelText="No"
+          :okText="$t('label.yes')"
+          :cancelText="$t('label.no')"
           placement="top"
         >
           <a-button :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" shape="circle"></a-button>
@@ -49,7 +49,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="totalCount"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
@@ -68,7 +68,7 @@
           <a-form-item :label="$t('label.vlanrange')">
             <a-input
               v-decorator="['range', {
-                rules: [{ required: true, message: `${this.$t('label.required')}` }]
+                rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
             ></a-input>
           </a-form-item>
@@ -84,7 +84,7 @@
             <a-select
               @change="handleDomainChange"
               v-decorator="['domain', {
-                rules: [{ required: true, message: `${this.$t('label.required')}` }]
+                rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
             >
               <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.name }}</a-select-option>
@@ -94,7 +94,7 @@
           <a-form-item :label="$t('label.account')" v-if="selectedScope === 'account'">
             <a-select
               v-decorator="['account', {
-                rules: [{ required: true, message: `${this.$t('label.required')}` }]
+                rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
             >
               <a-select-option
@@ -109,7 +109,7 @@
           <a-form-item :label="$t('label.project')" v-if="selectedScope === 'project'">
             <a-select
               v-decorator="['project', {
-                rules: [{ required: true, message: `${this.$t('label.required')}` }]
+                rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
             >
               <a-select-option
@@ -202,7 +202,7 @@ export default {
         this.totalCount = response.listdedicatedguestvlanrangesresponse.count || 0
       }).catch(error => {
         this.$notification.error({
-          message: `Error ${error.response.status}`,
+          message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext,
           duration: 0
         })
@@ -286,7 +286,7 @@ export default {
         id: item.id
       }).then(response => {
         this.$store.dispatch('AddAsyncJob', {
-          title: `Deleted dedicated VLAN/VNI range ${item.guestvlanrange} for ${item.account}`,
+          title: `${this.$t('label.delete.dedicated.vlan.range')} ${item.guestvlanrange} ${this.$t('label.for')} ${item.account}`,
           jobid: response.releasededicatedguestvlanrangeresponse.jobid,
           status: 'progress'
         })
@@ -296,13 +296,13 @@ export default {
             this.fetchData()
             this.parentFinishLoading()
           },
-          errorMessage: 'Deleting failed',
+          errorMessage: this.$t('label.deleting.failed'),
           errorMethod: () => {
             this.fetchData()
             this.parentFinishLoading()
           },
-          loadingMessage: `Deleting ${item.id}`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: `${this.$t('label.deleting')} ${item.id}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.fetchData()
             this.parentFinishLoading()
@@ -310,7 +310,7 @@ export default {
         })
       }).catch(error => {
         console.log(error)
-        this.$message.error('Failed to delete.')
+        this.$message.error(this.$t('message.fail.to.delete'))
         this.fetchData()
         this.parentFinishLoading()
       })

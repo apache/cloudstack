@@ -29,7 +29,7 @@
       </a-spin>
     </div>
     <div class="form__item" v-if="accountsList">
-      <p class="form__label">Account</p>
+      <p class="form__label">{{ $t('label.account') }}</p>
       <a-select style="width: 100%" @change="handleChangeAccount">
         <a-select-option v-for="(account, index) in accountsList" :value="account.name" :key="index">
           {{ account.name }}

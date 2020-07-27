@@ -61,7 +61,7 @@
                 {
                   validator: (rule, value, callback) => {
                     if (value && value.length > 1 && value.indexOf(0) !== -1) {
-                      callback('All Zones cannot be combined with any other zone')
+                      callback($t('message.error.zone.combined'))
                     }
                     callback()
                   }

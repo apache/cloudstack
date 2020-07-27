@@ -129,7 +129,7 @@ export default {
           params.state = this.states[values.state].id
         }
         api('updateKubernetesSupportedVersion', params).then(json => {
-          this.$message.success('Successfully updated Kubernetes supported version: ' + this.resource.name)
+          this.$message.success(`${this.$t('message.success.update.kubeversion')}: ${this.resource.name}`)
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

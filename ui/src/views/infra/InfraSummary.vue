@@ -44,7 +44,7 @@
             :footer="null"
             @cancel="sslModalClose">
             <p>
-              Please submit a new X.509 compliant SSL certificate chain to be updated to each console proxy and secondary storage virtual instance:
+              {{ $t('message.update.ssl') }}
             </p>
 
             <a-form @submit.prevent="handleSslFormSubmit" ref="sslForm" :form="form">
@@ -63,7 +63,7 @@
                   name="rootCert"
                   v-decorator="[
                     'root',
-                    {rules: [{ required: true, message: `${this.$t('label.required')}` }], validateTrigger:'change'}
+                    {rules: [{ required: true, message: `${$t('label.required')}` }], validateTrigger:'change'}
                   ]"
                 ></a-textarea>
               </a-form-item>
@@ -95,7 +95,7 @@
               <a-form-item>
                 <a-button @click="addIntermediateCert">
                   <a-icon type="plus-circle" />
-                  Add intermediate certificate
+                  {{ $t('label.add.intermediate.certificate') }}
                 </a-button>
               </a-form-item>
 
@@ -113,7 +113,7 @@
                   name="serverCert"
                   v-decorator="[
                     'server',
-                    {rules: [{ required: true, message: `${this.$t('label.required')}` }], validateTrigger:'change'}
+                    {rules: [{ required: true, message: `${$t('label.required')}` }], validateTrigger:'change'}
                   ]"
                 ></a-textarea>
               </a-form-item>
@@ -132,7 +132,7 @@
                   name="pkcsKey"
                   v-decorator="[
                     'pkcs',
-                    {rules: [{ required: true, message: `${this.$t('label.required')}` }], validateTrigger:'change'}
+                    {rules: [{ required: true, message: `${$t('label.required')}` }], validateTrigger:'change'}
                   ]"
                 ></a-textarea>
               </a-form-item>
@@ -150,7 +150,7 @@
                   name="dnsSuffix"
                   v-decorator="[
                     'dns',
-                    {rules: [{ required: true, message: `${this.$t('label.required')}` }], validateTrigger:'change'}
+                    {rules: [{ required: true, message: `${$t('label.required')}` }], validateTrigger:'change'}
                   ]"
                 ></a-input>
               </a-form-item>
@@ -265,24 +265,24 @@ export default {
       api('queryAsyncJobResult', { jobid: jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1 && this.maxCerts === count) {
-          this.$message.success('Certificate Uploaded: ' + result.jobresult.customcertificate.message)
+          this.$message.success(`${this.$t('label.certificate.upload')}: ${result.jobresult.customcertificate.message}`)
           this.$notification.success({
-            message: 'Certificate Uploaded',
-            description: result.jobresult.customcertificate.message || 'Certificate successfully uploaded'
+            message: this.$t('label.certificate.upload'),
+            description: result.jobresult.customcertificate.message || this.$t('message.success.certificate.upload')
           })
         } else if (result.jobstatus === 2) {
           this.$notification.error({
-            message: 'Certificate Upload Failed',
-            description: result.jobresult.errortext || 'Failed to update SSL Certificate. Failed to pass certificate validation check',
+            message: this.$t('label.certificate.upload.failed'),
+            description: result.jobresult.errortext || this.$t('label.certificate.upload.failed.description'),
             duration: 0
           })
         } else if (result.jobstatus === 0) {
           this.$message
-            .loading('Certificate upload in progress: ' + count, 2)
+            .loading(`${this.$t('message.certificate.upload.processing')}: ${count}`, 2)
             .then(() => this.pollActionCompletion(jobId, count))
         }
       }).catch(e => {
-        console.log('Error encountered while fetching async job result' + e)
+        console.log(this.$t('error.fetching.async.job.result') + e)
       })
     },
 

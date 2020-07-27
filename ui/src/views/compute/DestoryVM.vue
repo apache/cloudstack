@@ -132,9 +132,9 @@ export default {
           })
           this.$pollJob({
             jobId,
-            loadingMessage: `Deleting VM ${this.resource.name}`,
-            catchMessage: 'Error encountered while fetching async job result',
-            successMessage: `Successfully Deleted VM ${this.resource.name}`
+            loadingMessage: `${this.$t('message.deleting.vm')} ${this.resource.name}`,
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            successMessage: `${this.$t('message.success.delete.vm')} ${this.resource.name}`
           })
         }).catch(error => {
           this.$notifyError(error)

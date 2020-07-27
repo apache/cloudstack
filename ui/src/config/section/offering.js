@@ -250,6 +250,7 @@ export default {
       name: 'vpcoffering',
       title: 'label.vpc.offerings',
       icon: 'deployment-unit',
+      docHelp: 'plugins/nuage-plugin.html?#vpc-offerings',
       permission: ['listVPCOfferings', 'listInfrastructure'],
       params: { isrecursive: 'true' },
       resourceType: 'VpcOffering',
@@ -263,6 +264,7 @@ export default {
       actions: [{
         api: 'createVPCOffering',
         icon: 'plus',
+        docHelp: 'plugins/nuage-plugin.html?#optional-create-and-enable-vpc-offering',
         label: 'label.add.vpc.offering',
         listView: true,
         popup: true,

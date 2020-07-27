@@ -228,7 +228,7 @@ export default {
 
       if (!this.checkValidRange(value, min, max)) {
         this.errors[input].status = 'error'
-        this.errors[input].message = this.$t('message.error.invalid.range', { min: min, max: max })
+        this.errors[input].message = `${this.$t('message.please.enter.value')} ${this.$t('label.from')} ${min} ${this.$t('label.to')} ${max})`
         return false
       }
 

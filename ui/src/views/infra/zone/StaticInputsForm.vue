@@ -39,7 +39,7 @@
             rules: [
               {
                 required: field.required,
-                message: field.placeHolder,
+                message: $t(field.placeHolder),
                 initialValue: getPrefilled(field.key)
               }
             ]
@@ -66,7 +66,7 @@
             rules: [
               {
                 required: field.required,
-                message: field.placeHolder,
+                message: $t(field.placeHolder),
                 initialValue: getPrefilled(field.key)
               }
             ]
@@ -78,14 +78,14 @@
             rules: [
               {
                 required: field.required,
-                message: field.placeHolder,
+                message: $t(field.placeHolder),
                 initialValue: getPrefilled(field.key)
               },
               {
                 validator: checkIpFormat,
                 ipV4: field.ipV4,
                 ipV6: field.ipV6,
-                message: field.message
+                message: $t(field.message)
               }
             ]
           }]"
@@ -123,7 +123,7 @@ export default {
     },
     description: {
       type: String,
-      default: 'Creating IP Ranges'
+      default: 'label.creating.iprange'
     },
     isFixError: {
       type: Boolean,

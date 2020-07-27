@@ -20,7 +20,7 @@
     <a-card
       class="ant-form-text"
       style="text-align: justify; margin: 10px 0; padding: 20px;"
-      v-html="zoneType !== null ? $t(zoneDescription[zoneType]) : 'Please select zone type below.'">
+      v-html="zoneType !== null ? $t(zoneDescription[zoneType]) : $t('message.error.select.zone.type')">
     </a-card>
     <a-table
       bordered
@@ -68,13 +68,13 @@
           centered
         >
           <a-form :form="form">
-            <span class="ant-form-text"> Please specify the traffic label you want associated with this traffic type. </span>
+            <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
             <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
               <a-input
                 v-decorator="['trafficLabel', {
                   rules: [{
                     required: true,
-                    message: 'Please enter traffic label',
+                    message: $t('message.error.traffic.label'),
                   }]
                 }]"
               />
@@ -148,7 +148,7 @@
     </div>
     <a-modal
       :visible="showError"
-      title="Error!"
+      :title="`${$t('label.error')}!`"
       @ok="() => { showError = false }"
       @cancel="() => { showError = false }"
       centered

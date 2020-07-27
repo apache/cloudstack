@@ -38,7 +38,7 @@
         <a-form-item :label="$t('label.sizegb')">
           <a-input
             v-decorator="['size', {
-              rules: [{ required: true, message: 'Please enter size in GB' }]}]"
+              rules: [{ required: true, message: $t('message.error.size') }]}]"
             :placeholder="$t('label.disksize')"/>
         </a-form-item>
       </div>
@@ -101,21 +101,21 @@ export default {
         api('resizeVolume', values).then(response => {
           this.$pollJob({
             jobId: response.resizevolumeresponse.jobid,
-            successMessage: 'Successfully resized volume',
+            successMessage: this.$t('message.success.resize.volume'),
             successMethod: () => {
               this.$store.dispatch('AddAsyncJob', {
-                title: `Successfully resized Volume`,
+                title: this.$t('message.success.resize.volume'),
                 jobid: response.resizevolumeresponse.jobid,
                 description: values.name,
                 status: 'progress'
               })
             },
-            errorMessage: 'Failed to resize volume',
+            errorMessage: this.$t('message.resize.volume.failed'),
             errorMethod: () => {
               this.closeModal()
             },
             loadingMessage: `Volume resize is in progress`,
-            catchMessage: 'Error encountered while fetching async job result',
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.loading = false
               this.closeModal()
@@ -123,7 +123,7 @@ export default {
           })
         }).catch(error => {
           this.$notification.error({
-            message: `Error ${error.response.status}`,
+            message: `${this.$t('label.error')} ${error.response.status}`,
             description: error.response.data.errorresponse.errortext,
             duration: 0
           })

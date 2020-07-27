@@ -19,8 +19,8 @@
   <a-select
     :value="defaultValue"
     @change="handleChange">
-    <a-select-option value="allow">Allow</a-select-option>
-    <a-select-option value="deny">Deny</a-select-option>
+    <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
+    <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
   </a-select>
 </template>
 

@@ -23,7 +23,7 @@
         <a-select
           v-decorator="['zoneid', {
             initialValue: this.zoneId,
-            rules: [{ required: true, message: `${this.$t('label.required')}` }] }
+            rules: [{ required: true, message: `${$t('label.required')}` }] }
           ]">
           <a-select-option
             v-for="zone in zonesList"
@@ -40,7 +40,7 @@
           v-decorator="[
             'name',
             {
-              rules: [{ required: true, message: `${this.$t('label.required')}` }]
+              rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
         />
       </a-form-item>
@@ -51,7 +51,7 @@
           v-decorator="[
             'gateway',
             {
-              rules: [{ required: true, message: `${this.$t('label.required')}` }]
+              rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
         />
       </a-form-item>
@@ -62,7 +62,7 @@
           v-decorator="[
             'netmask',
             {
-              rules: [{ required: true, message: `${this.$t('label.required')}` }]
+              rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
         />
       </a-form-item>
@@ -73,7 +73,7 @@
           v-decorator="[
             'startip',
             {
-              rules: [{ required: true, message: `${this.$t('label.required')}` }]
+              rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
         />
       </a-form-item>
@@ -194,7 +194,7 @@ export default {
           this.$parent.$parent.close()
         }).catch(error => {
           this.$notification.error({
-            message: `Error ${error.response.status}`,
+            message: `${this.$t('label.error')} ${error.response.status}`,
             description: error.response.data.createpodresponse.errortext,
             duration: 0
           })
@@ -219,23 +219,23 @@ export default {
             this.$store.dispatch('AddAsyncJob', {
               title: this.$t('message.pod.dedicated'),
               jobid: response.dedicatepodresponse.jobid,
-              description: `Domain ID: ${this.dedicatedDomainId}`,
+              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
               status: 'progress'
             })
           },
-          errorMessage: 'Failed to dedicate pod',
+          errorMessage: this.$t('error.dedicate.pod.failed'),
           errorMethod: () => {
             this.loading = false
           },
-          loadingMessage: this.$t('message.dedicate.pod'),
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.dedicating.pod'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.loading = false
           }
         })
       }).catch(error => {
         this.$notification.error({
-          message: `Error ${error.response.status}`,
+          message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext,
           duration: 0
         })

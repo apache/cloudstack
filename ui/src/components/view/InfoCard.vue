@@ -29,10 +29,13 @@
               </slot>
             </div>
             <slot name="name">
-              <h4 class="name">
-                {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || resource.virtualmachinename || resource.templatetype }}
-              </h4>
-              <console style="margin-left: 10px" :resource="resource" size="default" v-if="resource.id" />
+              <div v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.name)">{{ $t(resource.name.toLowerCase()) }}</div>
+              <div v-else>
+                <h4 class="name">
+                  {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || resource.virtualmachinename || resource.templatetype }}
+                </h4>
+                <console style="margin-left: 10px" :resource="resource" size="default" v-if="resource.id" />
+              </div>
             </slot>
           </div>
           <slot name="actions">
@@ -41,7 +44,10 @@
                 {{ resource.instancename }}
               </a-tag>
               <a-tag v-if="resource.type">
-                {{ resource.type }}
+                <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.type)">{{ $t(resource.type.toLowerCase()) }}</span>
+                <span v-else>
+                  {{ resource.type }}
+                </span>
               </a-tag>
               <a-tag v-if="resource.issourcenat">
                 {{ $t('label.issourcenat') }}
@@ -94,7 +100,7 @@
           <div class="resource-detail-item__details">
             <a-tooltip placement="right" >
               <template slot="title">
-                <span>Copy ID</span>
+                <span>{{ $t('label.copyid') }}</span>
               </template>
               <a-button
                 style="margin-left: -5px"
@@ -102,7 +108,7 @@
                 icon="barcode"
                 type="dashed"
                 size="small"
-                @click="$message.success('Copied to clipboard')"
+                @click="$message.success($t('label.copied.clipboard'))"
                 v-clipboard:copy="resource.id" />
             </a-tooltip>
             <span style="margin-left: 10px;">{{ resource.id }}</span>
@@ -146,7 +152,7 @@
         <div class="resource-detail-item" v-if="resource.memory">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="bulb" />{{ resource.memory }} MB Memory
+            <a-icon type="bulb" />{{ resource.memory + ' ' + $t('label.mb.memory') }}
           </div>
           <div>
             <span v-if="resource.memorykbs && resource.memoryintfreekbs">
@@ -163,7 +169,7 @@
         <div class="resource-detail-item" v-else-if="resource.memorytotalgb">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="bulb" />{{ resource.memorytotalgb }} Memory
+            <a-icon type="bulb" />{{ resource.memorytotalgb + ' ' + $t('label.memory') }}
           </div>
           <div>
             <span v-if="resource.memoryusedgb">
@@ -191,7 +197,7 @@
 
             <div style="display: flex; flex-direction: column; width: 100%;">
               <div>
-                <a-icon type="bulb" />{{ resource.memorytotal }} Memory
+                <a-icon type="bulb" />{{ resource.memorytotal + ' ' + $t('label.memory') }}
               </div>
               <div>
                 <span
@@ -224,10 +230,10 @@
             <span style="width: 100%;" v-else-if="resource.sizegb || resource.size">{{ resource.sizegb || (resource.size/1024.0) }}</span>
           </div>
           <div style="margin-left: 25px; margin-top: 5px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
-            <a-tag style="margin-bottom: 5px;">Read {{ toSize(resource.diskkbsread) }}</a-tag>
-            <a-tag style="margin-bottom: 5px;">Write {{ toSize(resource.diskkbswrite) }}</a-tag><br/>
-            <a-tag style="margin-bottom: 5px;">Read (IO) {{ resource.diskioread }}</a-tag>
-            <a-tag>Write (IO) {{ resource.diskiowrite }}</a-tag>
+            <a-tag style="margin-bottom: 5px;">{{ $t('label.read') + ' ' + toSize(resource.diskkbsread) }}</a-tag>
+            <a-tag style="margin-bottom: 5px;">{{ $t('label.write') + ' ' + toSize(resource.diskkbswrite) }}</a-tag><br/>
+            <a-tag style="margin-bottom: 5px;">{{ $t('label.read.io') + ' ' + resource.diskioread }}</a-tag>
+            <a-tag>{{ $t('label.writeio') + ' ' + resource.diskiowrite }}</a-tag>
           </div>
         </div>
         <div class="resource-detail-item" v-else-if="resource.disksizetotalgb">
@@ -259,8 +265,8 @@
             <a-icon type="wifi" />
             <div>
               <div v-if="'networkkbsread' in resource && 'networkkbswrite' in resource">
-                <a-tag><a-icon type="arrow-down" /> RX {{ toSize(resource.networkkbsread) }}</a-tag>
-                <a-tag><a-icon type="arrow-up" /> TX {{ toSize(resource.networkkbswrite) }}</a-tag>
+                <a-tag><a-icon type="arrow-down" />RX {{ toSize(resource.networkkbsread) }}</a-tag>
+                <a-tag><a-icon type="arrow-up" />TX {{ toSize(resource.networkkbswrite) }}</a-tag>
               </div>
               <div v-else>{{ resource.nic.length }} NIC(s)</div>
               <div
@@ -499,7 +505,7 @@
             v-if="$router.resolve('/' + item.name).route.name !== '404'"
             :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
             <a-button style="margin-right: 10px" :icon="$router.resolve('/' + item.name).route.meta.icon" >
-              View {{ $t(item.title) }}
+              {{ $t('label.view') + ' ' + $t(item.title) }}
             </a-button>
           </router-link>
         </div>
@@ -513,9 +519,9 @@
             {{ $t('label.apikey') }}
             <a-tooltip placement="right" >
               <template slot="title">
-                <span>Copy {{ $t('label.apikey') }}</span>
+                <span>{{ $t('label.copy') + ' ' + $t('label.apikey') }}</span>
               </template>
-              <a-button shape="circle" type="dashed" size="small" @click="$message.success('Copied to clipboard')" v-clipboard:copy="resource.apikey">
+              <a-button shape="circle" type="dashed" size="small" @click="$message.success($t('label.copied.clipboard'))" v-clipboard:copy="resource.apikey">
                 <a-icon type="copy"/>
               </a-button>
             </a-tooltip>
@@ -530,9 +536,9 @@
             {{ $t('label.secretkey') }}
             <a-tooltip placement="right" >
               <template slot="title">
-                <span>Copy {{ $t('label.secretkey') }}</span>
+                <span>{{ $t('label.copy') + ' ' + $t('label.secretkey') }}</span>
               </template>
-              <a-button shape="circle" type="dashed" size="small" @click="$message.success('Copied to clipboard')" v-clipboard:copy="resource.secretkey">
+              <a-button shape="circle" type="dashed" size="small" @click="$message.success($t('label.copied.clipboard'))" v-clipboard:copy="resource.secretkey">
                 <a-icon type="copy"/>
               </a-button>
             </a-tooltip>

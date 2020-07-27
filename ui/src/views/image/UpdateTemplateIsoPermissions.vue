@@ -23,26 +23,26 @@
 
     <div class="form__item">
       <p class="form__label">{{ $t('label.operation') }}</p>
-      <a-select v-model="selectedOperation" defaultValue="Add" @change="fetchData">
+      <a-select v-model="selectedOperation" :defaultValue="$t('label.add')" @change="fetchData">
         <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
         <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
         <a-select-option :value="$t('label.reset')">{{ $t('label.reset') }}</a-select-option>
       </a-select>
     </div>
 
-    <template v-if="selectedOperation !== 'Reset'">
+    <template v-if="selectedOperation !== $t('label.reset')">
       <div class="form__item">
         <p class="form__label">
           <span class="required">*</span>
           {{ $t('label.sharewith') }}
         </p>
-        <a-select v-model="selectedShareWith" defaultValue="Account" @change="fetchData">
+        <a-select v-model="selectedShareWith" :defaultValue="$t('label.account')" @change="fetchData">
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
       </div>
 
-      <template v-if="selectedShareWith === 'Account'">
+      <template v-if="selectedShareWith === $t('label.account')">
         <div class="form__item">
           <p class="form__label">
             {{ $t('label.account') }}
@@ -55,11 +55,12 @@
               @change="handleChange"
               style="width: 100%">
               <a-select-option v-for="account in accountsList" :key="account.name">
-                {{ account.name }}</a-select-option>
+                {{ account.name }}
+              </a-select-option>
             </a-select>
           </div>
           <div v-else>
-            <a-input v-model="selectedAccountsList" placeholder="Enter comma-separated list of commands"></a-input>
+            <a-input v-model="selectedAccountsList" :placeholder="$t('label.comma.separated.list.description')"></a-input>
           </div>
         </div>
       </template>
@@ -71,12 +72,13 @@
           </p>
           <a-select
             mode="multiple"
-            placeholder="Select Projects"
+            :placeholder="$t('label.select.projects')"
             :value="selectedProjects"
             @change="handleChange"
             style="width: 100%">
             <a-select-option v-for="project in projectsList" :key="project.name">
-              {{ project.name }}</a-select-option>
+              {{ project.name }}
+            </a-select-option>
           </a-select>
         </div>
       </template>
@@ -112,7 +114,7 @@ export default {
       selectedAccounts: [],
       selectedProjects: [],
       selectedAccountsList: '',
-      selectedOperation: 'Add',
+      selectedOperation: this.$t('label.add'),
       selectedShareWith: this.$t('label.account'),
       accountError: false,
       projectError: false,
@@ -125,7 +127,7 @@ export default {
     accountsList () {
       return this.accounts.length > 0 ? this.accounts
         .filter(a =>
-          this.selectedOperation === 'Add'
+          this.selectedOperation === this.$t('label.add')
             ? !this.permittedAccounts.includes(a.name)
             : this.permittedAccounts.includes(a.name)
         ) : this.accounts
@@ -133,7 +135,7 @@ export default {
     projectsList () {
       return this.projects > 0 ? this.projects
         .filter(p =>
-          this.selectedOperation === 'Add'
+          this.selectedOperation === this.$t('label.add')
             ? !this.permittedProjects.includes(p.id)
             : this.permittedProjects.includes(p.id)
         ) : this.projects
@@ -150,7 +152,7 @@ export default {
       } else {
         this.fetchTemplatePermissions()
       }
-      if (this.selectedShareWith === 'Account') {
+      if (this.selectedShareWith === this.$t('label.account')) {
         this.selectedAccounts = []
         this.fetchAccounts()
       } else {
@@ -212,8 +214,8 @@ export default {
       })
     },
     handleChange (selectedItems) {
-      if (this.selectedOperation === 'Add' || this.selectedOperation === 'Remove') {
-        if (this.selectedShareWith === 'Account') {
+      if (this.selectedOperation === this.$t('label.add') || this.selectedOperation === this.$t('label.remove')) {
+        if (this.selectedShareWith === this.$t('label.account')) {
           this.selectedAccounts = selectedItems
         } else {
           this.selectedProjects = selectedItems
@@ -226,7 +228,7 @@ export default {
     submitData () {
       let variableKey = ''
       let variableValue = ''
-      if (this.selectedShareWith === 'Account') {
+      if (this.selectedShareWith === this.$t('label.account')) {
         variableKey = 'accounts'
         if (this.showAccountSelect) {
           variableValue = this.selectedAccounts.map(account => account).join(',')
@@ -250,7 +252,7 @@ export default {
       })
         .then(response => {
           this.$notification.success({
-            message: 'Successfully updated ' + resourceType + ' permissions'
+            message: `${this.$t('label.success.updated')} ${resourceType} ${this.$t('label.permissions')}`
           })
         })
         .catch(error => {
@@ -266,7 +268,6 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-
   .form {
     display: flex;
     flex-direction: column;

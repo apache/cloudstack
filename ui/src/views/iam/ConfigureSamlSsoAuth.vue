@@ -38,7 +38,7 @@
         </a-select>
       </a-form-item>
       <div class="card-footer">
-        <a-button @click="handleClose">{{ $t('Close') }}</a-button>
+        <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
         <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
@@ -102,12 +102,12 @@ export default {
         }).then(response => {
           this.$notification.success({
             message: values.samlEnable ? this.$t('label.saml.enable') : this.$t('label.saml.disable'),
-            description: values.samlEnable ? `Successfully enabled SAML Authorization for ${this.resource.username}`
-              : `Successfully disabled SAML Authorization for ${this.resource.username}`
+            description: values.samlEnable ? `${this.$t('message.success.enable.saml.auth')} ${this.$t('label.for')} ${this.resource.username}`
+              : `${this.$t('message.success.disable.saml.auth')} ${this.$t('label.for')} ${this.resource.username}`
           })
         }).catch(error => {
           this.$notification.error({
-            message: 'Request Failed',
+            message: this.$t('message.request.failed'),
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
             duration: 0
           })

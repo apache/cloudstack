@@ -35,14 +35,14 @@
             </div>
             <div class="list__col">
               <div class="list__label">{{ $t('label.agentstate') }}</div>
-              <div><status :text="vm.agentstate || 'Unknown'" displayText></status></div>
+              <div><status :text="vm.agentstate || $t('label.unknown')" displayText></status></div>
             </div>
             <div class="list__col">
               <div class="list__label">
                 {{ $t('label.type') }}
               </div>
               <div>
-                {{ vm.systemvmtype == 'consoleproxy' ? 'Console Proxy VM' : 'Secondary Storage VM' }}
+                {{ vm.systemvmtype == 'consoleproxy' ? $t('label.console.proxy.vm') : $t('label.secondary.storage.vm') }}
               </div>
             </div>
             <div class="list__col">

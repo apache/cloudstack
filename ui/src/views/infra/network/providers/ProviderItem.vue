@@ -196,7 +196,7 @@ export default {
       } catch (error) {
         this.listData[args.title].loading = false
         this.$notification.error({
-          message: 'Request Failed',
+          message: this.$t('message.request.failed'),
           description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
         })
       }

@@ -22,7 +22,7 @@
           v-decorator="[
             'name',
             {
-              rules: [{ required: true, message: `${this.$t('label.required')}` }],
+              rules: [{ required: true, message: `${$t('label.required')}` }],
             }
           ]"
           :placeholder="$t('label.vpncustomergatewayname')" />
@@ -32,7 +32,7 @@
           v-decorator="[
             'gateway',
             {
-              rules: [{ required: true, message: `${this.$t('label.required')}`}],
+              rules: [{ required: true, message: `${$t('label.required')}`}],
             }
           ]"
           :placeholder="$t('label.vpncustomergateway')" />
@@ -42,7 +42,7 @@
           v-decorator="[
             'cidrlist',
             {
-              rules: [{ required: true, message: `${this.$t('label.required')}`}],
+              rules: [{ required: true, message: `${$t('label.required')}`}],
             }
           ]"
           :placeholder="$t('label.vpncustomergateway.cidrlist')" />
@@ -53,7 +53,7 @@
           v-decorator="[
             'ipsecpsk',
             {
-              rules: [{ required: true, message: `${this.$t('label.required')}`}],
+              rules: [{ required: true, message: `${$t('label.required')}`}],
             }
           ]"
           :placeholder="$t('label.vpncustomergateway.secretkey')" />
@@ -271,25 +271,25 @@ export default {
           esppolicy: esppolicy
         }).then(response => {
           this.$store.dispatch('AddAsyncJob', {
-            title: `Adding VPN customer gateway`,
+            title: this.$t('message.add.vpn.customer.gateway'),
             jobid: response.createvpncustomergatewayresponse.jobid,
             description: values.name,
             status: 'progress'
           })
           this.$pollJob({
             jobId: response.createvpncustomergatewayresponse.jobid,
-            successMessage: `Successfully added VPN customer gateway`,
+            successMessage: this.$t('message.success.add.vpn.customer.gateway'),
             successMethod: () => {
               this.closeModal()
               this.parentFetchData()
             },
-            errorMessage: 'VPN customer gateway creation failed' + response,
+            errorMessage: `${this.$t('message.create.vpn.customer.gateway.failed')} ` + response,
             errorMethod: () => {
               this.closeModal()
               this.parentFetchData()
             },
-            loadingMessage: `Creation of VPN customer gateway is in progress`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.add.vpn.customer.gateway.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.closeModal()
             }
@@ -297,7 +297,7 @@ export default {
           this.closeModal()
         }).catch(error => {
           console.error(error)
-          this.$message.error('Failed to Add VPN customer gateway')
+          this.$message.error(this.$t('message.success.add.vpn.customer.gateway'))
         }).finally(() => {
           this.form.resetFields()
           this.closeModal()

@@ -122,7 +122,7 @@
                     initialValue: selectedIdp,
                     rules: [{ required: samlEnable, message: `${this.$t('message.error.select')}` }]
                   }]"
-                  placeholder="Choose SAML identity provider"
+                  :placeholder="$t('label.choose.saml.indentity')"
                   :loading="loading">
                   <a-select-option v-for="(idp, idx) in listIdps" :key="idx">
                     {{ idp.orgName }}
@@ -210,7 +210,7 @@ export default {
         scopedSlots: { customRender: 'email' }
       },
       {
-        title: this.$t('Conflict'),
+        title: this.$t('label.user.conflict'),
         dataIndex: 'conflictingusersource',
         scopedSlots: { customRender: 'conflictingusersource' }
       }
@@ -387,8 +387,8 @@ export default {
               }
             } else if (apiName === 'importLdapUsers' && response.ldapuserresponse && values.samlEnable) {
               this.$notification.error({
-                message: 'Request Failed',
-                description: 'Unable to find users IDs to enable SAML Single Sign On, kindly enable it manually.'
+                message: this.$t('message.request.failed'),
+                description: this.$t('message.error.enable.saml')
               })
             } else {
               if (apiName === 'ldapCreateAccount') {

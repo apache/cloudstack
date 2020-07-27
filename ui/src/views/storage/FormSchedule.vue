@@ -76,7 +76,7 @@
                     rules: [{
                       type: 'object',
                       required: true,
-                      message: 'Please select time'
+                      message: $t('message.error.time')
                     }]
                   }]" />
               </a-form-item>
@@ -119,7 +119,7 @@
                   <a-input-number
                     style="width: 100%"
                     v-decorator="['maxsnaps', {
-                      rules: [{ required: true, message: 'Please enter input'}]
+                      rules: [{ required: true, message: $t('message.error.required.input')}]
                     }]"
                     :min="1"
                     :max="8" />
@@ -159,9 +159,9 @@
                 @blur="handleInputConfirm"
                 @keyup.enter="handleInputConfirm"
                 compact>
-                <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 100px; text-align: center" placeholder="Key" />
+                <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 100px; text-align: center" :placeholder="$t('label.key')" />
                 <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
-                <a-input :value="inputValue" @change="handleValueChange" style="width: 100px; text-align: center; border-left: 0" placeholder="Value" />
+                <a-input :value="inputValue" @change="handleValueChange" style="width: 100px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
                 <a-button shape="circle" size="small" @click="handleInputConfirm">
                   <a-icon type="check"/>
                 </a-button>
@@ -365,8 +365,8 @@ export default {
         api('createSnapshotPolicy', params).then(json => {
           this.$emit('refresh')
           this.$notification.success({
-            message: 'Recurring Snapshots',
-            description: 'Successfully recurring snapshots'
+            message: this.$t('label.action.recurring.snapshot'),
+            description: this.$t('message.success.recurring.snapshot')
           })
           this.resetForm()
         }).catch(error => {

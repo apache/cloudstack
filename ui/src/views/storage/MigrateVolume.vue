@@ -22,7 +22,7 @@
       <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
       <a-select v-model="selectedStoragePool" style="width: 100%;">
         <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
-          {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? '(Suitable)' : '(Not Suitable)' }}</span>
+          {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
         </a-select-option>
       </a-select>
       <template v-if="this.resource.virtualmachineid">
@@ -135,18 +135,18 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.migratevolumeresponse.jobid,
-          successMessage: `Successfully migrated volume`,
+          successMessage: this.$t('message.success.migrate.volume'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          errorMessage: 'Migrating volume failed',
+          errorMessage: this.$t('message.migrate.volume.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          loadingMessage: `Migrating volume...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.migrate.volume.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()

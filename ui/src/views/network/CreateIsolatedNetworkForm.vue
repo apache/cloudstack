@@ -32,7 +32,7 @@
             </span>
             <a-input
               v-decorator="['name', {
-                rules: [{ required: true, message: 'Please enter name' }]
+                rules: [{ required: true, message: $t('message.error.name') }]
               }]"
               :placeholder="this.$t('label.name')"/>
           </a-form-item>
@@ -45,7 +45,7 @@
             </span>
             <a-input
               v-decorator="['displaytext', {
-                rules: [{ required: true, message: 'Please enter display text' }]
+                rules: [{ required: true, message: $t('message.error.display.text') }]
               }]"
               :placeholder="this.$t('label.display.text')"/>
           </a-form-item>
@@ -138,7 +138,7 @@
             </span>
             <a-input
               v-decorator="['vlanid', {
-                rules: [{ required: true, message: 'Please enter value' }]
+                rules: [{ required: true, message: $t('message.please.enter.value') }]
               }]"
               :placeholder="this.$t('label.vlanid')"/>
           </a-form-item>
@@ -225,7 +225,7 @@
             <a-input
               v-decorator="['account', {
                 rules: [
-                  { required: true, message: this.$t('label.required') }
+                  { required: true, message: $t('label.required') }
                 ]
               }]"
               :placeholder="this.$t('label.account')"/>
@@ -482,7 +482,7 @@ export default {
         api('createNetwork', params).then(json => {
           this.$notification.success({
             message: 'Network',
-            description: 'Successfully created isolated network'
+            description: this.$t('message.success.create.isolated.network')
           })
           this.$emit('refresh-data')
         }).catch(error => {

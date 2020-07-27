@@ -35,7 +35,7 @@
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback('Please enter a valid number')
+                    callback(this.$t('message.error.number'))
                   }
                   callback()
                 }
@@ -191,9 +191,9 @@ export default {
           })
           this.$pollJob({
             jobId,
-            loadingMessage: `Scale Kubernetes cluster ${this.resource.name} in progress`,
-            catchMessage: 'Error encountered while fetching async job result',
-            successMessage: `Successfully scaled Kubernetes cluster ${this.resource.name}`,
+            loadingMessage: `${this.$t('label.kubernetes.cluster.scale')} ${this.resource.name} ${this.$t('label.in.progress')}`,
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            successMessage: `${this.$t('message.success.scale.kubernetes')} ${this.resource.name}`,
             successMethod: result => {
               this.$emit('refresh-data')
             }

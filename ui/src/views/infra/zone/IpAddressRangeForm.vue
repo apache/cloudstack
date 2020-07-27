@@ -39,7 +39,7 @@
           <a-form-item :style="{ display: 'inline-block', width: '14%' }">
             <a-input
               v-decorator="[ 'gateway', {
-                rules: [{ required: true, message: 'Please enter Gateway' }]
+                rules: [{ required: true, message: $t('message.error.gateway') }]
               }]"
               :placeholder="$t('label.gateway')"
             />
@@ -47,7 +47,7 @@
           <a-form-item :style="{ display: 'inline-block', width: '14%' }">
             <a-input
               v-decorator="[ 'netmask', {
-                rules: [{ required: true, message: 'Please enter Netmask' }]
+                rules: [{ required: true, message: $t('message.error.netmask') }]
               }]"
               :placeholder="$t('label.netmask')"
             />
@@ -64,12 +64,12 @@
                 rules: [
                   {
                     required: true,
-                    message: 'Please enter Start IP'
+                    message: $t('message.error.startip')
                   },
                   {
                     validator: checkIpFormat,
                     ipV4: true,
-                    message: 'Please enter a valid IPv4 address.'
+                    message: $t('message.error.ipv4.address')
                   }
                 ]
               }]"
@@ -82,12 +82,12 @@
                 rules: [
                   {
                     required: true,
-                    message: 'Please enter End IP'
+                    message: $t('message.error.endip')
                   },
                   {
                     validator: checkIpFormat,
                     ipV4: true,
-                    message: 'Please enter a valid IPv4 address.'
+                    message: $t('message.error.ipv4.address')
                   }]
               }]"
               :placeholder="$t('label.end.ip')"
@@ -130,7 +130,7 @@ export default {
     },
     description: {
       type: String,
-      default: 'Creating IP Ranges'
+      default: 'label.creating.iprange'
     },
     prefillContent: {
       type: Object,

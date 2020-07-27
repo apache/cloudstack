@@ -18,12 +18,12 @@
 <template>
   <div>
     <span v-if="showError">
-      <a-alert type="error" message="Single-Sign-On failed for Cloudian Management Console. Please ask your administrator to fix integration issues." showIcon />
+      <a-alert type="error" :message="$t('message.error.cloudian.console')" showIcon />
       <br/>
-      <a-button @click="doSso()">Try Again</a-button>
+      <a-button @click="doSso()">{{ $t('label.try.again') }}</a-button>
     </span>
     <span v-else>
-      <a-alert type="info" message="Cloudian Management Console should open in another window" showIcon />
+      <a-alert type="info" :message="$t('message.info.cloudian.console')" showIcon />
     </span>
     <br/>
   </div>

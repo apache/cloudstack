@@ -1533,7 +1533,7 @@ export default {
       } catch (e) {
         this.loading = false
         await this.$notification.error({
-          message: 'Request Failed',
+          message: this.$t('message.request.failed'),
           description: e
         })
       }
@@ -1587,7 +1587,7 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              message = 'createPhysicalNetwork failed. Error: ' + result.jobresult.errortext
+              message = `createPhysicalNetwork ${this.$t('label.failed').toLowerCase()}. ${this.$t('label.error')}: ` + result.jobresult.errortext
               reject(message)
               return
             }
@@ -1616,7 +1616,9 @@ export default {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
               this.setStepStatus(STATUS_FAILED)
-              message = 'Failed to add ' + trafficType + ' traffic type to basic zone. Error: ' + result.jobresult.errortext
+              message = `${this.$t('message.failed.to.add')} ` + trafficType +
+                ` ${this.$t('message.traffic.type.to.basic.zone')}. ${this.$t('label.error')}: ` +
+                result.jobresult.errortext
               reject(message)
               return
             }
@@ -1637,7 +1639,7 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              message = 'updatePhysicalNetwork failed. Error:' + result.jobresult.errortext
+              message = `updatePhysicalNetwork ${this.$t('label.failed').toLowerCase()}. ${this.$t('label.error')}: ` + result.jobresult.errortext
               reject(message)
               return
             }
@@ -1660,7 +1662,7 @@ export default {
             providerId = items[0].id
           }
           if (!type && providerId == null) {
-            message = 'error: listNetworkServiceProviders API doesn\'t return VirtualRouter provider ID'
+            message = this.$t('message.listnsp.not.return.providerid')
             reject(message)
             return
           }
@@ -1682,7 +1684,7 @@ export default {
             virtualRouterElementId = items[0].id
           }
           if (virtualRouterElementId === null) {
-            message = 'error: listVirtualRouterElements API doesn\'t return Virtual Router Element Id'
+            message = this.$t('message.virtual.router.not.return.elementid')
             reject(message)
             return
           }
@@ -1705,7 +1707,7 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              message = 'configureVirtualRouterElement failed. Error: ' + result.jobresult.errortext
+              message = `configureVirtualRouterElement ${this.$t('label.failed').toLowerCase()}. ${this.$t('label.error')}: ` + result.jobresult.errortext
               reject(message)
               return
             }
@@ -1730,13 +1732,13 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              message = 'updateNetworkServiceProvider failed. Error: '
+              message = `updateNetworkServiceProvider ${this.$t('label.failed').toLowerCase()}. ${this.$t('label.error')}: `
               switch (type) {
                 case 'netscalerProvider':
-                  message = 'failed to enable Netscaler provider. Error: '
+                  message = `${this.$t('message.enable.netsacler.provider.failed')}. ${this.$t('label.error')}: `
                   break
                 case 'enableSecurityGroupProvider':
-                  message = 'failed to enable security group provider. Error: '
+                  message = `${this.$t('message.enable.securitygroup.provider.failed')}. ${this.$t('label.error')}: `
                   break
               }
               message += result.jobresult.errortext
@@ -1777,7 +1779,7 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              message = 'configureOvsElement failed. Error: ' + result.jobresult.errortext
+              message = `configureOvsElement ${this.$t('label.failed').toLowerCase()}. ${this.$t('label.error')}: ` + result.jobresult.errortext
               reject(message)
               return
             }
@@ -1800,7 +1802,7 @@ export default {
             internalLbElementId = items[0].id
           }
           if (internalLbElementId == null) {
-            message = 'error: listInternalLoadBalancerElements API doesn\'t return Internal LB Element Id'
+            message = this.$t('message.interloadbalance.not.return.elementid')
             reject(message)
             return
           }
@@ -1819,7 +1821,7 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              message = 'configureVirtualRouterElement failed. Error: ' + result.jobresult.errortext
+              message = `configureVirtualRouterElement ${this.$t('label.failed').toLowerCase()}. ${this.$t('label.error')}: ` + result.jobresult.errortext
               reject(message)
               return
             }
@@ -1840,7 +1842,7 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              message = 'addNetworkServiceProvider&name=Netscaler failed. Error: ' + result.jobresult.errortext
+              message = `addNetworkServiceProvider&name=Netscaler ${this.$t('label.failed').toLowerCase()}. ${this.$t('label.error')}: ` + result.jobresult.errortext
               reject(message)
               return
             }
@@ -2006,7 +2008,7 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              message = 'addNetscalerDevice' + result.jobresult.errortext
+              message = 'addNetscalerDevice ' + result.jobresult.errortext
               reject(message)
               return
             }

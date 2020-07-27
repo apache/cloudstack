@@ -48,10 +48,10 @@
       </div>
       <div slot="interval" slot-scope="text, record">
         <span v-if="record.intervaltype===2">
-          {{ $t('label.interval.weekly').replace('{number}', $t(listDayOfWeek[record.schedule.split(':')[2] - 1])) }}
+          {{ `${$t('label.every')} ${$t(listDayOfWeek[record.schedule.split(':')[2] - 1])}` }}
         </span>
         <span v-else-if="record.intervaltype===3">
-          {{ $t('label.interval.monthly').replace('{number}', record.schedule.split(':')[2]) }}
+          {{ `${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
         </span>
       </div>
       <div slot="timezone" slot-scope="text, record">
@@ -163,8 +163,8 @@ export default {
       api('deleteSnapshotPolicies', params).then(json => {
         if (json.deletesnapshotpoliciesresponse.success) {
           this.$notification.success({
-            message: 'Delete Snapshot Policy',
-            description: 'Successfully deleted snapshot policy'
+            message: this.$t('label.delete.snapshot.policy'),
+            description: this.$t('message.success.delete.snapshot.policy')
           })
 
           this.$emit('refresh')

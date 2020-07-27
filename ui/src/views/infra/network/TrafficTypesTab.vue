@@ -24,7 +24,7 @@
           :key="idx"
           style="margin-bottom: 10px;">
           <div><strong>{{ $t(type) }}</strong></div>
-          <div>{{ item[type] || 'Use default gateway' }}</div>
+          <div>{{ item[type] || $t('label.network.label.display.for.blank.value') }}</div>
         </div>
         <div v-if="item.traffictype === 'Public'">
           <div style="margin-bottom: 10px;">

@@ -38,7 +38,7 @@
           style="width: 100%"
           :disabled="!('createNetworkACLList' in $store.getters.apis)"
           @click="() => handleOpenModals('networkAcl')">
-          Add Network ACL List
+          {{ $t('label.add.network.acl.list') }}
         </a-button>
         <a-table
           class="table"
@@ -60,7 +60,7 @@
           :current="page"
           :pageSize="pageSize"
           :total="itemCounts.networkAcls"
-          :showTotal="total => `Total ${total} ${$t('label.items')}`"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
           @change="changePage"
           @showSizeChange="changePageSize"
@@ -75,10 +75,10 @@
           @ok="handleNetworkAclFormSubmit">
           <a-form @submit.prevent="handleNetworkAclFormSubmit" :form="networkAclForm">
             <a-form-item :label="$t('label.add.list.name')">
-              <a-input v-decorator="['name', {rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"></a-input>
+              <a-input v-decorator="['name', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
             </a-form-item>
             <a-form-item :label="$t('label.description')">
-              <a-input v-decorator="['description', {rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"></a-input>
+              <a-input v-decorator="['description', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
             </a-form-item>
           </a-form>
         </a-modal>
@@ -89,7 +89,7 @@
           icon="plus"
           style="width: 100%"
           :disabled="!('createPrivateGateway' in $store.getters.apis)"
-          @click="() => handleOpenModals('privateGateways')">Add Private Gateway</a-button>
+          @click="() => handleOpenModals('privateGateways')">{{ $t('label.add.private.gateway') }}</a-button>
         <a-table
           class="table"
           size="small"
@@ -111,7 +111,7 @@
           :current="page"
           :pageSize="pageSize"
           :total="itemCounts.privateGateways"
-          :showTotal="total => `Total ${total} ${$t('label.items')}`"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
           @change="changePage"
           @showSizeChange="changePageSize"
@@ -135,7 +135,7 @@
               <a-form-item :label="$t('label.vlan')" :required="true">
                 <a-input
                   :placeholder="placeholders.vlan"
-                  v-decorator="['vlan', {rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"
+                  v-decorator="['vlan', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
                 ></a-input>
               </a-form-item>
               <a-form-item
@@ -148,19 +148,19 @@
               <a-form-item :label="$t('label.publicip')" :required="true">
                 <a-input
                   :placeholder="placeholders.ipaddress"
-                  v-decorator="['ipaddress', {rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"
+                  v-decorator="['ipaddress', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
                 ></a-input>
               </a-form-item>
               <a-form-item :label="$t('label.gateway')" :required="true">
                 <a-input
                   :placeholder="placeholders.gateway"
-                  v-decorator="['gateway', {rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"
+                  v-decorator="['gateway', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
                 ></a-input>
               </a-form-item>
               <a-form-item :label="$t('label.netmask')" :required="true">
                 <a-input
                   :placeholder="placeholders.netmask"
-                  v-decorator="['netmask', {rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"
+                  v-decorator="['netmask', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
                 ></a-input>
               </a-form-item>
               <a-form-item :label="$t('label.sourcenat')">
@@ -185,7 +185,7 @@
           style="width: 100%"
           :disabled="!('createVpnGateway' in $store.getters.apis)"
           @click="handleCreateVpnGateway">
-          Create Site-to-Site VPN Gateway
+          {{ $t('label.create.site.vpn.gateway') }}
         </a-button>
         <a-list class="list">
           <a-list-item v-for="item in vpnGateways" :key="item.id">
@@ -209,7 +209,7 @@
           style="width: 100%"
           :disabled="!('createVpnConnection' in $store.getters.apis)"
           @click="handleOpenModals('vpnConnection')">
-          Create Site-to-Site VPN Connection
+          {{ $t('label.create.site.vpn.connection') }}
         </a-button>
         <a-table
           class="table"
@@ -233,7 +233,7 @@
           :current="page"
           :pageSize="pageSize"
           :total="itemCounts.vpnConnections"
-          :showTotal="total => `Total ${total} ${$t('label.items')}`"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
           @change="changePage"
           @showSizeChange="changePageSize"
@@ -562,7 +562,7 @@ export default {
 
         api('createPrivateGateway', params).then(response => {
           this.$store.dispatch('AddAsyncJob', {
-            title: `Successfully added Private Gateway`,
+            title: this.$t('message.success.add.private.gateway'),
             jobid: response.createprivategatewayresponse.jobid,
             status: 'progress'
           })
@@ -572,13 +572,13 @@ export default {
               this.modals.gateway = false
               this.handleFetchData()
             },
-            errorMessage: 'Adding Private Gateway failed',
+            errorMessage: this.$t('message.add.private.gateway.failed'),
             errorMethod: () => {
               this.modals.gateway = false
               this.handleFetchData()
             },
-            loadingMessage: `Adding Private Gateway...`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.add.private.gateway.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.modals.gateway = false
               this.handleFetchData()
@@ -609,7 +609,7 @@ export default {
           passive: values.passive ? values.passive : false
         }).then(response => {
           this.$store.dispatch('AddAsyncJob', {
-            title: `VPN Connection`,
+            title: this.$t('label.vpn.connection'),
             jobid: response.createvpnconnectionresponse.jobid,
             status: 'progress'
           })
@@ -619,13 +619,13 @@ export default {
               this.fetchVpnConnections()
               this.fetchLoading = false
             },
-            errorMessage: 'Adding VPN Connection failed',
+            errorMessage: this.$t('message.add.vpn.connection.failed'),
             errorMethod: () => {
               this.fetchVpnConnections()
               this.fetchLoading = false
             },
-            loadingMessage: `Adding VPN Connection...`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.add.vpn.connection.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchVpnConnections()
               this.fetchLoading = false
@@ -654,7 +654,7 @@ export default {
           vpcid: this.resource.id
         }).then(response => {
           this.$store.dispatch('AddAsyncJob', {
-            title: `Successfully added Network ACL List`,
+            title: this.$t('message.success.add.network.acl'),
             jobid: response.createnetworkacllistresponse.jobid,
             status: 'progress'
           })
@@ -663,12 +663,12 @@ export default {
             successMethod: () => {
               this.fetchLoading = false
             },
-            errorMessage: 'Adding Network ACL List failed',
+            errorMessage: this.$t('message.add.network.acl.failed'),
             errorMethod: () => {
               this.fetchLoading = false
             },
-            loadingMessage: `Adding Network ACL List...`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.add.network.acl.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchLoading = false
             }
@@ -687,7 +687,7 @@ export default {
         vpcid: this.resource.id
       }).then(response => {
         this.$store.dispatch('AddAsyncJob', {
-          title: `Successfully added VPN Gateway`,
+          title: this.$t('message.success.add.vpn.gateway'),
           jobid: response.createvpngatewayresponse.jobid,
           status: 'progress'
         })
@@ -696,12 +696,12 @@ export default {
           successMethod: () => {
             this.fetchLoading = false
           },
-          errorMessage: 'Adding VPN Gateway failed',
+          errorMessage: this.$t('message.add.vpn.gateway.failed'),
           errorMethod: () => {
             this.fetchLoading = false
           },
-          loadingMessage: `Adding VPN Gateway...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.add.vpn.gateway.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.fetchLoading = false
           }

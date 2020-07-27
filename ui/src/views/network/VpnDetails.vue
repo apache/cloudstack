@@ -18,36 +18,40 @@
 <template>
   <div v-if="remoteAccessVpn">
     <div>
-      <p>Your Remote Access VPN is currently enabled and can be accessed via the IP <strong>{{ remoteAccessVpn.publicip }}</strong></p>
-      <p>Your IPSec pre-shared key is <strong>{{ remoteAccessVpn.presharedkey }}</strong></p>
+      <p>{{ $t('message.enabled.vpn') }} <strong>{{ remoteAccessVpn.publicip }}</strong></p>
+      <p>{{ $t('message.enabled.vpn.ip.sec') }} <strong>{{ remoteAccessVpn.presharedkey }}</strong></p>
       <a-divider/>
-      <a-button><router-link :to="{ path: '/vpnuser'}">Manage VPN Users</router-link></a-button>
-      <a-button style="margin-left: 10px" type="danger" @click="disableVpn = true" :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">Disable VPN</a-button>
+      <a-button><router-link :to="{ path: '/vpnuser'}">{{ $t('label.manage.vpn.user') }}</router-link></a-button>
+      <a-button style="margin-left: 10px" type="danger" @click="disableVpn = true" :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">
+        {{ $t('label.disable.vpn') }}
+      </a-button>
     </div>
 
-    <a-modal v-model="disableVpn" :footer="null" oncancel="disableVpn = false" title="Disable Remove Access VPN">
-      <p>Are you sure you want to disable VPN?</p>
+    <a-modal v-model="disableVpn" :footer="null" oncancel="disableVpn = false" :title="$t('label.disable.vpn')">
+      <p>{{ $t('message.disable.vpn') }}</p>
 
       <a-divider></a-divider>
 
       <div class="actions">
-        <a-button @click="() => disableVpn = false">Cancel</a-button>
-        <a-button type="primary" @click="handleDisableVpn">Yes</a-button>
+        <a-button @click="() => disableVpn = false">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" @click="handleDisableVpn">{{ $t('label.yes') }}</a-button>
       </div>
     </a-modal>
 
   </div>
   <div v-else>
-    <a-button :disabled="!('createRemoteAccessVpn' in $store.getters.apis)" type="primary" @click="enableVpn = true">Enable VPN</a-button>
+    <a-button :disabled="!('createRemoteAccessVpn' in $store.getters.apis)" type="primary" @click="enableVpn = true">
+      {{ $t('label.enable.vpn') }}
+    </a-button>
 
-    <a-modal v-model="enableVpn" :footer="null" onCancel="enableVpn = false" title="Enable Remote Access VPN">
-      <p>Please confirm that you want Remote Access VPN enabled for this IP address.</p>
+    <a-modal v-model="enableVpn" :footer="null" onCancel="enableVpn = false" :title="$t('label.enable.vpn')">
+      <p>{{ $t('message.enable.vpn') }}</p>
 
       <a-divider></a-divider>
 
       <div class="actions">
-        <a-button @click="() => enableVpn = false">Cancel</a-button>
-        <a-button type="primary" @click="handleCreateVpn">Yes</a-button>
+        <a-button @click="() => enableVpn = false">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" @click="handleCreateVpn">{{ $t('label.yes') }}</a-button>
       </div>
     </a-modal>
 
@@ -110,23 +114,23 @@ export default {
           successMethod: result => {
             const res = result.jobresult.remoteaccessvpn
             this.$notification.success({
-              message: 'Status',
+              message: this.$t('label.status'),
               description:
-                `Your Remote Access VPN is currently enabled and can be accessed via the IP ${res.publicip}. Your IPSec pre-shared key is ${res.presharedkey}`,
+                `${this.$t('message.enabled.vpn')} ${res.publicip}. ${this.$t('message.enabled.vpn.ip.sec')} ${res.presharedkey}`,
               duration: 0
             })
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          errorMessage: 'Failed to enable VPN',
+          errorMessage: this.$t('message.enable.vpn.failed'),
           errorMethod: () => {
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          loadingMessage: `Enabling VPN...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.enable.vpn.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.fetchData()
             this.parentFetchData()
@@ -149,20 +153,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.deleteremoteaccessvpnresponse.jobid,
-          successMessage: 'Successfully disabled VPN',
+          successMessage: this.$t('message.success.disable.vpn'),
           successMethod: () => {
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          errorMessage: 'Failed to disable VPN',
+          errorMessage: this.$t('message.disable.vpn.failed'),
           errorMethod: () => {
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
           },
-          loadingMessage: `Disabling VPN...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.disable.vpn.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.fetchData()
             this.parentFetchData()

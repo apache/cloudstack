@@ -69,7 +69,7 @@
           :current="page"
           :pageSize="pageSize"
           :total="itemCount"
-          :showTotal="total => `Total ${total} ${$t('label.items')}`"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
           @change="changePage"
           @showSizeChange="changePageSize"
@@ -204,9 +204,9 @@ export default {
 
       this.$confirm({
         title: title,
-        okText: 'OK',
+        okText: this.$t('label.ok'),
         okType: 'danger',
-        cancelText: 'Cancel',
+        cancelText: this.$t('label.cancel'),
         onOk () {
           self.updateProjectInvitation(record, true)
         }
@@ -221,7 +221,7 @@ export default {
         title = this.$t('label.decline.invitation')
       }
 
-      const loading = this.$message.loading(title + 'in progress for ' + record.project, 0)
+      const loading = this.$message.loading(title + `${this.$t('label.in.progress.for')} ` + record.project, 0)
       const params = {}
 
       params.projectid = record.projectid
@@ -249,9 +249,9 @@ export default {
 
       this.$confirm({
         title: title,
-        okText: 'OK',
+        okText: this.$t('label.ok'),
         okType: 'danger',
-        cancelText: 'Cancel',
+        cancelText: this.$t('label.cancel'),
         onOk () {
           self.updateProjectInvitation(record, false)
         }

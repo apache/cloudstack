@@ -30,10 +30,10 @@
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select v-model="newRule.protocol" style="width: 100%;" @change="resetRulePorts">
-            <a-select-option value="tcp">TCP</a-select-option>
-            <a-select-option value="udp">UDP</a-select-option>
-            <a-select-option value="icmp">ICMP</a-select-option>
-            <a-select-option value="all">All</a-select-option>
+            <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
+            <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
+            <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
+            <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
@@ -87,7 +87,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="totalCount"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
@@ -142,11 +142,11 @@ export default {
           scopedSlots: { customRender: 'protocol' }
         },
         {
-          title: `ICMP Type / Start Port`,
+          title: this.$t('label.icmptype.start.port'),
           scopedSlots: { customRender: 'startport' }
         },
         {
-          title: `ICMP Code / End Port`,
+          title: this.$t('label.icmpcode.end.port'),
           scopedSlots: { customRender: 'endport' }
         },
         {
@@ -161,7 +161,7 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return 'All'
+      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -194,12 +194,12 @@ export default {
       api('deleteEgressFirewallRule', { id: rule.id }).then(response => {
         this.$pollJob({
           jobId: response.deleteegressfirewallruleresponse.jobid,
-          successMessage: `Successfully removed Egress rule`,
+          successMessage: this.$t('message.success.remove.egress.rule'),
           successMethod: () => this.fetchData(),
-          errorMessage: 'Removing Egress rule failed',
+          errorMessage: this.$t('message.remove.egress.rule.failed'),
           errorMethod: () => this.fetchData(),
-          loadingMessage: `Deleting Egress rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.remove.egress.rule.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => this.fetchData()
         })
       }).catch(error => {
@@ -212,18 +212,18 @@ export default {
       api('createEgressFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
           jobId: response.createegressfirewallruleresponse.jobid,
-          successMessage: `Successfully added new Egress rule`,
+          successMessage: this.$t('message.success.add.egress.rule'),
           successMethod: () => {
             this.resetAllRules()
             this.fetchData()
           },
-          errorMessage: 'Adding new Egress rule failed',
+          errorMessage: this.$t('message.add.egress.rule.failed'),
           errorMethod: () => {
             this.resetAllRules()
             this.fetchData()
           },
-          loadingMessage: `Adding new Egress rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.add.egress.rule.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.resetAllRules()
             this.fetchData()

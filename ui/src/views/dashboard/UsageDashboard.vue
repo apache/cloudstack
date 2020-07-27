@@ -187,14 +187,14 @@ export default {
         if (json && json.listvolumesresponse) {
           count = json.listvolumesresponse.count
         }
-        this.stats.splice(3, 1, { name: 'Total Volumes', count: count, icon: 'database', path: '/volume' })
+        this.stats.splice(3, 1, { name: this.$t('label.total.volume'), count: count, icon: 'database', path: '/volume' })
       })
       api('listNetworks', { listall: true }).then(json => {
         var count = 0
         if (json && json.listnetworksresponse) {
           count = json.listnetworksresponse.count
         }
-        this.stats.splice(4, 1, { name: 'Total Networks', count: count, icon: 'apartment', path: '/guestnetwork' })
+        this.stats.splice(4, 1, { name: this.$t('label.total.network'), count: count, icon: 'apartment', path: '/guestnetwork' })
       })
       api('listPublicIpAddresses', { listall: true }).then(json => {
         var count = 0

@@ -104,32 +104,32 @@ export default {
         {
           title: 'label.zone.type',
           step: [],
-          description: 'Select type of zone basic/advanced.',
-          hint: 'This is the type of zone deployement that you want to use. Basic zone: provides a single network where each VM instance is assigned an IP directly from the network. Guest isolation can be provided through layer-3 means such as security groups (IP address source filtering). Advanced zone: For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks and providing custom network offerings such as firewall, VPN, or load balancer support.'
+          description: this.$t('message.select.zone.description'),
+          hint: this.$t('message.select.zone.hint')
         },
         {
           title: 'label.zone.details',
           step: ['stepAddZone', 'dedicateZone'],
-          description: 'Populate zone details',
-          hint: 'A zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.'
+          description: this.$t('message.zone.detail.description'),
+          hint: this.$t('message.zone.detail.hint')
         },
         {
           title: 'label.network',
           step: ['physicalNetwork', 'netscaler', 'pod', 'guestTraffic', 'storageTraffic', 'publicTraffic'],
-          description: 'Setup network and traffic',
-          hint: 'Configure network components and public/guest/management traffic including IP addresses.'
+          description: this.$t('message.network.description'),
+          hint: this.$t('message.network.hint')
         },
         {
           title: 'label.add.resources',
           step: ['clusterResource', 'hostResource', 'primaryResource', 'secondaryResource'],
-          description: 'Add infrastructure resources',
-          hint: 'Add infrastructure resources - pods, clusters, primary/secondary storages.'
+          description: this.$t('message.add.resource.description'),
+          hint: this.$t('message.add.resource.hint')
         },
         {
           title: 'label.launch',
           step: ['launchZone'],
-          description: 'Zone is ready to launch; please proceed to the next step.',
-          hint: 'Configure network components and traffic including IP addresses.'
+          description: this.$t('message.launch.zone.description'),
+          hint: this.$t('message.launch.zone.hint')
         }
       ],
       zoneConfig: {}
@@ -155,7 +155,7 @@ export default {
       this.$emit('close-action')
     },
     onRefreshData () {
-      this.$message.success('Processing complete!')
+      this.$message.success(this.$t('message.processing.complete'))
       this.$emit('refresh-data')
       this.onCloseAction()
     },

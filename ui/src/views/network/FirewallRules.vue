@@ -91,7 +91,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="totalCount"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
@@ -233,12 +233,12 @@ export default {
       api('deleteFirewallRule', { id: rule.id }).then(response => {
         this.$pollJob({
           jobId: response.deletefirewallruleresponse.jobid,
-          successMessage: `Successfully removed Firewall rule`,
+          successMessage: this.$t('message.success.remove.firewall.rule'),
           successMethod: () => this.fetchData(),
-          errorMessage: 'Removing Firewall rule failed',
+          errorMessage: this.$t('message.remove.firewall.rule.failed'),
           errorMethod: () => this.fetchData(),
-          loadingMessage: `Deleting Firewall rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.remove.firewall.rule.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => this.fetchData()
         })
       }).catch(error => {
@@ -251,18 +251,18 @@ export default {
       api('createFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
           jobId: response.createfirewallruleresponse.jobid,
-          successMessage: `Successfully added new Firewall rule`,
+          successMessage: this.$t('message.success.add.firewall.rule'),
           successMethod: () => {
             this.resetAllRules()
             this.fetchData()
           },
-          errorMessage: 'Adding new Firewall rule failed',
+          errorMessage: this.$t('message.add.firewall.rule.failed'),
           errorMethod: () => {
             this.resetAllRules()
             this.fetchData()
           },
-          loadingMessage: `Adding new Firewall rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.add.firewall.rule.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.resetAllRules()
             this.fetchData()
@@ -316,20 +316,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.createtagsresponse.jobid,
-          successMessage: `Successfully added tag`,
+          successMessage: this.$t('message.success.add.tag'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
-          errorMessage: 'Failed to add new tag',
+          errorMessage: this.$t('message.add.tag.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
-          loadingMessage: `Adding tag...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.add.tag.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -352,20 +352,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.deletetagsresponse.jobid,
-          successMessage: `Successfully removed tag`,
+          successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
-          errorMessage: 'Failed to remove tag',
+          errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
-          loadingMessage: `Removing tag...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.delete.tag.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()

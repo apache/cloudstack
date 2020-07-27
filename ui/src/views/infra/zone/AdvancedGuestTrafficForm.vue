@@ -94,7 +94,7 @@ export default {
     },
     description: {
       type: String,
-      default: 'Creating IP Ranges'
+      default: 'label.creating.iprange'
     },
     isFixError: {
       type: Boolean,
@@ -142,7 +142,7 @@ export default {
         }
         if (!this.checkFromTo(values.vlanRangeStart, values.vlanRangeEnd)) {
           this.validStatus = 'error'
-          this.validMessage = 'Please enter a valid VLAN/VNI range'
+          this.validMessage = this.$t('message.error.vlan.range')
           return
         }
         if (this.isFixError) {
@@ -169,7 +169,7 @@ export default {
       }
       if (!this.checkFromTo(fromVal, toVal)) {
         this.validStatus = 'error'
-        this.validMessage = 'Please enter a valid VLAN/VNI range'
+        this.validMessage = this.$t('message.error.vlan.range')
       }
       callback()
     },

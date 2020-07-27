@@ -24,7 +24,7 @@
           <a-input-group class="form__item__input-container" compact>
             <a-input
               v-model="newRule.privateport"
-              placeholder="Start"
+              :placeholder="$t('label.start')"
               style="border-right: 0; width: 60px; margin-right: 0;"></a-input>
             <a-input
               placeholder="-"
@@ -33,7 +33,7 @@
               center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.privateendport"
-              placeholder="End"
+              :placeholder="$t('label.end')"
               style="border-left: 0; width: 60px; text-align: right; margin-right: 0;"></a-input>
           </a-input-group>
         </div>
@@ -42,7 +42,7 @@
           <a-input-group class="form__item__input-container" compact>
             <a-input
               v-model="newRule.publicport"
-              placeholder="Start"
+              :placeholder="$t('label.start')"
               style="border-right: 0; width: 60px; margin-right: 0;"></a-input>
             <a-input
               placeholder="-"
@@ -51,7 +51,7 @@
               text-align: center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.publicendport"
-              placeholder="End"
+              :placeholder="$t('label.end')"
               style="border-left: 0; width: 60px; text-align: right; margin-right: 0;"></a-input>
           </a-input-group>
         </div>
@@ -113,7 +113,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="totalCount"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
@@ -123,7 +123,7 @@
       </template>
     </a-pagination>
 
-    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal">
+    <a-modal :title="$t('label.edit.tags')" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal">
       <span v-show="tagsModalLoading" class="tags-modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -154,7 +154,7 @@
     </a-modal>
 
     <a-modal
-      title="Add VM"
+      :title="$t('label.add.vm')"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
@@ -181,7 +181,7 @@
         </span>
         <a-input-search
           class="input-search"
-          placeholder="Search"
+          :placeholder="$t('label.search')"
           v-model="searchQuery"
           allowClear
           @search="onSearch" />
@@ -205,7 +205,7 @@
               v-model="newRule.vmguestip"
             >
               <a-select-option v-for="(nic, nicIndex) in nics" :key="nic" :value="nic">
-                {{ nic }}{{ nicIndex === 0 ? ' (Primary)' : null }}
+                {{ nic }}{{ nicIndex === 0 ? ` (${this.$t('label.primary')})` : null }}
               </a-select-option>
             </a-select>
           </div>
@@ -224,7 +224,7 @@
           :current="vmPage"
           :pageSize="vmPageSize"
           :total="vmCount"
-          :showTotal="total => `Total ${total} ${$t('label.items')}`"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
           @change="handleChangePage"
           @showSizeChange="handleChangePageSize"
@@ -370,7 +370,7 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return 'All'
+      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -418,12 +418,12 @@ export default {
       api('deletePortForwardingRule', { id: rule.id }).then(response => {
         this.$pollJob({
           jobId: response.deleteportforwardingruleresponse.jobid,
-          successMessage: `Successfully removed Port Forwarding rule`,
+          successMessage: this.$t('message.success.remove.port.forward'),
           successMethod: () => this.fetchData(),
-          errorMessage: 'Removing Port Forwarding rule failed',
+          errorMessage: this.$t('message.remove.port.forward.failed'),
           errorMethod: () => this.fetchData(),
-          loadingMessage: `Deleting Port Forwarding rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.delete.port.forward.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => this.fetchData()
         })
       }).catch(error => {
@@ -442,20 +442,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.createportforwardingruleresponse.jobid,
-          successMessage: `Successfully added new Port Forwarding rule`,
+          successMessage: this.$t('message.success.add.port.forward'),
           successMethod: () => {
             this.closeModal()
             this.parentFetchData()
             this.fetchData()
           },
-          errorMessage: 'Adding new Port Forwarding rule failed',
+          errorMessage: this.$t('message.add.port.forward.failed'),
           errorMethod: () => {
             this.closeModal()
             this.parentFetchData()
             this.fetchData()
           },
-          loadingMessage: `Adding new Port Forwarding rule...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.add.port.forward.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.closeModal()
             this.fetchData()
@@ -520,20 +520,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.createtagsresponse.jobid,
-          successMessage: `Successfully added tag`,
+          successMessage: this.$t('message.success.add.tag'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
-          errorMessage: 'Failed to add new tag',
+          errorMessage: this.$t('message.add.tag.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
-          loadingMessage: `Adding tag...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.add.tag.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
@@ -555,20 +555,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.deletetagsresponse.jobid,
-          successMessage: `Successfully removed tag`,
+          successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
-          errorMessage: 'Failed to remove tag',
+          errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
-          loadingMessage: `Removing tag...`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.delete.tag.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()

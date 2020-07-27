@@ -137,7 +137,7 @@ export default {
         params.virtualmachineid = this.virtualMachineOptions.opts.filter(opt => opt.name === values.virtualmachineid)[0].id || null
 
         this.actionLoading = true
-        const title = 'Restore Volume and Attach'
+        const title = this.$t('label.restore.volume.attach')
         api('restoreVolumeFromBackupAndAttachToVM', params).then(json => {
           const jobId = json.restorevolumefrombackupandattachtovmresponse.jobid || null
           if (jobId) {
@@ -154,8 +154,8 @@ export default {
                 this.parentFetchData()
                 this.closeAction()
               },
-              loadingMessage: `${title} in progress for ${this.resource.id}`,
-              catchMessage: 'Error encountered while fetching async job result'
+              loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${this.resource.id}`,
+              catchMessage: this.$t('error.fetching.async.job.result')
             })
           }
         }).catch(error => {

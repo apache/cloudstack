@@ -61,7 +61,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="totalCount"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
@@ -142,7 +142,7 @@ export default {
           this.totalCount -= 1
         }
       }).catch(error => {
-        this.$message.error('Failed to load hosts: ' + error)
+        this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
       }).finally(() => {
         this.loading = false
       })
@@ -154,23 +154,23 @@ export default {
         virtualmachineid: this.resource.id
       }).then(response => {
         this.$store.dispatch('AddAsyncJob', {
-          title: `Migrating ${this.resource.name}`,
+          title: `${this.$t('label.migrating')} ${this.resource.name}`,
           jobid: response.migratevirtualmachineresponse.jobid,
           description: this.resource.name,
           status: 'progress'
         })
         this.$pollJob({
           jobId: response.migratevirtualmachineresponse.jobid,
-          successMessage: `Migration completed successfully for ${this.resource.name}`,
+          successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
           successMethod: () => {
             this.$parent.$parent.close()
           },
-          errorMessage: 'Migration failed',
+          errorMessage: this.$t('message.migrating.failed'),
           errorMethod: () => {
             this.$parent.$parent.close()
           },
-          loadingMessage: `Migration in progress for ${this.resource.name}`,
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: `${this.$t('message.migrating.processing')} ${this.resource.name}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.$parent.$parent.close()
           }
@@ -178,7 +178,7 @@ export default {
         this.$parent.$parent.close()
       }).catch(error => {
         console.error(error)
-        this.$message.error(`Failed to migrate VM to host ${this.selectedHost.name}`)
+        this.$message.error(`${this.$t('message.migrating.vm.to.host.failed')} ${this.selectedHost.name}`)
       })
     },
     handleChangePage (page, pageSize) {

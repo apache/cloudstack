@@ -57,19 +57,19 @@
 
       <div class="form__item required-field">
         <div class="form__label"><span class="required">* </span>{{ selectedClusterHyperVisorType === 'VMware' ? $t('label.vcenterhost') : $t('label.hostnamelabel') }}</div>
-        <span class="required required-label">Required</span>
+        <span class="required required-label">{{ $t('label.required') }}</span>
         <a-input v-model="hostname"></a-input>
       </div>
 
       <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
         <div class="form__label"><span class="required">* </span>{{ $t('label.username') }}</div>
-        <span class="required required-label">Required</span>
+        <span class="required required-label">{{ $t('label.required') }}</span>
         <a-input :placeholder="placeholder.username" v-model="username"></a-input>
       </div>
 
       <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
         <div class="form__label"><span class="required">* </span>{{ $t('label.password') }}</div>
-        <span class="required required-label">Required</span>
+        <span class="required required-label">{{ $t('label.required') }}</span>
         <a-input :placeholder="placeholder.password" type="password" v-model="password"></a-input>
       </div>
 
@@ -80,7 +80,7 @@
         </div>
         <div class="form__item required-field">
           <div class="form__label"><span class="required">* </span>{{ $t('label.agent.password') }}</div>
-          <span class="required required-label">Required</span>
+          <span class="required required-label">{{ $t('label.required') }}</span>
           <a-input type="password" v-model="agentpassword"></a-input>
         </div>
         <div class="form__item">
@@ -296,7 +296,7 @@ export default {
         }
       }).catch(error => {
         this.$notification.error({
-          message: `Error ${error.response.status}`,
+          message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.addhostresponse.errortext,
           duration: 0
         })
@@ -321,23 +321,23 @@ export default {
             this.$store.dispatch('AddAsyncJob', {
               title: this.$t('message.host.dedicated'),
               jobid: response.dedicatehostresponse.jobid,
-              description: `Domain ID: ${this.dedicatedDomainId}`,
+              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
               status: 'progress'
             })
           },
-          errorMessage: 'Failed to dedicate host',
+          errorMessage: this.$t('error.dedicate.host.failed'),
           errorMethod: () => {
             this.loading = false
           },
-          loadingMessage: this.$t('message.dedicate.host'),
-          catchMessage: 'Error encountered while fetching async job result',
+          loadingMessage: this.$t('message.dedicating.host'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.loading = false
           }
         })
       }).catch(error => {
         this.$notification.error({
-          message: `Error ${error.response.status}`,
+          message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext,
           duration: 0
         })

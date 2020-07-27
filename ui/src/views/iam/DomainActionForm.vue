@@ -169,8 +169,8 @@ export default {
           }
         },
         errorMethod: () => this.parentFetchData(),
-        loadingMessage: `${this.$t(action.label)} in progress for ${this.resource.name}`,
-        catchMessage: 'Error encountered while fetching async job result',
+        loadingMessage: `${this.$t(action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
+        catchMessage: this.$t('error.fetching.async.job.result'),
         action
       })
     },
@@ -255,7 +255,7 @@ export default {
           }
         }).catch(error => {
           this.$notification.error({
-            message: 'Request Failed',
+            message: this.$t('message.request.failed'),
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })
         }).finally(f => {

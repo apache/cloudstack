@@ -21,7 +21,7 @@
       <a-form-item :label="$t('label.name')">
         <a-input
           v-decorator="['name', {
-            rules: [{ required: true, message: 'Please enter volume name' }]
+            rules: [{ required: true, message: $t('message.error.volume.name') }]
           }]"
           :placeholder="$t('label.volumename')"/>
       </a-form-item>
@@ -29,7 +29,7 @@
         <a-select
           v-decorator="['zoneid', {
             initialValue: selectedZoneId,
-            rules: [{ required: true, message: 'Please select a zone' }] }]"
+            rules: [{ required: true, message: $t('message.error.zone') }] }]"
           :loading="loading"
           @change="zone => fetchDiskOfferings(zone)">
           <a-select-option
@@ -44,7 +44,7 @@
         <a-select
           v-decorator="['diskofferingid', {
             initialValue: selectedDiskOfferingId,
-            rules: [{ required: true, message: 'Please select an option' }]}]"
+            rules: [{ required: true, message: $t('message.error.select') }]}]"
           :loading="loading"
           @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
         >
@@ -60,7 +60,7 @@
         <a-form-item :label="$t('label.sizegb')">
           <a-input
             v-decorator="['size', {
-              rules: [{ required: true, message: 'Please enter custom disk size' }]}]"
+              rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"
             :placeholder="$t('label.disksize')"/>
         </a-form-item>
       </span>
@@ -126,22 +126,22 @@ export default {
         api('createVolume', values).then(response => {
           this.$pollJob({
             jobId: response.createvolumeresponse.jobid,
-            successMessage: `Successfully created volume`,
+            successMessage: this.$t('message.success.create.volume'),
             successMethod: () => {
               this.$store.dispatch('AddAsyncJob', {
-                title: `Successfully created Volume`,
+                title: this.$t('message.success.create.volume'),
                 jobid: response.createvolumeresponse.jobid,
                 description: values.name,
                 status: 'progress'
               })
               this.$emit('refresh-data')
             },
-            errorMessage: 'Failed to Create volume',
+            errorMessage: this.$t('message.create.volume.failed'),
             errorMethod: () => {
               this.$emit('refresh-data')
             },
-            loadingMessage: `Volume creation in progress`,
-            catchMessage: 'Error encountered while fetching async job result'
+            loadingMessage: this.$t('message.create.volume.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result')
           })
         }).catch(error => {
           this.$notifyError(error)

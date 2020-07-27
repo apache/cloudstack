@@ -187,16 +187,16 @@ export default {
               jobId,
               successMethod: result => {
                 this.$notification.success({
-                  message: 'Successfully changed offering'
+                  message: this.$t('message.success.change.offering')
                 })
               },
-              loadingMessage: 'Scale in progress',
-              catchMessage: 'Error encountered while fetching async job result'
+              loadingMessage: this.$t('message.scale.processing'),
+              catchMessage: this.$t('error.fetching.async.job.result')
             })
           }
         } else {
           this.$notification.success({
-            message: 'Successfully changed offering'
+            message: this.$t('message.success.change.offering')
           })
         }
         this.$parent.$parent.close()

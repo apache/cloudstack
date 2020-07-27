@@ -54,7 +54,7 @@
       :current="page"
       :pageSize="pageSize"
       :total="itemCount"
-      :showTotal="total => `Total ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
@@ -270,8 +270,8 @@ export default {
             }
           },
           errorMethod: () => this.fetchData(),
-          loadingMessage: `Deleting template ${this.resource.name} in progress`,
-          catchMessage: 'Error encountered while fetching async job result'
+          loadingMessage: `${this.$t('label.deleting.template')} ${this.resource.name} ${this.$t('label.in.progress')}`,
+          catchMessage: this.$t('error.fetching.async.job.result')
         })
       }).catch(error => {
         this.$notifyError(error)
@@ -335,12 +335,12 @@ export default {
               this.fetchData()
             },
             errorMethod: () => this.fetchData(),
-            loadingMessage: `Copy template ${this.resource.name} in progress`,
-            catchMessage: 'Error encountered while fetching async job result'
+            loadingMessage: `${this.$t('label.action.copy.template')} ${this.resource.name} ${this.$t('label.in.progress')}`,
+            catchMessage: this.$t('error.fetching.async.job.result')
           })
         }).catch(error => {
           this.$notification.error({
-            message: 'Request Failed',
+            message: this.$t('message.request.failed'),
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })
         }).finally(() => {

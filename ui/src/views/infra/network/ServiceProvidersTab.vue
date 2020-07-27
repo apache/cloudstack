@@ -27,7 +27,7 @@
           :key="item.title">
           <span slot="tab">
             {{ $t(item.title) }}
-            <status :text="item.title in nsps ? nsps[item.title].state : 'Disabled'" style="margin-bottom: 6px; margin-left: 6px" />
+            <status :text="item.title in nsps ? nsps[item.title].state : $t('label.disabled')" style="margin-bottom: 6px; margin-left: 6px" />
           </span>
           <provider-item
             v-if="tabKey===item.title"
@@ -1198,7 +1198,7 @@ export default {
         } catch (error) {
           this.actionLoading = false
           this.$notification.error({
-            message: 'Request Failed',
+            message: this.$t('message.request.failed'),
             description: error
           })
         }
@@ -1334,7 +1334,7 @@ export default {
       } catch (message) {
         this.actionLoading = false
         this.$notification.error({
-          message: 'Request Failed',
+          message: this.$t('message.request.failed'),
           description: message
         })
       }

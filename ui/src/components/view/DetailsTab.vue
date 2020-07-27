@@ -33,6 +33,10 @@
             <router-link :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
           </div>
         </div>
+        <div v-else-if="['name', 'type'].includes(item)">
+          <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource[item])">{{ $t(resource[item].toLowerCase()) }}</span>
+          <span v-else>{{ resource[item] }}</span>
+        </div>
         <div v-else>
           {{ resource[item] }}
         </div>

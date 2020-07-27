@@ -32,7 +32,7 @@
             </span>
             <a-input
               v-decorator="['name', {
-                rules: [{ required: true, message: 'Please enter name' }]
+                rules: [{ required: true, message: $t('message.error.name') }]
               }]"
               :placeholder="this.$t('label.name')"/>
           </a-form-item>
@@ -45,7 +45,7 @@
             </span>
             <a-input
               v-decorator="['displaytext', {
-                rules: [{ required: true, message: 'Please enter display text' }]
+                rules: [{ required: true, message: $t('message.error.display.text') }]
               }]"
               :placeholder="this.$t('label.display.text')"/>
           </a-form-item>
@@ -109,7 +109,7 @@
             </span>
             <a-input
               v-decorator="['vlanid', {
-                rules: [{ required: true, message: 'Please enter value' }]
+                rules: [{ required: true, message: $t('message.please.enter.value') }]
               }]"
               :placeholder="this.$t('label.vlanid')"/>
           </a-form-item>
@@ -713,8 +713,8 @@ export default {
             !this.isValidTextValueForKey(values, 'startipv6') && !this.isValidTextValueForKey(values, 'endipv6'))
         ) {
           this.$notification.error({
-            message: 'Request Failed',
-            description: 'Either IPv4 fields or IPv6 fields need to be filled when adding a guest network'
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.error.add.guest.network')
           })
         }
         this.actionLoading = true
@@ -791,8 +791,8 @@ export default {
         }
         api('createNetwork', params).then(json => {
           this.$notification.success({
-            message: 'Network',
-            description: 'Successfully created guest network'
+            message: this.$t('label.network'),
+            description: this.$t('message.success.add.guest.network')
           })
           this.resetForm()
         }).catch(error => {

@@ -56,8 +56,8 @@
         :current="options.page"
         :pageSize="options.pageSize"
         :total="total"
-        :showTotal="total => `Total ${total} ${$t('label.items')}`"
-        :pageSizeOptions="['10', '20', '40']"
+        :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+        :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '500'] : ['10', '20', '50', '100', '500']"
         @change="handleTableChange"
         @showSizeChange="handlePageSizeChange"
         showSizeChanger>
@@ -72,6 +72,7 @@
 
 <script>
 import { api } from '@/api'
+import { mixinDevice } from '@/utils/mixin.js'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -79,6 +80,7 @@ export default {
   components: {
     Status
   },
+  mixins: [mixinDevice],
   props: {
     resource: {
       type: Object,

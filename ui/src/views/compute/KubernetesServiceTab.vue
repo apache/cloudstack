@@ -26,7 +26,7 @@
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.access')" key="access">
-        <a-card title="Kubernetes Cluster Config" :loading="this.versionLoading">
+        <a-card :title="$t('label.kubeconfig.cluster')" :loading="this.versionLoading">
           <div v-if="this.clusterConfig !== ''">
             <a-textarea :value="this.clusterConfig" :rows="5" readonly />
             <div :span="24" class="action-button">
@@ -34,62 +34,61 @@
             </div>
           </div>
           <div v-else>
-            <p>Kubernetes cluster kubeconfig not available currently</p>
+            <p>{{ $t('message.kubeconfig.cluster.not.available') }}</p>
           </div>
         </a-card>
-        <a-card title="Using CLI" :loading="this.versionLoading">
+        <a-card :title="$t('label.using.cli')" :loading="this.versionLoading">
           <a-timeline>
             <a-timeline-item>
               <p>
-                Download kubeconfig for the cluster<br><br>
-                The <code>kubectl</code> command-line tool uses kubeconfig files to find the information it needs to choose a cluster and communicate with the API server of a cluster.
+                {{ $t('label.download.kubeconfig.cluster') }}
               </p>
             </a-timeline-item>
             <a-timeline-item>
               <p>
-                Download <code>kubectl</code> tool for cluster's Kubernetes version<br><br>
-                Linux: <a :href="this.kubectlLinuxLink">{{ this.kubectlLinuxLink }}</a><br>
-                MacOS: <a :href="this.kubectlMacLink">{{ this.kubectlMacLink }}</a><br>
-                Windows: <a :href="this.kubectlWindowsLink">{{ this.kubectlWindowsLink }}</a>
+                {{ $t('label.download.kubectl') }} <br><br>
+                {{ $t('label.linux') }}: <a :href="this.kubectlLinuxLink">{{ this.kubectlLinuxLink }}</a><br>
+                {{ $t('label.macos') }}: <a :href="this.kubectlMacLink">{{ this.kubectlMacLink }}</a><br>
+                {{ $t('label.windows') }}: <a :href="this.kubectlWindowsLink">{{ this.kubectlWindowsLink }}</a>
               </p>
             </a-timeline-item>
             <a-timeline-item>
               <p>
-                Use <code>kubectl</code> and <code>kubeconfig</code> file to access cluster<br><br>
+                {{ $t('label.use.kubectl.access.cluster') }}<br><br>
                 <code><b>kubectl --kubeconfig /custom/path/kube.conf {COMMAND}</b></code><br><br>
 
-                <em>List pods</em><br>
+                <em>{{ $t('label.list.pods') }}</em><br>
                 <code>kubectl --kubeconfig /custom/path/kube.conf get pods --all-namespaces</code><br>
-                <em>List nodes</em><br>
+                <em>{{ $t('label.list.nodes') }}</em><br>
                 <code>kubectl --kubeconfig /custom/path/kube.conf get nodes --all-namespaces</code><br>
-                <em>List services</em><br>
+                <em>{{ $t('label.list.services') }}</em><br>
                 <code>kubectl --kubeconfig /custom/path/kube.conf get services --all-namespaces</code>
               </p>
             </a-timeline-item>
           </a-timeline>
         </a-card>
-        <a-card title="Kubernetes Dashboard UI">
+        <a-card :title="$t('label.kubernetes.dashboard')">
           <a-timeline>
             <a-timeline-item>
               <p>
-                Run proxy locally<br><br>
+                {{ $t('label.run.proxy.locally') }}<br><br>
                 <code><b>kubectl --kubeconfig /custom/path/kube.conf proxy</b></code>
               </p>
             </a-timeline-item>
             <a-timeline-item>
               <p>
-                Open URL in browser<br><br>
+                {{ $t('label.open.url') }}<br><br>
                 <a href="http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/"><code>http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/</code></a>
               </p>
             </a-timeline-item>
             <a-timeline-item>
               <p>
-                Token for dashboard login can be retrieved using following command<br><br>
+                {{ $t('label.token.for.dashboard.login') }}<br><br>
                 <code><b>kubectl --kubeconfig /custom/path/kube.conf describe secret $(kubectl --kubeconfig /custom/path/kube.conf get secrets -n kubernetes-dashboard | grep kubernetes-dashboard-token | awk '{print $1}') -n kubernetes-dashboard</b></code>
               </p>
             </a-timeline-item>
           </a-timeline>
-          <p>More about accessing dashboard UI, <a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui">https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui</a></p>
+          <p>{{ $t('label.more.access.dashboard.ui') }}, <a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui">https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui</a></p>
         </a-card>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.instances')" key="instances">
@@ -247,8 +246,8 @@ export default {
             this.clusterConfig = config.configdata
           } else {
             this.$notification.error({
-              message: 'Request Failed',
-              description: 'Unable to retrieve Kubernetes cluster config'
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.retrieve.kubeconfig')
             })
           }
         }).finally(() => {

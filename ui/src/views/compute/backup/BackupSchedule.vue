@@ -48,10 +48,10 @@
       </div>
       <div slot="interval" slot-scope="text, record">
         <span v-if="record.intervaltype==='WEEKLY'">
-          {{ $t('label.interval.weekly').replace('{number}', $t(listDayOfWeek[record.schedule.split(':')[2] - 1])) }}
+          {{ `${$t('label.every')} ${$t(listDayOfWeek[record.schedule.split(':')[2] - 1])}` }}
         </span>
         <span v-else-if="record.intervaltype==='MONTHLY'">
-          {{ $t('label.interval.monthly').replace('{number}', record.schedule.split(':')[2]) }}
+          {{ `${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
         </span>
       </div>
       <div slot="timezone" slot-scope="text, record">
@@ -159,7 +159,7 @@ export default {
         if (json.deletebackupscheduleresponse.success) {
           this.$notification.success({
             message: this.$t('label.scheduled.backups'),
-            description: 'Successfully deleted Configure VM backup schedule'
+            description: this.$t('message.success.delete.backup.schedule')
           })
         }
         this.refreshSchedule()

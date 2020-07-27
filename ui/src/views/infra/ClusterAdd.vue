@@ -56,7 +56,7 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.clusternamelabel') }}</div>
-        <span class="required required-label" ref="requiredCluster">Required</span>
+        <span class="required required-label" ref="requiredCluster">{{ $t('label.required') }}</span>
         <a-input :placeholder="placeholder.clustername" v-model="clustername"></a-input>
       </div>
 
@@ -242,7 +242,7 @@ export default {
         }
       }).catch(error => {
         this.$notification.error({
-          message: `Error ${error.response.status}`,
+          message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.addclusterresponse.errortext,
           duration: 0
         })
@@ -268,23 +268,23 @@ export default {
             this.$store.dispatch('AddAsyncJob', {
               title: this.$t('message.cluster.dedicated'),
               jobid: response.dedicateclusterresponse.jobid,
-              description: `Domain ID: ${this.dedicatedDomainId}`,
+              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
               status: 'progress'
             })
           },
-          errorMessage: 'Failed to dedicate cluster',
+          errorMessage: this.$t('error.dedicate.cluster.failed'),
           errorMethod: () => {
             this.loading = false
           },
           loadingMessage: this.$t('message.dedicate.zone'),
-          catchMessage: 'Error encountered while fetching async job result',
+          catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.loading = false
           }
         })
       }).catch(error => {
         this.$notification.error({
-          message: `Error ${error.response.status}`,
+          message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext,
           duration: 0
         })

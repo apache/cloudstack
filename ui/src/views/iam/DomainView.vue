@@ -176,7 +176,7 @@ export default {
         this.treeSelected = domains[0] || {}
       }).catch(error => {
         this.$notification.error({
-          message: 'Request Failed',
+          message: this.$t('message.request.failed'),
           description: error.response.headers['x-description'],
           duration: 0
         })

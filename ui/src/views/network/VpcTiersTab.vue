@@ -99,7 +99,7 @@
                 :current="page"
                 :pageSize="pageSize"
                 :total="itemCounts.vms[network.id]"
-                :showTotal="total => `Total ${total} ${$t('label.items')}`"
+                :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
                 :pageSizeOptions="['10', '20', '40', '80', '100']"
                 @change="changePage"
                 @showSizeChange="changePageSize"
@@ -139,7 +139,7 @@
                 :current="page"
                 :pageSize="pageSize"
                 :total="itemCounts.internalLB[network.id]"
-                :showTotal="total => `Total ${total} ${$t('label.items')}`"
+                :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
                 :pageSizeOptions="['10', '20', '40', '80', '100']"
                 @change="changePage"
                 @showSizeChange="changePageSize"
@@ -159,12 +159,12 @@
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
             <a-input
-              placeholder="A unique name of the tier"
-              v-decorator="['name',{rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"></a-input>
+              :placeholder="$t('label.unique.name.tier')"
+              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.networkofferingid')">
             <a-select
-              v-decorator="['networkOffering',{rules: [{ required: true, message: `${this.$t('label.required')}` }]}]">
+              v-decorator="['networkOffering',{rules: [{ required: true, message: `${$t('label.required')}` }]}]">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
                 {{ item.name }}
               </a-select-option>
@@ -172,13 +172,13 @@
           </a-form-item>
           <a-form-item :label="$t('label.gateway')">
             <a-input
-              placeholder="The gateway of the tier in the super CIDR range and not overlapping the CIDR of any other tier in this VPC."
-              v-decorator="['gateway',{rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"></a-input>
+              :placeholder="$t('label.create.network.gateway.description')"
+              v-decorator="['gateway',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.netmask')">
             <a-input
-              placeholder="Netmask of the tier. For example, with VPC CIDR of 10.0.0.0/16 and network tier CIDR of 10.1.1.0/24, gateway is 10.1.1.1 and netmask is 255.255.255.0"
-              v-decorator="['netmask',{rules: [{ required: true, message: `${this.$t('label.required')}` }]}]"></a-input>
+              :placeholder="$t('label.create.network.netmask.description')"
+              v-decorator="['netmask',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.externalid')">
             <a-input
@@ -200,26 +200,26 @@
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
             <a-input
-              placeholder="Unique name for Internal LB"
-              v-decorator="['name', { rules: [{ required: true, message: 'Please specify a name for the Internal LB'}] }]"/>
+              :placeholder="$t('label.internallb.name.description')"
+              v-decorator="['name', { rules: [{ required: true, message: $t('message.error.internallb.name')}] }]"/>
           </a-form-item>
           <a-form-item :label="$t('label.description')">
             <a-input
-              placeholder="Brief description of the Internal LB"
+              :placeholder="$t('label.internallb.description')"
               v-decorator="['description']"/>
           </a-form-item>
           <a-form-item :label="$t('label.sourceipaddress')">
             <a-input
-              placeholder="Brief description of the Internal LB"
+              :placeholder="$t('label.internallb.sourceip.description')"
               v-decorator="['sourceIP']"/>
           </a-form-item>
           <a-form-item :label="$t('label.sourceport')">
             <a-input
-              v-decorator="['sourcePort', { rules: [{ required: true, message: 'Please specify a Source Port'}] }]"/>
+              v-decorator="['sourcePort', { rules: [{ required: true, message: $t('message.error.internallb.source.port')}] }]"/>
           </a-form-item>
           <a-form-item :label="$t('label.instanceport')">
             <a-input
-              v-decorator="['instancePort', { rules: [{ required: true, message: 'Please specify a Instance Port'}] }]"/>
+              v-decorator="['instancePort', { rules: [{ required: true, message: $t('message.error.internallb.instance.port')}] }]"/>
           </a-form-item>
           <a-form-item :label="$t('label.algorithm')">
             <a-select
@@ -227,7 +227,7 @@
                 'algorithm',
                 {
                   initialValue: 'Source',
-                  rules: [{ required: true, message: `${this.$t('label.required')}`}]
+                  rules: [{ required: true, message: `${$t('label.required')}`}]
                 }]">
               <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]">
                 {{ key }}
@@ -494,7 +494,7 @@ export default {
           aclid: values.acl
         }).then(() => {
           this.$notification.success({
-            message: 'Successfully added VPC Network'
+            message: this.$t('message.success.add.vpc.network')
           })
         }).catch(error => {
           this.$notifyError(error)
@@ -523,30 +523,30 @@ export default {
           scheme: 'Internal'
         }).then(response => {
           this.$store.dispatch('AddAsyncJob', {
-            title: `Creating Internal LB`,
+            title: this.$t('message.create.internallb'),
             jobid: response.createloadbalancerresponse.jobid,
             description: values.name,
             status: 'progress'
           })
           this.$pollJob({
             jobId: response.createloadbalancerresponse.jobid,
-            successMessage: `Successfully created Internal LB`,
+            successMessage: this.$t('message.success.create.internallb'),
             successMethod: () => {
               this.fetchData()
             },
-            errorMessage: 'Failed to create Internal LB' + response,
+            errorMessage: `${this.$t('message.create.internallb.failed')} ` + response,
             errorMethod: () => {
               this.fetchData()
             },
-            loadingMessage: `Creation of Internal LB is in progress`,
-            catchMessage: 'Error encountered while fetching async job result',
+            loadingMessage: this.$t('message.create.internallb.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchData()
             }
           })
         }).catch(error => {
           console.error(error)
-          this.$message.error('Failed to create Internal LB')
+          this.$message.error(this.$t('message.create.internallb.failed'))
         }).finally(() => {
           this.modalLoading = false
           this.fetchLoading = false

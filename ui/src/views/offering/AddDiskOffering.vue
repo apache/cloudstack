@@ -386,7 +386,7 @@
                 {
                   validator: (rule, value, callback) => {
                     if (value && value.length > 1 && value.indexOf(0) !== -1) {
-                      callback(this.$t('label.error.zone.combined'))
+                      callback(this.$t('message.error.zone.combined'))
                     }
                     callback()
                   }
@@ -607,7 +607,7 @@ export default {
           params.zoneid = zoneId
         }
         api('createDiskOffering', params).then(json => {
-          this.$message.success(this.$t('message.disk.offering.created', { name: values.name }))
+          this.$message.success(`${this.$t('message.disk.offering.created')} ${values.name}}`)
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

@@ -26,7 +26,7 @@
         <a-form-item :label="$t('label.name')">
           <a-input
             v-decorator="['name', {
-              rules: [{ required: true, message: 'Please enter name' }]
+              rules: [{ required: true, message: $t('message.error.name') }]
             }]"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
@@ -67,8 +67,8 @@
     <div v-if="isSubmitted">
       <p v-html="$t('message.desc.created.ssh.key.pair')"></p>
       <div :span="24" class="action-button">
-        <a-button @click="notifyCopied" v-clipboard:copy="hiddenElement.innerHTML" type="primary">{{ 'Copy to clipboard' }}</a-button>
-        <a-button @click="downloadKey" type="primary">{{ this.$t('Download') }}</a-button>
+        <a-button @click="notifyCopied" v-clipboard:copy="hiddenElement.innerHTML" type="primary">{{ $t('label.copy.clipboard') }}</a-button>
+        <a-button @click="downloadKey" type="primary">{{ this.$t('label.download') }}</a-button>
         <a-button @click="closeAction">{{ this.$t('label.close') }}</a-button>
       </div>
     </div>
@@ -174,7 +174,7 @@ export default {
         if (this.isValidValueForKey(values, 'publickey') && values.publickey.length > 0) {
           params.publickey = values.publickey
           api('registerSSHKeyPair', params).then(json => {
-            this.$message.success('Successfully registered SSH key pair: ' + values.name)
+            this.$message.success(this.$t('message.success.register.keypair') + ' ' + values.name)
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {
@@ -184,7 +184,7 @@ export default {
           })
         } else {
           api('createSSHKeyPair', params).then(json => {
-            this.$message.success('Successfully created SSH key pair: ' + values.name)
+            this.$message.success(this.$t('message.success.create.keypair') + ' ' + values.name)
             if (json.createsshkeypairresponse && json.createsshkeypairresponse.keypair && json.createsshkeypairresponse.keypair.privatekey) {
               this.isSubmitted = true
               const key = json.createsshkeypairresponse.keypair.privatekey
@@ -208,7 +208,7 @@ export default {
     },
     notifyCopied () {
       this.$notification.info({
-        message: this.$t('Copied Successfully to cilpboard')
+        message: this.$t('message.success.copy.clipboard')
       })
     },
     closeAction () {

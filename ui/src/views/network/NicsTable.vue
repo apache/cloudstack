@@ -64,7 +64,7 @@
         {{ text }}
       </router-link>
       <a-tag v-if="item.isdefault">
-        Default
+        {{ $t('label.default') }}
       </a-tag>
     </template>
   </a-table>

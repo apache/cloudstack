@@ -143,7 +143,6 @@ export default {
           icon: 'sync',
           label: 'label.reinstall.vm',
           message: 'message.reinstall.vm',
-          docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           args: ['virtualmachineid', 'templateid'],
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },

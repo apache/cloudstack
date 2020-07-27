@@ -34,6 +34,7 @@ export default {
     {
       api: 'addImageStore',
       icon: 'plus',
+      docHelp: 'installguide/configuration.html#add-secondary-storage',
       label: 'label.add.secondary.storage',
       listView: true,
       popup: true,

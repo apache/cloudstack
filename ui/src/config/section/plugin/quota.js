@@ -48,6 +48,7 @@ export default {
         {
           api: 'quotaCredits',
           icon: 'plus',
+          docHelp: 'plugins/quota.html#quota-credits',
           label: 'label.quota.add.credits',
           dataView: true,
           args: ['value', 'min_balance', 'quota_enforce'],

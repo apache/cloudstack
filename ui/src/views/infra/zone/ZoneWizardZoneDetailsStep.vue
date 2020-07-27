@@ -31,7 +31,7 @@
           v-decorator="['name', {
             rules: [{
               required: true,
-              message: 'Please enter zone name',
+              message: $t('message.error.zone.name'),
               initialValue: name
             }]
           }]"
@@ -46,13 +46,13 @@
             rules: [
               {
                 required: true,
-                message: 'Please enter IpV4 DNS 1',
+                message: $t('message.error.ipv4.dns1'),
                 initialValue: ipv4Dns1
               },
               {
                 validator: checkIpFormat,
                 ipV4: true,
-                message: 'Please enter a valid IP v4 address.'
+                message: $t('message.error.ipv4.address')
               }
             ]
           }]"
@@ -66,13 +66,13 @@
           v-decorator="['ipv4Dns2', {
             rules: [
               {
-                message: 'Please enter IpV4 DNS 2',
+                message: $t('message.error.ipv4.dns2'),
                 initialValue: ipv4Dns2
               },
               {
                 validator: checkIpFormat,
                 ipV4: true,
-                message: 'Please enter a valid IP v4 address.'
+                message: $t('message.error.ipv4.address')
               }
             ]
           }]"
@@ -87,13 +87,13 @@
           v-decorator="['ipv6Dns1', {
             rules: [
               {
-                message: 'Please enter IpV6 DNS 1',
+                message: $t('message.error.ipv6.dns1'),
                 initialValue: ipv6Dns1
               },
               {
                 validator: checkIpFormat,
                 ipV6: true,
-                message: 'Please enter a valid IP v6 address.'
+                message: $t('message.error.ipv6.address')
               }
             ]
           }]"
@@ -108,13 +108,13 @@
           v-decorator="['ipv6Dns2', {
             rules: [
               {
-                message: 'Please enter IpV6 DNS 2',
+                message: $t('message.error.ipv6.dns2'),
                 initialValue: ipv6Dns2
               },
               {
                 validator: checkIpFormat,
                 ipV6: true,
-                message: 'Please enter a valid IP v6 address.'
+                message: $t('message.error.ipv6.address')
               }
             ]
           }]"
@@ -129,7 +129,7 @@
           v-decorator="['ipv6Cidr', {
             rules: [
               {
-                message: 'Please enter IpV6 CIDR',
+                message: $t('message.error.ipv6.cidr'),
                 initialValue: ip6cidr
               }
             ]
@@ -145,13 +145,13 @@
           v-decorator="['ip6gateway', {
             rules: [
               {
-                message: 'Please enter IpV6 Gateway',
+                message: $t('message.error.ipv6.gateway'),
                 initialValue: ip6gateway
               },
               {
                 validator: checkIpFormat,
                 ipV6: true,
-                message: 'Please enter a valid IPv6 Gatweay.'
+                message: $t('message.error.ipv6.gateway.format')
               }
             ]
           }]"
@@ -166,13 +166,13 @@
             rules: [
               {
                 required: true,
-                message: 'Please enter Internal DNS 1',
+                message: $t('message.error.internal.dns1'),
                 initialValue: internalDns1
               },
               {
                 validator: checkIpFormat,
                 ipV4: true,
-                message: 'Please enter a valid IP v4 address.'
+                message: $t('message.error.ipv4.address')
               }
             ]
           }]"
@@ -186,13 +186,13 @@
           v-decorator="['internalDns2', {
             rules: [
               {
-                message: 'Please enter Internal DNS 2',
+                message: $t('message.error.internal.dns2'),
                 initialValue: internalDns2
               },
               {
                 validator: checkIpFormat,
                 ipV4: true,
-                message: 'Please enter a valid IP v4 address.'
+                message: $t('message.error.ipv4.address')
               }
             ]
           }]"
@@ -208,11 +208,11 @@
           v-decorator="['hypervisor',{
             rules: [{
               required: true,
-              message: 'Please select hypervisor type',
+              message: $t('message.error.hypervisor.type'),
               initialValue: currentHypervisor
             }]
           }]"
-          placeholder="Please select hypervisor type"
+          :placeholder="$t('message.error.hypervisor.type')"
         >
           <a-select-option v-for="hypervisor in hypervisors" :key="hypervisor.name">
             {{ hypervisor.name }}
@@ -228,11 +228,11 @@
           :loading="availableNetworkOfferings === null"
           v-decorator="['networkOfferingId', {
             rules: [{
-              message: 'Please select network offering',
+              message: $t('message.error.network.offering'),
               initialValue: currentNetworkOfferingId
             }]
           }]"
-          placeholder="Please select network offering"
+          :placeholder="$t('message.error.network.offering')"
         >
           <a-select-option
             v-for="networkOffering in availableNetworkOfferings"
@@ -248,7 +248,7 @@
         <a-input
           v-decorator="['networkDomain', {
             rules: [{
-              message: 'Please enter Network domain',
+              message: $t('message.error.network.domain'),
               intialValue: networkDomain
             }]
           }]"
@@ -287,7 +287,7 @@
               initialValue: domain
             }]
           }]"
-          placeholder="Please select domain to dedicate to"
+          :placeholder="$t('message.error.select.domain.to.dedicate')"
         >
           <a-select-option v-for="dom in domains" :key="dom.id">
             {{ dom.path }}

@@ -182,7 +182,8 @@ export default {
       params.id = row.id
 
       // show loading
-      const loading = this.$message.loading('Delete certificate in progress for ' + row.name, 0)
+      const message = `${this.$t('label.delete.certificate')} ${this.$t('label.in.progress.for')} ${row.name}`
+      const loading = this.$message.loading(message, 0)
 
       api('deleteSslCert', params).then(json => {
         const jsonResponse = json.deletesslcertresponse
@@ -191,10 +192,10 @@ export default {
         setTimeout(loading)
 
         if (jsonResponse.success) {
-          this.$message.success('Delete success', 3)
+          this.$message.success(this.$t('message.success.delete'), 3)
           this.fetchData()
         } else {
-          this.$message.error('Delete fail', 3)
+          this.$message.error(this.$t('message.delete.failed'), 3)
         }
       }).catch(error => {
         // hide loading
@@ -206,14 +207,13 @@ export default {
     },
     onShowConfirm (row) {
       const self = this
-      let title = this.$t('label.deleteconfirm')
-      title = title.replace('{name}', this.$t('label.certificate'))
+      const title = `${this.$t('label.deleteconfirm')} ${this.$t('label.certificate')}`
 
       this.$confirm({
         title: title,
-        okText: 'OK',
+        okText: this.$t('label.ok'),
         okType: 'danger',
-        cancelText: 'Cancel',
+        cancelText: this.$t('label.cancel'),
         onOk () {
           self.onDelete(row)
         }

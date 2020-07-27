@@ -42,7 +42,7 @@
             :placeholder="$t('label.username')"
             v-decorator="[
               'username',
-              {rules: [{ required: true, message: 'Enter your username' }, { validator: handleUsernameOrEmail }], validateTrigger: 'change'}
+              {rules: [{ required: true, message: $t('message.error.username') }, { validator: handleUsernameOrEmail }], validateTrigger: 'change'}
             ]"
           >
             <a-icon slot="prefix" type="user" :style="{ color: 'rgba(0,0,0,.25)' }"/>
@@ -57,7 +57,7 @@
             :placeholder="$t('label.password')"
             v-decorator="[
               'password',
-              {rules: [{ required: true, message: 'Enter your password' }], validateTrigger: 'blur'}
+              {rules: [{ required: true, message: $t('message.error.password') }], validateTrigger: 'blur'}
             ]"
           >
             <a-icon slot="prefix" type="lock" :style="{ color: 'rgba(0,0,0,.25)' }"/>
@@ -71,7 +71,7 @@
             :placeholder="$t('label.domain')"
             v-decorator="[
               'domain',
-              {rules: [{ required: false, message: 'Enter your domain, leave empty for ROOT domain' }], validateTrigger: 'change'}
+              {rules: [{ required: false, message: $t('message.error.domain') }], validateTrigger: 'change'}
             ]"
           >
             <a-icon slot="prefix" type="block" :style="{ color: 'rgba(0,0,0,.25)' }"/>
@@ -212,9 +212,10 @@ export default {
     },
     requestFailed (err) {
       if (err && err.response && err.response.data && err.response.data.loginresponse) {
-        this.$message.error('Error ' + err.response.data.loginresponse.errorcode + ': ' + err.response.data.loginresponse.errortext)
+        const error = err.response.data.loginresponse.errorcode + ': ' + err.response.data.loginresponse.errortext
+        this.$message.error(`${this.$t('label.error')} ${error}`)
       } else {
-        this.$message.error('Login Failed')
+        this.$message.error(this.$t('message.login.failed'))
       }
     }
   }

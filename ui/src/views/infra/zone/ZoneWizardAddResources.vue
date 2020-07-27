@@ -160,13 +160,13 @@ export default {
         {
           title: 'label.cluster.name',
           key: 'clusterName',
-          placeHolder: 'Please enter cluster name',
+          placeHolder: 'message.error.cluster.name',
           required: true
         },
         {
           title: 'label.vcenter.host',
           key: 'vCenterHost',
-          placeHolder: 'Please enter vCenter Host',
+          placeHolder: 'message.error.vcenter.host',
           required: true,
           display: {
             hypervisor: ['VMware', 'Ovm3']
@@ -175,7 +175,7 @@ export default {
         {
           title: 'label.vcenter.username',
           key: 'vCenterUsername',
-          placeHolder: 'Please enter vCenter Username',
+          placeHolder: 'message.error.vcenter.username',
           required: true,
           display: {
             hypervisor: ['VMware', 'Ovm3']
@@ -184,7 +184,7 @@ export default {
         {
           title: 'label.vcenter.password',
           key: 'vCenterPassword',
-          placeHolder: 'Please enter vCenter Password',
+          placeHolder: 'message.error.vcenter.password',
           required: true,
           password: true,
           display: {
@@ -194,7 +194,7 @@ export default {
         {
           title: 'label.vcenter.datacenter',
           key: 'vCenterDatacenter',
-          placeHolder: 'Please enter vCenter Datacenter',
+          placeHolder: 'message.error.vcenter.datacenter',
           required: true,
           display: {
             hypervisor: ['VMware', 'Ovm3']
@@ -221,7 +221,7 @@ export default {
         {
           title: 'label.cisco.nexus1000v.ip.address',
           key: 'vsmipaddress',
-          placeHolder: 'Please enter Nexus 1000v IP Address',
+          placeHolder: 'message.error.nexus1000v.ipaddess',
           required: false,
           display: {
             vSwitchEnabled: true
@@ -230,7 +230,7 @@ export default {
         {
           title: 'label.cisco.nexus1000v.username',
           key: 'vsmusername',
-          placeHolder: 'Please enter Nexus 1000v Username',
+          placeHolder: 'message.error.nexus1000v.username',
           required: false,
           display: {
             vSwitchEnabled: true
@@ -239,7 +239,7 @@ export default {
         {
           title: 'label.cisco.nexus1000v.password',
           key: 'vsmpassword',
-          placeHolder: 'Please enter Nexus 1000v Password',
+          placeHolder: 'message.error.nexus1000v.password',
           required: false,
           display: {
             vSwitchEnabled: true
@@ -252,7 +252,7 @@ export default {
         {
           title: 'label.host.name',
           key: 'hostName',
-          placeHolder: 'Please enter host name',
+          placeHolder: 'message.error.host.name',
           required: true,
           display: {
             hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
@@ -261,7 +261,7 @@ export default {
         {
           title: 'label.username',
           key: 'hostUserName',
-          placeHolder: 'Please enter host username',
+          placeHolder: 'message.error.host.username',
           required: true,
           display: {
             hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
@@ -270,7 +270,7 @@ export default {
         {
           title: 'label.password',
           key: 'hostPassword',
-          placeHolder: 'Please enter host password',
+          placeHolder: 'message.error.host.password',
           required: true,
           password: true,
           display: {
@@ -280,7 +280,7 @@ export default {
         {
           title: 'label.agent.username',
           key: 'agentUserName',
-          placeHolder: 'Please enter Agent username',
+          placeHolder: 'message.error.agent.username',
           required: false,
           defaultValue: 'Oracle',
           display: {
@@ -290,7 +290,7 @@ export default {
         {
           title: 'label.agent.password',
           key: 'agentPassword',
-          placeHolder: 'Please enter Agent password',
+          placeHolder: 'message.error.agent.password',
           required: true,
           password: true,
           display: {
@@ -300,7 +300,7 @@ export default {
         {
           title: 'label.tags',
           key: 'hostTags',
-          placeHolder: 'Please enter host tags',
+          placeHolder: 'message.error.host.tags',
           required: false
         }
       ]
@@ -310,7 +310,7 @@ export default {
         {
           title: 'label.name',
           key: 'primaryStorageName',
-          placeHolder: 'Please enter name',
+          placeHolder: 'message.error.name',
           required: true
         },
         {
@@ -323,7 +323,7 @@ export default {
         {
           title: 'label.protocol',
           key: 'primaryStorageProtocol',
-          placeHolder: 'Please select option',
+          placeHolder: 'message.error.select',
           required: true,
           select: true,
           options: this.primaryStorageProtocols
@@ -331,7 +331,7 @@ export default {
         {
           title: 'label.server',
           key: 'primaryStorageServer',
-          placeHolder: 'Please enter server',
+          placeHolder: 'message.error.server',
           required: true,
           display: {
             primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB']
@@ -340,7 +340,7 @@ export default {
         {
           title: 'label.path',
           key: 'primaryStoragePath',
-          placeHolder: 'Please enter path',
+          placeHolder: 'message.error.path',
           required: true,
           display: {
             primaryStorageProtocol: ['nfs', 'SMB', 'SharedMountPoint', 'ocfs2']
@@ -349,7 +349,7 @@ export default {
         {
           title: 'label.SR.name',
           key: 'primaryStorageSRLabel',
-          placeHolder: 'Please enter SR Name-Label',
+          placeHolder: 'message.error.sr.namelabel',
           required: true,
           display: {
             primaryStorageProtocol: 'PreSetup'
@@ -358,7 +358,7 @@ export default {
         {
           title: 'label.target.iqn',
           key: 'primaryStorageTargetIQN',
-          placeHolder: 'Please enter Target IQN',
+          placeHolder: 'message.error.target.iqn',
           required: true,
           display: {
             primaryStorageProtocol: 'iscsi'
@@ -367,7 +367,7 @@ export default {
         {
           title: 'label.LUN.number',
           key: 'primaryStorageLUN',
-          placeHolder: 'Please enter LUN #',
+          placeHolder: 'message.error.lun',
           required: true,
           display: {
             primaryStorageProtocol: 'iscsi'
@@ -376,7 +376,7 @@ export default {
         {
           title: 'label.smb.domain',
           key: 'primaryStorageSMBDomain',
-          placeHolder: 'Please enter SMB Domain',
+          placeHolder: 'message.error.sbdomain',
           required: true,
           display: {
             primaryStorageProtocol: 'SMB'
@@ -385,7 +385,7 @@ export default {
         {
           title: 'label.smb.username',
           key: 'primaryStorageSMBUsername',
-          placeHolder: 'Please enter SMB Username',
+          placeHolder: 'message.error.sbdomain.username',
           required: true,
           display: {
             primaryStorageProtocol: 'SMB'
@@ -394,7 +394,7 @@ export default {
         {
           title: 'label.smb.password',
           key: 'primaryStorageSMBPassword',
-          placeHolder: 'Please enter SMB Password',
+          placeHolder: 'message.error.sbdomain.password',
           required: true,
           password: true,
           display: {
@@ -404,7 +404,7 @@ export default {
         {
           title: 'label.rados.monitor',
           key: 'primaryStorageRADOSMonitor',
-          placeHolder: 'Please enter RADOS Monitor',
+          placeHolder: 'message.error.rados.monitor',
           required: false,
           display: {
             primaryStorageProtocol: ['rbd']
@@ -413,7 +413,7 @@ export default {
         {
           title: 'label.rados.pool',
           key: 'primaryStorageRADOSPool',
-          placeHolder: 'Please enter RADOS Pool',
+          placeHolder: 'message.error.rados.pool',
           required: false,
           display: {
             primaryStorageProtocol: ['rbd']
@@ -422,7 +422,7 @@ export default {
         {
           title: 'label.rados.user',
           key: 'primaryStorageRADOSUser',
-          placeHolder: 'Please enter RADOS User',
+          placeHolder: 'message.error.rados.user',
           required: false,
           display: {
             primaryStorageProtocol: ['rbd']
@@ -431,7 +431,7 @@ export default {
         {
           title: 'label.rados.secret',
           key: 'primaryStorageRADOSSecret',
-          placeHolder: 'Please enter RADOS Secret',
+          placeHolder: 'message.error.rados.secret',
           required: false,
           display: {
             primaryStorageProtocol: ['rbd']
@@ -440,7 +440,7 @@ export default {
         {
           title: 'label.volgroup',
           key: 'primaryStorageVolumeGroup',
-          placeHolder: 'Please enter Volume Group',
+          placeHolder: 'message.error.volumne.group',
           required: true,
           display: {
             primaryStorageProtocol: 'clvm'
@@ -449,7 +449,7 @@ export default {
         {
           title: 'label.volume',
           key: 'primaryStorageVolume',
-          placeHolder: 'Please enter Volume',
+          placeHolder: 'message.error.volumne',
           required: true,
           display: {
             primaryStorageProtocol: 'gluster'
@@ -458,7 +458,7 @@ export default {
         {
           title: 'label.vcenter.datacenter',
           key: 'primaryStorageVmfsDatacenter',
-          placeHolder: 'Please enter vCenter Datacenter',
+          placeHolder: 'message.error.vcenter.datacenter',
           required: true,
           display: {
             primaryStorageProtocol: 'vmfs'
@@ -467,7 +467,7 @@ export default {
         {
           title: 'label.vcenter.datastore',
           key: 'primaryStorageVmfsDatastore',
-          placeHolder: 'Please enter vCenter Datastore',
+          placeHolder: 'message.error.vcenter.datastore',
           required: true,
           display: {
             primaryStorageProtocol: 'vmfs'
@@ -476,7 +476,7 @@ export default {
         {
           title: 'label.storage.tags',
           key: 'primaryStorageTags',
-          placeHolder: 'Please enter storage tags',
+          placeHolder: 'message.error.storage.tags',
           required: false
         }
       ]
@@ -502,7 +502,7 @@ export default {
           title: 'label.server',
           key: 'secondaryStorageServer',
           required: true,
-          placeHolder: 'Please enter Server',
+          placeHolder: 'message.error.server',
           display: {
             secondaryStorageProvider: ['NFS', 'SMB']
           }
@@ -511,7 +511,7 @@ export default {
           title: 'label.path',
           key: 'secondaryStoragePath',
           required: true,
-          placeHolder: 'Please enter Path',
+          placeHolder: 'message.error.path',
           display: {
             secondaryStorageProvider: ['NFS', 'SMB']
           }
@@ -520,7 +520,7 @@ export default {
           title: 'label.smb.domain',
           key: 'secondaryStorageSMBDomain',
           required: true,
-          placeHolder: 'Please enter SMB Domain',
+          placeHolder: 'message.error.sbdomain',
           display: {
             secondaryStorageProvider: ['SMB']
           }
@@ -529,7 +529,7 @@ export default {
           title: 'label.smb.username',
           key: 'secondaryStorageSMBUsername',
           required: true,
-          placeHolder: 'Please enter SMB Username',
+          placeHolder: 'message.error.smb.username',
           display: {
             secondaryStorageProvider: ['SMB']
           }
@@ -539,7 +539,7 @@ export default {
           key: 'secondaryStorageSMBPassword',
           required: true,
           password: true,
-          placeHolder: 'Please enter SMB Password',
+          placeHolder: 'message.error.smb.password',
           display: {
             secondaryStorageProvider: ['SMB']
           }
@@ -548,7 +548,7 @@ export default {
           title: 'label.s3.access_key',
           key: 'secondaryStorageAccessKey',
           required: true,
-          placeHolder: 'Please enter Access Key',
+          placeHolder: 'message.error.access.key',
           display: {
             secondaryStorageProvider: ['S3']
           }
@@ -557,7 +557,7 @@ export default {
           title: 'label.s3.secret_key',
           key: 'secondaryStorageSecretKey',
           required: true,
-          placeHolder: 'Please enter Secret Key',
+          placeHolder: 'message.error.secret.key',
           display: {
             secondaryStorageProvider: ['S3']
           }
@@ -566,7 +566,7 @@ export default {
           title: 'label.s3.bucket',
           key: 'secondaryStorageBucket',
           required: true,
-          placeHolder: 'Please enter Bucket',
+          placeHolder: 'message.error.bucket',
           display: {
             secondaryStorageProvider: ['S3']
           }
@@ -626,7 +626,7 @@ export default {
           title: 'label.s3.nfs.server',
           key: 'secondaryStorageNFSServer',
           required: true,
-          placeHolder: 'Please enter S3 NFS Server',
+          placeHolder: 'message.error.s3nfs.server',
           display: {
             secondaryStorageProvider: ['S3']
           }
@@ -635,7 +635,7 @@ export default {
           title: 'label.s3.nfs.path',
           key: 'secondaryStorageNFSPath',
           required: true,
-          placeHolder: 'Please enter S3 NFS Path',
+          placeHolder: 'message.error.s3nfs.path',
           display: {
             secondaryStorageProvider: ['S3']
           }
@@ -644,7 +644,7 @@ export default {
           title: 'label.url',
           key: 'secondaryStorageURL',
           required: true,
-          placeHolder: 'Please enter URL',
+          placeHolder: 'message.error.url',
           display: {
             secondaryStorageProvider: ['Swift']
           }

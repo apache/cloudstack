@@ -163,12 +163,11 @@ export default {
           })
           this.$pollJob({
             jobId,
-            loadingMessage: `Upgrade Kubernetes cluster ${this.resource.name} in progress`,
-            catchMessage: 'Error encountered while fetching async job result',
-            successMessage: `Successfully upgraded Kubernetes cluster ${this.resource.name}`,
+            loadingMessage: `${this.$t('label.kubernetes.cluster.upgrade')} ${this.resource.name} ${this.$t('label.in.progress')}`,
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            successMessage: `${this.$t('message.success.upgrade.kubernetes')} ${this.resource.name}`,
             successMethod: result => {
               this.$emit('refresh-data')
-              console.log('hello!')
             }
           })
         }).catch(error => {
