@@ -69,7 +69,19 @@ export default {
       message: 'message.confirm.scale.up.router.vm',
       dataView: true,
       args: ['serviceofferingid'],
-      show: (record) => { return record.hypervisor !== 'KVM' }
+      show: (record) => { return record.hypervisor !== 'KVM' },
+      mapping: {
+        serviceofferingid: {
+          api: 'listServiceOfferings',
+          params: (record) => {
+            return {
+              virtualmachineid: record.virtualmachineid,
+              issystem: true,
+              systemvmtype: 'domainrouter'
+            }
+          }
+        }
+      }
     },
     {
       api: 'upgradeRouterTemplate',
