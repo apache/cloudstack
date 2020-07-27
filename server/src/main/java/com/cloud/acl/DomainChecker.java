@@ -235,7 +235,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 if (RolePermissionEntity.Permission.ALLOW.equals(permission.getPermission())) {
                     return true;
                 } else {
-                    throw new PermissionDeniedException("User/ Account not permitted to access API : "+apiCommandName);
+                    throw new PermissionDeniedException(apiCommandName + " does not exist");
                 }
             }
         }
