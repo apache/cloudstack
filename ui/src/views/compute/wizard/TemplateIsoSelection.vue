@@ -21,12 +21,12 @@
       class="search-input"
       :placeholder="$t('label.search')"
       v-model="filter"
-      @search="filterDataSource">
+      @search="handleSearch">
     </a-input-search>
     <a-spin :spinning="loading">
       <a-tabs
         :animated="false"
-        :defaultActiveKey="Object.keys(dataSource)[0]"
+        :defaultActiveKey="filterOpts[0].id"
         v-model="filterType"
         tabPosition="top"
         @change="changeFilterType">
@@ -36,13 +36,13 @@
           :tab="$t(filterItem.name)">
           <TemplateIsoRadioGroup
             v-if="filterType===filterItem.id"
-            :osList="dataSource[filterItem.id]"
-            :itemCount="itemCount[filterItem.id]"
+            :osList="items[filterItem.id][inputDecorator.slice(0, -2)] || []"
+            :itemCount="items[filterItem.id].count || 0"
             :input-decorator="inputDecorator"
             :selected="checkedValue"
             :preFillContent="preFillContent"
-            @handle-filter-tag="filterDataSource"
             @emit-update-template-iso="updateTemplateIso"
+            @handle-search-filter="($event) => emitSearchFilter($event)"
           ></TemplateIsoRadioGroup>
         </a-tab-pane>
       </a-tabs>
@@ -51,17 +51,15 @@
 </template>
 
 <script>
-import { getNormalizedOsName } from '@/utils/icons'
 import TemplateIsoRadioGroup from '@views/compute/wizard/TemplateIsoRadioGroup'
-import store from '@/store'
 
 export default {
   name: 'TemplateIsoSelection',
   components: { TemplateIsoRadioGroup },
   props: {
     items: {
-      type: Array,
-      default: () => []
+      type: Object,
+      default: () => {}
     },
     inputDecorator: {
       type: String,
@@ -83,11 +81,7 @@ export default {
   data () {
     return {
       filter: '',
-      filteredItems: this.items,
       checkedValue: '',
-      dataSource: {},
-      itemCount: {},
-      visibleFilter: false,
       filterOpts: [{
         id: 'featured',
         name: 'label.featured'
@@ -101,25 +95,23 @@ export default {
         id: 'sharedexecutable',
         name: 'label.sharedexecutable'
       }],
-      osType: '',
-      filterType: '',
-      oldInputDecorator: ''
+      filterType: 'featured'
     }
   },
   watch: {
     items (items) {
-      this.filteredItems = []
       this.checkedValue = ''
-      if (items && items.length > 0) {
-        this.filteredItems = items
-        this.checkedValue = items[0].id
+      const key = this.inputDecorator.slice(0, -2)
+      for (const filter of this.filterOpts) {
+        if (items[filter.id] && items[filter.id][key] && items[filter.id][key].length > 0) {
+          this.filterType = filter.id
+          this.checkedValue = items[filter.id][key][0].id
+          break
+        }
       }
-      this.dataSource = this.mappingDataSource()
-      this.filterType = Object.keys(this.dataSource)[0]
     },
     inputDecorator (newValue, oldValue) {
       if (newValue !== oldValue) {
-        this.oldInputDecorator = this.inputDecorator
         this.filter = ''
       }
     }
@@ -128,107 +120,22 @@ export default {
     this.form = this.$form.createForm(this)
   },
   methods: {
-    mappingDataSource () {
-      const mappedItems = {
-        featured: [],
-        community: [],
-        selfexecutable: [],
-        sharedexecutable: []
-      }
-      const itemCount = {
-        featured: 0,
-        community: 0,
-        selfexecutable: 0,
-        sharedexecutable: 0
-      }
-      this.filteredItems.forEach((os) => {
-        os.osName = getNormalizedOsName(os.ostypename)
-        if (os.isPublic && os.isfeatured) {
-          mappedItems.community.push(os)
-          itemCount.community = itemCount.community + 1
-        } else if (os.isfeatured) {
-          mappedItems.featured.push(os)
-          itemCount.featured = itemCount.featured + 1
-        } else {
-          const isSelf = !os.ispublic && (os.account === store.getters.userInfo.account)
-          if (isSelf) {
-            mappedItems.selfexecutable.push(os)
-            itemCount.selfexecutable = itemCount.selfexecutable + 1
-          } else {
-            mappedItems.sharedexecutable.push(os)
-            itemCount.sharedexecutable = itemCount.sharedexecutable + 1
-          }
-        }
-      })
-      this.itemCount = itemCount
-      return mappedItems
-    },
     updateTemplateIso (name, id) {
       this.checkedValue = id
       this.$emit('update-template-iso', name, id)
     },
-    filterDataSource (strQuery) {
-      if (strQuery !== '' && strQuery.includes('is:')) {
-        this.filteredItems = []
-        this.filter = strQuery
-        const filters = strQuery.split(';')
-        filters.forEach((filter) => {
-          const query = filter.replace(/ /g, '')
-          const data = this.filterDataSourceByTag(query)
-          this.filteredItems = this.filteredItems.concat(data)
-        })
-      } else if (strQuery !== '') {
-        this.filteredItems = this.items.filter((item) => item.displaytext.toLowerCase().includes(strQuery.toLowerCase()))
-      } else {
-        this.filteredItems = this.items
+    handleSearch (value) {
+      this.filter = value
+      const options = {
+        page: 1,
+        pageSize: 10,
+        keyword: this.filter
       }
-      this.dataSource = this.mappingDataSource()
+      this.emitSearchFilter(options)
     },
-    filterDataSourceByTag (tag) {
-      let arrResult = []
-      if (tag.includes('public')) {
-        arrResult = this.items.filter((item) => {
-          return item.ispublic && item.isfeatured
-        })
-      } else if (tag.includes('featured')) {
-        arrResult = this.items.filter((item) => {
-          return item.isfeatured
-        })
-      } else if (tag.includes('self')) {
-        arrResult = this.items.filter((item) => {
-          return !item.ispublic && (item.account === store.getters.userInfo.account)
-        })
-      } else if (tag.includes('shared')) {
-        arrResult = this.items.filter((item) => {
-          return !item.ispublic && (item.account !== store.getters.userInfo.account)
-        })
-      }
-
-      return arrResult
-    },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
-        const filtered = values.filter || []
-        this.filter = ''
-        filtered.map(item => {
-          if (this.filter.length === 0) {
-            this.filter += 'is:' + item
-          } else {
-            this.filter += '; is:' + item
-          }
-        })
-        this.filterDataSource(this.filter)
-      })
-    },
-    onClear () {
-      const field = { filter: undefined }
-      this.form.setFieldsValue(field)
-      this.filter = ''
-      this.filterDataSource('')
+    emitSearchFilter (options) {
+      options.category = this.filterType
+      this.$emit('handle-search-filter', options)
     },
     changeFilterType (value) {
       this.filterType = value

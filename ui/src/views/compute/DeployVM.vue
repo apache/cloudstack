@@ -89,6 +89,7 @@
                           :selected="tabKey"
                           :loading="loading.templates"
                           :preFillContent="dataPreFill"
+                          @handle-search-filter="($event) => fetchAllTemplates($event)"
                           @update-template-iso="updateFieldValue" />
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
@@ -110,6 +111,7 @@
                           :selected="tabKey"
                           :loading="loading.isos"
                           :preFillContent="dataPreFill"
+                          @handle-search-filter="($event) => fetchAllIsos($event)"
                           @update-template-iso="updateFieldValue" />
                         <a-form-item :label="this.$t('label.hypervisor')">
                           <a-select
@@ -781,8 +783,23 @@ export default {
       }
     },
     instanceConfig (instanceConfig) {
-      this.template = _.find(this.options.templates, (option) => option.id === instanceConfig.templateid)
-      this.iso = _.find(this.options.isos, (option) => option.id === instanceConfig.isoid)
+      this.template = ''
+      for (const key in this.options.templates) {
+        var template = _.find(_.get(this.options.templates[key], 'template', []), (option) => option.id === instanceConfig.templateid)
+        if (template) {
+          this.template = template
+          break
+        }
+      }
+
+      this.iso = ''
+      for (const key in this.options.isos) {
+        var iso = _.find(_.get(this.options.isos[key], 'iso', []), (option) => option.id === instanceConfig.isoid)
+        if (iso) {
+          this.iso = iso
+          break
+        }
+      }
 
       if (instanceConfig.hypervisor) {
         var hypervisorItem = _.find(this.options.hypervisors, (option) => option.name === instanceConfig.hypervisor)
@@ -976,9 +993,16 @@ export default {
           templateid: value,
           isoid: null
         })
-        const templates = this.options.templates.filter(x => x.id === value)
-        if (templates.length > 0) {
-          var size = templates[0].size / (1024 * 1024 * 1024) || 0 // bytes to GB
+        let template = ''
+        for (const key in this.options.templates) {
+          var t = _.find(_.get(this.options.templates[key], 'template', []), (option) => option.id === value)
+          if (t) {
+            template = t
+            break
+          }
+        }
+        if (template) {
+          var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
         }
       } else if (name === 'isoid') {
@@ -1254,12 +1278,17 @@ export default {
         this.loading[name] = false
       })
     },
-    fetchTemplates (templateFilter) {
+    fetchTemplates (templateFilter, params) {
+      params = params || {}
+      if (params.keyword || params.category !== templateFilter) {
+        params.page = 1
+        params.pageSize = params.pageSize || 10
+      }
+      params.zoneid = _.get(this.zone, 'id')
+      params.templatefilter = templateFilter
+
       return new Promise((resolve, reject) => {
-        api('listTemplates', {
-          zoneid: _.get(this.zone, 'id'),
-          templatefilter: templateFilter
-        }).then((response) => {
+        api('listTemplates', params).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors
@@ -1267,13 +1296,18 @@ export default {
         })
       })
     },
-    fetchIsos (isoFilter) {
+    fetchIsos (isoFilter, params) {
+      params = params || {}
+      if (params.keyword || params.category !== isoFilter) {
+        params.page = 1
+        params.pageSize = params.pageSize || 10
+      }
+      params.zoneid = _.get(this.zone, 'id')
+      params.isoFilter = isoFilter
+      params.bootable = true
+
       return new Promise((resolve, reject) => {
-        api('listIsos', {
-          zoneid: _.get(this.zone, 'id'),
-          isofilter: isoFilter,
-          bootable: true
-        }).then((response) => {
+        api('listIsos', params).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors
@@ -1281,20 +1315,19 @@ export default {
         })
       })
     },
-    fetchAllTemplates (filterKeys) {
+    fetchAllTemplates (params) {
       const promises = []
-      this.options.templates = []
+      const templates = {}
       this.loading.templates = true
       this.templateFilter.forEach((filter) => {
-        if (filterKeys && !filterKeys.includes(filter)) {
-          return true
-        }
-        promises.push(this.fetchTemplates(filter))
+        templates[filter] = { count: 0, template: [] }
+        promises.push(this.fetchTemplates(filter, params))
       })
-      Promise.all(promises).then(response => {
-        response.forEach((resItem) => {
-          const concatTemplates = _.concat(this.options.templates, _.get(resItem, 'listtemplatesresponse.template', []))
-          this.options.templates = _.uniqWith(concatTemplates, _.isEqual)
+      this.options.templates = templates
+      Promise.all(promises).then((response) => {
+        response.forEach((resItem, idx) => {
+          templates[this.templateFilter[idx]] = _.isEmpty(resItem.listtemplatesresponse) ? { count: 0, template: [] } : resItem.listtemplatesresponse
+          this.options.templates = { ...templates }
           this.$forceUpdate()
         })
       }).catch((reason) => {
@@ -1303,20 +1336,19 @@ export default {
         this.loading.templates = false
       })
     },
-    fetchAllIsos (filterKey) {
+    fetchAllIsos (params) {
       const promises = []
-      this.options.isos = []
+      const isos = {}
       this.loading.isos = true
       this.isoFilter.forEach((filter) => {
-        if (filterKey && filterKey !== filter) {
-          return true
-        }
-        promises.push(this.fetchIsos(filter))
+        isos[filter] = { count: 0, iso: [] }
+        promises.push(this.fetchIsos(filter, params))
       })
-      Promise.all(promises).then(response => {
-        response.forEach((resItem) => {
-          const concatedIsos = _.concat(this.options.isos, _.get(resItem, 'listisosresponse.iso', []))
-          this.options.isos = _.uniqWith(concatedIsos, _.isEqual)
+      this.options.isos = isos
+      Promise.all(promises).then((response) => {
+        response.forEach((resItem, idx) => {
+          isos[this.isoFilter[idx]] = _.isEmpty(resItem.listisosresponse) ? { count: 0, iso: [] } : resItem.listisosresponse
+          this.options.isos = { ...isos }
           this.$forceUpdate()
         })
       }).catch((reason) => {
