@@ -729,6 +729,44 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
+    public boolean createFullCloneWithSpecificDisk(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs, Pair<VirtualDisk, String> volumeDeviceInfo)
+            throws Exception {
+
+        assert (morFolder != null);
+        assert (morResourcePool != null);
+        assert (morDs != null);
+        VirtualDisk requiredDisk = volumeDeviceInfo.first();
+
+        VirtualMachineRelocateSpec rSpec = new VirtualMachineRelocateSpec();
+        List<VirtualMachineRelocateSpecDiskLocator> diskLocator = new ArrayList<VirtualMachineRelocateSpecDiskLocator>(1);
+        VirtualMachineRelocateSpecDiskLocator loc = new VirtualMachineRelocateSpecDiskLocator();
+        loc.setDatastore(morDs);
+        loc.setDiskId(requiredDisk.getKey());
+        loc.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.MOVE_ALL_DISK_BACKINGS_AND_DISALLOW_SHARING.value());
+        diskLocator.add(loc);
+
+        rSpec.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.MOVE_ALL_DISK_BACKINGS_AND_DISALLOW_SHARING.value());
+        rSpec.getDisk().addAll(diskLocator);
+        rSpec.setPool(morResourcePool);
+
+        VirtualMachineCloneSpec cloneSpec = new VirtualMachineCloneSpec();
+        cloneSpec.setPowerOn(false);
+        cloneSpec.setTemplate(false);
+        cloneSpec.setLocation(rSpec);
+
+        ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
+
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            s_logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+
+        return false;
+    }
+
     public boolean createFullClone(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs)
             throws Exception {
 
