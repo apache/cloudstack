@@ -62,13 +62,16 @@
           <div class="form__label">{{ $t('label.cidr') }}</div>
           <a-input v-model="newRule.cidrlist"></a-input>
         </div>
-        <div class="form__item" v-if="addType === 'account'">
-          <div class="form__label">{{ $t('label.account.and.security.group') }}</div>
-          <div style="display:flex;">
+        <template v-if="addType === 'account'">
+          <div class="form__item">
+            <div class="form__label">{{ $t('label.account') }}</div>
             <a-input v-model="newRule.usersecuritygrouplist.account" style="margin-right: 10px;"></a-input>
+          </div>
+          <div class="form__item">
+            <div class="form__label">{{ $t('label.securitygroup') }}</div>
             <a-input v-model="newRule.usersecuritygrouplist.group"></a-input>
           </div>
-        </div>
+        </template>
         <div class="form__item" style="flex: 0">
           <a-button :disabled="!('authorizeSecurityGroupInress' in $store.getters.apis) && !('authorizeSecurityGroupEgress' in $store.getters.apis)" type="primary" @click="handleAddRule">{{ $t('label.add') }}</a-button>
         </div>

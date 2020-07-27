@@ -72,7 +72,11 @@ service.interceptors.request.use(config => {
     config.params.response = 'json'
     const project = Vue.ls.get(CURRENT_PROJECT)
     if (!config.params.projectid && project && project.id) {
-      config.params.projectid = project.id
+      if (config.params.command === 'listTags') {
+        config.params.projectid = '-1'
+      } else {
+        config.params.projectid = project.id
+      }
     }
   }
   return config

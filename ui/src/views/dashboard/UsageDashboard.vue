@@ -82,7 +82,7 @@
                 :key="event.id"
                 :color="getEventColour(event)">
                 <span :style="{ color: '#999' }"><small>{{ event.created }}</small></span><br/>
-                <span :style="{ color: '#666' }"><small>{{ event.type }}</small></span><br/>
+                <span :style="{ color: '#666' }"><small><router-link :to="{ path: 'event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
                 <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
               </a-timeline-item>
             </a-timeline>

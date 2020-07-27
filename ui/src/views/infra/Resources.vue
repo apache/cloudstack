@@ -41,7 +41,7 @@
 import { api } from '@/api'
 
 export default {
-  name: 'ZoneResources',
+  name: 'Resources',
   props: {
     resource: {
       type: Object,
@@ -66,10 +66,11 @@ export default {
   },
   methods: {
     fetchData () {
+      const entity = this.$route.meta.name + 'id'
+      const params = {}
+      params[entity] = this.resource.id
       this.fetchLoading = true
-      api('listCapacity', {
-        zoneid: this.resource.id
-      }).then(response => {
+      api('listCapacity', params).then(response => {
         this.resourcesList = response.listcapacityresponse.capacity
         this.animatePercentVals()
       }).catch(error => {

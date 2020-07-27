@@ -123,7 +123,21 @@ const user = {
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_APIS', cachedApis)
-          resolve(cachedApis)
+
+          // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
+          api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {
+            const result = response.listusersresponse.user[0]
+            commit('SET_INFO', result)
+            commit('SET_NAME', result.firstname + ' ' + result.lastname)
+            if ('email' in result) {
+              commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5(result.email))
+            } else {
+              commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5('dev@cloudstack.apache.org'))
+            }
+            resolve(cachedApis)
+          }).catch(error => {
+            reject(error)
+          })
         } else {
           const hide = message.loading(i18n.t('message.discovering.feature'), 0)
           api('listApis').then(response => {

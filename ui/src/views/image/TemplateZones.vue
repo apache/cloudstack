@@ -240,9 +240,11 @@ export default {
       this.fetchData()
     },
     isActionPermitted () {
-      return (['Admin'].includes(this.$store.getters.userInfo.roletype) ||
-        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account)) &&
-        this.resource.isready && this.resource.templatetype !== 'SYSTEM'
+      return (['Admin'].includes(this.$store.getters.userInfo.roletype) || // If admin or owner or belongs to current project
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.projectid && this.$store.getters.project && this.$store.getters.project.id && this.resource.projectid === this.$store.getters.project.id)) &&
+        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Template is ready or downloaded
+        this.resource.templatetype !== 'SYSTEM'
     },
     deleteTemplate () {
       const params = {

@@ -31,6 +31,13 @@ export default {
     title: 'label.hosts',
     param: 'podid'
   }],
+  tabs: [{
+    name: 'details',
+    component: () => import('@/components/view/DetailsTab.vue')
+  }, {
+    name: 'resources',
+    component: () => import('@/views/infra/Resources.vue')
+  }],
   actions: [
     {
       api: 'createPod',

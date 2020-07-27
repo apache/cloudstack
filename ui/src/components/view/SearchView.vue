@@ -91,6 +91,7 @@
                   type="primary"
                   size="small"
                   icon="search"
+                  html-type="submit"
                   @click="handleSubmit">{{ $t('label.search') }}</a-button>
               </div>
             </a-form>

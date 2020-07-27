@@ -74,7 +74,9 @@
         </span>
         <a-select
           allowClear
-          v-decorator="['externalid'] "
+          v-decorator="['externalid', {
+            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
+          }] "
           :loading="externals.loading">
           <a-select-option v-for="opt in externals.opts" :key="opt.id">
             {{ opt.name }}

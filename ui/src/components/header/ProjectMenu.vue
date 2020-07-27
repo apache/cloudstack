@@ -48,6 +48,7 @@
 <script>
 import store from '@/store'
 import { api } from '@/api'
+import _ from 'lodash'
 
 export default {
   name: 'ProjectMenu',
@@ -66,20 +67,20 @@ export default {
         return
       }
       var page = 1
+      const projects = []
       const getNextPage = () => {
         this.loading = true
         api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500 }).then(json => {
-          if (page === 1) {
-            this.projects = [{ name: this.$t('label.default.view') }]
-          }
           if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
-            this.projects.push(...json.listprojectsresponse.project)
+            projects.push(...json.listprojectsresponse.project)
           }
-          if (this.projects.length - 1 < json.listprojectsresponse.count) {
+          if (projects.length < json.listprojectsresponse.count) {
             page++
             getNextPage()
           }
         }).finally(() => {
+          this.projects = _.orderBy(projects, ['displaytext'], ['asc'])
+          this.projects.unshift({ name: this.$t('label.default.view') })
           this.loading = false
         })
       }
@@ -92,7 +93,7 @@ export default {
       const project = this.projects[index]
       this.$store.dispatch('SetProject', project)
       this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
-      this.$message.success(`Switched to "${project.name}"`)
+      this.$message.success(`Switched to "${project.displaytext}"`)
       if (this.$route.name !== 'dashboard') {
         this.$router.push({ name: 'dashboard' })
       }

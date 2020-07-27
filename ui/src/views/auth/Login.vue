@@ -39,6 +39,7 @@
           <a-input
             size="large"
             type="text"
+            autoFocus
             :placeholder="$t('label.username')"
             v-decorator="[
               'username',

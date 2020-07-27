@@ -104,9 +104,9 @@
     <a slot="publicip" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
-    <a slot="traffictype" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: $route.path + '/' + record.id + '?physicalnetworkid=' + record.physicalnetworkid }">{{ text }}</router-link>
-    </a>
+    <span slot="traffictype" slot-scope="text" href="javascript:;">
+      {{ text }}
+    </span>
     <a slot="vmname" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
     </a>
@@ -164,12 +164,14 @@
       <router-link :to="{ path: '/pod/' + record.podid }">{{ text }}</router-link>
     </a>
     <span slot="account" slot-scope="text, record">
-      <router-link
-        v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`) !== '404'"
-        :to="{ path: `${$route.path}/${record.account}`, query: { account: record.account, domainid: record.domainid, quota: true } }">{{ text }}</router-link>
-      <router-link :to="{ path: '/account/' + record.accountid }" v-else-if="record.accountid">{{ text }}</router-link>
-      <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
+      <template v-if="text && !text.startsWith('PrjAcct-')">
+        <router-link
+          v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`) !== '404'"
+          :to="{ path: `${$route.path}/${record.account}`, query: { account: record.account, domainid: record.domainid, quota: true } }">{{ text }}</router-link>
+        <router-link :to="{ path: '/account/' + record.accountid }" v-else-if="record.accountid">{{ text }}</router-link>
+        <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
     </span>
     <span slot="domain" slot-scope="text, record" href="javascript:;">
       <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>

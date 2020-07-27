@@ -111,7 +111,11 @@ export default {
         isSystem: true,
         zoneId: this.resource.zoneid
       }).then(json => {
-        this.publicNetwork = json.listnetworksresponse.network[0] || {}
+        if (json.listnetworksresponse && json.listnetworksresponse.network && json.listnetworksresponse.network.length > 0) {
+          this.publicNetwork = json.listnetworksresponse.network[0]
+        } else {
+          this.publicNetwork = {}
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {

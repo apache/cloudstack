@@ -103,6 +103,10 @@ export default {
       mapping: {
         virtualmachineid: {
           value: (record) => { return record.id }
+        },
+        hostid: {
+          api: 'findHostsForMigration',
+          params: (record) => { return { virtualmachineid: record.id } }
         }
       }
     },

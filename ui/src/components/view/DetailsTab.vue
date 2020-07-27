@@ -18,7 +18,7 @@
 <template>
   <a-list
     size="small"
-    :dataSource="$route.meta.details">
+    :dataSource="projectname ? [...$route.meta.details.filter(x => x !== 'account'), 'projectname'] : $route.meta.details">
     <a-list-item slot="renderItem" slot-scope="item" v-if="item in resource">
       <div>
         <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
@@ -73,7 +73,8 @@ export default {
   data () {
     return {
       dedicatedRoutes: ['zone', 'pod', 'cluster', 'host'],
-      dedicatedSectionActive: false
+      dedicatedSectionActive: false,
+      projectname: ''
     }
   },
   mounted () {
@@ -83,6 +84,13 @@ export default {
     this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
   },
   watch: {
+    resource (newItem) {
+      this.resource = newItem
+      if ('account' in this.resource && this.resource.account.startsWith('PrjAcct-')) {
+        this.projectname = this.resource.account.substring(this.resource.account.indexOf('-') + 1, this.resource.account.lastIndexOf('-'))
+        this.resource.projectname = this.projectname
+      }
+    },
     $route () {
       this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
     }

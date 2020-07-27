@@ -23,7 +23,7 @@
       v-model="filter"
       @search="handleSearch" />
     <a-button type="primary" @click="showCreateForm = true" style="float: right; margin-right: 5px; z-index: 8">
-      {{ $t('label.add.network') }}
+      {{ $t('label.create.network') }}
     </a-button>
     <a-table
       :loading="loading"

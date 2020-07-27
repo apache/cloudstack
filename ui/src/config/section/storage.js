@@ -102,7 +102,7 @@ export default {
           message: 'message.confirm.attach.disk',
           args: ['virtualmachineid'],
           dataView: true,
-          show: (record) => { return record.type !== 'ROOT' && record.state !== 'Destroy' && !('virtualmachineid' in record) }
+          show: (record) => { return record.type !== 'ROOT' && ['Allocated', 'Ready', 'Uploaded'].includes(record.state) && !('virtualmachineid' in record) }
         },
         {
           api: 'detachVolume',
@@ -110,7 +110,10 @@ export default {
           label: 'label.action.detach.disk',
           message: 'message.detach.disk',
           dataView: true,
-          show: (record) => { return record.type !== 'ROOT' && 'virtualmachineid' in record && record.virtualmachineid }
+          show: (record) => {
+            return record.type !== 'ROOT' && 'virtualmachineid' in record && record.virtualmachineid &&
+              ['Running', 'Stopped', 'Destroyed'].includes(record.vmstate)
+          }
         },
         {
           api: 'createSnapshot',
@@ -147,7 +150,7 @@ export default {
           label: 'label.action.resize.volume',
           dataView: true,
           popup: true,
-          show: (record) => { return record.state !== 'Destroy' },
+          show: (record) => { return ['Allocated', 'Ready'].includes(record.state) },
           component: () => import('@/views/storage/ResizeVolume.vue')
         },
         {
@@ -167,7 +170,7 @@ export default {
           label: 'label.action.download.volume',
           message: 'message.download.volume.confirm',
           dataView: true,
-          show: (record) => { return record && record.state === 'Ready' && (record.vmstate === 'Stopped' || record.virtualmachineid == null) && record.state !== 'Destroy' },
+          show: (record) => { return record && record.state === 'Ready' && (record.vmstate === 'Stopped' || record.virtualmachineid == null) },
           args: ['zoneid', 'mode'],
           mapping: {
             zoneid: {
@@ -278,14 +281,15 @@ export default {
           label: 'label.action.revert.snapshot',
           message: 'message.action.revert.snapshot',
           dataView: true,
-          show: (record) => { return record.revertable }
+          show: (record) => { return record.state === 'BackedUp' && record.revertable }
         },
         {
           api: 'deleteSnapshot',
           icon: 'delete',
           label: 'label.action.delete.snapshot',
           message: 'message.action.delete.snapshot',
-          dataView: true
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' }
         }
       ]
     },
@@ -326,6 +330,7 @@ export default {
           label: 'label.action.vmsnapshot.delete',
           message: 'message.action.vmsnapshot.delete',
           dataView: true,
+          show: (record) => { return ['Ready', 'Expunging', 'Error'].includes(record.state) },
           args: ['vmsnapshotid'],
           mapping: {
             vmsnapshotid: {
@@ -349,7 +354,8 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
           label: 'label.backup.restore',
           message: 'message.backup.restore',
-          dataView: true
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' }
         },
         {
           api: 'restoreVolumeFromBackupAndAttachToVM',
@@ -357,6 +363,7 @@ export default {
           label: 'label.backup.attach.restore',
           message: 'message.backup.attach.restore',
           dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' },
           popup: true,
           component: () => import('@/views/storage/RestoreAttachBackupVolume.vue')
         },
@@ -366,6 +373,7 @@ export default {
           label: 'label.backup.offering.remove',
           message: 'message.backup.offering.remove',
           dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' },
           args: ['forced', 'virtualmachineid'],
           mapping: {
             forced: {
@@ -381,7 +389,8 @@ export default {
           icon: 'delete',
           label: 'label.delete.backup',
           message: 'message.delete.backup',
-          dataView: true
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' }
         }
       ]
     }

@@ -76,7 +76,7 @@
 
         <a-divider/>
 
-        <div class="resource-detail-item" v-if="resource.state || resource.status">
+        <div class="resource-detail-item" v-if="(resource.state || resource.status) && $route.meta.name !== 'zone'">
           <div class="resource-detail-item__label">{{ $t('label.status') }}</div>
           <div class="resource-detail-item__details">
             <status class="status" :text="resource.state || resource.status" displayText/>
@@ -288,11 +288,12 @@
             <span v-else>{{ resource.ipaddress }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.projectid">
+        <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
           <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="project" />
-            <router-link :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
+            <router-link v-if="resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
+            <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
           </div>
         </div>
 
@@ -458,7 +459,7 @@
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.account">
+        <div class="resource-detail-item" v-if="resource.account && !resource.account.startsWith('PrjAcct-')">
           <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="user" />
@@ -551,88 +552,89 @@
 
       <div class="account-center-tags" v-if="resourceType && 'listTags' in $store.getters.apis">
         <a-divider/>
-        <div class="title">{{ $t('label.tags') }}</div>
-        <div>
-          <template v-for="(tag, index) in tags">
-            <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
-              {{ tag.key }} = {{ tag.value }}
-            </a-tag>
-          </template>
+        <a-spin :spinning="loadingTags">
+          <div class="title">{{ $t('label.tags') }}</div>
+          <div>
+            <template v-for="(tag, index) in tags">
+              <a-tag :key="index" :closable="isAdminOrOwner() && 'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+                {{ tag.key }} = {{ tag.value }}
+              </a-tag>
+            </template>
 
-          <div v-if="inputVisible">
-            <a-input-group
-              type="text"
-              size="small"
-              @blur="handleInputConfirm"
-              @keyup.enter="handleInputConfirm"
-              compact>
-              <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 30%; text-align: center" :placeholder="$t('label.key')" />
-              <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
-              <a-input :value="inputValue" @change="handleValueChange" style="width: 30%; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-              <a-button shape="circle" size="small" @click="handleInputConfirm">
-                <a-icon type="check"/>
-              </a-button>
-              <a-button shape="circle" size="small" @click="inputVisible=false">
-                <a-icon type="close"/>
-              </a-button>
-            </a-input-group>
+            <div v-if="inputVisible">
+              <a-input-group
+                type="text"
+                size="small"
+                @blur="handleInputConfirm"
+                @keyup.enter="handleInputConfirm"
+                compact>
+                <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 30%; text-align: center" :placeholder="$t('label.key')" />
+                <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+                <a-input :value="inputValue" @change="handleValueChange" style="width: 30%; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
+                <a-button shape="circle" size="small" @click="handleInputConfirm">
+                  <a-icon type="check"/>
+                </a-button>
+                <a-button shape="circle" size="small" @click="inputVisible=false">
+                  <a-icon type="close"/>
+                </a-button>
+              </a-input-group>
+            </div>
+            <a-tag @click="showInput" style="background: #fff; borderStyle: dashed;" v-else-if="isAdminOrOwner() && 'createTags' in $store.getters.apis">
+              <a-icon type="plus" /> {{ $t('label.new.tag') }}
+            </a-tag>
           </div>
-          <a-tag @click="showInput" style="background: #fff; borderStyle: dashed;" v-else-if="'createTags' in $store.getters.apis">
-            <a-icon type="plus" /> {{ $t('label.new.tag') }}
-          </a-tag>
-        </div>
+        </a-spin>
       </div>
 
       <div class="account-center-team" v-if="annotationType && 'listAnnotations' in $store.getters.apis">
         <a-divider :dashed="true"/>
-        <div class="title">
-          {{ $t('label.comments') }} ({{ notes.length }})
-        </div>
-        <a-list
-          v-if="notes.length"
-          :dataSource="notes"
-          itemLayout="horizontal"
-          size="small"
-        >
-          <a-list-item slot="renderItem" slot-scope="item">
-            <a-comment
-              :content="item.annotation"
-              :datetime="item.created"
-            >
-              <a-button
-                v-if="'removeAnnotation' in $store.getters.apis"
-                slot="avatar"
-                type="danger"
-                shape="circle"
-                size="small"
-                @click="deleteNote(item)">
-                <a-icon type="delete"/>
-              </a-button>
-            </a-comment>
-          </a-list-item>
-        </a-list>
-
-        <a-comment v-if="'addAnnotation' in $store.getters.apis">
-          <a-avatar
-            slot="avatar"
-            icon="edit"
-            @click="showNotesInput = true"
-          />
-          <div slot="content">
-            <a-textarea
-              rows="4"
-              @change="handleNoteChange"
-              :value="annotation"
-              :placeholder="$t('label.add.note')" />
-            <a-button
-              style="margin-top: 10px"
-              @click="saveNote"
-              type="primary"
-            >
-              {{ $t('label.save') }}
-            </a-button>
+        <a-spin :spinning="loadingAnnotations">
+          <div class="title">
+            {{ $t('label.comments') }} ({{ notes.length }})
           </div>
-        </a-comment>
+          <a-list
+            v-if="notes.length"
+            :dataSource="notes"
+            itemLayout="horizontal"
+            size="small" >
+            <a-list-item slot="renderItem" slot-scope="item">
+              <a-comment
+                :content="item.annotation"
+                :datetime="item.created" >
+                <a-button
+                  v-if="'removeAnnotation' in $store.getters.apis"
+                  slot="avatar"
+                  type="danger"
+                  shape="circle"
+                  size="small"
+                  @click="deleteNote(item)">
+                  <a-icon type="delete"/>
+                </a-button>
+              </a-comment>
+            </a-list-item>
+          </a-list>
+
+          <a-comment v-if="'addAnnotation' in $store.getters.apis">
+            <a-avatar
+              slot="avatar"
+              icon="edit"
+              @click="showNotesInput = true" />
+            <div slot="content">
+              <a-textarea
+                rows="4"
+                @change="handleNoteChange"
+                :value="annotation"
+                :placeholder="$t('label.add.note')" />
+              <a-button
+                style="margin-top: 10px"
+                @click="saveNote"
+                type="primary"
+              >
+                {{ $t('label.save') }}
+              </a-button>
+            </div>
+          </a-comment>
+        </a-spin>
       </div>
     </a-card>
   </a-spin>
@@ -681,7 +683,9 @@ export default {
       notes: [],
       annotation: '',
       showKeys: false,
-      showNotesInput: false
+      showNotesInput: false,
+      loadingTags: false,
+      loadingAnnotations: false
     }
   },
   watch: {
@@ -746,6 +750,7 @@ export default {
       if (!('listTags' in this.$store.getters.apis) || !this.resource || !this.resource.id) {
         return
       }
+      this.loadingTags = true
       this.tags = []
       const params = {
         listall: true,
@@ -759,18 +764,28 @@ export default {
         if (json.listtagsresponse && json.listtagsresponse.tag) {
           this.tags = json.listtagsresponse.tag
         }
+      }).finally(() => {
+        this.loadingTags = false
       })
     },
     getNotes () {
       if (!('listAnnotations' in this.$store.getters.apis)) {
         return
       }
+      this.loadingAnnotations = true
       this.notes = []
       api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.notes = json.listannotationsresponse.annotation
         }
+      }).finally(() => {
+        this.loadingAnnotations = false
       })
+    },
+    isAdminOrOwner () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype) ||
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
+        this.resource.project && this.resource.projectid === this.$store.getters.project.id
     },
     showInput () {
       this.inputVisible = true
@@ -786,6 +801,7 @@ export default {
     },
     handleInputConfirm () {
       const args = {}
+      this.loadingTags = true
       args.resourceids = this.resource.id
       args.resourcetype = this.resourceType
       args['tags[0].key'] = this.inputKey
@@ -801,6 +817,7 @@ export default {
     },
     handleDeleteTag (tag) {
       const args = {}
+      this.loadingTags = true
       args.resourceids = this.resource.id
       args.resourcetype = this.resourceType
       args['tags[0].key'] = tag.key
@@ -817,6 +834,7 @@ export default {
       if (this.annotation.length < 1) {
         return
       }
+      this.loadingAnnotations = true
       this.showNotesInput = false
       const args = {}
       args.entityid = this.resource.id
@@ -829,6 +847,7 @@ export default {
       this.annotation = ''
     },
     deleteNote (annotation) {
+      this.loadingAnnotations = true
       const args = {}
       args.id = annotation.id
       api('removeAnnotation', args).then(json => {
