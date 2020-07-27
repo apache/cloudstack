@@ -175,7 +175,7 @@
                   }]"
                   :placeholder="field.description"
                 >
-                  <a-select-option :key="null">{{ }}</a-select-option>
+                  <a-select-option key="" >{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
                     {{ opt }}
                   </a-select-option>
@@ -196,7 +196,7 @@
                     return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
-                  <a-select-option :key="null">{{ }}</a-select-option>
+                  <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
@@ -216,7 +216,7 @@
                     return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
-                  <a-select-option :key="null">{{ }}</a-select-option>
+                  <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id">
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
@@ -827,7 +827,7 @@ export default {
               if (param.name !== key) {
                 continue
               }
-              if (input === undefined || input === null) {
+              if (input === undefined || input === null || input === '') {
                 if (param.type === 'boolean') {
                   params[key] = false
                 }
