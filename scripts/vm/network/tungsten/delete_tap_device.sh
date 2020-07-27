@@ -1,0 +1,1 @@
+ip tuntap del dev $1 mode tap
