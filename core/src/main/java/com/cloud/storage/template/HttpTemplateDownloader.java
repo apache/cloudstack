@@ -346,7 +346,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         long localFileSize = 0;
         if (file.exists() && resume) {
             localFileSize = file.length();
-            s_logger.info("Resuming download to file (current size)=" + toHumanReadableSize(localFileSize)); //untested
+            s_logger.info("Resuming download to file (current size)=" + toHumanReadableSize(localFileSize));
         }
         return localFileSize;
     }

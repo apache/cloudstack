@@ -29,7 +29,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 public class HumanReadableJson {
 
     private boolean changeValue;
-    private String output = "";
+    private StringBuilder output = new StringBuilder();
 
     private final String[] elementsToMatch = {
             "bytesSent","bytesReceived","BytesWrite","BytesRead","bytesReadRate","bytesWriteRate","iopsReadRate",
@@ -41,27 +41,27 @@ public class HumanReadableJson {
     public static String getHumanReadableBytesJson(String json){
         HumanReadableJson humanReadableJson = new HumanReadableJson();
         humanReadableJson.addElement(json);
-        return humanReadableJson.output;
+        return humanReadableJson.output.toString();
     }
 
     private void addElement(String content) {
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(content);
         if (jsonElement.isJsonArray()) {
-            output += "[";
+            output.append("[");
             addArray(jsonElement.toString());
-            output += "]";
+            output.append("]");
         }
         if (jsonElement.isJsonObject()) {
-            output += "{";
+            output.append("{");
             addObject(jsonElement.getAsJsonObject().toString());
-            output += "}";
+            output.append("}");
         }
         if (jsonElement.isJsonPrimitive()) {
             if (changeValue) {
-                output += "\"" + toHumanReadableSize(jsonElement.getAsLong()) + "\",";
+                output.append("\"" + toHumanReadableSize(jsonElement.getAsLong()) + "\",");
             } else {
-                output += "\"" + jsonElement.getAsString() + "\",";
+                output.append("\"" + jsonElement.getAsString() + "\",");
             }
         }
     }
@@ -74,7 +74,7 @@ public class HumanReadableJson {
         while(it.hasNext()) {
             Entry<String, JsonElement> value = it.next();
             String key = value.getKey();
-            output += "\"" + key + "\":";
+            output.append("\"" + key + "\":");
             for (int i = 0; i < elementsToMatch.length; i++){
                 if (key.equals(elementsToMatch[i])) {
                     changeValue = true;

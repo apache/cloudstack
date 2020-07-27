@@ -718,7 +718,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 s_logger.debug("Using root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes for volume " + name);
                 size = rootDisksize;
             } else {
-                s_logger.debug("Using root disk size of " + toHumanReadableSize(size) + " Bytes for volume " + name + "since specified root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes is smaller than template"); //untested
+                s_logger.debug("Using root disk size of " + toHumanReadableSize(size) + " Bytes for volume " + name + "since specified root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes is smaller than template");
             }
         }
 

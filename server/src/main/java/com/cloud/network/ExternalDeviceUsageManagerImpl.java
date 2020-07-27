@@ -539,7 +539,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
             userStats.setCurrentBytesReceived(newCurrentBytesReceived);
             if (oldCurrentBytesReceived > newCurrentBytesReceived) {
-                s_logger.warn(warning + "Stored bytes received: " + toHumanReadableSize(oldCurrentBytesReceived) + ", new bytes received: " + toHumanReadableSize(newCurrentBytesReceived) + "."); // untested
+                s_logger.warn(warning + "Stored bytes received: " + toHumanReadableSize(oldCurrentBytesReceived) + ", new bytes received: " + toHumanReadableSize(newCurrentBytesReceived) + ".");
                 userStats.setNetBytesReceived(oldNetBytesReceived + oldCurrentBytesReceived);
             }
 

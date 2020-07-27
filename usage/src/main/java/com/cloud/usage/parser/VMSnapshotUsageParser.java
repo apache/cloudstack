@@ -36,6 +36,8 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVMSnapshotDao;
 import com.cloud.user.AccountVO;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class VMSnapshotUsageParser {
     public static final Logger s_logger = Logger.getLogger(VMSnapshotUsageParser.class.getName());
@@ -143,7 +145,7 @@ public class VMSnapshotUsageParser {
             usageDesc += " DiskOffering: " + doId;
         }
 
-        usageDesc += " Size: " + size;
+        usageDesc += " Size: " + toHumanReadableSize(size);
 
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, doId, null, vmSnapshotId, size,
