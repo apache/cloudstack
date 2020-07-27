@@ -215,6 +215,7 @@
                 <template slot="description">
                   <div v-if="zoneSelected">
                     <network-selection
+                      v-if="!networkId"
                       :items="options.networks"
                       :row-count="rowCount.networks"
                       :value="networkOfferingIds"
@@ -765,6 +766,12 @@ export default {
           value: keyboard
         }
       })
+    },
+    networkId () {
+      return this.$route.query.networkid || null
+    },
+    networkName () {
+      return this.$route.query.name || null
     }
   },
   watch: {
@@ -786,7 +793,9 @@ export default {
       this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
       this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
       this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-      this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
+      if (!this.networkId) {
+        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
+      }
       this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
       if (this.zone) {
@@ -874,6 +883,15 @@ export default {
       this.form.getFieldDecorator([field], { initialValue: this.dataPreFill[field] })
     },
     fetchData () {
+      if (this.networkId) {
+        this.updateNetworks([this.networkId])
+        this.updateDefaultNetworks(this.networkId)
+        this.networks = [{
+          id: this.networkId,
+          name: this.networkName
+        }]
+      }
+
       if (this.dataPreFill.zoneid) {
         this.fetchDataByZone(this.dataPreFill.zoneid)
       } else {
@@ -1323,6 +1341,9 @@ export default {
       })
       this.tabKey = 'templateid'
       _.each(this.params, (param, name) => {
+        if (this.networkId && name === 'networks') {
+          return true
+        }
         if (!('isLoad' in param) || param.isLoad) {
           this.fetchOptions(param, name, ['zones'])
         }

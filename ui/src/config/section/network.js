@@ -184,6 +184,16 @@ export default {
         name: 'egress.rule',
         component: () => import('@/views/network/IngressEgressRuleConfigure.vue')
       }],
+      show: () => {
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
+        if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
+          return false
+        }
+        return true
+      },
       actions: [
         {
           api: 'createSecurityGroup',
