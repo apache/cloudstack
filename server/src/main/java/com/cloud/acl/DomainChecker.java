@@ -217,7 +217,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 return isPermitted(project, projectAccount, apiCommandName);
             }
         }
-        throw new UnavailableCommandException("The API " + apiCommandName + " does not exist or is not available for this account/user ");
+        throw new UnavailableCommandException("The given command '" + apiCommandName + "' either does not exist or is not available for the user");
     }
 
     private boolean isPermitted(Project project, ProjectAccount projectUser, String apiCommandName) {
@@ -235,7 +235,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 if (RolePermissionEntity.Permission.ALLOW.equals(permission.getPermission())) {
                     return true;
                 } else {
-                    throw new PermissionDeniedException(apiCommandName + " does not exist");
+                    throw new PermissionDeniedException("The given command '" + apiCommandName + "' either does not exist or is not available for the user");
                 }
             }
         }
