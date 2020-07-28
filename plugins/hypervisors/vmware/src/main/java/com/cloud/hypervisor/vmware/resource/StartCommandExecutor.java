@@ -228,7 +228,9 @@ class StartCommandExecutor {
                 }
             }
             // vmMo should now be a stopped VM on the intended host
-            int totalChangeDevices = disks.length + nics.length;
+            // The number of disks changed must be 0 for install as is, as the VM is a clone
+            int disksChanges = !installAsIs ? disks.length : 0;
+            int totalChangeDevices = disksChanges + nics.length;
             int hackDeviceCount = 0;
             if (diskInfoBuilder != null) {
                 hackDeviceCount += diskInfoBuilder.getDiskCount();
@@ -291,7 +293,7 @@ class StartCommandExecutor {
             }
 
             DiskSetup diskSetup = new DiskSetup(vmSpec, rootDiskTO, controllerInfo, context, dcMo, hyperHost, vmMo, disks, dataStoresDetails, diskInfoBuilder, hasSnapshot,
-                    deviceConfigSpecArray, deviceCount, ideUnitNumber, scsiUnitNumber, ideControllerKey, scsiControllerKey);
+                    deviceConfigSpecArray, deviceCount, ideUnitNumber, scsiUnitNumber, ideControllerKey, scsiControllerKey, installAsIs);
             diskSetup.invoke();
 
             rootDiskTO = diskSetup.getRootDiskTO();
@@ -393,7 +395,7 @@ class StartCommandExecutor {
 
             Map<String, Map<String, String>> iqnToData = new HashMap<>();
 
-            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, iqnToData, hyperHost, context);
+            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, iqnToData, hyperHost, context, installAsIs);
 
             //
             // Power-on VM
@@ -941,12 +943,13 @@ class StartCommandExecutor {
     }
 
     private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks,
-            Map<String, Map<String, String>> iqnToData, VmwareHypervisorHost hyperHost, VmwareContext context)
+                                           Map<String, Map<String, String>> iqnToData, VmwareHypervisorHost hyperHost, VmwareContext context, boolean installAsIs)
             throws Exception {
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
 
         for (DiskTO vol : sortedDisks) {
-            if (vol.getType() == Volume.Type.ISO)
+            //TODO: Map existing disks to the ones returned in the answer
+            if (vol.getType() == Volume.Type.ISO || installAsIs)
                 continue;
 
             VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
@@ -1544,10 +1547,11 @@ class StartCommandExecutor {
         private int ideControllerKey;
         private int scsiControllerKey;
         private DiskTO[] sortedDisks;
+        private boolean installAsIs;
 
         public DiskSetup(VirtualMachineTO vmSpec, DiskTO rootDiskTO, Pair<String, String> controllerInfo, VmwareContext context, DatacenterMO dcMo, VmwareHypervisorHost hyperHost,
-                VirtualMachineMO vmMo, DiskTO[] disks, HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails, VirtualMachineDiskInfoBuilder diskInfoBuilder,
-                boolean hasSnapshot, VirtualDeviceConfigSpec[] deviceConfigSpecArray, int deviceCount, int ideUnitNumber, int scsiUnitNumber, int ideControllerKey, int scsiControllerKey) {
+                         VirtualMachineMO vmMo, DiskTO[] disks, HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails, VirtualMachineDiskInfoBuilder diskInfoBuilder,
+                         boolean hasSnapshot, VirtualDeviceConfigSpec[] deviceConfigSpecArray, int deviceCount, int ideUnitNumber, int scsiUnitNumber, int ideControllerKey, int scsiControllerKey, boolean installAsIs) {
             this.vmSpec = vmSpec;
             this.rootDiskTO = rootDiskTO;
             this.controllerInfo = controllerInfo;
@@ -1565,6 +1569,7 @@ class StartCommandExecutor {
             this.scsiUnitNumber = scsiUnitNumber;
             this.ideControllerKey = ideControllerKey;
             this.scsiControllerKey = scsiControllerKey;
+            this.installAsIs = installAsIs;
         }
 
         public DiskTO getRootDiskTO() {
@@ -1583,8 +1588,9 @@ class StartCommandExecutor {
             int controllerKey;
             sortedDisks = sortVolumesByDeviceId(disks);
             for (DiskTO vol : sortedDisks) {
-                if (vol.getType() == Volume.Type.ISO)
+                if (vol.getType() == Volume.Type.ISO || installAsIs) {
                     continue;
+                }
 
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
                 controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
