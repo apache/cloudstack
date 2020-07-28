@@ -707,6 +707,7 @@ public class VolumeServiceImpl implements VolumeService {
         private final AsyncCallFuture<VolumeApiResult> future;
         private final DataObject templateOnStore;
         private final SnapshotInfo snapshot;
+        private boolean deployAsIs;
 
         public CreateVolumeFromBaseImageContext(AsyncCompletionCallback<T> callback, DataObject vo, DataStore primaryStore, DataObject templateOnStore, AsyncCallFuture<VolumeApiResult> future,
                 SnapshotInfo snapshot) {
@@ -723,7 +724,8 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @DB
-    protected void createVolumeFromBaseImageAsync(VolumeInfo volume, DataObject templateOnPrimaryStore, PrimaryDataStore pd, AsyncCallFuture<VolumeApiResult> future) {
+    protected void createVolumeFromBaseImageAsync(VolumeInfo volume, DataObject templateOnPrimaryStore, PrimaryDataStore pd,
+                                                  AsyncCallFuture<VolumeApiResult> future) {
         DataObject volumeOnPrimaryStorage = pd.create(volume);
         volumeOnPrimaryStorage.processEvent(Event.CreateOnlyRequested);
 
@@ -732,7 +734,15 @@ public class VolumeServiceImpl implements VolumeService {
         caller.setCallback(caller.getTarget().createVolumeFromBaseImageCallBack(null, null));
         caller.setContext(context);
 
-        motionSrv.copyAsync(context.templateOnStore, volumeOnPrimaryStorage, caller);
+        if (!volume.isDeployAsIs()) {
+            motionSrv.copyAsync(context.templateOnStore, volumeOnPrimaryStorage, caller);
+        } else {
+            Answer answer = new Answer(null);
+            CopyCommandResult result = new CopyCommandResult(null, null);
+            result.setSuccess(true);
+            caller.complete(result);
+        }
+
         return;
     }
 
@@ -1211,13 +1221,7 @@ public class VolumeServiceImpl implements VolumeService {
             return future;
         }
 
-        if (template.isDeployAsIs()) {
-            //Dont need to create volume, as the VM will be cloned from the template on StartCommand
-            VolumeApiResult result = new VolumeApiResult(volume);
-            future.complete(result);
-        } else {
-            createVolumeFromBaseImageAsync(volume, templateOnPrimaryStore, pd, future);
-        }
+        createVolumeFromBaseImageAsync(volume, templateOnPrimaryStore, pd, future);
         return future;
     }
 
