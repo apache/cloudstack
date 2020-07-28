@@ -1507,27 +1507,44 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
 
         if (primaryStorage.getPoolType() == StoragePoolType.DatastoreCluster) {
-            // Before preparing the datastorecluster to maintenance mode, the storagepools in the datastore cluster needs to put in maintenance
-            List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(primaryStorageId);
-            Transaction.execute(new TransactionCallbackNoReturn() {
-                @Override
-                public void doInTransactionWithoutResult(TransactionStatus status) {
-                    for (StoragePoolVO childDatastore : childDatastores) {
-                        // set the pool state to prepare for maintenance, so that VMs will not migrate to the storagepools in the same cluster
-                        childDatastore.setStatus(StoragePoolStatus.PrepareForMaintenance);
-                        _storagePoolDao.update(childDatastore.getId(), childDatastore);
-                    }
-                }
-            });
-            for (StoragePoolVO childDatastore : childDatastores) {
-                //FR41 need to handle when one of the primary stores is unable to put in maintenance mode
-                DataStore childStore = _dataStoreMgr.getDataStore(childDatastore.getId(), DataStoreRole.Primary);
-                lifeCycle.maintain(childStore);
-            }
+            handlePrepareDatastoreCluserMaintenance(lifeCycle, primaryStorageId);
         }
         lifeCycle.maintain(store);
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
+    }
+
+    private void handlePrepareDatastoreCluserMaintenance(DataStoreLifeCycle lifeCycle, Long primaryStorageId) {
+        // Before preparing the datastorecluster to maintenance mode, the storagepools in the datastore cluster needs to put in maintenance
+        List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(primaryStorageId);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (StoragePoolVO childDatastore : childDatastores) {
+                    // set the pool state to prepare for maintenance, so that VMs will not migrate to the storagepools in the same cluster
+                    childDatastore.setStatus(StoragePoolStatus.PrepareForMaintenance);
+                    _storagePoolDao.update(childDatastore.getId(), childDatastore);
+                }
+            }
+        });
+        List<DataStore> maintenanceSuccessfulStoragePools = new ArrayList<>();
+        for (StoragePoolVO childDatastore : childDatastores) {
+            //FR41 need to handle when one of the primary stores is unable to put in maintenance mode
+            DataStore childStore = _dataStoreMgr.getDataStore(childDatastore.getId(), DataStoreRole.Primary);
+            try {
+                lifeCycle.maintain(childStore);
+            } catch (Exception e) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Exception on maintenance preparation of one of the child datastores in datastore cluster %d with error %s", primaryStorageId, e));
+                    s_logger.debug(String.format("Cancelling the maintenance mode of child datastores in datastore cluster %d", primaryStorageId));
+                }
+                for (DataStore dataStore: maintenanceSuccessfulStoragePools) {
+                    lifeCycle.cancelMaintain(dataStore);
+                }
+                throw new CloudRuntimeException(String.format("Failed to prepare maintenance mode for datastore cluster %d with error %s %s", primaryStorageId, e.getMessage(), e));
+            }
+            maintenanceSuccessfulStoragePools.add(childStore);
+        }
     }
 
     @Override
