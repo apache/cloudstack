@@ -26,16 +26,19 @@ import java.util.Map.Entry;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
+
 public class HumanReadableJson {
 
     private boolean changeValue;
     private StringBuilder output = new StringBuilder();
+    private boolean firstPrimitive = true;
 
     private final String[] elementsToMatch = {
             "bytesSent","bytesReceived","BytesWrite","BytesRead","bytesReadRate","bytesWriteRate","iopsReadRate",
             "iopsWriteRate","ioRead","ioWrite","bytesWrite","bytesRead","networkkbsread","networkkbswrite",
             "diskkbsread","diskkbswrite","minRam","maxRam","volumeSize", "size","newSize","memorykbs",
-            "memoryintfreekbs","memorytargetkbs","diskioread","diskiowrite"
+            "memoryintfreekbs","memorytargetkbs","diskioread","diskiowrite","totalSize","capacityBytes",
+            "availableBytes","maxDownloadSizeInBytes","templateSize","templatePhySicalSize"
     };
 
     public static String getHumanReadableBytesJson(String json){
@@ -54,15 +57,17 @@ public class HumanReadableJson {
         }
         if (jsonElement.isJsonObject()) {
             output.append("{");
+            firstPrimitive = true;
             addObject(jsonElement.getAsJsonObject().toString());
             output.append("}");
         }
         if (jsonElement.isJsonPrimitive()) {
             if (changeValue) {
-                output.append("\"" + toHumanReadableSize(jsonElement.getAsLong()) + "\",");
+                output.append("\"" + toHumanReadableSize(jsonElement.getAsLong()) + "\"");
             } else {
-                output.append("\"" + jsonElement.getAsString() + "\",");
+                output.append("\"" + jsonElement.getAsString() + "\"");
             }
+            firstPrimitive = false;
         }
     }
 
@@ -74,6 +79,9 @@ public class HumanReadableJson {
         while(it.hasNext()) {
             Entry<String, JsonElement> value = it.next();
             String key = value.getKey();
+            if (!firstPrimitive){
+                output.append(",");
+            }
             output.append("\"" + key + "\":");
             for (int i = 0; i < elementsToMatch.length; i++){
                 if (key.equals(elementsToMatch[i])) {
@@ -90,6 +98,9 @@ public class HumanReadableJson {
         JsonParser parser = new JsonParser();
         JsonArray ar1 = parser.parse(content).getAsJsonArray();
         for (int count = 0; count < ar1.size(); count++) {
+            if (count > 0) {
+                output.append(",");
+            }
             addElement(ar1.get(count).toString());
         }
     }

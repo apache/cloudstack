@@ -107,6 +107,8 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
@@ -450,9 +452,20 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         long accountResourceLimit = findCorrectResourceLimitForAccount(account, type);
         long currentResourceCount = _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
         long requestedResourceCount = currentResourceCount + numResources;
+
+        String convertedAccountResourceLimit = String.valueOf(accountResourceLimit);
+        String convertedCurrentResourceCount = String.valueOf(currentResourceCount);
+        String convertedNumResources = String.valueOf(numResources);
+
+        if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+            convertedAccountResourceLimit = toHumanReadableSize(accountResourceLimit);
+            convertedCurrentResourceCount = toHumanReadableSize(currentResourceCount);
+            convertedNumResources = toHumanReadableSize(numResources);
+        }
+
         String messageSuffix = " amount of resources of Type = '" + type + "' for " + (project == null ? "Account Name = " + account.getAccountName() : "Project Name = " + project.getName())
-                + " in Domain Id = " + account.getDomainId() + " is exceeded: Account Resource Limit = " + accountResourceLimit + ", Current Account Resource Amount = " + currentResourceCount
-                + ", Requested Resource Amount = " + numResources + ".";
+                + " in Domain Id = " + account.getDomainId() + " is exceeded: Account Resource Limit = " + convertedAccountResourceLimit + ", Current Account Resource Amount = " + convertedCurrentResourceCount
+                + ", Requested Resource Amount = " + convertedNumResources + ".";
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if" + messageSuffix);
