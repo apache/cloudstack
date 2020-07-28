@@ -40,6 +40,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -602,6 +603,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 _storagePoolDetailsDao.addDetail(resourceId, name, value, true);
+                if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                    List<StoragePoolVO> childDataStores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(resourceId);
+                    for (StoragePoolVO childDataStore: childDataStores) {
+                        _storagePoolDetailsDao.addDetail(childDataStore.getId(), name, value, true);
+                    }
+                }
 
                 break;
 
