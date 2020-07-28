@@ -238,6 +238,19 @@
                 </template>
               </a-step>
               <a-step
+                v-if="showSecurityGroupSection"
+                :title="$t('label.security.groups')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template slot="description">
+                  <security-group-selection
+                    :zoneId="zoneId"
+                    :value="securitygroupids"
+                    :loading="loading.networks"
+                    :preFillContent="dataPreFill"
+                    @select-security-group-item="($event) => updateSecurityGroups($event)"></security-group-selection>
+                </template>
+              </a-step>
+              <a-step
                 :title="this.$t('label.sshkeypairs')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
@@ -448,6 +461,7 @@ import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
+import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 
 export default {
   name: 'Wizard',
@@ -461,7 +475,8 @@ export default {
     DiskOfferingSelection,
     InfoCard,
     ComputeOfferingSelection,
-    ComputeSelection
+    ComputeSelection,
+    SecurityGroupSelection
   },
   props: {
     visible: {
@@ -556,16 +571,6 @@ export default {
         'selfexecutable',
         'sharedexecutable'
       ],
-      steps: {
-        BASIC: 0,
-        TEMPLATE_ISO: 1,
-        COMPUTE: 2,
-        DISK_OFFERING: 3,
-        AFFINITY_GROUP: 4,
-        NETWORK: 5,
-        SSH_KEY_PAIR: 6,
-        ENABLE_SETUP: 7
-      },
       initDataConfig: {},
       defaultNetwork: '',
       networkConfig: [],
@@ -583,7 +588,8 @@ export default {
       tabKey: 'templateid',
       dataPreFill: {},
       showDetails: false,
-      showRootDiskSizeChanger: false
+      showRootDiskSizeChanger: false,
+      securitygroupids: []
     }
   },
   computed: {
@@ -774,6 +780,9 @@ export default {
     },
     networkName () {
       return this.$route.query.name || null
+    },
+    showSecurityGroupSection () {
+      return this.networks.length > 0 && this.zone.securitygroupsenabled
     }
   },
   watch: {
@@ -1060,6 +1069,9 @@ export default {
         keypair: name
       })
     },
+    updateSecurityGroups (securitygroupids) {
+      this.securitygroupids = securitygroupids
+    },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
@@ -1161,6 +1173,9 @@ export default {
               deployVmData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
             }
           }
+        }
+        if (this.securitygroupids.length > 0) {
+          deployVmData.securitygroupids = this.securitygroupids.join(',')
         }
         // step 7: select ssh key pair
         deployVmData.keypair = values.keypair
