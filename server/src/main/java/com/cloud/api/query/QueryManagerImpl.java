@@ -31,6 +31,8 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.projects.dao.ProjectInvitationDao;
+import com.cloud.user.dao.UserDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -118,6 +120,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -412,6 +416,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private RouterHealthCheckResultDao routerHealthCheckResultDao;
+
+    @Inject
+    private PrimaryDataStoreDao _storagePoolDao;
 
     @Inject
     private ProjectInvitationDao projectInvitationDao;
@@ -960,7 +967,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (storageId != null) {
-            sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
+            StoragePoolVO poolVO = _storagePoolDao.findById((Long) storageId);
+            if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster((Long) storageId);
+                sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.IN);
+            } else {
+                sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
+            }
         }
 
         if (affinityGroupId != null) {
@@ -1086,7 +1099,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
 
             if (storageId != null) {
-                sc.setParameters("poolId", storageId);
+                StoragePoolVO poolVO = _storagePoolDao.findById((Long) storageId);
+                if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                    List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster((Long) storageId);
+                    List<Long> childDatastoreIds = childDatastores.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+                    sc.setParameters("poolId", childDatastoreIds.toArray());
+                } else {
+                    sc.setParameters("poolId", storageId);
+                }
             }
         }
 
