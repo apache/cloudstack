@@ -99,7 +99,7 @@ export default {
           return true
         }
       }
-      return true
+      return false
     },
     handleRefresh () {
       this.fetchData()
