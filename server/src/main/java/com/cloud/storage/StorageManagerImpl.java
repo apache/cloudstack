@@ -927,13 +927,44 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (sPool.getPoolType() == StoragePoolType.DatastoreCluster) {
             // FR41 yet to handle on failure of deletion of any of the child storage pool
-            List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(sPool.getId());
-            for (StoragePoolVO childPool : childStoragePools) {
-                deleteDataStoreInternal(childPool, forced);
+            if (checkIfDataStoreClusterCanbeDeleted(sPool, forced)) {
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(sPool.getId());
+                        for (StoragePoolVO childPool : childStoragePools) {
+                            deleteDataStoreInternal(childPool, forced);
+                        }
+                    }
+                });
+            } else {
+                throw new CloudRuntimeException("Cannot delete pool " + sPool.getName() + " as there are associated " + "non-destroyed vols for this pool");
             }
         }
         return deleteDataStoreInternal(sPool, forced);
+    }
 
+    private boolean checkIfDataStoreClusterCanbeDeleted(StoragePoolVO sPool, boolean forced) {
+        List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(sPool.getId());
+        boolean canDelete = true;
+        for (StoragePoolVO childPool : childStoragePools) {
+            Pair<Long, Long> vlms = _volsDao.getCountAndTotalByPool(childPool.getId());
+            if (forced) {
+                if (vlms.first() > 0) {
+                    Pair<Long, Long> nonDstrdVlms = _volsDao.getNonDestroyedCountAndTotalByPool(childPool.getId());
+                    if (nonDstrdVlms.first() > 0) {
+                        canDelete = false;
+                        break;
+                    }
+                }
+            } else {
+                if (vlms.first() > 0) {
+                    canDelete = false;
+                    break;
+                }
+            }
+        }
+        return canDelete;
     }
 
     private boolean deleteDataStoreInternal(StoragePoolVO sPool, boolean forced) {
