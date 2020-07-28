@@ -29,6 +29,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.google.common.base.Strings;
 import com.cloud.utils.db.TransactionLegacy;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -157,9 +158,16 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 
     @Override
     public List<AccountVO> findAccountsLike(String accountName) {
+        return findAccountsLike(accountName, null).first();
+    }
+
+    @Override
+    public Pair<List<AccountVO>, Integer> findAccountsLike(String accountName, Filter filter) {
         SearchCriteria<AccountVO> sc = createSearchCriteria();
-        sc.addAnd("accountName", SearchCriteria.Op.LIKE, "%" + accountName + "%");
-        return listBy(sc);
+        if (!Strings.isNullOrEmpty(accountName)) {
+            sc.addAnd("accountName", SearchCriteria.Op.LIKE, "%" + accountName + "%");
+        }
+        return searchAndCount(sc, filter);
     }
 
     @Override

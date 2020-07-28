@@ -1949,7 +1949,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int ideUnitNumber = 0;
             int scsiUnitNumber = 0;
             int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-            int scsiControllerKey = vmMo.getGenericScsiDeviceControllerKeyNoException();
+            int scsiControllerKey = vmMo.getScsiDeviceControllerKeyNoException();
             int controllerKey;
 
             //
@@ -2072,13 +2072,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
                     }
                 } else {
-                    controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController);
+                    if (VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber)) {
+                        scsiUnitNumber++;
+                    }
+
+                    controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController, scsiUnitNumber);
                     if (controllerKey == -1) {
                         // This may happen for ROOT legacy VMs which doesn't have recommended disk controller when global configuration parameter 'vmware.root.disk.controller' is set to "osdefault"
                         // Retrieve existing controller and use.
                         Ternary<Integer, Integer, DiskControllerType> vmScsiControllerInfo = vmMo.getScsiControllerInfo();
                         DiskControllerType existingControllerType = vmScsiControllerInfo.third();
-                        controllerKey = vmMo.getScsiDiskControllerKeyNoException(existingControllerType.toString());
+                        controllerKey = vmMo.getScsiDiskControllerKeyNoException(existingControllerType.toString(), scsiUnitNumber);
                     }
                 }
                 if (!hasSnapshot) {
@@ -2102,10 +2106,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     assert (volumeDsDetails != null);
 
                     String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, vol, matchingExistingDisk, dataStoresDetails);
-                    if (controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
+
+                    int deviceNumber = -1;
+                    if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) {
+                        deviceNumber = ideUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_IDE_CONTROLLER;
+                        ideUnitNumber++;
+                    } else {
+                        deviceNumber = scsiUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_SCSI_CONTROLLER;
                         scsiUnitNumber++;
-                    VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(),
-                            (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) ? ((ideUnitNumber++) % VmwareHelper.MAX_IDE_CONTROLLER_COUNT) : scsiUnitNumber++, i + 1);
+                    }
+
+                    VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1);
 
                     if (vol.getType() == Volume.Type.ROOT)
                         rootDiskTO = vol;
@@ -2117,8 +2128,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     i++;
                 } else {
-                    if (controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
-                        scsiUnitNumber++;
                     if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber))
                         ideUnitNumber++;
                     else
