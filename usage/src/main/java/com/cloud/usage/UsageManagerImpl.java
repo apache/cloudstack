@@ -278,12 +278,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             throw new ConfigurationException("Unhandled exception configuring UsageManager " + e.toString());
         }
 
+        String processName;
         try {
-            String processName = ManagementFactory.getRuntimeMXBean().getName();
+            processName = ManagementFactory.getRuntimeMXBean().getName();
             _pid = Integer.parseInt(processName.split("@")[0]);
         } catch (Exception e) {
-            s_logger.error("Unable to get process pid ", e);
-            throw new ConfigurationException("Unable to get process pid " + e.toString());
+            String msg = String.format("Unable to get process Id for %s!", processName);
+            s_logger.debug(msg , e);
+            throw new ConfigurationException(msg, e);
         }
         return true;
     }
