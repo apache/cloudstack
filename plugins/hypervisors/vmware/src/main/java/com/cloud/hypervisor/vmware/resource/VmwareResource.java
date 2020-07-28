@@ -3766,7 +3766,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     VolumeStatsEntry vse = statEntry.get(chainInfo);
                                     if (vse != null) {
                                         vse.setPhysicalSize(vse.getPhysicalSize() + physicalsize);
-                                        vse.setVirtualSize(vse.getVirtualSize() + virtualsize);
                                     }
                                 } else {
                                     VolumeStatsEntry vse = new VolumeStatsEntry(chainInfo, physicalsize, virtualsize);
