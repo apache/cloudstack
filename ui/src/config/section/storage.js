@@ -39,8 +39,8 @@ export default {
               return record.physicalsize ? parseFloat(record.physicalsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) + 'GB' : ''
             }
           })
-          metricsFields.push('utilization')
         }
+        metricsFields.push('utilization')
 
         if (store.getters.metrics) {
           fields.push(...metricsFields)
