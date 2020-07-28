@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`project_role` (
   `project_id` bigint(20) unsigned COMMENT 'Id of the project to which the role belongs',
   PRIMARY KEY (`id`),
   KEY `i_project_role__name` (`name`),
-  UNIQUE KEY (`name`),
+  UNIQUE KEY (`name`, `project_id`),
   CONSTRAINT `fk_project_role__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
