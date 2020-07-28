@@ -110,7 +110,7 @@ class StartCommandExecutor {
         this.vmwareResource = vmwareResource;
     }
 
-    // FR37 the monster blob god method:
+    // FR37 the monster blob god method: reduce to 320 so far and counting
     protected StartAnswer execute(StartCommand cmd) {
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Executing resource StartCommand: " + vmwareResource.getGson().toJson(cmd));
@@ -233,7 +233,7 @@ class StartCommandExecutor {
             if (diskInfoBuilder != null) {
                 hackDeviceCount += diskInfoBuilder.getDiskCount();
             }
-            hackDeviceCount += nicDevices.length;
+            hackDeviceCount += nicDevices == null ? 0 : nicDevices.length;
             // vApp cdrom device
             // HACK ALERT: ovf properties might not be the only or defining feature of vApps; needs checking
             if (LOGGER.isTraceEnabled()) {
@@ -373,7 +373,7 @@ class StartCommandExecutor {
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure VM before start. vmName: " + vmInternalCSName);
             }
-
+            // FR37 TODO reconcile disks now!!! they are configured, check and add them to the returning vmTO
             if (vmSpec.getType() == VirtualMachine.Type.DomainRouter) {
                 hyperHost.setRestartPriorityForVM(vmMo, DasVmPriority.HIGH.value());
             }
@@ -393,7 +393,7 @@ class StartCommandExecutor {
 
             Map<String, Map<String, String>> iqnToData = new HashMap<>();
 
-            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, ideControllerKey, scsiControllerKey, iqnToData, hyperHost, context);
+            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, iqnToData, hyperHost, context);
 
             //
             // Power-on VM
@@ -410,25 +410,32 @@ class StartCommandExecutor {
 
             return startAnswer;
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                LOGGER.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                vmwareResource.invalidateServiceContext();
-            }
-
-            String msg = "StartCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            LOGGER.warn(msg, e);
-            StartAnswer startAnswer = new StartAnswer(cmd, msg);
-            if ( e instanceof VmAlreadyExistsInVcenter) {
-                startAnswer.setContextParam("stopRetry", "true");
-            }
-            reRegisterExistingVm(existingVm, dcMo);
-
-            return startAnswer;
+            return handleStartFailure(cmd, vmSpec, existingVm, dcMo, e);
         } finally {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("finally done with %s",  vmwareResource.getGson().toJson(cmd)));
             }
         }
+    }
+
+    private StartAnswer handleStartFailure(StartCommand cmd, VirtualMachineTO vmSpec, VirtualMachineData existingVm, DatacenterMO dcMo, Throwable e) {
+        if (e instanceof RemoteException) {
+            LOGGER.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+            vmwareResource.invalidateServiceContext();
+        }
+
+        String msg = "StartCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+        LOGGER.warn(msg, e);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("didn't start VM %s", vmSpec.getName()), e);
+        }
+        StartAnswer startAnswer = new StartAnswer(cmd, msg);
+        if ( e instanceof VmAlreadyExistsInVcenter) {
+            startAnswer.setContextParam("stopRetry", "true");
+        }
+        reRegisterExistingVm(existingVm, dcMo);
+
+        return startAnswer;
     }
 
     private void deleteOldVersionOfTheStartedVM(VirtualMachineData existingVm, DatacenterMO dcMo, VirtualMachineMO vmMo) throws Exception {
@@ -933,8 +940,9 @@ class StartCommandExecutor {
         return listForSort.toArray(new DiskTO[0]);
     }
 
-    private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks, int ideControllerKey,
-            int scsiControllerKey, Map<String, Map<String, String>> iqnToData, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
+    private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks,
+            Map<String, Map<String, String>> iqnToData, VmwareHypervisorHost hyperHost, VmwareContext context)
+            throws Exception {
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
 
         for (DiskTO vol : sortedDisks) {
