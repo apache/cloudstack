@@ -4403,7 +4403,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 s_logger.debug("Preparing spec for volume : " + volume.getName());
                 morDsAtTarget = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(tgtHyperHost, filerTo.getUuid());
-                morDsAtSource = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, filerTo.getUuid());
+                morDsAtSource = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, volume.getPoolUuid());
+
                 if (morDsAtTarget == null) {
                     String msg = "Unable to find the target datastore: " + filerTo.getUuid() + " on target host: " + tgtHyperHost.getHyperHostName()
                             + " to execute MigrateWithStorageCommand";
@@ -4431,7 +4432,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             s_logger.debug("Mounted datastore " + tgtDsHost + ":/" + tgtDsPath + " on " + _hostName);
                         }
                     }
-
                     // If datastore is VMFS and target datastore is not mounted or accessible to source host then fail migration.
                     if (filerTo.getType().equals(StoragePoolType.VMFS) || filerTo.getType().equals(StoragePoolType.PreSetup)) {
                         if (morDsAtSource == null) {
@@ -4452,6 +4452,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (volume.getType() == Volume.Type.ROOT) {
                     relocateSpec.setDatastore(morTgtDatastore);
                 }
+
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
                 diskLocator.setDatastore(morDsAtSource);
                 Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volume.getPath(), VMDK_EXTENSION));
@@ -4476,8 +4477,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     diskLocators.add(diskLocator);
                 }
             }
-
-            relocateSpec.getDisk().addAll(diskLocators);
+            if (srcHyperHost.getHyperHostCluster().equals(tgtHyperHost.getHyperHostCluster())) {
+                relocateSpec.getDisk().addAll(diskLocators);
+            }
 
             // Prepare network at target before migration
             NicTO[] nics = vmTo.getNics();
