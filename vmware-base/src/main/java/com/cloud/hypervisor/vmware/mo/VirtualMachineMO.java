@@ -34,8 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import com.vmware.vim25.VStorageObject;
-import com.vmware.vim25.VStorageObjectConfigInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
@@ -63,6 +61,8 @@ import com.vmware.vim25.ParaVirtualSCSIController;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VStorageObject;
+import com.vmware.vim25.VStorageObjectConfigInfo;
 import com.vmware.vim25.VirtualBusLogicController;
 import com.vmware.vim25.VirtualCdrom;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;

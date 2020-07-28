@@ -1,0 +1,103 @@
+diff --git a/server/src/main/java/com/cloud/vm/UserVmManagerImpl.java b/server/src/main/java/com/cloud/vm/UserVmManagerImpl.java
+index 47d3013f22..2dbf257fb2 100644
+--- a/server/src/main/java/com/cloud/vm/UserVmManagerImpl.java
++++ b/server/src/main/java/com/cloud/vm/UserVmManagerImpl.java
+@@ -5551,11 +5551,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
+             throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
+         }
+ 
+-        if (vm.getState() != State.Stopped) {
+-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Stopped, unable to migrate the vm having the specified id");
+-            ex.addProxyObject(vm.getUuid(), "vmId");
+-            throw ex;
+-        }
++//        if (vm.getState() != State.Stopped) {
++//            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Stopped, unable to migrate the vm having the specified id");
++//            ex.addProxyObject(vm.getUuid(), "vmId");
++//            throw ex;
++//        }
+ 
+         if (vm.getType() != VirtualMachine.Type.User) {
+             // OffLineVmwareMigration: *WHY* ?
+@@ -5634,14 +5634,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
+             throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
+         }
+         // business logic
+-        if (vm.getState() != State.Running) {
+-            if (s_logger.isDebugEnabled()) {
+-                s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
+-            }
+-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id");
+-            ex.addProxyObject(vm.getUuid(), "vmId");
+-            throw ex;
+-        }
++//        if (vm.getState() != State.Running) {
++//            if (s_logger.isDebugEnabled()) {
++//                s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
++//            }
++//            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id");
++//            ex.addProxyObject(vm.getUuid(), "vmId");
++//            throw ex;
++//        }
+ 
+         checkIfHostOfVMIsInPrepareForMaintenanceState(vm.getHostId(), vmId, "Migrate");
+ 
+@@ -5987,15 +5987,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
+         }
+ 
+         // OfflineVmwareMigration: this would be it ;) if multiple paths exist: unify
+-        if (vm.getState() != State.Running) {
+-            // OfflineVmwareMigration: and not vmware
+-            if (s_logger.isDebugEnabled()) {
+-                s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
+-            }
+-            CloudRuntimeException ex = new CloudRuntimeException("VM is not Running, unable to migrate the vm with" + " specified id");
+-            ex.addProxyObject(vm.getUuid(), "vmId");
+-            throw ex;
+-        }
++//        if (vm.getState() != State.Running) {
++//            // OfflineVmwareMigration: and not vmware
++//            if (s_logger.isDebugEnabled()) {
++//                s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
++//            }
++//            CloudRuntimeException ex = new CloudRuntimeException("VM is not Running, unable to migrate the vm with" + " specified id");
++//            ex.addProxyObject(vm.getUuid(), "vmId");
++//            throw ex;
++//        }
+ 
+         if(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
+             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
+diff --git a/vmware-base/src/main/java/com/cloud/hypervisor/vmware/mo/VirtualMachineMO.java b/vmware-base/src/main/java/com/cloud/hypervisor/vmware/mo/VirtualMachineMO.java
+index 62ecc9a5d5..36e102cb20 100644
+--- a/vmware-base/src/main/java/com/cloud/hypervisor/vmware/mo/VirtualMachineMO.java
++++ b/vmware-base/src/main/java/com/cloud/hypervisor/vmware/mo/VirtualMachineMO.java
+@@ -34,8 +34,6 @@ import java.util.concurrent.ExecutorService;
+ import java.util.concurrent.Executors;
+ import java.util.concurrent.Future;
+ 
+-import com.vmware.vim25.VStorageObject;
+-import com.vmware.vim25.VStorageObjectConfigInfo;
+ import org.apache.commons.collections.CollectionUtils;
+ import org.apache.log4j.Logger;
+ import org.apache.commons.lang.StringUtils;
+@@ -2430,13 +2428,13 @@ public class VirtualMachineMO extends BaseMO {
+                                     String deviceNumbering = getDeviceBusName(devices, device);
+ 
+                                     s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
+-                                    if (((VirtualDisk) device).getVDiskId() == null) {
+-                                        s_logger.debug("vDiskid does not exist for volume " + vmdkDatastorePath + " registering the disk now");
+-                                        VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(getOwnerDatacenter().first().getContext());
+-                                        VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsBackingFile, null, getOwnerDatacenter().first().getName());
+-                                        VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
+-                                        ((VirtualDisk) device).setVDiskId(diskConfigInfo.getId());
+-                                    }
++//                                    if (((VirtualDisk) device).getVDiskId() == null) {
++//                                        s_logger.debug("vDiskid does not exist for volume " + vmdkDatastorePath + " registering the disk now");
++//                                        VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(getOwnerDatacenter().first().getContext());
++//                                        VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsBackingFile, null, getOwnerDatacenter().first().getName());
++//                                        VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
++//                                        ((VirtualDisk) device).setVDiskId(diskConfigInfo.getId());
++//                                    }
+                                     return new Pair<>((VirtualDisk)device, deviceNumbering);
+                                 }
+ 
