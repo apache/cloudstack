@@ -296,6 +296,7 @@
         :loading="loading"
         :columns="columns"
         :items="items"
+        :actions="actions"
         ref="listview"
         @selection-change="onRowSelectionChange"
         @refresh="this.fetchData" />
@@ -639,6 +640,8 @@ export default {
       }
       this.currentAction = action
       this.currentAction.params = store.getters.apis[this.currentAction.api].params
+      this.resource = action.resource
+      this.$emit('change-resource', this.resource)
       var paramFields = this.currentAction.params
       paramFields.sort(function (a, b) {
         if (a.name === 'name' && b.name !== 'name') { return -1 }
