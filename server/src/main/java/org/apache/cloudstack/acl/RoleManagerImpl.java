@@ -49,8 +49,10 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.ListUtils;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
@@ -244,49 +246,62 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public List<Role> findRolesByName(String name) {
-        List<? extends Role> roles = null;
+        return findRolesByName(name, null, null).first();
+    }
+
+    @Override
+    public Pair<List<Role>, Integer> findRolesByName(String name, Long startIndex, Long limit) {
         if (StringUtils.isNotBlank(name)) {
-            roles = roleDao.findAllByName(name);
+            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, startIndex, limit);
+            int removed = removeRootAdminRolesIfNeeded(data.first());
+            return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
         }
-        removeRootAdminRolesIfNeeded(roles);
-        return ListUtils.toListOfInterface(roles);
+        return new Pair<List<Role>, Integer>(new ArrayList<Role>(), 0);
     }
 
     /**
      *  Removes roles of the given list that have the type '{@link RoleType#Admin}' if the user calling the method is not a 'root admin'.
      *  The actual removal is executed via {@link #removeRootAdminRoles(List)}. Therefore, if the method is called by a 'root admin', we do nothing here.
      */
-    protected void removeRootAdminRolesIfNeeded(List<? extends Role> roles) {
+    protected int removeRootAdminRolesIfNeeded(List<? extends Role> roles) {
         Account account = getCurrentAccount();
         if (!accountManager.isRootAdmin(account.getId())) {
-            removeRootAdminRoles(roles);
+            return removeRootAdminRoles(roles);
         }
+        return 0;
     }
 
     /**
      * Remove all roles that have the {@link RoleType#Admin}.
      */
-    protected void removeRootAdminRoles(List<? extends Role> roles) {
+    protected int removeRootAdminRoles(List<? extends Role> roles) {
         if (CollectionUtils.isEmpty(roles)) {
-            return;
+            return 0;
         }
         Iterator<? extends Role> rolesIterator = roles.iterator();
+        int count = 0;
         while (rolesIterator.hasNext()) {
             Role role = rolesIterator.next();
             if (RoleType.Admin == role.getRoleType()) {
+                count++;
                 rolesIterator.remove();
             }
         }
-
+        return count;
     }
 
     @Override
     public List<Role> findRolesByType(RoleType roleType) {
+        return findRolesByType(roleType, null, null).first();
+    }
+
+    @Override
+    public Pair<List<Role>, Integer> findRolesByType(RoleType roleType, Long startIndex, Long limit) {
         if (roleType == null || RoleType.Admin == roleType && !accountManager.isRootAdmin(getCurrentAccount().getId())) {
-            return Collections.emptyList();
+            return new Pair<List<Role>, Integer>(Collections.emptyList(), 0);
         }
-        List<? extends Role> roles = roleDao.findAllByRoleType(roleType);
-        return ListUtils.toListOfInterface(roles);
+        Pair<List<RoleVO>, Integer> data = roleDao.findAllByRoleType(roleType, startIndex, limit);
+        return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second()));
     }
 
     @Override
@@ -294,6 +309,14 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         List<? extends Role> roles = roleDao.listAll();
         removeRootAdminRolesIfNeeded(roles);
         return ListUtils.toListOfInterface(roles);
+    }
+
+    @Override
+    public Pair<List<Role>, Integer> listRoles(Long startIndex, Long limit) {
+        Pair<List<RoleVO>, Integer> data = roleDao.searchAndCount(null,
+                new Filter(RoleVO.class, "id", Boolean.TRUE, startIndex, limit));
+        int removed = removeRootAdminRolesIfNeeded(data.first());
+        return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
     }
 
     @Override
