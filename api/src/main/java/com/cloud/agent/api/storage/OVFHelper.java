@@ -276,7 +276,7 @@ public class OVFHelper {
                 } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
                     units = ResourceType.bytesToMiB;
                 } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
-                    units = 1;
+                    units = ResourceType.bytesToGiB;
                 }
                 od._capacity = od._capacity * units;
             }
