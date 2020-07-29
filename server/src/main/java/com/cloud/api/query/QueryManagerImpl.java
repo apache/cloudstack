@@ -57,7 +57,6 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -910,11 +909,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object pod = null;
         Object hostId = null;
         Object storageId = null;
-        if (cmd instanceof ListVMsCmdByAdmin) {
-            ListVMsCmdByAdmin adCmd = (ListVMsCmdByAdmin)cmd;
-            pod = adCmd.getPodId();
-            hostId = adCmd.getHostId();
-            storageId = adCmd.getStorageId();
+        if (_accountMgr.isRootAdmin(caller.getId())) {
+            pod = cmd.getPodId();
+            hostId = cmd.getHostId();
+            storageId = cmd.getStorageId();
         }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
@@ -1066,9 +1064,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("keyPairName", keyPairName);
         }
 
-        if (cmd instanceof ListVMsCmdByAdmin) {
-            ListVMsCmdByAdmin aCmd = (ListVMsCmdByAdmin)cmd;
-            if (aCmd.getPodId() != null) {
+        if (_accountMgr.isRootAdmin(caller.getId())) {
+            if (cmd.getPodId() != null) {
                 sc.setParameters("podId", pod);
 
                 if (state == null) {

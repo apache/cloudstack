@@ -200,6 +200,18 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return keypair;
     }
 
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public Long getStorageId() {
+        return storageId;
+    }
+
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
         EnumSet<VMDetails> dv;
         if (viewDetails == null || viewDetails.size() <= 0) {

@@ -166,7 +166,7 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("managementserverid")
     @Param(description = "the management server ID of the host")
-    private Long managementServerId;
+    private String managementServerId;
 
     @SerializedName("clusterid")
     @Param(description = "the cluster ID of the host")
@@ -381,7 +381,7 @@ public class HostResponse extends BaseResponse {
         this.lastPinged = lastPinged;
     }
 
-    public void setManagementServerId(Long managementServerId) {
+    public void setManagementServerId(String managementServerId) {
         this.managementServerId = managementServerId;
     }
 
@@ -632,7 +632,7 @@ public class HostResponse extends BaseResponse {
         return lastPinged;
     }
 
-    public Long getManagementServerId() {
+    public String getManagementServerId() {
         return managementServerId;
     }
 
