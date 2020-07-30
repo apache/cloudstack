@@ -90,7 +90,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
-        return reOrder(pools, vmProfile, plan);
+        return reorderPools(pools, vmProfile, plan);
     }
 
     protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,
@@ -156,7 +156,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return reorderedPools;
     }
 
-    protected List<StoragePool> reOrder(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
+    @Override
+    public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
         if (pools == null) {
             return null;
         }

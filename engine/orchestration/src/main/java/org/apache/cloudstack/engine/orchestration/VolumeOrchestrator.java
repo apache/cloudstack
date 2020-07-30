@@ -296,6 +296,34 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return null;
     }
 
+    @Override
+    public StoragePool findChildDataStoreInDataStoreCluster(DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Long datastoreClusterId) {
+        Long podId = null;
+        if (pod != null) {
+            podId = pod.getId();
+        } else if (clusterId != null) {
+            Cluster cluster = _entityMgr.findById(Cluster.class, clusterId);
+            if (cluster != null) {
+                podId = cluster.getPodId();
+            }
+        }
+        List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(datastoreClusterId);
+        List<StoragePool> suitablePools = new ArrayList<StoragePool>();
+
+        for (StoragePoolVO childDatastore: childDatastores)
+            suitablePools.add((StoragePool)dataStoreMgr.getDataStore(childDatastore.getId(), DataStoreRole.Primary));
+
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+            DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), podId, clusterId, hostId, null, null);
+            final List<StoragePool> poolList = allocator.reorderPools(suitablePools, profile, plan);
+
+            if (poolList != null && !poolList.isEmpty()) {
+                return (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
+            }
+        }
+        return null;
+    }
     public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOffering offering, DataCenter dc, long accountId, Set<Long> avoids) {
         for (PodAllocator allocator : _podAllocators) {
             final Pair<Pod, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);

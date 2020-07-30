@@ -241,6 +241,11 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         return pdsv.isManaged();
     }
 
+    @Override
+    public Long getParent() {
+        return pdsv.getParent();
+    }
+
     private boolean canCloneVolume() {
         return Boolean.valueOf(getDriver().getCapabilities().get(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_VOLUME.toString()));
     }
