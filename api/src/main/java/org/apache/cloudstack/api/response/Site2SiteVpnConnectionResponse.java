@@ -53,7 +53,7 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     private String gatewayIp;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "guest cidr list of the customer gateway")
+    @Param(description = "guest cidr list of the customer gateway. Multiple entries are separated by a single comma character (,).")
     //from CustomerGateway
     private String guestCidrList;
 

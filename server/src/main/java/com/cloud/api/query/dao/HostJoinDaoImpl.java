@@ -39,6 +39,8 @@ import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
 import com.cloud.host.Host;
@@ -65,6 +67,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private HAConfigDao haConfigDao;
     @Inject
     private OutOfBandManagementDao outOfBandManagementDao;
+    @Inject
+    private ManagementServerHostDao managementServerHostDao;
 
     private final SearchBuilder<HostJoinVO> hostSearch;
 
@@ -103,7 +107,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setHypervisor(host.getHypervisorType());
         hostResponse.setHostType(host.getType());
         hostResponse.setLastPinged(new Date(host.getLastPinged()));
-        hostResponse.setManagementServerId(host.getManagementServerId());
+        Long mshostId = host.getManagementServerId();
+        if (mshostId != null) {
+            ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(host.getManagementServerId());
+            if (managementServer != null) {
+                hostResponse.setManagementServerId(managementServer.getUuid());
+            }
+        }
         hostResponse.setName(host.getName());
         hostResponse.setPodId(host.getPodUuid());
         hostResponse.setRemoved(host.getRemoved());

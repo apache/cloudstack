@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.acl.dao;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -52,16 +54,25 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
 
     @Override
     public List<RoleVO> findAllByName(final String roleName) {
+        return findAllByName(roleName, null, null).first();
+    }
+
+    @Override
+    public Pair<List<RoleVO>, Integer> findAllByName(final String roleName, Long offset, Long limit) {
         SearchCriteria<RoleVO> sc = RoleByNameSearch.create();
         sc.setParameters("roleName", "%" + roleName + "%");
-        return listBy(sc);
+        return searchAndCount(sc, new Filter(RoleVO.class, "id", true, offset, limit));
     }
 
     @Override
     public List<RoleVO> findAllByRoleType(final RoleType type) {
+        return findAllByRoleType(type, null, null).first();
+    }
+
+    public Pair<List<RoleVO>, Integer> findAllByRoleType(final RoleType type, Long offset, Long limit) {
         SearchCriteria<RoleVO> sc = RoleByTypeSearch.create();
         sc.setParameters("roleType", type);
-        return listBy(sc);
+        return searchAndCount(sc, new Filter(RoleVO.class, "id", true, offset, limit));
     }
 
     @Override

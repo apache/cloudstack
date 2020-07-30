@@ -461,6 +461,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         return listBy(sc, null);
     }
 
+    @Override
+    public SnapshotDataStoreVO findDestroyedReferenceBySnapshot(long snapshotId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters("store_role", role);
+        sc.setParameters("state", State.Destroyed);
+        return findOneBy(sc);
+    }
+
     private boolean isSnapshotChainingRequired(long volumeId) {
 
         hypervisorsSupportingSnapshotsChaining.add(Hypervisor.HypervisorType.XenServer);
