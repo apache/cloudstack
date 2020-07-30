@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,21 +15,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+package org.apache.cloudstack.utils.redfish;
 
-package org.apache.cloudstack.outofbandmanagement.dao;
+public class RedfishException extends RuntimeException {
 
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
+    public RedfishException(String message) {
+        super(message);
+    }
 
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
+    public RedfishException(String message, Exception e) {
+        super(message, e);
+    }
 
-import java.util.List;
-
-public interface OutOfBandManagementDao extends GenericDao<OutOfBandManagementVO, Long>,
-        StateDao<OutOfBandManagement.PowerState, OutOfBandManagement.PowerState.Event, OutOfBandManagement> {
-    OutOfBandManagement findByHost(long hostId);
-    OutOfBandManagementVO findByHostAddress(String address);
-    List<OutOfBandManagementVO> findAllByManagementServer(long serverId);
-    void expireServerOwnership(long serverId);
 }
