@@ -84,6 +84,8 @@ public interface VolumeOrchestrationService {
 
     String getVmNameOnVolume(Volume volume);
 
+    StoragePool findChildDataStoreInDataStoreCluster(DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Long datastoreClusterId);
+
     VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot, UserVm vm) throws StorageUnavailableException;
 
     Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException;

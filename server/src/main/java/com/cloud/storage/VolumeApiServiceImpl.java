@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.Pod;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -2190,6 +2191,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storagePoolId);
         } else if (destPool.isInMaintenance()) {
             throw new InvalidParameterValueException("Cannot migrate volume " + vol + "to the destination storage pool " + destPool.getName() + " as the storage pool is in maintenance mode.");
+        }
+
+        if (destPool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+            DataCenter dc = _entityMgr.findById(DataCenter.class, vol.getDataCenterId());
+            Pod destPoolPod = _entityMgr.findById(Pod.class, destPool.getPodId());
+
+            destPool = _volumeMgr.findChildDataStoreInDataStoreCluster(dc, destPoolPod, destPool.getClusterId(), null, null, destPool.getId());
         }
 
         if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(vol), destPool)) {

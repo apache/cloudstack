@@ -504,6 +504,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private ResourceTagDao resourceTagDao;
     @Inject
     private TemplateOVFPropertiesDao templateOVFPropertiesDao;
+    @Inject
+    private VolumeOrchestrationService _volumeMgr;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -5556,6 +5558,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         checkDestinationHypervisorType(destPool, vm);
+        if (destPool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+            DataCenter dc = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
+            Pod destPoolPod = _entityMgr.findById(Pod.class, destPool.getPodId());
+
+            destPool = _volumeMgr.findChildDataStoreInDataStoreCluster(dc, destPoolPod, destPool.getClusterId(), null, null, destPool.getId());
+        }
 
         _itMgr.storageMigration(vm.getUuid(), destPool);
         return _vmDao.findById(vm.getId());

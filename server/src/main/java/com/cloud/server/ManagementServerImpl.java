@@ -27,10 +27,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -1482,8 +1485,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else {
             suitablePools = allPools;
         }
-
+        abstractDataStoreClustersList((List<StoragePool>) allPools);
+        abstractDataStoreClustersList((List<StoragePool>) suitablePools);
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+    }
+
+    private void abstractDataStoreClustersList(List<StoragePool> storagePools) {
+        Predicate<StoragePool> childDatastorePredicate = pool -> (pool.getParent() != 0);
+        List<StoragePool> childDatastores = storagePools.stream().filter(childDatastorePredicate).collect(Collectors.toList());
+
+        if (!childDatastores.isEmpty()) {
+            storagePools.removeAll(childDatastores);
+            Set<Long> parentStoragePoolIds = childDatastores.stream().map(mo -> mo.getParent()).collect(Collectors.toSet());
+            for (Long parentStoragePoolId : parentStoragePoolIds) {
+                StoragePool parentPool = _poolDao.findById(parentStoragePoolId);
+                if (!storagePools.contains(parentPool))
+                    storagePools.add(parentPool);
+            }
+        }
     }
 
     /**
