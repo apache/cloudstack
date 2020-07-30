@@ -25,13 +25,17 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import com.cloud.agent.api.to.DataTO;
+import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -144,6 +148,7 @@ class StartCommandExecutor {
                 vmMo = dcMo.findVm(vmNameOnVcenter);
             }
 
+            DiskTO[] specDisks = vmSpec.getDisks();
             boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
             // FR37 if startcommand contains enough info: a template url/-location and flag; deploy OVA as is
             if (vmMo == null && installAsIs) {
@@ -152,6 +157,7 @@ class StartCommandExecutor {
                 }
                 getStorageProcessor().cloneVMFromTemplate(vmSpec.getTemplateName(), vmInternalCSName, vmSpec.getTemplatePrimaryStoreUuid());
                 vmMo = dcMo.findVm(vmInternalCSName);
+                mapSpecDisksToClonedDisks(vmMo, vmInternalCSName, specDisks);
             }
 
             // VM may not have been on the same host, relocate to expected host
@@ -162,7 +168,7 @@ class StartCommandExecutor {
             }
 
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
-            DiskTO[] disks = validateDisks(vmSpec.getDisks());
+            DiskTO[] disks = validateDisks(specDisks);
             NicTO[] nics = vmSpec.getNics();
 
             // FIXME: disks logic here, why is disks/volumes during copy not set with pool ID?
@@ -404,6 +410,11 @@ class StartCommandExecutor {
                 throw new Exception("Failed to start VM. vmName: " + vmInternalCSName + " with hostname " + vmNameOnVcenter);
             }
 
+            if (installAsIs) {
+                // Set disks as the disks path and chain is retrieved from the cloned VM disks
+                cmd.getVirtualMachine().setDisks(disks);
+            }
+
             StartAnswer startAnswer = new StartAnswer(cmd);
 
             startAnswer.setIqnToData(iqnToData);
@@ -417,6 +428,58 @@ class StartCommandExecutor {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("finally done with %s",  vmwareResource.getGson().toJson(cmd)));
             }
+        }
+    }
+
+    /**
+     * Modify the specDisks information to match the cloned VM's disks (from vmMo VM)
+     */
+    private void mapSpecDisksToClonedDisks(VirtualMachineMO vmMo, String vmInternalCSName, DiskTO[] specDisks) {
+        try {
+            if (vmMo != null && ArrayUtils.isNotEmpty(specDisks)) {
+                List<VirtualDisk> vmDisks = vmMo.getVirtualDisks();
+                List<DiskTO> sortedDisks = Arrays.asList(sortVolumesByDeviceId(specDisks))
+                        .stream()
+                        .filter(x -> x.getType() == Volume.Type.ROOT)
+                        .collect(Collectors.toList());
+                if (sortedDisks.size() != vmDisks.size()) {
+                    LOGGER.error("Different number of root disks spec vs cloned deploy-as-is VM disks: " + sortedDisks.size() + " - " + vmDisks.size());
+                    return;
+                }
+                for (int i = 0; i < sortedDisks.size(); i++) {
+                    DiskTO specDisk = sortedDisks.get(i);
+                    VirtualDisk vmDisk = vmDisks.get(i);
+                    DataTO dataVolume = specDisk.getData();
+                    if (dataVolume instanceof VolumeObjectTO) {
+                        VolumeObjectTO volumeObjectTO = (VolumeObjectTO) dataVolume;
+                        if (!volumeObjectTO.getSize().equals(vmDisk.getCapacityInBytes())) {
+                            LOGGER.info("Mapped disk size is not the same as the cloned VM disk size: " +
+                                    volumeObjectTO.getSize() + " - " + vmDisk.getCapacityInBytes());
+                        }
+                        VirtualDeviceBackingInfo backingInfo = vmDisk.getBacking();
+                        if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+                            VirtualDiskFlatVer2BackingInfo backing = (VirtualDiskFlatVer2BackingInfo) backingInfo;
+                            String fileName = backing.getFileName();
+                            if (StringUtils.isNotBlank(fileName)) {
+                                String[] fileNameParts = fileName.split(" ");
+                                String datastoreUuid = fileNameParts[0].replace("[", "").replace("]", "");
+                                String relativePath = fileNameParts[1].split("/")[1].replace(".vmdk", "");
+                                String vmSpecDatastoreUuid = volumeObjectTO.getDataStore().getUuid().replaceAll("-", "");
+                                if (!datastoreUuid.equals(vmSpecDatastoreUuid)) {
+                                    LOGGER.info("Mapped disk datastore UUID is not the same as the cloned VM datastore UUID: " +
+                                            datastoreUuid + " - " + vmSpecDatastoreUuid);
+                                }
+                                volumeObjectTO.setPath(relativePath);
+                                specDisk.setPath(relativePath);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            String msg = "Error mapping deploy-as-is VM disks from cloned VM " + vmInternalCSName;
+            LOGGER.error(msg, e);
+            throw new CloudRuntimeException(e);
         }
     }
 
@@ -949,7 +1012,7 @@ class StartCommandExecutor {
 
         for (DiskTO vol : sortedDisks) {
             //TODO: Map existing disks to the ones returned in the answer
-            if (vol.getType() == Volume.Type.ISO || installAsIs)
+            if (vol.getType() == Volume.Type.ISO)
                 continue;
 
             VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
@@ -2149,8 +2212,9 @@ class StartCommandExecutor {
 
         public PrepareRunningVMForConfiguration invoke() throws Exception {
             LOGGER.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
-            if (VmwareResource.getVmPowerState(vmMo) != VirtualMachine.PowerState.PowerOff)
+            if (VmwareResource.getVmPowerState(vmMo) != VirtualMachine.PowerState.PowerOff) {
                 vmMo.safePowerOff(vmwareResource.getShutdownWaitMs());
+            }
 
             // retrieve disk information before we tear down
             diskInfoBuilder = vmMo.getDiskInfoBuilder();

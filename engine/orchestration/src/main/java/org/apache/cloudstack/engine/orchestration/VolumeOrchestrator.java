@@ -715,7 +715,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                Account owner) {
+                                                Account owner, long deviceId) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
 
         Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
@@ -744,13 +744,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
         vol.setTemplateId(template.getId());
 
-        if (type.equals(Type.ROOT)) {
-            vol.setDeviceId(0l);
-            if (!vm.getType().equals(VirtualMachine.Type.User)) {
-                vol.setRecreatable(true);
-            }
-        } else {
-            vol.setDeviceId(1l);
+        vol.setDeviceId(deviceId);
+        if (type.equals(Type.ROOT) && !vm.getType().equals(VirtualMachine.Type.User)) {
+            vol.setRecreatable(true);
         }
 
         if (vm.getType() == VirtualMachine.Type.User) {
@@ -803,13 +799,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         for (int number = 0; number < volumesNumber; number++) {
             String volumeName = name;
             Long volumeSize = rootDisksize;
+            long deviceId = type.equals(Type.ROOT) ? 0L : 1L;
             if (template.isDeployAsIs()) {
                 int volumeNameSuffix = templateAsIsDisks.get(number).getDiskNumber();
                 volumeName = String.format("%s-%d", volumeName, volumeNameSuffix);
                 volumeSize = templateAsIsDisks.get(number).getVirtualSize();
+                deviceId = templateAsIsDisks.get(number).getDiskNumber();
             }
             s_logger.info(String.format("adding disk object %s to %s", volumeName, vm.getInstanceName()));
-            profiles.add(allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops, template, vm, owner));
+            profiles.add(allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops, template, vm, owner, deviceId));
         }
         return profiles;
     }

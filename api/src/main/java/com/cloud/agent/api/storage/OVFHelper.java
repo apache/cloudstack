@@ -221,7 +221,7 @@ public class OVFHelper {
 
     private List<DatadiskTO> matchDisksToFilesAndGenerateDiskTOs(File ovfFile, List<OVFFile> vf, List<OVFDisk> vd) throws InternalErrorException {
         List<DatadiskTO> diskTOs = new ArrayList<>();
-        int diskNumber = 1;
+        int diskNumber = 0;
         for (OVFFile of : vf) {
             if (StringUtils.isBlank(of._id)){
                 LOGGER.error("The ovf file info is incomplete file info");
