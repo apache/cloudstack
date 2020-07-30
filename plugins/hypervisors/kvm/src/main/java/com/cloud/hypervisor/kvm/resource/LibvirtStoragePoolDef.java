@@ -147,7 +147,12 @@ public class LibvirtStoragePoolDef {
         }
         if (_poolType == PoolType.RBD) {
             storagePoolBuilder.append("<source>\n");
-            storagePoolBuilder.append("<host name='" + _sourceHost + "' port='" + _sourcePort + "'/>\n");
+            if (_sourcePort > 0) {
+                storagePoolBuilder.append("<host name='" + _sourceHost + "' port='" + _sourcePort + "'/>\n");
+            } else {
+                storagePoolBuilder.append("<host name='" + _sourceHost + "'/>\n");
+            }
+
             storagePoolBuilder.append("<name>" + _sourceDir + "</name>\n");
             if (_authUsername != null) {
                 storagePoolBuilder.append("<auth username='" + _authUsername + "' type='" + _authType + "'>\n");
