@@ -82,7 +82,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
 
         FormatInfo info = createFormatInfo(templatePath, templateName, templateFilePath, templateFileFullPath);
 
-        // The intention is to use the ova file as is for deployment and use processing result only for
+        // The ova will be deploying as is and the info created here, is to do
         // - property assessment and
         // - reconsiliation of
         // - - disks,

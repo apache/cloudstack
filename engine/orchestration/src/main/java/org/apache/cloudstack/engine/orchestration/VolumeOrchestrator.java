@@ -1221,10 +1221,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     private List<VolumeTask> getTasks(List<VolumeVO> vols, Map<Volume, StoragePool> destVols, VirtualMachineProfile vm) throws StorageUnavailableException {
         boolean recreate = RecreatableSystemVmEnabled.value();
         List<VolumeTask> tasks = new ArrayList<VolumeTask>();
-        // FR37 TODO: is it this easy?
-//        if (vm.getTemplate().isDeployAsIs()) {
-//            return tasks;
-//        }
         for (VolumeVO vol : vols) {
             StoragePoolVO assignedPool = null;
             if (destVols != null) {

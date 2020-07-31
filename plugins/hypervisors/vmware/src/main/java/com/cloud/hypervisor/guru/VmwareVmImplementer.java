@@ -119,10 +119,9 @@ class VmwareVmImplementer {
             to.setBootloader(VirtualMachineTemplate.BootloaderType.HVM);
         deployAsIs |= vm.getTemplate().isDeployAsIs();
         HostVO host = hostDao.findById(vm.getVirtualMachine().getHostId());
-        // FR37 if VmwareImplementAsIsAndReconsiliate add secondary storage or some other encoding of the OVA file to the start command,
-        // FR37 so the url for the original OVA can be used for deployment
+        // add base image or secondary storage path of the OVA file to the start command,
         if (deployAsIs) {
-            // FR37 we need to make sure the primary storage for the template is known and whether this is a new deployment
+            // FR37 TODO we need to make sure the primary storage for the template is known and whether this is a new deployment, I.E. do we need to clone the base image (again)
             storeTemplateLocationInTO(vm, to, host.getId());
         }
         Map<String, String> details = to.getDetails();
@@ -387,7 +386,6 @@ class VmwareVmImplementer {
         return rootDiskTO;
     }
 
-    // TODO FR37 phase out ovf properties in favor of template details; propertyTO remains
     private List<OVFPropertyTO> getOvfPropertyList(VirtualMachineProfile vm, Map<String, String> details) {
         List<OVFPropertyTO> ovfProperties = new ArrayList<OVFPropertyTO>();
         for (String detailKey : details.keySet()) {
@@ -398,9 +396,7 @@ class VmwareVmImplementer {
                     LOGGER.warn(String.format("OVF property %s not found on template, discarding", vmPropertyKey));
                     continue;
                 }
-                // FR37 the key is without acs prefix (in the TO)
                 propertyTO.setKey(vmPropertyKey);
-                // FR37 if the UI send the whole json we should just copy it otherwise take the json from the template and set the value on it
                 propertyTO.setValue(details.get(detailKey));
                 ovfProperties.add(propertyTO);
             }

@@ -215,7 +215,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         to.setNics(nics);
         to.setDisks(vmProfile.getDisks().toArray(new DiskTO[vmProfile.getDisks().size()]));
-        // FR37 if this is a new VM to be deployed as is from a template we need to pass the mary storage somehow, now only for actual disks is a primary storage passed
+        // If this is a new VM to be deployed as is from a template we need to pass the primary storage somehow, now only for actual disks is a primary storage passed
         if (vmProfile.getTemplate().getBits() == 32) {
             to.setArch("i686");
         } else {
