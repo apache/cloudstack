@@ -89,7 +89,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return processor.copyTemplateToPrimaryStorage(cmd);
         } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary &&
             destDataStore.getRole() == DataStoreRole.Primary) {
-            // FR37 pretend to clone template to a volume but actually create a cloned vm
+            // Template deploy-as-is: pretend to clone template to a volume but actually create a cloned vm
             return processor.cloneVolumeFromBaseTemplate(cmd);
         } else if (srcData.getObjectType() == DataObjectType.VOLUME &&
             (srcData.getDataStore().getRole() == DataStoreRole.ImageCache || srcDataStore.getRole() == DataStoreRole.Image)) {

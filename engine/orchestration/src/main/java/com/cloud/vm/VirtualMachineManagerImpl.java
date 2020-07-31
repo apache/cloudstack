@@ -1138,7 +1138,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 try {
                     _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null, dest.getStorageForDisks()), ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        // FR37 TODO do not create a copy volume task for deploy as is on vmware ?
                         volumeMgr.prepare(vmProfile, dest);
                     }
 
@@ -1157,7 +1156,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
 
                     cmds = new Commands(Command.OnError.Stop);
-                    // FR37 TODO vmTO must contain definitions of disks to be expected for deployAsIs
+
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);

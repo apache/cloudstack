@@ -855,8 +855,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     }
                 }
             } else {
-                // FR37 check for deployasis and deploy from content library if possible
-                // FR37 check if we should be here for an existing VM
                 String templatePath = template.getPath();
                 if (template.isDeployAsIs()) {
                     if(s_logger.isDebugEnabled()) {
