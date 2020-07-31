@@ -4030,7 +4030,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void copyNetworkRequirementsToVm(UserVmVO vm, VirtualMachineTemplate template) {
-        if (template.isDeployAsIs()) { // FR37 should be always when we are done
+        if (template.isDeployAsIs()) { // This should be always when we are done, i.e. after a cooling down period.
             List<VMTemplateDetailVO> details = templateDetailsDao.listDetailsByTemplateId(template.getId(), ImageStore.REQUIRED_NETWORK_PREFIX);
             for (VMTemplateDetailVO detail : details) {
                 vm.setDetail(detail.getName(), detail.getValue());
@@ -4039,7 +4039,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void copyDiskDetailsToVm(UserVmVO vm, VirtualMachineTemplate template) {
-        if (template.isDeployAsIs()) { // FR37 should be always when we are done
+        if (template.isDeployAsIs()) { // This should be always when we are done, i.e. after a cooling down period.
             List<VMTemplateDetailVO> details = templateDetailsDao.listDetailsByTemplateId(template.getId(), ImageStore.DISK_DEFINITION_PREFIX);
             for (VMTemplateDetailVO detail : details) {
                 vm.setDetail(detail.getName(), detail.getValue());
@@ -5241,8 +5241,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if this templateId has a child ISO
         List<VMTemplateVO> child_templates = _templateDao.listByParentTemplatetId(templateId);
         for (VMTemplateVO tmpl: child_templates){
-            if (tmpl.getFormat() == Storage.ImageFormat.ISO){ // FR37 why only ISO?
-                s_logger.info("MDOV trying to attach disk to the VM " + tmpl.getId() + " vmid=" + vm.getId());
+            if (tmpl.getFormat() == Storage.ImageFormat.ISO){ // Note that this is only done for ISOs.
+                s_logger.info("MultiDiskOVA trying to attach disk to the VM " + tmpl.getId() + " vmid=" + vm.getId());
                 _tmplService.attachIso(tmpl.getId(), vm.getId());
             }
         }
