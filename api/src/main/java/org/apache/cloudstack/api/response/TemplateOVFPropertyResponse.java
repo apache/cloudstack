@@ -18,17 +18,9 @@ package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
-
-import com.cloud.agent.api.storage.OVFProperty;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * the placeholder of parameters to fill for deployment
- //  FR37 TODO remname for generic use
- */
-@EntityReference(value = OVFProperty.class)
 public class TemplateOVFPropertyResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.KEY)

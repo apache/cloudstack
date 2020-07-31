@@ -144,3 +144,5 @@ CREATE VIEW `cloud`.`template_view` AS
          LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_template`.`id`)
              AND ((`resource_tags`.`resource_type` = 'Template')
              OR (`resource_tags`.`resource_type` = 'ISO')))));
+
+DROP TABLE IF EXISTS `cloud`.`template_ovf_properties`;
