@@ -74,7 +74,7 @@
         <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
 
         <span v-if="$route.path.startsWith('/globalsetting')">{{ text }}</span>
-        <span v-if="$route.path.startsWith('/alert')">
+        <span v-else-if="$route.path.startsWith('/alert')">
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
         </span>
