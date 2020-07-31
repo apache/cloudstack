@@ -504,7 +504,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String srcOVAFileName =
                 VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templatePathAtSecondaryStorage, templateName,
                         ImageFormat.OVA.getFileExtension());
-        // FR37 consider extension: ova or ovf?
         String srcFileName = getOVFFilePath(srcOVAFileName);
         if (srcFileName == null) {
             Script command = new Script("tar", 0, s_logger);
@@ -576,27 +575,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return new Pair<>(vmMo, virtualSize);
     }
 
-    private void deployTemplateToContentLibrary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl, String templatePathAtSecondaryStorage,
-            String templateUuid, String srcOVAFileName, String srcFileName) throws Exception {
-        String storeName = getSecondaryDatastoreUUID(secondaryStorageUrl);
-        ManagedObjectReference morSecDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storeName);
-        if (morSecDatastore == null) {
-            morSecDatastore = prepareSecondaryDatastoreOnHost(secondaryStorageUrl);
-        }
-        DatastoreMO secDsMo = new DatastoreMO(datastoreMo.getContext(), morSecDatastore);
-        DatastoreSummary secDatastoresummary = secDsMo.getSummary();
-
-        String ovfFile = getOVFFile(srcOVAFileName);
-        boolean importResult = true;//contentLibraryService.importOvf(datastoreMo.getContext(), secDatastoresummary.getUrl() + templatePathAtSecondaryStorage, ovfFile, datastoreMo.getName(), templateUuid);
-        if (!importResult) {
-            s_logger.warn("Failed to import ovf into the content library: " + srcFileName);
-        }
-    }
-
     @Override
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
-        // FR37 TODO find where TO is created and make sure deployAsIs is set correctly
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO srcStore = srcData.getDataStore();
 
@@ -800,7 +781,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return true;
     }
 
-    // FR37 TODO: OR make sure deploy is done in this method from template
     @Override
     public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();

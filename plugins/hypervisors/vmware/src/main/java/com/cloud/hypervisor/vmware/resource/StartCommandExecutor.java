@@ -114,7 +114,7 @@ class StartCommandExecutor {
         this.vmwareResource = vmwareResource;
     }
 
-    // FR37 the monster blob god method: reduce to 320 so far and counting
+    // TODO this is a monster blob god method: reduced to 320 lines so far and still needs chopping up
     protected StartAnswer execute(StartCommand cmd) {
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Executing resource StartCommand: " + vmwareResource.getGson().toJson(cmd));
@@ -141,8 +141,6 @@ class StartCommandExecutor {
             VmwareHypervisorHost hyperHost = vmwareResource.getHyperHost(context);
             dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
 
-            // checkIfVmExistsInVcenter(vmInternalCSName, vmNameOnVcenter, dcMo);
-            // FR37 - We expect VM to be already cloned and available at this point
             VirtualMachineMO vmMo = dcMo.findVm(vmInternalCSName);
             if (vmMo == null) {
                 vmMo = dcMo.findVm(vmNameOnVcenter);
@@ -150,7 +148,9 @@ class StartCommandExecutor {
 
             DiskTO[] specDisks = vmSpec.getDisks();
             boolean installAsIs = StringUtils.isNotEmpty(vmSpec.getTemplateLocation());
-            // FR37 if startcommand contains enough info: a template url/-location and flag; deploy OVA as is
+            // If startcommand contains enough info: a template url/-location and flag; deploy OVA as is
+            // we create the VM as clone from the base image directly instead of copying disks
+            // from different templates
             if (vmMo == null && installAsIs) {
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace(String.format("deploying OVA from %s as is", vmSpec.getTemplateLocation()));
@@ -177,13 +177,9 @@ class StartCommandExecutor {
             if ((dataStoresDetails == null) || (dataStoresDetails.isEmpty())) {
                 String msg = "Unable to locate datastore details of the volumes to be attached";
                 LOGGER.error(msg);
-                // throw a more specific Exception
-                // FR37 - this may not be necessary the cloned VM will have disks and knowledge of datastore paths/location?
-                // throw new Exception(msg);
             }
 
-            // FR37 - this may need checking, if the first datastore is the right one - ideally it should be datastore where first disk is hosted
-            DatastoreMO dsRootVolumeIsOn = null; //
+            DatastoreMO dsRootVolumeIsOn = null;
             if (! installAsIs) {
                 dsRootVolumeIsOn = getDatastoreThatRootDiskIsOn(dataStoresDetails, disks);
 
@@ -243,7 +239,6 @@ class StartCommandExecutor {
             }
             hackDeviceCount += nicDevices == null ? 0 : nicDevices.length;
             // vApp cdrom device
-            // HACK ALERT: ovf properties might not be the only or defining feature of vApps; needs checking
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("current count(s) desired: %d/ found:%d. now adding device to device count for vApp config ISO", totalChangeDevices, hackDeviceCount));
             }
@@ -381,7 +376,6 @@ class StartCommandExecutor {
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure VM before start. vmName: " + vmInternalCSName);
             }
-            // FR37 TODO reconcile disks now!!! they are configured, check and add them to the returning vmTO
             if (vmSpec.getType() == VirtualMachine.Type.DomainRouter) {
                 hyperHost.setRestartPriorityForVM(vmMo, DasVmPriority.HIGH.value());
             }
@@ -1149,12 +1143,12 @@ class StartCommandExecutor {
         }
     }
 
+    /**
+     * We need to configure the port on the DV switch after the host is
+     * connected. So make this happen between the configure and start of
+     * the VM
+     */
     private static void postNvpConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec) throws Exception {
-        /**
-         * We need to configure the port on the DV switch after the host is
-         * connected. So make this happen between the configure and start of
-         * the VM
-         */
         int nicIndex = 0;
         for (NicTO nicTo : sortNicsByDeviceId(vmSpec.getNics())) {
             if (nicTo.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
@@ -1487,7 +1481,7 @@ class StartCommandExecutor {
                 vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
 
             if (systemVm) {
-                // System volumes doesn't require more than 1 SCSI controller as there is no requirement for data volumes.
+                // System volumes don't require more than 1 SCSI controller as there is no requirement for data volumes.
                 ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
             } else {
                 ensureDiskControllers(vmMo, controllerInfo);
@@ -2060,11 +2054,10 @@ class StartCommandExecutor {
             //
 
             // vAPP ISO
-            // FR37 the native deploy mechs should create this for us
+            // the native deploy mechs should create this for us
             if (vmSpec.getOvfProperties() != null) {
                 if (LOGGER.isTraceEnabled()) {
-                    // FR37 TODO add more usefull info (if we keep this bit
-                    LOGGER.trace("adding iso for properties for 'xxx'");
+                    LOGGER.trace(String.format("adding iso for properties for '%s'", vmMo.getName()));
                 }
                 deviceConfigSpecArray[deviceCount] = new VirtualDeviceConfigSpec();
                 Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, null, true, true, ideUnitNumber++, deviceCount + 1);
