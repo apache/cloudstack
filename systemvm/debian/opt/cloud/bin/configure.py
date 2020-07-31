@@ -964,6 +964,9 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["mangle", "front",
                         "-A PREROUTING -d %s/32 -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
                         (rule["public_ip"], hex(100 + int(device[len("eth"):])))])
+        self.fw.append(["mangle", "front",
+                        "-A PREROUTING -s %s/32 -m state --state NEW -i eth0 -j MARK --set-xmark %s/0xffffffff" %
+                        (rule["internal_ip"], hex(100 + int(device[len("eth"):])))])
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",
