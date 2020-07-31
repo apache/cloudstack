@@ -38,7 +38,7 @@ package org.apache.cloudstack.api.net;
  * </Item>
  * {code}
  */
-public class NetworkPrerequisiteTO implements NetworkPrerequisite {
+public class NetworkPrerequisiteTO {
     String name; // attribute on Network should match <rasd:Connection> on Item (virtual hardware)
     String networkDescription;
 
@@ -50,7 +50,7 @@ public class NetworkPrerequisiteTO implements NetworkPrerequisite {
     String resourceSubType;
     String resourceType; // or int?
 
-    @Override public int getAddressOnParent() {
+    public int getAddressOnParent() {
         return addressOnParent;
     }
 
@@ -58,7 +58,7 @@ public class NetworkPrerequisiteTO implements NetworkPrerequisite {
         this.addressOnParent = addressOnParent;
     }
 
-    @Override public boolean isAutomaticAllocation() {
+    public boolean isAutomaticAllocation() {
         return automaticAllocation;
     }
 
@@ -66,7 +66,7 @@ public class NetworkPrerequisiteTO implements NetworkPrerequisite {
         this.automaticAllocation = automaticAllocation;
     }
 
-    @Override public String getNicDescription() {
+    public String getNicDescription() {
         return nicDescription;
     }
 
@@ -74,7 +74,7 @@ public class NetworkPrerequisiteTO implements NetworkPrerequisite {
         this.nicDescription = nicDescription;
     }
 
-    @Override public String getElementName() {
+    public String getElementName() {
         return elementName;
     }
 
@@ -82,7 +82,7 @@ public class NetworkPrerequisiteTO implements NetworkPrerequisite {
         this.elementName = elementName;
     }
 
-    @Override public int getInstanceID() {
+    public int getInstanceID() {
         return InstanceID;
     }
 
@@ -90,7 +90,7 @@ public class NetworkPrerequisiteTO implements NetworkPrerequisite {
         InstanceID = instanceID;
     }
 
-    @Override public String getResourceSubType() {
+    public String getResourceSubType() {
         return resourceSubType;
     }
 
@@ -98,7 +98,7 @@ public class NetworkPrerequisiteTO implements NetworkPrerequisite {
         this.resourceSubType = resourceSubType;
     }
 
-    @Override public String getResourceType() {
+    public String getResourceType() {
         return resourceType;
     }
 
@@ -106,7 +106,7 @@ public class NetworkPrerequisiteTO implements NetworkPrerequisite {
         this.resourceType = resourceType;
     }
 
-    @Override public String getName() {
+    public String getName() {
         return name;
     }
 
@@ -114,7 +114,7 @@ public class NetworkPrerequisiteTO implements NetworkPrerequisite {
         this.name = name;
     }
 
-    @Override public String getNetworkDescription() {
+    public String getNetworkDescription() {
         return networkDescription;
     }
 
