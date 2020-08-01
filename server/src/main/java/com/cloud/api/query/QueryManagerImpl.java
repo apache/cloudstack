@@ -982,7 +982,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (storageId != null) {
             StoragePoolVO poolVO = _storagePoolDao.findById((Long) storageId);
             if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-                List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster((Long) storageId);
                 sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.IN);
             } else {
                 sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);

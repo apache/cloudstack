@@ -40,6 +40,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -838,6 +839,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private KeystoreManager _ksMgr;
     @Inject
     private DpdkHelper dpdkHelper;
+    @Inject
+    private PrimaryDataStoreDao _primaryDataStoreDao;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -3323,9 +3326,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("nulltype", sb.entity().getType(), SearchCriteria.Op.IN);
 
         if (storageId != null) {
-            final SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
-            volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-            sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            StoragePoolVO storagePool = _primaryDataStoreDao.findById(storageId);
+            if (storagePool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                final SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+                volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.IN);
+                sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            } else {
+                final SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+                volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+                sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            }
         }
 
         final SearchCriteria<VMInstanceVO> sc = sb.create();
@@ -3365,7 +3375,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (storageId != null) {
-            sc.setJoinParameters("volumeSearch", "poolId", storageId);
+            StoragePoolVO storagePool = _primaryDataStoreDao.findById(storageId);
+            if (storagePool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childDataStores = _primaryDataStoreDao.listChildStoragePoolsInDatastoreCluster(storageId);
+                List<Long> childDatastoreIds = childDataStores.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+                sc.setJoinParameters("volumeSearch", "poolId", childDatastoreIds.toArray());
+            } else {
+                sc.setJoinParameters("volumeSearch", "poolId", storageId);
+            }
         }
 
         final Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
