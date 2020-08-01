@@ -47,7 +47,7 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     private String guestIp;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "guest cidr list of the customer gateway")
+    @Param(description = "guest cidr list of the customer gateway. Multiple entries are separated by a single comma character (,).")
     private String guestCidrList;
 
     @SerializedName(ApiConstants.IPSEC_PSK)

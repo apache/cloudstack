@@ -16,8 +16,7 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cloudstack-plugins</artifactId>
     <name>Apache CloudStack Plugin POM</name>
@@ -109,6 +108,7 @@
 
         <module>outofbandmanagement-drivers/ipmitool</module>
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
+        <module>outofbandmanagement-drivers/redfish</module>
 
         <module>storage/image/default</module>
         <module>storage/image/s3</module>
@@ -129,7 +129,7 @@
         <module>user-authenticators/plain-text</module>
         <module>user-authenticators/saml2</module>
         <module>user-authenticators/sha256salted</module>
-    </modules>
+   </modules>
     <dependencies>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>

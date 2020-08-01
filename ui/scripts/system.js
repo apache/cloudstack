@@ -17662,6 +17662,10 @@
                                                     id: 'nestedcloudstack',
                                                     description: 'nested-cloudstack - controls host that is a VM in a parent cloudstack (testing purposes only)'
                                                 });
+                                                items.push({
+                                                    id: 'redfish',
+                                                    description: 'redfish - controls host using a redfish java client'
+                                                });
                                                 args.response.success({
                                                     data: items
                                                 });
