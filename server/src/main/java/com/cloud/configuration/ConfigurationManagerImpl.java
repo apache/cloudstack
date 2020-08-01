@@ -2462,6 +2462,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        final Long storagePolicyId = cmd.getStoragePolicy();
+        if (storagePolicyId != null) {
+            if (vsphereStoragePolicyDao.findById(storagePolicyId) == null) {
+                throw new InvalidParameterValueException("Please specify a valid vSphere storage policy id");
+            }
+        }
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
@@ -2469,7 +2476,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode());
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId);
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -2480,7 +2487,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode) {
+            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID) {
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -2618,6 +2625,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntryValue, true));
             }
+        }
+
+        if (storagePolicyID != null) {
+            detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
         }
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
