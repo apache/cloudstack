@@ -42,6 +42,7 @@ import javax.inject.Inject;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
@@ -306,6 +307,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     StoragePoolTagsDao _storagePoolTagsDao;
     @Inject
     DiskOfferingDetailsDao _diskOfferingDetailsDao;
+    @Inject
+    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
 
@@ -1990,7 +1993,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<Pair<Volume, Answer>> answers = new ArrayList<Pair<Volume, Answer>>();
 
         for (Volume volume : volumes) {
-            String storagePolicyId = _diskOfferingDetailsDao.getDetail(volume.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
+            String storagePolicyId = null;
+            if (volume.getVolumeType() == Type.ROOT) {
+                Long vmId = volume.getInstanceId();
+                if (vmId != null) {
+                    VMInstanceVO vm = _vmInstanceDao.findByIdIncludingRemoved(vmId);
+                    storagePolicyId = _serviceOfferingDetailsDao.getDetail(vm.getServiceOfferingId(), ApiConstants.STORAGE_POLICY);
+                }
+            } else {
+                storagePolicyId = _diskOfferingDetailsDao.getDetail(volume.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
+            }
             if (org.apache.commons.lang.StringUtils.isNotEmpty(storagePolicyId)) {
                 VsphereStoragePolicyVO storagePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyId));
                 List<Long> hostIds = getUpHostsInPool(pool.getId());
