@@ -3428,7 +3428,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         try {
             if (cmd.getRemoveDatastore()) {
-// not yet needed as it is not yet used                contentLibraryService.deleteContentLibrary(context, cmd.getDetails().get(DeleteStoragePoolCommand.DATASTORE_NAME));
                 _storageProcessor.handleDatastoreAndVmdkDetach(cmd, cmd.getDetails().get(DeleteStoragePoolCommand.DATASTORE_NAME),
                         cmd.getDetails().get(DeleteStoragePoolCommand.IQN), cmd.getDetails().get(DeleteStoragePoolCommand.STORAGE_HOST),
                         Integer.parseInt(cmd.getDetails().get(DeleteStoragePoolCommand.STORAGE_PORT)));
@@ -3441,14 +3440,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 // VmwareHypervisorHost hyperHost = this.getHyperHost(getServiceContext());
                 // hyperHost.unmountDatastore(pool.getUuid());
 
-                VmwareContext context = null;
-                VmwareHypervisorHost hyperHost = getHyperHost(context);
-                StorageFilerTO pool = cmd.getPool();
-                ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
-                if (morDatastore != null) {
-                    DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
-// this is not created yet                    contentLibraryService.deleteContentLibrary(context, dsMo.getName());
-                }
                 return new Answer(cmd, true, "success");
             }
         } catch (Throwable e) {
