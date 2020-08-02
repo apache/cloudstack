@@ -23,7 +23,6 @@ import com.cloud.agent.api.LogLevel;
 
 /**
  * Used to represent travel objects like:
- // FR37 rename
  * <Property ovf:key="RouteDefault" ovf:type="string" ovf:qualifiers="ValueMap{&quot;Default Route&quot;,&quot;Remote HTTP and SSH Client Routes&quot;}" ovf:value="Default Route" ovf:userConfigurable="true">
  *         <Label>Select Route Type</Label>
  *         <Description>Select the route/gateway type.

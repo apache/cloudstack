@@ -56,6 +56,7 @@ import com.cloud.template.VirtualMachineTemplate;
  *
  *
  */
+
 public class RequestTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(RequestTest.class);
 
