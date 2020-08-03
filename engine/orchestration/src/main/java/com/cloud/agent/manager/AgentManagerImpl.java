@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -77,6 +78,8 @@ import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -105,6 +108,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
@@ -162,6 +166,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ConfigurationDao _configDao = null;
     @Inject
     protected ClusterDao _clusterDao = null;
+    @Inject
+    protected ManagementServerHostDao _msHostDao;
 
     @Inject
     protected HighAvailabilityManager _haMgr = null;
@@ -183,11 +189,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ScheduledExecutorService _directAgentExecutor;
     protected ScheduledExecutorService _cronJobExecutor;
     protected ScheduledExecutorService _monitorExecutor;
+    protected ScheduledExecutorService _scanHostsExecutor;
+    protected ScheduledExecutorService _investigatorExecutor;
 
     private int _directAgentThreadCap;
 
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
     private final ConcurrentHashMap<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
+
+    private final ConcurrentHashMap<Long, ScheduledFuture<?>> _investigateTasksMap = new ConcurrentHashMap<>();
 
     @Inject
     ResourceManager _resourceMgr;
@@ -207,6 +217,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             "Percentage (as a value between 0 and 1) of direct.agent.pool.size to be used as upper thread cap for a single direct agent to process requests", false);
     protected final ConfigKey<Boolean> CheckTxnBeforeSending = new ConfigKey<Boolean>("Developer", Boolean.class, "check.txn.before.sending.agent.commands", "false",
             "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.", true);
+
+    protected final ConfigKey<Boolean> InvestigateDisconnectedHosts = new ConfigKey<>("Advanced", Boolean.class, "investigate.disconnected.hosts",
+        "false", "Determines whether to investigate VMs on disconnected hosts", false);
+    protected final ConfigKey<Integer> InvestigateDisconnectedHostsInterval = new ConfigKey<>("Advanced", Integer.class, "investigate.disconnected.hosts.interval",
+        "300", "The time (in seconds) between VM investigation on disconnected hosts.", false);
+    protected final ConfigKey<Integer> InvestigateDisconnectedHostsPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, "investigate.disconnected.hosts.pool.size", "10",
+            "Default pool size to investigate disconnected hosts", false);
+
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -242,6 +260,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _directAgentThreadCap = Math.round(DirectAgentPoolSize.value() * DirectAgentThreadCap.value()) + 1; // add 1 to always make the value > 0
 
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
+
+        _scanHostsExecutor =  new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("HostsScanner"));
+        _investigatorExecutor = new ScheduledThreadPoolExecutor(InvestigateDisconnectedHostsPoolSize.value(), new NamedThreadFactory("DisconnectHostsInvestigator"));
 
         return true;
     }
@@ -619,6 +640,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
 
+        if (InvestigateDisconnectedHosts.value()) {
+            _scanHostsExecutor.scheduleAtFixedRate(new ScanDisconnectedHostsTask(), 60, 60, TimeUnit.SECONDS);
+        }
+
         return true;
     }
 
@@ -778,6 +803,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _connectExecutor.shutdownNow();
         _monitorExecutor.shutdownNow();
+        _investigatorExecutor.shutdownNow();
+
         return true;
     }
 
@@ -1730,7 +1757,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize, DirectAgentPoolSize,
-            DirectAgentThreadCap };
+            DirectAgentThreadCap,
+            InvestigateDisconnectedHosts, InvestigateDisconnectedHostsInterval, InvestigateDisconnectedHostsPoolSize };
     }
 
     protected class SetHostParamsListener implements Listener {
@@ -1844,6 +1872,93 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             s_logger.debug("Propagating changes on host parameters to the agents");
             Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
             sendCommandToAgents(hostsPerZone, params);
+        }
+    }
+
+    protected class ScanDisconnectedHostsTask extends ManagedContextRunnable {
+
+        @Override
+        protected void runInContext() {
+            try {
+                ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+                if (msHost == null || (msHost.getMsid() != _nodeId)) {
+                    s_logger.debug("Skipping disconnected hosts scan task");
+                    for (Long hostId : _investigateTasksMap.keySet()) {
+                        cancelInvestigationTask(hostId);
+                    }
+                    return;
+                }
+                for (HostVO host : _hostDao.listByType(Host.Type.Routing)) {
+                    if (host.getStatus() == Status.Disconnected) {
+                        scheduleInvestigationTask(host.getId());
+                    }
+                }
+            } catch (final Exception e) {
+                s_logger.error("Exception caught while scanning disconnected hosts : ", e);
+            }
+        }
+    }
+
+    protected class InvestigationTask extends ManagedContextRunnable {
+        Long _hostId;
+
+        InvestigationTask(final Long hostId) {
+            _hostId = hostId;
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                final long hostId = _hostId;
+                s_logger.info("Investigating host " + hostId + " to determine its actual state");
+                HostVO host = _hostDao.findById(hostId);
+                if (host == null) {
+                    s_logger.info("Cancelling investigation on host " + hostId + " which might has been removed");
+                    cancelInvestigationTask(hostId);
+                    return;
+                }
+                if (host.getStatus() != Status.Disconnected) {
+                    s_logger.info("Cancelling investigation on host " + hostId + " in status " + host.getStatus());
+                    cancelInvestigationTask(hostId);
+                    return;
+                }
+                Status determinedState = _haMgr.investigate(hostId);
+                s_logger.info("Investigators determine the status of host " + hostId + " is " + determinedState);
+                if (determinedState == Status.Down) {
+                    agentStatusTransitTo(host, Status.Event.HostDown, _nodeId);
+                    s_logger.info("Scheduling VMs restart on host " + hostId + " which is Down");
+                    _haMgr.scheduleRestartForVmsOnHost(host, true);
+                    s_logger.info("Cancelling investigation on host " + hostId + " which is Down");
+                    cancelInvestigationTask(hostId);
+                }
+            } catch (final Exception e) {
+                s_logger.error("Exception caught while handling investigation task: ", e);
+            }
+        }
+    }
+
+    private void scheduleInvestigationTask(final Long hostId) {
+        ScheduledFuture future = _investigateTasksMap.get(hostId);
+        if (future != null) {
+            s_logger.info("There is already a task to investigate host " + hostId);
+        } else {
+            ScheduledFuture scheduledFuture = _investigatorExecutor.scheduleWithFixedDelay(new InvestigationTask(hostId), InvestigateDisconnectedHostsInterval.value(),
+                    InvestigateDisconnectedHostsInterval.value(), TimeUnit.SECONDS);
+            _investigateTasksMap.put(hostId, scheduledFuture);
+            s_logger.info("Scheduled a task to investigate host " + hostId);
+        }
+    }
+
+    private void cancelInvestigationTask(final Long hostId) {
+        ScheduledFuture future = _investigateTasksMap.get(hostId);
+        if (future != null) {
+            try {
+                future.cancel(false);
+                s_logger.info("Cancelled a task to investigate host " + hostId);
+                _investigateTasksMap.remove(hostId);
+            } catch (Exception e) {
+                s_logger.error("Exception caught while cancelling investigation task: ", e);
+            }
         }
     }
 }
