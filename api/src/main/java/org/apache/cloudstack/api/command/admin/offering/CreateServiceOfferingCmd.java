@@ -217,7 +217,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.13")
     private Integer minMemory;
 
-    @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = VsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware")
+    @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = VsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware", since = "4.15")
     private Long storagePolicy;
 
     /////////////////////////////////////////////////////
