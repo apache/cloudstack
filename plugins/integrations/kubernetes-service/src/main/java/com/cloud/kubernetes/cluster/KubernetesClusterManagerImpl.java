@@ -51,7 +51,6 @@ import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.codec.binary.Base64;
@@ -63,7 +62,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
-import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -82,6 +80,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterDestroyWorker;
@@ -122,9 +121,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -181,11 +178,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Inject
     protected ClusterDetailsDao clusterDetailsDao;
     @Inject
+    protected HostDao hostDao;
+    @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
     protected VMTemplateDao templateDao;
-    @Inject
-    protected VMTemplateZoneDao templateZoneDao;
     @Inject
     protected TemplateJoinDao templateJoinDao;
     @Inject
@@ -300,8 +297,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 LOGGER.warn(String.format("Unable to find the template %s to be used for provisioning Kubernetes cluster nodes", templateName));
                 return false;
             }
-            List<VMTemplateZoneVO> listZoneTemplate = templateZoneDao.listByZoneTemplate(zone.getId(), template.getId());
-            if (listZoneTemplate == null || listZoneTemplate.isEmpty()) {
+            if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
                 LOGGER.warn(String.format("The template ID: %s, name: %s is not available for use in zone ID: %s provisioning Kubernetes cluster nodes", template.getUuid(), templateName, zone.getUuid()));
                 return false;
             }
@@ -394,7 +390,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 tempalteName = KubernetesClusterXenserverTemplateName.value();
                 break;
         }
-        return templateDao.findByTemplateName(tempalteName);
+        return templateDao.findValidByTemplateName(tempalteName);
     }
 
     private boolean validateIsolatedNetwork(Network network, int clusterTotalNodeCount) {
@@ -523,6 +519,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
                 HostVO h = hp.first();
+                hostDao.loadHostTags(h);
+                if (!Strings.isNullOrEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
+                    continue;
+                }
                 int reserved = hp.second();
                 reserved++;
                 ClusterVO cluster = clusterDao.findById(h.getClusterId());
@@ -545,7 +545,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             if (!suitable_host_found) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Suitable hosts not found in datacenter ID: %s for node %d", zone.getUuid(), i));
+                    LOGGER.info(String.format("Suitable hosts not found in datacenter ID: %s for node %d with offering ID: %s", zone.getUuid(), i, offering.getUuid()));
                 }
                 break;
             }
@@ -556,8 +556,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             return new DeployDestination(zone, null, planCluster, null);
         }
-        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%1$s memory=%2$s)",
-                cpu_requested * nodesCount, ram_requested * nodesCount);
+        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%d) with offering ID: %s",
+                cpu_requested * nodesCount, ram_requested * nodesCount, offering.getUuid());
         LOGGER.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }
@@ -684,12 +684,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Kubernetes version ID: %s is not available for zone ID: %s", clusterKubernetesVersion.getUuid(), zone.getUuid()));
         }
 
-        TemplateJoinVO iso = templateJoinDao.findById(clusterKubernetesVersion.getIsoId());
+        VMTemplateVO iso = templateDao.findById(clusterKubernetesVersion.getIsoId());
         if (iso == null) {
             throw new InvalidParameterValueException(String.format("Invalid ISO associated with version ID: %s",  clusterKubernetesVersion.getUuid()));
         }
-        if (!ObjectInDataStoreStateMachine.State.Ready.equals(iso.getState())) {
-            throw new InvalidParameterValueException(String.format("ISO associated with version ID: %s is not in Ready state",  clusterKubernetesVersion.getUuid()));
+        if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(iso, zone.getId(), true))) {
+            throw new InvalidParameterValueException(String.format("ISO associated with version ID: %s is not in Ready state for datacenter ID: %s",  clusterKubernetesVersion.getUuid(), zone.getUuid()));
         }
 
         ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
@@ -887,6 +887,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (clusterSize < 1) {
                 throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled for size, %d", kubernetesCluster.getUuid(), clusterSize));
             }
+            if (clusterSize > kubernetesCluster.getNodeCount()) { // Upscale
+                VMTemplateVO template = templateDao.findById(kubernetesCluster.getTemplateId());
+                if (template == null) {
+                    throw new InvalidParameterValueException(String.format("Invalid template associated with Kubernetes cluster ID: %s",  kubernetesCluster.getUuid()));
+                }
+                if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
+                    throw new InvalidParameterValueException(String.format("Template ID: %s associated with Kubernetes cluster ID: %s is not in Ready state for datacenter ID: %s", template.getUuid(), kubernetesCluster.getUuid(), zone.getUuid()));
+                }
+            }
         }
     }
 
@@ -907,6 +916,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         if (!KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s is not in running state", kubernetesCluster.getUuid()));
+        }
+        final DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
+        if (zone == null) {
+            logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
         }
         KubernetesSupportedVersionVO upgradeVersion = kubernetesSupportedVersionDao.findById(upgradeVersionId);
         if (upgradeVersion == null || upgradeVersion.getRemoved() != null) {
@@ -939,12 +952,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(e.getMessage());
         }
 
-        TemplateJoinVO iso = templateJoinDao.findById(upgradeVersion.getIsoId());
+        VMTemplateVO iso = templateDao.findById(upgradeVersion.getIsoId());
         if (iso == null) {
             throw new InvalidParameterValueException(String.format("Invalid ISO associated with version ID: %s",  upgradeVersion.getUuid()));
         }
-        if (!ObjectInDataStoreStateMachine.State.Ready.equals(iso.getState())) {
-            throw new InvalidParameterValueException(String.format("ISO associated with version ID: %s is not in Ready state",  upgradeVersion.getUuid()));
+        if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(iso, zone.getId(), true))) {
+            throw new InvalidParameterValueException(String.format("ISO associated with version ID: %s is not in Ready state for datacenter ID: %s",  upgradeVersion.getUuid(), zone.getUuid()));
         }
     }
 
