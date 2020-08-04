@@ -176,6 +176,7 @@ export default {
   },
   mounted () {
     if (this.launchZone) {
+      this.processStatus = STATUS_PROCESS
       this.stepData = this.launchData
       if (this.stepChild === 'publicTraffic') {
         this.stepData.returnedPublicTraffic = []
@@ -1514,7 +1515,6 @@ export default {
       this.currentStep++
       this.addStep('message.zone.creation.complete', 'stepComplete')
       this.setStepStatus(STATUS_FINISH)
-      this.currentStep++
       this.processStatus = STATUS_FINISH
     },
     async enableZoneAction () {

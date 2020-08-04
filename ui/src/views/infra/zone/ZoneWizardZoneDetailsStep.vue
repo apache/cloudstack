@@ -130,7 +130,7 @@
             rules: [
               {
                 message: $t('message.error.ipv6.cidr'),
-                initialValue: ip6cidr
+                initialValue: ipv6Cidr
               }
             ]
           }]"
@@ -479,6 +479,12 @@ export default {
     },
     internalDns2 () {
       return this.prefillContent.internalDns2 ? this.prefillContent.internalDns2.value : null
+    },
+    ipv6Cidr () {
+      return this.prefillContent.ipv6Cidr ? this.prefillContent.ipv6Cidr.value : null
+    },
+    ip6gateway () {
+      return this.prefillContent.ip6gateway ? this.prefillContent.ip6gateway.value : null
     },
     currentHypervisor () {
       if (this.prefillContent.hypervisor) {

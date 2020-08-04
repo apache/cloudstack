@@ -260,6 +260,49 @@ export default {
           required: false
         }
       ]
+    },
+    guestTrafficFields () {
+      const fields = [
+        {
+          title: 'label.guest.gateway',
+          key: 'guestGateway',
+          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.guestgateway',
+          required: false
+        },
+        {
+          title: 'label.guest.netmask',
+          key: 'guestNetmask',
+          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.guestnetmask',
+          required: false
+        },
+        {
+          title: 'label.guest.start.ip',
+          key: 'guestStartIp',
+          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.gueststartip',
+          required: false,
+          ipV4: true,
+          message: 'message.error.ipv4.address'
+        },
+        {
+          title: 'label.guest.end.ip',
+          key: 'guestStopIp',
+          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.guestendip',
+          required: false,
+          ipV4: true,
+          message: 'message.error.ipv4.address'
+        }
+      ]
+
+      if (this.sgEnabled) {
+        fields.push({
+          title: 'label.vlanid',
+          key: 'guestVlan',
+          required: false,
+          ipV4: false
+        })
+      }
+
+      return fields
     }
   },
   data () {
@@ -311,36 +354,6 @@ export default {
           title: 'label.end.reserved.system.ip',
           key: 'podReservedStopIp',
           placeHolder: 'message.installwizard.tooltip.addpod.reservedsystemendip',
-          required: false,
-          ipV4: true,
-          message: 'message.error.ipv4.address'
-        }
-      ],
-      guestTrafficFields: [
-        {
-          title: 'label.guest.gateway',
-          key: 'guestGateway',
-          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.guestgateway',
-          required: false
-        },
-        {
-          title: 'label.guest.netmask',
-          key: 'guestNetmask',
-          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.guestnetmask',
-          required: false
-        },
-        {
-          title: 'label.guest.start.ip',
-          key: 'guestStartIp',
-          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.gueststartip',
-          required: false,
-          ipV4: true,
-          message: 'message.error.ipv4.address'
-        },
-        {
-          title: 'label.guest.end.ip',
-          key: 'guestStopIp',
-          placeHolder: 'message.installwizard.tooltip.configureguesttraffic.guestendip',
           required: false,
           ipV4: true,
           message: 'message.error.ipv4.address'
