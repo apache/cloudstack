@@ -3752,7 +3752,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 builder.append("Volume on secondary storage usage");
                 if (volume != null) {
                     builder.append(" for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3776,7 +3776,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getVirtualSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
