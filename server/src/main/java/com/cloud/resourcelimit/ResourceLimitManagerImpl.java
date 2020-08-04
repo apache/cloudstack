@@ -820,7 +820,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @DB
     protected boolean updateResourceCountForAccount(final long accountId, final ResourceType type, final boolean increment, final long delta) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Updating resource Type = " + type + " count for Account = " + accountId + " Operation = " + (increment ? "increasing" : "decreasing") + " Amount = " + delta);
+            String convertedDelta = String.valueOf(delta);
+            if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+                convertedDelta = toHumanReadableSize(delta);
+            }
+            s_logger.debug("Updating resource Type = " + type + " count for Account = " + accountId + " Operation = " + (increment ? "increasing" : "decreasing") + " Amount = " + convertedDelta);
         }
         try {
             return Transaction.execute(new TransactionCallback<Boolean>() {

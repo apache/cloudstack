@@ -350,6 +350,8 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class ApiResponseHelper implements ResponseGenerator {
 
     private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
@@ -3575,7 +3577,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 if (tmpl != null) {
                     builder.append(" for ").append(tmpl.getName()).append(" (").append(tmpl.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getSize()).append(" and virtual size ").append(usageRecord.getVirtualSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize())).append(" and virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
