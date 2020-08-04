@@ -93,6 +93,20 @@ export default {
     },
     $route () {
       this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
+      this.fetchProjectAdmins()
+    }
+  },
+  methods: {
+    fetchProjectAdmins () {
+      if (!this.resource.owner) {
+        return false
+      }
+      var owners = this.resource.owner
+      var projectAdmins = []
+      for (var owner of owners) {
+        projectAdmins.push(Object.keys(owner).includes('user') ? owner.account + '(' + owner.user + ')' : owner.account)
+      }
+      this.resource.account = projectAdmins.join()
     }
   }
 }

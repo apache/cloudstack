@@ -576,6 +576,18 @@ export default {
           this.items = []
         }
 
+        if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
+          this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
+        }
+
+        if (this.apiName === 'listProjects' && this.items.length > 0) {
+          this.columns.map(col => {
+            if (col.title === 'Account') {
+              col.title = this.$t('label.project.owner')
+            }
+          })
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
@@ -818,7 +830,6 @@ export default {
     execSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
-        console.log(values)
         if (!err) {
           const params = {}
           if ('id' in this.resource && this.currentAction.params.map(i => { return i.name }).includes('id')) {
@@ -867,10 +878,6 @@ export default {
               params[key] = this.currentAction.mapping[key].value(this.resource, params)
             }
           }
-
-          console.log(this.currentAction)
-          console.log(this.resource)
-          console.log(params)
 
           const resourceName = params.displayname || params.displaytext || params.name || params.hostname || params.username || params.ipaddress || params.virtualmachinename || this.resource.name
 

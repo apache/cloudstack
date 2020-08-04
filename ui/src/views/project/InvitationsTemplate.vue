@@ -116,6 +116,11 @@ export default {
         scopedSlots: { customRender: 'project' }
       },
       {
+        title: this.$t('label.account'),
+        dataIndex: 'account',
+        scopedSlots: { customRender: 'account' }
+      },
+      {
         title: this.$t('label.domain'),
         dataIndex: 'domain',
         scopedSlots: { customRender: 'domain' }
@@ -152,6 +157,18 @@ export default {
     this.page = 1
     this.pageSize = 10
     this.itemCount = 0
+    this.apiConfig = this.$store.getters.apis.listProjectInvitations || {}
+    this.apiParams = {}
+    this.apiConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
+    if (this.apiParams.userid) {
+      this.columns.splice(2, 0, {
+        title: this.$t('label.user'),
+        dataIndex: 'userid',
+        scopedSlots: { customRender: 'user' }
+      })
+    }
   },
   mounted () {
     this.fetchData()
@@ -225,7 +242,11 @@ export default {
       const params = {}
 
       params.projectid = record.projectid
-      params.account = record.account
+      if (record.userid && record.userid !== null) {
+        params.userid = record.userid
+      } else {
+        params.account = record.account
+      }
       params.domainid = record.domainid
       params.accept = state
 

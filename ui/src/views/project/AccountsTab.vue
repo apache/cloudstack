@@ -21,29 +21,47 @@
       <a-col :md="24" :lg="24">
         <a-table
           size="small"
-          :loading="loading"
+          :loading="loading.table"
           :columns="columns"
           :dataSource="dataSource"
           :pagination="false"
-          :rowKey="record => record.accountid || record.account"
-        >
-          <span slot="action" v-if="record.role!==owner" slot-scope="text, record" class="account-button-action">
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.make.project.owner') }}
-              </template>
+          :rowKey="record => record.userid ? record.userid : (record.accountid || record.account)">
+          <span slot="user" slot-scope="text, record" v-if="record.userid">
+            {{ record.username }}
+          </span>
+          <span slot="projectrole" slot-scope="text, record" v-if="record.projectroleid">
+            {{ getProjectRole(record) }}
+          </span>
+          <span v-if="imProjectAdmin && dataSource.length > 1" slot="action" slot-scope="text, record" class="account-button-action">
+            <a-tooltip
+              slot="title"
+              placement="top"
+              :title="record.userid ? $t('label.make.user.project.owner') : $t('label.make.project.owner')">
               <a-button
+                v-if="record.role !== owner"
                 type="default"
                 shape="circle"
-                icon="user"
+                icon="arrow-up"
                 size="small"
-                :disabled="!('updateProject' in $store.getters.apis)"
-                @click="onMakeProjectOwner(record)" />
+                @click="promoteAccount(record)" />
             </a-tooltip>
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.remove.project.account') }}
-              </template>
+            <a-tooltip
+              slot="title"
+              placement="top"
+              :title="record.userid ? $t('label.demote.project.owner.user') : $t('label.demote.project.owner')"
+              v-if="updateProjectApi.params.filter(x => x.name === 'swapowner').length > 0">
+              <a-button
+                v-if="record.role === owner"
+                type="default"
+                shape="circle"
+                icon="arrow-down"
+                size="small"
+                @click="demoteAccount(record)" />
+            </a-tooltip>
+            <a-tooltip
+              slot="title"
+              placement="top"
+              :title="record.userid ? $t('label.remove.project.user') : $t('label.remove.project.account')">
               <a-button
                 type="danger"
                 shape="circle"
@@ -89,11 +107,20 @@ export default {
     return {
       columns: [],
       dataSource: [],
-      loading: false,
+      imProjectAdmin: false,
+      loading: {
+        user: false,
+        projectAccount: false,
+        roles: false,
+        table: false
+      },
       page: 1,
       pageSize: 10,
       itemCount: 0,
-      owner: 'Admin'
+      users: [],
+      projectRoles: [],
+      owner: 'Admin',
+      role: 'Regular'
     }
   },
   created () {
@@ -101,27 +128,36 @@ export default {
       {
         title: this.$t('label.account'),
         dataIndex: 'account',
-        width: '35%',
         scopedSlots: { customRender: 'account' }
       },
       {
-        title: this.$t('label.role'),
+        title: this.$t('label.roletype'),
         dataIndex: 'role',
         scopedSlots: { customRender: 'role' }
       },
       {
         title: this.$t('label.action'),
         dataIndex: 'action',
-        fixed: 'right',
-        width: 100,
         scopedSlots: { customRender: 'action' }
       }
     ]
-
+    if (this.isProjectRolesSupported()) {
+      this.columns.splice(1, 0, {
+        title: this.$t('label.user'),
+        dataIndex: 'userid',
+        scopedSlots: { customRender: 'user' }
+      })
+      this.columns.splice(this.columns.length - 1, 0, {
+        title: this.$t('label.project.role'),
+        dataIndex: 'projectroleid',
+        scopedSlots: { customRender: 'projectrole' }
+      })
+    }
     this.page = 1
     this.pageSize = 10
     this.itemCount = 0
   },
+  inject: ['parentFetchData'],
   mounted () {
     this.fetchData()
   },
@@ -140,25 +176,12 @@ export default {
       params.projectId = this.resource.id
       params.page = this.page
       params.pageSize = this.pageSize
-
-      this.loading = true
-
-      api('listProjectAccounts', params).then(json => {
-        const listProjectAccount = json.listprojectaccountsresponse.projectaccount
-        const itemCount = json.listprojectaccountsresponse.count
-
-        if (!listProjectAccount || listProjectAccount.length === 0) {
-          this.dataSource = []
-          return
-        }
-
-        this.itemCount = itemCount
-        this.dataSource = listProjectAccount
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.loading = false
-      })
+      this.updateProjectApi = this.$store.getters.apis.updateProject
+      this.fetchUsers()
+      this.fetchProjectAccounts(params)
+      if (this.isProjectRolesSupported()) {
+        this.fetchProjectRoles()
+      }
     },
     changePage (page, pageSize) {
       this.page = page
@@ -166,29 +189,126 @@ export default {
       this.fetchData()
     },
     changePageSize (currentPage, pageSize) {
-      this.page = currentPage
+      this.page = 0
       this.pageSize = pageSize
       this.fetchData()
+    },
+    isLoggedInUserProjectAdmin (user) {
+      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)) {
+        return true
+      }
+      // If I'm the logged in user Or if I'm the logged in account And I'm the owner
+      if (((user.userid && user.userid === this.$store.getters.userInfo.id) ||
+        user.account === this.$store.getters.userInfo.account) &&
+        user.role === this.owner) {
+        return true
+      }
+      return false
+    },
+    isProjectRolesSupported () {
+      return ('listProjectRoles' in this.$store.getters.apis)
+    },
+    getProjectRole (record) {
+      const projectRole = this.projectRoles.filter(role => role.id === record.projectroleid)
+      return projectRole[0].name || projectRole[0].id || null
+    },
+    fetchUsers () {
+      this.loading.user = true
+      api('listUsers', { listall: true }).then(response => {
+        this.users = response.listusersresponse.user || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading.user = false
+      })
+    },
+    fetchProjectRoles () {
+      this.loading.roles = true
+      api('listProjectRoles', { projectId: this.resource.id }).then(response => {
+        this.projectRoles = response.listprojectrolesresponse.projectrole || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading.roles = false
+      })
+    },
+    fetchProjectAccounts (params) {
+      this.loading.projectAccount = true
+      api('listProjectAccounts', params).then(json => {
+        const listProjectAccount = json.listprojectaccountsresponse.projectaccount
+        const itemCount = json.listprojectaccountsresponse.count
+        if (!listProjectAccount || listProjectAccount.length === 0) {
+          this.dataSource = []
+          return
+        }
+        for (const projectAccount of listProjectAccount) {
+          this.imProjectAdmin = this.isLoggedInUserProjectAdmin(projectAccount)
+          if (this.imProjectAdmin) {
+            break
+          }
+        }
+
+        this.itemCount = itemCount
+        this.dataSource = listProjectAccount
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading.projectAccount = false
+      })
     },
     onMakeProjectOwner (record) {
       const title = this.$t('label.make.project.owner')
       const loading = this.$message.loading(title + `${this.$t('label.in.progress.for')} ` + record.account, 0)
       const params = {}
-
       params.id = this.resource.id
       params.account = record.account
+      this.updateProject(record, params, title, loading)
+    },
+    promoteAccount (record) {
+      var title = this.$t('label.make.project.owner')
+      const loading = this.$message.loading(title + `${this.$t('label.in.progress.for')} ` + record.account, 0)
+      const params = {}
 
+      params.id = this.resource.id
+      if (record.userid) {
+        params.userid = record.userid
+        // params.accountid = (record.user && record.user[0].accountid) || record.accountid
+        title = this.$t('label.make.user.project.owner')
+      } else {
+        params.account = record.account
+      }
+      params.roletype = this.owner
+      params.swapowner = false
+      this.updateProject(record, params, title, loading)
+    },
+    demoteAccount (record) {
+      var title = this.$t('label.demote.project.owner')
+      const loading = this.$message.loading(title + `${this.$t('label.in.progress.for')} ` + record.account, 0)
+      const params = {}
+      if (record.userid) {
+        params.userid = record.userid
+        // params.accountid = (record.user && record.user[0].accountid) || record.accountid
+        title = this.$t('label.demote.project.owner.user')
+      } else {
+        params.account = record.account
+      }
+
+      params.id = this.resource.id
+      params.roletype = 'Regular'
+      params.swapowner = false
+      this.updateProject(record, params, title, loading)
+    },
+    updateProject (record, params, title, loading) {
       api('updateProject', params).then(json => {
         const hasJobId = this.checkForAddAsyncJob(json, title, record.account)
-
         if (hasJobId) {
           this.fetchData()
         }
       }).catch(error => {
-        // show error
         this.$notifyError(error)
       }).finally(() => {
         setTimeout(loading, 1000)
+        this.parentFetchData()
       })
     },
     onShowConfirmDelete (record) {
@@ -209,18 +329,22 @@ export default {
       const title = this.$t('label.remove.project.account')
       const loading = this.$message.loading(title + `${this.$t('label.in.progress.for')} ` + record.account, 0)
       const params = {}
-
-      params.account = record.account
       params.projectid = this.resource.id
-
-      api('deleteAccountFromProject', params).then(json => {
+      if (record.userid) {
+        params.userid = record.userid
+        this.deleteOperation('deleteUserFromProject', params, record, title, loading)
+      } else {
+        params.account = record.account
+        this.deleteOperation('deleteAccountFromProject', params, record, title, loading)
+      }
+    },
+    deleteOperation (apiName, params, record, title, loading) {
+      api(apiName, params).then(json => {
         const hasJobId = this.checkForAddAsyncJob(json, title, record.account)
-
         if (hasJobId) {
           this.fetchData()
         }
       }).catch(error => {
-        // show error
         this.$notifyError(error)
       }).finally(() => {
         setTimeout(loading, 1000)

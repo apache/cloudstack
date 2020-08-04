@@ -91,7 +91,6 @@ const user = {
       return new Promise((resolve, reject) => {
         login(userInfo).then(response => {
           const result = response.loginresponse || {}
-
           Cookies.set('account', result.account, { expires: 1 })
           Cookies.set('domainid', result.domainid, { expires: 1 })
           Cookies.set('role', result.type, { expires: 1 })
@@ -100,7 +99,6 @@ const user = {
           Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
           Cookies.set('userid', result.userid, { expires: 1 })
           Cookies.set('username', result.username, { expires: 1 })
-
           Vue.ls.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
           commit('SET_TOKEN', result.sessionkey)
 
@@ -174,7 +172,7 @@ const user = {
           })
         }
 
-        api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {
+        api('listUsers', { username: Cookies.get('username') }).then(response => {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
@@ -248,6 +246,29 @@ const user = {
       var jobsArray = Vue.ls.get(ASYNC_JOB_IDS, [])
       jobsArray.push(jobJson)
       commit('SET_ASYNC_JOB_IDS', jobsArray)
+    },
+    ProjectView ({ commit }, projectid) {
+      return new Promise((resolve, reject) => {
+        api('listApis', { projectid: projectid }).then(response => {
+          const apis = {}
+          const apiList = response.listapisresponse.api
+          for (var idx = 0; idx < apiList.length; idx++) {
+            const api = apiList[idx]
+            const apiName = api.name
+            apis[apiName] = {
+              params: api.params,
+              response: api.response
+            }
+          }
+          commit('SET_APIS', apis)
+          resolve(apis)
+          store.dispatch('GenerateRoutes', { apis }).then(() => {
+            router.addRoutes(store.getters.addRouters)
+          })
+        }).catch(error => {
+          reject(error)
+        })
+      })
     }
   }
 }

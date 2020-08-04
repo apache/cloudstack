@@ -88,7 +88,8 @@ export default {
   data () {
     return {
       activeTab: '',
-      networkService: null
+      networkService: null,
+      projectAccount: null
     }
   },
   watch: {
