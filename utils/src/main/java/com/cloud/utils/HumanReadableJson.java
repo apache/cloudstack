@@ -31,7 +31,7 @@ public class HumanReadableJson {
 
     private boolean changeValue;
     private StringBuilder output = new StringBuilder();
-    private boolean firstPrimitive = true;
+    private boolean firstElement = true;
 
     private final String[] elementsToMatch = {
             "bytesSent","bytesReceived","BytesWrite","BytesRead","bytesReadRate","bytesWriteRate","iopsReadRate",
@@ -54,12 +54,14 @@ public class HumanReadableJson {
             output.append("[");
             addArray(jsonElement.toString());
             output.append("]");
+            firstElement = false;
         }
         if (jsonElement.isJsonObject()) {
             output.append("{");
-            firstPrimitive = true;
+            firstElement = true;
             addObject(jsonElement.getAsJsonObject().toString());
             output.append("}");
+            firstElement = false;
         }
         if (jsonElement.isJsonPrimitive()) {
             if (changeValue) {
@@ -67,7 +69,7 @@ public class HumanReadableJson {
             } else {
                 output.append("\"" + jsonElement.getAsString() + "\"");
             }
-            firstPrimitive = false;
+            firstElement = false;
         }
     }
 
@@ -79,7 +81,7 @@ public class HumanReadableJson {
         while(it.hasNext()) {
             Entry<String, JsonElement> value = it.next();
             String key = value.getKey();
-            if (!firstPrimitive){
+            if (!firstElement){
                 output.append(",");
             }
             output.append("\"" + key + "\":");

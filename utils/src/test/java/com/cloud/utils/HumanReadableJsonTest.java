@@ -33,6 +33,7 @@ public class HumanReadableJsonTest {
     @Test
     public void parseJsonArrayTest() {
         assertEquals("[]", getHumanReadableBytesJson("[]"));
+        assertEquals("[[],[]]", getHumanReadableBytesJson("[[],[]]"));
         assertEquals("[{},{}]", getHumanReadableBytesJson("[{},{}]"));
     }
     @Test
@@ -41,7 +42,8 @@ public class HumanReadableJsonTest {
     }
     @Test
     public void parseComplexJsonTest() {
-        assertEquals("[{\"object\":[]}]", getHumanReadableBytesJson("[{\"object\":[]}]"));
+        assertEquals("[{\"object\":[],\"object2\":[]},{}]", getHumanReadableBytesJson("[{\"object\":[],\"object2\":[]},{}]"));
+        assertEquals("[{\"object\":{},\"object2\":{}}]", getHumanReadableBytesJson("[{\"object\":{},\"object2\":{}}]"));
         assertEquals("[{\"object\":[{},{}]}]", getHumanReadableBytesJson("[{\"object\":[{},{}]}]"));
         assertEquals("[{\"object\":[]},{\"object\":[]}]", getHumanReadableBytesJson("[{\"object\":[]},{\"object\":[]}]"));
         assertEquals("[{\"object\":[{\"object\":[]}]},{\"object\":[]}]", getHumanReadableBytesJson("[{\"object\":[{\"object\":[]}]},{\"object\":[]}]"));
