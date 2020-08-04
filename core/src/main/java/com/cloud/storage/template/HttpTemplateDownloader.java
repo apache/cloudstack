@@ -270,7 +270,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         String downloaded = "(incomplete download)";
         if (totalBytes >= remoteSize) {
             status = Status.DOWNLOAD_FINISHED;
-            downloaded = "(download complete remote=" + toHumanReadableSize(remoteSize) + "bytes)";
+            downloaded = "(download complete remote=" + toHumanReadableSize(remoteSize) + " bytes)";
         }
         errorString = "Downloaded " + toHumanReadableSize(totalBytes) + " bytes " + downloaded;
     }
