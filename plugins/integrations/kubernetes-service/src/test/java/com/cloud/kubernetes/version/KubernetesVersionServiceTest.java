@@ -65,6 +65,9 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(PowerMockRunner.class)
@@ -101,6 +104,15 @@ public class KubernetesVersionServiceTest {
 
         overrideDefaultConfigValue(KubernetesClusterService.KubernetesServiceEnabled, "_defaultValue", "true");
 
+        final SearchBuilder<KubernetesSupportedVersionVO> versionSearchBuilder = Mockito.mock(SearchBuilder.class);
+        final SearchCriteria<KubernetesSupportedVersionVO> versionSearchCriteria = Mockito.mock(SearchCriteria.class);
+        when(kubernetesSupportedVersionDao.createSearchBuilder()).thenReturn(versionSearchBuilder);
+        final KubernetesSupportedVersionVO kubernetesSupportedVersionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
+        when(versionSearchBuilder.entity()).thenReturn(kubernetesSupportedVersionVO);
+        when(versionSearchBuilder.entity()).thenReturn(kubernetesSupportedVersionVO);
+        when(versionSearchBuilder.create()).thenReturn(versionSearchCriteria);
+        when(kubernetesSupportedVersionDao.createSearchCriteria()).thenReturn(versionSearchCriteria);
+
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         when(zone.getId()).thenReturn(1L);
         when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
@@ -127,9 +139,8 @@ public class KubernetesVersionServiceTest {
         KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
         when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
         versionVOs.add(versionVO);
-        when(kubernetesSupportedVersionDao.listAll()).thenReturn(versionVOs);
-        when(kubernetesSupportedVersionDao.listAllInZone(Mockito.anyLong())).thenReturn(versionVOs);
         when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
+        when(kubernetesSupportedVersionDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class))).thenReturn(versionVOs);
         kubernetesVersionService.listKubernetesSupportedVersions(cmd);
     }
 

@@ -50,6 +50,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
@@ -69,7 +70,6 @@ import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -96,6 +96,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected ClusterDao clusterDao;
     @Inject
     protected ClusterDetailsDao clusterDetailsDao;
+    @Inject
+    protected HostDao hostDao;
     @Inject
     protected FirewallRulesDao firewallRulesDao;
     @Inject
@@ -208,6 +210,13 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
                 HostVO h = hp.first();
+                if (!h.getHypervisorType().equals(clusterTemplate.getHypervisorType())) {
+                    continue;
+                }
+                hostDao.loadHostTags(h);
+                if (!Strings.isNullOrEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
+                    continue;
+                }
                 int reserved = hp.second();
                 reserved++;
                 ClusterVO cluster = clusterDao.findById(h.getClusterId());
@@ -229,7 +238,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             if (!suitable_host_found) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Suitable hosts not found in datacenter ID: %s for node %d", zone.getUuid(), i));
+                    LOGGER.info(String.format("Suitable hosts not found in datacenter ID: %s for node %d, with offering ID: %s and hypervisor: %s", zone.getUuid(), i, offering.getUuid(), clusterTemplate.getHypervisorType().toString()));
                 }
                 break;
             }
@@ -240,8 +249,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             return new DeployDestination(zone, null, null, null);
         }
-        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%1$s memory=%2$s)",
-                cpu_requested * nodesCount, ram_requested * nodesCount);
+        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%d) with offering ID: %s and hypervisor: %s",
+                cpu_requested * nodesCount, ram_requested * nodesCount, offering.getUuid(), clusterTemplate.getHypervisorType().toString());
         LOGGER.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }
@@ -306,7 +315,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         UserVm nodeVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-        VirtualMachineTemplate template = templateDao.findById(kubernetesCluster.getTemplateId());
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Account owner = accountDao.findById(kubernetesCluster.getAccountId());
@@ -319,12 +327,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, nodeInstance));
         String k8sNodeConfig = null;
         try {
-            k8sNodeConfig = getKubernetesNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()));
+            k8sNodeConfig = getKubernetesNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes node configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(StringUtils.getPreferredCharset()));
-        nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
+        nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
                 null, addrs, null, null, null, customParameterMap, null, null, null, null);
