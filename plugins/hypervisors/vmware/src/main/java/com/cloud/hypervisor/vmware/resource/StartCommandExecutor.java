@@ -35,6 +35,7 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -155,7 +156,8 @@ class StartCommandExecutor {
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace(String.format("deploying OVA from %s as is", vmSpec.getTemplateLocation()));
                 }
-                getStorageProcessor().cloneVMFromTemplate(vmSpec.getTemplateName(), vmInternalCSName, vmSpec.getTemplatePrimaryStoreUuid());
+                String destDatastore = getDatastoreFromSpecDisks(specDisks);
+                getStorageProcessor().cloneVMFromTemplate(vmSpec.getTemplateName(), vmInternalCSName, destDatastore);
                 vmMo = dcMo.findVm(vmInternalCSName);
                 mapSpecDisksToClonedDisks(vmMo, vmInternalCSName, specDisks);
             }
@@ -423,6 +425,28 @@ class StartCommandExecutor {
                 LOGGER.trace(String.format("finally done with %s",  vmwareResource.getGson().toJson(cmd)));
             }
         }
+    }
+
+    private String getDatastoreFromSpecDisks(DiskTO[] specDisks) {
+        if (specDisks.length == 0) {
+            return null;
+        }
+
+        Map<String, List<DiskTO>> psDisksMap = Arrays.asList(specDisks).stream()
+                .filter(x -> x.getType() != Volume.Type.ISO && x.getData() != null && x.getData().getDataStore() != null)
+                .collect(Collectors.groupingBy(x -> x.getData().getDataStore().getUuid()));
+
+        String dataStore;
+        if (MapUtils.isEmpty(psDisksMap)) {
+            LOGGER.error("Could not find a destination datastore for VM volumes");
+            return null;
+        } else {
+            dataStore = psDisksMap.keySet().iterator().next();
+            if (psDisksMap.keySet().size() > 1) {
+                LOGGER.info("Found multiple destination datastores for VM volumes, selecting " + dataStore);
+            }
+        }
+        return dataStore;
     }
 
     /**

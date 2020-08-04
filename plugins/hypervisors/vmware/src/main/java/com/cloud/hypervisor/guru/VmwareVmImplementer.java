@@ -213,7 +213,6 @@ class VmwareVmImplementer {
 
             to.setTemplateName(templateName);
             to.setTemplateLocation(relativeLocation);
-            to.setTemplatePrimaryStoreUuid(storagePoolVO.getUuid());
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("deploying '%s' OVA as is from %s.", templateName, relativeLocation));
             }

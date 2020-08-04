@@ -88,7 +88,6 @@ public class VirtualMachineTO {
      */
     String templateLocation = null;
     String templateName = null;
-    String templatePrimaryStoreUuid;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -425,11 +424,4 @@ public class VirtualMachineTO {
         this.templateName = templateName;
     }
 
-    public String getTemplatePrimaryStoreUuid() {
-        return templatePrimaryStoreUuid;
-    }
-
-    public void setTemplatePrimaryStoreUuid(String templatePrimaryStoreUuid) {
-        this.templatePrimaryStoreUuid = templatePrimaryStoreUuid;
-    }
 }
