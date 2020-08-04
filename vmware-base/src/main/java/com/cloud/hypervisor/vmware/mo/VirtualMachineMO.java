@@ -303,7 +303,7 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while powering of vm.");
+                        s_logger.debug("[ignored] interrupted while powering of vm.");
                     }
                 }
 
@@ -336,7 +336,7 @@ public class VirtualMachineMO extends BaseMO {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while powering of vm unconditionaly.");
+                    s_logger.debug("[ignored] interrupted while powering of vm unconditionally.");
                 }
             }
             return true;
@@ -370,7 +370,7 @@ public class VirtualMachineMO extends BaseMO {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while pausing after power off.");
+                    s_logger.debug("[ignored] interrupted while pausing after power off.");
                 }
             } else {
                 break;
@@ -1780,7 +1780,7 @@ public class VirtualMachineMO extends BaseMO {
                                 command.add((new File(name).getName()));
                             }
 
-                            s_logger.info("Package OVA with commmand: " + command.toString());
+                            s_logger.info("Package OVA with command: " + command.toString());
                             command.execute();
 
                             // to be safe, physically test existence of the target OVA file
@@ -1793,7 +1793,7 @@ public class VirtualMachineMO extends BaseMO {
                             success = true;
                         }
                     }
-                    s_logger.info("volss: copy vmdk and ovf file finishes " + System.currentTimeMillis());
+                    s_logger.info("volss: copy vmdk and ovf file finished " + System.currentTimeMillis());
                 } catch (Throwable e) {
                     s_logger.error("Unexpected exception ", e);
                 } finally {
