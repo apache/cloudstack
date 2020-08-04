@@ -1015,11 +1015,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 workerVm.attachDisk(new String[] {datastoreVolumePath}, morDs);
                 vmMo = workerVm;
                 clonedWorkerVMNeeded = false;
-            } else {
-                vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
             }
 
-            exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, destVolumePath, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1), _nfsVersion, clonedWorkerVMNeeded);
+            exportVolumeToSecondaryStorage(hyperHost.getContext(), vmMo, hyperHost, volumePath, secStorageUrl, destVolumePath, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1), _nfsVersion, clonedWorkerVMNeeded);
             return new Pair<>(destVolumePath, exportName);
 
         } finally {
@@ -1104,7 +1102,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, String installPath, long templateId, String templateUniqueName,
+    private Ternary<String, Long, Long> createTemplateFromVolume(VmwareContext context, VirtualMachineMO vmMo, VmwareHypervisorHost hyperHost, String installPath, long templateId, String templateUniqueName,
                                                                  String secStorageUrl, String volumePath, String workerVmName, String nfsVersion) throws Exception {
 
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
@@ -1131,8 +1129,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
 
-            VmwareContext context = hostService.getServiceContext(null);
-            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
             vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
@@ -1182,8 +1178,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 clonedVm.detachAllDisks();
                 clonedVm.destroy();
             }
-
-            vmMo.removeSnapshot(templateUniqueName, false);
         }
     }
 
@@ -1230,9 +1224,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             Ternary<String, Long, Long> result =
-                    createTemplateFromVolume(vmMo, template.getPath(), template.getId(), template.getName(), secondaryStoragePoolURL, volumePath,
+                    createTemplateFromVolume(context, vmMo, hyperHost, template.getPath(), template.getId(), template.getName(), secondaryStoragePoolURL, volumePath,
                             hostService.getWorkerName(context, cmd, 0), _nfsVersion);
-
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
             newTemplate.setFormat(ImageFormat.OVA);
@@ -1683,7 +1676,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     // return Pair<String(divice bus name), String[](disk chain)>
-    private Pair<String, String[]> exportVolumeToSecondaryStorage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir,
+    private Pair<String, String[]> exportVolumeToSecondaryStorage(VmwareContext context, VirtualMachineMO vmMo, VmwareHypervisorHost hyperHost, String volumePath, String secStorageUrl, String secStorageDir,
                                                                   String exportName, String workerVmName, String nfsVersion, boolean clonedWorkerVMNeeded) throws Exception {
 
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
@@ -1714,13 +1707,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String disks[] = vmMo.getCurrentSnapshotDiskChainDatastorePaths(diskDevice);
             if (clonedWorkerVMNeeded) {
                 // 4 MB is the minimum requirement for VM memory in VMware
-                Pair<VirtualMachineMO, String[]> cloneResult =
-                        vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, diskDevice, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
-                clonedVm = cloneResult.first();
-                clonedVm.exportVm(exportPath, exportName, false, false);
-            } else {
-                vmMo.exportVm(exportPath, exportName, false, false);
+                DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
+                ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+                vmMo.createFullCloneWithSpecificDisk(exportName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
+                clonedVm = dcMo.findVm(exportName);
+                if (clonedVm == null) {
+                    String msg = "Failed to clone VM. volume path: " + volumePath;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
             }
+            vmMo.exportVm(exportPath, exportName, false, false);
+
             return new Pair<>(diskDevice, disks);
         } finally {
             if (clonedVm != null) {
@@ -1731,12 +1729,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     // Ternary<String(backup uuid in secondary storage), String(device bus name), String[](original disk chain in the snapshot)>
-    private Ternary<String, String, String[]> backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, String installPath, String volumePath, String snapshotUuid,
+    private Ternary<String, String, String[]> backupSnapshotToSecondaryStorage(VmwareContext context, VirtualMachineMO vmMo, VmwareHypervisorHost hypervisorHost, String installPath, String volumePath, String snapshotUuid,
                                                                                String secStorageUrl, String prevSnapshotUuid, String prevBackupUuid, String workerVmName,
                                                                                String nfsVersion) throws Exception {
 
         String backupUuid = UUID.randomUUID().toString();
-        Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, installPath, backupUuid, workerVmName, nfsVersion, true);
+        Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStorage(context, vmMo, hypervisorHost, volumePath, secStorageUrl, installPath, backupUuid, workerVmName, nfsVersion, true);
         return new Ternary<>(backupUuid, snapshotInfo.first(), snapshotInfo.second());
     }
 
@@ -1805,12 +1803,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     hasOwnerVm = true;
                 }
 
-                if (!vmMo.createSnapshot(snapshotUuid, "Snapshot taken for " + srcSnapshot.getName(), false, false)) {
-                    throw new Exception("Failed to take snapshot " + srcSnapshot.getName() + " on vm: " + vmName);
-                }
-
                 backupResult =
-                        backupSnapshotToSecondaryStorage(vmMo, destSnapshot.getPath(), srcSnapshot.getVolume().getPath(), snapshotUuid, secondaryStorageUrl,
+                        backupSnapshotToSecondaryStorage(context, vmMo, hyperHost, destSnapshot.getPath(), srcSnapshot.getVolume().getPath(), snapshotUuid, secondaryStorageUrl,
                                 prevSnapshotUuid, prevBackupUuid, hostService.getWorkerName(context, cmd, 1), _nfsVersion);
                 snapshotBackupUuid = backupResult.first();
 
@@ -1891,7 +1885,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                             }
                         }
                     } else {
-                        s_logger.error("Can not find the snapshot we just used ?!");
+                        s_logger.info("No snapshots created to be deleted!");
                     }
                 }
 
