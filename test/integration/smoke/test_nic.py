@@ -23,8 +23,7 @@ from marvin.lib.base import (Account,
                              VirtualMachine,
                              NetworkOffering)
 from marvin.lib.common import (get_zone,
-                               get_template,
-                               get_test_template,
+                               get_suitable_test_template,
                                get_domain)
 from marvin.lib.utils import validateList
 from marvin.codes import PASS
@@ -77,21 +76,14 @@ class TestNic(cloudstackTestCase):
             if self.zone.localstorageenabled:
                 self.services["service_offerings"][
                     "tiny"]["storagetype"] = 'local'
-            template = FAILED
-            if self.hypervisor.lower() in ["xenserver"]:
-                template = get_test_template(
-                    self.apiclient,
-                    self.zone.id,
-                    self.hypervisor
-                )
+            template = get_suitable_test_template(
+                self.apiclient,
+                self.zone.id,
+                self.services["ostype"],
+                self.hypervisor
+            )
             if template == FAILED:
-                template = get_template(
-                    self.apiclient,
-                    self.zone.id,
-                    self.services["ostype"]
-                )
-            if template == FAILED:
-                assert False, "get_template() failed to return template with description %s" % self.services["ostype"]
+                assert False, "get_suitable_test_template() failed to return template with description %s" % self.services["ostype"]
             # Set Zones and disk offerings
             self.services["small"]["zoneid"] = self.zone.id
             self.services["small"]["template"] = template.id

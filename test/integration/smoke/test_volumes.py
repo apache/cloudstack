@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,8 +34,7 @@ from marvin.lib.base import (ServiceOffering,
                              DiskOffering,
                              StoragePool,)
 from marvin.lib.common import (get_domain,
-                                get_template,
-                                get_test_template,
+                                get_suitable_test_template,
                                 get_zone,
                                 find_storage_pool_type,
                                 get_pod,
@@ -85,21 +84,14 @@ class TestCreateVolume(cloudstackTestCase):
                                     custom=True
                                     )
 
-        template = FAILED
-        if cls.hypervisor.lower() in ["xenserver"]:
-            template = get_test_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.hypervisor
-            )
+        template = get_suitable_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            cls.hypervisor
+        )
         if template == FAILED:
-            template = get_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.services["ostype"]
-            )
-        if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -312,21 +304,14 @@ class TestVolumes(cloudstackTestCase):
                                     custom=True
                                     )
 
-        cls.template = FAILED
-        if cls.hypervisor.lower() in ["xenserver"]:
-            cls.template = get_test_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.hypervisor
-            )
+        cls.template = get_suitable_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            cls.hypervisor
+        )
         if cls.template == FAILED:
-            cls.template = get_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.services["ostype"]
-            )
-        if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -1003,7 +988,7 @@ class TestVolumes(cloudstackTestCase):
             pool = pools[0]
         else:
             raise self.skipTest("Not enough storage pools found, skipping test")
-        
+
         if hasattr(pool, 'tags'):
             StoragePool.update(self.apiclient, id=pool.id, tags="")
 
