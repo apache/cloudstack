@@ -76,7 +76,7 @@ def handleMigrateBegin():
                 continue
             newBrName = "br" + phyDev + "-" + vlanId
             source.setAttribute("bridge", newBrName)
-        print((domain.toxml()))
+        print(domain.toxml())
     except:
         pass
 
