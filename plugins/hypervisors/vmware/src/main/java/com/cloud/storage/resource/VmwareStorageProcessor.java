@@ -951,7 +951,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (morDatastore == null) {
                 URI uri = new URI(destStore.getUrl());
 
-                morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), destStore.getUuid().replace("-", ""));
+                morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), destStore.getUuid().replace("-", ""), true);
 
                 if (morDatastore == null) {
                     throw new Exception("Unable to mount storage pool on host. storeUrl: " + uri.getHost() + ":/" + uri.getPath());
@@ -2142,7 +2142,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         URI uri = new URI(storeUrl);
 
         VmwareHypervisorHost hyperHost = hostService.getHyperHost(hostService.getServiceContext(null), null);
-        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""));
+        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""), false);
 
         if (morDatastore == null) {
             throw new Exception("Unable to mount secondary storage on host. storeUrl: " + storeUrl);

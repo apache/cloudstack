@@ -492,7 +492,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                 ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolTO.getUuid());
                 if (morDatastore == null) {
-                    morDatastore = hyperHost.mountDatastore(false, poolTO.getHost(), 0, poolTO.getPath(), poolTO.getUuid().replace("-", ""));
+                    morDatastore = hyperHost.mountDatastore(false, poolTO.getHost(), 0, poolTO.getPath(), poolTO.getUuid().replace("-", ""), true);
 
                     if (morDatastore == null) {
                         throw new Exception("Unable to mount storage pool on host. storeUrl: " + poolTO.getHost() + ":/" + poolTO.getPath());

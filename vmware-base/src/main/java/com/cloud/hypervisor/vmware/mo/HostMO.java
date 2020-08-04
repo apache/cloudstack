@@ -836,7 +836,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     }
 
     @Override
-    public ManagedObjectReference mountDatastore(boolean vmfsDatastore, String poolHostAddress, int poolHostPort, String poolPath, String poolUuid) throws Exception {
+    public ManagedObjectReference mountDatastore(boolean vmfsDatastore, String poolHostAddress, int poolHostPort, String poolPath, String poolUuid, boolean createBaseFolder) throws Exception {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - mountDatastore(). target MOR: " + _mor.getValue() + ", vmfs: " + vmfsDatastore + ", poolHost: " + poolHostAddress +
@@ -889,7 +889,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             }
         }
 
-        if (dsMo != null && !"StoragePod".equals(morDatastore.getType())) {
+        if (dsMo != null && !"StoragePod".equals(morDatastore.getType()) && createBaseFolder) {
             HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this);
         }
 

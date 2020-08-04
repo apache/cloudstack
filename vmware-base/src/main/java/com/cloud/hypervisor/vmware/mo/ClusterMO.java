@@ -423,7 +423,7 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
     }
 
     @Override
-    public ManagedObjectReference mountDatastore(boolean vmfsDatastore, String poolHostAddress, int poolHostPort, String poolPath, String poolUuid) throws Exception {
+    public ManagedObjectReference mountDatastore(boolean vmfsDatastore, String poolHostAddress, int poolHostPort, String poolPath, String poolUuid, boolean createBaseFolder) throws Exception {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - mountDatastore(). target MOR: " + _mor.getValue() + ", vmfs: " + vmfsDatastore + ", poolHost: " + poolHostAddress +
@@ -435,7 +435,7 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
         if (hosts != null && hosts.size() > 0) {
             for (ManagedObjectReference morHost : hosts) {
                 HostMO hostMo = new HostMO(_context, morHost);
-                morDs = hostMo.mountDatastore(vmfsDatastore, poolHostAddress, poolHostPort, poolPath, poolUuid);
+                morDs = hostMo.mountDatastore(vmfsDatastore, poolHostAddress, poolHostPort, poolPath, poolUuid, true);
                 if (morDsFirst == null)
                     morDsFirst = morDs;
 
