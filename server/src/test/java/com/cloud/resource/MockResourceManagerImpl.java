@@ -32,8 +32,8 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelHostAsDeadCmd;
-import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDeadCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -145,12 +145,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public Host declareHostAsDead(DeclareHostAsDeadCmd cmd) {
+    public Host declareHostAsDegraded(DeclareHostAsDegradedCmd cmd) {
         return null;
     }
 
     @Override
-    public Host cancelHostAsDead(final CancelHostAsDeadCmd cmd) {
+    public Host cancelHostAsDegraded(final CancelHostAsDegradedCmd cmd) {
         return null;
     }
 

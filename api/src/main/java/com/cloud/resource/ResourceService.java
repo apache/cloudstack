@@ -27,8 +27,8 @@ import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDeadCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelHostAsDeadCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.AgentUnavailableException;
@@ -68,9 +68,9 @@ public interface ResourceService {
 
     Host maintain(PrepareForMaintenanceCmd cmd);
 
-    Host declareHostAsDead(DeclareHostAsDeadCmd cmd) throws NoTransitionException;
+    Host declareHostAsDegraded(DeclareHostAsDegradedCmd cmd) throws NoTransitionException;
 
-    Host cancelHostAsDead(CancelHostAsDeadCmd cmd) throws NoTransitionException;
+    Host cancelHostAsDegraded(CancelHostAsDegradedCmd cmd) throws NoTransitionException;
 
     /**
      * Deletes a host

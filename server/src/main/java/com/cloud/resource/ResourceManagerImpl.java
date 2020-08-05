@@ -35,10 +35,10 @@ import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelHostAsDeadCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDeadCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
@@ -954,10 +954,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     /**
      * Returns true if host can be deleted.</br>
-     * A host can be deleted either if it is in Maintenance or "Dead" state.
+     * A host can be deleted either if it is in Maintenance or "Degraded" state.
      */
     protected boolean canDeleteHost(HostVO host) {
-        return host.getResourceState() == ResourceState.Maintenance || host.getResourceState() == ResourceState.Dead;
+        return host.getResourceState() == ResourceState.Maintenance || host.getResourceState() == ResourceState.Degraded;
     }
 
     @Override
@@ -1333,10 +1333,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     /**
-     * Declares host as dead. This method is used in critical situations; e.g. if it is not possible to start host, not even via out-of-band.
+     * Declares host as Degraded. This method is used in critical situations; e.g. if it is not possible to start host, not even via out-of-band.
      */
     @Override
-    public Host declareHostAsDead(final DeclareHostAsDeadCmd cmd) throws NoTransitionException {
+    public Host declareHostAsDegraded(final DeclareHostAsDegradedCmd cmd) throws NoTransitionException {
         Long hostId = cmd.getId();
         HostVO host = _hostDao.findById(hostId);
 
@@ -1344,21 +1344,21 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException(String.format("Host [id:%s] does not exist", host.getId()));
         }
 
-        if (host.getResourceState() == ResourceState.Dead) {
-            throw new NoTransitionException(String.format("Host [id:%s] was already marked as Dead.", host.getId()));
+        if (host.getResourceState() == ResourceState.Degraded) {
+            throw new NoTransitionException(String.format("Host [id:%s] was already marked as Degraded.", host.getId()));
         }
 
         if (host.getStatus() != Status.Alert && host.getStatus() != Status.Disconnected) {
             throw new InvalidParameterValueException(
-                    String.format("Cannot perform declare host [id=%s, name=%s] as 'Dead' when host is in %s status", host.getId(), host.getName(), host.getStatus()));
+                    String.format("Cannot perform declare host [id=%s, name=%s] as 'Degraded' when host is in %s status", host.getId(), host.getName(), host.getStatus()));
         }
 
         try {
-            resourceStateTransitTo(host, ResourceState.Event.DeclareHostDead, _nodeId);
-            host.setResourceState(ResourceState.Dead);
+            resourceStateTransitTo(host, ResourceState.Event.DeclareHostDegraded, _nodeId);
+            host.setResourceState(ResourceState.Degraded);
         } catch (NoTransitionException e) {
             s_logger.error(String.format("Cannot transmit host [id:%s, name:%s, state:%s, status:%s] to %s state", host.getId(), host.getName(), host.getState(), host.getStatus(),
-                    ResourceState.Event.DeclareHostDead), e);
+                    ResourceState.Event.DeclareHostDegraded), e);
             throw e;
         }
 
@@ -1368,15 +1368,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     /**
-     * This method assumes that the host is dead; therefore it schedule VMs to be re-started by the HA manager.
+     * This method assumes that the host is Degraded; therefore it schedule VMs to be re-started by the HA manager.
      */
     private void scheduleVmsRestart(Long hostId) {
         List<VMInstanceVO> allVmsOnHost = _vmDao.listByHostId(hostId);
         if (CollectionUtils.isEmpty(allVmsOnHost)) {
-            s_logger.debug(String.format("Host [id=%s] was marked as Dead with no allocated VMs, no need to schedule VM restart", hostId));
+            s_logger.debug(String.format("Host [id=%s] was marked as Degraded with no allocated VMs, no need to schedule VM restart", hostId));
         }
 
-        s_logger.debug(String.format("Host [id=%s] was marked as Dead with a total of %s allocated VMs. Triggering HA to start VMs that have HA enabled.", hostId, allVmsOnHost.size()));
+        s_logger.debug(String.format("Host [id=%s] was marked as Degraded with a total of %s allocated VMs. Triggering HA to start VMs that have HA enabled.", hostId, allVmsOnHost.size()));
         for (VMInstanceVO vm : allVmsOnHost) {
             State vmState = vm.getState();
             if (vmState == State.Starting || vmState == State.Running || vmState == State.Stopping) {
@@ -1386,10 +1386,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     /**
-     * Changes a host from 'Dead' to 'Enabled' ResourceState.
+     * Changes a host from 'Degraded' to 'Enabled' ResourceState.
      */
     @Override
-    public Host cancelHostAsDead(final CancelHostAsDeadCmd cmd) throws NoTransitionException {
+    public Host cancelHostAsDegraded(final CancelHostAsDegradedCmd cmd) throws NoTransitionException {
         Long hostId = cmd.getId();
         HostVO host = _hostDao.findById(hostId);
 
@@ -1397,13 +1397,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException(String.format("Host [id=%s] does not exist", host.getId()));
         }
 
-        if (host.getResourceState() != ResourceState.Dead) {
+        if (host.getResourceState() != ResourceState.Degraded) {
             throw new NoTransitionException(
-                    String.format("Cannot perform cancelHostAsDead on host [id=%s, name=%s] when host is in %s state", host.getId(), host.getName(), host.getResourceState()));
+                    String.format("Cannot perform cancelHostAsDegraded on host [id=%s, name=%s] when host is in %s state", host.getId(), host.getName(), host.getResourceState()));
         }
 
         try {
-            resourceStateTransitTo(host, ResourceState.Event.EnableDeadHost, _nodeId);
+            resourceStateTransitTo(host, ResourceState.Event.EnableDegradedHost, _nodeId);
             host.setResourceState(ResourceState.Enabled);
         } catch (NoTransitionException e) {
             throw new NoTransitionException(

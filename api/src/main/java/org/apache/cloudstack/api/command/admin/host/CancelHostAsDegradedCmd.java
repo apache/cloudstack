@@ -32,16 +32,16 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = "cancelHostAsDead",
-        description = "Cancel host status from 'Dead'. Host will transit back to status 'Enabled'.",
+@APICommand(name = "cancelHostAsDegraded",
+        description = "Cancel host status from 'Degraded'. Host will transit back to status 'Enabled'.",
         since = "4.15.0.0",
         responseObject = HostResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class CancelHostAsDeadCmd extends BaseAsyncCmd {
+public class CancelHostAsDegradedCmd extends BaseAsyncCmd {
 
-    private static final String COMMAND_RESPONSE_NAME = "cancelhostasdeadresponse";
+    private static final String COMMAND_RESPONSE_NAME = "cancelhostasdegradedresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -78,12 +78,12 @@ public class CancelHostAsDeadCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_CANCEL_HOST_DEAD;
+        return EventTypes.EVENT_CANCEL_HOST_DEGRADED;
     }
 
     @Override
     public String getEventDescription() {
-        return "declaring host: " + getId() + " as dead";
+        return "declaring host: " + getId() + " as Degraded";
     }
 
     @Override
@@ -100,9 +100,9 @@ public class CancelHostAsDeadCmd extends BaseAsyncCmd {
     public void execute() {
         Host host;
         try {
-            host = _resourceService.cancelHostAsDead(this);
+            host = _resourceService.cancelHostAsDegraded(this);
         } catch (NoTransitionException exception) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to Cancel host from Dead status due to: " + exception.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to Cancel host from Degraded status due to: " + exception.getMessage());
         }
 
         HostResponse response = _responseGenerator.createHostResponse(host);

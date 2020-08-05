@@ -31,7 +31,7 @@ public enum ResourceState {
     ErrorInMaintenance,
     Maintenance,
     Error,
-    Dead;
+    Degraded;
 
     public enum Event {
         InternalCreated("Resource is created"),
@@ -46,8 +46,8 @@ public enum ResourceState {
         ErrorsCorrected("Errors were corrected on a resource attempting to enter maintenance but encountered errors"),
         Error("An internal error happened"),
         DeleteHost("Admin delete a host"),
-        DeclareHostDead("Admin declares host as Dead"),
-        EnableDeadHost("Admin puts Dead host into Enabled"),
+        DeclareHostDegraded("Admin declares host as Degraded"),
+        EnableDegradedHost("Admin puts Degraded host into Enabled"),
 
         /*
          * Below events don't cause resource state to change, they are merely
@@ -116,12 +116,12 @@ public enum ResourceState {
         s_fsm.addTransition(ResourceState.Enabled, Event.InternalCreated, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Enabled, Event.Disable, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.Enabled, Event.AdminAskMaintenance, ResourceState.PrepareForMaintenance);
-        s_fsm.addTransition(ResourceState.Enabled, Event.DeclareHostDead, ResourceState.Dead);
+        s_fsm.addTransition(ResourceState.Enabled, Event.DeclareHostDegraded, ResourceState.Degraded);
         s_fsm.addTransition(ResourceState.Enabled, Event.InternalEnterMaintenance, ResourceState.Maintenance);
         s_fsm.addTransition(ResourceState.Disabled, Event.Enable, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Disabled, Event.Disable, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.Disabled, Event.InternalCreated, ResourceState.Disabled);
-        s_fsm.addTransition(ResourceState.Disabled, Event.DeclareHostDead, ResourceState.Dead);
+        s_fsm.addTransition(ResourceState.Disabled, Event.DeclareHostDegraded, ResourceState.Degraded);
         s_fsm.addTransition(ResourceState.PrepareForMaintenance, Event.InternalEnterMaintenance, ResourceState.Maintenance);
         s_fsm.addTransition(ResourceState.PrepareForMaintenance, Event.AdminCancelMaintenance, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.PrepareForMaintenance, Event.UnableToMigrate, ResourceState.ErrorInPrepareForMaintenance);
@@ -130,7 +130,7 @@ public enum ResourceState {
         s_fsm.addTransition(ResourceState.Maintenance, Event.AdminCancelMaintenance, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Maintenance, Event.InternalCreated, ResourceState.Maintenance);
         s_fsm.addTransition(ResourceState.Maintenance, Event.DeleteHost, ResourceState.Disabled);
-        s_fsm.addTransition(ResourceState.Maintenance, Event.DeclareHostDead, ResourceState.Dead);
+        s_fsm.addTransition(ResourceState.Maintenance, Event.DeclareHostDegraded, ResourceState.Degraded);
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.InternalCreated, ResourceState.ErrorInPrepareForMaintenance);
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.Disable, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.ErrorInPrepareForMaintenance, Event.DeleteHost, ResourceState.Disabled);
@@ -146,8 +146,8 @@ public enum ResourceState {
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.AdminCancelMaintenance, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Error, Event.InternalCreated, ResourceState.Error);
         s_fsm.addTransition(ResourceState.Disabled, Event.DeleteHost, ResourceState.Disabled);
-        s_fsm.addTransition(ResourceState.Dead, Event.DeleteHost, ResourceState.Disabled);
-        s_fsm.addTransition(ResourceState.Dead, Event.EnableDeadHost, ResourceState.Enabled);
-        s_fsm.addTransition(ResourceState.Dead, Event.AdminAskMaintenance, ResourceState.Maintenance);
+        s_fsm.addTransition(ResourceState.Degraded, Event.DeleteHost, ResourceState.Disabled);
+        s_fsm.addTransition(ResourceState.Degraded, Event.EnableDegradedHost, ResourceState.Enabled);
+        s_fsm.addTransition(ResourceState.Degraded, Event.AdminAskMaintenance, ResourceState.Maintenance);
     }
 }
