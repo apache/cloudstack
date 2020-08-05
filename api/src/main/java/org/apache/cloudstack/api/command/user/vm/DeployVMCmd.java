@@ -334,24 +334,26 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public Map<Integer, Long> getVmNetworkMap() {
         Map<Integer, Long> map = new HashMap<>();
-        Collection parameterCollection = vAppNetworks.values();
-        Iterator iterator = parameterCollection.iterator();
-        while (iterator.hasNext()) {
-            HashMap<String, String> entry = (HashMap<String, String>)iterator.next();
-            Integer nic;
-            try {
-                nic = Integer.valueOf(entry.get(VmDetailConstants.NIC));
-            } catch (NumberFormatException nfe) {
-                nic = null;
+        if (MapUtils.isNotEmpty(vAppNetworks)) {
+            Collection parameterCollection = vAppNetworks.values();
+            Iterator iterator = parameterCollection.iterator();
+            while (iterator.hasNext()) {
+                HashMap<String, String> entry = (HashMap<String, String>) iterator.next();
+                Integer nic;
+                try {
+                    nic = Integer.valueOf(entry.get(VmDetailConstants.NIC));
+                } catch (NumberFormatException nfe) {
+                    nic = null;
+                }
+                String networkUuid = entry.get(VmDetailConstants.NETWORK);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
+                }
+                if (nic == null || Strings.isNullOrEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
+                    throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
+                }
+                map.put(nic, _entityMgr.findByUuid(Network.class, networkUuid).getId());
             }
-            String networkUuid = entry.get(VmDetailConstants.NETWORK);
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
-            }
-            if (nic == null || Strings.isNullOrEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
-                throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
-            }
-            map.put(nic, _entityMgr.findByUuid(Network.class, networkUuid).getId());
         }
         return map;
     }
