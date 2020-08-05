@@ -268,7 +268,7 @@ public class ViewResponseHelper {
 
     public static List<VolumeResponse> createVolumeResponse(ResponseView view, VolumeJoinVO... volumes) {
         Hashtable<Long, VolumeResponse> vrDataList = new Hashtable<Long, VolumeResponse>();
-        DecimalFormat df = new DecimalFormat("0.00");
+        DecimalFormat df = new DecimalFormat("0.0%");
         for (VolumeJoinVO vr : volumes) {
             VolumeResponse vrData = vrDataList.get(vr.getId());
             if (vrData == null) {

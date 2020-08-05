@@ -1134,6 +1134,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 try {
+                    resetVmNicsDeviceId(vm.getId());
                     _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null, dest.getStorageForDisks()), ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         volumeMgr.prepare(vmProfile, dest);
@@ -1350,6 +1351,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         if (log) {
             s_logger.info(msgBuf.toString());
+        }
+    }
+
+    private void resetVmNicsDeviceId(Long vmId) {
+        final List<NicVO> nics = _nicsDao.listByVmId(vmId);
+        Collections.sort(nics, new Comparator<NicVO>() {
+            @Override
+            public int compare(NicVO nic1, NicVO nic2) {
+                Long nicDevId1 = Long.valueOf(nic1.getDeviceId());
+                Long nicDevId2 = Long.valueOf(nic2.getDeviceId());
+                return nicDevId1.compareTo(nicDevId2);
+            }
+        });
+        int deviceId = 0;
+        for (final NicVO nic : nics) {
+            if (nic.getDeviceId() != deviceId) {
+                nic.setDeviceId(deviceId);
+                _nicsDao.update(nic.getId(),nic);
+            }
+            deviceId ++;
         }
     }
 

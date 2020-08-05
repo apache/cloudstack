@@ -356,6 +356,7 @@ public class DatastoreMO extends BaseMO {
         FileQueryFlags fqf = new FileQueryFlags();
         fqf.setFileSize(true);
         fqf.setFileOwner(true);
+        fqf.setFileType(true);
         fqf.setModification(true);
         searchSpec.setDetails(fqf);
         searchSpec.setSearchCaseInsensitive(false);
