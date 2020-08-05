@@ -45,6 +45,7 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
+                               get_test_ovf_templates,
                                list_hosts,
                                list_virtual_machines)
 from marvin.codes import FAILED, PASS
@@ -1667,3 +1668,57 @@ class TestUnmanageVM(cloudstackTestCase):
             "PowerOn",
             "Unmanaged VM is still running"
         )
+
+
+class TestVAppsVM(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestVAppsVM, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+        cls._cleanup = []
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+
+        cls.templates = get_test_ovf_templates(
+            cls.apiclient,
+            cls.zone.id,
+        )
+        if len(cls.template) == 0:
+            assert False, "get_test_ovf_templates() failed to return templates"
+
+        cls.hypervisorNotSupported = cls.hypervisor.lower() != "vmware"
+
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
+
+        cls._cleanup = [
+            cls.account
+        ]
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+
+        self.cleanup = []
+
+    @attr(tags=["advanced", "advancedns", "smoke", "sg"], required_hardware="false")
+    @skipTestIf("hypervisorNotSupported")
+    def test_01_vapps_vm_cycle(self):
+        """
+        Test the following for all found ovf templates:
+        1. Deploy VM
+        2. Verify VM has correct properties
+        3. Verify VM has correct disks
+        4. Verify VM has correct nics
+        5. Destroy VM
+        """
+
+        # 1 - Deploy VM

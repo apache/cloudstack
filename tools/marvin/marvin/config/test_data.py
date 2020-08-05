@@ -987,6 +987,19 @@ test_data = {
         }
     },
 
+    "test_ovf_templates": [
+        {
+            "name": "ovf-vmware",
+            "displaytext": "ovf vmware",
+            "format": "ova",
+            "hypervisor": "vmware",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://download.cloudstack.org/templates/ovf/test-vmware.ova",
+            "requireshvm": "True",
+            "ispublic": "True"
+        }
+    ],
+
     "coreos_volume": {
         "diskname": "Volume_core",
         "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",

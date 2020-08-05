@@ -395,6 +395,48 @@ def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=N
     return FAILED
 
 
+def get_test_ovf_templates(apiclient, zone_id=None, test_ovf_templates=None):
+    """
+    @Name : get_test_ovf_templates
+    @Desc : Retrieves the list of test ovf templates used to running tests. When the template
+            is missing it will be download at most one in a zone for a hypervisor.
+    @Input : returns a list of templates
+    """
+    result = []
+
+    if test_ovf_templates is None:
+        test_ovf_templates = test_data["test_ovf_templates"]
+    if test_ovf_templates is None:
+        return result
+    if hypervisor is None:
+        return result
+    hypervisor = hypervisor.lower()
+    if hypervisor != 'vmware':
+        return result
+
+    for test_template in test_ovf_templates:
+
+        cmd = listTemplates.listTemplatesCmd()
+        cmd.name = test_template['name']
+        cmd.templatefilter = 'all'
+        if zone_id is not None:
+            cmd.zoneid = zone_id
+        if hypervisor is not None:
+            cmd.hypervisor = hypervisor
+        templates = apiclient.listTemplates(cmd)
+
+        if validateList(templates)[0] != PASS:
+            template = Template.register(apiclient, test_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False)
+            template.download(apiclient)
+            return template
+
+        for template in templates:
+            if template.isready and template.ispublic:
+                result.append(template)
+
+    return result
+
+
 def get_windows_template(
         apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='USER',
         template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
