@@ -17,6 +17,8 @@
 package org.apache.cloudstack.engine.orchestration;
 
 
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,11 +41,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.network.dao.NetworkDetailVO;
-import com.cloud.network.dao.NetworkDetailsDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
@@ -91,6 +88,8 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -132,6 +131,8 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -181,6 +182,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
@@ -232,8 +234,6 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
-
-import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -764,25 +764,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final boolean[] deviceIds = new boolean[size];
                 Arrays.fill(deviceIds, false);
 
+                List<Pair<Network, NicProfile>> profilesList = getOrderedNetworkNicProfileMapping(networks);
                 final List<NicProfile> nics = new ArrayList<NicProfile>(size);
                 NicProfile defaultNic = null;
-
                 Network nextNetwork = null;
-                for (final Map.Entry<? extends Network, List<? extends NicProfile>> network : networks.entrySet()) {
-                    nextNetwork = network.getKey();
-                    List<? extends NicProfile> requestedProfiles = network.getValue();
-                    if (requestedProfiles == null) {
-                        requestedProfiles = new ArrayList<NicProfile>();
-                    }
-                    if (requestedProfiles.isEmpty()) {
-                        requestedProfiles.add(null);
-                    }
-
-                    for (final NicProfile requested : requestedProfiles) {
-                        Pair<NicProfile, Integer> newDeviceInfo = addRequestedNicToNicListWithDeviceNumberAndRetrieveDefaultDevice( requested, deviceIds, deviceId, nextNetwork, nics, defaultNic);
-                        defaultNic = newDeviceInfo.first();
-                        deviceId = newDeviceInfo.second();
-                    }
+                for (Pair <Network, NicProfile> networkNicPair : profilesList) {
+                    nextNetwork = networkNicPair.first();
+                    Pair<NicProfile, Integer> newDeviceInfo = addRequestedNicToNicListWithDeviceNumberAndRetrieveDefaultDevice(networkNicPair.second(), deviceIds, deviceId, nextNetwork, nics, defaultNic);
+                    defaultNic = newDeviceInfo.first();
+                    deviceId = newDeviceInfo.second();
                 }
                 createExtraNics(size, nics, nextNetwork);
 
@@ -839,6 +829,42 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 rc.first(defaultNic);
                 rc.second(deviceId);
                 return rc;
+            }
+
+            /**
+             * private transaction method to get oredered list of Network and NicProfile pair
+             * @return ordered list of Network and NicProfile pair
+             * @param networks the map od networks to nic profiles list
+             */
+            private List<Pair<Network, NicProfile>> getOrderedNetworkNicProfileMapping(final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) {
+                List<Pair<Network, NicProfile>> profilesList = new ArrayList<>();
+                for (final Map.Entry<? extends Network, List<? extends NicProfile>> network : networks.entrySet()) {
+                    List<? extends NicProfile> requestedProfiles = network.getValue();
+                    if (requestedProfiles == null) {
+                        requestedProfiles = new ArrayList<NicProfile>();
+                    }
+                    if (requestedProfiles.isEmpty()) {
+                        requestedProfiles.add(null);
+                    }
+                    for (final NicProfile requested : requestedProfiles) {
+                        profilesList.add(new Pair<Network, NicProfile>(network.getKey(), requested));
+                    }
+                }
+                profilesList.sort(new Comparator<Pair<Network, NicProfile>>() {
+                    @Override
+                    public int compare(Pair<Network, NicProfile> pair1, Pair<Network, NicProfile> pair2) {
+                        int profile1Order = Integer.MAX_VALUE;
+                        int profile2Order = Integer.MAX_VALUE;
+                        if (pair1 != null && pair1.second() != null && pair1.second().getOrderIndex() != null) {
+                            profile1Order = pair1.second().getOrderIndex();
+                        }
+                        if (pair2 != null && pair2.second() != null && pair2.second().getOrderIndex() != null) {
+                            profile2Order = pair2.second().getOrderIndex();
+                        }
+                        return profile1Order - profile2Order;
+                    }
+                });
+                return profilesList;
             }
 
             /**

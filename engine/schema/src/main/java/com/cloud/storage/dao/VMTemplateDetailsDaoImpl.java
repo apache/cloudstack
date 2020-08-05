@@ -17,25 +17,25 @@
 package com.cloud.storage.dao;
 
 
-import com.cloud.agent.api.storage.OVFPropertyTO;
-import com.cloud.agent.api.to.DatadiskTO;
-import com.cloud.storage.ImageStore;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
-import com.google.gson.Gson;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
-
+import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.VMTemplateDetailVO;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.google.gson.Gson;
 
 @Component
 public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
@@ -111,6 +111,12 @@ public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateD
             NetworkPrerequisiteTO ovfPropertyTO = gson.fromJson(property.getValue(), NetworkPrerequisiteTO.class);
             networkPrereqs.add(ovfPropertyTO);
         }
+        networkPrereqs.sort(new Comparator<NetworkPrerequisiteTO>() {
+            @Override
+            public int compare(NetworkPrerequisiteTO o1, NetworkPrerequisiteTO o2) {
+                return o1.getInstanceID() - o2.getInstanceID();
+            }
+        });
         return networkPrereqs;
     }
 
