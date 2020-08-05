@@ -5828,9 +5828,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (!isOnSupportedHypevisorForMigration(vm)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM form hypervisor type " + vm.getHypervisorType());
-            }
+            s_logger.error(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM form hypervisor type " + vm.getHypervisorType());
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
@@ -5839,9 +5837,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (isVMUsingLocalStorage(vm.getId())) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
-            }
+            s_logger.error(vm + " is using Local Storage, cannot migrate this VM.");
             throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
         }
 
