@@ -3483,7 +3483,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append("Bytes received by network ");
                 }
                 if (network != null) {
-                    builder.append(network.getName()).append(" (").append(network.getUuid()).append(") ");
+                    if (network.getName() != null) {
+                        builder.append(network.getName());
+                    }
+                    if (network.getUuid() != null){
+                        builder.append(" (").append(network.getUuid()).append(") ");
+                    }
                 }
                 if (vm != null) {
                     builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
