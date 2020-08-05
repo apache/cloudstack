@@ -1308,23 +1308,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return true;
     }
 
+    /**
+     * Looks for Hosts able to allocate the VM and migrates the VM with its volume.
+     */
     private void migrateAwayVmWithVolume(HostVO host, VMInstanceVO vm) {
-            final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
-            ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getServiceOfferingId());
-            final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
-            plan.setMigrationPlan(true);
+        final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
+        ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getServiceOfferingId());
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
+        plan.setMigrationPlan(true);
         DeployDestination dest = null;
         try {
             dest = deploymentManager.planDeployment(profile, plan, new DeploymentPlanner.ExcludeList(), null);
         } catch (InsufficientServerCapacityException e) {
-            throw new CloudRuntimeException(String.format("Maintenance failed, could not find deployment destination for VM [id=%s, name=%s].", vm.getId(), vm.getInstanceName()), e);
+            throw new CloudRuntimeException(String.format("Maintenance failed, could not find deployment destination for VM [id=%s, name=%s].", vm.getId(), vm.getInstanceName()),
+                    e);
         }
         Host destHost = dest.getHost();
 
         try {
             _vmMgr.migrateWithStorage(vm.getUuid(), host.getId(), destHost.getId(), null);
         } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException(String.format("Maintenance failed, could not migrate VM [id=%s, name=%s] with local storage from host [id=%s, name=%s] to host [id=%s, name=%s].", vm.getId(), vm.getInstanceName(), host.getId(), host.getName(), destHost.getId(), destHost.getName()), e);
+            throw new CloudRuntimeException(
+                    String.format("Maintenance failed, could not migrate VM [id=%s, name=%s] with local storage from host [id=%s, name=%s] to host [id=%s, name=%s].", vm.getId(),
+                            vm.getInstanceName(), host.getId(), host.getName(), destHost.getId(), destHost.getName()), e);
         }
     }
 
