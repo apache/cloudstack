@@ -477,8 +477,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
         _resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
         try {
-            ShutdownCommand cmd = AddHostOnServiceRestart.value() ? new ShutdownCommand(ShutdownCommand.DeleteHost, null, false) :
-                    new ShutdownCommand(ShutdownCommand.DeleteHost, "Cleaning up zone/pod/cluster details for host", true);
+            ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null, !AddHostOnServiceRestart.value());
             agentMgr.send(host.getId(), cmd);
         } catch (AgentUnavailableException e) {
             s_logger.warn("Sending ShutdownCommand failed: ", e);
