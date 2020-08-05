@@ -43,6 +43,6 @@ public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {
     /////////////////////////////////////////////////////
 
     public Boolean isDeployAsIs() {
-        return (deployAsIs == null) ? true : deployAsIs;
+        return (deployAsIs == null) ? false : deployAsIs;
     }
 }
