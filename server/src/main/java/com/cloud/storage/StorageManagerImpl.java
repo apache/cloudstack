@@ -1562,9 +1562,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         });
         List<DataStore> maintenanceSuccessfulStoragePools = new ArrayList<>();
-        for (StoragePoolVO childDatastore : childDatastores) {
-            //FR41 need to handle when one of the primary stores is unable to put in maintenance mode
-            DataStore childStore = _dataStoreMgr.getDataStore(childDatastore.getId(), DataStoreRole.Primary);
+        for (Iterator<StoragePoolVO> iteratorChildDatastore = childDatastores.listIterator(); iteratorChildDatastore.hasNext(); ) {
+            DataStore childStore = _dataStoreMgr.getDataStore(iteratorChildDatastore.next().getId(), DataStoreRole.Primary);
             try {
                 lifeCycle.maintain(childStore);
             } catch (Exception e) {
@@ -1572,8 +1571,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     s_logger.debug(String.format("Exception on maintenance preparation of one of the child datastores in datastore cluster %d with error %s", primaryStorageId, e));
                     s_logger.debug(String.format("Cancelling the maintenance mode of child datastores in datastore cluster %d", primaryStorageId));
                 }
+                // Cancel maintenance mode of already prepared child storage pools
+                maintenanceSuccessfulStoragePools.add(childStore);
                 for (DataStore dataStore: maintenanceSuccessfulStoragePools) {
                     lifeCycle.cancelMaintain(dataStore);
+                }
+                // Set back to Up state of remaining child storage pools
+                while (iteratorChildDatastore.hasNext()) {
+                    StoragePoolVO childDatastore = iteratorChildDatastore.next();
+                    childDatastore.setStatus(StoragePoolStatus.Up);
+                    _storagePoolDao.update(childDatastore.getId(), childDatastore);
                 }
                 throw new CloudRuntimeException(String.format("Failed to prepare maintenance mode for datastore cluster %d with error %s %s", primaryStorageId, e.getMessage(), e));
             }
