@@ -1243,6 +1243,10 @@ cloudStack.docs = {
         desc: 'The Management Server will download the file from the specified URL, such as http://my.web.server/filename.vhd.gz',
         externalLink: ''
     },
+    helpRegisterTemplateDeployAsIs: {
+        desc: 'Vmware Only: Deploy with specifications from OVF instead of orchestrated specs',
+        externalLink: ''
+    },
     helpRegisterTemplateDirectDownload: {
         desc: 'KVM Only: Secondary Storage is bypassed and template/ISO is downloaded to Primary Storage on deployment',
         externalLink: ''

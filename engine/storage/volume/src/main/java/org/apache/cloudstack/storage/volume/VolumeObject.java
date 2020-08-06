@@ -21,6 +21,11 @@ import java.util.Date;
 import javax.inject.Inject;
 
 import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -72,6 +77,10 @@ public class VolumeObject implements VolumeInfo {
     VMInstanceDao vmInstanceDao;
     @Inject
     DiskOfferingDao diskOfferingDao;
+    @Inject
+    VMTemplateDao templateDao;
+    @Inject
+    VolumeDetailsDao volumeDetailsDao;
     private Object payload;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
@@ -358,7 +367,7 @@ public class VolumeObject implements VolumeInfo {
         if (dataStore == null) {
             throw new CloudRuntimeException("datastore must be set before using this object");
         }
-        DataObjectInStore obj = objectInStoreMgr.findObject(volumeVO.getId(), DataObjectType.VOLUME, dataStore.getId(), dataStore.getRole());
+        DataObjectInStore obj = objectInStoreMgr.findObject(volumeVO.getId(), DataObjectType.VOLUME, dataStore.getId(), dataStore.getRole(), null);
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&" + EncodingType.SIZE + "=" + volumeVO.getSize() + "&" +
                 EncodingType.NAME + "=" + volumeVO.getName();
@@ -433,6 +442,18 @@ public class VolumeObject implements VolumeInfo {
                 objectInStoreMgr.deleteIfNotReady(this);
             }
         }
+    }
+
+    @Override
+    public boolean isDeployAsIs() {
+        VMTemplateVO template = templateDao.findById(getTemplateId());
+        return template != null && template.isDeployAsIs();
+    }
+
+    @Override
+    public String getDeployAsIsConfiguration() {
+        VolumeDetailVO detail = volumeDetailsDao.findDetail(getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
+        return detail != null ? detail.getValue() : null;
     }
 
     @Override

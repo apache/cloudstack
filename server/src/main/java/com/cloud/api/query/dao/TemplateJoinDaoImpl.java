@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -140,7 +142,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     @Override
-    public TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO template) {
+    public TemplateResponse newTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO template) {
         TemplateResponse templateResponse = new TemplateResponse();
         templateResponse.setId(template.getUuid());
         templateResponse.setName(template.getName());
@@ -212,8 +214,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         // set details map
-        Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(template.getId());
-        templateResponse.setDetails(details);
+        if (detailsView.contains(ApiConstants.DomainDetails.all)) {
+            Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(template.getId());
+            templateResponse.setDetails(details);
+        }
 
         // update tag information
         long tag_id = template.getTagId();
@@ -222,6 +226,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         templateResponse.setDirectDownload(template.isDirectDownload());
+        templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
 
         //set template children disks
@@ -289,16 +294,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     @Override
-    public TemplateResponse setTemplateResponse(ResponseView view, TemplateResponse templateResponse, TemplateJoinVO template) {
-
-        // update details map
-        if (template.getDetailName() != null) {
-            Map<String, String> details = templateResponse.getDetails();
-            if (details == null) {
-                details = new HashMap<>();
+    public TemplateResponse setTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateResponse templateResponse, TemplateJoinVO template) {
+        if (detailsView.contains(ApiConstants.DomainDetails.all)) {
+            // update details map
+            String key = template.getDetailName();
+            if (key != null) {
+                templateResponse.addDetail(key, template.getDetailValue());
             }
-            details.put(template.getDetailName(), template.getDetailValue());
-            templateResponse.setDetails(details);
         }
 
         // update tag information

@@ -30,6 +30,8 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
@@ -167,6 +169,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private long _hostReservationReleasePeriod = 60L * 60L * 1000L; // one hour by default
     @Inject
     protected VMReservationDao _reservationDao;
+    @Inject
+    private VMTemplateDao templateDao;
 
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
     protected long _nodeId = -1;
@@ -346,7 +350,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             storageVolMap.remove(vol);
                         }
                         DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap);
-                        s_logger.debug("Returning Deployment Destination: " + dest);
+                        //s_logger.debug("Returning Deployment Destination: " + dest);
                         return dest;
                     }
                 }
@@ -484,7 +488,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                     }
                                     DeployDestination dest = new DeployDestination(dc, pod, cluster, host,
                                             storageVolMap);
-                                    s_logger.debug("Returning Deployment Destination: " + dest);
+                                    //s_logger.debug("Returning Deployment Destination: " + dest);
                                     return dest;
                                 }
                             }
@@ -1100,7 +1104,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 storageVolMap.remove(vol);
                             }
                             DeployDestination dest = new DeployDestination(dc, pod, clusterVO, host, storageVolMap);
-                            s_logger.debug("Returning Deployment Destination: " + dest);
+                            //s_logger.debug("Returning Deployment Destination: " + dest);
                             return dest;
                         }
                     } else {
@@ -1228,6 +1232,14 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         return new Pair<Boolean, Boolean>(requiresShared, requiresLocal);
     }
 
+    private boolean isVolumeFromDeployAsIsTemplate(Volume volume) {
+        if (volume == null) {
+            return false;
+        }
+        VMTemplateVO template = templateDao.findById(volume.getTemplateId());
+        return template != null && template.isDeployAsIs();
+    }
+
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts, Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
             ExcludeList avoid, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes, List<Long> preferredHosts) {
         s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
@@ -1253,6 +1265,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         boolean multipleVolume = volumesOrderBySizeDesc.size() > 1;
         for (Host potentialHost : suitableHosts) {
             Map<StoragePool, List<Volume>> volumeAllocationMap = new HashMap<StoragePool, List<Volume>>();
+            StoragePool deployAsIsPool = null;
             for (Volume vol : volumesOrderBySizeDesc) {
                 haveEnoughSpace = false;
                 s_logger.debug("Checking if host: " + potentialHost.getId() + " can access any suitable storage pool for volume: " + vol.getVolumeType());
@@ -1261,6 +1274,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 hostAffinityCheck = checkAffinity(potentialHost, preferredHosts);
                 for (StoragePool potentialSPool : volumePoolList) {
                     if (hostCanAccessSPool(potentialHost, potentialSPool)) {
+                        if (isVolumeFromDeployAsIsTemplate(vol) && deployAsIsPool != null && !deployAsIsPool.getUuid().equals(potentialSPool.getUuid())) {
+                            //Deploy-as-is volumes must be allocated to the same storage pool
+                            continue;
+                        }
                         hostCanAccessPool = true;
                         if (multipleVolume && !readyAndReusedVolumes.contains(vol)) {
                             List<Volume> requestVolumes = null;
@@ -1274,6 +1291,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 !_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool, potentialHost.getClusterId()))
                                 continue;
                             volumeAllocationMap.put(potentialSPool, requestVolumes);
+                        }
+                        if (isVolumeFromDeployAsIsTemplate(vol) && deployAsIsPool == null) {
+                            s_logger.info("VM from deploy-as-is template detected, " +
+                                    "trying to allocate VM volumes to the same storage pool: " + potentialSPool.getUuid());
+                            deployAsIsPool = potentialSPool;
                         }
                         storage.put(vol, potentialSPool);
                         haveEnoughSpace = true;

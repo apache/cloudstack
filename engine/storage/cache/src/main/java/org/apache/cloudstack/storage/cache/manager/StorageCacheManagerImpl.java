@@ -291,7 +291,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 
                 if (st == ObjectInDataStoreStateMachine.State.Ready) {
                     s_logger.debug("there is already one in the cache store");
-                    DataObject dataObj = objectInStoreMgr.get(data, store);
+                    DataObject dataObj = objectInStoreMgr.get(data, store, null);
                     dataObj.incRefCount();
                     existingDataObj = dataObj;
                 }

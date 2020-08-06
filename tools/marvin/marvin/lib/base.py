@@ -502,7 +502,8 @@ class VirtualMachine:
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
-               rootdiskcontroller=None, macaddress=None, datadisktemplate_diskoffering_list={}):
+               rootdiskcontroller=None, macaddress=None, datadisktemplate_diskoffering_list={},
+               properties=None, nicnetworklist=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -630,6 +631,12 @@ class VirtualMachine:
             cmd.macaddress = macaddress
         elif macaddress in services:
             cmd.macaddress = services["macaddress"]
+
+        if properties:
+            cmd.properties = properties
+
+        if nicnetworklist:
+            cmd.nicnetworklist = nicnetworklist
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -1413,6 +1420,9 @@ class Template:
 
         if "directdownload" in services:
             cmd.directdownload = services["directdownload"]
+
+        if "deployasis" in services:
+            cmd.deployasis = services["deployasis"]
 
         # Register Template
         template = apiclient.registerTemplate(cmd)

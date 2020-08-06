@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 
 import com.cloud.configuration.Config;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
@@ -126,6 +127,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     ResourceManager resourceManager;
     @Inject
     VMTemplateDao templateDao;
+    @Inject
+    private VMTemplateDetailsDao templateDetailsDao;
 
     @Override
     public String getName() {
@@ -591,6 +594,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // remove its related ACL permission
             Pair<Class<?>, Long> tmplt = new Pair<Class<?>, Long>(VirtualMachineTemplate.class, template.getId());
             _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
+
+            // Remove template details
+            templateDetailsDao.removeDetails(template.getId());
 
         }
         return success;

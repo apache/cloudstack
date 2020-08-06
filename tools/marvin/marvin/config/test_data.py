@@ -986,7 +986,60 @@ test_data = {
             "ispublic": "True"
         }
     },
-
+    "test_ovf_templates": [
+        {
+            "name": "test-ovf",
+            "displaytext": "test-ovf",
+            "format": "ova",
+            "hypervisor": "vmware",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://172.17.0.1/machina-2dd-iso.ova",
+            "deployasis": "True",
+            "requireshvm": "True",
+            "ispublic": "True"
+        }
+    ],
+    "virtual_machine_vapps": {
+        "test-ovf": {
+            "name": "testvm-vapps",
+            "displayname": "Test VM vApps",
+            "properties": [
+                {
+                    "key": "used.by.admin",
+                    "value": "marvin"
+                },
+                {
+                    "key": "use.type",
+                    "value": "test"
+                },
+                {
+                    "key": "usefull.property",
+                    "value": "True"
+                }
+            ],
+            "nicnetworklist": [
+                {
+                    "network": "l2",
+                    "nic": [15, 18]
+                },
+                {
+                    "network": "l2",
+                    "nic": [16]
+                },
+                {
+                    "network": "l2",
+                    "nic": [17]
+                }
+            ]
+        }
+    },
+    "custom_service_offering": {
+        "name": "Custom Service Offering for vApps",
+        "displaytext": "Custom Service Offering for vApps",
+        "cpunumber": "",
+        "cpuspeed": "",
+        "memory": ""
+    },
     "coreos_volume": {
         "diskname": "Volume_core",
         "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
