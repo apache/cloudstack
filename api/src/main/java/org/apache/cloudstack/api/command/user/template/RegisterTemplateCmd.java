@@ -162,6 +162,13 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                 description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
     private Boolean directDownload;
 
+    @Parameter(name= ApiConstants.DEPLOY_AS_IS,
+            type = CommandType.BOOLEAN,
+            description = "VMware only: true if template should not strip and define disks and networks but leave those to the template definition",
+            since = "4.15"
+    )
+    private Boolean deployAsIs;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -272,6 +279,10 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     public boolean isDirectDownload() {
         return directDownload == null ? false : directDownload;
+    }
+
+    public Boolean isDeployAsIs() {
+        return deployAsIs == null ? false : deployAsIs;
     }
 
     /////////////////////////////////////////////////////

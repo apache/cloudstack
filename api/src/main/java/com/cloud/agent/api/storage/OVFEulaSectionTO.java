@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,18 +15,37 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+package com.cloud.agent.api.storage;
 
-package com.cloud.storage.dao;
+import com.cloud.agent.api.LogLevel;
 
-import com.cloud.storage.TemplateOVFPropertyVO;
-import com.cloud.utils.db.GenericDao;
+import java.io.Serializable;
 
-import java.util.List;
+/**
+ * End-user licence agreement
+ */
+public class OVFEulaSectionTO implements Serializable {
+    private String info;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private byte[] compressedLicense;
+    private int index;
 
-public interface TemplateOVFPropertiesDao extends GenericDao<TemplateOVFPropertyVO, Long> {
+    public OVFEulaSectionTO(String info, byte[] license, int eulaIndex) {
+        this.info = info;
+        this.compressedLicense = license;
+        this.index = eulaIndex;
+    }
 
-    boolean existsOption(long templateId, String key);
-    TemplateOVFPropertyVO findByTemplateAndKey(long templateId, String key);
-    void saveOptions(List<TemplateOVFPropertyVO> opts);
-    List<TemplateOVFPropertyVO> listByTemplateId(long templateId);
+    public String getInfo() {
+        return this.info;
+    }
+
+    public byte[] getCompressedLicense() {
+        return this.compressedLicense;
+    }
+
+    public int getIndex() {
+        return index;
+    }
 }

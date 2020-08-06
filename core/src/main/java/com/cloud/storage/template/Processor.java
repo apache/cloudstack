@@ -23,10 +23,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import com.cloud.agent.api.storage.OVFEulaSectionTO;
 import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
+import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 
 /**
  * Generic interface to process different types of image formats
@@ -48,13 +52,17 @@ public interface Processor extends Adapter {
 
     FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException;
 
-    public static class FormatInfo {
+    class FormatInfo {
         public ImageFormat format;
         public long size;
         public long virtualSize;
         public String filename;
         public boolean isCorrupted;
         public List<OVFPropertyTO> ovfProperties;
+        public List<NetworkPrerequisiteTO> networks;
+        public List<DatadiskTO> disks;
+        public OVFVirtualHardwareSectionTO hardwareSection;
+        public List<OVFEulaSectionTO> eulaSections;
     }
 
     long getVirtualSize(File file) throws IOException;

@@ -20,6 +20,14 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.vm.VmDetailConstants;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -30,7 +38,6 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -71,6 +78,10 @@ public class VolumeObject implements VolumeInfo {
     VMInstanceDao vmInstanceDao;
     @Inject
     DiskOfferingDao diskOfferingDao;
+    @Inject
+    VMTemplateDao templateDao;
+    @Inject
+    VolumeDetailsDao volumeDetailsDao;
     private Object payload;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
@@ -357,7 +368,7 @@ public class VolumeObject implements VolumeInfo {
         if (dataStore == null) {
             throw new CloudRuntimeException("datastore must be set before using this object");
         }
-        DataObjectInStore obj = objectInStoreMgr.findObject(volumeVO.getId(), DataObjectType.VOLUME, dataStore.getId(), dataStore.getRole());
+        DataObjectInStore obj = objectInStoreMgr.findObject(volumeVO.getId(), DataObjectType.VOLUME, dataStore.getId(), dataStore.getRole(), null);
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&" + EncodingType.SIZE + "=" + volumeVO.getSize() + "&" +
                 EncodingType.NAME + "=" + volumeVO.getName();
@@ -391,9 +402,7 @@ public class VolumeObject implements VolumeInfo {
                 if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
                     volEvent = Volume.Event.UploadRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.MigrationRequested) {
-                    volEvent = Event.CopyRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.MigrateDataRequested) {
-                    return;
+                    volEvent = Volume.Event.CopyRequested;
                 }
             } else {
                 if (event == ObjectInDataStoreStateMachine.Event.CreateRequested || event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
@@ -434,6 +443,18 @@ public class VolumeObject implements VolumeInfo {
                 objectInStoreMgr.deleteIfNotReady(this);
             }
         }
+    }
+
+    @Override
+    public boolean isDeployAsIs() {
+        VMTemplateVO template = templateDao.findById(getTemplateId());
+        return template != null && template.isDeployAsIs();
+    }
+
+    @Override
+    public String getDeployAsIsConfiguration() {
+        VolumeDetailVO detail = volumeDetailsDao.findDetail(getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
+        return detail != null ? detail.getValue() : null;
     }
 
     @Override

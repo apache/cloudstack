@@ -16,18 +16,28 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-
 package com.cloud.agent.api.storage;
 
-public interface OVFProperty {
+import java.util.List;
 
-    Long getTemplateId();
-    String getKey();
-    String getType();
-    String getValue();
-    String getQualifiers();
-    Boolean isUserConfigurable();
-    String getLabel();
-    String getDescription();
-    Boolean isPassword();
+public class OVFVirtualHardwareSectionTO {
+
+    public OVFVirtualHardwareSectionTO() {
+    }
+
+    private List<OVFConfigurationTO> configurations;
+    private List<OVFVirtualHardwareItemTO> commonHardwareItems;
+
+    public OVFVirtualHardwareSectionTO(List<OVFConfigurationTO> configurations, List<OVFVirtualHardwareItemTO> commonHardwareItems) {
+        this.configurations = configurations;
+        this.commonHardwareItems = commonHardwareItems;
+    }
+
+    public List<OVFConfigurationTO> getConfigurations() {
+        return configurations;
+    }
+
+    public List<OVFVirtualHardwareItemTO> getCommonHardwareItems() {
+        return commonHardwareItems;
+    }
 }

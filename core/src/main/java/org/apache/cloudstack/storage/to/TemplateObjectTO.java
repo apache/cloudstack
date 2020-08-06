@@ -47,6 +47,8 @@ public class TemplateObjectTO implements DataTO {
     private boolean bootable;
     private String uniqueName;
     private boolean directDownload;
+    private boolean deployAsIs;
+    private String deployAsIsConfiguration;
 
     public TemplateObjectTO() {
 
@@ -82,6 +84,8 @@ public class TemplateObjectTO implements DataTO {
             this.imageDataStore = template.getDataStore().getTO();
         }
         this.hypervisorType = template.getHypervisorType();
+        this.deployAsIs = template.isDeployAsIs();
+        this.deployAsIsConfiguration = template.getDeployAsIsConfiguration();
     }
 
     @Override
@@ -242,6 +246,18 @@ public class TemplateObjectTO implements DataTO {
 
     public void setDirectDownload(boolean directDownload) {
         this.directDownload = directDownload;
+    }
+
+    public boolean isDeployAsIs() {
+        return deployAsIs;
+    }
+
+    public String getDeployAsIsConfiguration() {
+        return deployAsIsConfiguration;
+    }
+
+    public void setDeployAsIsConfiguration(String deployAsIsConfiguration) {
+        this.deployAsIsConfiguration = deployAsIsConfiguration;
     }
 
     @Override

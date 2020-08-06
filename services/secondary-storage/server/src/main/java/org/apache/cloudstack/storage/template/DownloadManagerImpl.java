@@ -37,6 +37,9 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.storage.OVFEulaSectionTO;
+import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.S3TemplateDownloader;
@@ -55,6 +58,7 @@ import com.cloud.storage.template.RawImageProcessor;
 import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.TemplateConstants;
+import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -128,6 +132,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private final long id;
         private final ResourceType resourceType;
         private List<OVFPropertyTO> ovfProperties;
+        private List<NetworkPrerequisiteTO> networks;
+        private List<DatadiskTO> disks;
+        private OVFVirtualHardwareSectionTO hardwareSection;
+        private List<OVFEulaSectionTO> eulaSections;
 
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
                 String installPathPrefix, ResourceType resourceType) {
@@ -229,6 +237,38 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
             this.ovfProperties = ovfProperties;
+        }
+
+        public List<NetworkPrerequisiteTO> getNetworks() {
+            return networks;
+        }
+
+        public void setNetworks(List<NetworkPrerequisiteTO> networks) {
+            this.networks = networks;
+        }
+
+        public List<DatadiskTO> getDisks() {
+            return disks;
+        }
+
+        public void setDisks(List<DatadiskTO> disks) {
+            this.disks = disks;
+        }
+
+        public void setVirtualHardwareSection(OVFVirtualHardwareSectionTO section) {
+            this.hardwareSection = section;
+        }
+
+        public OVFVirtualHardwareSectionTO getVirtualHardwareSection() {
+            return this.hardwareSection;
+        }
+
+        public List<OVFEulaSectionTO> getEulaSections() {
+            return eulaSections;
+        }
+
+        public void setEulaSections(List<OVFEulaSectionTO> eulaSections) {
+            this.eulaSections = eulaSections;
         }
     }
 
@@ -509,7 +549,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         while (en.hasNext()) {
             Processor processor = en.next();
 
-            FormatInfo info = null;
+            FormatInfo info;
             try {
                 info = processor.process(resourcePath, null, templateName, this._processTimeout);
             } catch (InternalErrorException e) {
@@ -525,6 +565,16 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 dnld.setTemplatePhysicalSize(info.size);
                 if (CollectionUtils.isNotEmpty(info.ovfProperties)) {
                     dnld.setOvfProperties(info.ovfProperties);
+                }
+                if (CollectionUtils.isNotEmpty(info.networks)) {
+                    dnld.setNetworks(info.networks);
+                }
+                if (CollectionUtils.isNotEmpty(info.disks)) {
+                    dnld.setDisks(info.disks);
+                }
+                dnld.setVirtualHardwareSection(info.hardwareSection);
+                if (CollectionUtils.isNotEmpty(info.eulaSections)) {
+                    dnld.setEulaSections(info.eulaSections);
                 }
                 break;
             }
@@ -828,6 +878,16 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                             getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
             if (CollectionUtils.isNotEmpty(dj.getOvfProperties())) {
                 answer.setOvfProperties(dj.getOvfProperties());
+            }
+            if (CollectionUtils.isNotEmpty(dj.getNetworks())) {
+                answer.setNetworkRequirements(dj.getNetworks());
+            }
+            if (CollectionUtils.isNotEmpty(dj.getDisks())) {
+                answer.setDisks(dj.getDisks());
+            }
+            answer.setOvfHardwareSection(dj.getVirtualHardwareSection());
+            if (CollectionUtils.isNotEmpty(dj.getEulaSections())) {
+                answer.setEulaSections(dj.getEulaSections());
             }
             jobs.remove(jobId);
             return answer;

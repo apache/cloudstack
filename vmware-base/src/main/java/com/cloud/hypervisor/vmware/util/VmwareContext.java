@@ -367,32 +367,32 @@ public class VmwareContext {
         out.close();
     }
 
-    public void uploadFile(String urlString, String localFileFullName) throws Exception {
-        uploadFile(urlString, new File(localFileFullName));
-    }
+    public void uploadFile(String httpMethod, String urlString, String localFileName) throws Exception {
+        HttpURLConnection conn = getRawHTTPConnection(urlString);
 
-    public void uploadFile(String urlString, File localFile) throws Exception {
-        HttpURLConnection conn = getHTTPConnection(urlString, "PUT");
+        conn.setDoOutput(true);
+        conn.setUseCaches(false);
+
+        conn.setChunkedStreamingMode(ChunkSize);
+        conn.setRequestMethod(httpMethod);
+        conn.setRequestProperty("Connection", "Keep-Alive");
+        String contentType = "application/octet-stream";
+        conn.setRequestProperty("Content-Type", contentType);
+        conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
+        connectWithRetry(conn);
         OutputStream out = null;
         InputStream in = null;
         BufferedReader br = null;
 
         try {
             out = conn.getOutputStream();
-            in = new FileInputStream(localFile);
+            in = new FileInputStream(localFileName);
             byte[] buf = new byte[ChunkSize];
             int len = 0;
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
             }
             out.flush();
-
-            br = new BufferedReader(new InputStreamReader(conn.getInputStream(), getCharSetFromConnection(conn)));
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (s_logger.isTraceEnabled())
-                    s_logger.trace("Upload " + urlString + " response: " + line);
-            }
         } finally {
             if (in != null)
                 in.close();
@@ -402,6 +402,7 @@ public class VmwareContext {
 
             if (br != null)
                 br.close();
+            conn.disconnect();
         }
     }
 
@@ -427,7 +428,10 @@ public class VmwareContext {
         conn.setChunkedStreamingMode(ChunkSize);
         conn.setRequestMethod(httpMethod);
         conn.setRequestProperty("Connection", "Keep-Alive");
-        conn.setRequestProperty("Content-Type", "application/x-vnd.vmware-streamVmdk");
+        String contentType = urlString.endsWith(".iso") ?
+                "application/octet-stream" :
+                "application/x-vnd.vmware-streamVmdk";
+        conn.setRequestProperty("Content-Type", contentType);
         conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
 

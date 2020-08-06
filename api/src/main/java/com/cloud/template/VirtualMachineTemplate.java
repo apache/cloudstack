@@ -138,4 +138,6 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
     void incrUpdatedCount();
 
     Date getUpdated();
+
+    boolean isDeployAsIs();
 }

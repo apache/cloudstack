@@ -30,6 +30,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.storage.ImageStore;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -382,11 +383,23 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
         for (Map.Entry<String, String> entry : detailsStr.entrySet()) {
-            boolean display = visibilityMap.getOrDefault(entry.getKey(), true);
+            boolean display = visibilityMap.getOrDefault(entry.getKey(), true) && displayOVFDetails(entry.getKey());
             details.add(new UserVmDetailVO(vm.getId(), entry.getKey(), entry.getValue(), display));
         }
 
         _detailsDao.saveDetails(details);
+    }
+
+    /*
+        Do not display VM properties parsed from OVF, handled internally
+     */
+    private boolean displayOVFDetails(String key) {
+        if (key.startsWith(ImageStore.ACS_PROPERTY_PREFIX) || key.startsWith(ImageStore.OVF_HARDWARE_ITEM_PREFIX) ||
+        key.startsWith(ImageStore.OVF_HARDWARE_CONFIGURATION_PREFIX) || key.startsWith(ImageStore.DISK_DEFINITION_PREFIX) ||
+        key.startsWith(ImageStore.REQUIRED_NETWORK_PREFIX) || key.startsWith(ImageStore.OVF_EULA_SECTION_PREFIX)) {
+            return false;
+        }
+        return true;
     }
 
     @Override
