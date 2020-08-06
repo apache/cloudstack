@@ -3489,6 +3489,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     if (network.getUuid() != null){
                         builder.append(" (").append(network.getUuid()).append(") ");
                     }
+                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue())  + " ");
                 }
                 if (vm != null) {
                     builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
@@ -3525,6 +3526,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (volume != null) {
                     builder.append(" and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
+                if (usageRecord.getRawUsage()!= null){
+                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue()));
+                }
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
@@ -3554,6 +3558,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 if (template != null) {
                     builder.append(" and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
+                }
+                if (usageRecord.getSize() != null) {
+                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3601,7 +3608,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 builder.append("Snapshot usage ");
                 if (snap != null) {
                     builder.append("for ").append(snap.getName()).append(" (").append(snap.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3747,6 +3754,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 if (diskOff != null) {
                     builder.append(" using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
+                }
+                if (usageRecord.getSize() != null){
+                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
