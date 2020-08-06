@@ -336,7 +336,7 @@ public class EventTypes {
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";
 
-    // Host-as-dead
+    // Host on Degraded ResourceState
     public static final String EVENT_DECLARE_HOST_DEGRADED = "HOST.DECLARE.DEGRADED";
     public static final String EVENT_CANCEL_HOST_DEGRADED = "HOST.CANCEL.DEGRADED";
 
