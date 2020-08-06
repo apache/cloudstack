@@ -16,10 +16,53 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URL;
+import java.nio.channels.SocketChannel;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.naming.ConfigurationException;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DeployAsIsInfoTO;
+import com.cloud.storage.ImageStore;
 import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+import org.joda.time.Duration;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -1796,6 +1839,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
+
+            DiskTO[] specDisks = vmSpec.getDisks();
+            DeployAsIsInfoTO deployAsIsInfo = vmSpec.getDeployAsIsInfo();
+            boolean installAsIs = deployAsIsInfo != null && deployAsIsInfo.isDeployAsIs();
+            if (installAsIs && dcMo.findVm(vmInternalCSName) == null) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Deploying OVA from as is");
+                }
+                String deployAsIsTemplate = deployAsIsInfo.getTemplatePath();
+                String destDatastore = getDatastoreFromSpecDisks(specDisks);
+                String deploymentConfiguration = deployAsIsInfo.getDeploymentConfiguration();
+                vmInVcenter = _storageProcessor.cloneVMFromTemplate(deployAsIsTemplate, vmInternalCSName, destDatastore);
+                mapSpecDisksToClonedDisks(vmInVcenter, vmInternalCSName, specDisks);
+            }
+
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
@@ -1816,6 +1874,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
+            VirtualDevice[] nicDevices = null;
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             DiskControllerType systemVmScsiControllerType = DiskControllerType.lsilogic;
             int firstScsiControllerBusNum = 0;
@@ -1829,6 +1888,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 // retrieve disk information before we tear down
                 diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 hasSnapshot = vmMo.hasSnapshot();
+                nicDevices = vmMo.getNicDevices();
                 if (!hasSnapshot)
                     vmMo.tearDownDevices(new Class<?>[]{VirtualDisk.class, VirtualEthernetCard.class});
                 else
@@ -1925,7 +1985,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
+            // The number of disks changed must be 0 for install as is, as the VM is a clone
+            //int disksChanges = !installAsIs ? disks.length : 0;
             int totalChangeDevices = disks.length + nics.length;
+            int hackDeviceCount = 0;
+            if (diskInfoBuilder != null) {
+                hackDeviceCount += diskInfoBuilder.getDiskCount();
+            }
+            hackDeviceCount += nicDevices == null ? 0 : nicDevices.length;
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("current count(s) desired: %d/ found:%d. now adding device to device count for vApp config ISO", totalChangeDevices, hackDeviceCount));
+            }
+            if (vmSpec.getOvfProperties() != null) {
+                totalChangeDevices++;
+            }
 
             DiskTO volIso = null;
             if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -2309,15 +2382,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             configureVideoCard(vmMo, vmSpec, vmConfigSpec);
 
             // Set OVF properties (if available)
-            Pair<String, List<OVFPropertyTO>> ovfPropsMap = vmSpec.getOvfProperties();
-            VmConfigInfo templateVappConfig = null;
-            List<OVFPropertyTO> ovfProperties = null;
-            if (ovfPropsMap != null) {
-                String vmTemplate = ovfPropsMap.first();
-                s_logger.info("Find VM template " + vmTemplate);
-                VirtualMachineMO vmTemplateMO = dcMo.findVm(vmTemplate);
-                templateVappConfig = vmTemplateMO.getConfigInfo().getVAppConfig();
-                ovfProperties = ovfPropsMap.second();
+            List<OVFPropertyTO> ovfProperties = vmSpec.getOvfProperties();
+            VmConfigInfo templateVappConfig;
+            if (ovfProperties != null) {
+                VirtualMachineMO templateVMmo = dcMo.findVm(deployAsIsInfo.getTemplatePath());
+                templateVappConfig = templateVMmo.getConfigInfo().getVAppConfig();
                 // Set OVF properties (if available)
                 if (CollectionUtils.isNotEmpty(ovfProperties)) {
                     s_logger.info("Copying OVF properties from template and setting them to the values the user provided");
@@ -2414,6 +2483,85 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private String getDatastoreFromSpecDisks(DiskTO[] specDisks) {
+        if (specDisks.length == 0) {
+            return null;
+        }
+
+        Map<String, List<DiskTO>> psDisksMap = Arrays.asList(specDisks).stream()
+                .filter(x -> x.getType() != Volume.Type.ISO && x.getData() != null && x.getData().getDataStore() != null)
+                .collect(Collectors.groupingBy(x -> x.getData().getDataStore().getUuid()));
+
+        String dataStore;
+        if (MapUtils.isEmpty(psDisksMap)) {
+            s_logger.error("Could not find a destination datastore for VM volumes");
+            return null;
+        } else {
+            dataStore = psDisksMap.keySet().iterator().next();
+            if (psDisksMap.keySet().size() > 1) {
+                s_logger.info("Found multiple destination datastores for VM volumes, selecting " + dataStore);
+            }
+        }
+        return dataStore;
+    }
+
+    /**
+     * Modify the specDisks information to match the cloned VM's disks (from vmMo VM)
+     */
+    private void mapSpecDisksToClonedDisks(VirtualMachineMO vmMo, String vmInternalCSName, DiskTO[] specDisks) {
+        try {
+            s_logger.debug("Mapping spec disks information to cloned VM disks for VM " + vmInternalCSName);
+            if (vmMo != null && ArrayUtils.isNotEmpty(specDisks)) {
+                List<VirtualDisk> vmDisks = vmMo.getVirtualDisks();
+                List<DiskTO> sortedDisks = Arrays.asList(sortVolumesByDeviceId(specDisks))
+                        .stream()
+                        .filter(x -> x.getType() == Volume.Type.ROOT)
+                        .collect(Collectors.toList());
+                if (sortedDisks.size() != vmDisks.size()) {
+                    s_logger.error("Different number of root disks spec vs cloned deploy-as-is VM disks: " + sortedDisks.size() + " - " + vmDisks.size());
+                    return;
+                }
+                for (int i = 0; i < sortedDisks.size(); i++) {
+                    DiskTO specDisk = sortedDisks.get(i);
+                    VirtualDisk vmDisk = vmDisks.get(i);
+                    DataTO dataVolume = specDisk.getData();
+                    if (dataVolume instanceof VolumeObjectTO) {
+                        VolumeObjectTO volumeObjectTO = (VolumeObjectTO) dataVolume;
+                        if (!volumeObjectTO.getSize().equals(vmDisk.getCapacityInBytes())) {
+                            s_logger.info("Mapped disk size is not the same as the cloned VM disk size: " +
+                                    volumeObjectTO.getSize() + " - " + vmDisk.getCapacityInBytes());
+                        }
+                        VirtualDeviceBackingInfo backingInfo = vmDisk.getBacking();
+                        if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+                            VirtualDiskFlatVer2BackingInfo backing = (VirtualDiskFlatVer2BackingInfo) backingInfo;
+                            String fileName = backing.getFileName();
+                            if (StringUtils.isNotBlank(fileName)) {
+                                String[] fileNameParts = fileName.split(" ");
+                                String datastoreUuid = fileNameParts[0].replace("[", "").replace("]", "");
+                                String relativePath = fileNameParts[1].split("/")[1].replace(".vmdk", "");
+                                String vmSpecDatastoreUuid = volumeObjectTO.getDataStore().getUuid().replaceAll("-", "");
+                                if (!datastoreUuid.equals(vmSpecDatastoreUuid)) {
+                                    s_logger.info("Mapped disk datastore UUID is not the same as the cloned VM datastore UUID: " +
+                                            datastoreUuid + " - " + vmSpecDatastoreUuid);
+                                }
+                                volumeObjectTO.setPath(relativePath);
+                                specDisk.setPath(relativePath);
+                            } else {
+                                s_logger.error("Empty backing filename for volume " + volumeObjectTO.getName());
+                            }
+                        } else {
+                            s_logger.error("Could not get volume backing info for volume " + volumeObjectTO.getName());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            String msg = "Error mapping deploy-as-is VM disks from cloned VM " + vmInternalCSName;
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(e);
+        }
+    }
+
     private void setBootOptions(VirtualMachineTO vmSpec, String bootMode, VirtualMachineConfigSpec vmConfigSpec) {
         VirtualMachineBootOptions bootOptions = null;
         if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")) {
@@ -2457,10 +2605,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Map<String, Pair<String, Boolean>> getOVFMap(List<OVFPropertyTO> props) {
         Map<String, Pair<String, Boolean>> map = new HashMap<>();
         for (OVFPropertyTO prop : props) {
-            Pair<String, Boolean> pair = new Pair<>(prop.getValue(), prop.isPassword());
+            String value = getPropertyValue(prop);
+            Pair<String, Boolean> pair = new Pair<>(value, prop.isPassword());
             map.put(prop.getKey(), pair);
         }
         return map;
+    }
+
+    private String getPropertyValue(OVFPropertyTO prop) {
+        String type = prop.getType();
+        String value = prop.getValue();
+        if ("boolean".equalsIgnoreCase(type)) {
+            value = Boolean.parseBoolean(value) ? "True" : "False";
+        }
+        return value;
     }
 
     /**
@@ -2843,7 +3001,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private static void configCustomExtraOption(List<OptionValue> extraOptions, VirtualMachineTO vmSpec) {
         // we no longer to validation anymore
         for (Map.Entry<String, String> entry : vmSpec.getDetails().entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(VmDetailConstants.BOOT_MODE)) {
+            if (entry.getKey().equalsIgnoreCase(VmDetailConstants.BOOT_MODE) ||
+                    entry.getKey().startsWith(ImageStore.REQUIRED_NETWORK_PREFIX) ||
+                    entry.getKey().startsWith(ImageStore.ACS_PROPERTY_PREFIX) ||
+                    entry.getKey().startsWith(ImageStore.DISK_DEFINITION_PREFIX)) {
                 continue;
             }
             OptionValue newVal = new OptionValue();

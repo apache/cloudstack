@@ -795,95 +795,100 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
 
             String vmdkName = volume.getName();
-            String vmdkFileBaseName;
-            if (srcStore == null) {
-                // create a root volume for blank VM (created from ISO)
-                String dummyVmName = hostService.getWorkerName(context, cmd, 0);
+            String vmdkFileBaseName = null;
+            if (template.isDeployAsIs()) {
+                s_logger.info("Volume from deploy-as-is template, no need to create the volume at this point, VM will be cloned");
+            } else {
+                if (srcStore == null) {
+                    // create a root volume for blank VM (created from ISO)
+                    String dummyVmName = hostService.getWorkerName(context, cmd, 0);
 
-                try {
-                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
-                    if (vmMo == null) {
-                        throw new Exception("Unable to create a dummy VM for volume creation");
+                    try {
+                        vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
+                        if (vmMo == null) {
+                            throw new Exception("Unable to create a dummy VM for volume creation");
+                        }
+
+                        vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
+                        // we only use the first file in the pair, linked or not will not matter
+                        String vmdkFilePair[] = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true);
+                        String volumeDatastorePath = vmdkFilePair[0];
+                        synchronized (this) {
+                            s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
+                            VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo, searchExcludedFolders);
+                            vmMo.createDisk(volumeDatastorePath, (long)(volume.getSize() / (1024L * 1024L)), morDatastore, -1);
+                            vmMo.detachDisk(volumeDatastorePath, false);
+                        }
+                    } finally {
+                        s_logger.info("Destroy dummy VM after volume creation");
+                        if (vmMo != null) {
+                            s_logger.warn("Unable to destroy a null VM ManagedObjectReference");
+                            vmMo.detachAllDisks();
+                            vmMo.destroy();
+                        }
                     }
+                } else {
+                    String templatePath = template.getPath();
+                    VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templatePath), true);
+                    if (vmTemplate == null) {
+                        s_logger.warn("Template host in vSphere is not in connected state, request template reload");
+                        return new CopyCmdAnswer("Template host in vSphere is not in connected state, request template reload");
+                    }
+
+                    ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+                    ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+                    if (template.getSize() != null){
+                        _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
+                    }
+                    if (!_fullCloneFlag) {
+                        createVMLinkedClone(vmTemplate, dcMo, vmdkName, morDatastore, morPool);
+                    } else {
+                        createVMFullClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
+                    }
+
+                    vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
+                    assert (vmMo != null);
 
                     vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
-                    // we only use the first file in the pair, linked or not will not matter
-                    String vmdkFilePair[] = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true);
-                    String volumeDatastorePath = vmdkFilePair[0];
-                    synchronized (this) {
-                        s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                        VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo, searchExcludedFolders);
-                        vmMo.createDisk(volumeDatastorePath, (long)(volume.getSize() / (1024L * 1024L)), morDatastore, -1);
-                        vmMo.detachDisk(volumeDatastorePath, false);
-                    }
-                } finally {
-                    s_logger.info("Destroy dummy VM after volume creation");
-                    if (vmMo != null) {
-                        s_logger.warn("Unable to destroy a null VM ManagedObjectReference");
-                        vmMo.detachAllDisks();
-                        vmMo.destroy();
-                    }
-                }
-            } else {
-                String templatePath = template.getPath();
-                VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templatePath), true);
-                if (vmTemplate == null) {
-                    s_logger.warn("Template host in vSphere is not in connected state, request template reload");
-                    return new CopyCmdAnswer("Template host in vSphere is not in connected state, request template reload");
-                }
-
-                ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-                ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-                if (template.getSize() != null){
-                    _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
-                }
-                if (!_fullCloneFlag) {
-                    createVMLinkedClone(vmTemplate, dcMo, vmdkName, morDatastore, morPool);
-                } else {
-                    createVMFullClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
-                }
-
-                vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
-                assert (vmMo != null);
-
-                vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
-                s_logger.info("Move volume out of volume-wrapper VM " + vmdkFileBaseName);
-                String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
-                String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
+                    s_logger.info("Move volume out of volume-wrapper VM " + vmdkFileBaseName);
+                    String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
+                    String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
 
                 for (int i=0; i<vmwareLayoutFilePair.length; i++) {
                     dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
                 }
 
-                s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
-                vmMo.detachAllDisks();
+                    s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
+                    vmMo.detachAllDisks();
 
-                s_logger.info("destroy volume-wrapper VM " + vmdkName);
-                vmMo.destroy();
+                    s_logger.info("destroy volume-wrapper VM " + vmdkName);
+                    vmMo.destroy();
 
-                String srcFile = dsMo.getDatastorePath(vmdkName, true);
+                    String srcFile = dsMo.getDatastorePath(vmdkName, true);
 
-                dsMo.deleteFile(srcFile, dcMo.getMor(), true, searchExcludedFolders);
+                    dsMo.deleteFile(srcFile, dcMo.getMor(), true, searchExcludedFolders);
 
-                if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
-                    dsMo.deleteFolder(srcFile, dcMo.getMor());
+                    if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
+                        dsMo.deleteFolder(srcFile, dcMo.getMor());
+                    }
                 }
-            }
-            // restoreVM - move the new ROOT disk into corresponding VM folder
-            VirtualMachineMO restoreVmMo = dcMo.findVm(volume.getVmName());
-            if (restoreVmMo != null) {
-                String vmNameInVcenter = restoreVmMo.getName(); // VM folder name in datastore will be VM's name in vCenter.
-                if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
-                    VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, searchExcludedFolders);
+                // restoreVM - move the new ROOT disk into corresponding VM folder
+                VirtualMachineMO restoreVmMo = dcMo.findVm(volume.getVmName());
+                if (restoreVmMo != null) {
+                    String vmNameInVcenter = restoreVmMo.getName(); // VM folder name in datastore will be VM's name in vCenter.
+                    if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
+                        VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, searchExcludedFolders);
+                    }
                 }
             }
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vmdkFileBaseName);
-            if (template.getSize() != null){
+            if (template.isDeployAsIs()) {
+                newVol.setSize(volume.getSize());
+            } else if (template.getSize() != null) {
                 newVol.setSize(template.getSize());
-            }
-            else {
+            } else {
                 newVol.setSize(volume.getSize());
             }
             return new CopyCmdAnswer(newVol);
@@ -896,6 +901,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String msg = "clone volume from base image failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new CopyCmdAnswer(e.toString());
+        }
+    }
+
+    private void createLinkedOrFullClone(TemplateObjectTO template, VolumeObjectTO volume, DatacenterMO dcMo, VirtualMachineMO vmMo, ManagedObjectReference morDatastore,
+                                         DatastoreMO dsMo, String cloneName, ManagedObjectReference morPool) throws Exception {
+        if (template.getSize() != null) {
+            _fullCloneFlag = volume.getSize() > template.getSize() || _fullCloneFlag;
+        }
+        if (!_fullCloneFlag) {
+            createVMLinkedClone(vmMo, dcMo, cloneName, morDatastore, morPool);
+        } else {
+            createVMFullClone(vmMo, dcMo, dsMo, cloneName, morDatastore, morPool);
         }
     }
 
@@ -3478,7 +3495,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         VirtualMachineMO clonedVm = null;
         try {
-            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin");
+            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin", null);
             clonedVm = hyperHost.findVmOnHyperHost(newVolumeName);
             if (clonedVm == null) {
                 throw new Exception("Unable to create container VM for volume creation");
@@ -3639,5 +3656,41 @@ public class VmwareStorageProcessor implements StorageProcessor {
     @Override
     public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
         return null;
+    }
+
+    /**
+     * Return the cloned VM from the template
+     */
+    public VirtualMachineMO cloneVMFromTemplate(String templateName, String cloneName, String templatePrimaryStoreUuid) {
+        try {
+            VmwareContext context = hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
+            DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
+            VirtualMachineMO templateMo = dcMo.findVm(templateName);
+            if (templateMo == null) {
+                throw new CloudRuntimeException(String.format("Unable to find template %s in vSphere", templateName));
+            }
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, templatePrimaryStoreUuid);
+            DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
+            ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+            if (morDatastore == null) {
+                throw new CloudRuntimeException("Unable to find datastore in vSphere");
+            }
+            s_logger.info("Cloning VM " + cloneName + " from template " + templatePrimaryStoreUuid);
+            if (!_fullCloneFlag) {
+                createVMLinkedClone(templateMo, dcMo, cloneName, morDatastore, morPool);
+            } else {
+                createVMFullClone(templateMo, dcMo, dsMo, cloneName, morDatastore, morPool);
+            }
+            VirtualMachineMO vm = dcMo.findVm(cloneName);
+            if (vm == null) {
+                throw new CloudRuntimeException("Unable to get the cloned VM " + cloneName);
+            }
+            return vm;
+        } catch (Throwable e) {
+            String msg = "Error cloning VM from template in primary storage: %s" + e.getMessage();
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(msg, e);
+        }
     }
 }

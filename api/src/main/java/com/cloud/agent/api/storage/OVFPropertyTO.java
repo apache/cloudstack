@@ -30,7 +30,7 @@ import com.cloud.agent.api.LogLevel;
  * Choose "Remote HTTP and SSH Client Routes" to route only traffic destined for the management client(s), when they are on remote networks.</Description>
  *       </Property>
  */
-public class OVFPropertyTO implements OVFProperty {
+public class OVFPropertyTO {
 
     private String key;
     private String type;
@@ -41,18 +41,14 @@ public class OVFPropertyTO implements OVFProperty {
     private String label;
     private String description;
     private Boolean password;
+    private int index;
+    private String category;
 
     public OVFPropertyTO() {
     }
 
-    public OVFPropertyTO(String key, String value, boolean password) {
-        this.key = key;
-        this.value = value;
-        this.password = password;
-    }
-
     public OVFPropertyTO(String key, String type, String value, String qualifiers, boolean userConfigurable,
-                       String label, String description, boolean password) {
+                       String label, String description, boolean password, int index, String category) {
         this.key = key;
         this.type = type;
         this.value = value;
@@ -61,9 +57,10 @@ public class OVFPropertyTO implements OVFProperty {
         this.label = label;
         this.description = description;
         this.password = password;
+        this.index = index;
+        this.category = category;
     }
 
-    @Override
     public Long getTemplateId() {
         return null;
     }
@@ -130,5 +127,13 @@ public class OVFPropertyTO implements OVFProperty {
 
     public void setPassword(Boolean password) {
         this.password = password;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public int getIndex() {
+        return index;
     }
 }

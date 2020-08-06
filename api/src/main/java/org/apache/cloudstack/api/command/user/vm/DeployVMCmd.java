@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
@@ -72,6 +73,8 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
+import com.google.common.base.Strings;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -221,10 +224,16 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.COPY_IMAGE_TAGS, type = CommandType.BOOLEAN, since = "4.13", description = "if true the image tags (if any) will be copied to the VM, default value is false")
     private Boolean copyImageTags;
 
-    @Parameter(name = ApiConstants.OVF_PROPERTIES, type = CommandType.MAP, since = "4.13",
-            description = "used to specify the OVF properties.")
+    @Parameter(name = ApiConstants.PROPERTIES, type = CommandType.MAP, since = "4.15",
+            description = "used to specify the vApp properties.")
     @LogLevel(LogLevel.Log4jLevel.Off)
-    private Map vmOvfProperties;
+    private Map vAppProperties;
+
+    @Parameter(name = ApiConstants.NIC_NETWORK_LIST, type = CommandType.MAP, since = "4.15",
+            description = "VMware only: used to specify network mapping of a vApp VMware template registered \"as-is\"." +
+                    " Example nicnetworklist[0].ip=Nic-101&nicnetworklist[0].network=uuid")
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private Map vAppNetworks;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -311,15 +320,40 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return null;
     }
 
-
-    public Map<String, String> getVmOVFProperties() {
+    public Map<String, String> getVmProperties() {
         Map<String, String> map = new HashMap<>();
-        if (MapUtils.isNotEmpty(vmOvfProperties)) {
-            Collection parameterCollection = vmOvfProperties.values();
+        if (MapUtils.isNotEmpty(vAppProperties)) {
+            Collection parameterCollection = vAppProperties.values();
             Iterator iterator = parameterCollection.iterator();
             while (iterator.hasNext()) {
                 HashMap<String, String> entry = (HashMap<String, String>)iterator.next();
                 map.put(entry.get("key"), entry.get("value"));
+            }
+        }
+        return map;
+    }
+
+    public Map<Integer, Long> getVmNetworkMap() {
+        Map<Integer, Long> map = new HashMap<>();
+        if (MapUtils.isNotEmpty(vAppNetworks)) {
+            Collection parameterCollection = vAppNetworks.values();
+            Iterator iterator = parameterCollection.iterator();
+            while (iterator.hasNext()) {
+                HashMap<String, String> entry = (HashMap<String, String>) iterator.next();
+                Integer nic;
+                try {
+                    nic = Integer.valueOf(entry.get(VmDetailConstants.NIC));
+                } catch (NumberFormatException nfe) {
+                    nic = null;
+                }
+                String networkUuid = entry.get(VmDetailConstants.NETWORK);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
+                }
+                if (nic == null || Strings.isNullOrEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
+                    throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
+                }
+                map.put(nic, _entityMgr.findByUuid(Network.class, networkUuid).getId());
             }
         }
         return map;
@@ -374,6 +408,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public List<Long> getNetworkIds() {
+        if (MapUtils.isNotEmpty(vAppNetworks)) {
+            if (CollectionUtils.isNotEmpty(networkIds) || ipAddress != null || getIp6Address() != null || MapUtils.isNotEmpty(ipToNetworkList)) {
+                throw new InvalidParameterValueException(String.format("%s can't be specified along with %s, %s, %s", ApiConstants.NIC_NETWORK_LIST, ApiConstants.NETWORK_IDS, ApiConstants.IP_ADDRESS, ApiConstants.IP_NETWORK_LIST));
+            } else {
+                return new ArrayList<>();
+            }
+        }
        if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
            if ((networkIds != null && !networkIds.isEmpty()) || ipAddress != null || getIp6Address() != null) {
                throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");

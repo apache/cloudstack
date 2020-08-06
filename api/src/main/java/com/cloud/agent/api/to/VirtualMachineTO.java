@@ -23,7 +23,6 @@ import java.util.HashMap;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 
@@ -82,7 +81,8 @@ public class VirtualMachineTO {
     Map<String, String> guestOsDetails = new HashMap<String, String>();
     Map<String, String> extraConfig = new HashMap<>();
     @LogLevel(LogLevel.Log4jLevel.Off)
-    Pair<String, List<OVFPropertyTO>> ovfProperties;
+    List<OVFPropertyTO> ovfProperties;
+    DeployAsIsInfoTO deployAsIsInfo;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -376,11 +376,11 @@ public class VirtualMachineTO {
         return extraConfig;
     }
 
-    public Pair<String, List<OVFPropertyTO>> getOvfProperties() {
+    public List<OVFPropertyTO> getOvfProperties() {
         return ovfProperties;
     }
 
-    public void setOvfProperties(Pair<String, List<OVFPropertyTO>> ovfProperties) {
+    public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
         this.ovfProperties = ovfProperties;
     }
     public String getBootType() {
@@ -401,5 +401,13 @@ public class VirtualMachineTO {
 
     public void setEnterHardwareSetup(boolean enterHardwareSetup) {
         this.enterHardwareSetup = enterHardwareSetup;
+    }
+
+    public DeployAsIsInfoTO getDeployAsIsInfo() {
+        return deployAsIsInfo;
+    }
+
+    public void setDeployAsIsInfo(DeployAsIsInfoTO deployAsIsInfo) {
+        this.deployAsIsInfo = deployAsIsInfo;
     }
 }

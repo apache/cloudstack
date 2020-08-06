@@ -1564,7 +1564,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);
 
         }
-        return ViewResponseHelper.createTemplateResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        return ViewResponseHelper.createTemplateResponse(EnumSet.of(DomainDetails.all), view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
     }
 
     @Override
@@ -1581,7 +1581,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     tvo.addAll(ApiDBUtils.newTemplateView(result, zoneId, readyOnly));
             }
         }
-        return ViewResponseHelper.createTemplateResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        return ViewResponseHelper.createTemplateResponse(EnumSet.of(DomainDetails.all), view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
     }
 
     @Override

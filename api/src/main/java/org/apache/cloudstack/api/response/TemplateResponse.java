@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the date this template was created")
     private Date created;
 
-    @SerializedName("removed")
+    @SerializedName(ApiConstants.REMOVED)
     @Param(description = "the date this template was removed")
     private Date removed;
 
@@ -80,7 +81,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "true if this template is a featured template, false otherwise")
     private boolean featured;
 
-    @SerializedName("crossZones")
+    @SerializedName(ApiConstants.CROSS_ZONES)
     @Param(description = "true if the template is managed across all Zones, false otherwise")
     private boolean crossZones;
 
@@ -122,7 +123,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the physical size of the template")
     private Long physicalSize;
 
-    @SerializedName("templatetype")
+    @SerializedName(ApiConstants.TEMPLATETYPE)
     @Param(description = "the type of the template")
     private String templateType;
 
@@ -146,7 +147,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "checksum of the template")
     private String checksum;
 
-    @SerializedName("sourcetemplateid")
+    @SerializedName(ApiConstants.SOURCETEMPLATEID)
     @Param(description = "the template ID of the parent template if present")
     private String sourcetemplateId;
 
@@ -154,7 +155,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the ID of the secondary storage host for the template")
     private String hostId;
 
-    @SerializedName("hostname")
+    @SerializedName(ApiConstants.HOST_NAME)
     @Param(description = "the name of the secondary storage host for the template")
     private String hostName;
 
@@ -172,7 +173,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "additional key/value details tied with template")
-    private Map details;
+    private Map<String, String> details;
 
     @SerializedName(ApiConstants.DOWNLOAD_DETAILS)
     @Param(description = "Lists the download progress of a template across all secondary storages")
@@ -194,12 +195,18 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "KVM Only: true if template is directly downloaded to Primary Storage bypassing Secondary Storage")
     private Boolean directDownload;
 
+    @SerializedName(ApiConstants.DEPLOY_AS_IS)
+    @Param(description = "VMware only: true if template is deployed without orchestrating disks and networks but \"as-is\" defined in the template.")
+    private Boolean deployAsIs;
+
     @SerializedName("parenttemplateid")
     @Param(description = "if Datadisk template, then id of the root disk template this template belongs to")
+    @Deprecated(since = "4.15")
     private String parentTemplateId;
 
     @SerializedName("childtemplates")
     @Param(description = "if root disk template, then ids of the datas disk templates this template owns")
+    @Deprecated(since = "4.15")
     private Set<ChildTemplateResponse> childTemplates;
 
     @SerializedName(ApiConstants.REQUIRES_HVM)
@@ -360,12 +367,19 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
         this.projectName = projectName;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         return this.details;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public void addDetail(String key, String value) {
+        if (this.details == null) {
+            setDetails(new HashMap<>());
+        }
+        this.details.put(key,value);
     }
 
     public void setTags(Set<ResourceTagResponse> tags) {
@@ -394,6 +408,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public Boolean getDirectDownload() {
         return directDownload;
+    }
+
+    public void setDeployAsIs(Boolean deployAsIs) {
+        this.deployAsIs = deployAsIs;
     }
 
     public void setParentTemplateId(String parentTemplateId) {

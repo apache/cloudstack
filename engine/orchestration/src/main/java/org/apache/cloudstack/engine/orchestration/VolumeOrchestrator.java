@@ -19,6 +19,7 @@
 package org.apache.cloudstack.engine.orchestration;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,10 +27,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.utils.StringUtils;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
@@ -51,6 +60,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -68,6 +78,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataTO;
@@ -141,6 +152,8 @@ import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
+import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
+
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
     public enum UserVmCloneType {
@@ -197,6 +210,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     protected UserVmCloneSettingDao _vmCloneSettingDao;
     @Inject
     StorageStrategyFactory _storageStrategyFactory;
+    @Inject
+    VMTemplateDetailsDao templateDetailsDao;
+    @Inject
+    TemplateService templateService;
+    @Inject
+    UserVmDetailsDao userVmDetailsDao;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -512,7 +531,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @DB
     public VolumeInfo copyVolumeFromSecToPrimary(VolumeInfo volume, VirtualMachine vm, VirtualMachineTemplate template, DataCenter dc, Pod pod, Long clusterId, ServiceOffering offering,
-            DiskOffering diskOffering, List<StoragePool> avoids, long size, HypervisorType hyperType) throws NoTransitionException {
+                                                 DiskOffering diskOffering, List<StoragePool> avoids, long size, HypervisorType hyperType) throws NoTransitionException {
 
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
         DiskProfile dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
@@ -545,7 +564,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @DB
     public VolumeInfo createVolume(VolumeInfo volume, VirtualMachine vm, VirtualMachineTemplate template, DataCenter dc, Pod pod, Long clusterId, ServiceOffering offering, DiskOffering diskOffering,
-            List<StoragePool> avoids, long size, HypervisorType hyperType) {
+                                   List<StoragePool> avoids, long size, HypervisorType hyperType) {
         // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
         volume = volService.updateHypervisorSnapshotReserveForVolume(diskOffering, volume.getId(), hyperType);
 
@@ -591,7 +610,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             try {
                 VolumeApiResult result = future.get();
                 if (result.isFailed()) {
-                    if (result.getResult().contains("request template reload") && (i == 0)) {
+                    if (result.getResult().contains(REQUEST_TEMPLATE_RELOAD) && (i == 0)) {
                         s_logger.debug("Retry template re-deploy for vmware");
                         continue;
                     } else {
@@ -687,7 +706,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner,
-            Long deviceId) {
+                                         Long deviceId) {
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -734,19 +753,23 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return toDiskProfile(vol, offering);
     }
 
-    @Override
-    public DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-            Account owner) {
+    private DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
+                                                Account owner, long deviceId, String configurationId) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
 
         Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
         if (rootDisksize != null) {
-            rootDisksize = rootDisksize * 1024 * 1024 * 1024;
-            if (rootDisksize > size) {
-                s_logger.debug("Using root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes for volume " + name);
+            if (template.isDeployAsIs()) {
+                // Volume size specified from template deploy-as-is
                 size = rootDisksize;
             } else {
-                s_logger.debug("Using root disk size of " + toHumanReadableSize(size) + " Bytes for volume " + name + "since specified root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes is smaller than template");
+                rootDisksize = rootDisksize * 1024 * 1024 * 1024;
+                if (rootDisksize > size) {
+                    s_logger.debug("Using root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes for volume " + name);
+                    size = rootDisksize;
+                } else {
+                    s_logger.debug("Using root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes for volume " + name + "since specified root disk size of " + rootDisksize + " Bytes is smaller than template");
+                }
             }
         }
 
@@ -760,13 +783,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
         vol.setTemplateId(template.getId());
 
-        if (type.equals(Type.ROOT)) {
-            vol.setDeviceId(0l);
-            if (!vm.getType().equals(VirtualMachine.Type.User)) {
-                vol.setRecreatable(true);
-            }
-        } else {
-            vol.setDeviceId(1l);
+        vol.setDeviceId(deviceId);
+        if (type.equals(Type.ROOT) && !vm.getType().equals(VirtualMachine.Type.User)) {
+            vol.setRecreatable(true);
         }
 
         if (vm.getType() == VirtualMachine.Type.User) {
@@ -775,6 +794,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         vol = _volsDao.persist(vol);
+
+        if (StringUtils.isNotBlank(configurationId)) {
+            VolumeDetailVO deployConfigurationDetail = new VolumeDetailVO(vol.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION, configurationId, false);
+            _volDetailDao.persist(deployConfigurationDetail);
+        }
 
         // Create event and update resource count for volumes if vm is a user vm
         if (vm.getType() == VirtualMachine.Type.User) {
@@ -792,6 +816,51 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, vol.isDisplayVolume(), new Long(vol.getSize()));
         }
         return toDiskProfile(vol, offering);
+    }
+
+    @Override
+    public List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
+                                                      Account owner) {
+        int volumesNumber = 1;
+        List<DatadiskTO> templateAsIsDisks = null;
+        String configurationId = null;
+        if (template.isDeployAsIs()) {
+            UserVmDetailVO configurationDetail = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
+            if (configurationDetail != null) {
+                configurationId = configurationDetail.getValue();
+            }
+            templateAsIsDisks = _tmpltMgr.getTemplateDisksOnImageStore(template.getId(), DataStoreRole.Image, configurationId);
+            if (CollectionUtils.isNotEmpty(templateAsIsDisks)) {
+                templateAsIsDisks = templateAsIsDisks.stream()
+                        .filter(x -> !x.isIso())
+                        .sorted(Comparator.comparing(DatadiskTO::getDiskNumber))
+                        .collect(Collectors.toList());
+            }
+            volumesNumber = templateAsIsDisks.size();
+        }
+
+        if (volumesNumber < 1) {
+            throw new CloudRuntimeException("Unable to create any volume from template " + template.getName());
+        }
+
+        List<DiskProfile> profiles = new ArrayList<>();
+
+        for (int number = 0; number < volumesNumber; number++) {
+            String volumeName = name;
+            Long volumeSize = rootDisksize;
+            long deviceId = type.equals(Type.ROOT) ? 0L : 1L;
+            if (template.isDeployAsIs()) {
+                int volumeNameSuffix = templateAsIsDisks.get(number).getDiskNumber();
+                volumeName = String.format("%s-%d", volumeName, volumeNameSuffix);
+                volumeSize = templateAsIsDisks.get(number).getVirtualSize();
+                deviceId = templateAsIsDisks.get(number).getDiskNumber();
+            }
+            s_logger.info(String.format("adding disk object %s to %s", volumeName, vm.getInstanceName()));
+            DiskProfile diskProfile = allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops,
+                    template, vm, owner, deviceId, configurationId);
+            profiles.add(diskProfile);
+        }
+        return profiles;
     }
 
     private ImageFormat getSupportedImageFormatForCluster(HypervisorType hyperType) {
@@ -824,7 +893,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private VolumeInfo copyVolume(StoragePool rootDiskPool, VolumeInfo volume, VirtualMachine vm, VirtualMachineTemplate rootDiskTmplt, DataCenter dcVO, Pod pod, DiskOffering diskVO,
-            ServiceOffering svo, HypervisorType rootDiskHyperType) throws NoTransitionException {
+                                  ServiceOffering svo, HypervisorType rootDiskHyperType) throws NoTransitionException {
 
         if (!isSupportedImageFormatForCluster(volume, rootDiskHyperType)) {
             throw new InvalidParameterValueException("Failed to attach volume to VM since volumes format " + volume.getFormat().getFileExtension() + " is not compatible with the vm hypervisor type");
@@ -1356,7 +1425,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             try {
                 result = future.get();
                 if (result.isFailed()) {
-                    if (result.getResult().contains("request template reload") && (i == 0)) {
+                    if (result.getResult().contains(REQUEST_TEMPLATE_RELOAD) && (i == 0)) {
                         s_logger.debug("Retry template re-deploy for vmware");
                         continue;
                     } else {

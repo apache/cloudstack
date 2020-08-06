@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
 
@@ -3473,5 +3474,30 @@ public class VirtualMachineMO extends BaseMO {
             s_logger.error("VMware ConsolidateVMDisks_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
+    }
+
+    /**
+     * Upgrades this virtual machine's virtual hardware to the latest revision that is supported by the virtual machine's current host.
+     * @param version If specified, upgrade to that specified version. If not specified, upgrade to the most current virtual hardware supported on the host.
+     * @return true if success, false if not
+     */
+    public boolean upgradeVirtualHardwareVersion(String version) {
+        try {
+            String targetHwVersion = StringUtils.isNotBlank(version) ? version : "the highest available";
+            s_logger.info("Upgrading the VM hardware version to " + targetHwVersion);
+            ManagedObjectReference morTask = _context.getService().upgradeVMTask(_mor, version);
+            boolean result = _context.getVimClient().waitForTask(morTask);
+            if (result) {
+                _context.waitForTaskProgressDone(morTask);
+            } else {
+                s_logger.error("VMware upgradeVMTask failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            String msg = "Attempted to upgrade VM hardware version failed: " + e.getMessage();
+            s_logger.error(msg, e);
+            return false;
+        }
     }
 }

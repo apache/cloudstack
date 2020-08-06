@@ -248,6 +248,7 @@
                                                     $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=deployAsIs]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
                                                     $form.find('.form-item[rel=directdownload]').hide();
@@ -258,6 +259,7 @@
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
                                                     $form.find('.form-item[rel=directdownload]').hide();
+                                                    $form.find('.form-item[rel=deployAsIs]').hide();
                                                     $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
 
                                                     if (isAdmin()) {
@@ -268,6 +270,7 @@
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                    $form.find('.form-item[rel=deployAsIs]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').css('display', 'inline-block');
                                                     $('#label_root_disk_controller').prop('selectedIndex', 2);
                                                     $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
@@ -281,6 +284,7 @@
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
                                                     $form.find('.form-item[rel=directdownload]').hide();
+                                                    $form.find('.form-item[rel=deployAsIs]').hide();
                                                     $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
                                                 }
                                             });
@@ -462,6 +466,13 @@
                                                 data: items
                                             });
                                         }
+                                    },
+                                    deployAsIs : {
+                                        label: 'label.deploy.as.is',
+                                        docID: 'helpRegisterTemplateDeployAsIs',
+                                        isBoolean: true,
+                                        dependsOn: 'hypervisor',
+                                        isHidden: true
                                     },
                                     // fields for hypervisor == "VMware" (ends here)
 
@@ -681,6 +692,11 @@
                                 if (args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "") {
                                     $.extend(data, {
                                         'details[0].keyboard': args.data.keyboardType
+                                    });
+                                }
+                                if (args.$form.find('.form-item[rel=deployAsIs]').css("display") != "none" && args.data.deployAsIs != "") {
+                                    $.extend(data, {
+                                        deployAsIs: (args.data.deployAsIs == "on") ? "true" : "false"
                                     });
                                 }
                                 // for hypervisor == VMware (ends here)
@@ -1823,18 +1839,7 @@
                             }
                         },
                         tabFilter: function (args) {
-                            $.ajax({
-                                url: createURL("listTemplateOvfProperties&id=" + args.context.templates[0].id),
-                                dataType: "json",
-                                async: false,
-                                success: function(json) {
-                                    ovfprops = json.listtemplateovfpropertiesresponse.ovfproperty;
-                                }
-                            });
                             var hiddenTabs = [];
-                            if (ovfprops == null || ovfprops.length === 0) {
-                                hiddenTabs.push("ovfpropertiestab");
-                            }
                             return hiddenTabs;
                         },
                         tabs: {
@@ -1916,6 +1921,11 @@
                                     },
                                     directdownload: {
                                         label: 'label.direct.download',
+                                        isBoolean: true,
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    deployAsIs: {
+                                        label: 'label.deploy.as.is',
                                         isBoolean: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
@@ -2605,57 +2615,7 @@
 										}
 									}
 								})
-							},
-
-                            /**
-                             * OVF properties tab (only displayed when OVF properties are available)
-                             */
-                            ovfpropertiestab: {
-                                title: 'label.ovf.properties',
-                                listView: {
-                                    id: 'ovfproperties',
-                                    fields: {
-                                        label: {
-                                            label: 'label.label'
-                                        },
-                                        description: {
-                                            label: 'label.description'
-                                        },
-                                        value: {
-                                            label: 'label.value'
-                                        }
-                                    },
-                                    hideSearchBar: true,
-                                    dataProvider: function(args) {
-                                        $.ajax({
-                                            url: createURL("listTemplateOvfProperties"),
-                                            data: {
-                                                id: args.context.templates[0].id
-                                            },
-                                            success: function(json) {
-                                                var ovfprops = json.listtemplateovfpropertiesresponse.ovfproperty;
-                                                var listDetails = [];
-                                                for (index in ovfprops){
-                                                    var prop = ovfprops[index];
-                                                    var det = {};
-                                                    det['label'] = prop['label'];
-                                                    det['description'] = prop['description'];
-                                                    det['value'] = prop['value'];
-                                                    listDetails.push(det);
-                                                }
-                                                args.response.success({
-                                                    data: listDetails
-                                                });
-                                            },
-
-                                            error: function(json) {
-                                                args.response.error(parseXMLHttpResponse(json));
-                                            }
-                                        });
-
-                                    }
-                                }
-                            }
+							}
 						}
                     }
                 }
@@ -2851,6 +2811,11 @@
                                         docID: 'helpRegisterISOFeatured',
                                         isBoolean: true,
                                         isHidden: true
+                                    },
+                                    deployAsIs : {
+                                        label: 'label.deploy.as.is',
+                                        docID: 'helpRegisterTemplateDeployAsIs',
+                                        isBoolean: true
                                     }
                                 }
                             },
@@ -2864,7 +2829,8 @@
                                     zoneid: args.data.zone,
                                     isextractable: (args.data.isExtractable == "on"),
                                     bootable: (args.data.isBootable == "on"),
-                                    directdownload: (args.data.directdownload == "on")
+                                    directdownload: (args.data.directdownload == "on"),
+                                    deployAsIs: (args.data.deployAsIs == "on")
                                 };
 
                                 if (args.$form.find('.form-item[rel=osTypeId]').css("display") != "none") {
@@ -3698,6 +3664,11 @@
                                     },
                                     directdownload: {
                                         label: 'label.direct.download',
+                                        isBoolean: true,
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    deployAsIs: {
+                                        label: 'label.deploy.as.is',
                                         isBoolean: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
