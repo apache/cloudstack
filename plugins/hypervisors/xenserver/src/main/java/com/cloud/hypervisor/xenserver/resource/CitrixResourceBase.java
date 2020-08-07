@@ -3090,7 +3090,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // stability
         if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <=
             // static max
-            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax + ", can lead to stability issues. Setting static max as much as dynamic max ");
+            s_logger.warn("dynamic max " + toHumanReadableSize(dynamicMaxRam) + " cant be greater than static max " + toHumanReadableSize(staticMax) + ", this can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;
@@ -3104,7 +3104,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (dynamicMinRam < recommendedValue) { // XS contraint that dynamic min
             // > static min
-            s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues");
+            s_logger.warn("Vm ram is set to dynamic min " + toHumanReadableSize(dynamicMinRam) + " and is less than the recommended static min " + toHumanReadableSize(recommendedValue) + ", this could lead to stability issues");
         }
         return dynamicMinRam;
     }
