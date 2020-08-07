@@ -1332,6 +1332,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void logBootModeParameters(Map<VirtualMachineProfile.Param, Object> params) {
+        if (params == null) {
+          return;
+        }
         StringBuffer msgBuf = new StringBuffer("Uefi params ");
         boolean log = false;
         if (params.get(VirtualMachineProfile.Param.UefiFlag) != null) {
@@ -3323,7 +3326,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void checkAndSetEnterSetupMode(VirtualMachineTO vmTo, Map<VirtualMachineProfile.Param, Object> params) {
-        Boolean enterSetup = (Boolean)params.get(VirtualMachineProfile.Param.BootIntoSetup);
+        Boolean enterSetup = null;
+        if (params != null) {
+            enterSetup = (Boolean) params.get(VirtualMachineProfile.Param.BootIntoSetup);
+        }
         if (s_logger.isTraceEnabled()) {
             s_logger.trace(String.format("orchestrating VM reboot for '%s' %s set to %s", vmTo.getName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup));
         }
