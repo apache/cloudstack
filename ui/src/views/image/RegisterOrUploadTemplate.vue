@@ -113,9 +113,16 @@
                 :help="zoneErrorMessage">
                 <a-select
                   v-decorator="['zoneid', {
-                    initialValue: this.zoneSelected
+                    initialValue: this.zoneSelected,
+                    rules: [
+                      {
+                        required: true,
+                        message: `${this.$t('message.error.select')}`
+                      }
+                    ]
                   }]"
                   @change="handlerSelectZone"
+                  :placeholder="apiParams.zoneid.description"
                   :loading="zones.loading">
                   <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
                     <div v-if="zone.name !== $t('label.all.zone')">

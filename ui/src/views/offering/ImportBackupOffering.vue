@@ -177,7 +177,7 @@ export default {
             params[key] = input
           }
         }
-        params.allowuserdrivenbackups = values.allowuserdrivenbackups ? values.allowuserdrivenbackups : false
+        params.allowuserdrivenbackups = values.allowuserdrivenbackups ? values.allowuserdrivenbackups : true
         this.loading = true
         const title = this.$t('label.import.offering')
         api('importBackupOffering', params).then(json => {

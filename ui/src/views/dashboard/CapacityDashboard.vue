@@ -35,7 +35,7 @@
         <div class="capacity-dashboard-button">
           <a-button
             shape="round"
-            @click="listCapacity(zoneSelected, true)">
+            @click="() => { listCapacity(zoneSelected, true); listEvents() }">
             {{ $t('label.fetch.latest') }}
           </a-button>
         </div>

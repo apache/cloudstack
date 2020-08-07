@@ -68,14 +68,20 @@ export default {
           icon: 'edit',
           label: 'label.edit',
           dataView: true,
-          args: ['name', 'displaytext', 'guestvmcidr']
+          args: (record) => {
+            var fields = ['name', 'displaytext', 'guestvmcidr']
+            if (record.type === 'Isolated') {
+              fields.push(...['networkofferingid', 'networkdomain'])
+            }
+            return fields
+          }
         },
         {
           api: 'restartNetwork',
           icon: 'sync',
           label: 'label.restart.network',
           dataView: true,
-          args: ['cleanup']
+          args: ['cleanup', 'makeredundant']
         },
         {
           api: 'replaceNetworkACLList',
@@ -139,7 +145,8 @@ export default {
           label: 'label.add.vpc',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-virtual-private-cloud',
           listView: true,
-          args: ['name', 'displaytext', 'zoneid', 'cidr', 'networkdomain', 'vpcofferingid', 'start']
+          popup: true,
+          component: () => import('@/views/network/CreateVpc.vue')
         },
         {
           api: 'updateVPC',
@@ -154,7 +161,13 @@ export default {
           label: 'label.restart.vpc',
           message: 'message.restart.vpc',
           dataView: true,
-          args: ['makeredundant', 'cleanup']
+          args: (record) => {
+            var fields = ['cleanup']
+            if (!record.redundantvpcrouter) {
+              fields.push('makeredundant')
+            }
+            return fields
+          }
         },
         {
           api: 'deleteVPC',

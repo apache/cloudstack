@@ -111,7 +111,7 @@ export default {
           message: 'message.detach.disk',
           dataView: true,
           show: (record) => {
-            return record.type !== 'ROOT' && 'virtualmachineid' in record && record.virtualmachineid &&
+            return record.type !== 'ROOT' && record.virtualmachineid &&
               ['Running', 'Stopped', 'Destroyed'].includes(record.vmstate)
           }
         },
@@ -121,7 +121,11 @@ export default {
           docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
           label: 'label.action.take.snapshot',
           dataView: true,
-          show: (record) => { return record.state === 'Ready' },
+          show: (record, store) => {
+            return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
+              record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
+              record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+          },
           popup: true,
           component: () => import('@/views/storage/TakeSnapshot.vue')
         },
@@ -131,7 +135,11 @@ export default {
           docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
           label: 'label.action.recurring.snapshot',
           dataView: true,
-          show: (record) => { return record.state === 'Ready' },
+          show: (record, store) => {
+            return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
+              record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
+              record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+          },
           popup: true,
           component: () => import('@/views/storage/RecurringSnapshotVolume.vue'),
           mapping: {
@@ -160,7 +168,7 @@ export default {
           label: 'label.migrate.volume',
           args: ['volumeid', 'storageid', 'livemigrate'],
           dataView: true,
-          show: (record, store) => { return record && record.state === 'Ready' && ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return record.state === 'Ready' && ['Admin'].includes(store.userInfo.roletype) && record.virtualmachineid },
           popup: true,
           component: () => import('@/views/storage/MigrateVolume.vue')
         },
@@ -170,7 +178,7 @@ export default {
           label: 'label.action.download.volume',
           message: 'message.download.volume.confirm',
           dataView: true,
-          show: (record) => { return record && record.state === 'Ready' && (record.vmstate === 'Stopped' || record.virtualmachineid == null) },
+          show: (record) => { return record.state === 'Ready' && (record.vmstate === 'Stopped' || !record.virtualmachineid) },
           args: ['zoneid', 'mode'],
           mapping: {
             zoneid: {
@@ -187,7 +195,11 @@ export default {
           icon: 'picture',
           label: 'label.action.create.template.from.volume',
           dataView: true,
-          show: (record) => { return (record.type === 'ROOT' && record.vmstate === 'Stopped') || (record.type !== 'ROOT' && !('virtualmachineid' in record) && !['Allocated', 'Uploaded', 'Destroy'].includes(record.state)) },
+          show: (record) => {
+            return !['Destroy', 'Destroyed', 'Expunging', 'Expunged', 'Migrating', 'Uploading', 'UploadError', 'Creating'].includes(record.state) &&
+            ((record.type === 'ROOT' && record.vmstate === 'Stopped') ||
+            (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
+          },
           args: ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
           mapping: {
             volumeid: {
@@ -214,6 +226,7 @@ export default {
           groupAction: true,
           show: (record, store) => {
             return ['Expunging', 'Expunged', 'UploadError'].includes(record.state) ||
+              ['Allocated', 'Uploaded'].includes(record.state) && record.type !== 'ROOT' && !record.virtualmachineid ||
               ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume) && record.state === 'Destroy')
           }
         },
@@ -227,7 +240,8 @@ export default {
             return (!['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !store.features.allowuserexpungerecovervolumestore) ? [] : ['expunge']
           },
           show: (record, store) => {
-            return (!['Creating'].includes(record.state) && record.type !== 'ROOT' && !('virtualmachineid' in record) && record.state !== 'Destroy')
+            return !['Destroy', 'Destroyed', 'Expunging', 'Expunged', 'Migrating', 'Uploading', 'UploadError', 'Creating', 'Allocated', 'Uploaded'].includes(record.state) &&
+              record.type !== 'ROOT' && !record.virtualmachineid
           }
         }
       ]

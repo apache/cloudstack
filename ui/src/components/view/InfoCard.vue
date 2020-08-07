@@ -519,7 +519,7 @@
         <div v-for="item in $route.meta.related" :key="item.path">
           <router-link
             v-if="$router.resolve('/' + item.name).route.name !== '404'"
-            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
+            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
             <a-button style="margin-right: 10px" :icon="$router.resolve('/' + item.name).route.meta.icon" >
               {{ $t('label.view') + ' ' + $t(item.title) }}
             </a-button>

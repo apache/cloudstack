@@ -21,7 +21,7 @@
     :loading="loading"
     :columns="isOrderUpdatable() ? columns : columns.filter(x => x.dataIndex !== 'order')"
     :dataSource="items"
-    :rowKey="record => record.id || record.name || record.usageType"
+    :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
     :rowSelection="['vm', 'event', 'alert'].includes($route.name) ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
@@ -99,13 +99,14 @@
       <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
-    <a slot="ipaddress" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+    <span slot="ipaddress" slot-scope="text, record" href="javascript:;">
+      <router-link v-if="$route.path === '/publicip'" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
       <span v-if="record.issourcenat">
         &nbsp;
         <a-tag>source-nat</a-tag>
       </span>
-    </a>
+    </span>
     <a slot="publicip" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
@@ -438,59 +439,56 @@ export default {
       this.parentToggleLoading()
       const apiString = this.getUpdateApi()
 
-      api(apiString, {
-        id,
-        sortKey: index
-      }).catch(error => {
-        console.error(error)
+      return new Promise((resolve, reject) => {
+        api(apiString, {
+          id,
+          sortKey: index
+        }).then((response) => {
+          resolve(response)
+        }).catch((reason) => {
+          reject(reason)
+        })
+      })
+    },
+    updateOrder (data) {
+      const promises = []
+      data.forEach((item, index) => {
+        promises.push(this.handleUpdateOrder(item.id, index + 1))
+      })
+      Promise.all(promises).catch((reason) => {
+        console.log(reason)
       }).finally(() => {
-        this.parentFetchData()
         this.parentToggleLoading()
+        this.parentFetchData()
       })
     },
     moveItemUp (record) {
       const data = this.items
       const index = data.findIndex(item => item.id === record.id)
       if (index === 0) return
-
       data.splice(index - 1, 0, data.splice(index, 1)[0])
-
-      data.forEach((item, index) => {
-        this.handleUpdateOrder(item.id, index + 1)
-      })
+      this.updateOrder(data)
     },
     moveItemDown (record) {
       const data = this.items
       const index = data.findIndex(item => item.id === record.id)
       if (index === data.length - 1) return
-
       data.splice(index + 1, 0, data.splice(index, 1)[0])
-
-      data.forEach((item, index) => {
-        this.handleUpdateOrder(item.id, index + 1)
-      })
+      this.updateOrder(data)
     },
     moveItemTop (record) {
       const data = this.items
       const index = data.findIndex(item => item.id === record.id)
       if (index === 0) return
-
       data.unshift(data.splice(index, 1)[0])
-
-      data.forEach((item, index) => {
-        this.handleUpdateOrder(item.id, index + 1)
-      })
+      this.updateOrder(data)
     },
     moveItemBottom (record) {
       const data = this.items
       const index = data.findIndex(item => item.id === record.id)
       if (index === data.length - 1) return
-
       data.push(data.splice(index, 1)[0])
-
-      data.forEach((item, index) => {
-        this.handleUpdateOrder(item.id, index + 1)
-      })
+      this.updateOrder(data)
     },
     editTariffValue (record) {
       this.parentEditTariffAction(true, record)

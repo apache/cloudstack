@@ -259,7 +259,7 @@
           </a-spin>
         </a-modal>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="'listRouters' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
     </a-tabs>

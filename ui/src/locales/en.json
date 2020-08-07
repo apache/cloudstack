@@ -2490,6 +2490,7 @@
 "message.attach.volume": "Please fill in the following data to attach a new volume. If you are attaching a disk volume to a Windows based virtual machine, you will need to reboot the instance to see the attached disk.",
 "message.authorization.failed": "Session expired, authorization verification failed",
 "message.backup.attach.restore": "Please confirm that you want to restore and attach the volume from the backup?",
+"message.backup.create": "Are you sure you want create a VM backup?",
 "message.backup.offering.remove": "Are you sure you want to remove VM from backup offering and delete the backup chain?",
 "message.backup.restore": "Please confirm that you want to restore the vm backup?",
 "message.basic.mode.desc": "Choose this network model if you do <b>*<u>not</u>*</b> want to enable any VLAN support.  All virtual instances created under this network model will be assigned an IP directly from the network and security groups are used to provide security and segregation.",

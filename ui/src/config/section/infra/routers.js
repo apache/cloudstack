@@ -36,6 +36,12 @@ export default {
     show: (record, route, user) => { return ['Running'].includes(record.state) && ['Admin'].includes(user.roletype) },
     component: () => import('@views/infra/routers/RouterHealthCheck.vue')
   }],
+  related: [{
+    name: 'vm',
+    title: 'label.instances',
+    param: 'networkid',
+    value: 'guestnetworkid'
+  }],
   actions: [
     {
       api: 'startRouter',
@@ -75,7 +81,7 @@ export default {
           api: 'listServiceOfferings',
           params: (record) => {
             return {
-              virtualmachineid: record.virtualmachineid,
+              virtualmachineid: record.id,
               issystem: true,
               systemvmtype: 'domainrouter'
             }

@@ -42,11 +42,11 @@ export default {
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
-    name: 'settings',
-    component: () => import('@/components/view/SettingsTab.vue')
-  }, {
     name: 'resources',
     component: () => import('@/views/infra/Resources.vue')
+  }, {
+    name: 'settings',
+    component: () => import('@/components/view/SettingsTab.vue')
   }],
   actions: [
     {

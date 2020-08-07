@@ -62,7 +62,11 @@ export default {
       label: 'label.action.enable.user',
       message: 'message.enable.user',
       dataView: true,
-      show: (record) => { return record.state === 'disabled' }
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
+          record.state === 'disabled'
+      }
     },
     {
       api: 'disableUser',
@@ -70,7 +74,11 @@ export default {
       label: 'label.action.disable.user',
       message: 'message.disable.user',
       dataView: true,
-      show: (record) => { return record.state === 'enabled' }
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
+          record.state === 'enabled'
+      }
     },
     {
       api: 'authorizeSamlSso',
@@ -78,6 +86,9 @@ export default {
       label: 'Configure SAML SSO Authorization',
       dataView: true,
       popup: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)
+      },
       component: () => import('@/views/iam/ConfigureSamlSsoAuth.vue')
     },
     {
@@ -85,7 +96,11 @@ export default {
       icon: 'delete',
       label: 'label.action.delete.user',
       message: 'message.delete.user',
-      dataView: true
+      dataView: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1)
+      }
     }
   ]
 }

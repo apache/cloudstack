@@ -36,21 +36,22 @@ export default {
         return
       }
       this.resource = newItem
-      this.fetchProjectAccounts()
+      this.determineOwner()
     }
   },
   methods: {
-    fetchProjectAccounts () {
-      var owner = this.resource.owner
+    determineOwner () {
+      var owner = this.resource.owner || []
+      // If current backend does not support multiple project admins
+      if (owner.length === 0) {
+        this.$set(this.resource, 'isCurrentUserProjectAdmin', this.resource.account === this.$store.getters.userInfo.account)
+        return
+      }
       owner = owner.filter(projectaccount => {
         return (projectaccount.userid && projectaccount.userid === this.$store.getters.userInfo.id) ||
           projectaccount.account === this.$store.getters.userInfo.account
       })
-      var isCurrentUserProjectAdmin = false
-      if (owner.length > 0) {
-        isCurrentUserProjectAdmin = true
-      }
-      this.$set(this.resource, 'isCurrentUserProjectAdmin', isCurrentUserProjectAdmin)
+      this.$set(this.resource, 'isCurrentUserProjectAdmin', owner.length > 0)
     }
   }
 }

@@ -77,7 +77,17 @@ export default {
       label: 'label.action.edit.domain',
       listView: true,
       dataView: true,
-      args: ['name', 'networkdomain']
+      args: (record) => {
+        var fields = ['networkdomain']
+        if (record.name !== 'ROOT') {
+          fields.unshift('name')
+        }
+        return fields
+      },
+      show: (record, store) => {
+        return ['Admin'].includes(store.userInfo.roletype) ||
+          ['DomainAdmin'].includes(store.userInfo.roletype) && record.domainid !== store.userInfo.domainid
+      }
     },
     {
       api: 'updateResourceCount',
@@ -119,7 +129,11 @@ export default {
       label: 'label.action.delete.domain',
       listView: true,
       dataView: true,
-      show: (record) => { return record.level !== 0 },
+      show: (record, store) => {
+        console.log(record)
+        return ['Admin'].includes(store.userInfo.roletype) && record.level !== 0 ||
+          ['DomainAdmin'].includes(store.userInfo.roletype) && record.domainid !== store.userInfo.domainid
+      },
       args: ['cleanup']
     }
   ]

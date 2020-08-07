@@ -94,6 +94,7 @@ export default {
       label: 'label.action.update.resource.count',
       message: 'message.update.resource.count',
       dataView: true,
+      show: (record, store) => { return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) },
       args: ['account', 'domainid'],
       mapping: {
         account: {
@@ -110,7 +111,11 @@ export default {
       label: 'label.action.enable.account',
       message: 'message.enable.account',
       dataView: true,
-      show: (record) => { return record.state === 'disabled' || record.state === 'locked' },
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1) &&
+          (record.state === 'disabled' || record.state === 'locked')
+      },
       params: { lock: 'false' }
     },
     {
@@ -119,7 +124,11 @@ export default {
       label: 'label.action.disable.account',
       message: 'message.disable.account',
       dataView: true,
-      show: (record) => { return record.state === 'enabled' },
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1) &&
+          record.state === 'enabled'
+      },
       args: ['lock'],
       mapping: {
         lock: {
@@ -133,7 +142,11 @@ export default {
       label: 'label.action.lock.account',
       message: 'message.lock.account',
       dataView: true,
-      show: (record) => { return record.state === 'enabled' },
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1) &&
+          record.state === 'enabled'
+      },
       args: ['lock'],
       mapping: {
         lock: {
@@ -163,7 +176,10 @@ export default {
       label: 'label.action.delete.account',
       message: 'message.delete.account',
       dataView: true,
-      hidden: (record) => { return record.name === 'admin' }
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1)
+      }
     }
   ]
 }
