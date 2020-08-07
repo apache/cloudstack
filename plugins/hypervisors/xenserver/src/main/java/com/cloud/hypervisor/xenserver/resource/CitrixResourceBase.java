@@ -1801,7 +1801,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             cmd.setDom0MinMemory(dom0Ram);
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Total Ram: " + ram + " dom0 Ram: " + dom0Ram);
+                s_logger.debug("Total Ram: " + toHumanReadableSize(ram) + " dom0 Ram: " + toHumanReadableSize(dom0Ram));
             }
 
             PIF pif = PIF.getByUuid(conn, _host.getPrivatePif());
