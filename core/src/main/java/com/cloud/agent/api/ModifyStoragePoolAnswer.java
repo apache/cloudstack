@@ -19,6 +19,7 @@
 
 package com.cloud.agent.api;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ public class ModifyStoragePoolAnswer extends Answer {
     private Map<String, TemplateProp> templateInfo;
     private String localDatastoreName;
     private String poolType;
-    private List<ModifyStoragePoolAnswer> datastoreClusterChildren;
+    private List<ModifyStoragePoolAnswer> datastoreClusterChildren = new ArrayList<>();;
 
     public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateProp> tInfo) {
         super(cmd);
