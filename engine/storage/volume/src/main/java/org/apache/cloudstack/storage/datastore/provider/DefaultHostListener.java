@@ -103,42 +103,44 @@ public class DefaultHostListener implements HypervisorHostListener {
         StoragePoolVO poolVO = this.primaryStoreDao.findById(poolId);
         updateStoragePoolHostVOAndDetails(poolVO, hostId, mspAnswer);
 
-        for (ModifyStoragePoolAnswer childDataStoreAnswer : ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren()) {
-            StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
-            StoragePoolVO dataStoreVO = primaryStoreDao.findPoolByUUID(childStoragePoolInfo.getUuid());
-            if (dataStoreVO != null) {
-                continue;
+        if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+            for (ModifyStoragePoolAnswer childDataStoreAnswer : ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren()) {
+                StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
+                StoragePoolVO dataStoreVO = primaryStoreDao.findPoolByUUID(childStoragePoolInfo.getUuid());
+                if (dataStoreVO != null) {
+                    continue;
+                }
+                dataStoreVO = new StoragePoolVO();
+                dataStoreVO.setStorageProviderName(poolVO.getStorageProviderName());
+                dataStoreVO.setHostAddress(childStoragePoolInfo.getHost());
+                dataStoreVO.setPoolType(Storage.StoragePoolType.PreSetup);
+                dataStoreVO.setPath(childStoragePoolInfo.getHostPath());
+                dataStoreVO.setPort(poolVO.getPort());
+                dataStoreVO.setName(childStoragePoolInfo.getName());
+                dataStoreVO.setUuid(childStoragePoolInfo.getUuid());
+                dataStoreVO.setDataCenterId(poolVO.getDataCenterId());
+                dataStoreVO.setPodId(poolVO.getPodId());
+                dataStoreVO.setClusterId(poolVO.getClusterId());
+                dataStoreVO.setStatus(StoragePoolStatus.Up);
+                dataStoreVO.setUserInfo(poolVO.getUserInfo());
+                dataStoreVO.setManaged(poolVO.isManaged());
+                dataStoreVO.setCapacityIops(poolVO.getCapacityIops());
+                dataStoreVO.setCapacityBytes(childDataStoreAnswer.getPoolInfo().getCapacityBytes());
+                dataStoreVO.setUsedBytes(childDataStoreAnswer.getPoolInfo().getCapacityBytes() - childDataStoreAnswer.getPoolInfo().getAvailableBytes());
+                dataStoreVO.setHypervisor(poolVO.getHypervisor());
+                dataStoreVO.setScope(poolVO.getScope());
+                dataStoreVO.setParent(poolVO.getId());
+
+                Map<String, String> details = new HashMap<>();
+                if(StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
+                    details.put("pool_type", childDataStoreAnswer.getPoolType());
+                }
+
+                List<String> storageTags = storagePoolTagsDao.getStoragePoolTags(poolId);
+                primaryStoreDao.persist(dataStoreVO, details, storageTags);
+
+                updateStoragePoolHostVOAndDetails(dataStoreVO, hostId, childDataStoreAnswer);
             }
-            dataStoreVO = new StoragePoolVO();
-            dataStoreVO.setStorageProviderName(poolVO.getStorageProviderName());
-            dataStoreVO.setHostAddress(childStoragePoolInfo.getHost());
-            dataStoreVO.setPoolType(Storage.StoragePoolType.PreSetup);
-            dataStoreVO.setPath(childStoragePoolInfo.getHostPath());
-            dataStoreVO.setPort(poolVO.getPort());
-            dataStoreVO.setName(childStoragePoolInfo.getName());
-            dataStoreVO.setUuid(childStoragePoolInfo.getUuid());
-            dataStoreVO.setDataCenterId(poolVO.getDataCenterId());
-            dataStoreVO.setPodId(poolVO.getPodId());
-            dataStoreVO.setClusterId(poolVO.getClusterId());
-            dataStoreVO.setStatus(StoragePoolStatus.Up);
-            dataStoreVO.setUserInfo(poolVO.getUserInfo());
-            dataStoreVO.setManaged(poolVO.isManaged());
-            dataStoreVO.setCapacityIops(poolVO.getCapacityIops());
-            dataStoreVO.setCapacityBytes(childDataStoreAnswer.getPoolInfo().getCapacityBytes());
-            dataStoreVO.setUsedBytes(childDataStoreAnswer.getPoolInfo().getCapacityBytes() - childDataStoreAnswer.getPoolInfo().getAvailableBytes());
-            dataStoreVO.setHypervisor(poolVO.getHypervisor());
-            dataStoreVO.setScope(poolVO.getScope());
-            dataStoreVO.setParent(poolVO.getId());
-
-            Map<String, String> details = new HashMap<>();
-            if(StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
-                details.put("pool_type", childDataStoreAnswer.getPoolType());
-            }
-
-            List<String> storageTags = storagePoolTagsDao.getStoragePoolTags(poolId);
-            primaryStoreDao.persist(dataStoreVO, details, storageTags);
-
-            updateStoragePoolHostVOAndDetails(dataStoreVO, hostId, childDataStoreAnswer);
         }
 
         s_logger.info("Connection established between storage pool " + pool + " and host " + hostId);
