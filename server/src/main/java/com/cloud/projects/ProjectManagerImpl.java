@@ -528,7 +528,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
 
         if (_invitationRequired) {
-            return inviteUserToProject(project, user, email, projectRole);
+            return inviteUserToProject(project, user, email, projectRole, role);
         } else {
             if (username == null) {
                 throw new InvalidParameterValueException("User information (ID) is required to add user to the project");
@@ -795,7 +795,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
 
         if (_invitationRequired) {
-            return inviteAccountToProject(project, account, email, projectRoleType);
+            return inviteAccountToProject(project, account, email, projectRoleType, projectRole);
         } else {
             if (account == null) {
                 throw new InvalidParameterValueException("Account information is required for assigning account to the project");
@@ -810,9 +810,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
     }
 
-    private boolean inviteAccountToProject(Project project, Account account, String email, Role role) {
+    private boolean inviteAccountToProject(Project project, Account account, String email, Role role,ProjectRole projectRole) {
         if (account != null) {
-            if (createAccountInvitation(project, account.getId(), null, role) != null) {
+            if (createAccountInvitation(project, account.getId(), null, role,
+                    Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
                 s_logger.warn("Failed to generate invitation for account " + account.getAccountName() + " to project id=" + project);
@@ -823,7 +824,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         if (email != null) {
             //generate the token
             String token = generateToken(10);
-            if (generateTokenBasedInvitation(project, null, email, token, role) != null) {
+            if (generateTokenBasedInvitation(project, null, email, token, role,
+                    Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
                 s_logger.warn("Failed to generate invitation for email " + email + " to project id=" + project);
@@ -834,9 +836,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         return false;
     }
 
-    private boolean inviteUserToProject(Project project, User user, String email, Role role) {
+    private boolean inviteUserToProject(Project project, User user, String email, Role role, ProjectRole projectRole) {
         if (email == null) {
-            if (createAccountInvitation(project, user.getAccountId(), user.getId(), role) != null) {
+            if (createAccountInvitation(project, user.getAccountId(), user.getId(), role,
+                    Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
                 s_logger.warn("Failed to generate invitation for account " + user.getUsername()  + " to project id=" + project);
@@ -845,7 +848,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         } else {
             //generate the token
             String token = generateToken(10);
-            if (generateTokenBasedInvitation(project, user.getId(), email, token, role) != null) {
+            if (generateTokenBasedInvitation(project, user.getId(), email, token, role,
+                    Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
                 s_logger.warn("Failed to generate invitation for email " + email + " to project id=" + project);
@@ -994,7 +998,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         });
     }
 
-    public ProjectInvitation createAccountInvitation(Project project, Long accountId, Long userId, Role role) {
+    public ProjectInvitation createAccountInvitation(Project project, Long accountId, Long userId, Role role, Long projectRoleId) {
         if (activeInviteExists(project, accountId, userId, null)) {
             throw new InvalidParameterValueException("There is already a pending invitation for account id=" + accountId + " to the project id=" + project);
         }
@@ -1005,6 +1009,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
         if (role != null) {
             invitationVO.setAccountRole(role);
+        }
+        if (projectRoleId != null) {
+            invitationVO.setProjectRoleId(projectRoleId);
         }
         return  _projectInvitationDao.persist(invitationVO);
     }
@@ -1050,7 +1057,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         });
     }
 
-    public ProjectInvitation generateTokenBasedInvitation(Project project, Long userId, String email, String token, Role role) {
+    public ProjectInvitation generateTokenBasedInvitation(Project project, Long userId, String email, String token, Role role, Long projectRoleId) {
         //verify if the invitation was already generated
         if (activeInviteExists(project, null, null, email)) {
             throw new InvalidParameterValueException("There is already a pending invitation for email " + email + " to the project id=" + project);
@@ -1063,6 +1070,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         if (role != null) {
             projectInvitationVO.setAccountRole(role);
         }
+        if (projectRoleId != null) {
+            projectInvitationVO.setProjectRoleId(projectRoleId);
+        }
+
         ProjectInvitation projectInvitation = _projectInvitationDao.persist(projectInvitationVO);
         try {
             _emailInvite.sendInvite(token, email, project.getId());
@@ -1107,18 +1118,24 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             //verify permissions
             _accountMgr.checkAccess(caller, null, true, account);
             accountId = account.getId();
-        } else {
+        } else if (userId != null) {
             user = userDao.findById(userId);
             if (user == null) {
                 throw new InvalidParameterValueException("Invalid user ID provided. Please provide a valid user ID or " +
                         "account name whose invitation is to be updated");
             }
+            Account userAccount = _accountDao.findById(user.getAccountId());
+            if (userAccount.getDomainId() != project.getDomainId()) {
+                throw new InvalidParameterValueException("Unable to find user =" + userId + " in domain id=" + project.getDomainId());
+            }
+        } else {
+            accountId = caller.getId();
+            user = CallContext.current().getCallingUser();
         }
 
         //check that invitation exists
         ProjectInvitationVO invite = null;
         if (token == null) {
-
             if (accountName != null) {
                 invite = _projectInvitationDao.findByAccountIdProjectId(accountId, projectId, ProjectInvitation.State.Pending);
             } else {
@@ -1152,19 +1169,19 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
                 if (result && accept) {
                     //check if account already exists for the project (was added before invitation got accepted)
-                    if (accountName != null) {
+                    if (finalInvite.getForUserId() == -1) {
                         ProjectAccount projectAccount = _projectAccountDao.findByProjectIdAccountId(projectId, accountIdFinal);
                         if (projectAccount != null) {
                             s_logger.debug("Account " + accountNameFinal + " already added to the project id=" + projectId);
                         } else {
-                            assignAccountToProject(project, accountIdFinal, finalInvite.getAccountRole(), null, null);
+                            assignAccountToProject(project, accountIdFinal, finalInvite.getAccountRole(), null, finalInvite.getProjectRoleId());
                         }
                     } else {
-                        ProjectAccount projectAccount = _projectAccountDao.findByProjectIdUserId(projectId, finalUser.getAccountId(), userId);
+                        ProjectAccount projectAccount = _projectAccountDao.findByProjectIdUserId(projectId, finalUser.getAccountId(), finalUser.getId());
                         if (projectAccount != null) {
-                            s_logger.debug("Account " + accountNameFinal + " already added to the project id=" + projectId);
+                            s_logger.debug("User " + finalUser.getId() + "has already been added to the project id=" + projectId);
                         } else {
-                            assignUserToProject(project, finalInvite.getForUserId(), finalUser.getAccountId(), finalInvite.getAccountRole(), null);
+                            assignUserToProject(project, finalInvite.getForUserId(), finalUser.getAccountId(), finalInvite.getAccountRole(), finalInvite.getProjectRoleId());
                         }
                     }
                 } else {

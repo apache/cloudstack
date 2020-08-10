@@ -68,11 +68,13 @@ ALTER TABLE `cloud`.`project_account`
 ALTER TABLE `cloud`.`project_invitations`
     ADD COLUMN `user_id` bigint unsigned COMMENT 'ID of user to be added to the project' AFTER `account_id`,
     ADD COLUMN `account_role` varchar(255) NOT NULL DEFAULT 'Regular' COMMENT 'Account role in the project (Owner or Regular)' AFTER `domain_id`,
+    ADD COLUMN `project_role_id` bigint unsigned COMMENT 'Project role id' AFTER `account_role`,
     ADD CONSTRAINT `fk_project_invitations__user_id` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+    ADD CONSTRAINT `fk_project_invitations__project_role_id` FOREIGN KEY (`project_role_id`) REFERENCES `project_role` (`id`) ON DELETE SET NULL,
     DROP INDEX `project_id`,
     ADD CONSTRAINT `uc_project_invitations__project_id_account_id_user_id` UNIQUE (`project_id`, `account_id`,`user_id`);
 
--- Alter project_invitation_view to incroporate user_id as a field
+-- Alter project_invitation_view to incorporate user_id as a field
 ALTER VIEW `cloud`.`project_invitation_view` AS
     select
         project_invitations.id,
@@ -80,6 +82,7 @@ ALTER VIEW `cloud`.`project_invitation_view` AS
         project_invitations.email,
         project_invitations.created,
         project_invitations.state,
+        project_invitations.project_role_id,
         projects.id project_id,
         projects.uuid project_uuid,
         projects.name project_name,

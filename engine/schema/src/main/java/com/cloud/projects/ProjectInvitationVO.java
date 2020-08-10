@@ -51,6 +51,9 @@ public class ProjectInvitationVO implements ProjectInvitation {
     @Enumerated(value = EnumType.STRING)
     private ProjectAccount.Role accountRole = ProjectAccount.Role.Regular;
 
+    @Column(name = "project_role_id")
+    private Long projectRoleId;
+
     @Column(name = "token")
     private String token;
 
@@ -141,6 +144,15 @@ public class ProjectInvitationVO implements ProjectInvitation {
 
     public void setAccountRole(ProjectAccount.Role accountRole) {
         this.accountRole = accountRole;
+    }
+
+    @Override
+    public Long getProjectRoleId() {
+        return projectRoleId;
+    }
+
+    public void setProjectRoleId(Long projectRoleId) {
+        this.projectRoleId = projectRoleId;
     }
 
     @Override

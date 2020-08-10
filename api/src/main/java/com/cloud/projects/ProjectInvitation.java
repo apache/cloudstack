@@ -45,4 +45,6 @@ public interface ProjectInvitation extends ControlledEntity, Identity, InternalI
 
     Long getForUserId();
 
+    Long getProjectRoleId();
+
 }
