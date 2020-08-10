@@ -60,7 +60,6 @@ import com.cloud.network.Network;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -172,7 +171,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         UserVm masterVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-        VirtualMachineTemplate template = templateDao.findById(kubernetesCluster.getTemplateId());
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Pair<String, Map<Long, Network.IpAddresses>> ipAddresses = getKubernetesMasterIpAddresses(zone, network, owner);
@@ -195,12 +193,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         boolean haSupported = isKubernetesVersionSupportsHA();
         String k8sMasterConfig = null;
         try {
-            k8sMasterConfig = getKubernetesMasterConfig(masterIp, serverIp, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()));
+            k8sMasterConfig = getKubernetesMasterConfig(masterIp, serverIp, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
-        masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
+        masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
                 requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null);
@@ -238,7 +236,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         UserVm additionalMasterVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-        VirtualMachineTemplate template = templateDao.findById(kubernetesCluster.getTemplateId());
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
@@ -250,12 +247,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-master-%d", kubernetesClusterNodeNamePrefix, additionalMasterNodeInstance + 1));
         String k8sMasterConfig = null;
         try {
-            k8sMasterConfig = getKubernetesAdditionalMasterConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()));
+            k8sMasterConfig = getKubernetesAdditionalMasterConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
-        additionalMasterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
+        additionalMasterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
                 null, addrs, null, null, null, customParameterMap, null, null, null, null);

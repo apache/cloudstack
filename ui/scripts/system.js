@@ -17023,6 +17023,8 @@
                                     if (args.data.annotation != null && args.data.annotation.length > 0)
                                         array1.push("&annotation=" + args.data.annotation);
 
+                                    if (args.data.name != null && args.data.name.length > 0)
+                                        array1.push("&name=" + args.data.name);
                                     $.ajax({
                                         url: createURL("updateHost&id=" + args.context.hosts[0].id + array1.join("")),
                                         dataType: "json",
@@ -17961,7 +17963,8 @@
 
                                 fields:[ {
                                     name: {
-                                        label: 'label.name'
+                                        label: 'label.name',
+                                        isEditable: true
                                     }
                                 },
                                 {
@@ -19556,6 +19559,9 @@
                                         array1.push("&capacityiops=" + capacityIops);
                                     }
 
+                                    if (args.data.name != null && args.data.name.length > 0)
+                                        array1.push("&name=" + args.data.name);
+
                                     $.ajax({
                                         url: createURL("updateStoragePool&id=" + args.context.primarystorages[0].id + array1.join("")),
                                         dataType: "json",
@@ -19688,7 +19694,8 @@
                                 title: 'label.details',
                                 fields:[ {
                                     name: {
-                                        label: 'label.name'
+                                        label: 'label.name',
+                                        isEditable: true
                                     }
                                 },
                                 {

@@ -6614,11 +6614,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException {
+        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId);
+    }
 
+    @Override
+    public UserVm restoreVirtualMachine(final Account caller, final long vmId, final Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException {
         Long userId = caller.getId();
-        Account owner = _accountDao.findById(vm.getAccountId());
         _userDao.findById(userId);
-        long vmId = vm.getId();
+        UserVmVO vm = _vmDao.findById(vmId);
+        Account owner = _accountDao.findById(vm.getAccountId());
         boolean needRestart = false;
 
         // Input validation

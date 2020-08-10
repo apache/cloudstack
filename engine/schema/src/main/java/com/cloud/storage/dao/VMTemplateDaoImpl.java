@@ -137,6 +137,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public VMTemplateVO findValidByTemplateName(String templateName) {
+        SearchCriteria<VMTemplateVO> sc = NameSearch.create();
+        sc.setParameters("name", templateName);
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId) {
         SearchCriteria<VMTemplateVO> sc = ParentTemplateIdSearch.create();
         sc.setParameters("parentTemplateId", parentTemplatetId);
