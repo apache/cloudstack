@@ -198,7 +198,7 @@ public class HypervisorHostHelper {
         if (UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
             return "cloud.public.untagged";
         } else {
-            return "cloud.public." + vlanId;
+            return "cloud.public." + vlanId + ".";
         }
     }
 
