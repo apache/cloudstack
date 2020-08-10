@@ -148,8 +148,8 @@ class CsInterface:
             return self.config.cmdline().get_guest_gw()
 
     def ip_in_subnet(self, ip):
-        ipo = IPAddress(ip)
-        net = IPNetwork("%s/%s" % (self.get_ip(), self.get_size()))
+        ipo = ip_address(ip)
+        net = ip_network("%s/%s" % (self.get_ip(), self.get_size()))
         return ipo in net
 
     def get_gateway_cidr(self):

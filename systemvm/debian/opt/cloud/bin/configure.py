@@ -21,7 +21,9 @@ import logging
 import os
 import re
 import sys
-import urllib.request, urllib.parse, urllib.error
+from urllib.request import *
+from urllib.parse import *
+from urllib.error import *
 import time
 
 from collections import OrderedDict
@@ -79,7 +81,7 @@ class CsPassword(CsDataBag):
                 data = urllib.parse.urlencode(payload)
                 request = urllib.request.Request(url, data=data, headers={"DomU_Request": "save_password"})
                 try:
-                    resp = urllib.request.urlopen(request, data)
+                    resp = urlopen(request, data)
                     logging.debug("Update password server result: http:%s, content:%s" % (resp.code, resp.read()))
                 except Exception as e:
                     logging.error("Failed to update password server due to: %s" % e)

@@ -19,6 +19,7 @@
 import os
 from ipaddress import *
 
+
 def macdevice_map():
     device_map = {}
     for eth in os.listdir('/sys/class/net'):

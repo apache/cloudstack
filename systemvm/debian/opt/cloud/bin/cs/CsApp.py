@@ -20,6 +20,7 @@ from .CsFile import CsFile
 from .CsProcess import CsProcess
 from . import CsHelper
 
+
 class CsApp:
     def __init__(self, ip):
         self.dev = ip.getDevice()

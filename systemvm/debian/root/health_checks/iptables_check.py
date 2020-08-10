@@ -20,6 +20,7 @@ from os import sys, path
 from subprocess import *
 from .utility import getHealthChecksData, formatPort
 
+
 def main():
     portForwards = getHealthChecksData("portForwarding")
     if portForwards is None or len(portForwards) == 0:

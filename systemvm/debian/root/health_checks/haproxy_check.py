@@ -19,6 +19,7 @@
 from os import sys, path
 from .utility import getHealthChecksData, formatPort
 
+
 def checkMaxconn(haproxyData, haCfgSections):
     if "maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
         if haproxyData["maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
@@ -43,8 +44,8 @@ def checkLoadBalance(haproxyData, haCfgSections):
             cfgSection = haCfgSections[secName]
             if "server" in cfgSection:
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
-                    print("Incorrect balance method for " + secName + \
-                          "Expected : " + lbSec["algorithm"] + \
+                    print("Incorrect balance method for " + secName +
+                          "Expected : " + lbSec["algorithm"] +
                           " but found " + cfgSection["balance"][0] + "\n")
                     correct = False
 

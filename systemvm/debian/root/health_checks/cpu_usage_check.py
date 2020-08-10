@@ -40,10 +40,10 @@ def main():
     if pout.wait() == 0:
         currentUsage = float(pout.communicate()[0].strip())
         if currentUsage > maxCpuUsage:
-            print("CPU Usage " + str(currentUsage) + \
+            print("CPU Usage " + str(currentUsage) +
                   "% has crossed threshold of " + str(maxCpuUsage) + "%")
             exit(1)
-        print("CPU Usage within limits with current at " \
+        print("CPU Usage within limits with current at "
               + str(currentUsage) + "%")
         exit(0)
     else:
