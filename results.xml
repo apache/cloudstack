@@ -1,3 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?><testsuite name="nosetests" tests="3" errors="0" failures="0" skip="0"><testcase classname="integration.smoke.test_enable_role_based_users_in_projects.TestRoleBasedUsersInProjects" name="test_add_account_to_project_with_project_role" time="3.046"></testcase><testcase classname="integration.smoke.test_enable_role_based_users_in_projects.TestRoleBasedUsersInProjects" name="test_add_multiple_admins_in_project" time="6.491"><system-out><![CDATA[pid == 3a16742f-819b-4d44-89d9-1f4122602038
-2
-]]></system-out></testcase><testcase classname="integration.smoke.test_enable_role_based_users_in_projects.TestRoleBasedUsersInProjects" name="test_add_user_to_project_with_project_role" time="2.713"></testcase></testsuite>
