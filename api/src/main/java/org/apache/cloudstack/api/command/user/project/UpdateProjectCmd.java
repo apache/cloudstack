@@ -63,7 +63,9 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ROLE_TYPE, type = CommandType.STRING, description = "Account level role to be assigned to the user/account : Admin/Regular")
     private String roleType;
 
-    @Parameter(name = ApiConstants.SWAP_OWNER, type = CommandType.BOOLEAN, description = "True by default; when true, makes provided account the owner")
+    @Parameter(name = ApiConstants.SWAP_OWNER, type = CommandType.BOOLEAN, description = "when true, it swaps ownership with the account/ user provided. " +
+            "Ideally to be used when a single project administrator is present. In case of multiple project admins, swapowner is to be set to false," +
+            "to promote or demote the user/account based on the roleType (Regular or Admin) provided. Defaults to true")
     private Boolean swapOwner;
 
     /////////////////////////////////////////////////////
