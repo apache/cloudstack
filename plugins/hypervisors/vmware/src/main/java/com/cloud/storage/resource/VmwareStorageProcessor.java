@@ -1737,6 +1737,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
+                vmMo = clonedVm;
             }
             vmMo.exportVm(exportPath, exportName, false, false);
 
