@@ -420,10 +420,14 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
     }
 
+    /**
+     * Cleanup agent zone properties.
+     *
+     * Unset zone, cluster and pod values so that host is not added back
+     * when service is restarted. This will be set to proper values
+     * when host is added back
+     */
     protected void cleanupAgentZoneProperties() {
-        // Unset zone, cluster and pod values so that host is not added back
-        // when service is restarted. This will be set to proper values
-        // when host is added back
         _shell.setPersistentProperty(null, "zone", "");
         _shell.setPersistentProperty(null, "cluster", "");
         _shell.setPersistentProperty(null, "pod", "");

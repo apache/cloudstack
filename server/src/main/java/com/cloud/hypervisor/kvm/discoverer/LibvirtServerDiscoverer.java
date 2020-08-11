@@ -67,7 +67,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.trilead.ssh2.Connection;
 
-import static com.cloud.configuration.ConfigurationManagerImpl.AddHostOnServiceRestart;
+import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(LibvirtServerDiscoverer.class);
@@ -477,7 +477,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
         _resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
         try {
-            ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null, !AddHostOnServiceRestart.value());
+            ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null, !ADD_HOST_ON_SERVICE_RESTART.value());
             agentMgr.send(host.getId(), cmd);
         } catch (AgentUnavailableException e) {
             s_logger.warn("Sending ShutdownCommand failed: ", e);
