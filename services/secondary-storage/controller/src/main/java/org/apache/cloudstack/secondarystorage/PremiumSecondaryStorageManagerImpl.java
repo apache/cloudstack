@@ -194,8 +194,8 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         if ((copyCmdsInPipeline.size() < halfLimit && alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() > _standbyCapacity) && alreadyRunning.size() > 1) {
             Collections.reverse(alreadyRunning);
             for(SecondaryStorageVmVO vm : alreadyRunning) {
-                long count = copyCmdsInPipeline.stream().map(cmd -> cmd.getInstanceId() == vm.getId()).count();
-                count += activeCmds.stream().map(cmd -> cmd.getInstanceId() == vm.getId()).count();
+                long count = copyCmdsInPipeline.stream().filter(cmd -> cmd.getInstanceId() == vm.getId()).count();
+                count += activeCmds.stream().filter(cmd -> cmd.getInstanceId() == vm.getId()).count();
                 if (count == 0) {
                     destroySecStorageVm(vm.getId());
                     break;
