@@ -46,7 +46,7 @@
             </div>
             <div class="list__container">
               <div class="list__col">
-                <div class="list__label">{{ $t('label.number') }}</div>
+                <div class="list__label">{{ $t('label.rule.number') }}</div>
                 <div>{{ acl.number }}</div>
               </div>
               <div class="list__col">
@@ -136,7 +136,7 @@
           <a-input-number style="width: 100%" v-decorator="['number']" />
         </a-form-item>
         <a-form-item :label="$t('label.cidrlist')">
-          <a-input v-decorator="['cidr']" />
+          <a-input v-decorator="['cidrlist']" />
         </a-form-item>
         <a-form-item :label="$t('label.action')">
           <a-select v-decorator="['action']">
@@ -167,12 +167,12 @@
           </a-form-item>
         </div>
 
-        <div v-if="ruleForm.getFieldValue('protocol') === 'tcp' || ruleForm.getFieldValue('protocol') === 'udp' || ruleForm.getFieldValue('protocol') === 'protocolnumber'">
+        <div v-show="ruleForm.getFieldValue('protocol') === 'tcp' || ruleForm.getFieldValue('protocol') === 'udp' || ruleForm.getFieldValue('protocol') === 'protocolnumber'">
           <a-form-item :label="$t('label.startport')">
-            <a-input v-decorator="['startport']" />
+            <a-input-number style="width: 100%" v-decorator="['startport']" />
           </a-form-item>
           <a-form-item :label="$t('label.endport')">
-            <a-input v-decorator="['endport']" />
+            <a-input-number style="width: 100%" v-decorator="['endport']" />
           </a-form-item>
         </div>
 
@@ -396,7 +396,7 @@ export default {
       setTimeout(() => {
         this.ruleForm.setFieldsValue({
           number: acl.number,
-          cidr: acl.cidrlist,
+          cidrlist: acl.cidrlist,
           action: acl.action,
           protocol: acl.protocol,
           startport: acl.startport,
@@ -406,6 +406,32 @@ export default {
         })
       }, 200)
     },
+    getDataFromForm (values) {
+      const data = {
+        cidrlist: values.cidrlist || '',
+        number: values.number || '',
+        protocol: values.protocol || '',
+        traffictype: values.traffictype || '',
+        action: values.action || '',
+        reason: values.reason || ''
+      }
+
+      if (values.protocol === 'tcp' || values.protocol === 'udp' || values.protocol === 'protocolnumber') {
+        data.startport = values.startport || ''
+        data.endport = values.endport || ''
+      }
+
+      if (values.protocol === 'icmp') {
+        data.icmptype = values.icmptype || -1
+        data.icmpcode = values.icmpcode || -1
+      }
+
+      if (values.protocol === 'protocolnumber') {
+        data.protocol = values.protocolnumber
+      }
+
+      return data
+    },
     handleEditRule (e) {
       e.preventDefault()
       this.ruleForm.validateFields((err, values) => {
@@ -413,18 +439,12 @@ export default {
 
         this.fetchLoading = true
         this.ruleModalVisible = false
-        api('updateNetworkACLItem', {}, 'POST', {
-          id: this.selectedAcl.id,
-          cidrlist: values.cidr,
-          number: values.number,
-          protocol: values.protocol,
-          traffictype: values.traffictype,
-          action: values.action,
-          reason: values.reason,
-          startport: values.startport,
-          endport: values.endport,
-          partialupgrade: false
-        }).then(response => {
+
+        const data = this.getDataFromForm(values)
+        data.id = this.selectedAcl.id
+        data.partialupgrade = false
+
+        api('updateNetworkACLItem', {}, 'POST', data).then(response => {
           this.$store.dispatch('AddAsyncJob', {
             title: this.$t('label.edit.acl.rule'),
             jobid: response.createnetworkaclresponse.jobid,
@@ -515,29 +535,8 @@ export default {
         this.fetchLoading = true
         this.ruleModalVisible = false
 
-        const data = {
-          aclid: this.resource.id,
-          cidrlist: values.cidr || '',
-          number: values.number || '',
-          protocol: values.protocol || '',
-          traffictype: values.traffictype || '',
-          action: values.action || '',
-          reason: values.reason || ''
-        }
-
-        if (values.protocol === 'tcp' || values.protocol === 'udp' || values.protocol === 'protocolnumber') {
-          data.startport = values.startport || ''
-          data.endport = values.endport || ''
-        }
-
-        if (values.protocol === 'icmp') {
-          data.icmptype = values.icmptype || -1
-          data.icmpcode = values.icmpcode || -1
-        }
-
-        if (values.protocol === 'protocolnumber') {
-          data.protocol = values.protocolnumber
-        }
+        const data = this.getDataFromForm(values)
+        data.aclid = this.resource.id
 
         api('createNetworkACL', {}, 'POST', data).then(() => {
           this.$notification.success({
