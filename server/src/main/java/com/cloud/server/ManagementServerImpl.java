@@ -1983,11 +1983,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
+        vlanSearch.and("removed", vlanSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-
-        SearchBuilder<DataCenterVO> zoneSearchBuilder = _dcDao.createSearchBuilder();
-        zoneSearchBuilder.and("removed", zoneSearchBuilder.entity().getRemoved(), SearchCriteria.Op.NULL);
-        sb.join("removed_zone_filter", zoneSearchBuilder, sb.entity().getDataCenterId(), zoneSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
 
         if (isAllocated != null && isAllocated == true) {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
