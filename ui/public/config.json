@@ -39,11 +39,5 @@
     "jp": "label.japanese.keyboard",
     "sc": "label.simplified.chinese.keyboard"
   },
-  "plugins": [
-    {
-      "name": "ExamplePlugin",
-      "icon": "appstore",
-      "path": "example.html"
-    }
-  ]
+  "plugins": []
 }
