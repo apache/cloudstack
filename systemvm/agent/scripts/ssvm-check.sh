@@ -118,7 +118,7 @@ fi
 # check for connectivity to the management server
 echo ================================================
 echo Management server is $MGMTSERVER.  Checking connectivity.
-socatout=$(echo | socat - TCP:$MGMTSERVER:8250,connect-timeout=3 2>&1)
+socatout=$(echo | socat - TCP:$MGMTSERVER:8250,connect-timeout=3 | tr -d '\0' 2>&1)
 if [ $? -eq 0 ]
 then
     echo "Good: Can connect to management server port 8250"
@@ -141,6 +141,6 @@ else
 fi
 
 echo ================================================
-echo Tests Complete.  Look for ERROR or WARNING above.
+echo Tests Complete. Look for ERROR or WARNING above.
 
 exit 0
