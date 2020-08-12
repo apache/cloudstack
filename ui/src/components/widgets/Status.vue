@@ -87,6 +87,7 @@ export default {
         case 'Setup':
         case 'Started':
         case 'Successfully Installed':
+        case 'ReadWrite':
         case 'True':
         case 'Up':
         case 'enabled':
@@ -100,6 +101,7 @@ export default {
         case 'Error':
         case 'False':
         case 'Stopped':
+        case 'ReadOnly':
           status = 'error'
           break
         case 'Migrating':

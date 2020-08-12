@@ -220,7 +220,9 @@
       <router-link v-if="$router.resolve('/zone/' + record.zoneid).route.name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
-
+    <a slot="readonly" slot-scope="text, record">
+      <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" />
+    </a>
     <div slot="order" slot-scope="text, record" class="shift-btns">
       <a-tooltip placement="top">
         <template slot="title">{{ $t('label.move.to.top') }}</template>

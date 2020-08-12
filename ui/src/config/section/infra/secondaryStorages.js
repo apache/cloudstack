@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import store from '@/store'
 
 export default {
   name: 'imagestore',
@@ -21,8 +22,20 @@ export default {
   icon: 'picture',
   docHelp: 'adminguide/storage.html#secondary-storage',
   permission: ['listImageStores'],
-  columns: ['name', 'url', 'protocol', 'scope', 'zonename'],
-  details: ['name', 'id', 'url', 'protocol', 'provider', 'scope', 'zonename'],
+  columns: () => {
+    var fields = ['name', 'url', 'protocol', 'scope', 'zonename']
+    if (store.getters.apis.listImageStores.params.filter(x => x.name === 'readonly').length > 0) {
+      fields.push('readonly')
+    }
+    return fields
+  },
+  details: () => {
+    var fields = ['name', 'id', 'url', 'protocol', 'provider', 'scope', 'zonename']
+    if (store.getters.apis.listImageStores.params.filter(x => x.name === 'readonly').length > 0) {
+      fields.push('readonly')
+    }
+    return fields
+  },
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
@@ -31,6 +44,14 @@ export default {
     component: () => import('@/components/view/SettingsTab.vue')
   }],
   actions: [
+    {
+      api: 'migrateSecondaryStorageData',
+      icon: 'drag',
+      label: 'label.migrate.data.from.image.store',
+      listView: true,
+      popup: true,
+      component: () => import('@/views/infra/MigrateData.vue')
+    },
     {
       api: 'addImageStore',
       icon: 'plus',
@@ -46,6 +67,22 @@ export default {
       label: 'label.action.delete.secondary.storage',
       message: 'message.action.delete.secondary.storage',
       dataView: true
+    },
+    {
+      api: 'updateImageStore',
+      icon: 'stop',
+      label: 'Make Image store read-only',
+      dataView: true,
+      defaultArgs: { readonly: true },
+      show: (record) => { return record.readonly === false }
+    },
+    {
+      api: 'updateImageStore',
+      icon: 'check-circle',
+      label: 'Make Image store read-write',
+      dataView: true,
+      defaultArgs: { readonly: false },
+      show: (record) => { return record.readonly === true }
     }
   ]
 }

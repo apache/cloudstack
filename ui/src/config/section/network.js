@@ -250,7 +250,8 @@ export default {
         name: 'firewall',
         component: () => import('@/views/network/FirewallRules.vue'),
         networkServiceFilter: networkService => networkService.filter(x => x.name === 'Firewall').length > 0
-      }, {
+      },
+      {
         name: 'portforwarding',
         component: () => import('@/views/network/PortForwarding.vue'),
         networkServiceFilter: networkService => networkService.filter(x => x.name === 'PortForwarding').length > 0

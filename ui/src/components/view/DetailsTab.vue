@@ -18,7 +18,7 @@
 <template>
   <a-list
     size="small"
-    :dataSource="projectname ? [...$route.meta.details.filter(x => x !== 'account'), 'projectname'] : $route.meta.details">
+    :dataSource="fetchDetails()">
     <a-list-item slot="renderItem" slot-scope="item" v-if="item in resource">
       <div>
         <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
@@ -107,6 +107,14 @@ export default {
         projectAdmins.push(Object.keys(owner).includes('user') ? owner.account + '(' + owner.user + ')' : owner.account)
       }
       this.resource.account = projectAdmins.join()
+    },
+    fetchDetails () {
+      var details = this.$route.meta.details
+      if (typeof details === 'function') {
+        details = details()
+      }
+      details = this.projectname ? [...details.filter(x => x !== 'account'), 'projectname'] : details
+      return details
     }
   }
 }
