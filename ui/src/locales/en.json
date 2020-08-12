@@ -2224,6 +2224,7 @@
 "label.vms.in.tier": "VMs in tier",
 "label.vmstate": "VM State",
 "label.vmtotal": "Total of VMs",
+"label.vmware.storage.policy": "VMWare Storage Policy",
 "label.vmwaredcid": "VMware Datacenter ID",
 "label.vmwaredcname": "VMware Datacenter Name",
 "label.vmwaredcvcenter": "VMware Datacenter vCenter",
