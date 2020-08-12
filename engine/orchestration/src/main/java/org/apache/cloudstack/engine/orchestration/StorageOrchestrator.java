@@ -183,11 +183,15 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             List<Long> orderedDS = migrationHelper.sortDataStores(storageCapacities);
             Long destDatastoreId = orderedDS.get(0);
 
-            if (chosenFileForMigration == null || destDatastoreId == null || destDatastoreId == srcDatastore.getId() ) {
+            if (chosenFileForMigration == null || destDatastoreId == null || (destDatastoreId == srcDatastore.getId() && migrationPolicy == MigrationPolicy.BALANCE) ) {
                 Pair<String, Boolean> result = migrateCompleted(destDatastoreId, srcDatastore, files, migrationPolicy);
                 message = result.first();
                 success = result.second();
                 break;
+            }
+
+            if (migrationPolicy == MigrationPolicy.COMPLETE && destDatastoreId == srcDatastore.getId()) {
+                destDatastoreId = orderedDS.get(1);
             }
 
             if (chosenFileForMigration.getSize() > storageCapacities.get(destDatastoreId).first()) {
