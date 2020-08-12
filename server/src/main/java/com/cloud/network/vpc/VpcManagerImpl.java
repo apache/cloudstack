@@ -2035,13 +2035,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            // 2) Delete private gateway from the DB
+            // 2) Clean up any remaining routes
+            cleanUpRoutesByGatewayId(gatewayId);
+
+            // 3) Delete private gateway from the DB
             return deletePrivateGatewayFromTheDB(gateway);
 
         } finally {
             if (gatewayVO != null) {
                 _vpcGatewayDao.releaseFromLockTable(gatewayId);
             }
+        }
+    }
+
+    private void cleanUpRoutesByGatewayId(long gatewayId){
+        List<StaticRouteVO> routes = _staticRouteDao.listByGatewayId(gatewayId);
+        for (StaticRouteVO route: routes){
+            _staticRouteDao.remove(route.getId());
         }
     }
 
@@ -2337,6 +2347,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<Long> permittedAccounts = new ArrayList<Long>();
         final Map<String, String> tags = cmd.getTags();
         final Long projectId = cmd.getProjectId();
+        final String state = cmd.getState();
 
         final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive,
                 null);
@@ -2352,6 +2363,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("vpcGatewayId", sb.entity().getVpcGatewayId(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             final SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -2377,6 +2389,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         if (gatewayId != null) {
             sc.addAnd("vpcGatewayId", Op.EQ, gatewayId);
+        }
+
+        if (state != null) {
+            sc.addAnd("state", Op.EQ, state);
         }
 
         if (tags != null && !tags.isEmpty()) {
