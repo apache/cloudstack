@@ -110,10 +110,10 @@ def main(args):
         elif command == 'fstrim':
             result, code = guestcmd.fstrim()
 
-        print((json.dumps(result)))
+        print(json.dumps(result))
         sys.exit(code)
     except libvirt.libvirtError as exc:
-        print((json.dumps({'error': str(exc)})))
+        print(json.dumps({'error': str(exc)}))
         sys.exit(255)
 
 if __name__ == '__main__':

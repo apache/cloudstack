@@ -882,7 +882,7 @@ def get_rule_logs_for_vms():
     except:
         logging.exception("Failed to get rule logs, better luck next time!")
 
-    print((";".join(result)))
+    print(";".join(result))
 
 
 def cleanup_rules_for_dead_vms():
@@ -1421,7 +1421,7 @@ def verify_ipset_for_vm(vm_name, vm_id, vm_ips, vm_ip6):
                 found = True
                 break
         if not found:
-            print(("vm ip %s is not found" % vm_ip))
+            print("vm ip %s is not found" % vm_ip)
             return False
 
     rules = []
@@ -1435,7 +1435,7 @@ def verify_ipset_for_vm(vm_name, vm_id, vm_ips, vm_ip6):
                 found = True
                 break
         if not found:
-            print(("vm ipv6 %s is not found" % vm_ip6))
+            print("vm ipv6 %s is not found" % vm_ip6)
             return False
 
     return True
@@ -1574,7 +1574,7 @@ def verify_expected_rules_exist(expected_rules, rules):
                 found = True
                 break
         if not found:
-            print(("Rule '%s' is not found" % expected_rule))
+            print("Rule '%s' is not found" % expected_rule)
             return False
     return True
 
@@ -1585,7 +1585,7 @@ def verify_expected_rules_in_order(expected_rules, rules):
         if i < len(expected_rules) and rule == expected_rules[i]:
             i += 1
     if i != len(expected_rules):
-        print(("Cannot find rule '%s'" % expected_rules[i]))
+        print("Cannot find rule '%s'" % expected_rules[i])
         return False
     return True
 
