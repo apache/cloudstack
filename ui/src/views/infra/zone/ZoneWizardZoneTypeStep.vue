@@ -32,7 +32,11 @@
           }]">
           <a-card :gutter="12" class="card-item">
             <a-col :md="6" :lg="6">
-              <a-radio class="card-form-item" value="Advanced">{{ $t('label.advanced') }}</a-radio>
+              <a-radio style="display: none;" class="card-form-item" value="Advanced">{{ $t('label.advanced') }}</a-radio>
+              <span style="margin-top: 20px" class="card-form-item">
+                <a-icon type="setting" style="margin-right: 10px" />
+                {{ $t('label.advanced') }}
+              </span>
             </a-col>
             <a-col :md="18" :lg="18">
               <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Advanced) }}</a-card>

@@ -17,7 +17,10 @@
 
 <template>
   <div class="page-header-index-wide">
-    <div v-if="$store.getters.userInfo.roletype === 'Admin' && !project">
+    <div v-if="showOnboarding">
+      <onboarding-dashboard />
+    </div>
+    <div v-else-if="$store.getters.userInfo.roletype === 'Admin' && !project">
       <capacity-dashboard/>
     </div>
     <div v-else>
@@ -27,23 +30,33 @@
 </template>
 
 <script>
+import { api } from '@/api'
 import store from '@/store'
 import CapacityDashboard from './CapacityDashboard'
 import UsageDashboard from './UsageDashboard'
+import OnboardingDashboard from './OnboardingDashboard'
 
 export default {
   name: 'Dashboard',
   components: {
     CapacityDashboard,
-    UsageDashboard
+    UsageDashboard,
+    OnboardingDashboard
+  },
+  provide: function () {
+    return {
+      parentFetchData: this.fetchData
+    }
   },
   data () {
     return {
       showCapacityDashboard: false,
-      project: false
+      project: false,
+      showOnboarding: false
     }
   },
   mounted () {
+    this.fetchData()
     this.showCapacityDashboard = Object.prototype.hasOwnProperty.call(store.getters.apis, 'listCapacity')
     this.project = false
     if (store.getters.project && store.getters.project.id) {
@@ -59,6 +72,16 @@ export default {
         }
       }
     )
+  },
+  methods: {
+    fetchData () {
+      if (!['Admin'].includes(this.$store.getters.userInfo.roletype)) {
+        return
+      }
+      api('listZones').then(json => {
+        this.showOnboarding = json.listzonesresponse.count ? json.listzonesresponse.count === 0 : true
+      })
+    }
   }
 }
 </script>

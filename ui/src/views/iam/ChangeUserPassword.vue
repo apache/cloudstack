@@ -33,11 +33,11 @@
             v-decorator="['currentpassword', {
               rules: [{ required: true, message: $t('message.error.current.password') }]
             }]"
-            :placeholder="apiParams.currentpassword.description"/>
+            :placeholder="message.error.current.password"/>
         </a-form-item>
         <a-form-item>
           <span slot="label">
-            {{ $t('label.password') }}
+            {{ $t('label.new.password') }}
             <a-tooltip :title="apiParams.password.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
@@ -46,7 +46,7 @@
             v-decorator="['password', {
               rules: [{ required: true, message: $t('message.error.new.password') }]
             }]"
-            :placeholder="apiParams.password.description"/>
+            :placeholder="$t('label.new.password')"/>
         </a-form-item>
         <a-form-item>
           <span slot="label">
@@ -67,7 +67,7 @@
                 }
               ]
             }]"
-            :placeholder="apiParams.password.description"/>
+            :placeholder="$t('label.confirmpassword.description')"/>
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -140,7 +140,7 @@ export default {
         if (this.isValidValueForKey(values, 'currentpassword') && values.currentpassword.length > 0) {
           params.currentpassword = values.currentpassword
         }
-        api('updateUser', params).then(json => {
+        api('updateUser', {}, 'POST', params).then(json => {
           this.$notification.success({
             message: this.$t('label.action.change.password'),
             description: `${this.$t('message.success.change.password')} ${this.resource.username}`
