@@ -159,6 +159,20 @@
       <span v-else>{{ text }}</span>
     </a>
 
+    <template v-for="(value, name) in thresholdMapping" :slot="name" slot-scope="text, record" href="javascript:;">
+      <span :key="name">
+        <span v-if="record[value.disable]" class="alert-disable-threshold">
+          {{ text }}
+        </span>
+        <span v-else-if="record[value.notification]" class="alert-notification-threshold">
+          {{ text }}
+        </span>
+        <span style="padding: 10%;" v-else>
+          {{ text }}
+        </span>
+      </span>
+    </template>
+
     <a slot="level" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/event/' + record.id }">{{ text }}</router-link>
     </a>
@@ -327,7 +341,49 @@ export default {
     return {
       selectedRowKeys: [],
       editableValueKey: null,
-      editableValue: ''
+      editableValue: '',
+      thresholdMapping: {
+        cpuused: {
+          notification: 'cputhreshold',
+          disable: 'cpudisablethreshold'
+        },
+        cpuallocated: {
+          notification: 'cpuallocatedthreshold',
+          disable: 'cpuallocateddisablethreshold'
+        },
+        memoryused: {
+          notification: 'memorythreshold',
+          disable: 'memorydisablethreshold'
+        },
+        memoryallocated: {
+          notification: 'memoryallocatedthreshold',
+          disable: 'memoryallocateddisablethreshold'
+        },
+        cpuusedghz: {
+          notification: 'cputhreshold',
+          disable: 'cpudisablethreshold'
+        },
+        cpuallocatedghz: {
+          notification: 'cpuallocatedthreshold',
+          disable: 'cpuallocateddisablethreshold'
+        },
+        memoryusedgb: {
+          notification: 'memorythreshold',
+          disable: 'memorydisablethreshold'
+        },
+        memoryallocatedgb: {
+          notification: 'memoryallocatedthreshold',
+          disable: 'memoryallocateddisablethreshold'
+        },
+        disksizeusedgb: {
+          notification: 'storageusagethreshold',
+          disable: 'storageusagedisablethreshold'
+        },
+        disksizeallocatedgb: {
+          notification: 'storageallocatedthreshold',
+          disable: 'storageallocateddisablethreshold'
+        }
+      }
     }
   },
   computed: {
@@ -536,5 +592,17 @@ export default {
       transform: rotate(90deg);
     }
 
+  }
+
+  .alert-notification-threshold {
+    background-color: rgba(255, 231, 175, 0.75);
+    color: #e87900;
+    padding: 10%;
+  }
+
+  .alert-disable-threshold {
+    background-color: rgba(255, 190, 190, 0.75);
+    color: #f50000;
+    padding: 10%;
   }
 </style>
