@@ -3733,7 +3733,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String instanceName = null;
         String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
-        if (_instanceNameFlag && hypervisor.equals(HypervisorType.VMware)) {
+        if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType)) {
             if (hostName == null) {
                 if (displayName != null) {
                     hostName = displayName;
