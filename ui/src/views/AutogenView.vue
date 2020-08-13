@@ -748,11 +748,10 @@ export default {
               if (res === 'count') {
                 continue
               }
-              const filter = this.currentAction.mapping[param.name].filter
-              if (filter) {
+              param.opts = json[obj][res]
+              if (this.currentAction.mapping[param.name] && this.currentAction.mapping[param.name].filter) {
+                const filter = this.currentAction.mapping[param.name].filter
                 param.opts = json[obj][res].filter(filter)
-              } else {
-                param.opts = json[obj][res]
               }
               if (['listTemplates', 'listIsos'].includes(possibleApi)) {
                 param.opts = [...new Map(param.opts.map(x => [x.id, x])).values()]
@@ -764,7 +763,7 @@ export default {
         }
         this.$forceUpdate()
       }).catch(function (error) {
-        console.log(error.stack)
+        console.log(error)
         param.loading = false
       }).then(function () {
       })
