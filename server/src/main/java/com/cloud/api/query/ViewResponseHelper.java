@@ -216,7 +216,12 @@ public class ViewResponseHelper {
             // update user list
             Account caller = CallContext.current().getCallingAccount();
             if (ApiDBUtils.isAdmin(caller)) {
-                List<UserAccountJoinVO> users = ApiDBUtils.findUserViewByAccountId(proj.getAccountId());
+                List<UserAccountJoinVO> users = null;
+                if (proj.getUserUuid() != null) {
+                    users = Collections.singletonList(ApiDBUtils.findUserAccountById(proj.getUserId()));
+                } else {
+                    users = ApiDBUtils.findUserViewByAccountId(proj.getAccountId());
+                }
                 resp.setUsers(ViewResponseHelper.createUserResponse(users.toArray(new UserAccountJoinVO[users.size()])));
             }
             responseList.add(resp);
@@ -268,7 +273,7 @@ public class ViewResponseHelper {
 
     public static List<VolumeResponse> createVolumeResponse(ResponseView view, VolumeJoinVO... volumes) {
         Hashtable<Long, VolumeResponse> vrDataList = new Hashtable<Long, VolumeResponse>();
-        DecimalFormat df = new DecimalFormat("0.00");
+        DecimalFormat df = new DecimalFormat("0.0%");
         for (VolumeJoinVO vr : volumes) {
             VolumeResponse vrData = vrDataList.get(vr.getId());
             if (vrData == null) {

@@ -56,13 +56,23 @@ then
        exit 1
 fi
 
+# Default case for Linux sed, just use "-i"
+sedi='-i'
+case "$(uname)" in
+  # For macOS, use two parameters
+  Darwin*) sedi='-i ""'
+esac
+
+# Expand the parameters in the actual call to "sed"
+sed  -e 's/foo/bar/' target.file
+
 set -e
 (cd "$DISTDIR/xmldoc"
  cp "$thisdir"/*.java .
  cp "$thisdir"/*.xsl .
  sed -e 's,%API_HEADER%,All APIs,g' "$thisdir/generatetoc_header.xsl" >generatetoc.xsl
- sed -i "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatetoc.xsl
- sed -i "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatecommands.xsl
+ sed $sedi "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatetoc.xsl
+ sed $sedi "s/%ACS_RELEASE%/${ACS_RELEASE}/g" generatecommands.xsl
 
  PLATFORM=`uname -s`
  if [[ "$PLATFORM" =~ .*WIN.* ]]

@@ -16,11 +16,10 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.lib.common import list_hosts
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend

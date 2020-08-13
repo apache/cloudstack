@@ -87,6 +87,8 @@ import com.cloud.utils.storage.QCOW2Utils;
 import org.apache.cloudstack.utils.security.ChecksumValue;
 import org.apache.cloudstack.utils.security.DigestHelper;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     private String _name;
     StorageLayer _storage;
@@ -268,7 +270,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         TemplateDownloader td = dj.getTemplateDownloader();
         LOGGER.info("Download Completion for jobId: " + jobId + ", status=" + status);
-        LOGGER.info("local: " + td.getDownloadLocalPath() + ", bytes=" + td.getDownloadedBytes() + ", error=" + td.getDownloadError() + ", pct=" +
+        LOGGER.info("local: " + td.getDownloadLocalPath() + ", bytes=" + toHumanReadableSize(td.getDownloadedBytes()) + ", error=" + td.getDownloadError() + ", pct=" +
                 td.getDownloadPercent());
 
         switch (status) {

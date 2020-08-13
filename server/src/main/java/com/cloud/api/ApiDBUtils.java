@@ -1142,6 +1142,10 @@ public class ApiDBUtils {
         return s_userDao.findById(userId);
     }
 
+    public static UserAccountJoinVO findUserAccountById(Long id) {
+        return s_userAccountJoinDao.findById(id);
+    }
+
     public static UserVm findUserVmById(Long vmId) {
         return s_userVmDao.findById(vmId);
     }
@@ -1833,6 +1837,7 @@ public class ApiDBUtils {
     }
 
     public static List<ProjectJoinVO> newProjectView(Project proj) {
+
         return s_projectJoinDao.newProjectView(proj);
     }
 

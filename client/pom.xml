@@ -104,6 +104,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-acl-project-role-based</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-ca-rootca</artifactId>
             <version>${project.version}</version>
         </dependency>

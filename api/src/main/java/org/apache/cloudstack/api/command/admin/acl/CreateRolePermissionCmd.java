@@ -17,28 +17,27 @@
 
 package org.apache.cloudstack.api.command.admin.acl;
 
-import com.cloud.user.Account;
-import com.google.common.base.Strings;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.response.RolePermissionResponse;
 import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = CreateRolePermissionCmd.APINAME, description = "Adds a API permission to a role", responseObject = RolePermissionResponse.class,
+import com.cloud.user.Account;
+
+@APICommand(name = CreateRolePermissionCmd.APINAME, description = "Adds an API permission to a role", responseObject = RolePermissionResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0",
         authorized = {RoleType.Admin})
-public class CreateRolePermissionCmd extends BaseCmd {
+public class CreateRolePermissionCmd extends BaseRolePermissionCmd {
     public static final String APINAME = "createRolePermission";
 
     /////////////////////////////////////////////////////
@@ -49,37 +48,12 @@ public class CreateRolePermissionCmd extends BaseCmd {
             description = "ID of the role", validations = {ApiArgValidator.PositiveNumber})
     private Long roleId;
 
-    @Parameter(name = ApiConstants.RULE, type = CommandType.STRING, required = true, description = "The API name or wildcard rule such as list*",
-            validations = {ApiArgValidator.NotNullOrEmpty})
-    private String rule;
-
-    @Parameter(name = ApiConstants.PERMISSION, type = CommandType.STRING, required = true, description = "The rule permission, allow or deny. Default: deny.")
-    private String permission;
-
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the role permission")
-    private String description;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getRoleId() {
         return roleId;
-    }
-
-    public Rule getRule() {
-        return new Rule(rule);
-    }
-
-    public RolePermission.Permission getPermission() {
-        if (Strings.isNullOrEmpty(permission)) {
-            return null;
-        }
-        return RolePermission.Permission.valueOf(permission.toUpperCase());
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     /////////////////////////////////////////////////////

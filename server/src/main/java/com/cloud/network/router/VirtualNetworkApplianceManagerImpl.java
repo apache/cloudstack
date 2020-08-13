@@ -270,6 +270,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual
  * network appliances available in the Cloud Stack.
@@ -793,7 +795,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                                     if (s_logger.isDebugEnabled()) {
                                                         s_logger.debug("Received # of bytes that's less than the last one.  "
                                                                 + "Assuming something went wrong and persisting it. Router: " + answerFinal.getRouterName() + " Reported: "
-                                                                + answerFinal.getBytesReceived() + " Stored: " + stats.getCurrentBytesReceived());
+                                                                + toHumanReadableSize(answerFinal.getBytesReceived()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesReceived()));
                                                     }
                                                     stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
                                                 }
@@ -802,7 +804,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                                     if (s_logger.isDebugEnabled()) {
                                                         s_logger.debug("Received # of bytes that's less than the last one.  "
                                                                 + "Assuming something went wrong and persisting it. Router: " + answerFinal.getRouterName() + " Reported: "
-                                                                + answerFinal.getBytesSent() + " Stored: " + stats.getCurrentBytesSent());
+                                                                + toHumanReadableSize(answerFinal.getBytesSent()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesSent()));
                                                     }
                                                     stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                                                 }
@@ -817,8 +819,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                         });
 
                                     } catch (final Exception e) {
-                                        s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + answer.getBytesReceived() + "; Tx: "
-                                                + answer.getBytesSent());
+                                        s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + toHumanReadableSize(answer.getBytesReceived()) + "; Tx: "
+                                                + toHumanReadableSize(answer.getBytesSent()));
                                     }
                                 }
                             }
@@ -3117,7 +3119,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                     if (stats.getCurrentBytesReceived() > answerFinal.getBytesReceived()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Router: "
-                                                    + answerFinal.getRouterName() + " Reported: " + answerFinal.getBytesReceived() + " Stored: " + stats.getCurrentBytesReceived());
+                                                    + answerFinal.getRouterName() + " Reported: " + toHumanReadableSize(answerFinal.getBytesReceived()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesReceived()));
                                         }
                                         stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
                                     }
@@ -3125,7 +3127,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                     if (stats.getCurrentBytesSent() > answerFinal.getBytesSent()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Router: "
-                                                    + answerFinal.getRouterName() + " Reported: " + answerFinal.getBytesSent() + " Stored: " + stats.getCurrentBytesSent());
+                                                    + answerFinal.getRouterName() + " Reported: " + toHumanReadableSize(answerFinal.getBytesSent()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesSent()));
                                         }
                                         stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                                     }
@@ -3139,8 +3141,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                 }
                             });
                         } catch (final Exception e) {
-                            s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + answer.getBytesReceived() + "; Tx: "
-                                    + answer.getBytesSent());
+                            s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + toHumanReadableSize(answer.getBytesReceived()) + "; Tx: "
+                                    + toHumanReadableSize(answer.getBytesSent()));
                         }
                     }
                 }

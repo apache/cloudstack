@@ -290,7 +290,9 @@ import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
+import org.apache.cloudstack.api.command.user.account.AddUserToProjectCmd;
 import org.apache.cloudstack.api.command.user.account.DeleteAccountFromProjectCmd;
+import org.apache.cloudstack.api.command.user.account.DeleteUserFromProjectCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
@@ -698,6 +700,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -710,15 +713,16 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
+    static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
+
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -935,6 +939,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
+        // Set human readable sizes
+        NumbersUtil.enableHumanReadableSizes = _configDao.findByName("display.human.readable.sizes").getValue().equals("true");
 
         if (_lockMasterListener == null) {
             _lockMasterListener = new LockMasterListener(ManagementServerNode.getManagementServerId());
@@ -1985,6 +1991,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
+        vlanSearch.and("removed", vlanSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 
         if (isAllocated != null && isAllocated == true) {
@@ -2810,7 +2817,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(MarkDefaultZoneForAccountCmd.class);
         cmdList.add(UpdateZoneCmd.class);
         cmdList.add(AddAccountToProjectCmd.class);
+        cmdList.add(AddUserToProjectCmd.class);
         cmdList.add(DeleteAccountFromProjectCmd.class);
+        cmdList.add(DeleteUserFromProjectCmd.class);
         cmdList.add(ListAccountsCmd.class);
         cmdList.add(ListProjectAccountsCmd.class);
         cmdList.add(AssociateIPAddrCmd.class);
@@ -3175,7 +3184,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {

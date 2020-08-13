@@ -45,6 +45,7 @@
         <!-- keep in alphabetic order -->
         <module>acl/dynamic-role-based</module>
         <module>acl/static-role-based</module>
+        <module>acl/project-role-based</module>
 
         <module>affinity-group-processors/explicit-dedication</module>
         <module>affinity-group-processors/host-affinity</module>

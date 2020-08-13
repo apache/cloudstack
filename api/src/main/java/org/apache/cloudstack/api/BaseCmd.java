@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -114,6 +115,8 @@ public abstract class BaseCmd {
     public AccountService _accountService;
     @Inject
     public RoleService roleService;
+    @Inject
+    public ProjectRoleService projRoleService;
     @Inject
     public UserVmService _userVmService;
     @Inject
@@ -268,6 +271,10 @@ public abstract class BaseCmd {
      * @return the id of the account that owns the object being acted upon
      */
     public abstract long getEntityOwnerId();
+
+    public List<Long> getEntityOwnerIds() {
+        return null;
+    }
 
     public Object getResponseObject() {
         return _responseObject;

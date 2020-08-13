@@ -3997,7 +3997,7 @@ class Project:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None):
+    def create(cls, apiclient, services, account=None, domainid=None, userid=None, accountid=None):
         """Create project"""
 
         cmd = createProject.createProjectCmd()
@@ -4007,7 +4007,10 @@ class Project:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
-
+        if userid:
+            cmd.userid = userid
+        if accountid:
+            cmd.accountid = accountid
         return Project(apiclient.createProject(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -4039,7 +4042,7 @@ class Project:
         cmd.id = self.id
         return apiclient.suspendProject(cmd)
 
-    def addAccount(self, apiclient, account=None, email=None):
+    def addAccount(self, apiclient, account=None, email=None, projectroleid=None, roletype=None):
         """Add account to project"""
 
         cmd = addAccountToProject.addAccountToProjectCmd()
@@ -4048,6 +4051,10 @@ class Project:
             cmd.account = account
         if email:
             cmd.email = email
+        if projectroleid:
+            cmd.projectroleid = projectroleid
+        if roletype:
+            cmd.roletype = roletype
         return apiclient.addAccountToProject(cmd)
 
     def deleteAccount(self, apiclient, account):
@@ -4057,6 +4064,29 @@ class Project:
         cmd.projectid = self.id
         cmd.account = account
         return apiclient.deleteAccountFromProject(cmd)
+
+    def addUser(self, apiclient, username=None, email=None, projectroleid=None, roletype=None):
+        """Add user to project"""
+
+        cmd = addUserToProject.addUserToProjectCmd()
+        cmd.projectid = self.id
+        if username:
+            cmd.username = username
+        if email:
+            cmd.email = email
+        if projectroleid:
+            cmd.projectroleid = projectroleid
+        if roletype:
+            cmd.roletype = roletype
+        return apiclient.addUserToProject(cmd)
+
+    def deleteUser(self, apiclient, userid):
+        """Delete user from project"""
+
+        cmd = deleteAccountFromProject.deleteAccountFromProjectCmd()
+        cmd.projectid = self.id
+        cmd.userid = userid
+        return apiclient.deleteUserFromProject(cmd)
 
     @classmethod
     def listAccounts(cls, apiclient, **kwargs):
@@ -4086,7 +4116,7 @@ class ProjectInvitation:
         self.__dict__.update(items)
 
     @classmethod
-    def update(cls, apiclient, projectid, accept, account=None, token=None):
+    def update(cls, apiclient, projectid, accept, account=None, token=None, userid=None):
         """Updates the project invitation for that account"""
 
         cmd = updateProjectInvitation.updateProjectInvitationCmd()
@@ -4094,6 +4124,8 @@ class ProjectInvitation:
         cmd.accept = accept
         if account:
             cmd.account = account
+        if userid:
+            cmd.userid = userid
         if token:
             cmd.token = token
 
@@ -5421,3 +5453,90 @@ class Backup:
         cmd = restoreBackup.restoreBackupCmd()
         cmd.id = self.id
         return (apiclient.restoreBackup(cmd))
+
+class ProjectRole:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, projectid):
+        """Create project role"""
+        cmd = createProjectRole.createProjectRoleCmd()
+        cmd.projectid = projectid
+        cmd.name = services["name"]
+        if "description" in services:
+            cmd.description = services["description"]
+
+        return ProjectRole(apiclient.createProjectRole(cmd).__dict__)
+
+    def delete(self, apiclient, projectid):
+        """Delete project Role"""
+
+        cmd = deleteProjectRole.deleteProjectRoleCmd()
+        cmd.projectid = projectid
+        cmd.id = self.id
+        apiclient.deleteProjectRole(cmd)
+
+    def update(self, apiclient, projectid, **kwargs):
+        """Update the project role"""
+
+        cmd = updateProjectRole.updateProjectRoleCmd()
+        cmd.projectid = projectid
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateProjectRole(cmd)
+
+    @classmethod
+    def list(cls, apiclient, projectid, **kwargs):
+        """List all project Roles matching criteria"""
+
+        cmd = listProjectRoles.listProjectRolesCmd()
+        cmd.projectid = projectid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.listProjectRoles(cmd))
+
+class ProjectRolePermission:
+    """Manage Project Role Permission"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, projectid):
+        """Create role permission"""
+        cmd = createProjectRolePermission.createProjectRolePermissionCmd()
+        cmd.projectid = projectid
+        cmd.projectroleid = services["projectroleid"]
+        cmd.rule = services["rule"]
+        cmd.permission = services["permission"]
+        if "description" in services:
+            cmd.description = services["description"]
+
+        return ProjectRolePermission(apiclient.createProjectRolePermission(cmd).__dict__)
+
+    def delete(self, apiclient, projectid):
+        """Delete role permission"""
+
+        cmd = deleteProjectRolePermission.deleteProjectRolePermissionCmd()
+        cmd.projectid = projectid
+        cmd.id = self.id
+        apiclient.deleteProjectRolePermission(cmd)
+
+    def update(self, apiclient, projectid, **kwargs):
+        """Update the role permission"""
+
+        cmd = updateProjectRolePermission.updateProjectRolePermissionCmd()
+        cmd.projectid = projectid
+        cmd.projectroleid = self.projectroleid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateProjectRolePermission(cmd)
+
+    @classmethod
+    def list(cls, apiclient, projectid, **kwargs):
+        """List all role permissions matching criteria"""
+
+        cmd = listProjectRolePermissions.listProjectRolePermissionsCmd()
+        cmd.projectid = projectid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.listProjectRolePermissions(cmd))

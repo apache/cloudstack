@@ -45,6 +45,9 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "the Id of the storage pool")
     private Long id;
 
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "Change the name of the storage pool", since = "4.15")
+    private String name;
+
     @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "comma-separated list of tags for the storage pool")
     private List<String> tags;
 
@@ -64,6 +67,10 @@ public class UpdateStoragePoolCmd extends BaseCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public List<String> getTags() {

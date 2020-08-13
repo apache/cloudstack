@@ -2199,7 +2199,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // OfflineVmwareMigration: check storage tags on disk(offering)s in comparison to destination storage pool
         // OfflineVmwareMigration: if no match return a proper error now
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-        if (diskOffering.equals(null)) {
+        if (diskOffering == null) {
             throw new CloudRuntimeException("volume '" + vol.getUuid() + "', has no diskoffering. Migration target cannot be checked.");
         }
         if (!doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {

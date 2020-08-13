@@ -52,6 +52,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.net.Proxy;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 /**
  * Download a template file using HTTP
  *
@@ -205,7 +207,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             ) {
                 out.seek(localFileSize);
 
-                s_logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInBytes);
+                s_logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + toHumanReadableSize(remoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes));
 
                 if (copyBytes(file, in, out)) return 0;
 
@@ -268,14 +270,14 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         String downloaded = "(incomplete download)";
         if (totalBytes >= remoteSize) {
             status = Status.DOWNLOAD_FINISHED;
-            downloaded = "(download complete remote=" + remoteSize + "bytes)";
+            downloaded = "(download complete remote=" + toHumanReadableSize(remoteSize) + " bytes)";
         }
-        errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
+        errorString = "Downloaded " + toHumanReadableSize(totalBytes) + " bytes " + downloaded;
     }
 
     private boolean canHandleDownloadSize() {
         if (remoteSize > maxTemplateSizeInBytes) {
-            s_logger.info("Remote size is too large: " + remoteSize + " , max=" + maxTemplateSizeInBytes);
+            s_logger.info("Remote size is too large: " + toHumanReadableSize(remoteSize) + " , max=" + toHumanReadableSize(maxTemplateSizeInBytes));
             status = Status.UNRECOVERABLE_ERROR;
             errorString = "Download file size is too large";
             return false;
@@ -344,7 +346,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         long localFileSize = 0;
         if (file.exists() && resume) {
             localFileSize = file.length();
-            s_logger.info("Resuming download to file (current size)=" + localFileSize);
+            s_logger.info("Resuming download to file (current size)=" + toHumanReadableSize(localFileSize));
         }
         return localFileSize;
     }

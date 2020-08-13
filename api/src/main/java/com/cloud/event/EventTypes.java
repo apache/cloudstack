@@ -191,6 +191,14 @@ public class EventTypes {
     public static final String EVENT_ROLE_PERMISSION_UPDATE = "ROLE.PERMISSION.UPDATE";
     public static final String EVENT_ROLE_PERMISSION_DELETE = "ROLE.PERMISSION.DELETE";
 
+    // Project Role events
+    public static final  String EVENT_PROJECT_ROLE_CREATE = "PROJECT.ROLE.CREATE";
+    public static final  String EVENT_PROJECT_ROLE_UPDATE = "PROJECT.ROLE.UPDATE";
+    public static final  String EVENT_PROJECT_ROLE_DELETE = "PROJECT.ROLE.DELETE";
+    public static final String EVENT_PROJECT_ROLE_PERMISSION_CREATE = "PROJECT.ROLE.PERMISSION.CREATE";
+    public static final String EVENT_PROJECT_ROLE_PERMISSION_UPDATE = "PROJECT.ROLE.PERMISSION.UPDATE";
+    public static final String EVENT_PROJECT_ROLE_PERMISSION_DELETE = "PROJECT.ROLE.PERMISSION.DELETE";
+
     // CA events
     public static final String EVENT_CA_CERTIFICATE_ISSUE = "CA.CERTIFICATE.ISSUE";
     public static final String EVENT_CA_CERTIFICATE_REVOKE = "CA.CERTIFICATE.REVOKE";
@@ -403,9 +411,11 @@ public class EventTypes {
     public static final String EVENT_PROJECT_ACTIVATE = "PROJECT.ACTIVATE";
     public static final String EVENT_PROJECT_SUSPEND = "PROJECT.SUSPEND";
     public static final String EVENT_PROJECT_ACCOUNT_ADD = "PROJECT.ACCOUNT.ADD";
+    public static final String EVENT_PROJECT_USER_ADD = "PROJECT.USER.ADD";
     public static final String EVENT_PROJECT_INVITATION_UPDATE = "PROJECT.INVITATION.UPDATE";
     public static final String EVENT_PROJECT_INVITATION_REMOVE = "PROJECT.INVITATION.REMOVE";
     public static final String EVENT_PROJECT_ACCOUNT_REMOVE = "PROJECT.ACCOUNT.REMOVE";
+    public static final String EVENT_PROJECT_USER_REMOVE = "PROJECT.USER.REMOVE";
 
     // Network as a Service
     public static final String EVENT_NETWORK_ELEMENT_CONFIGURE = "NETWORK.ELEMENT.CONFIGURE";
