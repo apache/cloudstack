@@ -749,7 +749,7 @@ export default {
                 continue
               }
               param.opts = json[obj][res]
-              if (this.currentAction.mapping[param.name] && this.currentAction.mapping[param.name].filter) {
+              if (this.currentAction.mapping && this.currentAction.mapping[param.name] && this.currentAction.mapping[param.name].filter) {
                 const filter = this.currentAction.mapping[param.name].filter
                 param.opts = json[obj][res].filter(filter)
               }
