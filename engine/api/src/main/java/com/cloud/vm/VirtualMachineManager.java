@@ -43,6 +43,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -234,4 +235,6 @@ public interface VirtualMachineManager extends Manager {
      * - Keep the VM as it is on the hypervisor
      */
     boolean unmanage(String vmUuid);
+
+    UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
 }

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.acl.dao;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -26,7 +27,12 @@ import java.util.List;
 
 public interface RoleDao extends GenericDao<RoleVO, Long> {
     List<RoleVO> findAllByName(String roleName);
+
+    Pair<List<RoleVO>, Integer> findAllByName(final String roleName, Long offset, Long limit);
+
     List<RoleVO> findAllByRoleType(RoleType type);
     List<RoleVO> findByName(String roleName);
     RoleVO findByNameAndType(String roleName, RoleType type);
+
+    Pair<List<RoleVO>, Integer> findAllByRoleType(RoleType type, Long offset, Long limit);
 }

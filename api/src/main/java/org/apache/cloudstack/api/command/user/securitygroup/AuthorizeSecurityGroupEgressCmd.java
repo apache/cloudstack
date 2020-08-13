@@ -73,7 +73,7 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list associated")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list associated. Multiple entries must be separated by a single comma character (,).")
     private List<String> cidrList;
 
     @Parameter(name = ApiConstants.USER_SECURITY_GROUP_LIST, type = CommandType.MAP, description = "user to security group mapping")

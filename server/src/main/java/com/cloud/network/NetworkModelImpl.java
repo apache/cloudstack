@@ -34,6 +34,7 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -104,11 +105,15 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.dao.ProjectAccountDao;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
@@ -162,6 +167,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     PodVlanMapDao _podVlanMapDao;
     @Inject
     VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    ProjectDao projectDao;
 
     private List<NetworkElement> networkElements;
 
@@ -1649,9 +1656,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                     ", network does not have an owner");
             if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                        ", permission denied");
+                User user = CallContext.current().getCallingUser();
+                Project project = projectDao.findByProjectAccountId(network.getAccountId());
+                ProjectAccount projectAccountUser = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
+                if (projectAccountUser != null) {
+                    if (!_projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), network.getAccountId())) {
+                        throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
+                                ", permission denied");
+                    }
+                } else {
+                    if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())) {
+                        throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
+                                ", permission denied");
+                    }
                 }
             } else {
                 List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());

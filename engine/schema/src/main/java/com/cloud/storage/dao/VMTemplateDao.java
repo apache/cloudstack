@@ -36,7 +36,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     public VMTemplateVO findByTemplateName(String templateName);
 
-    // public void update(VMTemplateVO template);
+    public VMTemplateVO findValidByTemplateName(String templateName);
 
     public List<VMTemplateVO> listAllSystemVMTemplates();
 

@@ -16,13 +16,9 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import junit.framework.TestCase;
+import java.lang.reflect.Field;
+import java.util.Collections;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,8 +26,16 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
-import java.util.Collections;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
+
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
@@ -117,7 +121,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     @Test
     public void testValidAllowRolePermissionApiCheckAccess() {
         final String allowedApiName = "someAllowedApi";
-        final RolePermission permission = new RolePermissionVO(1L, allowedApiName, RolePermission.Permission.ALLOW, null);
+        final RolePermission permission = new RolePermissionVO(1L, allowedApiName, Permission.ALLOW, null);
         Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
         assertTrue(apiAccessChecker.checkAccess(getTestUser(), allowedApiName));
     }
@@ -125,7 +129,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     @Test
     public void testValidAllowRolePermissionWildcardCheckAccess() {
         final String allowedApiName = "someAllowedApi";
-        final RolePermission permission = new RolePermissionVO(1L, "some*", RolePermission.Permission.ALLOW, null);
+        final RolePermission permission = new RolePermissionVO(1L, "some*", Permission.ALLOW, null);
         Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
         assertTrue(apiAccessChecker.checkAccess(getTestUser(), allowedApiName));
     }
@@ -133,7 +137,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     @Test
     public void testValidDenyRolePermissionApiCheckAccess() {
         final String denyApiName = "someDeniedApi";
-        final RolePermission permission = new RolePermissionVO(1L, denyApiName, RolePermission.Permission.DENY, null);
+        final RolePermission permission = new RolePermissionVO(1L, denyApiName, Permission.DENY, null);
         Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
         try {
             apiAccessChecker.checkAccess(getTestUser(), denyApiName);
@@ -145,7 +149,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     @Test
     public void testValidDenyRolePermissionWildcardCheckAccess() {
         final String denyApiName = "someDenyApi";
-        final RolePermission permission = new RolePermissionVO(1L, "*Deny*", RolePermission.Permission.DENY, null);
+        final RolePermission permission = new RolePermissionVO(1L, "*Deny*", Permission.DENY, null);
         Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
         try {
             apiAccessChecker.checkAccess(getTestUser(), denyApiName);

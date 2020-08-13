@@ -62,6 +62,8 @@ import com.xensource.xenapi.Types.StorageOperations;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
 
@@ -665,7 +667,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 newSnapshot.setParentSnapshotPath(prevBackupUuid);
             }
             s_logger.info("New snapshot details: " + newSnapshot.toString());
-            s_logger.info("New snapshot physical utilization: " + physicalSize);
+            s_logger.info("New snapshot physical utilization: " + toHumanReadableSize(physicalSize));
 
             return new CopyCmdAnswer(newSnapshot);
         } catch (final Exception e) {

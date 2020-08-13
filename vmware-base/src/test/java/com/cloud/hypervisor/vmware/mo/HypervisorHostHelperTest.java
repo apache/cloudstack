@@ -548,7 +548,7 @@ public class HypervisorHostHelperTest {
     public void testGetPublicNetworkNamePrefixTaggedVlan() throws Exception {
         vlanId = "1234";
         String publicNetworkPrefix = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
-        assertEquals("cloud.public.1234", publicNetworkPrefix);
+        assertEquals("cloud.public.1234.", publicNetworkPrefix);
     }
 
     @Test

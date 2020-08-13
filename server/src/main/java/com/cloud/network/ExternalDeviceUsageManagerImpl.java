@@ -90,6 +90,8 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class ExternalDeviceUsageManagerImpl extends ManagerBase implements ExternalDeviceUsageManager {
 
@@ -312,13 +314,13 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
                     userStats.setCurrentBytesSent(newCurrentBytesSent);
                     if (oldCurrentBytesSent > newCurrentBytesSent) {
-                        s_logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");
+                        s_logger.warn(warning + "Stored bytes sent: " + toHumanReadableSize(oldCurrentBytesSent) + ", new bytes sent: " + toHumanReadableSize(newCurrentBytesSent) + ".");
                         userStats.setNetBytesSent(oldNetBytesSent + oldCurrentBytesSent);
                     }
 
                     userStats.setCurrentBytesReceived(newCurrentBytesReceived);
                     if (oldCurrentBytesReceived > newCurrentBytesReceived) {
-                        s_logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");
+                        s_logger.warn(warning + "Stored bytes received: " + toHumanReadableSize(oldCurrentBytesReceived) + ", new bytes received: " + toHumanReadableSize(newCurrentBytesReceived) + ".");
                         userStats.setNetBytesReceived(oldNetBytesReceived + oldCurrentBytesReceived);
                     }
 
@@ -531,13 +533,13 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
             userStats.setCurrentBytesSent(newCurrentBytesSent);
             if (oldCurrentBytesSent > newCurrentBytesSent) {
-                s_logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");
+                s_logger.warn(warning + "Stored bytes sent: " + toHumanReadableSize(oldCurrentBytesSent) + ", new bytes sent: " + toHumanReadableSize(newCurrentBytesSent) + ".");
                 userStats.setNetBytesSent(oldNetBytesSent + oldCurrentBytesSent);
             }
 
             userStats.setCurrentBytesReceived(newCurrentBytesReceived);
             if (oldCurrentBytesReceived > newCurrentBytesReceived) {
-                s_logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");
+                s_logger.warn(warning + "Stored bytes received: " + toHumanReadableSize(oldCurrentBytesReceived) + ", new bytes received: " + toHumanReadableSize(newCurrentBytesReceived) + ".");
                 userStats.setNetBytesReceived(oldNetBytesReceived + oldCurrentBytesReceived);
             }
 

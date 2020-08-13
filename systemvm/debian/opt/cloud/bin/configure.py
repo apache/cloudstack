@@ -918,15 +918,6 @@ class CsForwardingRules(CsDataBag):
         if not rule["internal_ports"] == "any":
             fw_prerout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
-        fw_postrout_rule = "-A POSTROUTING -d %s/32 " % rule["public_ip"]
-        if not rule["protocol"] == "any":
-            fw_postrout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
-        if not rule["public_ports"] == "any":
-            fw_postrout_rule += " --dport %s" % self.portsToString(rule["public_ports"], ":")
-        fw_postrout_rule += " -j SNAT --to-source %s" % rule["internal_ip"]
-        if not rule["internal_ports"] == "any":
-            fw_postrout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
-
         fw_output_rule = "-A OUTPUT -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_output_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
@@ -948,7 +939,6 @@ class CsForwardingRules(CsDataBag):
             )
 
         self.fw.append(["nat", "", fw_prerout_rule])
-        self.fw.append(["nat", "", fw_postrout_rule])
         self.fw.append(["nat", "", fw_postrout_rule2])
         self.fw.append(["nat", "", fw_output_rule])
 

@@ -201,6 +201,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
 import com.cloud.utils.Pair;
@@ -1134,6 +1135,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 try {
+                    resetVmNicsDeviceId(vm.getId());
                     _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null, dest.getStorageForDisks()), ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         volumeMgr.prepare(vmProfile, dest);
@@ -1330,6 +1332,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void logBootModeParameters(Map<VirtualMachineProfile.Param, Object> params) {
+        if (params == null) {
+          return;
+        }
         StringBuffer msgBuf = new StringBuffer("Uefi params ");
         boolean log = false;
         if (params.get(VirtualMachineProfile.Param.UefiFlag) != null) {
@@ -1350,6 +1355,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         if (log) {
             s_logger.info(msgBuf.toString());
+        }
+    }
+
+    private void resetVmNicsDeviceId(Long vmId) {
+        final List<NicVO> nics = _nicsDao.listByVmId(vmId);
+        Collections.sort(nics, new Comparator<NicVO>() {
+            @Override
+            public int compare(NicVO nic1, NicVO nic2) {
+                Long nicDevId1 = Long.valueOf(nic1.getDeviceId());
+                Long nicDevId2 = Long.valueOf(nic2.getDeviceId());
+                return nicDevId1.compareTo(nicDevId2);
+            }
+        });
+        int deviceId = 0;
+        for (final NicVO nic : nics) {
+            if (nic.getDeviceId() != deviceId) {
+                nic.setDeviceId(deviceId);
+                _nicsDao.update(nic.getId(),nic);
+            }
+            deviceId ++;
         }
     }
 
@@ -3301,7 +3326,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void checkAndSetEnterSetupMode(VirtualMachineTO vmTo, Map<VirtualMachineProfile.Param, Object> params) {
-        Boolean enterSetup = (Boolean)params.get(VirtualMachineProfile.Param.BootIntoSetup);
+        Boolean enterSetup = null;
+        if (params != null) {
+            enterSetup = (Boolean) params.get(VirtualMachineProfile.Param.BootIntoSetup);
+        }
         if (s_logger.isTraceEnabled()) {
             s_logger.trace(String.format("orchestrating VM reboot for '%s' %s set to %s", vmTo.getName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup));
         }
@@ -5606,6 +5634,109 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.user_vm);
         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.cpu, cpu);
         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.memory, memory);
+    }
+
+    @Override
+    public UserVm restoreVirtualMachine(final long vmId, final Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException {
+        final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            VmWorkJobVO placeHolder = null;
+            placeHolder = createPlaceHolderWork(vmId);
+            try {
+                return orchestrateRestoreVirtualMachine(vmId, newTemplateId);
+            } finally {
+                if (placeHolder != null) {
+                    _workJobDao.expunge(placeHolder.getId());
+                }
+            }
+        } else {
+            final Outcome<VirtualMachine> outcome = restoreVirtualMachineThroughJobQueue(vmId, newTemplateId);
+
+            try {
+                outcome.get();
+            } catch (final InterruptedException e) {
+                throw new RuntimeException("Operation is interrupted", e);
+            } catch (final java.util.concurrent.ExecutionException e) {
+                throw new RuntimeException("Execution exception", e);
+            }
+
+            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ResourceUnavailableException) {
+                    throw (ResourceUnavailableException)jobResult;
+                } else if (jobResult instanceof ConcurrentOperationException) {
+                    throw (ConcurrentOperationException)jobResult;
+                } else if (jobResult instanceof RuntimeException) {
+                    throw (RuntimeException)jobResult;
+                } else if (jobResult instanceof Throwable) {
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                } else if (jobResult instanceof HashMap) {
+                    HashMap<Long, String> passwordMap = (HashMap<Long, String>)jobResult;
+                    UserVmVO userVm = _userVmDao.findById(vmId);
+                    userVm.setPassword(passwordMap.get(vmId));
+                    return userVm;
+                }
+            }
+            throw new RuntimeException("Unexpected job execution result");
+        }
+    }
+
+    private UserVm orchestrateRestoreVirtualMachine(final long vmId, final Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException {
+        s_logger.debug("Restoring vm " + vmId + " with new templateId " + newTemplateId);
+        final CallContext context = CallContext.current();
+        final Account account = context.getCallingAccount();
+        return _userVmService.restoreVirtualMachine(account, vmId, newTemplateId);
+    }
+
+    public Outcome<VirtualMachine> restoreVirtualMachineThroughJobQueue(final long vmId, final Long newTemplateId) {
+
+        final CallContext context = CallContext.current();
+        final User user = context.getCallingUser();
+        final Account account = context.getCallingAccount();
+
+        final List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                VirtualMachine.Type.Instance, vmId,
+                VmWorkRestore.class.getName());
+
+        VmWorkJobVO workJob = null;
+        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+            assert pendingWorkJobs.size() == 1;
+            workJob = pendingWorkJobs.get(0);
+        } else {
+
+            workJob = new VmWorkJobVO(context.getContextId());
+
+            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+            workJob.setCmd(VmWorkRestore.class.getName());
+
+            workJob.setAccountId(account.getId());
+            workJob.setUserId(user.getId());
+            workJob.setVmType(VirtualMachine.Type.Instance);
+            workJob.setVmInstanceId(vmId);
+            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
+
+            final VmWorkRestore workInfo = new VmWorkRestore(user.getId(), account.getId(), vmId,
+                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, newTemplateId);
+            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+        }
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
+
+        return new VmJobVirtualMachineOutcome(workJob, vmId);
+    }
+
+    @ReflectionUse
+    private Pair<JobInfo.Status, String> orchestrateRestoreVirtualMachine(final VmWorkRestore work) throws Exception {
+        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert vm != null;
+        UserVm uservm = orchestrateRestoreVirtualMachine(vm.getId(), work.getTemplateId());
+        HashMap<Long, String> passwordMap = new HashMap<Long, String>();
+        passwordMap.put(uservm.getId(), uservm.getPassword());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(passwordMap));
     }
 
 }

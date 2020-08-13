@@ -114,6 +114,8 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.script.Script;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
     private static final ExecutorService MonitorServiceExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("VM-Question-Monitor"));
@@ -1744,7 +1746,7 @@ public class VirtualMachineMO extends BaseMO {
                                 @Override
                                 public void action(Long param) {
                                     if (s_logger.isTraceEnabled()) {
-                                        s_logger.trace("Download progress " + param + "/" + totalBytes);
+                                        s_logger.trace("Download progress " + param + "/" + toHumanReadableSize(totalBytes));
                                     }
                                     progressReporter.reportProgress((int)(param * 100 / totalBytes));
                                 }

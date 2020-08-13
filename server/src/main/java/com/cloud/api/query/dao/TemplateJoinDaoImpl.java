@@ -48,6 +48,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -68,6 +69,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private AccountService _accountService;
     @Inject
     private VMTemplateDao _vmTemplateDao;
+    @Inject
+    private VMTemplateDetailsDao _templateDetailsDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -209,11 +212,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         // set details map
-        if (template.getDetailName() != null) {
-            Map<String, String> details = new HashMap<>();
-            details.put(template.getDetailName(), template.getDetailValue());
-            templateResponse.setDetails(details);
-        }
+        Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(template.getId());
+        templateResponse.setDetails(details);
 
         // update tag information
         long tag_id = template.getTagId();

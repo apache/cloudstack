@@ -27,6 +27,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
@@ -67,6 +69,7 @@ import com.cloud.gpu.GPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -80,6 +83,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -93,6 +98,7 @@ import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -147,6 +153,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     EntityManager _entityMgr;
     @Inject
     AsyncJobManager _jobMgr;
+    @Inject
+    ResourceTagDao _resourceTagDao;
 
     @Inject
     VmWorkJobDao _workJobDao;
@@ -206,6 +214,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         String keyword = cmd.getKeyword();
         String name = cmd.getVmSnapshotName();
         String accountName = cmd.getAccountName();
+        Map<String, String> tags = cmd.getTags();
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
@@ -229,10 +238,31 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("display_name", sb.entity().getDisplayName(), SearchCriteria.Op.EQ);
         sb.and("account_id", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.done();
+
+        if (MapUtils.isNotEmpty(tags)) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count = 0; count < tags.size(); count++) {
+                tagSearch.or().op(ApiConstants.KEY + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and(ApiConstants.VALUE + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and(ApiConstants.RESOURCE_TYPE, tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<VMSnapshotVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (MapUtils.isNotEmpty(tags)) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", ApiConstants.RESOURCE_TYPE, ResourceTag.ResourceObjectType.VMSnapshot.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", ApiConstants.KEY + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", ApiConstants.VALUE + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
 
         if (accountName != null && cmd.getDomainId() != null) {
             Account account = _accountMgr.getActiveAccountByName(accountName, cmd.getDomainId());
