@@ -57,7 +57,11 @@ public class ProjectInvitationJoinDaoImpl extends GenericDaoBase<ProjectInvitati
 
         if (invite.getAccountName() != null) {
             response.setAccountName(invite.getAccountName());
-        } else {
+        }
+        if (invite.getUserId() != null) {
+            response.setUserId(invite.getUserId());
+        }
+        if (invite.getEmail() != null) {
             response.setEmail(invite.getEmail());
         }
 

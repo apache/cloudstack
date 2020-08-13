@@ -23,7 +23,11 @@ public interface ProjectAccount {
 
     long getAccountId();
 
+    Long getUserId();
+
     long getProjectId();
+
+    Long getProjectRoleId();
 
     Role getAccountRole();
 

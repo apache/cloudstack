@@ -288,7 +288,9 @@ import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
+import org.apache.cloudstack.api.command.user.account.AddUserToProjectCmd;
 import org.apache.cloudstack.api.command.user.account.DeleteAccountFromProjectCmd;
+import org.apache.cloudstack.api.command.user.account.DeleteUserFromProjectCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
@@ -696,6 +698,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -708,9 +711,8 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -2808,7 +2810,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(MarkDefaultZoneForAccountCmd.class);
         cmdList.add(UpdateZoneCmd.class);
         cmdList.add(AddAccountToProjectCmd.class);
+        cmdList.add(AddUserToProjectCmd.class);
         cmdList.add(DeleteAccountFromProjectCmd.class);
+        cmdList.add(DeleteUserFromProjectCmd.class);
         cmdList.add(ListAccountsCmd.class);
         cmdList.add(ListProjectAccountsCmd.class);
         cmdList.add(AssociateIPAddrCmd.class);

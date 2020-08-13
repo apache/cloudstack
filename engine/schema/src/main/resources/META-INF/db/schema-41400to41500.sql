@@ -19,6 +19,156 @@
 -- Schema upgrade from 4.14.0.0 to 4.15.0.0
 --;
 
+-- Project roles
+CREATE TABLE IF NOT EXISTS `cloud`.`project_role` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) UNIQUE,
+  `name` varchar(255) COMMENT 'unique name of the dynamic project role',
+  `removed` datetime COMMENT 'date removed',
+  `description` text COMMENT 'description of the project role',
+  `project_id` bigint(20) unsigned COMMENT 'Id of the project to which the role belongs',
+  PRIMARY KEY (`id`),
+  KEY `i_project_role__name` (`name`),
+  UNIQUE KEY (`name`, `project_id`),
+  CONSTRAINT `fk_project_role__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Project role permissions table
+CREATE TABLE IF NOT EXISTS `cloud`.`project_role_permissions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) UNIQUE,
+  `project_id` bigint(20) unsigned NOT NULL COMMENT 'id of the role',
+  `project_role_id` bigint(20) unsigned NOT NULL COMMENT 'id of the role',
+  `rule` varchar(255) NOT NULL COMMENT 'rule for the role, api name or wildcard',
+  `permission` varchar(255) NOT NULL COMMENT 'access authority, allow or deny',
+  `description` text COMMENT 'description of the rule',
+  `sort_order` bigint(20) unsigned NOT NULL DEFAULT 0 COMMENT 'permission sort order',
+  PRIMARY KEY (`id`),
+  KEY `fk_project_role_permissions__project_role_id` (`project_role_id`),
+  KEY `i_project_role_permissions__sort_order` (`sort_order`),
+  UNIQUE KEY (`project_role_id`, `rule`),
+  CONSTRAINT `fk_project_role_permissions__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_project_role_permissions__project_role_id` FOREIGN KEY (`project_role_id`) REFERENCES `project_role` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Alter project accounts table to include user_id and project_role_id for role based users in projects
+ALTER TABLE `cloud`.`project_account`
+ ADD COLUMN `user_id` bigint unsigned COMMENT 'ID of user to be added to the project' AFTER `account_id`,
+ ADD CONSTRAINT `fk_project_account__user_id` FOREIGN KEY `fk_project_account__user_id`(`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+ ADD COLUMN `project_role_id` bigint unsigned COMMENT 'Project role id' AFTER `project_account_id`,
+ ADD CONSTRAINT `fk_project_account__project_role_id` FOREIGN KEY (`project_role_id`) REFERENCES `project_role` (`id`) ON DELETE SET NULL,
+ DROP FOREIGN KEY `fk_project_account__account_id`,
+ DROP INDEX `account_id`;
+
+ALTER TABLE `cloud`.`project_account`
+ ADD CONSTRAINT `fk_project_account__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE ,
+ ADD CONSTRAINT `uc_project_account__project_id_account_id_user_id` UNIQUE (`project_id`, `account_id`, `user_id`) ;
+
+-- Alter project invitations table to include user_id for invites sent to specific users of an account
+ALTER TABLE `cloud`.`project_invitations`
+    ADD COLUMN `user_id` bigint unsigned COMMENT 'ID of user to be added to the project' AFTER `account_id`,
+    ADD COLUMN `account_role` varchar(255) NOT NULL DEFAULT 'Regular' COMMENT 'Account role in the project (Owner or Regular)' AFTER `domain_id`,
+    ADD COLUMN `project_role_id` bigint unsigned COMMENT 'Project role id' AFTER `account_role`,
+    ADD CONSTRAINT `fk_project_invitations__user_id` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+    ADD CONSTRAINT `fk_project_invitations__project_role_id` FOREIGN KEY (`project_role_id`) REFERENCES `project_role` (`id`) ON DELETE SET NULL,
+    DROP INDEX `project_id`,
+    ADD CONSTRAINT `uc_project_invitations__project_id_account_id_user_id` UNIQUE (`project_id`, `account_id`,`user_id`);
+
+-- Alter project_invitation_view to incorporate user_id as a field
+ALTER VIEW `cloud`.`project_invitation_view` AS
+    select
+        project_invitations.id,
+        project_invitations.uuid,
+        project_invitations.email,
+        project_invitations.created,
+        project_invitations.state,
+        project_invitations.project_role_id,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name,
+        account.type account_type,
+        user.id user_id,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path
+    from
+        `cloud`.`project_invitations`
+            left join
+        `cloud`.`account` ON project_invitations.account_id = account.id
+            left join
+        `cloud`.`domain` ON project_invitations.domain_id = domain.id
+            left join
+        `cloud`.`projects` ON projects.id = project_invitations.project_id
+            left join
+        `cloud`.`user` ON project_invitations.user_id = user.id;
+
+-- Alter project_account_view to incorporate user id
+ALTER VIEW `cloud`.`project_account_view` AS
+    select
+        project_account.id,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name,
+        account.type account_type,
+        user.id user_id,
+        user.uuid user_uuid,
+        user.username user_name,
+        project_account.account_role,
+        project_role.id project_role_id,
+        project_role.uuid project_role_uuid,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path
+    from
+        `cloud`.`project_account`
+            inner join
+        `cloud`.`account` ON project_account.account_id = account.id
+            inner join
+        `cloud`.`domain` ON account.domain_id = domain.id
+            inner join
+        `cloud`.`projects` ON projects.id = project_account.project_id
+            left join
+        `cloud`.`project_role` ON project_account.project_role_id = project_role.id
+            left join
+        `cloud`.`user` ON (project_account.user_id = user.id);
+
+ALTER VIEW `cloud`.`project_view` AS
+    select
+        projects.id,
+        projects.uuid,
+        projects.name,
+        projects.display_text,
+        projects.state,
+        projects.removed,
+        projects.created,
+        projects.project_account_id,
+        account.account_name owner,
+        pacct.account_id,
+        pacct.user_id,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path
+    from
+        `cloud`.`projects`
+            inner join
+        `cloud`.`domain` ON projects.domain_id = domain.id
+            inner join
+        `cloud`.`project_account` ON projects.id = project_account.project_id
+            and project_account.account_role = 'Admin'
+            inner join
+        `cloud`.`account` ON account.id = project_account.account_id
+            left join
+        `cloud`.`project_account` pacct ON projects.id = pacct.project_id;
+
 -- Fix Debian 10 32-bit hypervisor mappings on VMware, debian10-32bit OS ID in guest_os table is 292, not 282
 UPDATE `cloud`.`guest_os_hypervisor` SET guest_os_id=292 WHERE guest_os_id=282 AND hypervisor_type="VMware" AND guest_os_name="debian10Guest";
 -- Fix CentOS 32-bit mapping for VMware 5.5 which does not have a centos6Guest but only centosGuest and centos64Guest

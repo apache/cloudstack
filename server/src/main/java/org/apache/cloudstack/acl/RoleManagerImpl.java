@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.command.admin.acl.ListRolePermissionsCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListRolesCmd;
 import org.apache.cloudstack.api.command.admin.acl.UpdateRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.UpdateRolePermissionCmd;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -75,7 +76,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     @Inject
     private AccountManager accountManager;
 
-    private void checkCallerAccess() {
+    public void checkCallerAccess() {
         if (!isEnabled()) {
             throw new PermissionDeniedException("Dynamic api checker is not enabled, aborting role operation");
         }
@@ -85,7 +86,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         }
         Role callerRole = findRole(caller.getRoleId());
         if (callerRole == null || callerRole.getRoleType() != RoleType.Admin) {
-            throw new PermissionDeniedException("Restricted API called by an user account of non-Admin role type");
+            throw new PermissionDeniedException("Restricted API called by a user account of non-Admin role type");
         }
     }
 
@@ -305,7 +306,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_CREATE, eventDescription = "creating Role Permission")
-    public RolePermission createRolePermission(final Role role, final Rule rule, final RolePermission.Permission permission, final String description) {
+    public RolePermission createRolePermission(final Role role, final Rule rule, final Permission permission, final String description) {
         checkCallerAccess();
         if (role.isDefault()) {
             throw new PermissionDeniedException("Role permission cannot be added for Default roles");
@@ -334,7 +335,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    public boolean updateRolePermission(Role role, RolePermission rolePermission, RolePermission.Permission permission) {
+    public boolean updateRolePermission(Role role, RolePermission rolePermission, Permission permission) {
         checkCallerAccess();
         if (role.isDefault()) {
             throw new PermissionDeniedException("Role permission cannot be updated for Default roles");
@@ -438,7 +439,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    public RolePermission.Permission getRolePermission(String permission) {
+    public Permission getRolePermission(String permission) {
         if (Strings.isNullOrEmpty(permission)) {
             return null;
         }

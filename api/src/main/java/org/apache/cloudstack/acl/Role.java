@@ -20,9 +20,7 @@ package org.apache.cloudstack.acl;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Role extends InternalIdentity, Identity {
-    String getName();
+public interface Role extends RoleEntity, InternalIdentity, Identity {
     RoleType getRoleType();
-    String getDescription();
     boolean isDefault();
 }

@@ -348,6 +348,8 @@ public class ApiConstants {
     public static final String STORAGE_POLICY = "storagepolicy";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
+    public static final String OWNER = "owner";
+    public static final String SWAP_OWNER = "swapowner";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String TARGET_IQN = "targetiqn";
@@ -474,12 +476,15 @@ public class ApiConstants {
     public static final String PROJECT = "project";
     public static final String ROLE = "role";
     public static final String ROLE_ID = "roleid";
+    public static final String PROJECT_ROLE_ID = "projectroleid";
+    public static final String PROJECT_ROLE_NAME = "projectrolename";
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
     public static final String RULES = "rules";
     public static final String RULE_ID = "ruleid";
+    public static final String PROJECT_ROLE_PERMISSION_ID = "projectrolepermissionid";
     public static final String RULE_ORDER = "ruleorder";
     public static final String USER = "user";
     public static final String ACTIVE_ONLY = "activeonly";

@@ -22,7 +22,7 @@ import java.util.Map;
 
 import com.cloud.utils.Pair;
 
-import org.apache.cloudstack.acl.RolePermission.Permission;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface RoleService {
