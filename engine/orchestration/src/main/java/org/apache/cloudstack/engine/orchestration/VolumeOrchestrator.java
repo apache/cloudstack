@@ -139,6 +139,7 @@ import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -714,10 +715,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (rootDisksize != null) {
             rootDisksize = rootDisksize * 1024 * 1024 * 1024;
             if (rootDisksize > size) {
-                s_logger.debug("Using root disk size of " + rootDisksize + " Bytes for volume " + name);
+                s_logger.debug("Using root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes for volume " + name);
                 size = rootDisksize;
             } else {
-                s_logger.debug("Using root disk size of " + size + " Bytes for volume " + name + "since specified root disk size of " + rootDisksize + " Bytes is smaller than template");
+                s_logger.debug("Using root disk size of " + toHumanReadableSize(size) + " Bytes for volume " + name + "since specified root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes is smaller than template");
             }
         }
 

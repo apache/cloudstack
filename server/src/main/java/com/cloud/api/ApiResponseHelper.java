@@ -350,6 +350,8 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class ApiResponseHelper implements ResponseGenerator {
 
     private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
@@ -3481,7 +3483,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append("Bytes received by network ");
                 }
                 if (network != null) {
-                    builder.append(network.getName()).append(" (").append(network.getUuid()).append(") ");
+                    if (network.getName() != null) {
+                        builder.append(network.getName());
+                    }
+                    if (network.getUuid() != null){
+                        builder.append(" (").append(network.getUuid()).append(") ");
+                    }
+                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue())  + " ");
                 }
                 if (vm != null) {
                     builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
@@ -3518,6 +3526,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (volume != null) {
                     builder.append(" and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
+                if (usageRecord.getRawUsage()!= null){
+                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue()));
+                }
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
@@ -3548,6 +3559,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (template != null) {
                     builder.append(" and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
                 }
+                if (usageRecord.getSize() != null) {
+                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
+                }
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.TEMPLATE || usageRecord.getUsageType() == UsageTypes.ISO) {
@@ -3575,7 +3589,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 if (tmpl != null) {
                     builder.append(" for ").append(tmpl.getName()).append(" (").append(tmpl.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getSize()).append(" and virtual size ").append(usageRecord.getVirtualSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize())).append(" and virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3594,7 +3608,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 builder.append("Snapshot usage ");
                 if (snap != null) {
                     builder.append("for ").append(snap.getName()).append(" (").append(snap.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3741,6 +3755,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (diskOff != null) {
                     builder.append(" using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
                 }
+                if (usageRecord.getSize() != null){
+                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
+                }
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME_SECONDARY) {
@@ -3750,7 +3767,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 builder.append("Volume on secondary storage usage");
                 if (volume != null) {
                     builder.append(" for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3774,7 +3791,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getVirtualSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }

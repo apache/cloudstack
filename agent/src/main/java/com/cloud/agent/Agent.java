@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.SetupMSListAnswer;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.ca.PostCertificateRenewalCommand;
@@ -809,6 +810,8 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     public void processReadyCommand(final Command cmd) {
         final ReadyCommand ready = (ReadyCommand)cmd;
+        // Set human readable sizes;
+        NumbersUtil.enableHumanReadableSizes = ready.getEnableHumanReadableSizes();
 
         s_logger.info("Processing agent ready command, agent id = " + ready.getHostId());
         if (ready.getHostId() != null) {

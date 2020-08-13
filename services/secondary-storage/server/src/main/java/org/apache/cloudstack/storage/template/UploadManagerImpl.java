@@ -53,6 +53,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     public class Completion implements UploadCompleteCallback {
@@ -439,7 +441,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
         TemplateUploader tu = uj.getTemplateUploader();
         s_logger.warn("Upload Completion for jobId: " + jobId + ", status=" + status);
-        s_logger.warn("UploadedBytes=" + tu.getUploadedBytes() + ", error=" + tu.getUploadError() + ", pct=" + tu.getUploadPercent());
+        s_logger.warn("UploadedBytes=" + toHumanReadableSize(tu.getUploadedBytes()) + ", error=" + tu.getUploadError() + ", pct=" + tu.getUploadPercent());
 
         switch (status) {
         case ABORTED:

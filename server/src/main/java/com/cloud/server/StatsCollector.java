@@ -142,6 +142,8 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 /**
  * Provides real time stats for various agent resources up to x seconds
  *
@@ -739,15 +741,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                                     if (isCurrentVmDiskStatsDifferentFromPrevious(previousVmDiskStats, vmDiskStat_lock)) {
                                         s_logger.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " + "Ignoring current answer. Host: " + host.getName()
-                                                + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + vmDiskStat.getBytesRead() + " write(Bytes): " + vmDiskStat.getBytesWrite()
-                                                + " Read(IO): " + vmDiskStat.getIORead() + " write(IO): " + vmDiskStat.getIOWrite());
+                                                + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " write(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesWrite())
+                                                + " Read(IO): " + toHumanReadableSize(vmDiskStat.getIORead()) + " write(IO): " + toHumanReadableSize(vmDiskStat.getIOWrite()));
                                         continue;
                                     }
 
                                     if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStat.getBytesRead()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Read # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getBytesRead() + " Stored: "
+                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " Stored: "
                                                     + vmDiskStat_lock.getCurrentBytesRead());
                                         }
                                         vmDiskStat_lock.setNetBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
@@ -756,8 +758,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (vmDiskStat_lock.getCurrentBytesWrite() > vmDiskStat.getBytesWrite()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Write # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getBytesWrite() + " Stored: "
-                                                    + vmDiskStat_lock.getCurrentBytesWrite());
+                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesWrite()) + " Stored: "
+                                                    + toHumanReadableSize(vmDiskStat_lock.getCurrentBytesWrite()));
                                         }
                                         vmDiskStat_lock.setNetBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
                                     }
@@ -885,8 +887,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (vmNetworkStat_lock.getCurrentBytesSent() > vmNetworkStat.getBytesSent()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Sent # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + vmNetworkStat.getBytesSent() + " Stored: "
-                                                    + vmNetworkStat_lock.getCurrentBytesSent());
+                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesSent()) + " Stored: "
+                                                    + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesSent()));
                                         }
                                         vmNetworkStat_lock.setNetBytesSent(vmNetworkStat_lock.getNetBytesSent() + vmNetworkStat_lock.getCurrentBytesSent());
                                     }
@@ -895,8 +897,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (vmNetworkStat_lock.getCurrentBytesReceived() > vmNetworkStat.getBytesReceived()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + vmNetworkStat.getBytesReceived() + " Stored: "
-                                                    + vmNetworkStat_lock.getCurrentBytesReceived());
+                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesReceived()) + " Stored: "
+                                                    + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesReceived()));
                                         }
                                         vmNetworkStat_lock.setNetBytesReceived(vmNetworkStat_lock.getNetBytesReceived() + vmNetworkStat_lock.getCurrentBytesReceived());
                                     }
@@ -1005,7 +1007,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     Answer answer = ssAhost.sendMessage(command);
                     if (answer != null && answer.getResult()) {
                         storageStats.put(storeId, (StorageStats)answer);
-                        s_logger.trace("HostId: " + storeId + " Used: " + ((StorageStats)answer).getByteUsed() + " Total Available: " + ((StorageStats)answer).getCapacityBytes());
+                        s_logger.trace("HostId: " + storeId + " Used: " + toHumanReadableSize(((StorageStats)answer).getByteUsed()) + " Total Available: " + toHumanReadableSize(((StorageStats)answer).getCapacityBytes()));
                     }
                 }
                 _storageStats = storageStats;

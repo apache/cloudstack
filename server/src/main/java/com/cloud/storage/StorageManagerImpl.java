@@ -199,6 +199,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
     private static final Logger s_logger = Logger.getLogger(StorageManagerImpl.class);
@@ -979,13 +981,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(storagePool.getId());
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();
             s_logger.debug("Found storage pool " + storagePool.getName() + " of type " + storagePool.getPoolType().toString() + " with overprovisioning factor " + overProvFactor.toString());
-            s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + storagePool.getCapacityBytes());
+            s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(storagePool.getCapacityBytes()));
         } else {
             s_logger.debug("Found storage pool " + storagePool.getName() + " of type " + storagePool.getPoolType().toString());
             totalOverProvCapacity = storagePool.getCapacityBytes();
         }
 
-        s_logger.debug("Total over provisioned capacity of the pool " + storagePool.getName() + " id: " + storagePool.getId() + " is " + totalOverProvCapacity);
+        s_logger.debug("Total over provisioned capacity of the pool " + storagePool.getName() + " id: " + storagePool.getId() + " is " + toHumanReadableSize(totalOverProvCapacity));
         CapacityState capacityState = CapacityState.Enabled;
         if (storagePool.getScope() == ScopeType.ZONE) {
             DataCenterVO dc = ApiDBUtils.findZoneById(storagePool.getDataCenterId());
@@ -1027,7 +1029,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 _capacityDao.update(capacity.getId(), capacity);
             }
         }
-        s_logger.debug("Successfully set Capacity - " + totalOverProvCapacity + " for capacity type - " + capacityType + " , DataCenterId - " + storagePool.getDataCenterId() + ", HostOrPoolId - "
+        s_logger.debug("Successfully set Capacity - " + toHumanReadableSize(totalOverProvCapacity) + " for capacity type - " + capacityType + " , DataCenterId - " + storagePool.getDataCenterId() + ", HostOrPoolId - "
                 + storagePool.getId() + ", PodId " + storagePool.getPodId());
     }
 
@@ -1739,7 +1741,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (stats != null) {
                 double usedPercentage = ((double)stats.getByteUsed() / (double)totalSize);
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + stats.getByteUsed() + ", usedPct: " + usedPercentage
+                    s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + toHumanReadableSize(pool.getCapacityBytes()) + ", usedBytes: " + toHumanReadableSize(stats.getByteUsed()) + ", usedPct: " + usedPercentage
                             + ", disable threshold: " + storageUsedThreshold);
                 }
                 if (usedPercentage >= storageUsedThreshold) {
@@ -1882,20 +1884,20 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
 
             s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with over-provisioning factor " + overProvFactor.toString());
-            s_logger.debug("Total over-provisioned capacity calculated is " + overProvFactor + " * " + pool.getCapacityBytes());
+            s_logger.debug("Total over-provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(pool.getCapacityBytes()));
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
 
             s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString());
         }
 
-        s_logger.debug("Total capacity of the pool " + poolVO.getName() + " with ID " + pool.getId() + " is " + totalOverProvCapacity);
+        s_logger.debug("Total capacity of the pool " + poolVO.getName() + " with ID " + pool.getId() + " is " + toHumanReadableSize(totalOverProvCapacity));
 
         double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking pool: " + pool.getId() + " for storage allocation , maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + allocatedSizeWithTemplate
-                    + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " + storageAllocatedThreshold);
+            s_logger.debug("Checking pool: " + pool.getId() + " for storage allocation , maxSize : " + toHumanReadableSize(totalOverProvCapacity) + ", totalAllocatedSize : " + toHumanReadableSize(allocatedSizeWithTemplate)
+                    + ", askingSize : " + toHumanReadableSize(totalAskingSize) + ", allocated disable threshold: " + storageAllocatedThreshold);
         }
 
         double usedPercentage = (allocatedSizeWithTemplate + totalAskingSize) / (double)(totalOverProvCapacity);
@@ -1911,8 +1913,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (totalOverProvCapacity < (allocatedSizeWithTemplate + totalAskingSize)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation, not enough storage, maxSize : " + totalOverProvCapacity
-                        + ", totalAllocatedSize : " + allocatedSizeWithTemplate + ", askingSize : " + totalAskingSize);
+                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation, not enough storage, maxSize : " + toHumanReadableSize(totalOverProvCapacity)
+                        + ", totalAllocatedSize : " + toHumanReadableSize(allocatedSizeWithTemplate) + ", askingSize : " + toHumanReadableSize(totalAskingSize));
             }
 
             return false;

@@ -719,6 +719,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
+    static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
+
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -935,6 +937,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
+        // Set human readable sizes
+        NumbersUtil.enableHumanReadableSizes = _configDao.findByName("display.human.readable.sizes").getValue().equals("true");
 
         if (_lockMasterListener == null) {
             _lockMasterListener = new LockMasterListener(ManagementServerNode.getManagementServerId());
@@ -3176,7 +3180,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
