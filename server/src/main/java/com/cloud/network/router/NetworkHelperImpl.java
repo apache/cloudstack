@@ -800,7 +800,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
 
         List<String> lbProtocols = Arrays.asList("tcp", "udp", "tcp-proxy", "ssl");
-        if (! lbProtocols.contains(rule.getLbProtocol())) {
+        if (rule.getLbProtocol() != null && ! lbProtocols.contains(rule.getLbProtocol())) {
             throw new InvalidParameterValueException("protocol " + rule.getLbProtocol() + " is not in valid protocols " + lbProtocols);
         }
 
