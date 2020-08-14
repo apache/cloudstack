@@ -874,6 +874,8 @@ class TestSSVMs(cloudstackTestCase):
         # Wait for the agent to be up
         self.waitForSystemVMAgent(ssvm_response.name)
 
+        # Wait until NFS stores mounted before running the script
+        time.sleep(30)
         # Call to verify cloud process is running
         self.test_03_ssvm_internals()
 
