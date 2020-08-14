@@ -898,10 +898,16 @@ export default {
                     hasJobId = true
                     break
                   } else {
+                    var message = this.$t(this.currentAction.label) + (resourceName ? ' - ' + resourceName : '')
+                    var duration = 2
+                    if (this.currentAction.successMessage) {
+                      message = message + ' - ' + this.$t(this.currentAction.successMessage)
+                      duration = 5
+                    }
                     this.$message.success({
-                      content: this.$t(this.currentAction.label) + (resourceName ? ' - ' + resourceName : ''),
+                      content: message,
                       key: this.currentAction.label + resourceName,
-                      duration: 2
+                      duration: duration
                     })
                   }
                 }
