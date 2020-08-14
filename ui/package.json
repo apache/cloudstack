@@ -1,7 +1,7 @@
 {
   "name": "primate",
   "description": "Modern role-based Apache CloudStack UI",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "homepage": "https://cloudstack.apache.org/",
   "repository": {
     "type": "git",
