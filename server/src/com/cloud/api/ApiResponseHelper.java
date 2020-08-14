@@ -3333,6 +3333,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 resourceType = ResourceTag.ResourceObjectType.UserVm;
                 usageRecResponse.setUsageId(vm.getUuid());
                 resourceId = vm.getId();
+                usageRecResponse.setOsTypeId(vm.getGuestOSId());
             }
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());
