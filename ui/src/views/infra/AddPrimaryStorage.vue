@@ -488,16 +488,16 @@ export default {
           Object.keys(smbParams).forEach((key, index) => {
             params['details[' + index.toString() + '].' + key] = smbParams[key]
           })
-        } else if (values.protocol === 'PreSetup' && values.hypervisor !== 'VMware') {
+        } else if (values.protocol === 'PreSetup' && this.hypervisorType !== 'VMware') {
           url = this.presetupURL(server, path)
-        } else if (values.protocol === 'PreSetup' && values.hypervisor === 'VMware') {
+        } else if (values.protocol === 'PreSetup' && this.hypervisorType === 'VMware') {
           path = values.vCenterDataCenter
           if (path.substring(0, 1) !== '/') {
             path = '/' + path
           }
           path += '/' + values.vCenterDataStore
           url = this.presetupURL(server, path)
-        } else if (values.protocol === 'datastorecluster' && values.hypervisor === 'VMware') {
+        } else if (values.protocol === 'datastorecluster' && this.hypervisorType === 'VMware') {
           path = values.vCenterDataCenter
           if (path.substring(0, 1) !== '/') {
             path = '/' + path
