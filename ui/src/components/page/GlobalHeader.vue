@@ -29,6 +29,7 @@
         :type="collapsed ? 'menu-unfold' : 'menu-fold'"
         @click="toggle"/>
       <project-menu v-if="device !== 'mobile'" />
+      <saml-domain-switcher style="margin-left: 20px" />
       <user-menu></user-menu>
     </div>
     <div v-else :class="['top-nav-header-index', theme]">
@@ -48,6 +49,7 @@
             @click="toggle"></a-icon>
         </div>
         <project-menu v-if="device !== 'mobile'" />
+        <saml-domain-switcher style="margin-left: 20px" />
         <user-menu></user-menu>
       </div>
     </div>
@@ -60,6 +62,7 @@ import Breadcrumb from '@/components/widgets/Breadcrumb'
 import Logo from '../header/Logo'
 import SMenu from '../menu/'
 import ProjectMenu from '../header/ProjectMenu'
+import SamlDomainSwitcher from '../header/SamlDomainSwitcher'
 import UserMenu from '../header/UserMenu'
 
 import { mixin } from '@/utils/mixin.js'
@@ -71,6 +74,7 @@ export default {
     Logo,
     SMenu,
     ProjectMenu,
+    SamlDomainSwitcher,
     UserMenu
   },
   mixins: [mixin],
