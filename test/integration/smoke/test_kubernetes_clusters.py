@@ -72,57 +72,41 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.kubernetes_version_ids = []
         if cls.setup_failed == False:
             try:
-                cls.kubernetes_version_1 = cls.addKubernetesSupportedVersion('1.14.9', 'http://download.cloudstack.org/cks/setup-1.14.9.iso')
+                cls.kubernetes_version_1 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.14.9"])
                 cls.kubernetes_version_ids.append(cls.kubernetes_version_1.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.14.9.iso, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
+                    (cls.services["cks_kubernetes_versions"]["1.14.9"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.14.9"]["url"], e))
         if cls.setup_failed == False:
             try:
-                cls.kubernetes_version_2 = cls.addKubernetesSupportedVersion('1.15.0', 'http://download.cloudstack.org/cks/setup-1.15.0.iso')
+                cls.kubernetes_version_2 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.15.0"])
                 cls.kubernetes_version_ids.append(cls.kubernetes_version_2.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.15.0.iso, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
+                    (cls.services["cks_kubernetes_versions"]["1.15.0"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.15.0"]["url"], e))
         if cls.setup_failed == False:
             try:
-                cls.kubernetes_version_3 = cls.addKubernetesSupportedVersion('1.16.0', 'http://download.cloudstack.org/cks/setup-1.16.0.iso')
+                cls.kubernetes_version_3 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.0"])
                 cls.kubernetes_version_ids.append(cls.kubernetes_version_3.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.16.0.iso, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
+                    (cls.services["cks_kubernetes_versions"]["1.16.0"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.0"]["url"], e))
         if cls.setup_failed == False:
             try:
-                cls.kubernetes_version_4 = cls.addKubernetesSupportedVersion('1.16.3', 'http://download.cloudstack.org/cks/setup-1.16.3.iso')
+                cls.kubernetes_version_4 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.3"])
                 cls.kubernetes_version_ids.append(cls.kubernetes_version_4.id)
             except Exception as e:
                 cls.setup_failed = True
-                cls.debug("Failed to get Kubernetes version ISO in ready state, http://download.cloudstack.org/cks/setup-1.16.3.iso, %s" % e)
+                cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
+                    (cls.services["cks_kubernetes_versions"]["1.16.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.3"]["url"], e))
 
-        cks_template_data = {
-            "name": "Kubernetes-Service-Template",
-            "displaytext": "Kubernetes-Service-Template",
-            "format": "qcow2",
-            "hypervisor": "kvm",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
-            "ispublic": "True",
-            "isextractable": "True"
-        }
-        cks_template_data_details = []
-        if cls.hypervisor.lower() == "vmware":
-            cks_template_data["url"] = "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova"
-            cks_template_data["format"] = "OVA"
-            cks_template_data_details = [{"keyboard":"us","nicAdapter":"Vmxnet3","rootDiskController":"pvscsi"}]
-        elif cls.hypervisor.lower() == "xenserver":
-            cks_template_data["url"] = "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2"
-            cks_template_data["format"] = "VHD"
-        elif cls.hypervisor.lower() == "kvm":
-            cks_template_data["requireshvm"] = "True"
         if cls.setup_failed == False:
             cls.cks_template = Template.register(
                                              cls.apiclient,
-                                             cks_template_data,
+                                             cls.services["cks_templates"][cls.hypervisor.lower()],
                                              zoneid=cls.zone.id,
                                              hypervisor=cls.hypervisor,
                                              details=cks_template_data_details
@@ -140,14 +124,8 @@ class TestKubernetesCluster(cloudstackTestCase):
                                   cls.cks_template_name_key,
                                   cls.cks_template.name)
 
-        cks_offering_data = {
-            "name": "CKS-Instance",
-            "displaytext": "CKS Instance",
-            "cpunumber": 2,
-            "cpuspeed": 1000,
-            "memory": 2048,
-        }
-        cks_offering_data["name"] = cks_offering_data["name"] + '-' + random_gen()
+        cks_offering_data = cls.services["cks_service_offering"]
+        cks_offering_data["name"] = 'CKS-Instance-' + random_gen()
         if cls.setup_failed == False:
             cls.cks_service_offering = ServiceOffering.create(
                                                               cls.apiclient,
@@ -279,13 +257,13 @@ class TestKubernetesCluster(cloudstackTestCase):
         return versionResponse[0]
 
     @classmethod 
-    def addKubernetesSupportedVersion(cls, semantic_version, iso_url):
+    def addKubernetesSupportedVersion(cls, version_service):
         addKubernetesSupportedVersionCmd = addKubernetesSupportedVersion.addKubernetesSupportedVersionCmd()
-        addKubernetesSupportedVersionCmd.semanticversion = semantic_version
-        addKubernetesSupportedVersionCmd.name = 'v' + semantic_version + '-' + random_gen()
-        addKubernetesSupportedVersionCmd.url = iso_url
-        addKubernetesSupportedVersionCmd.mincpunumber = 2
-        addKubernetesSupportedVersionCmd.minmemory = 2048
+        addKubernetesSupportedVersionCmd.semanticversion = version_service["version_service"]
+        addKubernetesSupportedVersionCmd.name = 'v' + version_service["version_service"] + '-' + random_gen()
+        addKubernetesSupportedVersionCmd.url = version_service["url"]
+        addKubernetesSupportedVersionCmd.mincpunumber = version_service["mincpunumber"]
+        addKubernetesSupportedVersionCmd.minmemory = version_service["minmemory"]
         kubernetes_version = cls.apiclient.addKubernetesSupportedVersion(addKubernetesSupportedVersionCmd)
         cls.debug("Waiting for Kubernetes version with ID %s to be ready" % kubernetes_version.id)
         cls.waitForKubernetesSupportedVersionIsoReadyState(kubernetes_version.id)
