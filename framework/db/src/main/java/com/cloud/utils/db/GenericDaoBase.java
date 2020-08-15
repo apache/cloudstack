@@ -56,7 +56,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
