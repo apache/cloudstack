@@ -30,6 +30,10 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.OCFS2Manager;
@@ -122,6 +126,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     StoragePoolAutomation storagePoolAutmation;
     @Inject
     protected HostDao _hostDao;
+    @Inject
+    private VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
+    @Inject
+    private VmwareDatacenterDao vmwareDcDao;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -249,11 +257,17 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setPath(hostPath.replaceFirst("/", ""));
             parameters.setUserInfo(userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
+            if (StringUtils.isNotBlank(hypervisorType) && HypervisorType.getType(hypervisorType).equals(HypervisorType.VMware)) {
+                validateVcenterDetails(zoneId, storageHost);
+            }
             parameters.setType(StoragePoolType.PreSetup);
             parameters.setHost(storageHost);
             parameters.setPort(0);
             parameters.setPath(hostPath);
         } else if (scheme.equalsIgnoreCase("DatastoreCluster")) {
+            if (StringUtils.isNotBlank(hypervisorType) && HypervisorType.getType(hypervisorType).equals(HypervisorType.VMware)) {
+                validateVcenterDetails(zoneId, storageHost);
+            }
             parameters.setType(StoragePoolType.DatastoreCluster);
             parameters.setHost(storageHost);
             parameters.setPort(0);
@@ -355,6 +369,17 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         parameters.setProviderName(providerName);
 
         return dataStoreHelper.createPrimaryDataStore(parameters);
+    }
+
+    private void validateVcenterDetails(long zoneId, String storageHost) {
+        VmwareDatacenterZoneMapVO vmwareDcZoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
+        if (vmwareDcZoneMap != null) {
+            Long associatedVmwareDcId = vmwareDcZoneMap.getVmwareDcId();
+            VmwareDatacenterVO associatedVmwareDc = vmwareDcDao.findById(associatedVmwareDcId);
+            if (!associatedVmwareDc.getVcenterHost().equals(storageHost)) {
+                throw new InvalidParameterValueException("Provided vCenter server details does not match with the existing vCenter in zone id: " + zoneId);
+            }
+        }
     }
 
     protected boolean createStoragePool(long hostId, StoragePool pool) {
