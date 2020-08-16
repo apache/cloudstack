@@ -82,8 +82,8 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
             if (srcDataObject instanceof SnapshotInfo && snapshotChain != null && snapshotChain.containsKey(srcDataObject)) {
                 for (SnapshotInfo snapshotInfo : snapshotChain.get(srcDataObject).first()) {
                     destDataObject = destDatastore.create(snapshotInfo);
-                    snapshotInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
-                    destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
+                    snapshotInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
+                    destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
                     migrateJob(future, snapshotInfo, destDataObject, destDatastore);
                 }
             } else {
@@ -101,8 +101,8 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                     }
                 }
                 destDataObject = destDatastore.create(srcDataObject);
-                srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
-                destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrationRequested);
+                srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
+                destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
                 migrateJob(future, srcDataObject, destDataObject, destDatastore);
             }
         } catch (Exception e) {

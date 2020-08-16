@@ -105,9 +105,9 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         // alreay Ready for DownloadListener
         stateMachines.addTransition(State.Ready, Event.OperationSuccessed, State.Ready);
         // State transitions for data object migration
-        stateMachines.addTransition(State.Ready, Event.MigrationRequested, State.Migrating);
+        stateMachines.addTransition(State.Ready, Event.MigrateDataRequested, State.Migrating);
         stateMachines.addTransition(State.Ready, Event.CopyRequested, State.Copying);
-        stateMachines.addTransition(State.Allocated, Event.MigrationRequested, State.Migrating);
+        stateMachines.addTransition(State.Allocated, Event.MigrateDataRequested, State.Migrating);
         stateMachines.addTransition(State.Migrating, Event.MigrationFailed, State.Failed);
         stateMachines.addTransition(State.Migrating, Event.MigrationSucceeded, State.Destroyed);
         stateMachines.addTransition(State.Migrating, Event.OperationSuccessed, State.Ready);
