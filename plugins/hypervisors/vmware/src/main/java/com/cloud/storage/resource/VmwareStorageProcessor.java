@@ -3483,7 +3483,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception("Unable to create container VM for volume creation");
             }
 
-            clonedVm.moveAllVmDiskFiles(primaryDsMo, "", false);
+            clonedVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
             clonedVm.detachAllDisks();
             return _storage.getSize(srcOVFFileName);
         } finally {

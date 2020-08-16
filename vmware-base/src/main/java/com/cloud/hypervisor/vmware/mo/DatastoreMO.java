@@ -260,8 +260,13 @@ public class DatastoreMO extends BaseMO {
             destFullPath = String.format("[%s] %s", destDsName, destFilePath);
 
         DatastoreMO srcDsMo = new DatastoreMO(_context, morDestDs);
-        if (!srcDsMo.fileExists(srcFullPath)) {
-            s_logger.error(String.format("Cannot move file to destination datastore due to file %s does not exists", srcFullPath));
+        try {
+            if (!srcDsMo.fileExists(srcFullPath)) {
+                s_logger.error(String.format("Cannot move file to destination datastore due to file %s does not exists", srcFullPath));
+                return false;
+            }
+        } catch (Exception e) {
+            s_logger.error(String.format("Cannot move file to destination datastore due to file %s due to exeception %s", srcFullPath, e.getMessage()));
             return false;
         }
 
