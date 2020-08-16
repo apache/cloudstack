@@ -1488,21 +1488,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else {
             suitablePools = allPools;
         }
-        abstractDataStoreClustersList((List<StoragePool>) allPools);
-        abstractDataStoreClustersList((List<StoragePool>) suitablePools);
+        List<StoragePool> avoidPools = new ArrayList<>();
+        if (srcVolumePool.getParent() != 0L) {
+            StoragePool datastoreCluster = _poolDao.findById(srcVolumePool.getParent());
+            avoidPools.add(datastoreCluster);
+        }
+        abstractDataStoreClustersList((List<StoragePool>) allPools, new ArrayList<StoragePool>());
+        abstractDataStoreClustersList((List<StoragePool>) suitablePools, avoidPools);
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
 
-    private void abstractDataStoreClustersList(List<StoragePool> storagePools) {
+    private void abstractDataStoreClustersList(List<StoragePool> storagePools, List<StoragePool> avoidPools) {
         Predicate<StoragePool> childDatastorePredicate = pool -> (pool.getParent() != 0);
         List<StoragePool> childDatastores = storagePools.stream().filter(childDatastorePredicate).collect(Collectors.toList());
-
+        storagePools.removeAll(avoidPools);
         if (!childDatastores.isEmpty()) {
             storagePools.removeAll(childDatastores);
             Set<Long> parentStoragePoolIds = childDatastores.stream().map(mo -> mo.getParent()).collect(Collectors.toSet());
             for (Long parentStoragePoolId : parentStoragePoolIds) {
                 StoragePool parentPool = _poolDao.findById(parentStoragePoolId);
-                if (!storagePools.contains(parentPool))
+                if (!storagePools.contains(parentPool) && !avoidPools.contains(parentPool))
                     storagePools.add(parentPool);
             }
         }
