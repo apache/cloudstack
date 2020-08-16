@@ -6,9 +6,11 @@ import net.juniper.contrail.api.types.InstanceIp;
 import net.juniper.contrail.api.types.VirtualMachine;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
+import net.juniper.contrail.api.types.VirtualRouter;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenInstanceIpResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenNetworkResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenVirtualMachineResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenVirtualRouterResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenVmInterfaceResponse;
 
 public class TungstenResponseHelper {
@@ -57,6 +59,14 @@ public class TungstenResponseHelper {
         }
         tungstenVmInterfaceResponse.setObjectName("tungstenVirtualMachineInterface");
         return tungstenVmInterfaceResponse;
+    }
+
+    public static TungstenVirtualRouterResponse createTungstenVirtualRouterResponse(VirtualRouter virtualRouter){
+        TungstenVirtualRouterResponse tungstenVirtualRouterResponse = new TungstenVirtualRouterResponse();
+        tungstenVirtualRouterResponse.setUuid(virtualRouter.getUuid());
+        tungstenVirtualRouterResponse.setName(virtualRouter.getName());
+        tungstenVirtualRouterResponse.setObjectName("tungstenVirtualRouter");
+        return tungstenVirtualRouterResponse;
     }
 
     public static TungstenInstanceIpResponse createTungstenInstanceIpResponse(InstanceIp instanceIp){

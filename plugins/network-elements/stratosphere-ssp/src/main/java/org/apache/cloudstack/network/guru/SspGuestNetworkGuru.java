@@ -77,6 +77,8 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
                 s_logger.info("SSP works for network isolatation.");
             } else if (!_sspMgr.canHandle(physicalNetwork)) {
                 s_logger.info("SSP manager not ready");
+            } else if(offering.isForTungsten()){
+                s_logger.info("This offering is for Tungsten SDN");
             } else {
                 return true;
             }
@@ -95,7 +97,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
      */
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapacityException {
+            throws InsufficientVirtualNetworkCapacityException {
         s_logger.trace("implement " + network.toString());
         super.implement(network, offering, dest, context);
         _sspMgr.createNetwork(network, offering, dest, context);
@@ -111,7 +113,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         super.reserve(nic, network, vm, dest, context);
         _sspMgr.createNicEnv(network, nic, dest, context);
     }

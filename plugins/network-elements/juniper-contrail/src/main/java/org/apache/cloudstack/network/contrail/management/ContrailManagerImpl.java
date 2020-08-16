@@ -34,12 +34,21 @@ import java.util.TimerTask;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import net.juniper.contrail.api.ApiConnector;
+import net.juniper.contrail.api.ApiConnectorFactory;
+import net.juniper.contrail.api.ApiPropertyBase;
+import net.juniper.contrail.api.ObjectReference;
+import net.juniper.contrail.api.types.FloatingIp;
+import net.juniper.contrail.api.types.FloatingIpPool;
+import net.juniper.contrail.api.types.NetworkPolicy;
+import net.juniper.contrail.api.types.VirtualNetwork;
+
 import org.apache.cloudstack.network.contrail.model.FloatingIpModel;
 import org.apache.cloudstack.network.contrail.model.FloatingIpPoolModel;
 import org.apache.cloudstack.network.contrail.model.ModelController;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
@@ -89,15 +98,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.ImmutableList;
-
-import net.juniper.contrail.api.ApiConnector;
-import net.juniper.contrail.api.ApiConnectorFactory;
-import net.juniper.contrail.api.ApiPropertyBase;
-import net.juniper.contrail.api.ObjectReference;
-import net.juniper.contrail.api.types.FloatingIp;
-import net.juniper.contrail.api.types.FloatingIpPool;
-import net.juniper.contrail.api.types.NetworkPolicy;
-import net.juniper.contrail.api.types.VirtualNetwork;
 
 public class ContrailManagerImpl extends ManagerBase implements ContrailManager {
     @Inject
@@ -193,7 +193,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     }
 
     private NetworkOffering locatePublicNetworkOffering(String offeringName,
-            String offeringDisplayText, Provider provider) {
+                                                        String offeringDisplayText, Provider provider) {
         List<? extends NetworkOffering> offerList = _configService.listNetworkOfferings(TrafficType.Public, false);
         for (NetworkOffering offer: offerList) {
             if (offer.getName().equals(offeringName)) {
@@ -219,14 +219,16 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         ConfigurationManager configMgr = (ConfigurationManager) _configService;
         NetworkOfferingVO voffer = configMgr.createNetworkOffering(offeringName, offeringDisplayText,
                 TrafficType.Public, null, true, Availability.Optional, null, serviceProviderMap, true,
-                Network.GuestType.Shared, false, null, false, null, true, false, null, true, null, false, false, null, null, true, null);
+                Network.GuestType.Shared, false, null, false, null, true, false, null, true, null, false, false, false,null, null);
+
+        voffer.setState(NetworkOffering.State.Enabled);
         long id = voffer.getId();
         _networkOfferingDao.update(id, voffer);
         return _networkOfferingDao.findById(id);
     }
 
     private NetworkOffering locateNetworkOffering(String offeringName,
-            String offeringDisplayText, Provider provider) {
+                                                  String offeringDisplayText, Provider provider) {
         List<? extends NetworkOffering> offerList = _configService.listNetworkOfferings(TrafficType.Guest, false);
         for (NetworkOffering offer : offerList) {
             if (offer.getName().equals(offeringName)) {
@@ -254,7 +256,9 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         ConfigurationManager configMgr = (ConfigurationManager)_configService;
         NetworkOfferingVO voffer =
                 configMgr.createNetworkOffering(offeringName, offeringDisplayText, TrafficType.Guest, null, false, Availability.Optional, null, serviceProviderMap, true,
-                        Network.GuestType.Isolated, false, null, false, null, false, true, null, true, null, false, offeringName.equals(vpcRouterOfferingName), null, null, true, null);
+                        Network.GuestType.Isolated, false, null, false, null, false, true, null, true, null, false, offeringName.equals(vpcRouterOfferingName), false,null, null);
+
+        voffer.setState(NetworkOffering.State.Enabled);
         if (offeringName.equals(vpcRouterOfferingName)) {
             voffer.setInternalLb(true);
         }
@@ -295,7 +299,8 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             }
             serviceProviderMap.put(svc, providerSet);
         }
-        vpcOffer = _vpcProvSvc.createVpcOffering(juniperVPCOfferingName, juniperVPCOfferingDisplayText, services, serviceProviderMap, null, null, null, null, null, VpcOffering.State.Enabled);
+        vpcOffer = _vpcProvSvc.createVpcOffering(juniperVPCOfferingName, juniperVPCOfferingDisplayText, services, serviceProviderMap, null, null, null, null);
+        ((VpcOfferingVO)vpcOffer).setState(VpcOffering.State.Enabled);
         long id = vpcOffer.getId();
         _vpcOffDao.update(id, (VpcOfferingVO)vpcOffer);
         return _vpcOffDao.findById(id);
@@ -438,7 +443,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     @Override
     public String getProjectName(long accountId) {
         Account account = _accountDao.findById(accountId);
-        if (account.getType() == Account.Type.PROJECT) {
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             ProjectVO project = _projectDao.findByProjectAccountId(account.getId());
             if (project != null) {
                 return project.getName();
@@ -455,7 +460,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
 
     private ProjectVO getProject(long accountId) {
         Account account = _accountDao.findById(accountId);
-        if (account.getType() == Account.Type.PROJECT) {
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             return _projectDao.findByProjectAccountId(account.getId());
         }
         return null;

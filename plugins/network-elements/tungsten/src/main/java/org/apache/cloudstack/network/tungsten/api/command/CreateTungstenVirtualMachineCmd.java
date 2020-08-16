@@ -46,8 +46,15 @@ public class CreateTungstenVirtualMachineCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten virtual machine interface name")
     private String name;
 
+    @Parameter(name = ApiConstants.TUNGSTEN_VIRTUAL_MACHINE_UUID, type = CommandType.STRING, description = "Tungsten virtual machine uuid. If null tungsten will generate an uuid for the virtual machine")
+    private String tungstenVmUuid;
+
     public String getName() {
         return name;
+    }
+
+    public String getTungstenVmUuid() {
+        return tungstenVmUuid;
     }
 
     @Inject

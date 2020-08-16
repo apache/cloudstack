@@ -202,6 +202,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider BigSwitchBcf = new Provider("BigSwitchBcf", false);
         //Add ConfigDrive provider
         public static final Provider ConfigDrive = new Provider("ConfigDrive", false);
+        //Add Tungsten provider
+        public static final Provider Tungsten = new Provider("Tungsten", true);
 
         private final String name;
         private final boolean isExternal;
@@ -404,6 +406,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     BroadcastDomainType getBroadcastDomainType();
 
     TrafficType getTrafficType();
+
+    String getTungstenNetworkUuid();
+
+    void setTungstenNetworkUuid(String tungstenNetworkUuid);
 
     String getGateway();
 

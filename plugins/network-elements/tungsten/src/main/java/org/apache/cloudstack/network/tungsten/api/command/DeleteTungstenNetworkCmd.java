@@ -26,11 +26,11 @@ public class DeleteTungstenNetworkCmd extends BaseCmd {
 
     private static final String s_name = "deletetungstennetworkresponse";
 
-    @Parameter(name= ApiConstants.UUID, type=CommandType.STRING, required=true, description="The UUID of the tungsten network")
-    private String uuid;
+    @Parameter(name= ApiConstants.TUNGSTEN_NETWORK_UUID, type=CommandType.STRING, required=true, description="The UUID of the tungsten network")
+    private String tungstenNetworkUuid;
 
-    public String getUuid() {
-        return uuid;
+    public String getTungstenNetworkUuid() {
+        return tungstenNetworkUuid;
     }
 
     @Inject

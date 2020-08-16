@@ -47,6 +47,9 @@ public class CreateTungstenNetworkCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten network Name")
     private String name;
 
+    @Parameter(name = ApiConstants.TUNGSTEN_NETWORK_UUID, type = CommandType.STRING, description = "Tungsten network uuid. If null tungsten will generate an uuid for the network")
+    private String tungstenNetworkUuid;
+
     @Parameter(name = ApiConstants.TUNGSTEN_NETWORK_IPAM_UUID, type = CommandType.STRING, description = "Network Ipam UUID")
     private String networkIpamUUID;
 
@@ -80,6 +83,10 @@ public class CreateTungstenNetworkCmd extends BaseAsyncCreateCmd {
 
     public String getName() {
         return name;
+    }
+
+    public String getTungstenNetworkUuid() {
+        return tungstenNetworkUuid;
     }
 
     public String getNetworkIpamUUID() {

@@ -17,9 +17,11 @@ import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenNetworkC
 import org.apache.cloudstack.network.tungsten.api.command.DeleteVRouterPortCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenNetworkCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenVirtualMachineCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenVirtualRouterCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenVmInterfaceCmd;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenNetworkResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenVirtualMachineResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenVirtualRouterResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenVmInterfaceResponse;
 
 import java.io.IOException;
@@ -28,10 +30,10 @@ public interface TungstenManager extends PluggableService {
   ListResponse<TungstenNetworkResponse> getNetworks(ListTungstenNetworkCmd cmd) throws IOException;
 
   ListResponse<TungstenVmInterfaceResponse> getVmInterfaces(ListTungstenVmInterfaceCmd cmd)
-      throws IOException;
+          throws IOException;
 
   ListResponse<TungstenVirtualMachineResponse> getVirtualMachines(ListTungstenVirtualMachineCmd cmd)
-      throws IOException;
+          throws IOException;
 
   VirtualNetwork createTungstenNetwork(CreateTungstenNetworkCmd cmd);
 
@@ -44,9 +46,11 @@ public interface TungstenManager extends PluggableService {
   VirtualNetwork deleteTungstenNetwork(DeleteTungstenNetworkCmd cmd) throws IOException;
 
   ApiObjectBase getTungstenObjectByUUID(Class<? extends ApiObjectBase> cls, String uuid)
-      throws IOException;
+          throws IOException;
 
   SuccessResponse addVRouterPort(AddVRouterPortCmd cmd) throws IOException;
 
   SuccessResponse deleteVRouterPort(DeleteVRouterPortCmd cmd) throws IOException;
+
+  ListResponse<TungstenVirtualRouterResponse> getVirtualRouters(ListTungstenVirtualRouterCmd cmd) throws IOException;
 }

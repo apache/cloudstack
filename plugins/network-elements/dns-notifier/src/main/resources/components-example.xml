@@ -30,7 +30,7 @@ under the License.
     <interceptor library="com.cloud.configuration.DefaultInterceptorLibrary"/>
     <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.PremiumComponentLibrary">
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
-             <param name="premium">true</param>
+            <param name="premium">true</param>
         </dao>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
@@ -75,6 +75,7 @@ under the License.
             <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
             <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
             <adapter name="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru"/>
+            <adapter name="TungstenGuestNetworkGuru" class="org.apache.cloudstack.network.tungsten.service.TungstenGuestNetworkGuru"/>
             <adapter name="PrivateNetworkGuru" class="com.cloud.network.guru.PrivateNetworkGuru"/>
             <adapter name="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru"/>
         </adapters>
@@ -96,7 +97,7 @@ under the License.
             <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
             <adapter name="XenServerInvestigator" class="com.cloud.ha.XenServerInvestigator"/>
             <adapter name="PingInvestigator" class="com.cloud.ha.UserVmDomRInvestigator"/>
-			<adapter name="ManagementIPSysVMInvestigator" class="com.cloud.ha.ManagementIPSystemVMInvestigator"/>
+            <adapter name="ManagementIPSysVMInvestigator" class="com.cloud.ha.ManagementIPSystemVMInvestigator"/>
         </adapters>
         <adapters key="com.cloud.ha.FenceBuilder">
             <adapter name="XenServerFenceBuilder" class="com.cloud.ha.XenServerFencer"/>
@@ -112,7 +113,7 @@ under the License.
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
             <adapter name="Bare Metal Agent" class="com.cloud.baremetal.BareMetalDiscoverer"/>
-			<adapter name="Ovm Discover" class="com.cloud.ovm.hypervisor.OvmDiscoverer" />
+            <adapter name="Ovm Discover" class="com.cloud.ovm.hypervisor.OvmDiscoverer" />
         </adapters>
         <adapters key="com.cloud.deploy.DeploymentPlanner">
             <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>
@@ -137,6 +138,7 @@ under the License.
             <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
             <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
             <adapter name="DnsNotifier" class="org.apache.cloudstack.network.element.DnsNotifier"/>
+            <adapter name="TungstenElement" class="org.apache.cloudstack.network.tungsten.service.TungstenElement"/>
         </adapters>
         <adapters key="com.cloud.cluster.agentlb.AgentLoadBalancerPlanner">
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>
@@ -166,10 +168,10 @@ under the License.
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
-             <param name="premium">true</param>
+            <param name="premium">true</param>
         </dao>
         <dao name="Snapshot policy defaults" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" singleton="false"/>
-        <dao name="DiskOffering configuration server" class="com.cloud.storage.dao.DiskOfferingDaoImpl" singleton="false"/>         
+        <dao name="DiskOffering configuration server" class="com.cloud.storage.dao.DiskOfferingDaoImpl" singleton="false"/>
         <dao name="ServiceOffering configuration server" class="com.cloud.service.dao.ServiceOfferingDaoImpl" singleton="false"/>
         <dao name="host zone configuration server" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
         <dao name="host pod configuration server" class="com.cloud.dc.dao.HostPodDaoImpl" singleton="false"/>
@@ -177,7 +179,7 @@ under the License.
         <dao name="NetworkOfferingDao" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" singleton="false"/>
         <dao name="DataCenterDao" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
         <dao name="NetworkDao" class="com.cloud.network.dao.NetworkDaoImpl" singleton="false"/>
-        <dao name="IpAddressDao" class="com.cloud.network.dao.IPAddressDaoImpl" singleton="false"/>     
+        <dao name="IpAddressDao" class="com.cloud.network.dao.IPAddressDaoImpl" singleton="false"/>
         <dao name="VlanDao" class="com.cloud.dc.dao.VlanDaoImpl" singleton="false"/>
         <dao name="ResouceCountDao" class="com.cloud.configuration.dao.ResourceCountDaoImpl" singleton="false"/>
         <dao name="AccountDao" class="com.cloud.user.dao.AccountDaoImpl" singleton="false"/>

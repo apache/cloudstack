@@ -91,6 +91,7 @@ known_categories = {
     'createTungstenInstanceIp' : 'Tungsten',
     'listTungstenVirtualMachines' : 'Tungsten',
     'listTungstenVmInterfaces' : 'Tungsten',
+    'listTungstenVirtualRouters' : 'Tungsten',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',
