@@ -74,7 +74,7 @@ export default {
       storagePools: [],
       selectedStoragePool: null,
       diskOfferings: [],
-      replaceDiskOffering: !!this.resource.virtualmachineid,
+      replaceDiskOffering: false,
       selectedDiskOffering: null
     }
   },
