@@ -315,8 +315,9 @@ export default {
       permission: ['listVMSnapshot'],
       resourceType: 'VMSnapshot',
       columns: () => {
-        var fields = ['name', 'state', 'type', 'current', 'parentName', 'created']
+        var fields = ['displayname', 'state', 'name', 'type', 'current', 'parentName', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('domain')
           fields.push('account')
         }
         return fields
