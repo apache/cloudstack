@@ -811,7 +811,10 @@ public class Agent implements HandlerFactory, IAgentControl {
     public void processReadyCommand(final Command cmd) {
         final ReadyCommand ready = (ReadyCommand)cmd;
         // Set human readable sizes;
-        NumbersUtil.enableHumanReadableSizes = ready.getEnableHumanReadableSizes();
+        Boolean humanReadable = ready.getEnableHumanReadableSizes();
+        if (humanReadable != null){
+            NumbersUtil.enableHumanReadableSizes = humanReadable;
+        }
 
         s_logger.info("Processing agent ready command, agent id = " + ready.getHostId());
         if (ready.getHostId() != null) {
