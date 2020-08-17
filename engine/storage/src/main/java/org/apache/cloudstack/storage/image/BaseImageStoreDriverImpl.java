@@ -426,7 +426,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         DataStore srcStore = srcData.getDataStore();
         DataStore destStore = destData.getDataStore();
         if ((srcData.getDataStore().getTO() instanceof NfsTO && destData.getDataStore().getTO() instanceof NfsTO) &&
-                (srcStore.getRole() == DataStoreRole.Image && destStore.getRole() == DataStoreRole.Image)) {
+                (srcStore.getRole() == DataStoreRole.Image && destStore.getRole() == DataStoreRole.Image) &&
+                ((srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE) ||
+                (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) ||
+                (srcData.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME))) {
             return true;
         }
         return false;
