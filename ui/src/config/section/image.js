@@ -43,7 +43,7 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled', 'sshkeyenabled', 'directdownload', 'isextractable', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'crosszones', 'type', 'account', 'domain', 'created', 'url'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled', 'sshkeyenabled', 'directdownload', 'deployasis', 'isextractable', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'crosszones', 'type', 'account', 'domain', 'created', 'url'],
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',
