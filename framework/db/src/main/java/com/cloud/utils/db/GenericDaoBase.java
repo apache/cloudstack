@@ -162,6 +162,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     protected static final String SELECT_LAST_INSERT_ID_SQL = "SELECT LAST_INSERT_ID()";
     public static final Date DATE_TO_NULL = new Date(Long.MIN_VALUE);
 
+    private static final String INTEGRITY_CONSTRAINT_VIOLATION = "23000";
+    private static final int DUPLICATE_ENTRY_ERRO_CODE = 1062;
+
     protected static final SequenceFetcher s_seqFetcher = SequenceFetcher.getInstance();
 
     public static <J> GenericDao<? extends J, ? extends Serializable> getDao(Class<J> entityType) {
@@ -850,10 +853,20 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             ub.clear();
             return result;
         } catch (final SQLException e) {
-            if (e.getSQLState().equals("23000") && e.getErrorCode() == 1062) {
-                throw new EntityExistsException("Entity already exists ", e);
-            }
+            handleEntityExistsException(e);
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+        }
+    }
+
+    /**
+     * If the SQLException.getSQLState is of 23000 (Integrity Constraint Violation), and the Error Code is 1062 (Duplicate Entry), throws EntityExistsException.
+     * @throws EntityExistsException
+     */
+    protected static void handleEntityExistsException(SQLException e) throws EntityExistsException {
+        boolean isIntegrityConstantViolation = INTEGRITY_CONSTRAINT_VIOLATION.equals(e.getSQLState());
+        boolean isErrorCodeOfDuplicateEntry = e.getErrorCode() == DUPLICATE_ENTRY_ERRO_CODE;
+        if (isIntegrityConstantViolation && isErrorCodeOfDuplicateEntry) {
+            throw new EntityExistsException("Entity already exists ", e);
         }
     }
 
@@ -1450,11 +1463,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             txn.commit();
         } catch (final SQLException e) {
-            if (e.getSQLState().equals("23000") && e.getErrorCode() == 1062) {
-                throw new EntityExistsException("Entity already exists: ", e);
-            } else {
-                throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-            }
+            handleEntityExistsException(e);
+            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
         } catch (IllegalArgumentException e) {
             throw new CloudRuntimeException("Problem with getting the ec attribute ", e);
         } catch (IllegalAccessException e) {
