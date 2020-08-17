@@ -45,8 +45,8 @@ if __name__ == '__main__':
     try:
         syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
     except UnknownSystemException:
-        print(("Error: CloudStack failed to detect your "
-                "operating system. Exiting."), file=sys.stderr)
+        print("Error: CloudStack failed to detect your "
+                "operating system. Exiting.", file=sys.stderr)
         sys.exit(1)
     try:
         syscfg.registerService(cloudManagementConfig)
