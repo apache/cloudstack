@@ -14,12 +14,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from utilities import writeProgressBar, bash
-from cloudException import CloudRuntimeException, CloudInternalException, formatExceptionInfo
+from .utilities import writeProgressBar, bash
+from .cloudException import CloudRuntimeException, CloudInternalException, formatExceptionInfo
 import logging
-from networkConfig import networkConfig
+from .networkConfig import networkConfig
 import re
-from configFileOps import configFileOps
+from .configFileOps import configFileOps
 import os
 import shutil
 
@@ -27,25 +27,31 @@ import shutil
 Unknown = 0
 CentOS6 = 1
 CentOS7 = 2
-Ubuntu = 3
-RHEL6 = 4
-RHEL7 = 5
+CentOS8 = 3
+Ubuntu = 4
+RHEL6 = 5
+RHEL7 = 6
+RHEL8 = 7
 distro = None
 
 #=================== DISTRIBUTION DETECTION =================
 if os.path.exists("/etc/centos-release"):
-    version = file("/etc/centos-release").readline()
+    version = open("/etc/centos-release").readline()
     if version.find("CentOS release 6") != -1:
       distro = CentOS6
     elif version.find("CentOS Linux release 7") != -1:
       distro = CentOS7
+    elif version.find("CentOS Linux release 8") != -1:
+      distro = CentOS8
 elif os.path.exists("/etc/redhat-release"):
-    version = file("/etc/redhat-release").readline()
+    version = open("/etc/redhat-release").readline()
     if version.find("Red Hat Enterprise Linux Server release 6") != -1:
       distro = RHEL6
     elif version.find("Red Hat Enterprise Linux Server 7") != -1:
       distro = RHEL7
-elif os.path.exists("/etc/lsb-release") and "Ubuntu" in file("/etc/lsb-release").read(-1): distro = Ubuntu
+    elif version.find("Red Hat Enterprise Linux Server 8") != -1:
+      distro = RHEL8
+elif os.path.exists("/etc/lsb-release") and "Ubuntu" in open("/etc/lsb-release").read(-1): distro = Ubuntu
 else: distro = Unknown
 #=================== DISTRIBUTION DETECTION =================
 
@@ -68,12 +74,12 @@ class serviceCfgBase(object):
             self.status = result
             writeProgressBar(None, result)
             return result
-        except CloudRuntimeException, e:
+        except CloudRuntimeException as e:
             self.status = result
             writeProgressBar(None, result)
             logging.debug(e.getDetails())
             raise e
-        except CloudInternalException, e:
+        except CloudInternalException as e:
             self.status = result
             writeProgressBar(None, result)
             raise e
@@ -95,7 +101,7 @@ class serviceCfgBase(object):
                 cfo.backup()
 
             result = self.restore()
-        except (CloudRuntimeException, CloudInternalException), e:
+        except (CloudRuntimeException, CloudInternalException) as e:
             logging.debug(e)
 
         writeProgressBar(None, result)
@@ -178,7 +184,7 @@ class networkConfigUbuntu(serviceCfgBase, networkConfigBase):
 
     def addBridge(self, br, dev):
         bash("ifdown %s"%dev.name)
-        for line in file(self.netCfgFile).readlines():
+        for line in open(self.netCfgFile).readlines():
             match = re.match("^ *iface %s.*"%dev.name, line)
             if match is not None:
                 dev.method = self.getNetworkMethod(match.group(0))
@@ -213,7 +219,7 @@ class networkConfigUbuntu(serviceCfgBase, networkConfigBase):
         logging.debug("Haven't implement yet")
 
     def writeToCfgFile(self, br, dev):
-        cfg = file(self.netCfgFile).read()
+        cfg = open(self.netCfgFile).read()
         ifaceDev = re.search("^ *iface %s.*"%dev.name, cfg, re.MULTILINE)
         ifaceBr = re.search("^ *iface %s.*"%br, cfg, re.MULTILINE)
         if ifaceDev is not None and ifaceBr is not None:
@@ -344,7 +350,8 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
             cfo.save()
 
             if not bash("service network restart").isSuccess():
-                raise CloudInternalException("Can't restart network")
+                if not bash("systemctl restart NetworkManager.service").isSuccess():
+                    raise CloudInternalException("Can't restart network")
 
             self.syscfg.env.nics.append(self.brName)
             self.syscfg.env.nics.append(self.brName)
@@ -566,6 +573,12 @@ class libvirtConfigUbuntu(serviceCfgBase):
         elif os.path.exists("/etc/default/libvirtd"):
             cfo = configFileOps("/etc/default/libvirtd", self)
             cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
+            if os.path.exists("/lib/systemd/system/libvirtd.socket"):
+                bash("/bin/systemctl mask libvirtd.socket");
+                bash("/bin/systemctl mask libvirtd-ro.socket");
+                bash("/bin/systemctl mask libvirtd-admin.socket");
+                bash("/bin/systemctl mask libvirtd-tls.socket");
+                bash("/bin/systemctl mask libvirtd-tcp.socket");
 
     def config(self):
         try:

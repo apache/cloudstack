@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -17,12 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import sys
-import os
+module cloudstack-agent 1.0;
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+require {
+	type nfs_t;
+	type system_conf_t;
+	type mount_t;
+	type qemu_t;
+	class file unlink;
+	class filesystem getattr;
+}
 
-import cloudtool
+#============= mount_t ==============
+allow mount_t system_conf_t:file unlink;
 
-ret = cloudtool.main()
-if ret: sys.exit(ret)
+#============= qemu_t ==============
+allow qemu_t nfs_t:filesystem getattr;

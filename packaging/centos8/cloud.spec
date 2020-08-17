@@ -40,14 +40,13 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
 BuildRequires: java-11-openjdk-devel
-BuildRequires: ws-commons-util
+#BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
 BuildRequires: /usr/bin/mkisofs
-BuildRequires: mysql-connector-python
 BuildRequires: maven => 3.0.0
-BuildRequires: python-setuptools
+BuildRequires: python3-setuptools
 BuildRequires: wget
 
 %description
@@ -57,7 +56,6 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: java-11-openjdk
-Requires: python
 Requires: python3
 Requires: bash
 Requires: gawk
@@ -88,13 +86,11 @@ management, and intelligence in CloudStack.
 
 %package common
 Summary: Apache CloudStack common files and scripts
-Requires: python
 Requires: python3
-Requires: python3-pip
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
-%global __requires_exclude ^libuuid\\.so\\.1$
+%global __requires_exclude ^(libuuid\\.so\\.1|/usr/bin/python)$
 
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
@@ -102,7 +98,6 @@ Requires: openssh-clients
 Requires: java-11-openjdk
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
-Requires: bridge-utils
 Requires: ebtables
 Requires: iptables
 Requires: ethtool
@@ -110,7 +105,7 @@ Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
-Requires: python36-libvirt
+Requires: python3-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
@@ -146,9 +141,11 @@ Apache CloudStack command line interface
 
 %package marvin
 Summary: Apache CloudStack Marvin library
-Requires: python-pip
+Requires: python3-pip
+Requires: python2-pip
 Requires: gcc
-Requires: python-devel
+Requires: python3-devel
+Requires: python2-devel
 Requires: libffi-devel
 Requires: openssl-devel
 Group: System Environment/Libraries
@@ -178,7 +175,7 @@ echo Doing CloudStack build
 
 %build
 
-cp packaging/centos7/replace.properties build/replace.properties
+cp packaging/centos8/replace.properties build/replace.properties
 echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
 touch build/gitrev.txt
@@ -223,7 +220,7 @@ cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
 python3 -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 python3 -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
 cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
-cp packaging/centos7/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
+cp packaging/centos8/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
 
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 cp -r plugins/network-elements/cisco-vnmc/src/main/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
@@ -272,8 +269,8 @@ ln -sf log4j-cloud.xml  ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/log4j
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
 install -D client/target/pythonlibs/jasypt-1.9.3.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
 
-install -D packaging/centos7/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
-install -D packaging/centos7/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
+install -D packaging/centos8/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
+install -D packaging/centos8/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
 install -D packaging/systemd/cloudstack-management.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-management.service
 install -D packaging/systemd/cloudstack-management.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-management
 install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management

@@ -445,7 +445,29 @@ def get_windows_template(
 
     return FAILED
 
-
+def get_suitable_test_template(apiclient, zoneid, ostypeid, hypervisor):
+    '''
+    @Name : get_suitable_test_template
+    @Desc : Retrieves the test template information based upon inputs provided
+            For Xenserver, get_test_template is used for retrieving the template
+            while get_template is used for other hypervisors or when
+            get_test_template fails
+    @Input : returns a template"
+    @Output : FAILED in case of any failure
+              template Information matching the inputs
+    '''
+    template = FAILED
+    if hypervisor.lower() in ["xenserver"]:
+        template = get_test_template(
+            apiclient,
+            zoneid,
+            hypervisor)
+    if template == FAILED:
+        template = get_template(
+            apiclient,
+            zoneid,
+            ostypeid)
+    return template
 
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""

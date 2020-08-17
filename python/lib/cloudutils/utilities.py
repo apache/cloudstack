@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from cloudException import CloudRuntimeException, formatExceptionInfo
+from .cloudException import CloudRuntimeException, formatExceptionInfo
 import logging
 from subprocess import PIPE, Popen
 from signal import alarm, signal, SIGALRM, SIGKILL
@@ -60,13 +60,13 @@ class bash:
         return self.success
     
     def getStdout(self):
-        return self.stdout.strip("\n")
+        return self.stdout.decode('utf-8').strip('\n')
     
     def getLines(self):
-        return self.stdout.split("\n")
+        return self.stdout.decode('utf-8').strip('\n')
 
     def getStderr(self):
-        return self.stderr.strip("\n")
+        return self.stderr.decode('utf-8').strip('\n')
     
     def getErrMsg(self):
         if self.isSuccess():
@@ -109,16 +109,18 @@ class Distribution:
         if os.path.exists("/etc/fedora-release"):
             self.distro = "Fedora"
         elif os.path.exists("/etc/redhat-release"):
-            version = file("/etc/redhat-release").readline()
+            version = open("/etc/redhat-release").readline()
             if version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or version.find("CentOS Linux release 6") != -1 or version.find("CentOS release 6.") != -1:
                 self.distro = "RHEL6"
             elif version.find("Red Hat Enterprise Linux Server release 7") != -1 or version.find("Scientific Linux release 7") != -1 or version.find("CentOS Linux release 7") != -1 or version.find("CentOS release 7.") != -1:
                 self.distro = "RHEL7"
+            elif version.find("Red Hat Enterprise Linux Server release 8") != -1 or version.find("Scientific Linux release 8") != -1 or version.find("CentOS Linux release 8") != -1 or version.find("CentOS release 8.") != -1:
+                self.distro = "RHEL8"
             elif version.find("CentOS") != -1:
                 self.distro = "CentOS"
             else:
                 self.distro = "RHEL5"
-        elif os.path.exists("/etc/legal") and "Ubuntu" in file("/etc/legal").read(-1):
+        elif os.path.exists("/etc/legal") and "Ubuntu" in open("/etc/legal").read(-1):
             self.distro = "Ubuntu"
             kernel = bash("uname -r").getStdout()
             if kernel.find("2.6.32") != -1:
@@ -211,9 +213,9 @@ class serviceOpsUbuntu(serviceOps):
         return self.startService(servicename,force=forcestart)
 
     def isKVMEnabled(self):
-        return bash("kvm-ok").isSuccess() 
+        return bash("kvm-ok").isSuccess()
 
-class serviceOpsRedhat7(serviceOps):
+class serviceOpsRedhat7Later(serviceOps):
     def isServiceRunning(self, servicename):
         try:
             o = bash("systemctl is-active " + servicename)

@@ -14,8 +14,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7
-from serviceConfig import *
+from .utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7Later
+from .serviceConfig import *
 class sysConfigFactory:
     @staticmethod
     def getSysConfigFactory(glbEnv):
@@ -43,8 +43,10 @@ class sysConfigAgentFactory:
             return sysConfigRedhat5(glbEnv)
         elif distribution == "RHEL7":
             return sysConfigRedhat7(glbEnv)
+        elif distribution == "RHEL8":
+            return sysConfigRedhat8(glbEnv)
         else:
-            print "Can't find the distribution version"
+            print("Can't find the distribution version")
             return sysConfig()
 
 class sysConfigServerFactory:
@@ -57,7 +59,7 @@ class sysConfigServerFactory:
         elif distribution != "Unknown":
             return sysConfigServerRedhat(glbEnv)
         else:
-            print "Can't find the distribution version"
+            print("Can't find the distribution version")
             return sysConfig()
     
 class sysConfigDbFactory:
@@ -144,8 +146,13 @@ class sysConfigAgentRedhatBase(sysConfigAgent):
 
 class sysConfigAgentRedhat7Base(sysConfigAgent):
     def __init__(self, env):
-        self.svo = serviceOpsRedhat7()
+        self.svo = serviceOpsRedhat7Later()
         super(sysConfigAgentRedhat7Base, self).__init__(env)
+
+class sysConfigAgentRedhat8Base(sysConfigAgent):
+    def __init__(self, env):
+        self.svo = serviceOpsRedhat7Later()
+        super(sysConfigAgentRedhat8Base, self).__init__(env)
 
 class sysConfigAgentUbuntu(sysConfigAgent):
     def __init__(self, glbEnv):
@@ -186,6 +193,17 @@ class sysConfigRedhat5(sysConfigAgentRedhatBase):
 class sysConfigRedhat7(sysConfigAgentRedhat7Base):
     def __init__(self, glbEnv):
         super(sysConfigRedhat7, self).__init__(glbEnv)
+        self.services = [securityPolicyConfigRedhat(self),
+                         networkConfigRedhat(self),
+                         libvirtConfigRedhat(self),
+                         firewallConfigAgent(self),
+                         nfsConfig(self),
+                         cloudAgentConfig(self)]
+
+#it covers RHEL8
+class sysConfigRedhat8(sysConfigAgentRedhat8Base):
+    def __init__(self, glbEnv):
+        super(sysConfigRedhat8, self).__init__(glbEnv)
         self.services = [securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
