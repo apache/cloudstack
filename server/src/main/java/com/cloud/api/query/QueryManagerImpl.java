@@ -31,8 +31,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.projects.dao.ProjectInvitationDao;
-import com.cloud.user.dao.UserDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
