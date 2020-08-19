@@ -1955,7 +1955,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.EQ);
+        if (storageId != null) {
+            StoragePoolVO poolVO = _storagePoolDao.findByUuid(storageId);
+            if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.IN);
+            } else {
+                sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.EQ);
+            }
+        }
         sb.and("diskOfferingId", sb.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
@@ -2024,7 +2031,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (storageId != null) {
-            sc.setParameters("storageId", storageId);
+            StoragePoolVO poolVO = _storagePoolDao.findByUuid(storageId);
+            if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(poolVO.getId());
+                List<String> childDatastoreIds = childDatastores.stream().map(mo -> mo.getUuid()).collect(Collectors.toList());
+                sc.setParameters("storageId", childDatastoreIds.toArray());
+            } else {
+                sc.setParameters("storageId", storageId);
+            }
         }
 
         if (clusterId != null) {

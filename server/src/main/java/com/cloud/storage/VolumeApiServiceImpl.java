@@ -1777,7 +1777,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (pool.getDataCenterId() != volume.getDataCenterId()) {
                 throw new InvalidParameterValueException("Invalid storageId specified; refers to the pool outside of the volume's zone");
             }
-            volume.setPoolId(pool.getId());
+            if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(storageId);
+                Collections.shuffle(childDatastores);
+                volume.setPoolId(childDatastores.get(0).getId());
+            } else {
+                volume.setPoolId(pool.getId());
+            }
         }
 
         if (customId != null) {
