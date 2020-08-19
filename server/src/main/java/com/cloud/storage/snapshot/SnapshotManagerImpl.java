@@ -311,7 +311,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         if (snapshotStrategy == null) {
             s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
-            return null;
+            String errorMsg = String.format("Revert snapshot command failed for snapshot with id %d, because this command is supported only for KVM hypervisor", snapshotId);
+            throw new CloudRuntimeException(errorMsg);
         }
 
         boolean result = snapshotStrategy.revertSnapshot(snapshotInfo);
