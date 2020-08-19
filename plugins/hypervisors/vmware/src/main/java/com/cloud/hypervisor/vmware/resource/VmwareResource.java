@@ -370,7 +370,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String _password;
     protected String _guid;
     protected String _vCenterAddress;
-    protected Integer storageNfsVersion;
+    protected String storageNfsVersion;
 
     protected String _privateNetworkVSwitchName;
     protected VmwareTrafficLabel _guestTrafficInfo = new VmwareTrafficLabel(TrafficType.Guest);
