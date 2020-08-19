@@ -136,6 +136,16 @@ public class DatastoreMO extends BaseMO {
             fullPath = String.format("[%s] %s", datastoreName, path);
 
         _context.getService().makeDirectory(morFileManager, fullPath, morDc, true);
+
+        int retry = 2;
+        for (int i = 0; i < retry; i++) {
+            DatastoreFile datastoreFile = new DatastoreFile(fullPath);
+            if (!folderExists(String.format("[%s]", datastoreName), datastoreFile.getFileName())) {
+                _context.getService().makeDirectory(morFileManager, fullPath, morDc, true);
+            } else {
+                return;
+            }
+        }
     }
 
     String getDatastoreRootPath() throws Exception {
