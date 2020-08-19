@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -165,6 +165,12 @@ mod_group() {
   fi
 }
 
+cleanup_flows() {
+  ovs-ofctl del-flows $br --strict table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff
+  ovs-ofctl del-flows $br --strict table=1,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff
+  ovs-ofctl -O OpenFlow13 del-groups $br group_id=$pri_vlan
+}
+
 # Allow the neccessary protocols and QinQ
 ovs-vsctl set bridge $br protocols=OpenFlow10,OpenFlow11,OpenFlow12,OpenFlow13
 ovs-vsctl set Open_vSwitch . other_config:vlan-limit=2
@@ -194,7 +200,7 @@ then
   then
     ovs-ofctl add-flow $br table=1,priority=70,udp,dl_vlan=$sec_vlan,dl_dst=$vm_mac,tp_src=67,actions=strip_vlan,output:$vm_port
   fi
-  
+
   # Security101
   ovs-ofctl add-flow $br table=1,priority=0,actions=drop
 
@@ -235,7 +241,7 @@ then
   then
     ovs-ofctl add-flow $br table=1,priority=70,udp,dl_vlan=$sec_vlan,tp_src=67,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$sec_vlan
   fi
-  
+
 else
   # Delete whatever we've added that's vm specific
   ovs-ofctl del-flows $br --strict table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=$vm_mac
@@ -266,12 +272,19 @@ else
   # Remove vm specific rules
   ovs-ofctl del-flows $br --strict table=0,priority=300,dl_vlan=$pri_vlan,dl_src=$vm_mac,dl_dst=ff:ff:ff:ff:ff:ff
 
+  # If the vm is going to be migrated but not yet removed. Remove the rules if it's the only vm in the vlan
+  res1=`ovs-vsctl --column _uuid find port tag=$pri_vlan | wc -l`
+  res2=`find_port $vm_mac | wc -l`
+  if [ "$res1" -eq 1 ] && [ "$res2" -eq 1 ]
+  then
+    cleanup_flows
+  fi
+
   # If no more vms exist on this host, clear up all the rules
   result=`ovs-vsctl find port tag=$pri_vlan`
   if [ -z "$result" ]
   then
-    ovs-ofctl del-flows $br --strict table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff
-    ovs-ofctl del-flows $br --strict table=1,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff
-    ovs-ofctl -O OpenFlow13 del-groups $br group_id=$pri_vlan
+    cleanup_flows
   fi
+
 fi
