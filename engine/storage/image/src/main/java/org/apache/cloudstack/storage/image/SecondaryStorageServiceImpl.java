@@ -31,6 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -110,7 +111,11 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
             if (destDataObject != null) {
                 destDataObject.getDataStore().delete(destDataObject);
             }
-            srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            if (!(srcDataObject instanceof VolumeInfo)) {
+                srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            } else {
+                ((VolumeInfo) srcDataObject).processEventOnly(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            }
             res.setResult(e.toString());
             future.complete(res);
         }
@@ -138,9 +143,15 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
             if (!answer.getResult()) {
                 s_logger.warn("Migration failed for "+srcData.getUuid());
                 res.setResult(result.getResult());
-                srcData.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
-                destData.processEvent(ObjectInDataStoreStateMachine.Event.MigrationFailed);
-                destData.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
+                if (!(srcData instanceof VolumeInfo) ) {
+                    srcData.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+                    destData.processEvent(ObjectInDataStoreStateMachine.Event.MigrationFailed);
+                    destData.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
+                } else {
+                    ((VolumeInfo)srcData).processEventOnly(ObjectInDataStoreStateMachine.Event.OperationFailed);
+                    ((VolumeInfo)destData).processEventOnly(ObjectInDataStoreStateMachine.Event.MigrationFailed);
+                    ((VolumeInfo)destData).processEventOnly(ObjectInDataStoreStateMachine.Event.DestroyRequested);
+                }
 
                 if (destData != null) {
                     destData.getDataStore().delete(destData);
