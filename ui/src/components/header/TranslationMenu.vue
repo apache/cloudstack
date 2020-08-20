@@ -32,7 +32,7 @@
       <a-menu-item key="ar" :value="arEG">Arabic</a-menu-item>
       <a-menu-item key="ca" :value="caES">Catalan</a-menu-item>
       <a-menu-item key="de_DE" :value="deDE">Deutsch</a-menu-item>
-      <a-menu-item key="es" :value="esES">Españo</a-menu-item>
+      <a-menu-item key="es" :value="esES">Español</a-menu-item>
       <a-menu-item key="fr_FR" :value="frFR">Français</a-menu-item>
       <a-menu-item key="it_IT" :value="itIT">Italiano</a-menu-item>
       <a-menu-item key="hu" :value="huHU">Magyar</a-menu-item>

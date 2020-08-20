@@ -270,7 +270,7 @@ export default {
         {
           api: 'scaleVirtualMachine',
           icon: 'arrows-alt',
-          label: 'Scale VM',
+          label: 'label.scale.vm',
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') },
