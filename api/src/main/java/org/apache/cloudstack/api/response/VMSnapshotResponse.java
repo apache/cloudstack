@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
@@ -99,6 +100,10 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the disk volume")
     private String domainName;
+
+    @SerializedName(ApiConstants.HYPERVISOR)
+    @Param(description = "the type of hypervisor on which snapshot is stored")
+    private Hypervisor.HypervisorType hypervisor;
 
     public VMSnapshotResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -235,5 +240,13 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
 
     public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public Hypervisor.HypervisorType getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(Hypervisor.HypervisorType hypervisor) {
+        this.hypervisor = hypervisor;
     }
 }
