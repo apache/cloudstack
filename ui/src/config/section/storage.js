@@ -256,6 +256,7 @@ export default {
       columns: () => {
         var fields = ['name', 'state', 'volumename', 'intervaltype', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('domain')
           fields.push('account')
         }
         return fields
@@ -315,7 +316,7 @@ export default {
       permission: ['listVMSnapshot'],
       resourceType: 'VMSnapshot',
       columns: () => {
-        var fields = ['displayname', 'state', 'name', 'type', 'current', 'parentName', 'created']
+        const fields = ['displayname', 'state', 'name', 'type', 'current', 'parentName', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('domain')
           fields.push('account')
@@ -325,6 +326,16 @@ export default {
       details: ['name', 'id', 'displayname', 'description', 'type', 'current', 'parentName', 'virtualmachineid', 'account', 'domain', 'created'],
       searchFilters: ['name', 'domainid', 'account', 'tags'],
       actions: [
+        {
+          api: 'createSnapshotFromVMSnapshot',
+          icon: 'camera',
+          label: 'label.action.create.snapshot.from.vmsnapshot',
+          message: 'message.action.create.snapshot.from.vmsnapshot',
+          dataView: true,
+          popup: true,
+          show: (record) => { return (record.state === 'Ready' && record.hypervisor === 'KVM') },
+          component: () => import('@/views/storage/CreateSnapshotFromVMSnapshot.vue')
+        },
         {
           api: 'revertToVMSnapshot',
           icon: 'sync',
