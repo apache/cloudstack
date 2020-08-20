@@ -3756,6 +3756,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 result = plugNic(network, nicTO, vmTO, context, dest);
                 if (result) {
+                    _userVmMgr.setupVmForPvlan(true, vm.getHostId(), nic);
                     s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
                     final long isDefault = nic.isDefaultNic() ? 1 : 0;
                     // insert nic's Id into DB as resource_name
@@ -3863,6 +3864,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Un-plugging nic " + nic + " for vm " + vm + " from network " + network);
             final boolean result = unplugNic(network, nicTO, vmTO, context, dest);
             if (result) {
+                _userVmMgr.setupVmForPvlan(false, vm.getHostId(), nicProfile);
                 s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network);
                 final long isDefault = nic.isDefaultNic() ? 1 : 0;
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),

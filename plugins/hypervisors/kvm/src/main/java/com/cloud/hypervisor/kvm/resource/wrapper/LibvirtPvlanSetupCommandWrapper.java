@@ -19,22 +19,17 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
-import org.libvirt.Connect;
-import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
 
-@ResourceWrapper(handles =  PvlanSetupCommand.class)
+@ResourceWrapper(handles = PvlanSetupCommand.class)
 public final class LibvirtPvlanSetupCommandWrapper extends CommandWrapper<PvlanSetupCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtPvlanSetupCommandWrapper.class);
@@ -43,66 +38,50 @@ public final class LibvirtPvlanSetupCommandWrapper extends CommandWrapper<PvlanS
     public Answer execute(final PvlanSetupCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String primaryPvlan = command.getPrimary();
         final String isolatedPvlan = command.getIsolated();
+        final String pvlanType = "-" + command.getPvlanType();
         final String op = command.getOp();
-        final String dhcpName = command.getDhcpName();
         final String dhcpMac = command.getDhcpMac();
-        final String vmMac = command.getVmMac();
+        final String vmMac = command.getVmMac() == null ? dhcpMac : command.getVmMac();
         final String dhcpIp = command.getDhcpIp();
-        boolean add = true;
 
         String opr = "-A";
         if (op.equals("delete")) {
             opr = "-D";
-            add = false;
         }
 
         String result = null;
-        try {
-            final String guestBridgeName = libvirtComputingResource.getGuestBridgeName();
-            final Duration timeout = libvirtComputingResource.getTimeout();
 
-            if (command.getType() == PvlanSetupCommand.Type.DHCP) {
-                final String ovsPvlanDhcpHostPath = libvirtComputingResource.getOvsPvlanDhcpHostPath();
-                final Script script = new Script(ovsPvlanDhcpHostPath, timeout, s_logger);
+        final String guestBridgeName = libvirtComputingResource.getGuestBridgeName();
+        final Duration timeout = libvirtComputingResource.getTimeout();
 
-                if (add) {
-                    final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
-                    final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(dhcpName);
+        if (command.getType() == PvlanSetupCommand.Type.DHCP) {
+            final String ovsPvlanDhcpHostPath = libvirtComputingResource.getOvsPvlanDhcpHostPath();
+            final Script script = new Script(ovsPvlanDhcpHostPath, timeout, s_logger);
 
-                    final List<InterfaceDef> ifaces = libvirtComputingResource.getInterfaces(conn, dhcpName);
-                    final InterfaceDef guestNic = ifaces.get(0);
-                    script.add(opr, "-b", guestBridgeName, "-p", primaryPvlan, "-i", isolatedPvlan, "-n", dhcpName, "-d", dhcpIp, "-m", dhcpMac, "-I",
-                            guestNic.getDevName());
-                } else {
-                    script.add(opr, "-b", guestBridgeName, "-p", primaryPvlan, "-i", isolatedPvlan, "-n", dhcpName, "-d", dhcpIp, "-m", dhcpMac);
-                }
+            script.add(opr, pvlanType, "-b", guestBridgeName, "-p", primaryPvlan, "-s", isolatedPvlan, "-m", dhcpMac,
+                    "-d", dhcpIp);
+            result = script.execute();
 
-                result = script.execute();
-
-                if (result != null) {
-                    s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
-                    return new Answer(command, false, result);
-                } else {
-                    s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
-                }
-            } else if (command.getType() == PvlanSetupCommand.Type.VM) {
-                final String ovsPvlanVmPath = libvirtComputingResource.getOvsPvlanVmPath();
-
-                final Script script = new Script(ovsPvlanVmPath, timeout, s_logger);
-                script.add(opr, "-b", guestBridgeName, "-p", primaryPvlan, "-i", isolatedPvlan, "-v", vmMac);
-                result = script.execute();
-
-                if (result != null) {
-                    s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
-                    return new Answer(command, false, result);
-                } else {
-                    s_logger.info("Programmed pvlan for vm with mac " + vmMac);
-                }
+            if (result != null) {
+                s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
+            } else {
+                s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
             }
-        } catch (final LibvirtException e) {
-            s_logger.error("Error whislt executing OVS Setup command! ==> " + e.getMessage());
-            return new Answer(command, false, e.getMessage());
         }
+
+        // We run this even for DHCP servers since they're all vms after all
+        final String ovsPvlanVmPath = libvirtComputingResource.getOvsPvlanVmPath();
+        final Script script = new Script(ovsPvlanVmPath, timeout, s_logger);
+        script.add(opr, pvlanType, "-b", guestBridgeName, "-p", primaryPvlan, "-s", isolatedPvlan, "-m", vmMac);
+        result = script.execute();
+
+        if (result != null) {
+            s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
+            return new Answer(command, false, result);
+        } else {
+            s_logger.info("Programmed pvlan for vm with mac " + vmMac);
+        }
+
         return new Answer(command, true, result);
     }
 }
