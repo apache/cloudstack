@@ -266,7 +266,10 @@ export default {
           jobId,
           successMethod: result => {
             if (singleZone) {
-              this.$router.go(-1)
+              const isResourcePage = (this.$route.params && this.$route.params.id)
+              if (isResourcePage) {
+                this.$router.go(-1)
+              }
             } else {
               this.fetchData()
             }
