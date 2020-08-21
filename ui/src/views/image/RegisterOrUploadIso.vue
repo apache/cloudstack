@@ -29,6 +29,7 @@
         layout="vertical">
         <a-form-item v-if="currentForm === 'Create'" :label="$t('label.url')">
           <a-input
+            autoFocus
             v-decorator="['url', {
               rules: [{ required: true, message: `${this.$t('label.upload.iso.from.local')}` }]
             }]"

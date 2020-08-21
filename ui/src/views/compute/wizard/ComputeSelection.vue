@@ -56,7 +56,7 @@
         </a-col>
         <a-col :md="colContraned" :lg="colContraned">
           <a-form-item
-            :label="this.$t('label.memory')"
+            :label="this.$t('label.memory.mb')"
             :validate-status="errors.memory.status"
             :help="errors.memory.message">
             <a-row :gutter="12">
@@ -71,8 +71,6 @@
               <a-col :md="4" :lg="4">
                 <a-input-number
                   v-model="memoryInputValue"
-                  :formatter="value => `${value} MB`"
-                  :parser="value => value.replace(' MB', '')"
                   @change="($event) => updateComputeMemory($event)"
                 />
               </a-col>
@@ -106,7 +104,7 @@ export default {
     },
     minMemory: {
       type: Number,
-      default: 1
+      default: 0
     },
     maxMemory: {
       type: Number,
@@ -158,19 +156,22 @@ export default {
   watch: {
     computeOfferingId (newValue, oldValue) {
       if (newValue !== oldValue) {
-        this.cpuNumberInputValue = this.minCpu
-        this.memoryInputValue = this.minMemory
+        this.fillValue()
       }
     }
   },
   mounted () {
-    this.cpuNumberInputValue = this.minCpu
-    this.memoryInputValue = this.minMemory
     this.fillValue()
   },
   methods: {
     fillValue () {
+      this.cpuNumberInputValue = this.minCpu
+      this.memoryInputValue = this.minMemory
+
       if (!this.preFillContent) {
+        this.updateComputeCpuNumber(this.cpuNumberInputValue)
+        this.updateComputeCpuSpeed(this.cpuSpeedInputValue)
+        this.updateComputeMemory(this.memoryInputValue)
         return
       }
       if (this.preFillContent.cpunumber) {
@@ -182,6 +183,9 @@ export default {
       if (this.preFillContent.memory) {
         this.memoryInputValue = this.preFillContent.memory
       }
+      this.updateComputeCpuNumber(this.preFillContent.cpunumber || this.cpuNumberInputValue)
+      this.updateComputeCpuSpeed(this.preFillContent.cpuspeed || this.cpuSpeedInputValue)
+      this.updateComputeMemory(this.preFillContent.memory || this.memoryInputValue)
     },
     updateComputeCpuNumber (value) {
       if (!this.validateInput('cpu', value)) {

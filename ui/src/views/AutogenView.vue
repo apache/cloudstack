@@ -70,7 +70,7 @@
             :selectedRowKeys="selectedRowKeys"
             :dataView="dataView"
             :resource="resource"
-            @exec-action="execAction"/>
+            @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
           <search-view
             v-if="!dataView"
             :searchFilters="searchFilters"
@@ -143,7 +143,6 @@
           <a-form
             :form="form"
             @submit="handleSubmit"
-            v-show="dataView || !currentAction.groupAction || this.selectedRowKeys.length === 0"
             layout="vertical" >
             <a-form-item
               v-for="(field, fieldIndex) in currentAction.paramFields"
@@ -238,6 +237,7 @@
               </span>
               <span v-else-if="field.type==='long'">
                 <a-input-number
+                  :autoFocus="fieldIndex === 0"
                   style="width: 100%;"
                   v-decorator="[field.name, {
                     rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
@@ -273,6 +273,7 @@
               </span>
               <span v-else>
                 <a-input
+                  :autoFocus="fieldIndex === 0"
                   v-decorator="[field.name, {
                     rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
                   }]"
@@ -326,6 +327,7 @@ import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
 import store from '@/store'
+import eventBus from '@/config/eventBus'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
@@ -386,6 +388,9 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+  },
+  created () {
+    eventBus.$on('refresh-data', this.fetchData)
   },
   mounted () {
     if (this.device === 'desktop') {
@@ -647,7 +652,7 @@ export default {
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
     },
-    execAction (action) {
+    execAction (action, isGroupAction) {
       const self = this
       this.form = this.$form.createForm(this)
       this.formModel = {}
@@ -672,7 +677,7 @@ export default {
       if ('args' in action) {
         var args = action.args
         if (typeof action.args === 'function') {
-          args = action.args(action.resource, this.$store.getters)
+          args = action.args(action.resource, this.$store.getters, isGroupAction)
         }
         if (args.length > 0) {
           this.currentAction.paramFields = args.map(function (arg) {
@@ -814,24 +819,28 @@ export default {
     },
     handleSubmit (e) {
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
-        const paramsList = this.currentAction.groupMap(this.selectedRowKeys)
-        this.actionLoading = true
-        for (const params of paramsList) {
-          api(this.currentAction.api, params).then(json => {
-          }).catch(error => {
-            this.$notifyError(error)
-          })
-        }
-        this.$message.info({
-          content: this.$t(this.currentAction.label),
-          key: this.currentAction.label,
-          duration: 3
+        this.form.validateFields((err, values) => {
+          if (!err) {
+            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
+            this.actionLoading = true
+            for (const params of paramsList) {
+              api(this.currentAction.api, params).then(json => {
+              }).catch(error => {
+                this.$notifyError(error)
+              })
+            }
+            this.$message.info({
+              content: this.$t(this.currentAction.label),
+              key: this.currentAction.label,
+              duration: 3
+            })
+            setTimeout(() => {
+              this.actionLoading = false
+              this.closeAction()
+              this.fetchData()
+            }, 2000)
+          }
         })
-        setTimeout(() => {
-          this.actionLoading = false
-          this.closeAction()
-          this.fetchData()
-        }, 2000)
       } else {
         this.execSubmit(e)
       }

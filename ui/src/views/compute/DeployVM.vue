@@ -193,7 +193,7 @@
                       :isConstrained="'serviceofferingdetails' in serviceOffering"
                       :minCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.mincpunumber*1 : 1"
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
-                      :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 1"
+                      :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
                       :maxMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
                       @update-compute-cpunumber="updateFieldValue"
                       @update-compute-cpuspeed="updateFieldValue"
@@ -215,7 +215,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="this.$t('label.diskofferingid')"
+                :title="tabKey == 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
                   <div v-if="zoneSelected">
@@ -543,6 +543,7 @@ import { api } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
+import eventBus from '@/config/eventBus'
 
 import InfoCard from '@/components/view/InfoCard'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
@@ -1289,7 +1290,7 @@ export default {
         }
         // step 3: select service offering
         deployVmData.serviceofferingid = values.computeofferingid
-        if (values.cpunumber || values.cpuspeed || values.memory) {
+        if (this.serviceOffering && this.serviceOffering.iscustomized) {
           if (values.cpunumber) {
             deployVmData['details[0].cpuNumber'] = values.cpunumber
           }
@@ -1383,9 +1384,16 @@ export default {
                     duration: 0
                   })
                 }
+                eventBus.$emit('refresh-data')
+              },
+              errorMethod: () => {
+                eventBus.$emit('refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
-              catchMessage: this.$t('error.fetching.async.job.result')
+              catchMessage: this.$t('error.fetching.async.job.result'),
+              catchMethod: () => {
+                eventBus.$emit('refresh-data')
+              }
             })
             this.$store.dispatch('AddAsyncJob', {
               title: title,

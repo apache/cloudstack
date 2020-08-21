@@ -247,7 +247,7 @@
         </a-form-item>
         <a-form-item v-if="this.offeringType === 'fixed'">
           <span slot="label">
-            {{ $t('label.memory') }}
+            {{ $t('label.memory.mb') }}
             <a-tooltip :title="apiParams.memory.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>

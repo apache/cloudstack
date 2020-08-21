@@ -94,8 +94,11 @@ export default {
           groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
           show: (record) => { return ['Stopped'].includes(record.state) },
-          args: (record, store) => {
+          args: (record, store, group) => {
             var fields = []
+            if (group) {
+              return fields
+            }
             if (store.userInfo.roletype === 'Admin') {
               fields = ['podid', 'clusterid', 'hostid']
             }
@@ -116,7 +119,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           groupAction: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
           args: ['forced'],
           show: (record) => { return ['Running'].includes(record.state) }
         },
@@ -384,8 +387,9 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
           groupAction: true,
+          args: ['expunge'],
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x, expunge: true } }) },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge } }) },
           show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) },
           component: () => import('@/views/compute/DestoryVM.vue')
         }

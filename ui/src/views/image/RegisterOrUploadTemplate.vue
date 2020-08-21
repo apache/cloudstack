@@ -31,6 +31,7 @@
           <a-row :gutter="12">
             <a-form-item :label="$t('label.url')">
               <a-input
+                autoFocus
                 v-decorator="['url', {
                   rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
                 }]"
