@@ -130,12 +130,12 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         # 2. The Cloud Database contains the valid information when listKubernetesSupportedVersions is called
         """
 
-        version = self.services["cks_kubernetes_version"]["1.16.3"]
+        version = self.services["cks_kubernetes_versions"]["1.16.3"]
         name = 'v' + version["semanticversion"] + '-' + random_gen()
 
         self.debug("Adding Kubernetes supported version with name: %s" % name)
 
-        version_response = self.addKubernetesSupportedVersion(version["semanticversion"], name, self.zone.id, version["url"], version["mincpunumber"], version["mincpumemory"])
+        version_response = self.addKubernetesSupportedVersion(version["semanticversion"], name, self.zone.id, version["url"], version["mincpunumber"], version["minmemory"])
 
         list_versions_response = self.listKubernetesSupportedVersion(version_response.id)
 
