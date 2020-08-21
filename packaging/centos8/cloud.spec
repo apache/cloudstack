@@ -462,14 +462,14 @@ fi
 
 %post usage
 if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
-    echo Replacing db.properties with management server db.properties
+    echo Replacing usage server's db.properties with a link to the management server's db.properties
     rm -f %{_sysconfdir}/%{name}/usage/db.properties
     ln -s %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/usage/db.properties
     /usr/bin/systemctl enable cloudstack-usage > /dev/null 2>&1 || true
 fi
 
 if [ -f "%{_sysconfdir}/%{name}/management/key" ]; then
-    echo Replacing key with management server key
+    echo Replacing usage server's key with a link to the management server's key
     rm -f %{_sysconfdir}/%{name}/usage/key
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
 fi
