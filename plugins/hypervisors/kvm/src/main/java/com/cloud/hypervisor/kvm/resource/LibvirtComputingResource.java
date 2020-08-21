@@ -61,6 +61,7 @@ import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
@@ -1156,9 +1157,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
-        IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
-        final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
-        cleanupMonitor.start();
+        Boolean _iscsiCleanUpEnabled = Boolean.parseBoolean((String)params.get("iscsi.session.cleanup.enabled"));
+
+        if (BooleanUtils.isTrue(_iscsiCleanUpEnabled)) {
+            IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
+            final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
+            cleanupMonitor.start();
+        } else {
+            s_logger.info("iscsi session clean up is disabled");
+        }
 
         return true;
     }
