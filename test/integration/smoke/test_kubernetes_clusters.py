@@ -259,8 +259,8 @@ class TestKubernetesCluster(cloudstackTestCase):
     @classmethod 
     def addKubernetesSupportedVersion(cls, version_service):
         addKubernetesSupportedVersionCmd = addKubernetesSupportedVersion.addKubernetesSupportedVersionCmd()
-        addKubernetesSupportedVersionCmd.semanticversion = version_service["version_service"]
-        addKubernetesSupportedVersionCmd.name = 'v' + version_service["version_service"] + '-' + random_gen()
+        addKubernetesSupportedVersionCmd.semanticversion = version_service["semanticversion"]
+        addKubernetesSupportedVersionCmd.name = 'v' + version_service["semanticversion"] + '-' + random_gen()
         addKubernetesSupportedVersionCmd.url = version_service["url"]
         addKubernetesSupportedVersionCmd.mincpunumber = version_service["mincpunumber"]
         addKubernetesSupportedVersionCmd.minmemory = version_service["minmemory"]

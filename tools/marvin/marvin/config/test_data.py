@@ -2023,7 +2023,7 @@ test_data = {
             "details": [{"keyboard":"us","nicAdapter":"Vmxnet3","rootDiskController":"pvscsi"}]
         }
     },
-    "cks_compute_offering": {
+    "cks_service_offering": {
         "name": "CKS-Instance",
         "displaytext": "CKS Instance",
         "cpunumber": 2,
