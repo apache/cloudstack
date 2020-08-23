@@ -6138,7 +6138,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
         }
 
-        if(cmd.getProjectId() != null && cmd.getDomainId() == null) {
+        if (cmd.getProjectId() != null && cmd.getDomainId() == null) {
             throw new InvalidParameterValueException("Please provide a valid domain ID; cannot assign VM to a project if domain ID is NULL.");
         }
 
