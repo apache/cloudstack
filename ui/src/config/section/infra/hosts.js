@@ -137,7 +137,7 @@ export default {
           value: (record) => { return record.id }
         },
         driver: {
-          options: ['ipmitool', 'nestedcloudstack']
+          options: ['ipmitool', 'nestedcloudstack', 'redfish']
         }
       }
     },
