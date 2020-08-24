@@ -380,7 +380,53 @@
                         </span>
                         <span v-else-if="property.type && property.type==='string' && property.password">
                           <a-input-password
-                            v-decorator="['properties.' + escapePropertyKey(property.key), { initialValue: property.value }]"
+                            v-decorator="['properties.' + escapePropertyKey(property.key), {
+                              rules: [
+                                {
+                                  initialValue: property.value
+                                },
+                                {
+                                  validator: (rule, value, callback) => {
+                                    if (!property.qualifiers) {
+                                      callback()
+                                    }
+                                    var minlength = 0
+                                    var maxlength = 0
+                                    var errorMessage = ''
+                                    var isPasswordInvalidLength = function () {
+                                      return false
+                                    }
+                                    var match = property.qualifiers.match(/MinLen\((\d+)\)/);
+                                    if (match) {
+                                      minlength = match[1]
+                                      errorMessage = $t('message.validate.minlength').replace('{0}', minlength)
+                                      isPasswordInvalidLength = function () {
+                                        return value && value.length < minlength
+                                      }
+                                    }
+                                    match = property.qualifiers.match(/MaxLen\((\d+)\)/);
+                                    if (match) {
+                                      maxlength = match[1]
+                                      if (minlength) {
+                                        errorMessage = $t('message.validate.range.length').replace('{0}', minlength).replace('{1}', maxlength)
+                                        isPasswordInvalidLength = function () {
+                                          return value && (maxlength < value.length || value.length < minlength)
+                                        }
+                                      } else {
+                                        errorMessage = $t('message.validate.maxlength').replace('{0}', maxlength)
+                                        isPasswordInvalidLength = function () {
+                                          return value && value.length > maxlength
+                                        }
+                                      }
+                                    }
+                                    if (isPasswordInvalidLength()) {
+                                      callback(errorMessage)
+                                    }
+                                    callback()
+                                  }
+                                }
+                              ]
+                            }]"
                             :placeholder="property.description" />
                         </span>
                         <span v-else>
@@ -1139,6 +1185,10 @@ export default {
             this.templateLicenses = []
             this.templateProperties = {}
             this.updateTemplateParameters()
+            if (t.deployasis && !t.details && (!this.template || t.id !== this.template.id)) {
+              // Deploy as-is template without details detected, need to retrieve the template details
+              this.fetchTemplateDetails(t)
+            }
             template = t
             break
           }
