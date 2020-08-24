@@ -117,7 +117,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 spes = primaryDataStoreDao.listBy(pool.getDataCenterId(), pool.getPodId(), pool.getClusterId(), ScopeType.CLUSTER);
             }
             for (StoragePoolVO sp : spes) {
-                if (sp.getParent() != pool.getParent()) { // If Datastore cluster is tried to prepare for maintenance then child storage pools are also kept in PrepareForMaintenance mode
+                if (sp.getParent() != pool.getParent() && sp.getId() != pool.getParent()) { // If Datastore cluster is tried to prepare for maintenance then child storage pools are also kept in PrepareForMaintenance mode
                     if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
                         throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId() +
                                 " is already in  PrepareForMaintenance mode ");
@@ -321,7 +321,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("ModifyStoragePool add secceeded");
+                    s_logger.debug("ModifyStoragePool add succeeded");
                 }
             }
         }

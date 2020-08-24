@@ -27,6 +27,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.StoragePoolStatus;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -221,6 +223,13 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             // Skip the parent datastore cluster, consider only child storage pools in it
             if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster && storageMgr.isStoragePoolDatastoreClusterParent(pool)) {
                 return false;
+            }
+            // Skip the storage pool whose parent datastore cluster is not in UP state.
+            if (pool.getParent() != 0L) {
+                StoragePoolVO datastoreCluster = storagePoolDao.findById(pool.getParent());
+                if (datastoreCluster == null || (datastoreCluster != null && datastoreCluster.getStatus() != StoragePoolStatus.Up)) {
+                    return false;
+                }
             }
 
             try {
