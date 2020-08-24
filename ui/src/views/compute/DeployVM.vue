@@ -341,7 +341,7 @@
                         v-for="(property, propertyIndex) in props"
                         :key="propertyIndex"
                         :v-bind="property.key" >
-                        <span slot="label">
+                        <span slot="label" style="text-transform: capitalize">
                           {{ property.label }}
                           <a-tooltip :title="property.description">
                             <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
@@ -485,7 +485,7 @@
                         v-for="(license, licenseIndex) in templateLicenses"
                         :key="licenseIndex"
                         :v-bind="license.id">
-                        <span slot="label">
+                        <span slot="label" style="text-transform: capitalize">
                           {{ 'Agreement ' + (licenseIndex+1) + ': ' + license.name }}
                         </span>
                         <a-textarea
@@ -1677,8 +1677,11 @@ export default {
           configurations.push(configuration)
         }
         configurations.sort(function (a, b) {
-          return a.cpunumber - b.cpunumber
+          return a.index - b.index
         })
+        // configurations.forEach(x => {
+        //   console.log(x.index)
+        // })
       }
       return configurations
     },
@@ -1686,11 +1689,12 @@ export default {
       var licenses = []
       if (template && template.details && Object.keys(template.details).length > 0) {
         var keys = Object.keys(template.details)
-        keys = keys.filter(key => key.startsWith('ACS-eula-'))
+        const prefix = /ACS-eula-\d-/
+        keys = keys.filter(key => key.startsWith('ACS-eula-')).sort()
         for (var key of keys) {
           var license = {
             id: this.escapePropertyKey(key.replace(' ', '-')),
-            name: key.replace('ACS-eula-', ''),
+            name: key.replace(prefix, ''),
             text: template.details[key]
           }
           licenses.push(license)
