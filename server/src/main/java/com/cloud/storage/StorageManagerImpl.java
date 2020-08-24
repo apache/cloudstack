@@ -1541,6 +1541,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
 
         if (primaryStorage.getPoolType() == StoragePoolType.DatastoreCluster) {
+            if (primaryStorage.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
+                throw new CloudRuntimeException(String.format("There is already a job running for preparation for maintenance of the storage pool %s", primaryStorage.getUuid()));
+            }
             handlePrepareDatastoreCluserMaintenance(lifeCycle, primaryStorageId);
         }
         lifeCycle.maintain(store);
@@ -1549,6 +1552,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     private void handlePrepareDatastoreCluserMaintenance(DataStoreLifeCycle lifeCycle, Long primaryStorageId) {
+        StoragePoolVO datastoreCluster = _storagePoolDao.findById(primaryStorageId);
+        datastoreCluster.setStatus(StoragePoolStatus.PrepareForMaintenance);
+        _storagePoolDao.update(datastoreCluster.getId(), datastoreCluster);
+
         // Before preparing the datastorecluster to maintenance mode, the storagepools in the datastore cluster needs to put in maintenance
         List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(primaryStorageId);
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -1611,6 +1618,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
         DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
         if (primaryStorage.getPoolType() == StoragePoolType.DatastoreCluster) {
+            primaryStorage.setStatus(StoragePoolStatus.Up);
+            _storagePoolDao.update(primaryStorage.getId(), primaryStorage);
             //FR41 need to handle when one of the primary stores is unable to cancel the maintenance mode
             List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(primaryStorageId);
             for (StoragePoolVO childDatastore : childDatastores) {
