@@ -136,36 +136,13 @@ export default {
       return this.$t('message.change.offering.confirm')
     },
     updateComputeOffering (id) {
-      this.params.serviceofferingid = id
-      this.selectedOffering = this.offeringsMap[id]
-
       // Delete custom details
       delete this.params[this.cpuNumberKey]
       delete this.params[this.cpuSpeedKey]
       delete this.params[this.memoryKey]
 
-      if (!this.selectedOffering.iscustomized) {
-        return
-      }
-
-      // Set custom defaults if unconstrained
-      if (!this.selectedOffering.serviceofferingdetails) {
-        this.params[this.cpuNumberKey] = 1
-        this.params[this.cpuSpeedKey] = 1
-        this.params[this.memoryKey] = 32 // Min allowed by the backend is 32MB
-        return
-      }
-
-      // Set min defaults
-      if (this.selectedOffering.serviceofferingdetails.mincpunumber) {
-        this.params[this.cpuNumberKey] = this.selectedOffering.serviceofferingdetails.mincpunumber
-      }
-      if (this.selectedOffering.serviceofferingdetails.mincpuspeed) {
-        this.params[this.cpuSpeedKey] = this.selectedOffering.serviceofferingdetails.mincpuspeed
-      }
-      if (this.selectedOffering.serviceofferingdetails.minmemory) {
-        this.params[this.memoryKey] = this.selectedOffering.serviceofferingdetails.minmemory
-      }
+      this.params.serviceofferingid = id
+      this.selectedOffering = this.offeringsMap[id]
     },
     updateFieldValue (name, value) {
       this.params[name] = value
@@ -175,10 +152,12 @@ export default {
     },
     handleSubmit () {
       this.loading = true
-      let apiName = 'scaleVirtualMachine'
-      if (this.resource.state === 'Stopped') {
-        apiName = 'changeServiceForVirtualMachine'
+
+      const apiName = this.resource.state === 'Stopped' ? 'changeServiceForVirtualMachine' : 'scaleVirtualMachine'
+      if ('cpuspeed' in this.selectedOffering && this.selectedOffering.iscustomized) {
+        delete this.params[this.cpuSpeedKey]
       }
+
       api(apiName, this.params).then(response => {
         if (apiName === 'scaleVirtualMachine') {
           const jobId = response.scalevirtualmachineresponse.jobid
