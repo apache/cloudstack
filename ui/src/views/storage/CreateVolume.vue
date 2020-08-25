@@ -18,14 +18,26 @@
 <template>
   <a-spin :spinning="loading">
     <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
-      <a-form-item :label="$t('label.name')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.name') }}
+          <a-tooltip :title="apiParams.name.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-input
           v-decorator="['name', {
             rules: [{ required: true, message: $t('message.error.volume.name') }]
           }]"
           :placeholder="$t('label.volumename')"/>
       </a-form-item>
-      <a-form-item :label="$t('label.zoneid')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.zoneid') }}
+          <a-tooltip :title="apiParams.zoneid.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-select
           v-decorator="['zoneid', {
             initialValue: selectedZoneId,
@@ -40,7 +52,13 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item :label="$t('label.diskoffering')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.diskoffering') }}
+          <a-tooltip :title="apiParams.diskofferingid.description || 'Disk Offering'">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-select
           v-decorator="['diskofferingid', {
             initialValue: selectedDiskOfferingId,
@@ -57,7 +75,13 @@
         </a-select>
       </a-form-item>
       <span v-if="customDiskOffering">
-        <a-form-item :label="$t('label.sizegb')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.sizegb') }}
+            <a-tooltip :title="apiParams.size.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['size', {
               rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"
@@ -89,6 +113,11 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+    this.apiParams = {}
+    var apiConfig = this.$store.getters.apis.createVolume || {}
+    apiConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
   },
   mounted () {
     this.fetchData()

@@ -463,7 +463,6 @@ export default {
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
-    console.log(this.apiParams)
   },
   created () {
   },

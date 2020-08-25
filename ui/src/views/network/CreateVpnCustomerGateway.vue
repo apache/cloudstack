@@ -17,7 +17,13 @@
 <template>
   <div>
     <a-form class="form-layout" :form="form" layout="vertical">
-      <a-form-item :label="$t('label.name')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.name') }}
+          <a-tooltip :title="apiParams.name.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-input
           v-decorator="[
             'name',
@@ -27,7 +33,13 @@
           ]"
           :placeholder="$t('label.vpncustomergatewayname')" />
       </a-form-item>
-      <a-form-item :label="$t('label.gateway')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.gateway') }}
+          <a-tooltip :title="apiParams.gateway.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-input
           v-decorator="[
             'gateway',
@@ -37,7 +49,13 @@
           ]"
           :placeholder="$t('label.vpncustomergateway')" />
       </a-form-item>
-      <a-form-item :label="$t('label.cidrlist')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.cidrlist') }}
+          <a-tooltip :title="apiParams.cidrlist.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-input
           v-decorator="[
             'cidrlist',
@@ -47,8 +65,13 @@
           ]"
           :placeholder="$t('label.vpncustomergateway.cidrlist')" />
       </a-form-item>
-      <a-form-item
-        :label="$t('label.ipsecpsk')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.ipsecpsk') }}
+          <a-tooltip :title="apiParams.ipsecpsk.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-input
           v-decorator="[
             'ipsecpsk',
@@ -58,8 +81,7 @@
           ]"
           :placeholder="$t('label.vpncustomergateway.secretkey')" />
       </a-form-item>
-      <a-form-item
-        :label="$t('label.ikeencryption')">
+      <a-form-item :label="$t('label.ikeencryption')">
         <a-select
           v-decorator="[
             'ikeEncryption',
@@ -72,8 +94,7 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item
-        :label="$t('label.ikehash')">
+      <a-form-item :label="$t('label.ikehash')">
         <a-select
           v-decorator="[
             'ikeHash',
@@ -149,8 +170,13 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item
-        :label="$t('label.ikelifetime')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.ikelifetime') }}
+          <a-tooltip :title="apiParams.ikelifetime.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-input
           v-decorator="[
             'ikelifetime',
@@ -160,8 +186,13 @@
           ]"
           :placeholder="$t('label.vpncustomergateway.ikelifetime')"/>
       </a-form-item>
-      <a-form-item
-        :label="$t('label.esplifetime')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.esplifetime') }}
+          <a-tooltip :title="apiParams.esplifetime.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-input
           v-decorator="[
             'esplifetime',
@@ -171,7 +202,13 @@
           ]"
           :placeholder="$t('label.vpncustomergateway.esplifetime')"/>
       </a-form-item>
-      <a-form-item :label="$t('label.dpd')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.dpd') }}
+          <a-tooltip :title="apiParams.dpd.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-switch
           v-decorator="[
             'dpd',
@@ -180,7 +217,13 @@
             },
           ]"/>
       </a-form-item>
-      <a-form-item :label="$t('label.forceencap')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.forceencap') }}
+          <a-tooltip :title="apiParams.forceencap.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-switch
           v-decorator="[
             'forceencap',
@@ -241,6 +284,11 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+    this.apiParams = {}
+    var apiConfig = this.$store.getters.apis.createVpnCustomerGateway || {}
+    apiConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
   },
   methods: {
     closeModal () {
