@@ -73,7 +73,7 @@
 
         <div class="form__item">
           <div class="form__label">{{ $t('label.vcenterpassword') }}</div>
-          <a-input v-model="password"></a-input>
+          <a-input type="password" v-model="password"></a-input>
         </div>
 
         <div class="form__item">
@@ -223,7 +223,7 @@ export default {
 
       this.loading = true
       this.parentToggleLoading()
-      api('addCluster', {
+      api('addCluster', {}, 'POST', {
         zoneId: this.zoneId,
         hypervisor: this.hypervisor,
         clustertype: this.clustertype,
