@@ -2583,7 +2583,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
    * @param ntwkOff network offering
    */
   private boolean hasGuestBypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff, final boolean isPrivateNetwork) {
-    return bypassVlanOverlapCheck && (ntwkOff.getGuestType() == GuestType.Shared || isPrivateNetwork);
+    return bypassVlanOverlapCheck && (ntwkOff.getGuestType() != GuestType.Isolated || isPrivateNetwork);
   }
 
   /**
