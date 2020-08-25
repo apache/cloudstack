@@ -1657,6 +1657,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     return false;
                 }
 
+                final UserVmVO userVm = _userVmDao.findById(vm.getId());
+                userVm.setPowerState(PowerState.PowerOff);
+                _userVmDao.update(userVm.getId(), userVm);
+
                 guru.finalizeStop(profile, answer);
             } else {
                 s_logger.error("Invalid answer received in response to a StopCommand for " + vm.getInstanceName());
