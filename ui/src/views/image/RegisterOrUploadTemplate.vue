@@ -95,6 +95,10 @@
                   }]"
                   :loading="zones.loading"
                   mode="multiple"
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   :placeholder="apiParams.zoneids.description"
                   @change="handlerSelectZone">
                   <a-select-option v-for="opt in zones.opts" :key="opt.id">
@@ -122,13 +126,16 @@
                       }
                     ]
                   }]"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   @change="handlerSelectZone"
                   :placeholder="apiParams.zoneid.description"
                   :loading="zones.loading">
                   <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
-                    <div v-if="zone.name !== $t('label.all.zone')">
-                      {{ zone.name || zone.description }}
-                    </div>
+                    {{ zone.name || zone.description }}
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -517,7 +524,7 @@ export default {
 
       this.allowed = false
 
-      if (store.getters.userInfo.roletype === this.rootAdmin) {
+      if (store.getters.userInfo.roletype === this.rootAdmin && this.currentForm === 'Create') {
         this.allowed = true
         listZones.push({
           id: this.$t('label.all.zone'),
