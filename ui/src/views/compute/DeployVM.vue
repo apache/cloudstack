@@ -1511,17 +1511,17 @@ export default {
       })
     },
     fetchIsos (isoFilter, params) {
-      params = params || {}
-      if (params.keyword || params.category !== isoFilter) {
-        params.page = 1
-        params.pageSize = params.pageSize || 10
+      const args = Object.assign({}, params)
+      if (args.keyword || args.category !== isoFilter) {
+        args.page = 1
+        args.pageSize = args.pageSize || 10
       }
-      params.zoneid = _.get(this.zone, 'id')
-      params.isoFilter = isoFilter
-      params.bootable = true
+      args.zoneid = _.get(this.zone, 'id')
+      args.isoFilter = isoFilter
+      args.bootable = true
 
       return new Promise((resolve, reject) => {
-        api('listIsos', params).then((response) => {
+        api('listIsos', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors
