@@ -390,32 +390,28 @@
                                     if (!property.qualifiers) {
                                       callback()
                                     }
-                                    var minlength = 0
-                                    var maxlength = 0
+                                    var minlength = getPropertyQualifiers(property.qualifiers, 'number-select').min
+                                    var maxlength = getPropertyQualifiers(property.qualifiers, 'number-select').max
                                     var errorMessage = ''
                                     var isPasswordInvalidLength = function () {
                                       return false
                                     }
-                                    var match = property.qualifiers.match(/MinLen\((\d+)\)/);
-                                    if (match) {
-                                      minlength = match[1]
+                                    if (minlength) {
                                       errorMessage = $t('message.validate.minlength').replace('{0}', minlength)
                                       isPasswordInvalidLength = function () {
-                                        return value && value.length < minlength
+                                        return !value || value.length < minlength
                                       }
                                     }
-                                    match = property.qualifiers.match(/MaxLen\((\d+)\)/);
-                                    if (match) {
-                                      maxlength = match[1]
+                                    if (maxlength !== Number.MAX_SAFE_INTEGER) {
                                       if (minlength) {
                                         errorMessage = $t('message.validate.range.length').replace('{0}', minlength).replace('{1}', maxlength)
                                         isPasswordInvalidLength = function () {
-                                          return value && (maxlength < value.length || value.length < minlength)
+                                          return !value || (maxlength < value.length || value.length < minlength)
                                         }
                                       } else {
                                         errorMessage = $t('message.validate.maxlength').replace('{0}', maxlength)
                                         isPasswordInvalidLength = function () {
-                                          return value && value.length > maxlength
+                                          return !value || value.length > maxlength
                                         }
                                       }
                                     }
@@ -541,7 +537,18 @@
                       </div>
                       <a-checkbox
                         style="margin-top: 10px"
-                        v-decorator="['licensesaccepted']">
+                        v-decorator="['licensesaccepted', {
+                          rules: [
+                            {
+                              validator: (rule, value, callback) => {
+                                if (!value) {
+                                  callback($t('message.license.agreements.not.accepted'))
+                                }
+                                callback()
+                              }
+                            }
+                          ]
+                        }]">
                         {{ $t('label.i.accept.all.license.agreements') }}
                       </a-checkbox>
                     </a-form-item>
@@ -1065,11 +1072,14 @@ export default {
         case 'number-select':
           var min = 0
           var max = Number.MAX_SAFE_INTEGER
-          if (qualifiers && qualifiers.includes('MinValue') && qualifiers.includes('MaxValue')) {
-            var arr = qualifiers.split(',')
-            if (arr.length > 1) {
-              min = arr[0].replace('MinValue(', '').slice(0, -1)
-              max = arr[1].replace('MaxValue(', '').slice(0, -1)
+          if (qualifiers) {
+            var match = qualifiers.match(/MinLen\((\d+)\)/)
+            if (match) {
+              min = parseInt(match[1])
+            }
+            match = qualifiers.match(/MaxLen\((\d+)\)/)
+            if (match) {
+              max = parseInt(match[1])
             }
           }
           result = { min: min, max: max }
@@ -1274,6 +1284,10 @@ export default {
       e.preventDefault()
       this.form.validateFields(async (err, values) => {
         if (err) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('error.form.message')
+          })
           return
         }
 

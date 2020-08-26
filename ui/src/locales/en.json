@@ -11,6 +11,7 @@
 "error.dedicate.zone.failed": "Failed to dedicate zone",
 "error.execute.api.failed": "Failed to execute API",
 "error.fetching.async.job.result": "Error encountered while fetching async job result",
+"error.form.message": "There are erorrs in the form. Please fix them",
 "error.installwizard.message": "Something went wrong; you may go back and correct any errors",
 "error.invalid.username.password": "Invalid username or password.<br/><br/>This could also be a restriction on the IP address you are connecting from.",
 "error.login": "Your username/password does not match our records.",
