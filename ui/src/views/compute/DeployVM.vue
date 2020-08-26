@@ -1744,9 +1744,6 @@ export default {
         configurations.sort(function (a, b) {
           return a.index - b.index
         })
-        // configurations.forEach(x => {
-        //   console.log(x.index)
-        // })
       }
       return configurations
     },
