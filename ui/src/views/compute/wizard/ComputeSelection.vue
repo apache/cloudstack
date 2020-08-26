@@ -21,7 +21,7 @@
       <a-row>
         <a-col :md="colContraned" :lg="colContraned">
           <a-form-item
-            :label="this.$t('label.cpunumber')"
+            :label="$t('label.cpunumber')"
             :validate-status="errors.cpu.status"
             :help="errors.cpu.message">
             <a-row :gutter="12">
@@ -36,7 +36,6 @@
               <a-col :md="4" :lg="4">
                 <a-input-number
                   v-model="cpuNumberInputValue"
-                  :formatter="value => `${value}`"
                   @change="($event) => updateComputeCpuNumber($event)"
                 />
               </a-col>
@@ -45,7 +44,7 @@
         </a-col>
         <a-col :md="8" :lg="8" v-show="!isConstrained">
           <a-form-item
-            :label="this.$t('label.cpuspeed')"
+            :label="$t('label.cpuspeed')"
             :validate-status="errors.cpuspeed.status"
             :help="errors.cpuspeed.message">
             <a-input-number
@@ -56,7 +55,7 @@
         </a-col>
         <a-col :md="colContraned" :lg="colContraned">
           <a-form-item
-            :label="this.$t('label.memory.mb')"
+            :label="$t('label.memory.mb')"
             :validate-status="errors.memory.status"
             :help="errors.memory.message">
             <a-row :gutter="12">
@@ -188,6 +187,7 @@ export default {
       this.updateComputeMemory(this.preFillContent.memory || this.memoryInputValue)
     },
     updateComputeCpuNumber (value) {
+      if (!value) this.cpuNumberInputValue = 0
       if (!this.validateInput('cpu', value)) {
         return
       }
@@ -197,6 +197,7 @@ export default {
       this.$emit('update-compute-cpuspeed', this.cpuspeedInputDecorator, value)
     },
     updateComputeMemory (value) {
+      if (!value) this.memoryInputValue = 0
       if (!this.validateInput('memory', value)) {
         return
       }
