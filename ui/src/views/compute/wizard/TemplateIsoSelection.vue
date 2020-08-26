@@ -100,14 +100,13 @@ export default {
   },
   watch: {
     items (items) {
-      this.checkedValue = ''
       const key = this.inputDecorator.slice(0, -2)
       for (const filter of this.filterOpts) {
         if (items[filter.id] && items[filter.id][key] && items[filter.id][key].length > 0) {
           if (!this.pagination) {
             this.filterType = filter.id
+            this.checkedValue = items[filter.id][key][0].id
           }
-          this.checkedValue = items[filter.id][key][0].id
           break
         }
       }
