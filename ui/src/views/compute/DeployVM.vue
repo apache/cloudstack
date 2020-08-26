@@ -1492,17 +1492,17 @@ export default {
       })
     },
     fetchTemplates (templateFilter, params) {
-      params = params || {}
-      if (params.keyword || params.category !== templateFilter) {
-        params.page = 1
-        params.pageSize = params.pageSize || 10
+      const args = Object.assign({}, params)
+      if (args.keyword || args.category !== templateFilter) {
+        args.page = 1
+        args.pageSize = args.pageSize || 10
       }
-      params.zoneid = _.get(this.zone, 'id')
-      params.templatefilter = templateFilter
-      params.details = 'min'
+      args.zoneid = _.get(this.zone, 'id')
+      args.templatefilter = templateFilter
+      args.details = 'min'
 
       return new Promise((resolve, reject) => {
-        api('listTemplates', params).then((response) => {
+        api('listTemplates', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors

@@ -104,7 +104,6 @@ export default {
       const key = this.inputDecorator.slice(0, -2)
       for (const filter of this.filterOpts) {
         if (items[filter.id] && items[filter.id][key] && items[filter.id][key].length > 0) {
-          this.filterType = filter.id
           this.checkedValue = items[filter.id][key][0].id
           break
         }
@@ -113,6 +112,7 @@ export default {
     inputDecorator (newValue, oldValue) {
       if (newValue !== oldValue) {
         this.filter = ''
+        this.filterType = 'featured'
       }
     }
   },
