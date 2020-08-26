@@ -1774,6 +1774,7 @@ export default {
     },
     resetFromTemplateConfiguration () {
       this.deleteFrom(this.params.serviceOfferings.options, ['cpuspeed', 'cpunumber', 'memory'])
+      this.deleteFrom(this.dataPreFill, ['cpuspeed', 'cpunumber', 'memory'])
       this.handleSearchFilter('serviceOfferings', {
         page: 1,
         pageSize: 10
