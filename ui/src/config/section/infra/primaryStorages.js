@@ -61,7 +61,7 @@ export default {
       icon: 'edit',
       label: 'label.edit',
       dataView: true,
-      args: ['tags', 'capacitybytes', 'capacityiops']
+      args: ['name', 'tags', 'capacitybytes', 'capacityiops']
     },
     {
       api: 'enableStorageMaintenance',

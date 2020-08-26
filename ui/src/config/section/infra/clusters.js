@@ -60,6 +60,13 @@ export default {
     },
     {
       api: 'updateCluster',
+      icon: 'edit',
+      label: 'label.edit',
+      dataView: true,
+      args: ['clustername']
+    },
+    {
+      api: 'updateCluster',
       icon: 'play-circle',
       label: 'label.action.enable.cluster',
       message: 'message.action.enable.cluster',
