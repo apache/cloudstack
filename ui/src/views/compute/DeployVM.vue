@@ -157,7 +157,7 @@
                           'templateConfiguration'
                         ]"
                         defaultActiveFirstOption
-                        :placeholder="'Something'"
+                        :placeholder="$t('label.configuration')"
                         :filterOption="(input, option) => {
                           return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }"
@@ -184,7 +184,6 @@
                     ></compute-offering-selection>
                     <compute-selection
                       v-if="serviceOffering && serviceOffering.iscustomized"
-                      v-show="!templateConfigurationExists"
                       cpunumber-input-decorator="cpunumber"
                       cpuspeed-input-decorator="cpuspeed"
                       memory-input-decorator="memory"
@@ -1185,6 +1184,7 @@ export default {
           templateid: value,
           isoid: null
         })
+        this.resetFromTemplateConfiguration()
         let template = ''
         for (const key in this.options.templates) {
           var t = _.find(_.get(this.options.templates[key], 'template', []), (option) => option.id === value)
@@ -1214,6 +1214,7 @@ export default {
         this.templateLicenses = []
         this.templateProperties = {}
         this.tabKey = 'isoid'
+        this.resetFromTemplateConfiguration()
         this.form.setFieldsValue({
           isoid: value,
           templateid: null
@@ -1766,6 +1767,34 @@ export default {
       }
       return licenses
     },
+    deleteFrom (options, values) {
+      for (const value of values) {
+        delete options[value]
+      }
+    },
+    resetFromTemplateConfiguration () {
+      this.deleteFrom(this.params.serviceOfferings.options, ['cpuspeed', 'cpunumber', 'memory'])
+      this.handleSearchFilter('serviceOfferings', {
+        page: 1,
+        pageSize: 10
+      })
+    },
+    handleTemplateConfiguration () {
+      if (!this.selectedTemplateConfiguration) {
+        return
+      }
+      const params = {
+        cpunumber: this.selectedTemplateConfiguration.cpunumber,
+        cpuspeed: this.selectedTemplateConfiguration.cpuspeed,
+        memory: this.selectedTemplateConfiguration.memory,
+        page: 1,
+        pageSize: 10
+      }
+      this.dataPreFill.cpunumber = params.cpunumber
+      this.dataPreFill.cpuspeed = params.cpuspeed
+      this.dataPreFill.memory = params.memory
+      this.handleSearchFilter('serviceOfferings', params)
+    },
     updateTemplateParameters () {
       if (this.template) {
         this.templateNics = this.fetchTemplateNics(this.template)
@@ -1785,6 +1814,7 @@ export default {
     },
     onSelectTemplateConfigurationId (value) {
       this.selectedTemplateConfiguration = _.find(this.templateConfigurations, (option) => option.id === value)
+      this.handleTemplateConfiguration()
       this.updateComputeOffering(null)
     },
     updateTemplateConfigurationOfferingDetails (offeringId) {
