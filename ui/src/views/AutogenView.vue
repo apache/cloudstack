@@ -390,7 +390,11 @@ export default {
     this.form = this.$form.createForm(this)
   },
   created () {
-    eventBus.$on('refresh-data', this.fetchData)
+    eventBus.$on('vm-refresh-data', () => {
+      if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
+        this.fetchData()
+      }
+    })
   },
   mounted () {
     if (this.device === 'desktop') {
