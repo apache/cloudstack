@@ -512,7 +512,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
     @Inject
-    private StorageManager storageMgr;
+    private StorageManager _storageManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2019,14 +2019,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!CollectionUtils.isEmpty(volumeLocators)) {
 
                 GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
+                Answer answer = null;
 
-                if (timeout > 0) {
-                    cmd.setWait(timeout/1000);
+                if (poolType == StoragePoolType.PowerFlex) {
+                    // Get volume stats from the pool directly instead of sending cmd to host
+                    // Added support for ScaleIO/PowerFlex pool only
+                    answer = _storageManager.getVolumeStats(storagePool, cmd);
+                } else {
+                    if (timeout > 0) {
+                        cmd.setWait(timeout/1000);
+                    }
+
+                    answer = _agentMgr.easySend(neighbor.getId(), cmd);
                 }
 
-                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
-
-                if (answer instanceof GetVolumeStatsAnswer){
+                if (answer != null && answer instanceof GetVolumeStatsAnswer){
                     GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
                     if (volstats.getVolumeStats() != null) {
                         volumeStatsByUuid.putAll(volstats.getVolumeStats());
@@ -6295,7 +6302,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
                 if (hypervisorType.equals(HypervisorType.VMware)) {
                     try {
-                        boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(volume), pool);
+                        boolean isStoragePoolStoragepolicyComplaince = _storageManager.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(volume), pool);
                         if (!isStoragePoolStoragepolicyComplaince) {
                             throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", pool.getUuid(), volume.getUuid()));
                         }

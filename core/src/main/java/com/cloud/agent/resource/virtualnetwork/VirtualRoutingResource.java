@@ -44,6 +44,7 @@ import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
 import org.apache.cloudstack.diagnostics.PrepareFilesAnswer;
 import org.apache.cloudstack.diagnostics.PrepareFilesCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
@@ -310,6 +311,22 @@ public class VirtualRoutingResource {
 
     private GetRouterMonitorResultsAnswer execute(GetRouterMonitorResultsCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        ExecutionResult fsReadOnlyResult = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_FILESYSTEM_WRITABLE_CHECK, null);
+        if (!fsReadOnlyResult.isSuccess()) {
+            s_logger.warn("Result of " + cmd + " failed with details: " + fsReadOnlyResult.getDetails());
+            if (StringUtils.isNotBlank(fsReadOnlyResult.getDetails())) {
+                final String readOnlyFileSystemError = "Read-only file system";
+                if (fsReadOnlyResult.getDetails().contains(readOnlyFileSystemError)) {
+                    return new GetRouterMonitorResultsAnswer(cmd, false, null, readOnlyFileSystemError);
+                } else {
+                    return new GetRouterMonitorResultsAnswer(cmd, false, null, fsReadOnlyResult.getDetails());
+                }
+            } else {
+                s_logger.warn("Result of " + cmd + " received empty details.");
+                return new GetRouterMonitorResultsAnswer(cmd, false, null, "No results available.");
+            }
+        }
+
         String args = cmd.shouldPerformFreshChecks() ? "true" : "false";
         s_logger.info("Fetching health check result for " + routerIp + " and executing fresh checks: " + args);
         ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_MONITOR_RESULTS, args);

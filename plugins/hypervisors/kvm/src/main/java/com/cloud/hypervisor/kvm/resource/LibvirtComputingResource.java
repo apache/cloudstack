@@ -46,9 +46,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
-import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
-import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -88,6 +86,7 @@ import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -110,7 +109,6 @@ import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -143,6 +141,9 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.IscsiStorageCleanupMonitor;
@@ -235,6 +236,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     public static final String DEFAULTDOMRSSHPORT = "3922";
+
+    public final static String HOST_CACHE_PATH_PARAMETER = "host.cache.location";
+    public final static String CONFIG_DIR = "config";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
 
@@ -515,6 +519,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return directDownloadTemporaryDownloadPath;
     }
 
+    public String getConfigPath() {
+        return getCachePath() + "/" + CONFIG_DIR;
+    }
+
+    public String getCachePath() {
+        return cachePath;
+    }
+
     public String getResizeVolumePath() {
         return _resizeVolumePath;
     }
@@ -567,6 +579,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
+    protected String cachePath;
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
@@ -616,6 +629,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String getDefaultDirectDownloadTemporaryPath() {
         return "/var/lib/libvirt/images";
+    }
+
+    private String getDefaultCachePath() {
+        return "/var/cache/cloud";
     }
 
     protected String getDefaultNetworkScriptsDir() {
@@ -705,6 +722,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         directDownloadTemporaryDownloadPath = (String) params.get("direct.download.temporary.download.location");
         if (org.apache.commons.lang.StringUtils.isBlank(directDownloadTemporaryDownloadPath)) {
             directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
+        }
+
+        cachePath = (String) params.get(HOST_CACHE_PATH_PARAMETER);
+        if (org.apache.commons.lang.StringUtils.isBlank(cachePath)) {
+            cachePath = getDefaultCachePath();
         }
 
         params.put("domr.scripts.dir", domrScriptsDir);
@@ -2458,11 +2480,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String getVolumePath(final Connect conn, final DiskTO volume) throws LibvirtException, URISyntaxException {
+        return getVolumePath(conn, volume, false);
+    }
+
+    public String getVolumePath(final Connect conn, final DiskTO volume, boolean diskOnHostCache) throws LibvirtException, URISyntaxException {
         final DataTO data = volume.getData();
         final DataStoreTO store = data.getDataStore();
 
         if (volume.getType() == Volume.Type.ISO && data.getPath() != null && (store instanceof NfsTO ||
                 store instanceof PrimaryDataStoreTO && data instanceof TemplateObjectTO && !((TemplateObjectTO) data).isDirectDownload())) {
+
+            if (data.getPath().startsWith(ConfigDrive.CONFIGDRIVEDIR) && diskOnHostCache) {
+                String configDrivePath = getConfigPath() + "/" + data.getPath();
+                return configDrivePath;
+            }
+
             final String isoPath = store.getUrl().split("\\?")[0] + File.separator + data.getPath();
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);
@@ -2500,7 +2532,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (volume.getType() == Volume.Type.ISO && data.getPath() != null) {
                 DataStoreTO dataStore = data.getDataStore();
                 String dataStoreUrl = null;
-                if (dataStore instanceof NfsTO) {
+                if (data.getPath().startsWith(ConfigDrive.CONFIGDRIVEDIR) && vmSpec.isConfigDriveOnHostCache() && data instanceof TemplateObjectTO) {
+                    String configDrivePath = getConfigPath() + "/" + data.getPath();
+                    physicalDisk = new KVMPhysicalDisk(configDrivePath, ((TemplateObjectTO) data).getUuid(), null);
+                    physicalDisk.setFormat(PhysicalDiskFormat.FILE);
+                } else if (dataStore instanceof NfsTO) {
                     NfsTO nfsStore = (NfsTO)data.getDataStore();
                     dataStoreUrl = nfsStore.getUrl();
                     physicalDisk = getPhysicalDiskFromNfsStore(dataStoreUrl, data);
@@ -2580,6 +2616,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                      */
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
                             pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                } else if (pool.getType() == StoragePoolType.PowerFlex) {
+                    disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                 } else if (pool.getType() == StoragePoolType.Gluster) {
                     final String mountpoint = pool.getLocalPath();
                     final String path = physicalDisk.getPath();
@@ -2663,7 +2701,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
         }
-
     }
 
     private KVMPhysicalDisk getPhysicalDiskPrimaryStore(PrimaryDataStoreTO primaryDataStoreTO, DataTO data) {
@@ -2825,6 +2862,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
                             attachingPool.getUuid(), devId, busT, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                } else if (attachingPool.getType() == StoragePoolType.PowerFlex) {
+                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, busT);
                 } else if (attachingPool.getType() == StoragePoolType.Gluster) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
                             null, devId, busT, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);

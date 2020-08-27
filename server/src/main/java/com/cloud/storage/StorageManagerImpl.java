@@ -96,6 +96,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -111,7 +112,12 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.GetStorageStatsAnswer;
+import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVolumeStatsAnswer;
+import com.cloud.agent.api.GetVolumeStatsCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.manager.Commands;
@@ -204,6 +210,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Strings;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -442,11 +449,63 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public Answer sendToPool(StoragePool pool, Command cmd) throws StorageUnavailableException {
+        if (cmd instanceof GetStorageStatsCommand && pool.getPoolType() == StoragePoolType.PowerFlex) {
+            // Get stats from the pool directly instead of sending cmd to host
+            // Added support for ScaleIO/PowerFlex pool only
+            return getStoragePoolStats(pool, (GetStorageStatsCommand) cmd);
+        }
+
         Answer[] answers = sendToPool(pool, new Commands(cmd));
         if (answers == null) {
             return null;
         }
         return answers[0];
+    }
+
+    private GetStorageStatsAnswer getStoragePoolStats(StoragePool pool, GetStorageStatsCommand cmd) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+        GetStorageStatsAnswer answer = null;
+
+        if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideStorageStats()) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+            Pair<Long, Long> storageStats = primaryStoreDriver.getStorageStats(pool);
+            if (storageStats == null) {
+                answer = new GetStorageStatsAnswer((GetStorageStatsCommand) cmd, "Failed to get storage stats for pool: " + pool.getId());
+            } else {
+                answer = new GetStorageStatsAnswer((GetStorageStatsCommand) cmd, storageStats.first(), storageStats.second());
+            }
+        }
+
+        return answer;
+    }
+
+    @Override
+    public Answer getVolumeStats(StoragePool pool, Command cmd) {
+        if (!(cmd instanceof GetVolumeStatsCommand)) {
+            return null;
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+        if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideVolumeStats()) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+            HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
+            GetVolumeStatsCommand getVolumeStatsCommand = (GetVolumeStatsCommand) cmd;
+            for (String volumeUuid : getVolumeStatsCommand.getVolumeUuids()) {
+                Pair<Long, Long> volumeStats = primaryStoreDriver.getVolumeStats(pool, volumeUuid);
+                if (volumeStats == null) {
+                    return new GetVolumeStatsAnswer(getVolumeStatsCommand, "Failed to get stats for volume: " + volumeUuid, null);
+                } else {
+                    VolumeStatsEntry volumeStatsEntry = new VolumeStatsEntry(volumeUuid, volumeStats.first(), volumeStats.second());
+                    statEntry.put(volumeUuid, volumeStatsEntry);
+                }
+            }
+            return new GetVolumeStatsAnswer(getVolumeStatsCommand, "", statEntry);
+        }
+
+        return null;
     }
 
     public Long chooseHostForStoragePool(StoragePoolVO poolVO, List<Long> avoidHosts, boolean sendToVmResidesOn, Long vmId) {
@@ -1029,6 +1088,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException {
+        StoragePool pool = (StoragePool)_dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        assert (pool.isShared()) : "Now, did you actually read the name of this method?";
+        s_logger.debug("Removing pool " + pool.getName() + " from  host " + hostId);
+
+        DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        HypervisorHostListener listener = hostListeners.get(provider.getName());
+        listener.hostDisconnected(hostId, pool.getId());
+    }
+
+    @Override
     public BigDecimal getStorageOverProvisioningFactor(Long poolId) {
         return new BigDecimal(CapacityManager.StorageOverprovisioningFactor.valueIn(poolId));
     }
@@ -1215,6 +1285,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         try {
                             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
                             if (volumeInfo != null) {
+                                volService.ensureVolumeIsExpungeReady(vol.getId());
                                 volService.expungeVolumeAsync(volumeInfo);
                             } else {
                                 s_logger.debug("Volume " + vol.getUuid() + " is already destroyed");
@@ -1350,6 +1421,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             if (storagePool != null && storagePool.isManaged()) {
                 VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
+                if (vmInstanceVO == null) {
+                    return;
+                }
 
                 Long lastHostId = vmInstanceVO.getLastHostId();
 
@@ -1773,6 +1847,38 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    @DB
+    public List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId) {
+        return _storagePoolHostDao.listByHostId(hostId);
+    }
+
+    @Override
+    public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
+        if (host == null || pool == null) {
+            return false;
+        }
+
+        if (!pool.isManaged()) {
+            return true;
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+        if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canHostAccessStoragePool(host, pool)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    @DB
+    public Host getHost(long hostId) {
+        return _hostDao.findById(hostId);
+    }
+
+    @Override
     public Host updateSecondaryStorage(long secStorageId, String newUrl) {
         HostVO secHost = _hostDao.findById(secStorageId);
         if (secHost == null) {
@@ -1847,7 +1953,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private boolean checkUsagedSpace(StoragePool pool) {
         // Managed storage does not currently deal with accounting for physically used space (only provisioned space). Just return true if "pool" is managed.
-        if (pool.isManaged()) {
+        // StatsCollector gets the storage stats from the ScaleIO/PowerFlex pool directly, limit the usage based on the capacity disable threshold
+        if (pool.isManaged() && pool.getPoolType() != StoragePoolType.PowerFlex) {
             return true;
         }
 
@@ -1965,14 +2072,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz) {
+    public boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSize) {
         if (!checkUsagedSpace(pool)) {
             return false;
         }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destination pool id: " + pool.getId());
         }
-        long totalAskingSize = newSiz - currentSize;
+        long totalAskingSize = newSize - currentSize;
 
         if (totalAskingSize <= 0) {
             return true;
@@ -2147,6 +2254,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     private long getBytesRequiredForTemplate(VMTemplateVO tmpl, StoragePool pool) {
+        if (tmplFactory.isTemplateMarkedForDirectDownload(tmpl.getId())) {
+            return tmpl.getSize();
+        }
+
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
 
@@ -2159,6 +2270,59 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return tmpl.getSize();
+    }
+
+    @Override
+    public boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume) {
+        if (pool == null || volume == null) {
+            return false;
+        }
+
+        if (!pool.isManaged()) {
+            return true;
+        }
+
+        if (volume.getPoolId() == null) {
+            // Volume is not allocated to any pool. Not possible to check compatibility with other pool
+            return true;
+        }
+
+        StoragePool volumePool = _storagePoolDao.findById(volume.getPoolId());
+        if (volumePool == null) {
+            // Volume pool doesn't exist. Not possible to check compatibility with other pool
+            return true;
+        }
+
+        if (volume.getState() == Volume.State.Ready && volumePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+            if (pool.getPoolType() != Storage.StoragePoolType.PowerFlex) {
+                return false;
+            }
+
+            final String STORAGE_POOL_SYSTEM_ID = "powerflex.storagepool.system.id";
+            String srcPoolSystemId = null;
+            StoragePoolDetailVO srcPoolSystemIdDetail = _storagePoolDetailsDao.findDetail(volume.getPoolId(), STORAGE_POOL_SYSTEM_ID);
+            if (srcPoolSystemIdDetail != null) {
+                srcPoolSystemId = srcPoolSystemIdDetail.getValue();
+            }
+
+            String destPoolSystemId = null;
+            StoragePoolDetailVO destPoolSystemIdDetail = _storagePoolDetailsDao.findDetail(pool.getId(), STORAGE_POOL_SYSTEM_ID);
+            if (destPoolSystemIdDetail != null) {
+                destPoolSystemId = destPoolSystemIdDetail.getValue();
+            }
+
+            if (Strings.isNullOrEmpty(srcPoolSystemId) || Strings.isNullOrEmpty(destPoolSystemId)) {
+                s_logger.debug("Unable to check PowerFlex pool: " + pool.getId() + " compatibilty for the volume: " + volume.getId());
+                return false;
+            }
+
+            if (!srcPoolSystemId.equals(destPoolSystemId)) {
+                s_logger.debug("PowerFlex pool: " + pool.getId() + " is not compatible for the volume: " + volume.getId());
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -2685,6 +2849,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 KvmStorageOnlineMigrationWait,
                 KvmAutoConvergence,
                 MaxNumberOfManagedClusteredFileSystems,
+                STORAGE_POOL_DISK_WAIT,
+                STORAGE_POOL_CLIENT_TIMEOUT,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
                 SecStorageMaxMigrateSessions,
                 MaxDataMigrationWaitTime

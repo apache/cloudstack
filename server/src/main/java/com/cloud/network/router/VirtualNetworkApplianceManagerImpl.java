@@ -280,6 +280,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
     private static final String CONNECTIVITY_TEST = "connectivity.test";
+    private static final String FILESYSTEM_WRITABLE_TEST = "filesystem.writable.test";
+    private static final String READONLY_FILESYSTEM_ERROR = "Read-only file system";
     private static final String BACKUP_ROUTER_EXCLUDED_TESTS = "gateways_check.py";
 
     @Inject private EntityManager _entityMgr;
@@ -1274,14 +1276,19 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             if (answer == null) {
                 s_logger.warn("Unable to fetch monitor results for router " + router);
-                resetRouterHealthChecksAndConnectivity(router.getId(), false, "Communication failed");
+                resetRouterHealthChecksAndConnectivity(router.getId(), false, false, "Communication failed");
                 return Arrays.asList(CONNECTIVITY_TEST);
             } else if (!answer.getResult()) {
                 s_logger.warn("Failed to fetch monitor results from router " + router + " with details: " + answer.getDetails());
-                resetRouterHealthChecksAndConnectivity(router.getId(), false, "Failed to fetch results with details: " + answer.getDetails());
-                return Arrays.asList(CONNECTIVITY_TEST);
+                if (StringUtils.isNotBlank(answer.getDetails()) && answer.getDetails().equalsIgnoreCase(READONLY_FILESYSTEM_ERROR)) {
+                    resetRouterHealthChecksAndConnectivity(router.getId(), true, false, "Failed to write: " + answer.getDetails());
+                    return Arrays.asList(FILESYSTEM_WRITABLE_TEST);
+                } else {
+                    resetRouterHealthChecksAndConnectivity(router.getId(), false, false, "Failed to fetch results with details: " + answer.getDetails());
+                    return Arrays.asList(CONNECTIVITY_TEST);
+                }
             } else {
-                resetRouterHealthChecksAndConnectivity(router.getId(), true, "Successfully fetched data");
+                resetRouterHealthChecksAndConnectivity(router.getId(), true, true, "Successfully fetched data");
                 updateDbHealthChecksFromRouterResponse(router.getId(), answer.getMonitoringResults());
                 return answer.getFailingChecks();
             }
@@ -1418,28 +1425,31 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return healthCheckResults;
     }
 
-    private RouterHealthCheckResultVO resetRouterHealthChecksAndConnectivity(final long routerId, boolean connected, String message) {
+    private void resetRouterHealthChecksAndConnectivity(final long routerId, boolean connected, boolean writable, String message) {
         routerHealthCheckResultDao.expungeHealthChecks(routerId);
-        boolean newEntry = false;
-        RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic");
+        updateRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic", connected, connected ? "Successfully connected to router" : message);
+        updateRouterHealthCheckResult(routerId, FILESYSTEM_WRITABLE_TEST, "basic", writable, writable ? "Successfully written to file system" : message);
+    }
+
+    private void updateRouterHealthCheckResult(final long routerId, String checkName, String checkType, boolean checkResult, String checkMessage) {
+        boolean newHealthCheckEntry = false;
+        RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, checkName, checkType);
         if (connectivityVO == null) {
-            connectivityVO = new RouterHealthCheckResultVO(routerId, CONNECTIVITY_TEST, "basic");
-            newEntry = true;
+            connectivityVO = new RouterHealthCheckResultVO(routerId, checkName, checkType);
+            newHealthCheckEntry = true;
         }
 
-        connectivityVO.setCheckResult(connected);
+        connectivityVO.setCheckResult(checkResult);
         connectivityVO.setLastUpdateTime(new Date());
-        if (StringUtils.isNotEmpty(message)) {
-            connectivityVO.setCheckDetails(message.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        if (StringUtils.isNotEmpty(checkMessage)) {
+            connectivityVO.setCheckDetails(checkMessage.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
         }
 
-        if (newEntry) {
+        if (newHealthCheckEntry) {
             routerHealthCheckResultDao.persist(connectivityVO);
         } else {
             routerHealthCheckResultDao.update(connectivityVO.getId(), connectivityVO);
         }
-
-        return routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic");
     }
 
     private RouterHealthCheckResultVO parseHealthCheckVOFromJson(final long routerId,
@@ -1596,12 +1606,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         // Step 2: Update health checks values in database. We do this irrespective of new health check config.
-        if (answer == null || !answer.getResult()) {
+        if (answer == null) {
             success = false;
-            resetRouterHealthChecksAndConnectivity(routerId, false,
-                    answer == null ? "Communication failed " : "Failed to fetch results with details: " + answer.getDetails());
+            resetRouterHealthChecksAndConnectivity(routerId, false, false, "Communication failed");
+        } else if (!answer.getResult()) {
+            success = false;
+            if (StringUtils.isNotBlank(answer.getDetails()) && answer.getDetails().equalsIgnoreCase(READONLY_FILESYSTEM_ERROR)) {
+                resetRouterHealthChecksAndConnectivity(routerId, true, false, "Failed to write: " + answer.getDetails());
+            } else {
+                resetRouterHealthChecksAndConnectivity(routerId, false, false, "Failed to fetch results with details: " + answer.getDetails());
+            }
         } else {
-            resetRouterHealthChecksAndConnectivity(routerId, true, "Successfully fetched data");
+            resetRouterHealthChecksAndConnectivity(routerId, true, true, "Successfully fetched data");
             updateDbHealthChecksFromRouterResponse(routerId, answer.getMonitoringResults());
         }
 

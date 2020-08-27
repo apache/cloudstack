@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.alert;
 
-import com.cloud.capacity.Capacity;
-import com.cloud.exception.InvalidParameterValueException;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import com.cloud.capacity.Capacity;
+import com.cloud.exception.InvalidParameterValueException;
 
 public interface AlertService {
     public static class AlertType {
@@ -69,6 +69,7 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_OOBM_AUTH_ERROR = new AlertType((short)29, "ALERT.OOBM.AUTHERROR", true);
         public static final AlertType ALERT_TYPE_HA_ACTION = new AlertType((short)30, "ALERT.HA.ACTION", true);
         public static final AlertType ALERT_TYPE_CA_CERT = new AlertType((short)31, "ALERT.CA.CERT", true);
+        public static final AlertType ALERT_TYPE_VM_SNAPSHOT = new AlertType((short)32, "ALERT.VM.SNAPSHOT", true);
 
         public short getType() {
             return type;
