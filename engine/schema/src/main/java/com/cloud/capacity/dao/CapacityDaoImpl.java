@@ -75,13 +75,24 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                     + " AND  host_capacity.host_id IN (SELECT capacity.host_id FROM `cloud`.`op_host_capacity` capacity JOIN `cloud`.`cluster_details` cluster_details ON (capacity.cluster_id= cluster_details.cluster_id) where capacity_type='0' AND cluster_details.name='memoryOvercommitRatio' AND ((total_capacity* cluster_details.value) - used_capacity ) >= ?)) ";
 
     private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART1 =
-            "SELECT capacity.cluster_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity ) FROM `cloud`.`op_host_capacity` capacity WHERE ";
+            "SELECT capacity.cluster_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity ) FROM `cloud`.`op_host_capacity` capacity ";
 
     private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART2 =
-            " AND capacity_type = ?  AND cluster_details.name =? GROUP BY capacity.cluster_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) ASC";
+            " AND capacity_type = ?  GROUP BY capacity.cluster_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity) ASC";
+
+    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_JOIN_1 =
+            "JOIN host ON capacity.host_id = host.id " +
+                    "LEFT JOIN (SELECT affinity_group.id, agvm.instance_id FROM affinity_group_vm_map agvm JOIN affinity_group ON agvm.affinity_group_id = affinity_group.id AND affinity_group.type='ExplicitDedication') AS ag ON ag.instance_id = ? " +
+                    "LEFT JOIN dedicated_resources dr_pod ON dr_pod.pod_id IS NOT NULL AND dr_pod.pod_id = host.pod_id " +
+                    "LEFT JOIN dedicated_resources dr_cluster ON dr_cluster.cluster_id IS NOT NULL AND dr_cluster.cluster_id = host.cluster_id " +
+                    "LEFT JOIN dedicated_resources dr_host ON dr_host.host_id IS NOT NULL AND dr_host.host_id = host.id ";
+
+    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_JOIN_2 =
+            " AND ((ag.id IS NULL AND dr_pod.pod_id IS NULL AND dr_cluster.cluster_id IS NULL AND dr_host.host_id IS NULL) OR " +
+                    "(dr_pod.affinity_group_id = ag.id OR dr_cluster.affinity_group_id = ag.id OR dr_host.affinity_group_id = ag.id))";
 
     private static final String ORDER_CLUSTERS_BY_AGGREGATE_OVERCOMMIT_CAPACITY_PART1 =
-            "SELECT capacity.cluster_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster_details` cluster_details ON (capacity.cluster_id = cluster_details.cluster_id) WHERE ";
+            "SELECT capacity.cluster_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster_details` cluster_details ON (capacity.cluster_id = cluster_details.cluster_id) ";
 
     private static final String ORDER_CLUSTERS_BY_AGGREGATE_OVERCOMMIT_CAPACITY_PART2 =
             " AND capacity_type = ?  AND cluster_details.name =? GROUP BY capacity.cluster_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) ASC";
@@ -572,7 +583,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<Long> listClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone) {
+    public List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
@@ -854,7 +865,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, short capacityTypeForOrdering, boolean isZone) {
+    public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, short capacityTypeForOrdering, boolean isZone) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
@@ -866,11 +877,14 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_OVERCOMMIT_CAPACITY_PART1);
         }
 
+        sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_JOIN_1);
         if (isZone) {
-            sql.append(" data_center_id = ?");
+            sql.append("WHERE capacity.capacity_state = 'Enabled' AND capacity.data_center_id = ?");
         } else {
-            sql.append(" pod_id = ?");
+            sql.append("WHERE capacity.capacity_state = 'Enabled' AND capacity.pod_id = ?");
         }
+        sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_JOIN_2);
+
         if (capacityTypeForOrdering != Capacity.CAPACITY_TYPE_CPU && capacityTypeForOrdering != Capacity.CAPACITY_TYPE_MEMORY) {
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART2);
         } else {
@@ -879,13 +893,14 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
         try {
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
-            pstmt.setLong(1, id);
-            pstmt.setShort(2, capacityTypeForOrdering);
+            pstmt.setLong(1, vmId);
+            pstmt.setLong(2, id);
+            pstmt.setShort(3, capacityTypeForOrdering);
 
             if (capacityTypeForOrdering == Capacity.CAPACITY_TYPE_CPU) {
-                pstmt.setString(3, "cpuOvercommitRatio");
+                pstmt.setString(4, "cpuOvercommitRatio");
             } else if (capacityTypeForOrdering == Capacity.CAPACITY_TYPE_MEMORY) {
-                pstmt.setString(3, "memoryOvercommitRatio");
+                pstmt.setString(4, "memoryOvercommitRatio");
             }
 
             ResultSet rs = pstmt.executeQuery();
