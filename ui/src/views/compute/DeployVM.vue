@@ -1402,6 +1402,10 @@ export default {
               status: 'progress'
             })
           }
+          // Sending a refresh in case it hasn't picked up the new VM
+          new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
+            eventBus.$emit('vm-refresh-data')
+          })
           this.$router.back()
         }).catch(error => {
           this.$notifyError(error)
