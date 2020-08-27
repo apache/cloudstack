@@ -23,6 +23,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageConflictException;
@@ -30,10 +31,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
-import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.OCFS2Manager;
@@ -126,10 +123,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     StoragePoolAutomation storagePoolAutmation;
     @Inject
     protected HostDao _hostDao;
-    @Inject
-    private VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
-    @Inject
-    private VmwareDatacenterDao vmwareDcDao;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -258,7 +251,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setUserInfo(userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
             if (StringUtils.isNotBlank(hypervisorType) && HypervisorType.getType(hypervisorType).equals(HypervisorType.VMware)) {
-                validateVcenterDetails(zoneId, storageHost);
+                validateVcenterDetails(zoneId, podId, clusterId,storageHost);
             }
             parameters.setType(StoragePoolType.PreSetup);
             parameters.setHost(storageHost);
@@ -266,7 +259,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setPath(hostPath);
         } else if (scheme.equalsIgnoreCase("DatastoreCluster")) {
             if (StringUtils.isNotBlank(hypervisorType) && HypervisorType.getType(hypervisorType).equals(HypervisorType.VMware)) {
-                validateVcenterDetails(zoneId, storageHost);
+                validateVcenterDetails(zoneId, podId, clusterId,storageHost);
             }
             parameters.setType(StoragePoolType.DatastoreCluster);
             parameters.setHost(storageHost);
@@ -371,15 +364,31 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         return dataStoreHelper.createPrimaryDataStore(parameters);
     }
 
-    private void validateVcenterDetails(long zoneId, String storageHost) {
-        VmwareDatacenterZoneMapVO vmwareDcZoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
-        if (vmwareDcZoneMap != null) {
-            Long associatedVmwareDcId = vmwareDcZoneMap.getVmwareDcId();
-            VmwareDatacenterVO associatedVmwareDc = vmwareDcDao.findById(associatedVmwareDcId);
-            if (!associatedVmwareDc.getVcenterHost().equals(storageHost)) {
-                throw new InvalidParameterValueException("Provided vCenter server details does not match with the existing vCenter in zone id: " + zoneId);
+    private void validateVcenterDetails(Long zoneId, Long podId, Long clusterId, String storageHost) {
+
+        List<HostVO> allHosts =
+                _resourceMgr.listAllUpHosts(Host.Type.Routing, clusterId, podId, zoneId);
+        if (allHosts.isEmpty()) {
+            throw new CloudRuntimeException("No host up to associate a storage pool with in zone: " + zoneId + " pod: " + podId + " cluster: " + clusterId);
+        }
+
+        boolean success = false;
+        for (HostVO h : allHosts) {
+            ValidateVcenterDetailsCommand cmd = new ValidateVcenterDetailsCommand(storageHost);
+            final Answer answer = agentMgr.easySend(h.getId(), cmd);
+            if (answer != null && answer.getResult()) {
+                s_logger.info("Successfully validated vCenter details provided");
+                return;
+            } else {
+                if (answer != null) {
+                    throw new InvalidParameterValueException("Provided vCenter server details does not match with the existing vCenter in zone id: " + zoneId);
+                } else {
+                    String msg = "Can not validate vCenter through host " + h.getId() + " due to ValidateVcenterDetailsCommand returns null";
+                    s_logger.warn(msg);
+                }
             }
         }
+        throw new CloudRuntimeException("Could not validate vCenter details through any of the hosts with in zone: " + zoneId + ", pod: " + podId + ", cluster: " + clusterId);
     }
 
     protected boolean createStoragePool(long hostId, StoragePool pool) {
