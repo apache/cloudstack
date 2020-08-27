@@ -17,7 +17,7 @@
 
 # Build example: docker build -t apache/cloudstack-primate:latest .
 
-FROM node:lts-buster AS build
+FROM node:lts-stretch AS build
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
 LABEL Description="Apache CloudStack Primate; Modern role-base progressive UI for Apache CloudStack"
