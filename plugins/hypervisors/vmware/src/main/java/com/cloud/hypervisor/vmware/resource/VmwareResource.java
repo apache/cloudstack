@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -569,6 +570,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((GetUnmanagedInstancesCommand) cmd);
             } else if (clz == PrepareUnmanageVMInstanceCommand.class) {
                 answer = execute((PrepareUnmanageVMInstanceCommand) cmd);
+            } else if (clz == ValidateVcenterDetailsCommand.class) {
+                answer = execute((ValidateVcenterDetailsCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -7260,5 +7263,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         return new PrepareUnmanageVMInstanceAnswer(cmd, true, "OK");
+    }
+
+    private Answer execute(ValidateVcenterDetailsCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource ValidateVcenterDetailsCommand " + _gson.toJson(cmd));
+        }
+        String vCenterServerAddress = cmd.getvCenterServerAddress();
+        VmwareContext context = getServiceContext();
+
+        if (vCenterServerAddress.equals(context.getServerAddress())) {
+            return new Answer(cmd, true, "success");
+        } else {
+            return new Answer(cmd, false, "Provided vCenter server address is invalid");
+        }
     }
 }
