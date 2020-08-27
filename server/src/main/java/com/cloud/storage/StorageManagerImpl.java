@@ -1583,12 +1583,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 for (DataStore dataStore: maintenanceSuccessfulStoragePools) {
                     lifeCycle.cancelMaintain(dataStore);
                 }
-                // Set back to Up state of remaining child storage pools
+                // Set back to Up state of remaining child storage pools and datastore cluster
                 while (iteratorChildDatastore.hasNext()) {
                     StoragePoolVO childDatastore = iteratorChildDatastore.next();
                     childDatastore.setStatus(StoragePoolStatus.Up);
                     _storagePoolDao.update(childDatastore.getId(), childDatastore);
                 }
+                datastoreCluster.setStatus(StoragePoolStatus.Up);
+                _storagePoolDao.update(datastoreCluster.getId(), datastoreCluster);
                 throw new CloudRuntimeException(String.format("Failed to prepare maintenance mode for datastore cluster %d with error %s %s", primaryStorageId, e.getMessage(), e));
             }
             maintenanceSuccessfulStoragePools.add(childStore);
