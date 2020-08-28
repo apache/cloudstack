@@ -299,7 +299,6 @@ import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
 import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmConfigSpec;
-import com.vmware.vim25.VmfsDatastoreInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -7000,14 +6999,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     instanceDisk.setDatastorePath(dsInfo.getNas().getRemotePath());
                                     instanceDisk.setDatastoreType(dsInfo.getNas().getType());
                                 }
-                            } else if (info instanceof VmfsDatastoreInfo) {
-                                VmfsDatastoreInfo dsInfo = (VmfsDatastoreInfo) info;
-                                instanceDisk.setDatastoreName(dsInfo.getVmfs().getName());
-                                instanceDisk.setDatastoreType(dsInfo.getVmfs().getType());
                             } else {
-                                String msg = String.format("Unmanaged instance disk: %s is on unsupported datastore %s", instanceDisk.getDiskId(), info.getClass().getSimpleName());
-                                s_logger.error(msg);
-                                throw new Exception(msg);
+                                instanceDisk.setDatastoreName(info.getName());
                             }
                         }
                         s_logger.info(vmMo.getName() + " " + disk.getDeviceInfo().getLabel() + " " + disk.getDeviceInfo().getSummary() + " " + disk.getDiskObjectId() + " " + disk.getCapacityInKB() + " " + instanceDisk.getController());
