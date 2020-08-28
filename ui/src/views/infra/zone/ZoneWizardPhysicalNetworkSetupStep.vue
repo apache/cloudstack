@@ -63,6 +63,7 @@
           :title="$t('label.edit.traffic.type')"
           :visible="showEditTraffic"
           :closable="true"
+          :maskClosable="false"
           @ok="updateTrafficLabel(trafficInEdit)"
           @cancel="cancelEditTraffic"
           centered
@@ -149,6 +150,7 @@
     <a-modal
       :visible="showError"
       :title="`${$t('label.error')}!`"
+      :maskClosable="false"
       @ok="() => { showError = false }"
       @cancel="() => { showError = false }"
       centered

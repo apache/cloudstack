@@ -72,6 +72,7 @@
         <a-modal
           v-model="modals.networkAcl"
           :title="$t('label.add.acl.list')"
+          :maskClosable="false"
           @ok="handleNetworkAclFormSubmit">
           <a-form @submit.prevent="handleNetworkAclFormSubmit" :form="networkAclForm">
             <a-form-item :label="$t('label.add.list.name')">
@@ -121,7 +122,11 @@
           </template>
         </a-pagination>
 
-        <a-modal v-model="modals.gateway" :title="$t('label.add.new.gateway')" @ok="handleGatewayFormSubmit">
+        <a-modal
+          v-model="modals.gateway"
+          :title="$t('label.add.new.gateway')"
+          :maskClosable="false"
+          @ok="handleGatewayFormSubmit">
           <a-spin :spinning="modals.gatewayLoading">
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
@@ -242,7 +247,11 @@
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
-        <a-modal v-model="modals.vpnConnection" :title="$t('label.create.vpn.connection')" @ok="handleVpnConnectionFormSubmit">
+        <a-modal
+          v-model="modals.vpnConnection"
+          :title="$t('label.create.vpn.connection')"
+          :maskClosable="false"
+          @ok="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
               <a-form-item :label="$t('label.vpncustomergatewayid')">

@@ -96,7 +96,7 @@
       </draggable>
     </div>
 
-    <a-modal :title="$t('label.edit.tags')" v-model="tagsModalVisible" :footer="null">
+    <a-modal :title="$t('label.edit.tags')" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -130,7 +130,7 @@
       </div>
 
     </a-modal>
-    <a-modal :title="ruleModalTitle" v-model="ruleModalVisible" @ok="handleRuleModalForm">
+    <a-modal :title="ruleModalTitle" :maskClosable="false" v-model="ruleModalVisible" @ok="handleRuleModalForm">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
         <a-form-item :label="$t('label.number')">
           <a-input-number style="width: 100%" v-decorator="['number']" />

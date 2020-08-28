@@ -37,6 +37,7 @@
       :title="$t('message.change.password')"
       :visible="this.step === 1"
       :closable="true"
+      :maskClosable="false"
       :footer="null"
       @cancel="closeAction"
       centered
@@ -50,6 +51,7 @@
       :title="$t('label.installwizard.addzoneintro.title')"
       :visible="this.step === 2"
       :closable="true"
+      :maskClosable="false"
       :footer="null"
       @cancel="closeAction"
       centered

@@ -112,6 +112,7 @@
     </div>
     <a-modal
       :visible="showError"
+      :maskClosable="false"
       title="Error!"
       @ok="() => { showError = false }"
       @cancel="() => { showError = false }"

@@ -59,7 +59,11 @@
       </template>
     </a-pagination>
 
-    <a-modal v-model="modal" :title="$t('label.dedicate.vlan.vni.range')" @ok="handleSubmit">
+    <a-modal
+      v-model="modal"
+      :title="$t('label.dedicate.vlan.vni.range')"
+      :maskClosable="false"
+      @ok="handleSubmit">
       <a-spin :spinning="formLoading">
         <a-form
           :form="form"

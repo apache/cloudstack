@@ -43,6 +43,7 @@
         :title="$t('label.action.router.health.checks')"
         :visible="showGetHealthChecksForm"
         :closable="true"
+        :maskClosable="false"
         @ok="handleGetHealthChecksSubmit"
         @cancel="onCloseGetHealthChecksForm"
         centered>

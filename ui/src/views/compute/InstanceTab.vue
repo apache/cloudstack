@@ -147,6 +147,7 @@
     <a-modal
       :visible="showAddNetworkModal"
       :title="$t('label.network.addvm')"
+      :maskClosable="false"
       @cancel="closeModals"
       @ok="submitAddNetwork">
       {{ $t('message.network.addvm.desc') }}
@@ -168,6 +169,7 @@
     <a-modal
       :visible="showUpdateIpModal"
       :title="$t('label.change.ipaddress')"
+      :maskClosable="false"
       @cancel="closeModals"
       @ok="submitUpdateIP"
     >
@@ -182,6 +184,7 @@
     <a-modal
       :visible="showSecondaryIpModal"
       :title="$t('label.acquire.new.secondary.ip')"
+      :maskClosable="false"
       :footer="null"
       :closable="false"
       class="wide-modal"

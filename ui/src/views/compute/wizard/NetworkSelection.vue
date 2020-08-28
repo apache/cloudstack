@@ -72,6 +72,7 @@
       :visible="showCreateForm"
       :title="$t('label.add.network')"
       :closable="true"
+      :maskClosable="false"
       :footer="null"
       @cancel="showCreateForm = false"
       centered

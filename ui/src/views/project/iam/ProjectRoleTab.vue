@@ -61,7 +61,12 @@
             </a-tooltip>
           </span>
         </a-table>
-        <a-modal title="Edit Project Role" v-model="editModalVisible" :footer="null" :afterClose="closeAction">
+        <a-modal
+          title="Edit Project Role"
+          v-model="editModalVisible"
+          :footer="null"
+          :afterClose="closeAction"
+          :maskClosable="false">
           <a-form
             :form="form"
             @submit="updateProjectRole"
@@ -103,7 +108,12 @@
             </span>
           </a-form>
         </a-modal>
-        <a-modal title="Create Project Role" v-model="createModalVisible" :footer="null" :afterClose="closeAction">
+        <a-modal
+          title="Create Project Role"
+          v-model="createModalVisible"
+          :footer="null"
+          :afterClose="closeAction"
+          :maskClosable="false">
           <a-form
             :form="form"
             @submit="createProjectRole"

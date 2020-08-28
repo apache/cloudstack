@@ -85,6 +85,7 @@
         <a-modal
           :visible="showAction"
           :closable="true"
+          :maskClosable="false"
           style="top: 20px;"
           @cancel="closeAction"
           :confirmLoading="actionLoading"
@@ -117,6 +118,7 @@
         v-else
         :visible="showAction"
         :closable="true"
+        :maskClosable="false"
         style="top: 20px;"
         @ok="handleSubmit"
         @cancel="closeAction"

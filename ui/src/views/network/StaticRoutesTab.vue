@@ -35,7 +35,7 @@
       </div>
     </div>
 
-    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null">
+    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>

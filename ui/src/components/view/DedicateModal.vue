@@ -19,6 +19,7 @@
   <a-modal
     v-model="dedicatedDomainModal"
     :title="label"
+    :maskClosable="false"
     @cancel="closeModal"
     @ok="handleDedicateForm">
     <DedicateDomain

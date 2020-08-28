@@ -87,7 +87,11 @@
       </template>
     </a-pagination>
 
-    <a-modal v-model="accountModal" v-if="selectedItem" @ok="accountModal = false">
+    <a-modal
+      v-model="accountModal"
+      v-if="selectedItem"
+      :maskClosable="false"
+      @ok="accountModal = false">
       <div>
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}</div>
@@ -104,7 +108,12 @@
       </div>
     </a-modal>
 
-    <a-modal :zIndex="1001" v-model="addAccountModal" :title="$t('label.add.account')" @ok="handleAddAccount">
+    <a-modal
+      :zIndex="1001"
+      :maskClosable="false"
+      v-model="addAccountModal"
+      :title="$t('label.add.account')"
+      @ok="handleAddAccount">
       <a-spin :spinning="domainsLoading">
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}:</div>
@@ -123,7 +132,11 @@
       </a-spin>
     </a-modal>
 
-    <a-modal v-model="addIpRangeModal" :title="$t('label.add.ip.range')" @ok="handleAddIpRange">
+    <a-modal
+      v-model="addIpRangeModal"
+      :title="$t('label.add.ip.range')"
+      :maskClosable="false"
+      @ok="handleAddIpRange">
       <a-form
         :form="form"
         @submit="handleAddIpRange"

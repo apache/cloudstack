@@ -78,6 +78,7 @@
       :title="$t('label.action.copy.iso')"
       :visible="showCopyActionForm"
       :closable="true"
+      :maskClosable="false"
       @ok="handleCopyIsoSubmit"
       @cancel="onCloseCopyForm"
       :confirmLoading="copyLoading"

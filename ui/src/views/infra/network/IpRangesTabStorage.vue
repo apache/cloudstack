@@ -66,7 +66,11 @@
       </template>
     </a-pagination>
 
-    <a-modal v-model="addIpRangeModal" :title="$t('label.add.ip.range')" @ok="handleAddIpRange">
+    <a-modal
+      v-model="addIpRangeModal"
+      :title="$t('label.add.ip.range')"
+      :maskClosable="false"
+      @ok="handleAddIpRange">
       <a-form
         :form="form"
         @submit="handleAddIpRange"

@@ -27,7 +27,12 @@
       </a-button>
     </div>
 
-    <a-modal v-model="disableVpn" :footer="null" oncancel="disableVpn = false" :title="$t('label.disable.vpn')">
+    <a-modal
+      v-model="disableVpn"
+      :footer="null"
+      oncancel="disableVpn = false"
+      :title="$t('label.disable.vpn')"
+      :maskClosable="false">
       <p>{{ $t('message.disable.vpn') }}</p>
 
       <a-divider></a-divider>
@@ -44,7 +49,12 @@
       {{ $t('label.enable.vpn') }}
     </a-button>
 
-    <a-modal v-model="enableVpn" :footer="null" onCancel="enableVpn = false" :title="$t('label.enable.vpn')">
+    <a-modal
+      v-model="enableVpn"
+      :footer="null"
+      onCancel="enableVpn = false"
+      :title="$t('label.enable.vpn')"
+      :maskClosable="false">
       <p>{{ $t('message.enable.vpn') }}</p>
 
       <a-divider></a-divider>

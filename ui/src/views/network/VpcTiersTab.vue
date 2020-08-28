@@ -154,7 +154,11 @@
       </a-list-item>
     </a-list>
 
-    <a-modal v-model="showCreateNetworkModal" :title="$t('label.add.new.tier')" @ok="handleAddNetworkSubmit">
+    <a-modal
+      v-model="showCreateNetworkModal"
+      :title="$t('label.add.new.tier')"
+      :maskClosable="false"
+      @ok="handleAddNetworkSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -195,7 +199,11 @@
       </a-spin>
     </a-modal>
 
-    <a-modal v-model="showAddInternalLB" :title="$t('label.add.internal.lb')" @ok="handleAddInternalLBSubmit">
+    <a-modal
+      v-model="showAddInternalLB"
+      :title="$t('label.add.internal.lb')"
+      :maskClosable="false"
+      @ok="handleAddInternalLBSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">

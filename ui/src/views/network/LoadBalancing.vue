@@ -139,7 +139,13 @@
       </template>
     </a-pagination>
 
-    <a-modal :title="$t('label.edit.tags')" v-model="tagsModalVisible" :footer="null" :afterClose="closeModal" class="tags-modal">
+    <a-modal
+      :title="$t('label.edit.tags')"
+      v-model="tagsModalVisible"
+      :footer="null"
+      :afterClose="closeModal"
+      :maskClosable="false"
+      class="tags-modal">
       <span v-show="tagsModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -178,6 +184,7 @@
       v-model="stickinessModalVisible"
       :footer="null"
       :afterClose="closeModal"
+      :maskClosable="false"
       :okButtonProps="{ props: {htmlType: 'submit'}}">
 
       <span v-show="stickinessModalLoading" class="modal-loading">
@@ -245,7 +252,12 @@
       </a-form>
     </a-modal>
 
-    <a-modal :title="$t('label.edit.rule')" v-model="editRuleModalVisible" :afterClose="closeModal" @ok="handleSubmitEditForm">
+    <a-modal
+      :title="$t('label.edit.rule')"
+      v-model="editRuleModalVisible"
+      :afterClose="closeModal"
+      :maskClosable="false"
+      @ok="handleSubmitEditForm">
       <span v-show="editRuleModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -276,6 +288,7 @@
 
     <a-modal
       :title="$t('label.add.vms')"
+      :maskClosable="false"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"

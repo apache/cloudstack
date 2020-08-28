@@ -23,6 +23,7 @@
     :confirmLoading="loading"
     :title="$t('label.quota.configuration')"
     :closable="true"
+    :maskClosable="false"
     :visible="showAction"
     @ok="submitTariff"
     @cancel="onClose"
