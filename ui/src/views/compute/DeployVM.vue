@@ -1195,10 +1195,6 @@ export default {
             this.templateLicenses = []
             this.templateProperties = {}
             this.updateTemplateParameters()
-            if (t.deployasis && !t.details && (!this.template || t.id !== this.template.id)) {
-              // Deploy as-is template without details detected, need to retrieve the template details
-              this.fetchTemplateDetails(t)
-            }
             template = t
             break
           }
