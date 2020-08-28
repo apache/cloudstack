@@ -95,7 +95,7 @@ export default {
     },
     minCpu: {
       type: Number,
-      default: 1
+      default: 0
     },
     maxCpu: {
       type: Number,
