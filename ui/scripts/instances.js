@@ -2615,7 +2615,11 @@
                                                 return;
 
                                             if (selectedServiceofferingObj.iscustomized == true) {
-                                                $form.find('.form-item[rel=cpuSpeed]').css('display', 'inline-block');
+                                                if (selectedServiceofferingObj.cpuspeed) {
+                                                    $form.find('.form-item[rel=cpuSpeed]').hide();
+                                                } else {
+                                                    $form.find('.form-item[rel=cpuSpeed]').css('display', 'inline-block');
+                                                }
                                                 $form.find('.form-item[rel=cpuNumber]').css('display', 'inline-block');
                                                 $form.find('.form-item[rel=memory]').css('display', 'inline-block');
                                             } else {
