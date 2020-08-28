@@ -19,6 +19,7 @@
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import (listInfrastructure,
+                                  listTemplates,
                                   listKubernetesSupportedVersions,
                                   addKubernetesSupportedVersion,
                                   deleteKubernetesSupportedVersion,
@@ -154,7 +155,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                 cls.debug("Error: Exception during cleanup for added Kubernetes supported versions: %s" % e)
         try:
             # Restore original CKS template
-            if clst.hypervisorNotSupported ==cls.initial_configuration_cks_template_name != None:
+            if cls.hypervisorNotSupported == False and cls.initial_configuration_cks_template_name != None:
                 Configurations.update(cls.apiclient,
                                       cls.cks_template_name_key,
                                       cls.initial_configuration_cks_template_name)
@@ -216,7 +217,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         hypervisor = cls.hypervisor.lower()
 
         if hypervisor not in cks_templates.keys():
-            print "Provided hypervisor has no CKS template"
+            cls.debug("Provided hypervisor has no CKS template")
             return FAILED
 
         cks_template = cks_templates[hypervisor]
@@ -230,7 +231,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         if validateList(templates)[0] != PASS:
             details = None
-            if hypervisor not in ["vmware"]
+            if hypervisor not in ["vmware"]:
                 details = cks_template["details"]
             template = Template.register(apiclient, test_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False, details=detils)
             template.download(apiclient)
