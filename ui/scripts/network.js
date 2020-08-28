@@ -946,6 +946,11 @@
                         var data = {};
                         listViewDataProvider(args, data);
 
+                        if ("networkOfferings" in args.context) {
+                            $.extend(data, {
+                                networkofferingid: args.context.networkOfferings[0].id
+                            });
+                        }
                         if ("routers" in args.context) {
                             if ("vpcid" in args.context.routers[0]) {
                                 $.extend(data, {
