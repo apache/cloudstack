@@ -275,7 +275,7 @@
                         </a-select>
                       </a-form-item>
                     </div>
-                    <div v-else>
+                    <div v-show="!(vm.templateid && templateNics && templateNics.length > 0)" >
                       <network-selection
                         v-if="!networkId"
                         :items="options.networks"
@@ -1334,6 +1334,12 @@ export default {
                 arrNetwork.push(ipToNetwork)
               }
             }
+          } else {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.step.4.continue')
+            })
+            return
           }
           for (let j = 0; j < arrNetwork.length; j++) {
             deployVmData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
