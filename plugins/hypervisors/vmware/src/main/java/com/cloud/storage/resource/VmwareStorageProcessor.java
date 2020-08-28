@@ -1187,13 +1187,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         String details = null;
         VirtualMachineMO vmMo = null;
+        VirtualMachineMO workerVmMo = null;
         VmwareContext context = hostService.getServiceContext(cmd);
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
             if (volume.getVmName() == null) {
                 ManagedObjectReference secMorDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, volume.getDataStore().getUuid());
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), secMorDs);
-                VirtualMachineMO workerVmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, "workervm"+volume.getUuid());
+                workerVmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, "workervm"+volume.getUuid());
                 if (workerVmMo == null) {
                     throw new Exception("Unable to find created worker VM");
                 }
@@ -1247,9 +1248,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
             return new CopyCmdAnswer(details);
         } finally {
             try {
-                if (volume.getVmName() == null && vmMo != null) {
-                    vmMo.detachAllDisks();
-                    vmMo.destroy();
+                if (volume.getVmName() == null && workerVmMo != null) {
+                    workerVmMo.detachAllDisks();
+                    workerVmMo.destroy();
                 }
             } catch (Throwable e) {
                 s_logger.warn("Failed to destroy worker VM created for detached volume");
