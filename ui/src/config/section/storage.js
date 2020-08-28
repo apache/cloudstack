@@ -168,7 +168,7 @@ export default {
           label: 'label.migrate.volume',
           args: ['volumeid', 'storageid', 'livemigrate'],
           dataView: true,
-          show: (record, store) => { return record.state === 'Ready' && ['Admin'].includes(store.userInfo.roletype) && record.virtualmachineid },
+          show: (record, store) => { return record.state === 'Ready' && ['Admin'].includes(store.userInfo.roletype) },
           popup: true,
           component: () => import('@/views/storage/MigrateVolume.vue')
         },
