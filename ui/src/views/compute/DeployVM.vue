@@ -1139,10 +1139,6 @@ export default {
             this.templateLicenses = []
             this.templateProperties = {}
             this.updateTemplateParameters()
-            if (t.deployasis === true && !t.details && (!this.template || t.id !== this.template.id)) {
-              // Deploy as-is template without details detected, need to retrieve the template details
-              this.fetchTemplateDetails(t)
-            }
             template = t
             break
           }
@@ -1484,23 +1480,6 @@ export default {
         this.loading[name] = false
       })
     },
-    fetchTemplateDetails (template) {
-      api('listTemplates', {
-        templateFilter: 'all',
-        id: template.id,
-        details: 'all'
-      }).then(response => {
-        if (response && response.listtemplatesresponse) {
-          const items = response.listtemplatesresponse.template
-          if (items && items.length > 0) {
-            this.template.details = items[0].details
-            this.updateTemplateParameters()
-          }
-        }
-      }).catch(error => {
-        this.$notifyError(error)
-      })
-    },
     fetchTemplates (templateFilter, params) {
       const args = Object.assign({}, params)
       if (args.keyword || args.category !== templateFilter) {
@@ -1509,7 +1488,7 @@ export default {
       }
       args.zoneid = _.get(this.zone, 'id')
       args.templatefilter = templateFilter
-      args.details = 'min'
+      args.details = 'all'
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
@@ -1728,13 +1707,12 @@ export default {
         this.templateProperties = this.fetchTemplateProperties(this.template)
         this.selectedTemplateConfiguration = {}
         if (this.templateConfigurationExists) {
-          setTimeout(() => {
-            this.selectedTemplateConfiguration = this.templateConfigurations[0]
-            if ('templateConfiguration' in this.form.fieldsStore.fieldsMeta) {
-              this.updateFieldValue('templateConfiguration', this.selectedTemplateConfiguration.id)
-            }
-            this.updateComputeOffering(null) // reset as existing selection may be incompatible
-          }, 500)
+          this.selectedTemplateConfiguration = this.templateConfigurations[0]
+          this.handleTemplateConfiguration()
+          if ('templateConfiguration' in this.form.fieldsStore.fieldsMeta) {
+            this.updateFieldValue('templateConfiguration', this.selectedTemplateConfiguration.id)
+          }
+          this.updateComputeOffering(null) // reset as existing selection may be incompatible
         }
       }
     },
