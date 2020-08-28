@@ -144,8 +144,8 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-bundle.version>1.19.4</cs.jersey-bundle.version>
-        <cs.jetty.version>9.4.26.v20200117</cs.jetty.version>
-        <cs.jetty-maven-plugin.version>9.4.26.v20200117</cs.jetty-maven-plugin.version>
+        <cs.jetty.version>9.4.27.v20200227</cs.jetty.version>
+        <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.10.5</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
