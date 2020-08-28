@@ -2445,6 +2445,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                         // log assign usage events for new offering
                                         List<NicVO> nics = _nicDao.listByNetworkId(networkId);
                                         for (NicVO nic : nics) {
+                                            if (nic.getReservationStrategy() == Nic.ReservationStrategy.PlaceHolder) {
+                                                continue;
+                                            }
                                             long vmId = nic.getInstanceId();
                                             VMInstanceVO vm = _vmDao.findById(vmId);
                                             if (vm == null) {

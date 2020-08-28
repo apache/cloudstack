@@ -30,6 +30,8 @@ import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetwork;
@@ -51,10 +53,12 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -261,6 +265,17 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             profile.setIPv4Netmask(null);
         }
 
+        if (config.getVpcId() == null && vm.getType() == VirtualMachine.Type.DomainRouter) {
+            boolean isPublicNetwork = _networkModel.isProviderSupportServiceInNetwork(config.getId(), Service.SourceNat, Provider.VirtualRouter);
+            if (!isPublicNetwork) {
+                Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(config, null);
+                if (placeholderNic == null) {
+                    s_logger.debug("Saving placeholder nic with ip4 address " + profile.getIPv4Address() +
+                            " and ipv6 address " + profile.getIPv6Address() + " for the network " + config);
+                    _networkMgr.savePlaceholderNic(config, profile.getIPv4Address(), profile.getIPv6Address(), VirtualMachine.Type.DomainRouter);
+                }
+            }
+        }
         return profile;
     }
 
