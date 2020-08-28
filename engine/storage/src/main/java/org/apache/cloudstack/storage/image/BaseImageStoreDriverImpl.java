@@ -404,7 +404,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 endPoint = _defaultEpSelector.getEndPointFromHostId(epId);
             }
         }
-        CommandExecLogVO execLog = new CommandExecLogVO(endPoint.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(endPoint.getId()).getName()).getId(), cmd.getClass().getSimpleName(), 1);
+        CommandExecLogVO execLog = new CommandExecLogVO(endPoint.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(endPoint.getId()).getName()).getId(), "DataMigrationCommand", 1);
         Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
         String errMsg = null;
         try {

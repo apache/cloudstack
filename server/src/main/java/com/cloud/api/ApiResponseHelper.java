@@ -622,6 +622,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
+            vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
                 vmSnapshotResponse.setZoneId(datacenter.getUuid());
@@ -3386,6 +3387,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 resourceType = ResourceTag.ResourceObjectType.UserVm;
                 usageRecResponse.setUsageId(vm.getUuid());
                 resourceId = vm.getId();
+                usageRecResponse.setOsTypeId(vm.getGuestOSId());
             }
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());

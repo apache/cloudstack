@@ -34,6 +34,7 @@ public class PvlanSetupCommand extends Command {
     private String dhcpIp;
     private Type type;
     private String networkTag;
+    private String pvlanType;
 
     protected PvlanSetupCommand() {
     }
@@ -43,6 +44,7 @@ public class PvlanSetupCommand extends Command {
         this.op = op;
         this.primary = NetUtils.getPrimaryPvlanFromUri(uri);
         this.isolated = NetUtils.getIsolatedPvlanFromUri(uri);
+        this.pvlanType = NetUtils.getPvlanTypeFromUri(uri);
         this.networkTag = networkTag;
     }
 
@@ -115,5 +117,9 @@ public class PvlanSetupCommand extends Command {
 
     public String getNetworkTag() {
         return networkTag;
+    }
+
+    public String getPvlanType() {
+        return pvlanType;
     }
 }

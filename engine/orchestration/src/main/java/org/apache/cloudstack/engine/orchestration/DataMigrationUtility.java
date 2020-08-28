@@ -54,7 +54,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -107,7 +106,7 @@ public class DataMigrationUtility {
     protected void checkIfCompleteMigrationPossible(ImageStoreService.MigrationPolicy policy, Long srcDataStoreId) {
         if (policy == ImageStoreService.MigrationPolicy.COMPLETE) {
             if (!filesReadyToMigrate(srcDataStoreId)) {
-                throw new CloudRuntimeException("Complete migration failed as there are data objects which are not Ready");
+                throw new CloudRuntimeException("Complete migration failed as there are data objects which are not Ready - i.e, they may be in Migrating, creating, copying, etc. states");
             }
         }
         return;
@@ -243,7 +242,7 @@ public class DataMigrationUtility {
     protected int activeSSVMCount(DataStore dataStore) {
         long datacenterId = dataStore.getScope().getScopeId();
         List<SecondaryStorageVmVO> ssvms =
-                secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, datacenterId, VirtualMachine.State.Running, VirtualMachine.State.Migrating);
+                secStorageVmDao.getSecStorageVmListInStates(null, datacenterId, VirtualMachine.State.Running, VirtualMachine.State.Migrating);
         int activeSSVMs = 0;
         for (SecondaryStorageVmVO vm : ssvms) {
             String name = "s-"+vm.getId()+"-VM";

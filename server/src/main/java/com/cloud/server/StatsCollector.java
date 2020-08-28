@@ -996,7 +996,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         continue;
                     }
 
-                    Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
+                    String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
                     GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), nfsVersion);
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {

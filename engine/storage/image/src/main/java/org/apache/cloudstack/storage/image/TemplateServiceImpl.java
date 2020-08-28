@@ -671,7 +671,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
-        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
+        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
         ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO(), nfsVersion);
         EndPoint ep = _epSelector.select(ssStore);
         Answer answer = null;

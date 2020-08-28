@@ -191,12 +191,11 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     private void scaleDownSSVMOnLoad(List<SecondaryStorageVmVO> alreadyRunning, List<CommandExecLogVO> activeCmds,
                                List<CommandExecLogVO> copyCmdsInPipeline)  {
         int halfLimit = Math.round((float) (alreadyRunning.size() * migrateCapPerSSVM) / 2);
-        if ((copyCmdsInPipeline.size() < halfLimit && alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() > _standbyCapacity) && alreadyRunning.size() > 1) {
+        if ((copyCmdsInPipeline.size() < halfLimit && alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() > (_standbyCapacity + 5)) && alreadyRunning.size() > 1) {
             Collections.reverse(alreadyRunning);
             for(SecondaryStorageVmVO vm : alreadyRunning) {
-                long count = copyCmdsInPipeline.stream().filter(cmd -> cmd.getInstanceId() == vm.getId()).count();
-                count += activeCmds.stream().filter(cmd -> cmd.getInstanceId() == vm.getId()).count();
-                if (count == 0) {
+                long count = activeCmds.stream().filter(cmd -> cmd.getInstanceId() == vm.getId()).count();
+                if (count == 0 && copyCmdsInPipeline.size() == 0) {
                     destroySecStorageVm(vm.getId());
                     break;
                 }
@@ -231,7 +230,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     private List<CommandExecLogVO> findAllActiveCopyCommands(long dcId, Date cutTime) {
         SearchCriteria<CommandExecLogVO> sc = activeCopyCommandSearch.create();
         sc.setParameters("created", cutTime);
-        sc.setParameters("command_name", "CopyCommand");
+        sc.setParameters("command_name", "DataMigrationCommand");
         sc.setJoinParameters("hostSearch", "dc", dcId);
         sc.setJoinParameters("hostSearch", "status", Status.Up);
         Filter filter = new Filter(CommandExecLogVO.class, "created", true, null, null);

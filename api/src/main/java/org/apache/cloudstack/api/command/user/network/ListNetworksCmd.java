@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -88,6 +89,9 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "list networks by network offering ID")
+    private Long networkOfferingId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -142,6 +146,10 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
 
     public Boolean getForVpc() {
         return forVpc;
+    }
+
+    public Long getNetworkOfferingId() {
+        return networkOfferingId;
     }
 
     @Override

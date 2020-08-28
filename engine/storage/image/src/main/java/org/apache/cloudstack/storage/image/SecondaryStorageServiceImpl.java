@@ -38,11 +38,14 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.secstorage.CommandExecLogDao;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.Pair;
 
 public class SecondaryStorageServiceImpl implements SecondaryStorageService {
@@ -159,6 +162,12 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
 
             } else {
                 destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
+                if (destData instanceof SnapshotInfo) {
+                    SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySourceSnapshot(srcData.getId(), DataStoreRole.Image);
+                    SnapshotDataStoreVO destSnapshotStore = snapshotStoreDao.findBySnapshot(srcData.getId(), DataStoreRole.Image);
+                    destSnapshotStore.setPhysicalSize(snapshotStore.getPhysicalSize());
+                    snapshotStoreDao.update(destSnapshotStore.getId(), destSnapshotStore);
+                }
                 s_logger.debug("Deleting source data");
                 srcData.getDataStore().delete(srcData);
                 s_logger.debug("Successfully migrated "+srcData.getUuid());

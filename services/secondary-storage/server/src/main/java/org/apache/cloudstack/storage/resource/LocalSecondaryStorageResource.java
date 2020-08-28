@@ -72,7 +72,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     }
 
     @Override
-    public String getRootDir(String url, Integer nfsVersion) {
+    public String getRootDir(String url, String nfsVersion) {
         return getRootDir();
 
     }

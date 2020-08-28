@@ -31,7 +31,7 @@ public class ListTemplateCommand extends StorageCommand {
         this.store = store;
     }
 
-    public ListTemplateCommand(DataStoreTO store, Integer nfsVersion) {
+    public ListTemplateCommand(DataStoreTO store, String nfsVersion) {
         super(nfsVersion);
         this.store = store;
     }
