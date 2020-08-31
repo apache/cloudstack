@@ -243,7 +243,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         for template in templates:
             if template.isready and template.ispublic:
-                return template
+                return Template(template.__dict__)
 
         return FAILED
 
@@ -297,18 +297,15 @@ class TestKubernetesCluster(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-
-        # Delete any existing Kubernetes cluster for account
-        clusters = self.listKubernetesCluster()
-        if clusters != None:
-            for cluster in clusters:
-                self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
-
         return
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created templates
+            # Delete any existing Kubernetes cluster for account
+            clusters = self.listKubernetesCluster()
+            if clusters != None:
+                for cluster in clusters:
+                    self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
