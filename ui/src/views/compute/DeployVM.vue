@@ -1189,6 +1189,7 @@ export default {
         for (const key in this.options.templates) {
           var t = _.find(_.get(this.options.templates[key], 'template', []), (option) => option.id === value)
           if (t) {
+            this.template = t
             this.templateConfigurations = []
             this.selectedTemplateConfiguration = {}
             this.templateNics = []
@@ -1281,6 +1282,14 @@ export default {
       e.preventDefault()
       this.form.validateFields(async (err, values) => {
         if (err) {
+          if (err.licensesaccepted) {
+            this.$notification.error({
+              message: this.$t('message.license.agreements.not.accepted'),
+              description: this.$t('message.step.license.agreements.continue')
+            })
+            return
+          }
+
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('error.form.message')
@@ -1305,13 +1314,6 @@ export default {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.step.2.continue')
-          })
-          return
-        }
-        if ('licensesaccepted' in values && values.licensesaccepted !== true) {
-          this.$notification.error({
-            message: this.$t('message.license.agreements.not.accepted'),
-            description: this.$t('message.step.license.agreements.continue')
           })
           return
         }
@@ -1432,6 +1434,7 @@ export default {
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')
+
         api('deployVirtualMachine', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
@@ -1796,14 +1799,16 @@ export default {
         this.templateLicenses = this.fetchTemplateLicenses(this.template)
         this.templateProperties = this.fetchTemplateProperties(this.template)
         this.selectedTemplateConfiguration = {}
-        if (this.templateConfigurationExists) {
-          this.selectedTemplateConfiguration = this.templateConfigurations[0]
-          this.handleTemplateConfiguration()
-          if ('templateConfiguration' in this.form.fieldsStore.fieldsMeta) {
-            this.updateFieldValue('templateConfiguration', this.selectedTemplateConfiguration.id)
+        setTimeout(() => {
+          if (this.templateConfigurationExists) {
+            this.selectedTemplateConfiguration = this.templateConfigurations[0]
+            this.handleTemplateConfiguration()
+            if ('templateConfiguration' in this.form.fieldsStore.fieldsMeta) {
+              this.updateFieldValue('templateConfiguration', this.selectedTemplateConfiguration.id)
+            }
+            this.updateComputeOffering(null) // reset as existing selection may be incompatible
           }
-          this.updateComputeOffering(null) // reset as existing selection may be incompatible
-        }
+        }, 500)
       }
     },
     onSelectTemplateConfigurationId (value) {
