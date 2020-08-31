@@ -113,7 +113,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                         (cls.services["cks_kubernetes_versions"]["1.16.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.3"]["url"], e))
 
             if cls.setup_failed == False:
-                cls.cks_template = getKubernetesTemplate()
+                cls.cks_template = cls.getKubernetesTemplate()
                 if template == FAILED:
                     assert False, "getKubernetesTemplate() failed to return template for hypervisor %s" % cls.hypervisor
                     cls.setup_failed = True
@@ -706,16 +706,20 @@ class TestKubernetesCluster(cloudstackTestCase):
             if forced:
                 cluster = self.listKubernetesCluster(cluster_id)
                 if cluster != None:
-                    forceDeleted = True
-                    for cluster_vm_id in cluster.virtualmachineids:
-                        cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
-                        cmd.id = cluster_vm_id
-                        cmd.expunge = True
-                        self.apiclient.destroyVirtualMachine(cmd)
-                    cmd = deleteNetwork.deleteNetworkCmd()
-                    cmd.id = cluster.networkid
-                    cmd.forced = True
-                    self.apiclient.deleteNetwork(cmd)
+                    if cluster.state in ['Running', 'Upgrading', 'Scaling']:
+                        self.stopKubernetesCluster(cluster_id)
+                        self.deleteKubernetesCluster(cluster_id)
+                    else:
+                        forceDeleted = True
+                        for cluster_vm_id in cluster.virtualmachineids:
+                            cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
+                            cmd.id = cluster_vm_id
+                            cmd.expunge = True
+                            self.apiclient.destroyVirtualMachine(cmd)
+                        cmd = deleteNetwork.deleteNetworkCmd()
+                        cmd.id = cluster.networkid
+                        cmd.forced = True
+                        self.apiclient.deleteNetwork(cmd)
 
 
 
