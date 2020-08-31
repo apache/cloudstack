@@ -2280,18 +2280,17 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String volumeUuid = UUID.randomUUID().toString().replace("-", "");
 
             String volumeDatastorePath = dsMo.getDatastorePath(volumeUuid + ".vmdk");
-
-            VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(context);
-            VStorageObject virtualDisk = vStorageObjectManagerMO.createDisk(morDatastore, VirtualDiskType.THIN, volume.getSize(), volumeDatastorePath, volumeUuid);
             VolumeObjectTO newVol = new VolumeObjectTO();
-            DatastoreFile file = new DatastoreFile(((BaseConfigInfoDiskFileBackingInfo)virtualDisk.getConfig().getBacking()).getFilePath());
-            newVol.setPath(file.getFileBaseName());
-            newVol.setSize(volume.getSize());
-            return new CreateObjectAnswer(newVol);
 
-            /*
-            *   // This is old code which uses workervm to create disks
-            *   String dummyVmName = hostService.getWorkerName(context, cmd, 0);
+            try {
+                VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(context);
+                VStorageObject virtualDisk = vStorageObjectManagerMO.createDisk(morDatastore, VirtualDiskType.THIN, volume.getSize(), volumeDatastorePath, volumeUuid);
+                DatastoreFile file = new DatastoreFile(((BaseConfigInfoDiskFileBackingInfo)virtualDisk.getConfig().getBacking()).getFilePath());
+                newVol.setPath(file.getFileBaseName());
+                newVol.setSize(volume.getSize());
+            } catch (Exception e) {
+                s_logger.debug("Create disk using vStorageObject manager failed due to exception " + e.getMessage() + ", retying using worker VM");
+                String dummyVmName = hostService.getWorkerName(context, cmd, 0);
                 try {
                     s_logger.info("Create worker VM " + dummyVmName);
                     vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
@@ -2304,14 +2303,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
                             vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
                             vmMo.detachDisk(volumeDatastorePath, false);
                         }
-                        catch (Exception e) {
-                            s_logger.error("Deleting file " + volumeDatastorePath + " due to error: " + e.getMessage());
+                        catch (Exception e1) {
+                            s_logger.error("Deleting file " + volumeDatastorePath + " due to error: " + e1.getMessage());
                             VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid, dcMo, VmwareManager.s_vmwareSearchExcludeFolder.value());
-                            throw new CloudRuntimeException("Unable to create volume due to: " + e.getMessage());
+                            throw new CloudRuntimeException("Unable to create volume due to: " + e1.getMessage());
                         }
                     }
 
-                    VolumeObjectTO newVol = new VolumeObjectTO();
+                    newVol = new VolumeObjectTO();
                     newVol.setPath(volumeUuid);
                     newVol.setSize(volume.getSize());
                     return new CreateObjectAnswer(newVol);
@@ -2322,8 +2321,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         vmMo.destroy();
                     }
                 }
-
-            * */
+            }
+            return new CreateObjectAnswer(newVol);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
