@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import (listInfrastructure,
                                   listKubernetesSupportedVersions,
                                   addKubernetesSupportedVersion,
                                   deleteKubernetesSupportedVersion,
+                                  listKubernetesClusters,
                                   createKubernetesCluster,
                                   stopKubernetesCluster,
                                   deleteKubernetesCluster,
@@ -31,13 +32,16 @@ from marvin.cloudstackAPI import (listInfrastructure,
                                   destroyVirtualMachine,
                                   deleteNetwork)
 from marvin.cloudstackException import CloudstackAPIException
-from marvin.codes import FAILED
+from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
                              ServiceOffering,
+                             Account,
                              Configurations)
 from marvin.lib.utils import (cleanup_resources,
+                              validateList,
                               random_gen)
-from marvin.lib.common import (get_zone)
+from marvin.lib.common import (get_zone,
+                               get_domain)
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
@@ -95,26 +99,26 @@ class TestKubernetesCluster(cloudstackTestCase):
                     cls.setup_failed = True
                     cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
                         (cls.services["cks_kubernetes_versions"]["1.15.0"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.15.0"]["url"], e))
-            if cls.setup_failed == False:
-                try:
-                    cls.kubernetes_version_3 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.0"])
-                    cls.kubernetes_version_ids.append(cls.kubernetes_version_3.id)
-                except Exception as e:
-                    cls.setup_failed = True
-                    cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
-                        (cls.services["cks_kubernetes_versions"]["1.16.0"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.0"]["url"], e))
-            if cls.setup_failed == False:
-                try:
-                    cls.kubernetes_version_4 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.3"])
-                    cls.kubernetes_version_ids.append(cls.kubernetes_version_4.id)
-                except Exception as e:
-                    cls.setup_failed = True
-                    cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
-                        (cls.services["cks_kubernetes_versions"]["1.16.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.3"]["url"], e))
+#             if cls.setup_failed == False:
+#                 try:
+#                     cls.kubernetes_version_3 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.0"])
+#                     cls.kubernetes_version_ids.append(cls.kubernetes_version_3.id)
+#                 except Exception as e:
+#                     cls.setup_failed = True
+#                     cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
+#                         (cls.services["cks_kubernetes_versions"]["1.16.0"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.0"]["url"], e))
+#             if cls.setup_failed == False:
+#                 try:
+#                     cls.kubernetes_version_4 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.3"])
+#                     cls.kubernetes_version_ids.append(cls.kubernetes_version_4.id)
+#                 except Exception as e:
+#                     cls.setup_failed = True
+#                     cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
+#                         (cls.services["cks_kubernetes_versions"]["1.16.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.3"]["url"], e))
 
             if cls.setup_failed == False:
                 cls.cks_template = cls.getKubernetesTemplate()
-                if template == FAILED:
+                if cls.cks_template == FAILED:
                     assert False, "getKubernetesTemplate() failed to return template for hypervisor %s" % cls.hypervisor
                     cls.setup_failed = True
                 else:
@@ -231,9 +235,9 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         if validateList(templates)[0] != PASS:
             details = None
-            if hypervisor not in ["vmware"]:
+            if hypervisor in ["vmware"] and "details" in cks_template:
                 details = cks_template["details"]
-            template = Template.register(cls.apiclient, cks_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
+            template = Template.register(cls.apiclient, cks_template, zoneid=cls.zone.id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
             template.download(cls.apiclient)
             return template
 
@@ -296,8 +300,9 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         # Delete any existing Kubernetes cluster for account
         clusters = self.listKubernetesCluster()
-        for cluster in clusters:
-            self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
+        if clusters != None:
+            for cluster in clusters:
+                self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
 
         return
 
