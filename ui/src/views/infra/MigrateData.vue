@@ -71,13 +71,13 @@
             }]"
             :loading="loading"
           >
-            <a-select-option value="Complete">Complete</a-select-option>
-            <a-select-option value="Balance">Balance</a-select-option>
+            <a-select-option value="Complete">{{ $t('label.complete') }}</a-select-option>
+            <a-select-option value="Balance">{{ $t('label.balance') }}</a-select-option>
           </a-select>
         </a-form-item>
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('Cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('OK') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -130,7 +130,7 @@ export default {
           }
         }
 
-        const title = 'Data Migration'
+        const title = this.$t('message.data.migration')
         this.loading = true
 
         const result = this.migrateData(params, title)

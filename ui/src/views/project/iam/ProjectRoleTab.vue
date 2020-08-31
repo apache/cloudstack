@@ -62,7 +62,7 @@
           </span>
         </a-table>
         <a-modal
-          title="Edit Project Role"
+          :title="$t('label.edit.project.role')"
           v-model="editModalVisible"
           :footer="null"
           :afterClose="closeAction"
@@ -109,7 +109,7 @@
           </a-form>
         </a-modal>
         <a-modal
-          title="Create Project Role"
+          :title="$t('label.create.project.role')"
           v-model="createModalVisible"
           :footer="null"
           :afterClose="closeAction"

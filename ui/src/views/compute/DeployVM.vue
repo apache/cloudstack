@@ -404,7 +404,7 @@
                   <div style="margin-top: 15px" v-show="this.showDetails">
                     <div
                       v-if="vm.templateid && ['KVM', 'VMware'].includes(hypervisor)">
-                      <a-form-item :label="$t('label.vm.boottype')">
+                      <a-form-item :label="$t('label.boottype')">
                         <a-select
                           v-decorator="['boottype']"
                           @change="fetchBootModes"
@@ -414,7 +414,7 @@
                           </a-select-option>
                         </a-select>
                       </a-form-item>
-                      <a-form-item :label="$t('label.vm.bootmode')">
+                      <a-form-item :label="$t('label.bootmode')">
                         <a-select
                           v-decorator="['bootmode']">
                           <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
