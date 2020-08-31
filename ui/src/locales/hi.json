@@ -412,7 +412,6 @@
 "label.sourcenattype": "समर्थित स्रोत NAT प्रकार",
 "label.specifyipranges": "IP पर्वतमाला निर्दिष्ट करें",
 "label.specifyvlan": "वीएलएएन निर्दिष्ट करें",
-"label.sshkeyenabled": "SSH सक्षम",
 "label.sshkeypair": "न्यू SSH कुंजी जोड़ी",
 "label.sshkeypairs": "SSH keypairs",
 "label.sslcert प्रमाणपत्र": "SSL प्रमाणपत्र",

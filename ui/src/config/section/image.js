@@ -43,7 +43,7 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled', 'sshkeyenabled', 'directdownload', 'deployasis', 'isextractable', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'crosszones', 'type', 'account', 'domain', 'created', 'url'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled', 'directdownload', 'deployasis', 'isextractable', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'crosszones', 'type', 'account', 'domain', 'created', 'url'],
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',
@@ -92,7 +92,7 @@ export default {
               record.isready
           },
           args: (record, store) => {
-            var fields = ['name', 'displaytext', 'passwordenabled', 'sshkeyenabled', 'ostypeid', 'isdynamicallyscalable']
+            var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
             if (['Admin'].includes(store.userInfo.roletype)) {
               fields.push('isrouting')
             }

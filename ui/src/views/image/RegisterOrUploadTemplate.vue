@@ -339,29 +339,24 @@
                     </a-checkbox>
                   </a-col>
                   <a-col :span="12">
-                    <a-checkbox value="sshkeyenabled">
-                      {{ $t('label.sshkeyenabled') }}
-                    </a-checkbox>
-                  </a-col>
-                </a-row>
-                <a-row>
-                  <a-col :span="12">
                     <a-checkbox value="ispublic">
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
+                </a-row>
+                <a-row>
                   <a-col :span="12">
                     <a-checkbox value="isfeatured">
                       {{ $t('label.isfeatured') }}
                     </a-checkbox>
                   </a-col>
-                </a-row>
-                <a-row>
                   <a-col :span="12">
                     <a-checkbox value="requireshvm">
                       {{ $t('label.requireshvm') }}
                     </a-checkbox>
                   </a-col>
+                </a-row>
+                <a-row>
                   <a-col :span="12" v-if="$store.getters.userInfo.roletype === 'Admin'">
                     <a-checkbox value="isrouting">
                       {{ $t('label.isrouting') }}

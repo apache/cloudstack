@@ -200,7 +200,7 @@ export default {
             ((record.type === 'ROOT' && record.vmstate === 'Stopped') ||
             (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
           },
-          args: ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
+          args: ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled'],
           mapping: {
             volumeid: {
               value: (record) => { return record.id }
@@ -271,7 +271,7 @@ export default {
           label: 'label.create.template',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled', 'sshkeyenabled'],
+          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled'],
           mapping: {
             snapshotid: {
               value: (record) => { return record.id }

@@ -1919,7 +1919,6 @@
 "label.srx.firewall": "Juniper SRX Firewall",
 "label.ssh.key.pair.details": "SSH-Schlüsselpaardetails",
 "label.ssh.key.pairs": "SSH-Schlüsselpaare",
-"label.sshkeyenabled": "SSH aktiviert",
 "label.sshkeypair": "Neues SSH-Schlüsselpaar",
 "label.sshkeypairs": "SSH Schlüsselpaare",
 "label.sslcertificates": "SSL Zertifikate",
