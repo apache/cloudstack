@@ -387,11 +387,14 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
           groupAction: true,
-          args: ['expunge'],
+          args: (record, store, group) => {
+            return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervm)
+              ? ['expunge'] : []
+          },
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge } }) },
           show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) },
-          component: () => import('@/views/compute/DestoryVM.vue')
+          component: () => import('@/views/compute/DestroyVM.vue')
         }
       ]
     },

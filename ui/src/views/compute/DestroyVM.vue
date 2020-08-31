@@ -23,7 +23,7 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item>
+        <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
           <span slot="label">
             {{ $t('label.expunge') }}
             <a-tooltip placement="bottom" :title="apiParams.expunge.description">

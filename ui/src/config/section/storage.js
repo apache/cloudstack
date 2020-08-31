@@ -237,7 +237,8 @@ export default {
           message: 'message.action.destroy.volume',
           dataView: true,
           args: (record, store) => {
-            return (!['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !store.features.allowuserexpungerecovervolumestore) ? [] : ['expunge']
+            return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume)
+              ? ['expunge'] : []
           },
           show: (record, store) => {
             return !['Destroy', 'Destroyed', 'Expunging', 'Expunged', 'Migrating', 'Uploading', 'UploadError', 'Creating', 'Allocated', 'Uploaded'].includes(record.state) &&
