@@ -223,7 +223,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         cks_template = cks_templates[hypervisor]
 
         cmd = listTemplates.listTemplatesCmd()
-        cmd.name = test_template['name']
+        cmd.name = cks_template['name']
         cmd.templatefilter = 'all'
         cmd.zoneid = cls.zone.id
         cmd.hypervisor = hypervisor
@@ -233,7 +233,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             details = None
             if hypervisor not in ["vmware"]:
                 details = cks_template["details"]
-            template = Template.register(apiclient, test_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False, details=detils)
+            template = Template.register(apiclient, cks_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False, details=detils)
             template.download(apiclient)
             return template
 
