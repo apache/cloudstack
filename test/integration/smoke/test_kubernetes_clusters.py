@@ -99,22 +99,22 @@ class TestKubernetesCluster(cloudstackTestCase):
                     cls.setup_failed = True
                     cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
                         (cls.services["cks_kubernetes_versions"]["1.15.0"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.15.0"]["url"], e))
-#             if cls.setup_failed == False:
-#                 try:
-#                     cls.kubernetes_version_3 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.0"])
-#                     cls.kubernetes_version_ids.append(cls.kubernetes_version_3.id)
-#                 except Exception as e:
-#                     cls.setup_failed = True
-#                     cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
-#                         (cls.services["cks_kubernetes_versions"]["1.16.0"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.0"]["url"], e))
-#             if cls.setup_failed == False:
-#                 try:
-#                     cls.kubernetes_version_4 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.3"])
-#                     cls.kubernetes_version_ids.append(cls.kubernetes_version_4.id)
-#                 except Exception as e:
-#                     cls.setup_failed = True
-#                     cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
-#                         (cls.services["cks_kubernetes_versions"]["1.16.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.3"]["url"], e))
+            if cls.setup_failed == False:
+                try:
+                    cls.kubernetes_version_3 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.0"])
+                    cls.kubernetes_version_ids.append(cls.kubernetes_version_3.id)
+                except Exception as e:
+                    cls.setup_failed = True
+                    cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
+                        (cls.services["cks_kubernetes_versions"]["1.16.0"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.0"]["url"], e))
+            if cls.setup_failed == False:
+                try:
+                    cls.kubernetes_version_4 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.16.3"])
+                    cls.kubernetes_version_ids.append(cls.kubernetes_version_4.id)
+                except Exception as e:
+                    cls.setup_failed = True
+                    cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
+                        (cls.services["cks_kubernetes_versions"]["1.16.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.3"]["url"], e))
 
             if cls.setup_failed == False:
                 cls.cks_template = cls.getKubernetesTemplate()
