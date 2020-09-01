@@ -5741,4 +5741,116 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(passwordMap));
     }
 
+    @Override
+    public Boolean updateDefaultNicForVM(final VirtualMachine vm, final Nic nic, final Nic defaultNic) {
+
+        final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            VmWorkJobVO placeHolder = null;
+            placeHolder = createPlaceHolderWork(vm.getId());
+            try {
+                return orchestrateUpdateDefaultNicForVM(vm, nic, defaultNic);
+            } finally {
+                if (placeHolder != null) {
+                    _workJobDao.expunge(placeHolder.getId());
+                }
+            }
+        } else {
+            final Outcome<VirtualMachine> outcome = updateDefaultNicForVMThroughJobQueue(vm, nic, defaultNic);
+
+            try {
+                outcome.get();
+            } catch (final InterruptedException e) {
+                throw new RuntimeException("Operation is interrupted", e);
+            } catch (final java.util.concurrent.ExecutionException e) {
+                throw new RuntimeException("Execution exception", e);
+            }
+
+            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof Boolean) {
+                    return (Boolean)jobResult;
+                }
+            }
+
+            throw new RuntimeException("Unexpected job execution result");
+        }
+    }
+
+    private Boolean orchestrateUpdateDefaultNicForVM(final VirtualMachine vm, final Nic nic, final Nic defaultNic) {
+
+        s_logger.debug("Updating default nic of vm " + vm + " from nic " + defaultNic.getUuid() + " to nic " + nic.getUuid());
+        Integer chosenID = nic.getDeviceId();
+        Integer existingID = defaultNic.getDeviceId();
+        NicVO nicVO = _nicsDao.findById(nic.getId());
+        NicVO defaultNicVO = _nicsDao.findById(defaultNic.getId());
+
+        nicVO.setDefaultNic(true);
+        nicVO.setDeviceId(existingID);
+        defaultNicVO.setDefaultNic(false);
+        defaultNicVO.setDeviceId(chosenID);
+
+        _nicsDao.persist(nicVO);
+        _nicsDao.persist(defaultNicVO);
+        return true;
+    }
+
+    public Outcome<VirtualMachine> updateDefaultNicForVMThroughJobQueue(final VirtualMachine vm, final Nic nic, final Nic defaultNic) {
+
+        final CallContext context = CallContext.current();
+        final User user = context.getCallingUser();
+        final Account account = context.getCallingAccount();
+
+        final List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                VirtualMachine.Type.Instance, vm.getId(),
+                VmWorkUpdateDefaultNic.class.getName());
+
+        VmWorkJobVO workJob = null;
+        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+            assert pendingWorkJobs.size() == 1;
+            workJob = pendingWorkJobs.get(0);
+        } else {
+
+            workJob = new VmWorkJobVO(context.getContextId());
+
+            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+            workJob.setCmd(VmWorkUpdateDefaultNic.class.getName());
+
+            workJob.setAccountId(account.getId());
+            workJob.setUserId(user.getId());
+            workJob.setVmType(VirtualMachine.Type.Instance);
+            workJob.setVmInstanceId(vm.getId());
+            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
+
+            final VmWorkUpdateDefaultNic workInfo = new VmWorkUpdateDefaultNic(user.getId(), account.getId(), vm.getId(),
+                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, nic.getId(), defaultNic.getId());
+            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+        }
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
+
+        return new VmJobVirtualMachineOutcome(workJob, vm.getId());
+    }
+
+    @ReflectionUse
+    private Pair<JobInfo.Status, String> orchestrateUpdateDefaultNic(final VmWorkUpdateDefaultNic work) throws Exception {
+        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert vm != null;
+        final NicVO nic = _entityMgr.findById(NicVO.class, work.getNicId());
+        if (nic == null) {
+            throw new CloudRuntimeException("Unable to find nic " + work.getNicId());
+        }
+        final NicVO defaultNic = _entityMgr.findById(NicVO.class, work.getDefaultNicId());
+        if (defaultNic == null) {
+            throw new CloudRuntimeException("Unable to find default nic " + work.getDefaultNicId());
+        }
+        final boolean result = orchestrateUpdateDefaultNicForVM(vm, nic, defaultNic);
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(result));
+    }
+
 }

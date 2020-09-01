@@ -1477,16 +1477,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Integer chosenID = nic.getDeviceId();
         Integer existingID = existing.getDeviceId();
 
-        nic.setDefaultNic(true);
-        nic.setDeviceId(existingID);
-        existingVO.setDefaultNic(false);
-        existingVO.setDeviceId(chosenID);
-
-        nic = _nicDao.persist(nic);
-        existingVO = _nicDao.persist(existingVO);
-
         Network newdefault = null;
-        newdefault = _networkModel.getDefaultNetworkForVm(vmId);
+        if (_itMgr.updateDefaultNicForVM(vmInstance, nic, existingVO)) {
+            newdefault = _networkModel.getDefaultNetworkForVm(vmId);
+        }
 
         if (newdefault == null) {
             nic.setDefaultNic(false);
