@@ -140,6 +140,7 @@ public class HypervisorHostHelper {
     private static final String VMDK_PACK_DIR = "ova";
     private static final String OVA_OPTION_KEY_BOOTDISK = "cloud.ova.bootdisk";
     public static final String VSPHERE_DATASTORE_BASE_FOLDER = "fcd";
+    public static final String VSPHERE_DATASTORE_HIDDEN_FOLDER = ".hidden";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
@@ -2102,10 +2103,13 @@ public class HypervisorHostHelper {
     public static void createBaseFolderInDatastore(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
         String dsPath = String.format("[%s]", dsMo.getName());
         String folderPath = String.format("[%s] %s", dsMo.getName(), VSPHERE_DATASTORE_BASE_FOLDER);
+        String hiddenFolderPath = String.format("%s/%s", folderPath, VSPHERE_DATASTORE_HIDDEN_FOLDER);
 
         if (!dsMo.folderExists(dsPath, VSPHERE_DATASTORE_BASE_FOLDER)) {
             s_logger.info(String.format("vSphere datastore base folder: %s does not exist, now creating on datastore: %s", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
             dsMo.makeDirectory(folderPath, hyperHost.getHyperHostDatacenter());
+            // Adding another directory so vCentre doesn't remove the fcd directory when it's empty
+            dsMo.makeDirectory(hiddenFolderPath, hyperHost.getHyperHostDatacenter());
         }
     }
 }
