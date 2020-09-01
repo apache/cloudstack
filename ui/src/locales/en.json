@@ -2926,6 +2926,7 @@
 "message.no.more.hosts.available": "No more hosts are available for migration",
 "message.no.network.support": "Your selected hypervisor, vSphere, does not have any additional network features.  Please continue to step 5.",
 "message.no.network.support.configuration.not.true": "You do not have any zone that has security group enabled. Thus, no additional network features.  Please continue to step 5.",
+"message.no.primary.stores": "No primary storage pools available for migration",
 "message.no.projects": "You do not have any projects.<br/>Please create a new one from the projects section.",
 "message.no.projects.adminonly": "You do not have any projects.<br/>Please ask your administrator to create a new project.",
 "message.number.clusters": "<h2><span> # of </span> Clusters</h2>",

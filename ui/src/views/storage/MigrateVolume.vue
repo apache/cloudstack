@@ -19,28 +19,32 @@
   <div class="migrate-volume-container">
 
     <div class="modal-form">
-      <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
-      <a-select v-model="selectedStoragePool" style="width: 100%;">
-        <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
-          {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
-        </a-select-option>
-      </a-select>
-      <template v-if="this.resource.virtualmachineid">
-        <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
-          {{ $t('label.usenewdiskoffering') }}
-        </p>
-        <a-checkbox v-model="replaceDiskOffering" />
+      <div v-if="storagePools.length > 0">
+        <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
+        <a-select v-model="selectedStoragePool" style="width: 100%;">
+          <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
+            {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
+          </a-select-option>
+        </a-select>
+        <template v-if="this.resource.virtualmachineid">
+          <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
+            {{ $t('label.usenewdiskoffering') }}
+          </p>
+          <a-checkbox v-model="replaceDiskOffering" />
 
-        <template v-if="replaceDiskOffering">
-          <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
-          <a-select v-model="selectedDiskOffering" style="width: 100%;">
-            <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
-              {{ diskOffering.displaytext }}
-            </a-select-option>
-          </a-select>
+          <template v-if="replaceDiskOffering">
+            <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
+            <a-select v-model="selectedDiskOffering" style="width: 100%;">
+              <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
+                {{ diskOffering.displaytext }}
+              </a-select-option>
+            </a-select>
+          </template>
         </template>
-
-      </template>
+      </div>
+      <a-alert style="margin-top: 15px" type="warning" v-else>
+        <span slot="message" v-html="$t('message.no.primary.stores')" />
+      </a-alert>
     </div>
 
     <a-divider />
@@ -68,7 +72,7 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData', 'parentToggleLoading'],
+  inject: ['parentFetchData'],
   data () {
     return {
       storagePools: [],
@@ -101,6 +105,7 @@ export default {
           zoneid: this.resource.zoneid
         }).then(response => {
           this.storagePools = response.liststoragepoolsresponse.storagepool || []
+          this.storagePools = this.storagePools.filter(pool => { return pool.id !== this.resource.storageid })
           if (Array.isArray(this.storagePools) && this.storagePools.length) {
             this.selectedStoragePool = this.storagePools[0].id || ''
           }
@@ -125,8 +130,10 @@ export default {
       this.$parent.$parent.close()
     },
     submitMigrateVolume () {
-      this.closeModal()
-      this.parentToggleLoading()
+      if (this.storagePools.length === 0) {
+        this.closeModal()
+        return
+      }
       api('migrateVolume', {
         livemigrate: this.resource.vmstate === 'Running',
         storageid: this.selectedStoragePool,
@@ -138,23 +145,23 @@ export default {
           successMessage: this.$t('message.success.migrate.volume'),
           successMethod: () => {
             this.parentFetchData()
-            this.parentToggleLoading()
           },
           errorMessage: this.$t('message.migrate.volume.failed'),
           errorMethod: () => {
             this.parentFetchData()
-            this.parentToggleLoading()
           },
           loadingMessage: this.$t('message.migrate.volume.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
-            this.parentToggleLoading()
           }
         })
       }).catch(error => {
         this.$notifyError(error)
         this.closeModal()
+      }).finally(() => {
+        this.closeModal()
+        this.parentFetchData()
       })
     }
   }
