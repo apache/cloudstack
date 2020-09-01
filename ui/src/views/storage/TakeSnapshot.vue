@@ -176,12 +176,12 @@ export default {
                   description: successDescription,
                   status: 'progress'
                 })
-                this.closeAction()
               },
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${description}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })
           }
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         })
