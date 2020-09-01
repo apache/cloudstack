@@ -18,24 +18,46 @@
 //
 package org.apache.cloudstack.utils.redfish;
 
+import com.cloud.utils.rest.HttpClientHelper;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.StatusLine;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class) public class RedfishClientTest {
+import java.io.IOException;
+import java.net.http.HttpRequest;
+
+@RunWith(MockitoJUnitRunner.class)
+public class RedfishClientTest {
 
     private static final String USERNAME = "user";
     private static final String PASSWORD = "password";
     private static final String oobAddress = "oob.host.address";
     private static final String systemId = "SystemID.1";
     private final static String COMPUTER_SYSTEM_RESET_URL_PATH = "/Actions/ComputerSystem.Reset";
+    private final static Integer REDFISHT_REQUEST_RETRIES = Integer.valueOf(2);
+    private static final String url = "https://address.system.net/redfish/v1/Systems/";
+    private static final HttpRequestBase httpReq = new HttpGet(url);
 
-    RedfishClient redfishClientspy = Mockito.spy(new RedfishClient(USERNAME, PASSWORD, true, true));
+    @Mock
+    HttpClient client;
+
+    RedfishClient redfishClientspy = Mockito.spy(new RedfishClient(USERNAME, PASSWORD, true, true, REDFISHT_REQUEST_RETRIES));
+
+//    @Before
+//    public void prepareHttpClient() throws IOException {
+//        Mockito.when(client.execute(httpReq)).thenThrow(IOException.class);
+//    }
 
     @Test(expected = RedfishException.class)
     public void validateAddressAndPrepareForUrlTestExpect() {
@@ -68,7 +90,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
     @Test
     public void buildRequestUrlTestHttpsGetSystemId() {
-        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, true, false);
+        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, true, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.GetSystemId, systemId);
         String expected = String.format("https://%s/redfish/v1/Systems/", oobAddress, systemId);
         Assert.assertEquals(expected, result);
@@ -76,7 +98,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
     @Test
     public void buildRequestUrlTestGetSystemId() {
-        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, false, false);
+        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, false, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.GetSystemId, systemId);
         String expected = String.format("http://%s/redfish/v1/Systems/", oobAddress, systemId);
         Assert.assertEquals(expected, result);
@@ -84,7 +106,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
     @Test
     public void buildRequestUrlTestHttpsComputerSystemReset() {
-        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, true, false);
+        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, true, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.ComputerSystemReset, systemId);
         String expected = String.format("https://%s/redfish/v1/Systems/%s%s", oobAddress, systemId, COMPUTER_SYSTEM_RESET_URL_PATH);
         Assert.assertEquals(expected, result);
@@ -92,7 +114,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
     @Test
     public void buildRequestUrlTestComputerSystemReset() {
-        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, false, false);
+        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, false, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.ComputerSystemReset, systemId);
         String expected = String.format("http://%s/redfish/v1/Systems/%s%s", oobAddress, systemId, COMPUTER_SYSTEM_RESET_URL_PATH);
         Assert.assertEquals(expected, result);
@@ -100,7 +122,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
     @Test
     public void buildRequestUrlTestHttpsGetPowerState() {
-        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, true, false);
+        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, true, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.GetPowerState, systemId);
         String expected = String.format("https://%s/redfish/v1/Systems/%s", oobAddress, systemId);
         Assert.assertEquals(expected, result);
@@ -108,7 +130,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
     @Test
     public void buildRequestUrlTestGetPowerState() {
-        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, false, false);
+        RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, false, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.GetPowerState, systemId);
         String expected = String.format("http://%s/redfish/v1/Systems/%s", oobAddress, systemId);
         Assert.assertEquals(expected, result);
@@ -160,4 +182,35 @@ import org.mockito.junit.MockitoJUnitRunner;
         redfishClientspy.getSystemId(oobAddress);
     }
 
+    @Test(expected = RedfishException.class)
+    public void retryHttpRequestDefaultRetries() throws IOException {
+        Mockito.when(client.execute(httpReq)).thenThrow(IOException.class).thenReturn(null);
+        redfishClientspy.retryHttpRequest(url, httpReq, client);
+
+        Mockito.verify(redfishClientspy, Mockito.times(1)).retryHttpRequest(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.verify(client, Mockito.times(2)).execute(Mockito.any());
+    }
+
+    @Test(expected = RedfishException.class)
+    public void retryHttpRequestNoRetries() throws IOException {
+        Mockito.when(client.execute(httpReq)).thenThrow(IOException.class);
+
+        RedfishClient newRedfishClientspy = Mockito.spy(new RedfishClient(USERNAME, PASSWORD, true, true, Integer.valueOf(0)));
+        newRedfishClientspy.retryHttpRequest(url, httpReq, client);
+
+        Mockito.verify(newRedfishClientspy, Mockito.times(12)).retryHttpRequest(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.verify(client, Mockito.times(10)).execute(Mockito.any());
+//        Mockito.never(client) TODO
+    }
+
+    @Test
+    public void retryHttpRequestNoException() throws IOException {
+        Mockito.when(client.execute(httpReq)).thenReturn(null);
+
+        RedfishClient newRedfishClientspy = Mockito.spy(new RedfishClient(USERNAME, PASSWORD, true, true, Integer.valueOf(1)));
+        newRedfishClientspy.retryHttpRequest(url, httpReq, client);
+
+        Mockito.verify(newRedfishClientspy, Mockito.times(1)).retryHttpRequest(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.verify(client, Mockito.times(1)).execute(Mockito.any());
+    }
 }
