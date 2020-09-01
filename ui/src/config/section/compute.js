@@ -332,7 +332,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#resetting-ssh-keys',
           dataView: true,
           args: ['keypair', 'account', 'domainid'],
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
+          show: (record) => { return ['Stopped'].includes(record.state) },
           mapping: {
             keypair: {
               api: 'listSSHKeyPairs',
