@@ -45,11 +45,11 @@
                 <a-select
                   v-if="!dataView && $route.meta.filters && $route.meta.filters.length > 0"
                   :placeholder="$t('label.filterby')"
-                  :value="$route.query.filter || (['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && $route.name === 'vm' ? 'all' : 'self')"
+                  :value="$route.query.filter || (['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name) ? 'all' : 'self')"
                   style="min-width: 100px; margin-left: 10px"
                   @change="changeFilter">
                   <a-icon slot="suffixIcon" type="filter" />
-                  <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && $route.name === 'vm'" key="all">
+                  <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
                     {{ $t('label.all') }}
                   </a-select-option>
                   <a-select-option v-for="filter in $route.meta.filters" :key="filter">
@@ -475,6 +475,12 @@ export default {
       params.listall = true
       if (this.$route.meta.params) {
         Object.assign(params, this.$route.meta.params)
+      }
+      if ('templatefilter' in params && this.routeName === 'template') {
+        params.templatefilter = 'all'
+      }
+      if ('isofilter' in params && this.routeName === 'iso') {
+        params.isofilter = 'all'
       }
       if (Object.keys(this.$route.query).length > 0) {
         Object.assign(params, this.$route.query)
