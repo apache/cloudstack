@@ -332,7 +332,7 @@ export default {
           this.loading = true
           api('registerIso', params).then(json => {
             this.$notification.success({
-              message: 'label.action.register.iso',
+              message: this.$t('label.action.register.iso'),
               description: `${this.$t('message.success.register.iso')} ${params.name}`
             })
           }).catch(error => {
