@@ -130,7 +130,7 @@
         <cs.guava.version>23.6-jre</cs.guava.version>
         <cs.httpclient.version>4.5.4</cs.httpclient.version>
         <cs.httpcore.version>4.4.8</cs.httpcore.version>
-        <cs.influxdb-java.version>2.15</cs.influxdb-java.version>
+        <cs.influxdb-java.version>2.20</cs.influxdb-java.version>
         <cs.jackson.version>2.9.2</cs.jackson.version>
         <cs.jasypt.version>1.9.2</cs.jasypt.version>
         <cs.java-ipv6.version>0.16</cs.java-ipv6.version>
