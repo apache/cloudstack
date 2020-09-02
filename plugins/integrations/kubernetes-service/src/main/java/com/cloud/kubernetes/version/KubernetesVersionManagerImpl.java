@@ -290,7 +290,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %d vCPUs required.", ApiConstants.MIN_CPU_NUMBER, KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU));
         }
         if (minimumRamSize == null || minimumRamSize < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %dMB memory required", KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
+            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %dMB memory required", ApiConstants.MIN_MEMORY, KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
         }
         if (compareSemanticVersions(semanticVersion, MIN_KUBERNETES_VERSION) < 0) {
             throw new InvalidParameterValueException(String.format("New supported Kubernetes version cannot be added as %s is minimum version supported by Kubernetes Service", MIN_KUBERNETES_VERSION));
