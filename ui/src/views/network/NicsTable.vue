@@ -50,12 +50,14 @@
         <a-descriptions-item :label="$t('label.ip6cidr')" v-if="record.ip6cidr">
           {{ record.ip6cidr }}
         </a-descriptions-item>
-        <a-descriptions-item :label="$t('label.broadcasturi')" v-if="record.broadcasturi">
-          {{ record.broadcasturi }}
-        </a-descriptions-item>
-        <a-descriptions-item :label="$t('label.isolationuri')" v-if="record.isolationuri">
-          {{ record.isolationuri }}
-        </a-descriptions-item>
+        <template v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype)">
+          <a-descriptions-item :label="$t('label.broadcasturi')" v-if="record.broadcasturi">
+            {{ record.broadcasturi }}
+          </a-descriptions-item>
+          <a-descriptions-item :label="$t('label.isolationuri')" v-if="record.isolationuri">
+            {{ record.isolationuri }}
+          </a-descriptions-item>
+        </template>
       </a-descriptions>
     </p>
     <template slot="networkname" slot-scope="text, item">
