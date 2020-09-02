@@ -33,8 +33,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import java.lang.management.ManagementFactory;
-
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaStatement;
@@ -280,8 +278,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         String processName = null;
         try {
-            processName = ManagementFactory.getRuntimeMXBean().getName();
-            _pid = Integer.parseInt(processName.split("@")[0]);
+            _pid = (int) ProcessHandle.current().pid();
         } catch (Exception e) {
             String msg = String.format("Unable to get process Id for %s!", processName);
             s_logger.debug(msg , e);
