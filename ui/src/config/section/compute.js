@@ -367,6 +367,7 @@ export default {
           api: 'unmanageVirtualMachine',
           icon: 'disconnect',
           label: 'label.action.unmanage.virtualmachine',
+          message: 'message.action.unmanage.virtualmachine',
           dataView: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && record.hypervisor === 'VMware' }
         },
