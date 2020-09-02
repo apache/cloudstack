@@ -276,13 +276,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             throw new ConfigurationException("Unhandled exception configuring UsageManager " + e.toString());
         }
 
-        String processName = null;
         try {
             _pid = (int) ProcessHandle.current().pid();
         } catch (Exception e) {
-            String msg = String.format("Unable to get process Id for %s!", processName);
-            s_logger.debug(msg , e);
-            throw new ConfigurationException(msg + " " + e.toString());
+            String msg = String.format("Unable to get process Id for %s!", e.toString());
+            s_logger.debug(msg);
+            throw new ConfigurationException(msg);
         }
         return true;
     }
