@@ -402,17 +402,17 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.updatedefaultnicforvirtualmachineresponse.jobid,
-          successMessage: `${this.$t('label.success.set')} ${item.networkname} ${this.$t('label.to.default')}. ${this.$t('message.set.default.nic.manual')}.`,
+          successMessage: `${this.$t('label.success.set')} ${item.networkname} ${this.$t('label.as.default')}. ${this.$t('message.set.default.nic.manual')}.`,
           successMethod: () => {
             this.loadingNic = false
             this.parentFetchData()
           },
-          errorMessage: `${this.$t('label.error.setting')} ${item.networkname} ${this.$t('label.to.default')}`,
+          errorMessage: `${this.$t('label.error.setting')} ${item.networkname} ${this.$t('label.as.default')}`,
           errorMethod: () => {
             this.loadingNic = false
             this.parentFetchData()
           },
-          loadingMessage: `${this.$t('label.setting')} ${item.networkname} ${this.$t('label.to.default')}...`,
+          loadingMessage: `${this.$t('label.setting')} ${item.networkname} ${this.$t('label.as.default')}...`,
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.loadingNic = false
