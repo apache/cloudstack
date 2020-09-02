@@ -476,10 +476,12 @@ export default {
       if (this.$route.meta.params) {
         Object.assign(params, this.$route.meta.params)
       }
-      if ('templatefilter' in params && this.routeName === 'template') {
+      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
+        'templatefilter' in params && this.routeName === 'template') {
         params.templatefilter = 'all'
       }
-      if ('isofilter' in params && this.routeName === 'iso') {
+      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
+        'isofilter' in params && this.routeName === 'iso') {
         params.isofilter = 'all'
       }
       if (Object.keys(this.$route.query).length > 0) {
