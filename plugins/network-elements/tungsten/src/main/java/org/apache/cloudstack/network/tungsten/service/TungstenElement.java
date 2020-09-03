@@ -30,8 +30,6 @@ public class TungstenElement extends AdapterBase implements StaticNatServiceProv
 
     @Inject
     NetworkModel _networkModel;
-    @Inject
-    TungstenService _tungstenService;
 
     private static final Logger s_logger = Logger.getLogger(TungstenElement.class);
     private final Map<Network.Service, Map<Network.Capability, String>> _capabilities = InitCapabilities();

@@ -4818,22 +4818,8 @@
                         label: 'label.tungsten',
                         isMaximized: true,
                         type: 'detailView',
-                        fields: {
-                            name: {
-                                label: 'label.name'
-                            },
-                            ipaddress: {
-                                label: 'label.ip.address'
-                            },
-                            state: {
-                                label: 'label.status',
-                                indicator: {
-                                    'Enabled': 'on'
-                                }
-                            }
-                        },
                         tabs: {
-                            network: {
+                            details: {
                                 title: 'label.network',
                                 fields:[ {
                                     name: {
@@ -4860,11 +4846,212 @@
                                 dataProvider: function (args) {
                                     refreshNspData("Tungsten");
                                     args.response.success({
-                                        actionFilter: virtualRouterProviderActionFilter,
                                         data: $.extend(nspMap[ "Tungsten"], {
                                             supportedServices: nspMap[ "Tungsten"].servicelist.join(', ')
-                                        })
+                                        }),
+                                        actionFilter: networkProviderActionFilter('Tungsten')
                                     });
+                                }
+                            },
+                            controllers: {
+                                title: 'label.tungsten.providers',
+                                listView: {
+                                    id: 'tungstenProviderList',
+                                    fields: {
+                                        name: {
+                                            label: 'label.name'
+                                        },
+                                        tungstenproviderhostname: {
+                                            label: 'label.tungsten.provider.hostname'
+                                        },
+                                        tungstenproviderport: {
+                                            label: 'label.tungsten.provider.port'
+                                        }
+                                    },
+                                    dataProvider: function (args) {
+                                        var providerObj
+                                        $.ajax({
+                                            url: createURL("listTungstenProviders"),
+                                            async: false,
+                                            success: function (json) {
+                                                providerObj = json.listTungstenProviders.tungstenProvider
+                                            }
+                                        });
+                                        args.response.success({
+                                            data: providerObj
+                                        });
+                                    },
+                                    detailView: {
+                                        name: "Tungsten Provider",
+                                        tabs: {
+                                            details: {
+                                                title: 'label.tungsten.providerdetail',
+                                                fields:[ {
+                                                    name: {
+                                                        label: 'label.name'
+                                                    },
+                                                    tungstenproviderhostname: {
+                                                        label: 'label.tungsten.provider.hostname', header: true
+                                                    },
+                                                    tungstenproviderport: {
+                                                        label: 'label.tungsten.provider.port'
+                                                    }
+                                                }],
+                                                dataProvider: function (args) {
+                                                    var providerObj
+                                                    $.ajax({
+                                                        url: createURL("listTungstenProviders&tungstenprovideruuid=" + args.jsonObj.uuid),
+                                                        dataType: "json",
+                                                        async: false,
+                                                        success: function (json) {
+                                                            providerObj = json.listTungstenProviders.tungstenProvider
+                                                        }
+                                                    });
+                                                    args.response.success({
+                                                        data: providerObj[0],
+                                                        actionFilter: function(args) { return [ 'remove' ] }
+                                                    });
+                                                }
+                                            }
+                                        },
+                                        actions: {
+                                            remove: {
+                                                label: 'label.tungsten.delete.provider',
+                                                action: function (args) {
+                                                    $.ajax({
+                                                        url: createURL("deleteTungstenProvider&tungstenprovideruuid=" + args.context.tungstenProviderList[0].uuid),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function (json) {
+                                                            args.response.success({
+                                                                    _custom: {
+                                                                        getUpdatedItem: function (json) {
+                                                                            $(window).trigger('cloudStack.fullRefresh');
+                                                                        }
+                                                                    }
+                                                                }
+                                                            );
+                                                        }
+                                                    });
+                                                },
+                                                messages: {
+                                                    confirm: function(args) {
+                                                        return 'message.action.delete.provider';
+                                                    },
+                                                    notification: function(args) {
+                                                        return 'label.tungsten.delete.provider'
+                                                    }
+                                                },
+                                                notification: {
+                                                    poll: function(args) {
+                                                        args.complete();
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        actions: {
+                            add: {
+                                label: 'label.tungsten.add.provider',
+                                createForm: {
+                                    title: 'label.tungsten.add.provider',
+                                    fields: {
+                                        name: {
+                                            label: 'label.name',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        hostname: {
+                                            label: 'label.tungsten.provider.hostname',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        port: {
+                                            label: 'label.tungsten.provider.port',
+                                            validation: {
+                                                required: true
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    addTungstenProvider(args);
+                                },
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.tungsten.add.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "Tungsten"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "Tungsten"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
                                 }
                             }
                         }
@@ -21814,6 +22001,34 @@
                 }
             });
         }
+    }
+
+    function addTungstenProvider(args) {
+        $.ajax({
+            url: createURL('createTungstenProvider'),
+            data: {
+                nspid: nspMap[ "Tungsten"].id,
+                tungstenproviderhostname: args.data.hostname,
+                name: args.data.name,
+                tungstenproviderport: args.data.port
+            },
+            type: "POST",
+            success: function (json) {
+                var jid = json.createtungstenproviderresponse.jobid;
+                args.response.success({
+                    _custom: {
+                        jobId: jid,
+                        getUpdatedItem: function (json) {
+                            var item = json.queryasyncjobresultresponse.jobresult.tungstenProvider;
+                            return item;
+                        }
+                    }
+                });
+            },
+            error: function(json) {
+                args.response.error(parseXMLHttpResponse(json));
+            }
+        });
     }
 
     // Inject cloudStack infra page

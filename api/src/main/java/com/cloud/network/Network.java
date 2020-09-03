@@ -407,10 +407,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     TrafficType getTrafficType();
 
-    String getTungstenNetworkUuid();
-
-    void setTungstenNetworkUuid(String tungstenNetworkUuid);
-
     String getGateway();
 
     // "cidr" is the Cloudstack managed address space, all CloudStack managed vms get IP address from "cidr",

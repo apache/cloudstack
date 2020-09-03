@@ -83,3 +83,17 @@ CREATE VIEW `cloud`.`network_offering_view` AS
         `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
     GROUP BY
         `network_offerings`.`id`;
+
+
+DROP TABLE IF EXISTS `cloud`.`tungsten_providers`;
+CREATE TABLE `cloud`.`tungsten_providers` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
+  `uuid` varchar(40),
+  `provider_name` varchar(40),
+  `port` varchar(40),
+  `hostname` varchar(40),
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_tungsten_providers__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_tungsten_providers__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

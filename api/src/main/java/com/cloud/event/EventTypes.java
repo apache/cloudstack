@@ -168,6 +168,8 @@ public class EventTypes {
     public static final String EVENT_TUNGSTEN_INSTANCE_IP = "TUNGSTEN.INSTANCE.IP";
     public static final String EVENT_TUNGSTEN_ADD_VROUTER_PORT = "TUNGSTEN.VROUTER.PORT.ADD";
     public static final String EVENT_TUNGSTEN_DEL_VROUTER_PORT = "TUNGSTEN.VROUTER.PORT.DEL";
+    public static final String EVENT_TUNGSTEN_ADD_PROVIDER = "TUNGSTEN.ADD.PROVIDER";
+    public static final String EVENT_TUNGSTEN_DELETE_PROVIDER = "TUNGSTEN.DELETE.PROVIDER";
 
     //NIC Events
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";

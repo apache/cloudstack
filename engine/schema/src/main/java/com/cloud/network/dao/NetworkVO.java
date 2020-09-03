@@ -85,9 +85,6 @@ public class NetworkVO implements Network {
     @Column(name = "vpc_id")
     Long vpcId;
 
-    @Column(name = "tungsten_network_uuid")
-    String tungstenNetworkUuid;
-
     @Column(name = "physical_network_id")
     Long physicalNetworkId;
 
@@ -288,26 +285,6 @@ public class NetworkVO implements Network {
         this.vpcId = vpcId;
     }
 
-    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId,
-                     long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType,
-                     boolean specifyIpRanges, Long vpcId, final boolean isRedundant, String tungstenNetworkUuid) {
-        this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId, isRedundant);
-        this.domainId = domainId;
-        this.accountId = accountId;
-        this.related = related;
-        this.id = id;
-        this.name = name;
-        this.displayText = displayText;
-        this.aclType = aclType;
-        this.networkDomain = networkDomain;
-        uuid = UUID.randomUUID().toString();
-        this.guestType = guestType;
-        this.specifyIpRanges = specifyIpRanges;
-        this.vpcId = vpcId;
-        this.tungstenNetworkUuid = tungstenNetworkUuid;
-
-    }
-
     @Override
     public String getReservationId() {
         return reservationId;
@@ -416,15 +393,6 @@ public class NetworkVO implements Network {
     @Override
     public TrafficType getTrafficType() {
         return trafficType;
-    }
-
-    @Override
-    public String getTungstenNetworkUuid() {
-        return tungstenNetworkUuid;
-    }
-
-    public void setTungstenNetworkUuid(String tungstenNetworkUuid) {
-        this.tungstenNetworkUuid = tungstenNetworkUuid;
     }
 
     @Override

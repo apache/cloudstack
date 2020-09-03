@@ -20,6 +20,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import net.juniper.contrail.api.types.Project;
 import net.juniper.contrail.api.types.VirtualMachine;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
@@ -51,12 +52,12 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
 
-        if(!canHandle(offering, dc.getNetworkType(),physnet)){
+        if (!canHandle(offering, dc.getNetworkType(), physnet)) {
             s_logger.debug("Refusing to design this network");
             return null;
         }
 
-        NetworkVO network = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+        NetworkVO network = (NetworkVO) super.design(offering, plan, userSpecified, owner);
 
         return network;
     }
@@ -124,7 +125,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
             s_logger.debug("Refusing to implement this network");
             return null;
         }
-        NetworkVO implemented = (NetworkVO)super.implement(network, offering,
+        NetworkVO implemented = (NetworkVO) super.implement(network, offering,
                 dest, context);
 
         if (network.getGateway() != null) {
@@ -141,9 +142,24 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
     }
 
     @Override
+    public void reserve(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context)
+            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        super.reserve(nic, network, vm, dest, context);
+        try {
+            String tungstenVirtualMachineUuid = createVirtualMachineInTungsten(vm.getUuid(), vm.getInstanceName());
+            Project project = tungstenService.getTungstenNetworkProject(vm.getOwner());
+            String tungstenVmInterfaceUuid = createVmInterfaceInTungsten(vm.getInstanceName(), project.getUuid(),
+                    network.getUuid(), tungstenVirtualMachineUuid, null, Arrays.asList(nic.getMacAddress()));
+            createTungstenInstanceIp(vm.getInstanceName() + "-InstanceIp", tungstenVmInterfaceUuid, network.getUuid(), nic.getIPv4Address());
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Failed to create resources in tungsten for the network with uuid: " + vm.getUuid());
+        }
+    }
+
+    @Override
     public boolean trash(Network network, NetworkOffering offering) {
         try {
-            tungstenService.deleteNetworkFromTungsten(network.getTungstenNetworkUuid());
+            tungstenService.deleteNetworkFromTungsten(network.getUuid());
         } catch (IOException e) {
             return false;
         }
@@ -151,15 +167,14 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
     }
 
     @Override
-    public Network createNetworkInTungsten(Network networkVO) {
+    public void createNetworkInTungsten(Network networkVO, Account owner) throws IOException {
+        Project project = tungstenService.getTungstenNetworkProject(owner);
         List<String> subnetIp = Arrays.asList(networkVO.getCidr().split("/"));
         String subnetIpPrefix = subnetIp.get(0);
         int subnetIpPrefixLength = Integer.parseInt(subnetIp.get(1));
         boolean isDhcpEnabled = networkVO.getMode().equals(Networks.Mode.Dhcp);
-        VirtualNetwork virtualNetwork = tungstenService.createNetworkInTungsten(null, networkVO.getName(), null,
+        VirtualNetwork virtualNetwork = tungstenService.createNetworkInTungsten(networkVO.getUuid(), networkVO.getName(), project.getUuid(), null,
                 null, null, subnetIpPrefix, subnetIpPrefixLength, networkVO.getGateway(), isDhcpEnabled, null, false);
-        networkVO.setTungstenNetworkUuid(virtualNetwork.getUuid());
-        return networkVO;
     }
 
     @Override

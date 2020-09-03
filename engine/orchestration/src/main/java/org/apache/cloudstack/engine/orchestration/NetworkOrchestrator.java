@@ -211,6 +211,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -708,7 +709,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         vo.setStrechedL2Network(offering.isSupportingStrechedL2());
 
                         if(guru instanceof NetworkGuruTungsten){
-                            vo = (NetworkVO) ((NetworkGuruTungsten) guru).createNetworkInTungsten(vo);
+                            try {
+                                ((NetworkGuruTungsten) guru).createNetworkInTungsten(vo, owner);
+                            } catch (IOException e) {
+                                throw new CloudRuntimeException("Unable to create a network in tungsten");
+                            }
                         }
 
                         final NetworkVO networkPersisted = _networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
@@ -1762,13 +1767,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
         guru.updateNicProfile(profile, network);
-
-        if(guru instanceof NetworkGuruTungsten){
-            String tungstenVirtualMachineUuid = ((NetworkGuruTungsten) guru).createVirtualMachineInTungsten(vmProfile.getUuid(), vmProfile.getInstanceName());
-            String tungstenVmInterfaceUuid = ((NetworkGuruTungsten) guru).createVmInterfaceInTungsten(vmProfile.getInstanceName(), "2853b16f-176e-4c7d-8931-423e496fad38",
-                    network.getTungstenNetworkUuid(), tungstenVirtualMachineUuid, null, Arrays.asList(nic.getMacAddress()));
-            ((NetworkGuruTungsten) guru).createTungstenInstanceIp("TungstenInstanceTest", tungstenVmInterfaceUuid, network.getTungstenNetworkUuid(), nic.getIPv4Address());
-        }
 
         configureExtraDhcpOptions(network, nicId);
         return profile;

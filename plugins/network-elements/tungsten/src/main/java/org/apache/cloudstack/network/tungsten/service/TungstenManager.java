@@ -27,30 +27,30 @@ import org.apache.cloudstack.network.tungsten.api.response.TungstenVmInterfaceRe
 import java.io.IOException;
 
 public interface TungstenManager extends PluggableService {
-  ListResponse<TungstenNetworkResponse> getNetworks(ListTungstenNetworkCmd cmd) throws IOException;
+    ListResponse<TungstenNetworkResponse> getNetworks(ListTungstenNetworkCmd cmd) throws IOException;
 
-  ListResponse<TungstenVmInterfaceResponse> getVmInterfaces(ListTungstenVmInterfaceCmd cmd)
-          throws IOException;
+    ListResponse<TungstenVmInterfaceResponse> getVmInterfaces(ListTungstenVmInterfaceCmd cmd)
+            throws IOException;
 
-  ListResponse<TungstenVirtualMachineResponse> getVirtualMachines(ListTungstenVirtualMachineCmd cmd)
-          throws IOException;
+    ListResponse<TungstenVirtualMachineResponse> getVirtualMachines(ListTungstenVirtualMachineCmd cmd)
+            throws IOException;
 
-  VirtualNetwork createTungstenNetwork(CreateTungstenNetworkCmd cmd);
+    VirtualNetwork createTungstenNetwork(CreateTungstenNetworkCmd cmd);
 
-  VirtualMachine createTungstenVirtualMachine(CreateTungstenVirtualMachineCmd cmd);
+    VirtualMachine createTungstenVirtualMachine(CreateTungstenVirtualMachineCmd cmd);
 
-  VirtualMachineInterface createTungstenVirtualMachineInterface(CreateTungstenVmInterfaceCmd cmd);
+    VirtualMachineInterface createTungstenVirtualMachineInterface(CreateTungstenVmInterfaceCmd cmd);
 
-  InstanceIp createInstanceIp(CreateTungstenInstanceIpCmd cmd);
+    InstanceIp createInstanceIp(CreateTungstenInstanceIpCmd cmd);
 
-  VirtualNetwork deleteTungstenNetwork(DeleteTungstenNetworkCmd cmd) throws IOException;
+    VirtualNetwork deleteTungstenNetwork(DeleteTungstenNetworkCmd cmd) throws IOException;
 
-  ApiObjectBase getTungstenObjectByUUID(Class<? extends ApiObjectBase> cls, String uuid)
-          throws IOException;
+    ApiObjectBase getTungstenObjectByUUID(Class<? extends ApiObjectBase> cls, String uuid)
+            throws IOException;
 
-  SuccessResponse addVRouterPort(AddVRouterPortCmd cmd) throws IOException;
+    SuccessResponse addVRouterPort(AddVRouterPortCmd cmd) throws IOException;
 
-  SuccessResponse deleteVRouterPort(DeleteVRouterPortCmd cmd) throws IOException;
+    SuccessResponse deleteVRouterPort(DeleteVRouterPortCmd cmd) throws IOException;
 
-  ListResponse<TungstenVirtualRouterResponse> getVirtualRouters(ListTungstenVirtualRouterCmd cmd) throws IOException;
+    ListResponse<TungstenVirtualRouterResponse> getVirtualRouters(ListTungstenVirtualRouterCmd cmd) throws IOException;
 }
