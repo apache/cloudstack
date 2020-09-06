@@ -1360,6 +1360,9 @@ export default {
             deployVmData['details[0].memory'] = values.memory
           }
         }
+        if (this.selectedTemplateConfiguration) {
+          deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
+        }
         // step 4: select disk offering
         deployVmData.diskofferingid = values.diskofferingid
         if (values.size) {
