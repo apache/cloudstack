@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -292,7 +294,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 LOGGER.warn(String.format("Global setting %s is empty. Template name need to be specified for Kubernetes service to function", templateKey));
                 return false;
             }
-            final VMTemplateVO template = templateDao.findByTemplateName(templateName);
+            final VMTemplateVO template = templateDao.findValidByTemplateName(templateName);
             if (template == null) {
                 LOGGER.warn(String.format("Unable to find the template %s to be used for provisioning Kubernetes cluster nodes", templateName));
                 return false;
@@ -375,22 +377,22 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private VMTemplateVO getKubernetesServiceTemplate(Hypervisor.HypervisorType hypervisorType) {
-        String tempalteName = null;
+        String templateName = null;
         switch (hypervisorType) {
             case Hyperv:
-                tempalteName = KubernetesClusterHyperVTemplateName.value();
+                templateName = KubernetesClusterHyperVTemplateName.value();
                 break;
             case KVM:
-                tempalteName = KubernetesClusterKVMTemplateName.value();
+                templateName = KubernetesClusterKVMTemplateName.value();
                 break;
             case VMware:
-                tempalteName = KubernetesClusterVMwareTemplateName.value();
+                templateName = KubernetesClusterVMwareTemplateName.value();
                 break;
             case XenServer:
-                tempalteName = KubernetesClusterXenserverTemplateName.value();
+                templateName = KubernetesClusterXenserverTemplateName.value();
                 break;
         }
-        return templateDao.findValidByTemplateName(tempalteName);
+        return templateDao.findValidByTemplateName(templateName);
     }
 
     private boolean validateIsolatedNetwork(Network network, int clusterTotalNodeCount) {
