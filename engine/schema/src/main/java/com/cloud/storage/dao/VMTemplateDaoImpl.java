@@ -323,8 +323,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         ValidNameSearch = createSearchBuilder();
         ValidNameSearch.and("name", ValidNameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        ValidNameSearch.and("state", ValidNameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        ValidNameSearch.and("removed", ValidNameSearch.entity().getName(), SearchCriteria.Op.NULL);
+        ValidNameSearch.and("state", ValidNameSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ValidNameSearch.and("removed", ValidNameSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 
         NameAccountIdSearch = createSearchBuilder();
         NameAccountIdSearch.and("name", NameAccountIdSearch.entity().getName(), SearchCriteria.Op.EQ);
