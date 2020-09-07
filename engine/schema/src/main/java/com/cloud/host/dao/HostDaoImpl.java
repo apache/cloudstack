@@ -107,6 +107,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected SearchBuilder<HostVO> MaintenanceCountSearch;
     protected SearchBuilder<HostVO> HostTypeCountSearch;
+    protected SearchBuilder<HostVO> HostTypeZoneCountSearch;
     protected SearchBuilder<HostVO> ClusterStatusSearch;
     protected SearchBuilder<HostVO> TypeNameZoneSearch;
     protected SearchBuilder<HostVO> AvailHypevisorInZone;
@@ -166,6 +167,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostTypeCountSearch.and("type", HostTypeCountSearch.entity().getType(), SearchCriteria.Op.EQ);
         HostTypeCountSearch.and("removed", HostTypeCountSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         HostTypeCountSearch.done();
+
+        HostTypeZoneCountSearch = createSearchBuilder();
+        HostTypeZoneCountSearch.and("type", HostTypeZoneCountSearch.entity().getType(), SearchCriteria.Op.EQ);
+        HostTypeZoneCountSearch.and("dc", HostTypeZoneCountSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        HostTypeZoneCountSearch.and("removed", HostTypeZoneCountSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        HostTypeZoneCountSearch.done();
 
         TypePodDcStatusSearch = createSearchBuilder();
         HostVO entity = TypePodDcStatusSearch.entity();
@@ -444,6 +451,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public Integer countAllByType(final Host.Type type) {
         SearchCriteria<HostVO> sc = HostTypeCountSearch.create();
         sc.setParameters("type", type);
+        return getCount(sc);
+    }
+
+    @Override
+    public Integer countAllByTypeInZone(long zoneId, Type type) {
+        SearchCriteria<HostVO> sc = HostTypeCountSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("dc", zoneId);
         return getCount(sc);
     }
 

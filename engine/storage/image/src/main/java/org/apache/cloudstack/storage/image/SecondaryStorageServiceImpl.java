@@ -42,6 +42,8 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.secstorage.CommandExecLogDao;
@@ -60,6 +62,8 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
     TemplateDataStoreDao templateStoreDao;
     @Inject
     SnapshotDataStoreDao snapshotStoreDao;
+    @Inject
+    VolumeDataStoreDao volumeDataStoreDao;
 
     private class MigrateDataContext<T> extends AsyncRpcContext<T> {
         final DataObject srcData;
@@ -167,6 +171,13 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                     SnapshotDataStoreVO destSnapshotStore = snapshotStoreDao.findBySnapshot(srcData.getId(), DataStoreRole.Image);
                     destSnapshotStore.setPhysicalSize(snapshotStore.getPhysicalSize());
                     snapshotStoreDao.update(destSnapshotStore.getId(), destSnapshotStore);
+                }
+
+                if (destData instanceof VolumeInfo) {
+                    VolumeDataStoreVO srcVolume = volumeDataStoreDao.findByStoreVolume(srcData.getDataStore().getId(), srcData.getId());
+                    VolumeDataStoreVO destVolume = volumeDataStoreDao.findByStoreVolume(destData.getDataStore().getId(), destData.getId());
+                    destVolume.setPhysicalSize(srcVolume.getPhysicalSize());
+                    volumeDataStoreDao.update(destVolume.getId(), destVolume);
                 }
                 s_logger.debug("Deleting source data");
                 srcData.getDataStore().delete(srcData);

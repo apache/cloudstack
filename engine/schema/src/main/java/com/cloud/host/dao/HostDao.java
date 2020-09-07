@@ -39,6 +39,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     Integer countAllByType(final Host.Type type);
 
+    Integer countAllByTypeInZone(long zoneId, final Host.Type type);
+
     /**
      * Mark all hosts associated with a certain management server
      * as disconnected.

@@ -1341,7 +1341,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 } else {
                     newVol.setPath(destData.getPath());
                 }
-                newVol.setSize(srcFile.length());
+                newVol.setSize(getVirtualSize(srcFile, format));
                 retObj = newVol;
             } else if (destData.getObjectType() == DataObjectType.SNAPSHOT) {
                 SnapshotObjectTO newSnapshot = new SnapshotObjectTO();

@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDa
 import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.storage.ImageStoreService;
@@ -38,6 +39,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -92,9 +94,15 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
         if (srcImageVO == null) {
             throw new CloudRuntimeException("Cannot find secondary storage with id: " + srcImgStoreId);
         }
+
+        Long srcStoreDcId = srcImageVO.getDataCenterId();
         imagestores.add(srcImageVO.getName());
         if (srcImageVO.getRole() != DataStoreRole.Image) {
             throw new CloudRuntimeException("Secondary storage is not of Image Role");
+        }
+
+        if (!srcImageVO.getProviderName().equals(DataStoreProvider.NFS_IMAGE)) {
+            throw new InvalidParameterValueException("Migration of datastore objects is supported only for NFS based image stores");
         }
 
         if (destImgStoreIds.contains(srcImgStoreId)) {
@@ -114,6 +122,17 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
                 s_logger.warn("Secondary storage: "+ id + " cannot be considered for migration as has read-only permission, Skipping it... ");
                 continue;
             }
+
+            if (!store.getProviderName().equals(DataStoreProvider.NFS_IMAGE)) {
+                s_logger.warn("Destination image store : " + store.getName() + " not NFS based. Store not suitable for migration!");
+                continue;
+            }
+
+            if (srcStoreDcId != null & store.getDataCenterId() != null && !srcStoreDcId.equals(store.getDataCenterId())) {
+                s_logger.warn("Source and destination stores are not in the same zone. Skipping destination store: " + store.getName());
+                continue;
+            }
+
             destDatastores.add(id);
             imagestores.add(store.getName());
         }

@@ -159,15 +159,15 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
             alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, dataCenterId, State.Running, State.Migrating, State.Starting);
             List<CommandExecLogVO> activeCmds = findActiveCommands(dataCenterId, cutTime);
             List<CommandExecLogVO> copyCmdsInPipeline = findAllActiveCopyCommands(dataCenterId, cutTime);
-            return scaleSSVMOnLoad(alreadyRunning, activeCmds, copyCmdsInPipeline);
+            return scaleSSVMOnLoad(alreadyRunning, activeCmds, copyCmdsInPipeline, dataCenterId);
 
         }
         return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
     }
 
     private Pair<AfterScanAction, Object> scaleSSVMOnLoad(List<SecondaryStorageVmVO> alreadyRunning, List<CommandExecLogVO> activeCmds,
-                                                    List<CommandExecLogVO> copyCmdsInPipeline) {
-        Integer hostsCount = _hostDao.countAllByType(Host.Type.Routing);
+                                                    List<CommandExecLogVO> copyCmdsInPipeline, long dataCenterId) {
+        Integer hostsCount = _hostDao.countAllByTypeInZone(dataCenterId, Host.Type.Routing);
         Integer maxSsvms = (hostsCount < MaxNumberOfSsvmsForMigration.value()) ? hostsCount : MaxNumberOfSsvmsForMigration.value();
         int halfLimit = Math.round((float) (alreadyRunning.size() * migrateCapPerSSVM) / 2);
         currentTime = DateUtil.currentGMTTime().getTime();
@@ -181,7 +181,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
                 (currentTime > nextSpawnTime) &&  alreadyRunning.size() <=  maxSsvms) {
             nextSpawnTime = currentTime + maxDataMigrationWaitTime;
             s_logger.debug("scaling SSVM to handle migration tasks");
-            return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
+            return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.commandExecutor);
 
         }
         scaleDownSSVMOnLoad(alreadyRunning, activeCmds, copyCmdsInPipeline);
@@ -195,7 +195,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
             Collections.reverse(alreadyRunning);
             for(SecondaryStorageVmVO vm : alreadyRunning) {
                 long count = activeCmds.stream().filter(cmd -> cmd.getInstanceId() == vm.getId()).count();
-                if (count == 0 && copyCmdsInPipeline.size() == 0) {
+                if (count == 0 && copyCmdsInPipeline.size() == 0 && vm.getRole() != SecondaryStorageVm.Role.templateProcessor) {
                     destroySecStorageVm(vm.getId());
                     break;
                 }
