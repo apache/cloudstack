@@ -159,6 +159,8 @@ class TestKubernetesCluster(cloudstackTestCase):
                 cls.debug("Error: Exception during cleanup for added Kubernetes supported versions: %s" % e)
         try:
             # Restore original CKS template
+            if cls.cks_template != None:
+                cls.cks_template.delete(cls.apiclient)
             if cls.hypervisorNotSupported == False and cls.initial_configuration_cks_template_name != None:
                 Configurations.update(cls.apiclient,
                                       cls.cks_template_name_key,
@@ -237,7 +239,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             details = None
             if hypervisor in ["vmware"] and "details" in cks_template:
                 details = cks_template["details"]
-            template = Template.register(cls.apiclient, cks_template, zoneid=None, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
+            template = Template.register(cls.apiclient, cks_template, zoneid=cls.zone.id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
             template.download(cls.apiclient)
             return template
 
