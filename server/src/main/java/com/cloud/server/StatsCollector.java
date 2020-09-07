@@ -1336,21 +1336,25 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         protected void sendMetricsToInfluxdb(Map<Object, Object> metrics) {
             InfluxDB influxDbConnection = createInfluxDbConnection();
 
-            Pong response = influxDbConnection.ping();
-            if (response.getVersion().equalsIgnoreCase("unknown")) {
-                throw new CloudRuntimeException(String.format("Cannot ping influxdb host %s:%s.", externalStatsHost, externalStatsPort));
+            try {
+                Pong response = influxDbConnection.ping();
+                if (response.getVersion().equalsIgnoreCase("unknown")) {
+                    throw new CloudRuntimeException(String.format("Cannot ping influxdb host %s:%s.", externalStatsHost, externalStatsPort));
+                }
+
+                Collection<Object> metricsObjects = metrics.values();
+                List<Point> points = new ArrayList<>();
+
+                s_logger.debug(String.format("Sending stats to %s host %s:%s", externalStatsType, externalStatsHost, externalStatsPort));
+
+                for (Object metricsObject : metricsObjects) {
+                    Point vmPoint = creteInfluxDbPoint(metricsObject);
+                    points.add(vmPoint);
+                }
+                writeBatches(influxDbConnection, databaseName, points);
+            } finally {
+                influxDbConnection.close();
             }
-
-            Collection<Object> metricsObjects = metrics.values();
-            List<Point> points = new ArrayList<>();
-
-            s_logger.debug(String.format("Sending stats to %s host %s:%s", externalStatsType, externalStatsHost, externalStatsPort));
-
-            for (Object metricsObject : metricsObjects) {
-                Point vmPoint = creteInfluxDbPoint(metricsObject);
-                points.add(vmPoint);
-            }
-            writeBatches(influxDbConnection, databaseName, points);
         }
 
         /**
@@ -1523,7 +1527,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      */
     protected void writeBatches(InfluxDB influxDbConnection, String dbName, List<Point> points) {
         BatchPoints batchPoints = BatchPoints.database(dbName).build();
-        influxDbConnection.enableBatch(BatchOptions.DEFAULTS);
+        if(!influxDbConnection.isBatchEnabled()){
+            influxDbConnection.enableBatch(BatchOptions.DEFAULTS);
+        }
 
         for (Point point : points) {
             batchPoints.point(point);

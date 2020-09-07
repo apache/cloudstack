@@ -106,6 +106,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         if (caller.getState() != Account.State.enabled) {
             throw new PermissionDeniedException(caller + " is disabled.");
         }
+
+        if (domain == null) {
+            throw new PermissionDeniedException(String.format("Provided domain is NULL, cannot check access for account [uuid=%s, name=%s]", caller.getUuid(), caller.getAccountName()));
+        }
+
         long domainId = domain.getId();
 
         if (_accountService.isNormalUser(caller.getId())) {
