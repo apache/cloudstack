@@ -501,7 +501,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.debug("Deleting Kubernetes cluster with ID: %s" % cluster_response.id)
 
-        self.deleteKubernetesClusterAndVerfiy(cluster_response.id, True)
+        self.deleteKubernetesClusterAndVerify(cluster_response.id, True)
 
         self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
 
