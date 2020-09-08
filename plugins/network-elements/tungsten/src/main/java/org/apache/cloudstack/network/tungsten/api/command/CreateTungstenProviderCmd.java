@@ -57,6 +57,12 @@ public class CreateTungstenProviderCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_PORT, type = CommandType.STRING, required = true, description = "Tungsten provider port")
     private String port;
 
+    @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_VROUTER, type = CommandType.STRING, required = true, description = "Tungsten provider vrouter")
+    private String vrouter;
+
+    @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_VROUTER_PORT, type = CommandType.STRING, required = true, description = "Tungsten provider vrouter port")
+    private String vrouterPort;
+
     public Long getNspId() {
         return nspId;
     }
@@ -71,6 +77,14 @@ public class CreateTungstenProviderCmd extends BaseAsyncCreateCmd {
 
     public String getPort() {
         return port;
+    }
+
+    public String getVrouter() {
+        return vrouter;
+    }
+
+    public String getVrouterPort() {
+        return vrouterPort;
     }
 
     @Inject

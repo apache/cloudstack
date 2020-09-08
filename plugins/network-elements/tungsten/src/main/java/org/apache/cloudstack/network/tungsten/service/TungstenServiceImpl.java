@@ -2,13 +2,14 @@ package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
 import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.TungstenUtils;
+import com.cloud.vm.NicProfile;
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.ApiConnectorFactory;
 import net.juniper.contrail.api.ApiObjectBase;
@@ -27,23 +28,18 @@ import net.juniper.contrail.api.types.VirtualNetwork;
 import net.juniper.contrail.api.types.VnSubnetsType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.network.tungsten.vrouter.Port;
 import org.apache.cloudstack.network.tungsten.vrouter.VRouterApiConnector;
 import org.apache.cloudstack.network.tungsten.vrouter.VRouterApiConnectorFactory;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
+
+import javax.inject.Inject;
 
 @Component
 public class TungstenServiceImpl implements TungstenService {
@@ -51,7 +47,6 @@ public class TungstenServiceImpl implements TungstenService {
     private static final Logger s_logger = Logger.getLogger(TungstenServiceImpl.class);
 
     private ApiConnector _api;
-    private final String configuration = "plugins/network-elements/tungsten/conf/tungsten.properties";
     private VRouterApiConnector _vrouterApi;
 
     @Inject
@@ -72,49 +67,26 @@ public class TungstenServiceImpl implements TungstenService {
         return _vrouterApi;
     }
 
-    @PostConstruct
     @Override
-    public void init() throws ConfigurationException {
-        File configFile = PropertiesUtil.findConfigFile(configuration);
+    public void init() {
         TungstenProviderVO tungstenProvider = _tungstenProviderService.getTungstenProvider();
         if (tungstenProvider != null) {
-            FileInputStream fileStream = null;
-            try {
-                String vrouterHost = null;
-                String vrouterPort = null;
-                String hostname = null;
-                int port = 0;
-                if (configFile == null) {
-                    throw new FileNotFoundException("Tungsten config file not found!");
-                } else {
-                    final Properties configProps = new Properties();
-                    fileStream = new FileInputStream(configFile);
-                    configProps.load(fileStream);
-
-                    vrouterHost = configProps.getProperty("tungsten.vrouter.hostname");
-                    vrouterPort = configProps.getProperty("tungsten.vrouter.port");
-                    hostname = tungstenProvider.getHostname();
-                    port = Integer.parseInt(tungstenProvider.getPort());
-
-                }
-                _api = ApiConnectorFactory.build(hostname, port);
-                _vrouterApi = VRouterApiConnectorFactory.getInstance(vrouterHost, vrouterPort);
-            } catch (Exception ex) {
-                s_logger.debug("Exception in configure: " + ex);
-                ex.printStackTrace();
-                throw new ConfigurationException();
-            } finally {
-                IOUtils.closeQuietly(fileStream);
-            }
+            String hostname = tungstenProvider.getHostname();
+            int port = Integer.parseInt(tungstenProvider.getPort());
+            String vrouter = tungstenProvider.getVrouter();
+            String vrouterPort = tungstenProvider.getVrouterPort();
+            _api = ApiConnectorFactory.build(hostname, port);
+            _vrouterApi = VRouterApiConnectorFactory.getInstance(vrouter, vrouterPort);
         } else {
             _tungstenProviderService.disableTungstenNsp();
         }
     }
 
     @Override
-    public VirtualNetwork createNetworkInTungsten(String networkUuid, String networkName, String projectUuid, String networkIpamUuid, String ipAllocPoolStart,
-                                                  String ipAllocPoolEnd, String subnetIpPrefix, int subnetIpPrefixLength, String defaultGateway,
-                                                  boolean isDhcpEnabled, List<String> dnsNameservers, boolean isIpAddrFromStart) {
+    public VirtualNetwork createNetworkInTungsten(String networkUuid, String networkName, String projectUuid,
+        String networkIpamUuid, String ipAllocPoolStart, String ipAllocPoolEnd, String subnetIpPrefix,
+        int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
+        boolean isIpAddrFromStart) {
         VirtualNetwork network = new VirtualNetwork();
         try {
             if (projectUuid != null) {
@@ -123,12 +95,13 @@ public class TungstenServiceImpl implements TungstenService {
             }
             network.setUuid(networkUuid);
             network.setName(networkName);
-            network.setNetworkIpam(getNetworkIpam(networkName, networkIpamUuid), getVnSubnetsType(ipAllocPoolStart, ipAllocPoolEnd, subnetIpPrefix,
-                    subnetIpPrefixLength, defaultGateway, isDhcpEnabled, dnsNameservers, isIpAddrFromStart));
+            network.setNetworkIpam(getNetworkIpam(networkName, networkIpamUuid),
+                getVnSubnetsType(ipAllocPoolStart, ipAllocPoolEnd, subnetIpPrefix, subnetIpPrefixLength, defaultGateway,
+                    isDhcpEnabled, dnsNameservers, isIpAddrFromStart));
             _api.create(network);
             return (VirtualNetwork) _api.findByFQN(VirtualNetwork.class, getFqnName(network));
         } catch (IOException e) {
-            s_logger.error("Unable to read " + configuration, e);
+            s_logger.error("Unable to create tungsten network " + networkUuid, e);
             return null;
         }
     }
@@ -140,9 +113,8 @@ public class TungstenServiceImpl implements TungstenService {
             if (network.getVirtualMachineInterfaceBackRefs() != null)
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete network");
             _api.delete(network);
-            return network;
-        } else
-            throw new InvalidParameterValueException("Unable to find tungsten network with UUID: " + tungstenNetworkUuid);
+        }
+        return network;
     }
 
     @Override
@@ -154,18 +126,19 @@ public class TungstenServiceImpl implements TungstenService {
             _api.create(virtualMachine);
             return (VirtualMachine) _api.findByFQN(VirtualMachine.class, getFqnName(virtualMachine));
         } catch (IOException e) {
-            s_logger.error("Unable to read " + configuration, e);
+            s_logger.error("Unable to create tungsten vm " + vmUuid, e);
             return null;
         }
     }
 
     @Override
-    public InstanceIp createInstanceIpInTungsten(String instanceIpName, String tungstenVmInterfaceUuid, String tungstenNetworkUuid,
-                                                 String tungstenInstanceIpAddress) {
+    public InstanceIp createInstanceIpInTungsten(String instanceIpName, String tungstenVmInterfaceUuid,
+        String tungstenNetworkUuid, String tungstenInstanceIpAddress) {
         InstanceIp instanceIp = new InstanceIp();
         try {
             instanceIp.setName(instanceIpName);
-            VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) _api.findById(VirtualMachineInterface.class, tungstenVmInterfaceUuid);
+            VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) _api.findById(
+                VirtualMachineInterface.class, tungstenVmInterfaceUuid);
             VirtualNetwork virtualNetwork = (VirtualNetwork) _api.findById(VirtualNetwork.class, tungstenNetworkUuid);
             if (virtualNetwork != null)
                 instanceIp.setVirtualNetwork(virtualNetwork);
@@ -175,16 +148,18 @@ public class TungstenServiceImpl implements TungstenService {
             _api.create(instanceIp);
             return (InstanceIp) _api.findByFQN(InstanceIp.class, getFqnName(instanceIp));
         } catch (IOException e) {
-            s_logger.error("Unable to read " + configuration, e);
+            s_logger.error("Unable to create tungsten instance ip ", e);
             return null;
         }
     }
 
     @Override
-    public VirtualMachineInterface createVmInterfaceInTungsten(String vmInterfaceName, String tungstenProjectUuid, String tungstenNetworkUuid,
-                                                               String tungstenVmUuid, String tungstenSecurityGroupUuid, List<String> tungstenVmInterfaceMacAddresses) {
+    public VirtualMachineInterface createVmInterfaceInTungsten(String vmiUuid, String vmInterfaceName,
+        String tungstenProjectUuid, String tungstenNetworkUuid, String tungstenVmUuid, String tungstenSecurityGroupUuid,
+        List<String> tungstenVmInterfaceMacAddresses) {
         VirtualMachineInterface virtualMachineInterface = new VirtualMachineInterface();
         try {
+            virtualMachineInterface.setUuid(vmiUuid);
             virtualMachineInterface.setName(vmInterfaceName);
             Project project = (Project) _api.findById(Project.class, tungstenProjectUuid);
             VirtualNetwork virtualNetwork = (VirtualNetwork) _api.findById(VirtualNetwork.class, tungstenNetworkUuid);
@@ -201,9 +176,10 @@ public class TungstenServiceImpl implements TungstenService {
             if (tungstenVmInterfaceMacAddresses != null && !tungstenVmInterfaceMacAddresses.isEmpty())
                 virtualMachineInterface.setMacAddresses(new MacAddressesType(tungstenVmInterfaceMacAddresses));
             _api.create(virtualMachineInterface);
-            return (VirtualMachineInterface) _api.findByFQN(VirtualMachineInterface.class, getFqnName(virtualMachineInterface));
+            return (VirtualMachineInterface) _api.findByFQN(VirtualMachineInterface.class,
+                getFqnName(virtualMachineInterface));
         } catch (IOException e) {
-//            s_logger.error("Unable to read " + configuration, e);
+            //            s_logger.error("Unable to read " + configuration, e);
             return null;
         }
     }
@@ -218,16 +194,20 @@ public class TungstenServiceImpl implements TungstenService {
         VirtualMachine virtualMachine = (VirtualMachine) _api.findById(VirtualMachine.class, vmUuid);
         if (virtualMachine == null)
             return;
-        if (virtualMachine.getVirtualMachineInterfaceBackRefs() != null && !virtualMachine.getVirtualMachineInterfaceBackRefs().isEmpty()) {
+        if (virtualMachine.getVirtualMachineInterfaceBackRefs() != null
+            && !virtualMachine.getVirtualMachineInterfaceBackRefs().isEmpty()) {
             removeVirtualMachineInterfaceBackRefs(virtualMachine.getVirtualMachineInterfaceBackRefs());
         }
         _api.delete(VirtualMachine.class, virtualMachine.getUuid());
     }
 
-    public void removeVirtualMachineInterfaceBackRefs(List<ObjectReference<ApiPropertyBase>> virtualMachineInterfaceBackRefs) throws IOException {
+    public void removeVirtualMachineInterfaceBackRefs(
+        List<ObjectReference<ApiPropertyBase>> virtualMachineInterfaceBackRefs) throws IOException {
         for (ObjectReference<ApiPropertyBase> item : virtualMachineInterfaceBackRefs) {
-            VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) _api.findById(VirtualMachineInterface.class, item.getUuid());
-            if (virtualMachineInterface.getInstanceIpBackRefs() != null && !virtualMachineInterface.getInstanceIpBackRefs().isEmpty()) {
+            VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) _api.findById(
+                VirtualMachineInterface.class, item.getUuid());
+            if (virtualMachineInterface.getInstanceIpBackRefs() != null
+                && !virtualMachineInterface.getInstanceIpBackRefs().isEmpty()) {
                 for (ObjectReference<ApiPropertyBase> instanceIp : virtualMachineInterface.getInstanceIpBackRefs()) {
                     _api.delete(InstanceIp.class, instanceIp.getUuid());
                 }
@@ -236,16 +216,18 @@ public class TungstenServiceImpl implements TungstenService {
         }
     }
 
-    public VnSubnetsType getVnSubnetsType(String ipAllocPoolStart,
-                                          String ipAllocPoolEnd, String subnetIpPrefix, int subnetIpPrefixLength, String defaultGateway,
-                                          boolean isDhcpEnabled, List<String> dnsNameservers, boolean isIpAddrFromStart) {
+    @Override
+    public VnSubnetsType getVnSubnetsType(String ipAllocPoolStart, String ipAllocPoolEnd, String subnetIpPrefix,
+        int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
+        boolean isIpAddrFromStart) {
         List<VnSubnetsType.IpamSubnetType.AllocationPoolType> allocationPoolTypes = new ArrayList<>();
         if (ipAllocPoolStart != null && ipAllocPoolEnd != null) {
-            allocationPoolTypes.add(new VnSubnetsType.IpamSubnetType.AllocationPoolType(ipAllocPoolStart, ipAllocPoolEnd));
+            allocationPoolTypes.add(
+                new VnSubnetsType.IpamSubnetType.AllocationPoolType(ipAllocPoolStart, ipAllocPoolEnd));
         }
         VnSubnetsType.IpamSubnetType ipamSubnetType = new VnSubnetsType.IpamSubnetType(
-                new SubnetType(subnetIpPrefix, subnetIpPrefixLength), defaultGateway,
-                null, isDhcpEnabled, dnsNameservers, allocationPoolTypes, isIpAddrFromStart, null, null, null);
+            new SubnetType(subnetIpPrefix, subnetIpPrefixLength), defaultGateway, null, isDhcpEnabled, dnsNameservers,
+            allocationPoolTypes, isIpAddrFromStart, null, null, null);
         return new VnSubnetsType(Arrays.asList(ipamSubnetType), null);
     }
 
@@ -259,6 +241,17 @@ public class TungstenServiceImpl implements TungstenService {
         networkIpam.setName(networkName + "-ipam");
         _api.create(networkIpam);
         return (NetworkIpam) _api.findByFQN(NetworkIpam.class, getFqnName(networkIpam));
+    }
+
+    @Override
+    public void addTungstenVrouterPort(Port port) throws IOException {
+        port.setTapInterfaceName(TungstenUtils.getTapName(port.getMacAddress()));
+        _vrouterApi.addPort(port);
+    }
+
+    @Override
+    public void deleteTungstenVrouterPort(String portUuid) throws IOException {
+        _vrouterApi.deletePort(portUuid);
     }
 
     /**
@@ -275,7 +268,7 @@ public class TungstenServiceImpl implements TungstenService {
         Domain tungstenDomain;
         Project tungstenProject;
         //get the tungsten domain
-        if (cloudstackDomain != null) {
+        if (cloudstackDomain.getId() != com.cloud.domain.Domain.ROOT_DOMAIN) {
             tungstenDomain = (Domain) _api.findById(Domain.class, cloudstackDomain.getUuid());
             if (tungstenDomain == null) {
                 tungstenDomain = createDomainInTungsten(cloudstackDomain.getName(), cloudstackDomain.getUuid());
@@ -287,10 +280,11 @@ public class TungstenServiceImpl implements TungstenService {
         if (cloudstackProject != null) {
             tungstenProject = (Project) _api.findById(Project.class, cloudstackProject.getUuid());
             if (tungstenProject == null) {
-                tungstenProject = createProjectInTungsten(cloudstackProject.getName(), cloudstackProject.getUuid(), tungstenDomain);
+                tungstenProject = createProjectInTungsten(cloudstackProject.getName(), cloudstackProject.getUuid(),
+                    tungstenDomain);
             }
         } else {
-            tungstenProject = getDefaultTungstenProject(tungstenDomain.getName());
+            tungstenProject = getDefaultTungstenProject();
         }
         return tungstenProject;
     }
@@ -304,7 +298,8 @@ public class TungstenServiceImpl implements TungstenService {
      * @return the project created in tungsten
      * @throws IOException
      */
-    public Project createProjectInTungsten(String projectName, String projectUuid, Domain tungstenDomain) throws IOException {
+    public Project createProjectInTungsten(String projectName, String projectUuid, Domain tungstenDomain)
+        throws IOException {
         Project tungstenProject = new Project();
         tungstenProject.setDisplayName(projectName);
         tungstenProject.setName(projectName);
@@ -362,19 +357,11 @@ public class TungstenServiceImpl implements TungstenService {
     /**
      * Get the tungsten domain default project
      *
-     * @param tungstenDomain
      * @return
      * @throws IOException
      */
-    public Project getDefaultTungstenProject(String tungstenDomain) throws IOException {
-        Project project;
-        if (tungstenDomain == null)
-            project = (Project) _api.findByFQN(Project.class, TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT);
-        else
-            project = (Project) _api.findByFQN(Project.class, tungstenDomain + ":" + tungstenDomain + "-default-project");
-        if (project == null)
-            project = createDefaultProject(tungstenDomain);
-        return project;
+    public Project getDefaultTungstenProject() throws IOException {
+        return (Project) _api.findByFQN(Project.class, TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT);
     }
 
     /**
@@ -396,5 +383,88 @@ public class TungstenServiceImpl implements TungstenService {
         }
         sb.deleteCharAt(sb.toString().length() - 1);
         return sb.toString();
+    }
+
+    @Override
+    public ApiObjectBase getObject(Class<? extends ApiObjectBase> obj, String uuid) throws IOException {
+        return _api.findById(obj, uuid);
+    }
+
+    @Override
+    public void deleteObject(Class<? extends ApiObjectBase> obj, String uuid) throws IOException {
+        _api.delete(obj, uuid);
+    }
+
+    @Override
+    public NetworkIpam getDefaultProjectNetworkIpam(Project project) throws IOException {
+        List<String> names = new ArrayList<>();
+        Domain domain = (Domain) _api.findById(Domain.class, project.getParentUuid());
+        names.add(domain.getName());
+        names.add(project.getName());
+        names.add(TUNGSTEN_DEFAULT_IPAM);
+        String ipamUuid = _api.findByName(NetworkIpam.class, names);
+        if (ipamUuid == null) {
+            NetworkIpam defaultIpam = new NetworkIpam();
+            defaultIpam.setName(TUNGSTEN_DEFAULT_IPAM);
+            defaultIpam.setParent(project);
+            _api.create(defaultIpam);
+            ipamUuid = defaultIpam.getUuid();
+        }
+        return (NetworkIpam) _api.findById(NetworkIpam.class, ipamUuid);
+    }
+
+    @Override
+    public VirtualNetwork createTungstenVirtualNetwork(Network network, Project project, NetworkIpam networkIpam,
+        VnSubnetsType subnet) {
+        try {
+            VirtualNetwork virtualNetwork = new VirtualNetwork();
+            virtualNetwork.setUuid(network.getUuid());
+            virtualNetwork.setName(network.getName());
+            virtualNetwork.addNetworkIpam(networkIpam, subnet);
+            virtualNetwork.setParent(project);
+            _api.create(virtualNetwork);
+            return (VirtualNetwork) _api.findById(VirtualNetwork.class, virtualNetwork.getUuid());
+        } catch (IOException e) {
+            s_logger.error("Unable to create tungsten network", e);
+            return null;
+        }
+    }
+
+    @Override
+    public InstanceIp createInstanceIpInTungsten(VirtualNetwork vn, VirtualMachineInterface vmi, NicProfile nic) {
+        try {
+            InstanceIp instanceIp = new InstanceIp();
+            instanceIp.setName(TungstenUtils.getInstanceIpName(nic.getId()));
+            instanceIp.setVirtualNetwork(vn);
+            instanceIp.setVirtualMachineInterface(vmi);
+            instanceIp.setAddress(nic.getIPv4Address());
+            _api.create(instanceIp);
+            return (InstanceIp) _api.findById(InstanceIp.class, instanceIp.getUuid());
+        } catch (IOException e) {
+            s_logger.error("Unable to create tungsten instance ip", e);
+            return null;
+        }
+    }
+
+    @Override
+    public VirtualMachineInterface createVmInterfaceInTungsten(NicProfile nicProfile, VirtualNetwork vn,
+        VirtualMachine vm, Project project) {
+        VirtualMachineInterface virtualMachineInterface = new VirtualMachineInterface();
+        try {
+            virtualMachineInterface.setUuid(nicProfile.getUuid());
+            virtualMachineInterface.setName(TungstenUtils.getVmiName(nicProfile.getId()));
+            virtualMachineInterface.setVirtualNetwork(vn);
+            virtualMachineInterface.setVirtualMachine(vm);
+            virtualMachineInterface.setParent(project);
+            MacAddressesType macAddressesType = new MacAddressesType();
+            macAddressesType.addMacAddress(nicProfile.getMacAddress());
+            virtualMachineInterface.setMacAddresses(macAddressesType);
+            _api.create(virtualMachineInterface);
+            return (VirtualMachineInterface) _api.findById(VirtualMachineInterface.class,
+                virtualMachineInterface.getUuid());
+        } catch (IOException e) {
+            s_logger.error("Unable to create tungsten virtual machine interface", e);
+            return null;
+        }
     }
 }

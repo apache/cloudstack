@@ -41,6 +41,9 @@ public class Port {
   @SerializedName("ip6-address")
   private String ipv6Address = NONE;
 
+  @SerializedName("vhostuser-mode")
+  private int vifType = 0;
+
   public String getId() {
     return id;
   }
@@ -135,5 +138,13 @@ public class Port {
 
   public void setIpv6Address(final String ipv6Address) {
     this.ipv6Address = ipv6Address;
+  }
+
+  public int getVifType() {
+    return vifType;
+  }
+
+  public void setVifType(final int vifType) {
+    this.vifType = vifType;
   }
 }

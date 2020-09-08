@@ -46,7 +46,7 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
             s_logger.debug("There is already a tungsten provider with service network provider id " + cmd.getNspId());
             return null;
         }
-        element = new TungstenProviderVO(cmd.getNspId(), cmd.getName(), cmd.getPort(), cmd.getHostname());
+        element = new TungstenProviderVO(cmd.getNspId(), cmd.getName(), cmd.getPort(), cmd.getHostname(), cmd.getVrouter(), cmd.getVrouterPort());
         _tungstenProviderDao.persist(element);
         _tungstenService.init();
         return element;

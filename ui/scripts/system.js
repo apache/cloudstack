@@ -4866,6 +4866,12 @@
                                         },
                                         tungstenproviderport: {
                                             label: 'label.tungsten.provider.port'
+                                        },
+                                        tungstenprovidervrouter: {
+                                          label: 'label.tungsten.provider.vrouter'
+                                        },
+                                        tungstenprovidervrouterport: {
+                                          label: 'label.tungsten.provider.vrouterport'
                                         }
                                     },
                                     dataProvider: function (args) {
@@ -4895,6 +4901,12 @@
                                                     },
                                                     tungstenproviderport: {
                                                         label: 'label.tungsten.provider.port'
+                                                    },
+                                                    tungstenprovidervrouter: {
+                                                      label: 'label.tungsten.provider.vrouter'
+                                                    },
+                                                    tungstenprovidervrouterport: {
+                                                      label: 'label.tungsten.provider.vrouterport'
                                                     }
                                                 }],
                                                 dataProvider: function (args) {
@@ -4977,6 +4989,18 @@
                                             validation: {
                                                 required: true
                                             }
+                                        },
+                                        vrouter: {
+                                          label: 'label.tungsten.provider.vrouter',
+                                          validation: {
+                                            required: true
+                                          }
+                                        },
+                                        vrouterport: {
+                                          label: 'label.tungsten.provider.vrouterport',
+                                          validation: {
+                                            required: true
+                                          }
                                         }
                                     }
                                 },
@@ -22010,7 +22034,9 @@
                 nspid: nspMap[ "Tungsten"].id,
                 tungstenproviderhostname: args.data.hostname,
                 name: args.data.name,
-                tungstenproviderport: args.data.port
+                tungstenproviderport: args.data.port,
+                tungstenprovidervrouter: args.data.vrouter,
+                tungstenprovidervrouterport: args.data.vrouterport
             },
             type: "POST",
             success: function (json) {

@@ -84,6 +84,8 @@ public class TungstenResponseHelper {
         tungstenProviderResponse.setName(tungstenProviderVO.getProviderName());
         tungstenProviderResponse.setPort(tungstenProviderVO.getPort());
         tungstenProviderResponse.setUuid(tungstenProviderVO.getUuid());
+        tungstenProviderResponse.setVrouter(tungstenProviderVO.getVrouter());
+        tungstenProviderResponse.setVrouterPort(tungstenProviderVO.getVrouterPort());
         tungstenProviderResponse.setObjectName("tungstenProvider");
         return tungstenProviderResponse;
     }

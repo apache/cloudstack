@@ -64,10 +64,17 @@ public class TungstenElement extends AdapterBase implements StaticNatServiceProv
 
     private static Map<Network.Service, Map<Network.Capability, String>> InitCapabilities() {
         Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<Network.Service, Map<Network.Capability, String>>();
-        capabilities.put(Network.Service.Dhcp, new HashMap<Network.Capability, String>());
-        Map<Network.Capability, String> sourceNatCapabilities = new HashMap<Network.Capability, String>();
+        final Map<Network.Capability, String> dhcpCapabilities = new HashMap<>();
+        capabilities.put(Network.Service.Dhcp, dhcpCapabilities);
+        Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
+        sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
         sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
         capabilities.put(Network.Service.SourceNat, sourceNatCapabilities);
+        capabilities.put(Network.Service.Connectivity, null);
+        capabilities.put(Network.Service.StaticNat, null);
+        final Map<Network.Capability, String> dnsCapabilities = new HashMap<>();
+        dnsCapabilities.put(Network.Capability.AllowDnsSuffixModification, "true");
+        capabilities.put(Network.Service.Dns, dnsCapabilities);
         return capabilities;
     }
 

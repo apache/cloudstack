@@ -19,7 +19,6 @@
 -- Schema upgrade from 4.14.0.0 to 4.15.0.0
 --;
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `for_tungsten` int(1) unsigned DEFAULT '0' COMMENT 'is tungsten enabled for the resource';
-ALTER TABLE `cloud`.`networks` ADD COLUMN `tungsten_network_uuid` varchar(255) COMMENT 'tungsten id';
 
 -- Network offering with multi-domains and multi-zones
 DROP VIEW IF EXISTS `cloud`.`network_offering_view`;
@@ -93,6 +92,8 @@ CREATE TABLE `cloud`.`tungsten_providers` (
   `provider_name` varchar(40),
   `port` varchar(40),
   `hostname` varchar(40),
+  `vrouter` varchar(40),
+  `vrouter_port` varchar(40),
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_tungsten_providers__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_tungsten_providers__uuid` UNIQUE (`uuid`)

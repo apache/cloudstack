@@ -1934,6 +1934,8 @@ var dictionary = {
     "label.tungsten.delete.provider":"Delete tungsten provider",
     "label.tungsten.provider.hostname":"Provider hostname",
     "label.tungsten.provider.port":"Provider port",
+    "label.tungsten.provider.vrouter":"Provider vrouter",
+    "label.tungsten.provider.vrouterport":"Provider vrouter port",
     "label.tungsten.action.delete.provider":"Delete provider",
     "label.vpn":"VPN",
     "label.vpn.customer.gateway":"VPN Customer Gateway",

@@ -163,7 +163,7 @@ public class TungstenManagerImpl extends ManagerBase implements TungstenManager,
 
     @Override
     public VirtualMachineInterface createTungstenVirtualMachineInterface(CreateTungstenVmInterfaceCmd cmd) {
-        return tungstenService.createVmInterfaceInTungsten(cmd.getName(), cmd.getTungstenProjectUuid(), cmd.getTungstenNetworkUuid(),
+        return tungstenService.createVmInterfaceInTungsten(null, cmd.getName(), cmd.getTungstenProjectUuid(), cmd.getTungstenNetworkUuid(),
                 cmd.getTungstenVirtualMachineUuid(), cmd.getTungstenSecurityGroupUuid(),
                 cmd.getTungstenVmInterfaceMacAddresses());
     }
