@@ -205,7 +205,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             hosts_with_resevered_capacity.put(h.getUuid(), new Pair<HostVO, Integer>(h, 0));
         }
         boolean suitable_host_found = false;
-        for (int i = 1; i <= nodesCount + 1; i++) {
+        for (int i = 1; i <= nodesCount; i++) {
             suitable_host_found = false;
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
