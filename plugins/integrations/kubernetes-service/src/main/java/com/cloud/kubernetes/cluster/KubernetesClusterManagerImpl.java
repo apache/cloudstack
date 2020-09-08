@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -993,7 +991,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         try {
             deployDestination = plan(totalNodeCount, zone, serviceOffering);
         } catch (InsufficientCapacityException e) {
-            logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to insufficient capacity for %d cluster nodes in zone ID: %s with service offering ID: %s", totalNodeCount, zone.getUuid(), serviceOffering.getUuid()));
+            logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to insufficient capacity for %d nodes cluster in zone ID: %s with service offering ID: %s", totalNodeCount, zone.getUuid(), serviceOffering.getUuid()));
         }
         if (deployDestination == null || deployDestination.getCluster() == null) {
             logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to error while finding suitable deployment plan for cluster in zone ID: %s", zone.getUuid()));
