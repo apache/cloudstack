@@ -367,7 +367,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 final List listParam = new ArrayList();
                 final StringTokenizer st = new StringTokenizer(paramObj.toString(), ",");
                 while (st.hasMoreTokens()) {
-                    final String token = st.nextToken();
+                    final String token = st.nextToken().trim();
                     final CommandType listType = annotation.collectionType();
                     switch (listType) {
                     case INTEGER:
@@ -408,8 +408,13 @@ public class ParamProcessWorker implements DispatchWorker {
                     if (paramObj.toString().length() > annotation.length()) {
                         s_logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
                         throw new InvalidParameterValueException("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
-                    } else {
-                        field.set(cmdObj, paramObj.toString());
+                    } else{
+                        String trimmedParam = paramObj.toString().trim();
+                        if (trimmedParam.length() == 0){
+                            s_logger.error("Empty string or only spaces are not allowed for " + field.getName());
+                            throw new InvalidParameterValueException("Empty string or only spaces are not allowed for " + field.getName());
+                        }
+                        field.set(cmdObj, trimmedParam);
                     }
                 }
                 break;
