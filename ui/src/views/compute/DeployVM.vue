@@ -35,6 +35,9 @@
                         v-decorator="['zoneid', {
                           rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                         }]"
+                        showSearch
+                        optionFilterProp="children"
+                        :filterOption="filterOption"
                         :options="zoneSelectOptions"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
@@ -45,6 +48,9 @@
                       :label="this.$t('label.podid')">
                       <a-select
                         v-decorator="['podid']"
+                        showSearch
+                        optionFilterProp="children"
+                        :filterOption="filterOption"
                         :options="podSelectOptions"
                         :loading="loading.pods"
                         @change="onSelectPodId"
@@ -55,6 +61,9 @@
                       :label="this.$t('label.clusterid')">
                       <a-select
                         v-decorator="['clusterid']"
+                        showSearch
+                        optionFilterProp="children"
+                        :filterOption="filterOption"
                         :options="clusterSelectOptions"
                         :loading="loading.clusters"
                         @change="onSelectClusterId"
@@ -65,6 +74,9 @@
                       :label="this.$t('label.hostid')">
                       <a-select
                         v-decorator="['hostid']"
+                        showSearch
+                        optionFilterProp="children"
+                        :filterOption="filterOption"
                         :options="hostSelectOptions"
                         :loading="loading.hosts"
                       ></a-select>
@@ -1568,6 +1580,11 @@ export default {
               this.fillValue(param.field)
             }
           })
+
+          if (name === 'zones' && this.options.zones.length === 1) {
+            this.form.getFieldDecorator(['zoneid'], { initialValue: this.options.zones[0].id })
+            this.onSelectZoneId(this.options.zones[0].id)
+          }
         })
       }).catch(function (error) {
         console.log(error.stack)
@@ -1655,6 +1672,11 @@ export default {
       }).finally(() => {
         this.loading.isos = false
       })
+    },
+    filterOption (input, option) {
+      return (
+        option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
+      )
     },
     onSelectZoneId (value) {
       this.dataPreFill = {}
