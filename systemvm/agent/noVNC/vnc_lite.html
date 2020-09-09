@@ -41,18 +41,13 @@
         #status {
             text-align: center;
         }
-        #sendCtrlAltDelButton {
-            position: fixed;
-            top: 0px;
-            right: 0px;
-            border: 1px outset;
-            padding: 5px 5px 4px 5px;
-            cursor: pointer;
+        #container {
+            display: flex;
+            justify-content: space-between;
         }
-        #sendCtrlEscButton {
-            position: fixed;
-            top: 0px;
-            left: 0px;
+        #sendCtrlAltDelButton, #sendCtrlEscButton, #toggleFullScreenButton {
+            vertical-align: top;
+            display: inline-block;
             border: 1px outset;
             padding: 5px 5px 4px 5px;
             cursor: pointer;
@@ -88,6 +83,7 @@
 
         let rfb;
         let desktopName;
+        let fullScreen = false;
 
         // When this function is called we have
         // successfully connected to a server
@@ -130,6 +126,12 @@
             return false;
         }
 
+        function toggleFullScreen() {
+            fullScreen = !fullScreen
+            rfb.scaleViewport = fullScreen
+            return false;
+        }
+
         // Show a status text in the top bar
         function status(text) {
             document.getElementById('status').textContent = text;
@@ -161,6 +163,9 @@
 
         document.getElementById('sendCtrlEscButton')
             .onclick = sendCtrlEsc;
+
+        document.getElementById('toggleFullScreenButton')
+            .onclick = toggleFullScreen;
 
         // Read parameters specified in the URL query string
         // By default, use the host and port of server that served this file
@@ -209,8 +214,12 @@
 <body>
     <div id="top_bar">
         <div id="status">Loading</div>
-        <div id="sendCtrlAltDelButton">Send CtrlAltDel</div>
-        <div id="sendCtrlEscButton">Send CtrlEsc</div>
+        <br />
+        <div id="container" >
+            <div id="sendCtrlAltDelButton">Send CtrlAltDel</div>
+            <div id="toggleFullScreenButton">Toggle Fullscreen</div>
+            <div id="sendCtrlEscButton">Send CtrlEsc</div>
+        </div>
     </div>
     <div id="screen">
         <!-- This is where the remote screen will appear -->
