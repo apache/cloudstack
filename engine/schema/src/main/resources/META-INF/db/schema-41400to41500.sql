@@ -833,3 +833,7 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_vers
 
 -- Fix OS category for Guest OS 'Other PV Virtio-SCSI (64-bit)'
 UPDATE `cloud`.`guest_os` SET category_id = 7 WHERE id = 275 AND display_name = 'Other PV Virtio-SCSI (64-bit)';
+
+-- Add flag 'hidden' in tables usage_ip_address and cloud_usage
+ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_hidden` smallint(1) NOT NULL DEFAULT '0' COMMENT 'is usage hidden';
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `is_hidden` smallint(1) NOT NULL DEFAULT '0' COMMENT 'is usage hidden';

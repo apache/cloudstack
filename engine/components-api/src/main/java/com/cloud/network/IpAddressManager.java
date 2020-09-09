@@ -206,5 +206,7 @@ public interface IpAddressManager {
     public boolean isIpEqualsGatewayOrNetworkOfferingsEmpty(Network network, String requestedIp);
 
     void releasePodIp(Long id) throws CloudRuntimeException;
+
+    boolean isUsageHidden(IPAddressVO address);
 }
 
