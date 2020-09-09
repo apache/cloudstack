@@ -815,7 +815,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 // OfflineVmwareMigration: this method is 100 lines and needs refactorring anyway
                 // we need to spawn a worker VM to attach the volume to and resize the volume.
                 useWorkerVm = true;
-                vmName = getWorkerName(getServiceContext(), cmd, 0);
 
                 String poolId = cmd.getPoolUuid();
 
@@ -823,6 +822,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 // OfflineVmwareMigration: 1. find data(store)
                 ManagedObjectReference morDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolId);
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDS);
+                vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
 
                 s_logger.info("Create worker VM " + vmName);
 
@@ -4768,7 +4768,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // OfflineVmwareMigration: we need to refactor the worker vm creation out for use in migration methods as well as here
             // OfflineVmwareMigration: this method is 100 lines and needs refactorring anyway
             // we need to spawn a worker VM to attach the volume to and move it
-            vmName = getWorkerName(getServiceContext(), cmd, 0);
+            vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
 
             // OfflineVmwareMigration: refactor for re-use
             // OfflineVmwareMigration: 1. find data(store)
@@ -6967,9 +6967,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     @DB
-    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence) {
+    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence, DatastoreMO dsMo) throws Exception {
         VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         String vmName = mgr.composeWorkerName();
+        if (dsMo!= null && dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+            vmName = CustomFieldConstants.CLOUD_UUID + "-" + vmName;
+        }
 
         assert (cmd != null);
         context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);

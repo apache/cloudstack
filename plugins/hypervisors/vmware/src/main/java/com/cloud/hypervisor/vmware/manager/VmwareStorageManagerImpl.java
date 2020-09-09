@@ -343,7 +343,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     if (vmMo == null) {
                         dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
 
-                        workerVMName = hostService.getWorkerName(context, cmd, 0);
+                        workerVMName = hostService.getWorkerName(context, cmd, 0, dsMo);
                         vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName, null);
 
                         if (vmMo == null) {
@@ -362,7 +362,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
 
                 snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid,
-                        prevBackupUuid, hostService.getWorkerName(context, cmd, 1), cmd.getNfsVersion());
+                        prevBackupUuid, hostService.getWorkerName(context, cmd, 1, dsMo), cmd.getNfsVersion());
 
                 success = (snapshotBackupUuid != null);
                 if (success) {
@@ -428,7 +428,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo, accountId, templateId, cmd.getUniqueName(), secondaryStoragePoolURL, volumePath,
-                    hostService.getWorkerName(context, cmd, 0), cmd.getNfsVersion());
+                    hostService.getWorkerName(context, cmd, 0, null), cmd.getNfsVersion());
 
             return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), cmd.getUniqueName(), ImageFormat.OVA);
 
@@ -486,7 +486,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             Pair<String, String> result;
             if (cmd.toSecondaryStorage()) {
                 result = copyVolumeToSecStorage(hostService, hyperHost, cmd, vmName, volumeId, cmd.getPool().getUuid(), volumePath, secondaryStorageURL,
-                        hostService.getWorkerName(context, cmd, 0), cmd.getNfsVersion());
+                        hostService.getWorkerName(context, cmd, 0, null), cmd.getNfsVersion());
             } else {
                 StorageFilerTO poolTO = cmd.getPool();
 
@@ -1025,7 +1025,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
             }
 
-            exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1),
+            exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1, null),
                     nfsVersion, clonedWorkerVMNeeded);
             return new Pair<String, String>(volumeFolder, exportName);
 

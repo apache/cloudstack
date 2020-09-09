@@ -1641,6 +1641,9 @@ public class HypervisorHostHelper {
         if (morCluster != null)
             hyperHost = new ClusterMO(hyperHost.getContext(), morCluster);
 
+        if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL") && !vmName.startsWith(CustomFieldConstants.CLOUD_UUID)) {
+            vmName = CustomFieldConstants.CLOUD_UUID + "-" + vmName;
+        }
         VirtualMachineMO workingVM = null;
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
         vmConfig.setName(vmName);
