@@ -2502,6 +2502,8 @@
 "message.assign.vm.processing": "Assigning VM...",
 "message.attach.iso.confirm": "Please confirm that you want to attach the ISO to this virtual instance.",
 "message.attach.volume": "Please fill in the following data to attach a new volume. If you are attaching a disk volume to a Windows based virtual machine, you will need to reboot the instance to see the attached disk.",
+"message.attach.volume.failed": "Failed to attach volume",
+"message.attach.volume.progress": "Attaching volume",
 "message.authorization.failed": "Session expired, authorization verification failed",
 "message.backup.attach.restore": "Please confirm that you want to restore and attach the volume from the backup?",
 "message.backup.create": "Are you sure you want create a VM backup?",

@@ -99,10 +99,10 @@ export default {
           api: 'attachVolume',
           icon: 'paper-clip',
           label: 'label.action.attach.disk',
-          message: 'message.confirm.attach.disk',
-          args: ['virtualmachineid'],
           dataView: true,
-          show: (record) => { return record.type !== 'ROOT' && ['Allocated', 'Ready', 'Uploaded'].includes(record.state) && !('virtualmachineid' in record) }
+          show: (record) => { return record.type !== 'ROOT' && ['Allocated', 'Ready', 'Uploaded'].includes(record.state) && !('virtualmachineid' in record) },
+          popup: true,
+          component: () => import('@/views/storage/AttachVolume.vue')
         },
         {
           api: 'detachVolume',
