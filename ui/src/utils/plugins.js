@@ -19,6 +19,7 @@ import _ from 'lodash'
 import i18n from '@/locales'
 import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
+import eventBus from '@/config/eventBus'
 
 export const pollJobPlugin = {
   install (Vue) {
@@ -30,6 +31,7 @@ export const pollJobPlugin = {
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
        * @param {Function} [errorMethod=() => {}]
+       * @param {Object} [showLoading=true]
        * @param {String} [loadingMessage=Loading...]
        * @param {String} [catchMessage=Error caught]
        * @param {Function} [catchMethod=() => {}]
@@ -43,6 +45,7 @@ export const pollJobPlugin = {
         errorMessage = i18n.t('label.error'),
         errorMethod = () => {},
         loadingMessage = `${i18n.t('label.loading')}...`,
+        showLoading = true,
         catchMessage = i18n.t('label.error.caught'),
         catchMethod = () => {},
         action = null
@@ -63,6 +66,7 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 2
           })
+          eventBus.$emit('async-job-complete')
           successMethod(result)
         } else if (result.jobstatus === 2) {
           message.error({
@@ -84,13 +88,16 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 0
           })
+          eventBus.$emit('async-job-complete')
           errorMethod(result)
         } else if (result.jobstatus === 0) {
-          message.loading({
-            content: loadingMessage,
-            key: jobId,
-            duration: 0
-          })
+          if (showLoading) {
+            message.loading({
+              content: loadingMessage,
+              key: jobId,
+              duration: 0
+            })
+          }
           setTimeout(() => {
             this.$pollJob(options, action)
           }, 3000)

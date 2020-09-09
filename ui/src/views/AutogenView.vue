@@ -397,6 +397,9 @@ export default {
         this.fetchData()
       }
     })
+    eventBus.$on('async-job-complete', () => {
+      this.fetchData()
+    })
   },
   mounted () {
     if (this.device === 'desktop') {
@@ -791,7 +794,7 @@ export default {
       }).then(function () {
       })
     },
-    pollActionCompletion (jobId, action, resourceName) {
+    pollActionCompletion (jobId, action, resourceName, showLoading = true) {
       this.$pollJob({
         jobId,
         name: resourceName,
@@ -810,6 +813,7 @@ export default {
         },
         errorMethod: () => this.fetchData(),
         loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
+        showLoading: showLoading,
         catchMessage: this.$t('error.fetching.async.job.result'),
         action
       })
@@ -835,13 +839,16 @@ export default {
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         this.form.validateFields((err, values) => {
           if (!err) {
-            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
             this.actionLoading = true
+            const itemsNameMap = {}
+            this.items.map(x => {
+              itemsNameMap[x.id] = x.name || x.displaytext || x.id
+            })
+            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
             for (const params of paramsList) {
-              api(this.currentAction.api, params).then(json => {
-              }).catch(error => {
-                this.$notifyError(error)
-              })
+              var resourceName = itemsNameMap[params.id]
+              // Using a method for this since it's an async call and don't want wrong prarms to be passed
+              this.callGroupApi(params, resourceName)
             }
             this.$message.info({
               content: this.$t(this.currentAction.label),
@@ -852,12 +859,45 @@ export default {
               this.actionLoading = false
               this.closeAction()
               this.fetchData()
-            }, 2000)
+            }, 500)
           }
         })
       } else {
         this.execSubmit(e)
       }
+    },
+    callGroupApi (params, resourceName) {
+      api(this.currentAction.api, params).then(json => {
+        this.handleResponse(json, resourceName, false)
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    handleResponse (response, resourceName, showLoading = true) {
+      for (const obj in response) {
+        if (obj.includes('response')) {
+          if (response[obj].jobid) {
+            const jobid = response[obj].jobid
+            this.$store.dispatch('AddAsyncJob', { title: this.$t(this.currentAction.label), jobid: jobid, description: resourceName, status: 'progress' })
+            this.pollActionCompletion(jobid, this.currentAction, resourceName, showLoading)
+            return true
+          } else {
+            var message = this.$t(this.currentAction.label) + (resourceName ? ' - ' + resourceName : '')
+            var duration = 2
+            if (this.currentAction.successMessage) {
+              message = message + ' - ' + this.$t(this.currentAction.successMessage)
+              duration = 5
+            }
+            this.$message.success({
+              content: message,
+              key: this.currentAction.label + resourceName,
+              duration: duration
+            })
+          }
+          break
+        }
+      }
+      return false
     },
     execSubmit (e) {
       e.preventDefault()
@@ -916,31 +956,7 @@ export default {
           var hasJobId = false
           this.actionLoading = true
           api(this.currentAction.api, params).then(json => {
-            for (const obj in json) {
-              if (obj.includes('response')) {
-                for (const res in json[obj]) {
-                  if (res === 'jobid') {
-                    this.$store.dispatch('AddAsyncJob', { title: this.$t(this.currentAction.label), jobid: json[obj][res], description: resourceName, status: 'progress' })
-                    this.pollActionCompletion(json[obj][res], this.currentAction, resourceName)
-                    hasJobId = true
-                    break
-                  } else {
-                    var message = this.$t(this.currentAction.label) + (resourceName ? ' - ' + resourceName : '')
-                    var duration = 2
-                    if (this.currentAction.successMessage) {
-                      message = message + ' - ' + this.$t(this.currentAction.successMessage)
-                      duration = 5
-                    }
-                    this.$message.success({
-                      content: message,
-                      key: this.currentAction.label + resourceName,
-                      duration: duration
-                    })
-                  }
-                }
-                break
-              }
-            }
+            hasJobId = this.handleResponse(json, resourceName)
             if ((this.currentAction.icon === 'delete' || ['archiveEvents', 'archiveAlerts'].includes(this.currentAction.api)) && this.dataView) {
               this.$router.go(-1)
             } else {
