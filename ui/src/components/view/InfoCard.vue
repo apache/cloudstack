@@ -32,7 +32,7 @@
               <div v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.name)">{{ $t(resource.name.toLowerCase()) }}</div>
               <div v-else>
                 <h4 class="name">
-                  {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || resource.virtualmachinename || resource.templatetype }}
+                  {{ resource.displayname || resource.displaytext || resource.name || resource.username || resource.ipaddress || resource.virtualmachinename || resource.templatetype }}
                 </h4>
                 <console style="margin-left: 10px" :resource="resource" size="default" v-if="resource.id" />
               </div>
@@ -121,12 +121,12 @@
             <span style="margin-left: 8px">{{ resource.ostypename }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="(resource.cpunumber && resource.cpuspeed) || resource.cputotal">
+        <div class="resource-detail-item" v-if="('cpunumber' in resource && 'cpuspeed' in resource) || resource.cputotal">
           <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="appstore" />
-            <span v-if="resource.cpunumber && resource.cpuspeed">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
-            <span v-else-if="resource.cputotal">{{ resource.cputotal }}</span>
+            <span v-if="resource.cputotal">{{ resource.cputotal }}</span>
+            <span v-else>{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
           </div>
           <div>
             <span v-if="resource.cpuused">
@@ -149,7 +149,7 @@
             </span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.memory">
+        <div class="resource-detail-item" v-if="'memory' in resource">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="bulb" />{{ resource.memory + ' ' + $t('label.mb.memory') }}
@@ -276,6 +276,19 @@
                 style="margin-left: -24px; margin-top: 5px;">
                 <a-icon type="api" />eth{{ index }} {{ eth.ipaddress }}
                 <router-link v-if="eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.networks && resource.networks.length > 0">
+          <div class="resource-detail-item__label">{{ $t('label.networks') }}</div>
+          <div class="resource-detail-item__details resource-detail-item__details--start">
+            <div>
+              <div
+                v-for="network in resource.networks"
+                :key="network.id"
+                style="margin-top: 5px;">
+                <a-icon type="api" />{{ network.name }}
               </div>
             </div>
           </div>

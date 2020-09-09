@@ -570,19 +570,7 @@
       </a-col>
       <a-col :md="24" :lg="7" v-if="!isMobile()">
         <a-affix :offsetTop="75">
-          <info-card class="vm-info-card" :resource="vm" :title="this.$t('label.yourinstance')">
-            <!-- ToDo: Refactor this, maybe move everything to the info-card component -->
-            <div slot="details" v-if="diskSize" style="margin-bottom: 12px;">
-              <a-icon type="hdd"></a-icon>
-              <span style="margin-left: 10px">{{ diskSize }}</span>
-            </div>
-            <div slot="details" v-if="networks">
-              <div v-for="network in networks" :key="network.id" style="margin-bottom: 12px;">
-                <a-icon type="api"></a-icon>
-                <span style="margin-left: 10px">{{ network.name }}</span>
-              </div>
-            </div>
-          </info-card>
+          <info-card class="vm-info-card" :resource="vm" :title="vm.name ? this.$t('label.yourinstance') + ' : ' + vm.name : this.$t('label.yourinstance')" />
         </a-affix>
       </a-col>
     </a-row>
@@ -983,6 +971,32 @@ export default {
         this.vm.zonename = this.zone.name
       }
 
+      const pod = _.find(this.options.pods, (option) => option.id === instanceConfig.podid)
+      if (pod) {
+        this.vm.podid = pod.id
+        this.vm.podname = pod.name
+      }
+
+      const cluster = _.find(this.options.clusters, (option) => option.id === instanceConfig.clusterid)
+      if (cluster) {
+        this.vm.clusterid = cluster.id
+        this.vm.clustername = cluster.name
+      }
+
+      const host = _.find(this.options.hosts, (option) => option.id === instanceConfig.hostid)
+      if (host) {
+        this.vm.hostid = host.id
+        this.vm.hostname = host.name
+      }
+
+      if (this.diskSize) {
+        this.vm.disksizetotalgb = this.diskSize
+      }
+
+      if (this.networks) {
+        this.vm.networks = this.networks
+      }
+
       if (this.template) {
         this.vm.templateid = this.template.id
         this.vm.templatename = this.template.displaytext
@@ -1003,6 +1017,15 @@ export default {
       if (this.serviceOffering) {
         this.vm.serviceofferingid = this.serviceOffering.id
         this.vm.serviceofferingname = this.serviceOffering.displaytext
+        if (this.serviceOffering.cpunumber) {
+          this.vm.cpunumber = this.serviceOffering.cpunumber
+        }
+        if (this.serviceOffering.cpuspeed) {
+          this.vm.cpuspeed = this.serviceOffering.cpuspeed
+        }
+        if (this.serviceOffering.memory) {
+          this.vm.memory = this.serviceOffering.memory
+        }
       }
 
       if (this.diskOffering) {
@@ -1216,6 +1239,11 @@ export default {
           isoid: value,
           templateid: null
         })
+      } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
+        this.vm[name] = value
+        this.form.setFieldsValue({
+          [name]: value
+        })
       } else {
         this.form.setFieldsValue({
           [name]: value
@@ -1419,8 +1447,10 @@ export default {
         }
         // step 7: select ssh key pair
         deployVmData.keypair = values.keypair
-        deployVmData.name = values.name
-        deployVmData.displayname = values.name
+        if (values.name) {
+          deployVmData.name = values.name
+          deployVmData.displayname = values.name
+        }
         // step 8: enter setup
         if ('properties' in values) {
           const keys = Object.keys(values.properties)
