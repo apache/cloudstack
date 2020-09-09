@@ -113,7 +113,7 @@
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
-          <a-switch v-decorator="['start']" />
+          <a-switch v-decorator="['start', {initialValue: true}]" defaultChecked />
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
