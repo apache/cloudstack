@@ -128,7 +128,7 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
                 continue;
             }
 
-            if (srcStoreDcId != null & store.getDataCenterId() != null && !srcStoreDcId.equals(store.getDataCenterId())) {
+            if (srcStoreDcId != null && store.getDataCenterId() != null && !srcStoreDcId.equals(store.getDataCenterId())) {
                 s_logger.warn("Source and destination stores are not in the same zone. Skipping destination store: " + store.getName());
                 continue;
             }
