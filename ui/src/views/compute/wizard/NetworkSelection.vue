@@ -237,7 +237,7 @@ export default {
   inject: ['vmFetchNetworks'],
   methods: {
     getDetails (network) {
-      return [
+      const detail = [
         {
           title: this.$t('label.description'),
           description: network.displaytext
@@ -247,6 +247,13 @@ export default {
           description: network.networkofferingdisplaytext
         }
       ]
+      if (network.type !== 'L2') {
+        detail.push({
+          title: this.$t('label.cidr'),
+          description: network.cidr
+        })
+      }
+      return detail
     },
     handleSearch (value) {
       this.filter = value
