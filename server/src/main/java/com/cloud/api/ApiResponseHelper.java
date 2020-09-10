@@ -2409,6 +2409,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         NetworkACL acl = ApiDBUtils.findByNetworkACLId(aclItem.getAclId());
         if (acl != null) {
             response.setAclId(acl.getUuid());
+            response.setAclName(acl.getName());
         }
 
         //set tag information
@@ -3003,6 +3004,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         NetworkACL acl =  ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
         if (acl != null) {
             response.setAclId(acl.getUuid());
+            response.setAclName(acl.getName());
         }
 
         response.setObjectName("privategateway");
