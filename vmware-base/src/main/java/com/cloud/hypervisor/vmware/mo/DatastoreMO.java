@@ -406,6 +406,8 @@ public class DatastoreMO extends BaseMO {
                     s_logger.info("Found file " + fileName + " in datastore at " + absoluteFileName);
                     if (parentFolderPath.endsWith("]"))
                         absoluteFileName += " ";
+                    else if (!parentFolderPath.endsWith("/"))
+                        absoluteFileName +="/";
                     absoluteFileName += fi.getPath();
                     if(isValidCloudStackFolderPath(parentFolderPath, searchExcludedFolders)) {
                         return absoluteFileName;

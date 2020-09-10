@@ -76,7 +76,9 @@ import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
 
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
+import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
+import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.LicenseAssignmentManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
@@ -692,9 +694,13 @@ public class VmwareHelper {
         return hotplugSupportedByLicense;
     }
 
-    public static String getVCenterSafeUuid() {
+    public static String getVCenterSafeUuid(DatastoreMO dsMo) throws Exception{
         // Object name that is greater than 32 is not safe in vCenter
-        return UUID.randomUUID().toString().replaceAll("-", "");
+        String uuid = UUID.randomUUID().toString().replaceAll("-", "");
+        if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+            return CustomFieldConstants.CLOUD_UUID + "-" + uuid;
+        }
+        return uuid;
     }
 
     public static String getRecommendedDiskControllerFromDescriptor(GuestOsDescriptor guestOsDescriptor) throws Exception {
