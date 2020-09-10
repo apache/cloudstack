@@ -989,7 +989,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             volumeName = srcVolumePath.substring(index + 1);
         }
 
-        String newVolume = VmwareHelper.getVCenterSafeUuid();
+        String newVolume = VmwareHelper.getVCenterSafeUuid(dsMo);
         restoreVolumeFromSecStorage(hyperHost, dsMo, newVolume, secStorageUrl, volumeFolder, volumeName, wait, nfsVersion);
 
         return new Pair<>(volumeFolder, newVolume);
@@ -3590,7 +3590,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String backupPath = backedUpSnapshotUuid.substring(0, index);
         backedUpSnapshotUuid = backedUpSnapshotUuid.substring(index + 1);
         String details;
-        String newVolumeName = VmwareHelper.getVCenterSafeUuid();
 
         VmwareContext context = hostService.getServiceContext(cmd);
         try {
@@ -3602,13 +3601,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
 
+            DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
+            String newVolumeName = VmwareHelper.getVCenterSafeUuid(primaryDsMo);
             // strip off the extension since restoreVolumeFromSecStorage internally will append suffix there.
             if (backedUpSnapshotUuid.endsWith(".ova")){
                 backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ova", "");
             } else if (backedUpSnapshotUuid.endsWith(".ovf")){
                 backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ovf", "");
             }
-            DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
             restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid, (long)cmd.getWait() * 1000, _nfsVersion);
 
             VolumeObjectTO newVol = new VolumeObjectTO();

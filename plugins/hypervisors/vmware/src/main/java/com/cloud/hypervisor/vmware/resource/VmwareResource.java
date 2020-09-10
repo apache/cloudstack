@@ -4760,7 +4760,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
         VirtualMachineMO vmMo = null;
         DatastoreMO dsMo = null;
+        DatastoreMO destinationDsMo = null;
         ManagedObjectReference morSourceDS = null;
+        ManagedObjectReference morDestintionDS = null;
         String vmdkDataStorePath = null;
 
         String vmName = null;
@@ -4768,15 +4770,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // OfflineVmwareMigration: we need to refactor the worker vm creation out for use in migration methods as well as here
             // OfflineVmwareMigration: this method is 100 lines and needs refactorring anyway
             // we need to spawn a worker VM to attach the volume to and move it
-            vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
+            morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getSourcePool().getUuid());
+            dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
+            morDestintionDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
+            destinationDsMo = new DatastoreMO(hyperHost.getContext(), morDestintionDS);
+            if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL"))
+                vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
+
+            if (destinationDsMo.getDatastoreType().equalsIgnoreCase("VVOL"))
+                vmName = getWorkerName(getServiceContext(), cmd, 0, destinationDsMo);
 
             // OfflineVmwareMigration: refactor for re-use
             // OfflineVmwareMigration: 1. find data(store)
             // OfflineVmwareMigration: more robust would be to find the store given the volume as it might have been moved out of band or due to error
 // example:            DatastoreMO existingVmDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
 
-            morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getSourcePool().getUuid());
-            dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
             s_logger.info("Create worker VM " + vmName);
             // OfflineVmwareMigration: 2. create the worker with access to the data(store)
             vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName, null);
