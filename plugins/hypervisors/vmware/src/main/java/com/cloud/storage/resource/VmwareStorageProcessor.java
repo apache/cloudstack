@@ -651,24 +651,21 @@ public class VmwareStorageProcessor implements StorageProcessor {
             VirtualMachineMO templateMo = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templateUuidName), true);
             Pair<VirtualMachineMO, Long> vmInfo = null;
 
+            final ManagedObjectReference morDs;
+            if (managed) {
+                morDs = prepareManagedDatastore(context, hyperHost, null, managedStoragePoolName, storageHost, storagePort,
+                        chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
+            }
+            else {
+                morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storageUuid);
+            }
+            assert (morDs != null);
+            dsMo = new DatastoreMO(context, morDs);
+
             if (templateMo == null) {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Template " + templateInfo.second() + " is not setup yet. Set up template from secondary storage with uuid name: " + templateUuidName);
                 }
-
-                final ManagedObjectReference morDs;
-
-                if (managed) {
-                    morDs = prepareManagedDatastore(context, hyperHost, null, managedStoragePoolName, storageHost, storagePort,
-                                chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
-                }
-                else {
-                    morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storageUuid);
-                }
-
-                assert (morDs != null);
-
-                dsMo = new DatastoreMO(context, morDs);
 
                 if (managed) {
                     vmInfo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
