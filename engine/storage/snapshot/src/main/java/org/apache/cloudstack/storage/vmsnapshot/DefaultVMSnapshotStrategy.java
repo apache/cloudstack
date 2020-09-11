@@ -329,7 +329,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         }
     }
 
-    private void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, VolumeObjectTO volumeTo) {
+    protected void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, VolumeObjectTO volumeTo) {
         VolumeVO volume = volumeDao.findById(volumeTo.getId());
         Long diskOfferingId = volume.getDiskOfferingId();
         Long offeringId = null;
@@ -347,7 +347,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 volumeTo.getSize(), VMSnapshot.class.getName(), vmSnapshot.getUuid(), details);
     }
 
-    private void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, Long vmSnapSize, Long virtualSize) {
+    protected void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, Long vmSnapSize, Long virtualSize) {
         try {
             Map<String, String> details = new HashMap<>();
             if (vmSnapshot != null) {

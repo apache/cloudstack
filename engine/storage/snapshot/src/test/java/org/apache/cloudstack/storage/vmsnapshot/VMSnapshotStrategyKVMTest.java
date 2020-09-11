@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.vmsnapshot;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -37,7 +37,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -63,10 +62,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
-import com.cloud.agent.api.FreezeThawVMAnswer;
-import com.cloud.agent.api.FreezeThawVMCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.exception.AgentUnavailableException;
@@ -95,8 +91,10 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 import junit.framework.TestCase;
 
@@ -104,8 +102,8 @@ import junit.framework.TestCase;
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VMSnapshotStrategyKVMTest extends TestCase{
     List<StoragePoolVO> storage;
-    @Inject
-    VMSnapshotStrategy vmSnapshotStrategy;
+//    @Inject
+//    VMSnapshotStrategy vmSnapshotStrategy;
     @Inject
     VMSnapshotHelper vmSnapshotHelper;
     @Inject
@@ -144,58 +142,15 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
     PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
     DataStoreManager _dataStoreMgr;
-   @Inject
+    @Inject
     StorageVMSnapshotStrategy vmStrategy;
+    @Inject
+    VMSnapshotDetailsDao vmSnapshotDetailsDao;
 
     @Override
     @Before
     public void setUp() throws Exception {
         ComponentContext.initComponentsLifeCycle();
-    }
-
-    @Test
-    public void testCreateVMSnapshot() throws Exception {
-        Long hostId = 1L;
-        Long vmId = 1L;
-        Long guestOsId = 1L;
-        HypervisorType hypervisorType = HypervisorType.KVM;
-        String hypervisorVersion = "default";
-        String guestOsName = "Other";
-        List<VolumeObjectTO> volumeObjectTOs = new ArrayList<VolumeObjectTO>();
-        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
-        UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
-        Mockito.when(userVmVO.getGuestOSId()).thenReturn(guestOsId);
-        Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
-        Mockito.when(vmSnapshotHelper.pickRunningHost(Matchers.anyLong())).thenReturn(hostId);
-        Mockito.when(vmSnapshotHelper.getVolumeTOList(Matchers.anyLong())).thenReturn(volumeObjectTOs);
-        Mockito.when(userVmDao.findById(Matchers.anyLong())).thenReturn(userVmVO);
-        GuestOSVO guestOSVO = Mockito.mock(GuestOSVO.class);
-        Mockito.when(guestOSDao.findById(Matchers.anyLong())).thenReturn(guestOSVO);
-        GuestOSHypervisorVO guestOSHypervisorVO = Mockito.mock(GuestOSHypervisorVO.class);
-        Mockito.when(guestOSHypervisorVO.getGuestOsName()).thenReturn(guestOsName);
-        Mockito.when(guestOsHypervisorDao.findById(Matchers.anyLong())).thenReturn(guestOSHypervisorVO);
-        Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(Matchers.anyLong(), Matchers.anyString(), Matchers.anyString())).thenReturn(guestOSHypervisorVO);
-        HostVO hostVO = Mockito.mock(HostVO.class);
-        Mockito.when(hostDao.findById(Matchers.anyLong())).thenReturn(hostVO);
-        Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
-        Mockito.when(hostVO.getHypervisorVersion()).thenReturn(hypervisorVersion);
-
-        FreezeThawVMAnswer freezeAnswer = Mockito.mock(FreezeThawVMAnswer.class);
-        Mockito.when(freezeAnswer.getResult()).thenReturn(true);
-        Mockito.when(agentMgr.send(Matchers.anyLong(), Matchers.isA(FreezeThawVMCommand.class))).thenReturn(freezeAnswer);
-
-        FreezeThawVMAnswer thawAnswer = Mockito.mock(FreezeThawVMAnswer.class);
-        Mockito.when(thawAnswer.getResult()).thenReturn(true);
-        Mockito.when(agentMgr.send(Matchers.anyLong(), Matchers.isA(FreezeThawVMCommand.class))).thenReturn(thawAnswer);
-        Mockito.when(vmSnapshotDao.findById(Matchers.anyLong())).thenReturn(vmSnapshot);
-
-        CreateVMSnapshotAnswer answer = Mockito.mock(CreateVMSnapshotAnswer.class);
-        Mockito.when(answer.getResult()).thenReturn(true);
-        Mockito.when(vmSnapshotDao.findById(Matchers.anyLong())).thenReturn(vmSnapshot);
-
-        VMSnapshot snapshot = null;
-        snapshot = vmSnapshotStrategy.takeVMSnapshot(vmSnapshot);
-        assertNotNull(snapshot);
     }
 
     @Test
@@ -205,7 +160,6 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
         SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
         SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
-        CreateSnapshotPayload payload = Mockito.mock(CreateSnapshotPayload.class);
         DataStore dataStore = Mockito.mock(DataStore.class);
         String volUuid = UUID.randomUUID().toString();
         String vmUuid = UUID.randomUUID().toString();
@@ -223,6 +177,10 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         SnapshotInfo info = null;
 
         when(strategy.takeSnapshot(any())).thenReturn(snapshotInfo);
+        VMSnapshotDetailsVO vmDetails = new VMSnapshotDetailsVO(vmSnapshot.getId(), volUuid, String.valueOf(snapshot.getId()), false);
+        PowerMockito.whenNew(VMSnapshotDetailsVO.class).withAnyArguments().thenReturn(vmDetails);
+        when(vmSnapshotDetailsDao.persist(any())).thenReturn(vmDetails);
+
         info =  vmStrategy.createDiskSnapshot(vmSnapshot, forRollback, vol);
         assertNotNull(info);
     }
@@ -279,7 +237,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
 
         RevertToVMSnapshotAnswer answer = Mockito.mock(RevertToVMSnapshotAnswer.class);
         Mockito.when(answer.getResult()).thenReturn(Boolean.TRUE);
-        boolean result = vmSnapshotStrategy.revertVMSnapshot(vmSnapshot);
+        boolean result = vmStrategy.revertVMSnapshot(vmSnapshot);
         assertTrue(result);
     }
 
@@ -290,21 +248,17 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
         Snapshot snap = Mockito.mock(Snapshot.class);
         DataStore dataStore = Mockito.mock(DataStore.class);
-        SearchBuilder<SnapshotVO> sb = Mockito.mock(SearchBuilder.class);
-        when(_snapshotDao.createSearchBuilder()).thenReturn(sb);
-        SearchCriteria<SnapshotVO> sc = Mockito.mock(SearchCriteria.class);
-        when(sb.create()).thenReturn(sc);
+
         String volUuid = UUID.randomUUID().toString();
         String vmUuid = UUID.randomUUID().toString();
         String name = vmUuid + "_" + volUuid;
         when(vol.getUuid()).thenReturn(volUuid);
         when(vmSnapshot.getUuid()).thenReturn(vmUuid);
         when(vol.getDataStore()).thenReturn(dataStore);
-        when(vmStrategy.findSnapshotByName(name)).thenReturn(snapshotVO);
         when(snapshotVO.getId()).thenReturn(1L);
         when(_snapshotService.revertSnapshot(snapshotVO.getId())).thenReturn(snap);
     //    testFindSnapshotByName(name);
-        vmStrategy.revertDiskSnapshot(vmSnapshot, vol);
+        vmStrategy.revertDiskSnapshot(vmSnapshot);
     }
 
     @Test
@@ -324,7 +278,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         when( _snapshotDataFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore())).thenReturn(info);
         when(_storageStrategyFactory.getSnapshotStrategy(info, SnapshotOperation.DELETE)).thenReturn(strategy);
         testFindSnapshotByName(name);
-        vmStrategy.deleteDiskSnapshot(vmSnapshot, vol);
+        vmStrategy.deleteDiskSnapshot(vmSnapshot);
     }
 
     @Test
@@ -361,7 +315,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         DeleteVMSnapshotAnswer answer = Mockito.mock(DeleteVMSnapshotAnswer.class);
         Mockito.when(answer.getResult()).thenReturn(true);
 
-        boolean result = vmSnapshotStrategy.deleteVMSnapshot(vmSnapshot);
+        boolean result = vmStrategy.deleteVMSnapshot(vmSnapshot);
         assertTrue(result);
     }
 
@@ -493,6 +447,11 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         @Bean
         public DataStoreProviderManager manager() {
             return Mockito.mock(DataStoreProviderManager.class);
+        }
+
+        @Bean
+        public VMSnapshotDetailsDao vmSnapshotDetailsDao () {
+            return Mockito.mock(VMSnapshotDetailsDao.class);
         }
     }
 }
