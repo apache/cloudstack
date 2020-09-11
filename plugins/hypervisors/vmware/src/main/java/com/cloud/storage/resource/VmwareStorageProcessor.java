@@ -1895,7 +1895,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     }
                     workerVm = vmMo;
                     // attach volume to worker VM
-                    String datastoreVolumePath = dsMo.getDatastorePath(volumePath + ".vmdk");
+                    String datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumePath + ".vmdk");
                     vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
                 } else {
                     s_logger.info("Using owner VM " + vmName + " for snapshot operation");
