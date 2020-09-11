@@ -1168,7 +1168,7 @@
 "label.kubernetes.cluster.scale": "Scale Kubernetes Cluster",
 "label.kubernetes.cluster.start": "Start Kubernetes Cluster",
 "label.kubernetes.cluster.stop": "Stop Kubernetes Cluster",
-"label.kubernetes.cluster.upgrade": "Upgrade Kubernetes Cluster",
+"label.kubernetes.cluster.upgrade": "Upgrade of Kubernetes Cluster",
 "label.kubernetes.dashboard": "Kubernetes Dashboard UI",
 "label.kubernetes.isos": "Kubernetes ISOs",
 "label.kubernetes.service": "Kubernetes Service",
