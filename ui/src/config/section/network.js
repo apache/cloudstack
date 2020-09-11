@@ -81,7 +81,8 @@ export default {
           icon: 'sync',
           label: 'label.restart.network',
           dataView: true,
-          args: ['cleanup', 'makeredundant']
+          args: ['cleanup', 'makeredundant'],
+          show: (record) => record.type !== 'L2'
         },
         {
           api: 'replaceNetworkACLList',
