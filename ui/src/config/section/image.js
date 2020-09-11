@@ -104,7 +104,13 @@ export default {
           icon: 'share-alt',
           label: 'label.action.template.share',
           dataView: true,
-          args: ['ispublic', 'isfeatured', 'isextractable'],
+          args: (record, store) => {
+            const fields = ['isfeatured', 'isextractable']
+            if (['Admin'].includes(store.userInfo.roletype) || store.features.userpublictemplateenabled) {
+              fields.unshift('ispublic')
+            }
+            return fields
+          },
           show: (record, store) => {
             return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
               (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||
@@ -225,7 +231,13 @@ export default {
           icon: 'share-alt',
           label: 'label.action.iso.share',
           dataView: true,
-          args: ['ispublic', 'isfeatured', 'isextractable'],
+          args: (record, store) => {
+            const fields = ['isfeatured', 'isextractable']
+            if (['Admin'].includes(store.userInfo.roletype) || store.features.userpublictemplateenabled) {
+              fields.unshift('ispublic')
+            }
+            return fields
+          },
           show: (record, store) => {
             return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
               (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||

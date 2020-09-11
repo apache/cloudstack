@@ -131,7 +131,9 @@
             }]" />
         </a-form-item>
 
-        <a-form-item :label="$t('label.ispublic')">
+        <a-form-item
+          :label="$t('label.ispublic')"
+          v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
           <a-switch
             v-decorator="['ispublic', {
               initialValue: false
