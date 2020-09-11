@@ -40,7 +40,9 @@
                 <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
             </span>
-            <a-input v-decorator="[ 'email']"></a-input>
+            <a-input
+              v-decorator="['email']"
+              :placeholder="apiParams.addAccountToProject.email.description"></a-input>
           </a-form-item>
           <a-form-item v-if="apiParams.addAccountToProject.projectroleid">
             <span slot="label">
@@ -105,7 +107,9 @@
                 <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
             </span>
-            <a-input v-decorator="[ 'email']"></a-input>
+            <a-input
+              v-decorator="['email']"
+              :placeholder="apiParams.addUserToProject.email.description"></a-input>
           </a-form-item>
           <a-form-item>
             <span slot="label">
