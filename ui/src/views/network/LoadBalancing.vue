@@ -340,7 +340,7 @@
               v-model="newRule.vmguestip[index]"
             >
               <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
-                {{ nic }}{{ nicIndex === 0 ? ` (${this.$t('label.primary')})` : null }}
+                {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
               </a-select-option>
             </a-select>
           </div>
