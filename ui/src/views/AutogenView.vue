@@ -43,16 +43,18 @@
                   {{ $t('label.filterby') }}
                 </template>
                 <a-select
-                  v-if="!dataView && $route.meta.filters && $route.meta.filters.length > 0"
+                  v-if="!dataView && filters && filters.length > 0"
                   :placeholder="$t('label.filterby')"
-                  :value="$route.query.filter || (['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name) ? 'all' : 'self')"
+                  :value="$route.query.filter || (projectView && $route.name === 'vm' ||
+                    ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
+                    ? 'all' : 'self')"
                   style="min-width: 100px; margin-left: 10px"
                   @change="changeFilter">
                   <a-icon slot="suffixIcon" type="filter" />
                   <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
                     {{ $t('label.all') }}
                   </a-select-option>
-                  <a-select-option v-for="filter in $route.meta.filters" :key="filter">
+                  <a-select-option v-for="filter in filters" :key="filter">
                     {{ $t('label.' + filter) }}
                   </a-select-option>
                 </a-select>
@@ -379,6 +381,7 @@ export default {
       currentAction: {},
       showAction: false,
       dataView: false,
+      projectView: false,
       selectedFilter: '',
       filters: [],
       searchFilters: [],
@@ -495,6 +498,12 @@ export default {
       delete params.irefresh
 
       this.searchFilters = this.$route && this.$route.meta && this.$route.meta.searchFilters
+      this.filters = this.$route && this.$route.meta && this.$route.meta.filters
+      if (typeof this.filters === 'function') {
+        this.filters = this.filters()
+      }
+
+      this.projectView = Boolean(store.getters.project && store.getters.project.id)
 
       if (this.$route && this.$route.params && this.$route.params.id) {
         this.dataView = true

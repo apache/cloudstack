@@ -30,7 +30,13 @@ export default {
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
-      filters: ['self', 'running', 'stopped'],
+      filters: () => {
+        const filters = ['running', 'stopped']
+        if (!(store.getters.project && store.getters.project.id)) {
+          filters.unshift('self')
+        }
+        return filters
+      },
       columns: () => {
         const fields = ['name', 'state', 'ipaddress']
         const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
