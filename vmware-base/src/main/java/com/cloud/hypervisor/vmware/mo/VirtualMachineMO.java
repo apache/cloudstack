@@ -1959,21 +1959,21 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     // return the disk chain (VMDK datastore paths) for cloned snapshot
-    public Pair<VirtualMachineMO, String[]> cloneFromCurrentSnapshot(String clonedVmName, int cpuSpeedMHz, int memoryMb, String diskDevice, ManagedObjectReference morDs)
+    public Pair<VirtualMachineMO, String[]> cloneFromCurrentSnapshot(String clonedVmName, int cpuSpeedMHz, int memoryMb, String diskDevice, ManagedObjectReference morDs, String virtualHardwareVersion)
             throws Exception {
         assert (morDs != null);
         String[] disks = getCurrentSnapshotDiskChainDatastorePaths(diskDevice);
-        VirtualMachineMO clonedVm = cloneFromDiskChain(clonedVmName, cpuSpeedMHz, memoryMb, disks, morDs);
+        VirtualMachineMO clonedVm = cloneFromDiskChain(clonedVmName, cpuSpeedMHz, memoryMb, disks, morDs, virtualHardwareVersion);
         return new Pair<VirtualMachineMO, String[]>(clonedVm, disks);
     }
 
-    public VirtualMachineMO cloneFromDiskChain(String clonedVmName, int cpuSpeedMHz, int memoryMb, String[] disks, ManagedObjectReference morDs) throws Exception {
+    public VirtualMachineMO cloneFromDiskChain(String clonedVmName, int cpuSpeedMHz, int memoryMb, String[] disks, ManagedObjectReference morDs, String cloneHardwareVersion) throws Exception {
         assert (disks != null);
         assert (disks.length >= 1);
 
         HostMO hostMo = getRunningHost();
 
-        VirtualMachineMO clonedVmMo = HypervisorHostHelper.createWorkerVM(hostMo, new DatastoreMO(hostMo.getContext(), morDs), clonedVmName);
+        VirtualMachineMO clonedVmMo = HypervisorHostHelper.createWorkerVM(hostMo, new DatastoreMO(hostMo.getContext(), morDs), clonedVmName, cloneHardwareVersion);
         if (clonedVmMo == null)
             throw new Exception("Unable to find just-created blank VM");
 

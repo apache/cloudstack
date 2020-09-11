@@ -1604,7 +1604,7 @@ public class HypervisorHostHelper {
 
         return controllerSpec;
     }
-    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName) throws Exception {
+    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName, String hardwareVersion) throws Exception {
 
         // Allow worker VM to float within cluster so that we will have better chance to
         // create it successfully
@@ -1615,6 +1615,9 @@ public class HypervisorHostHelper {
         VirtualMachineMO workingVM = null;
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
         vmConfig.setName(vmName);
+        if (hardwareVersion != null){
+            vmConfig.setVersion(("vmx-" + hardwareVersion));
+        }
         vmConfig.setMemoryMB((long)4);
         vmConfig.setNumCPUs(1);
         vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.value());
@@ -1933,7 +1936,7 @@ public class HypervisorHostHelper {
             ManagedObjectReference morDs) throws Exception {
         VmwareContext context = host.getContext();
         ManagedObjectReference morOvf = context.getServiceContent().getOvfManager();
-        VirtualMachineMO workerVmMo = HypervisorHostHelper.createWorkerVM(host, new DatastoreMO(context, morDs), ovfName);
+        VirtualMachineMO workerVmMo = HypervisorHostHelper.createWorkerVM(host, new DatastoreMO(context, morDs), ovfName, null);
         if (workerVmMo == null)
             throw new Exception("Unable to find just-created worker VM");
 
