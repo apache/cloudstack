@@ -550,7 +550,13 @@ export default {
           icon: 'plus',
           label: 'label.add.vpn.user',
           listView: true,
-          args: ['username', 'password', 'domainid', 'account']
+          args: (record, store) => {
+            if (store.userInfo.roletype === 'User') {
+              return ['username', 'password']
+            }
+
+            return ['username', 'password', 'domainid', 'account']
+          }
         },
         {
           api: 'removeVpnUser',
