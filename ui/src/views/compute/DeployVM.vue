@@ -514,7 +514,10 @@
                       />
                     </a-form-item>
                     <a-form-item :label="$t('label.group.optional')">
-                      <a-input v-decorator="['group']" />
+                      <a-auto-complete
+                        v-decorator="['group']"
+                        :filterOption="filterOption"
+                        :dataSource="options.instanceGroups" />
                     </a-form-item>
                     <a-form-item :label="$t('label.keyboard')">
                       <a-select
@@ -1147,6 +1150,7 @@ export default {
 
       this.fetchBootTypes()
       this.fetchBootModes()
+      this.fetchInstaceGroups()
       Vue.nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
         this.instanceConfig = this.form.getFieldsValue() // ToDo: maybe initialize with some other defaults
@@ -1201,6 +1205,19 @@ export default {
 
       this.options.bootModes = bootModes
       this.$forceUpdate()
+    },
+    fetchInstaceGroups () {
+      this.options.instanceGroups = []
+      api('listInstanceGroups', {
+        account: this.$store.getters.userInfo.account,
+        domainid: this.$store.getters.userInfo.domainid,
+        listall: true
+      }).then(response => {
+        const groups = response.listinstancegroupsresponse.instancegroup || []
+        groups.forEach(x => {
+          this.options.instanceGroups.push(x.name)
+        })
+      })
     },
     fetchNetwork () {
       const param = this.params.networks
@@ -1368,7 +1385,6 @@ export default {
         deployVmData.podid = values.podid
         deployVmData.clusterid = values.clusterid
         deployVmData.hostid = values.hostid
-        deployVmData.group = values.group
         deployVmData.keyboard = values.keyboard
         deployVmData.boottype = values.boottype
         deployVmData.bootmode = values.bootmode
@@ -1462,6 +1478,9 @@ export default {
         if (values.name) {
           deployVmData.name = values.name
           deployVmData.displayname = values.name
+        }
+        if (values.group) {
+          deployVmData.group = values.group
         }
         // step 8: enter setup
         if ('properties' in values) {
