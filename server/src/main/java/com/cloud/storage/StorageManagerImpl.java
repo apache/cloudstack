@@ -1568,7 +1568,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
         });
-        List<DataStore> maintenanceSuccessfulStoragePools = new ArrayList<>();
         for (Iterator<StoragePoolVO> iteratorChildDatastore = childDatastores.listIterator(); iteratorChildDatastore.hasNext(); ) {
             DataStore childStore = _dataStoreMgr.getDataStore(iteratorChildDatastore.next().getId(), DataStoreRole.Primary);
             try {
@@ -1576,24 +1575,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } catch (Exception e) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(String.format("Exception on maintenance preparation of one of the child datastores in datastore cluster %d with error %s", primaryStorageId, e));
-                    s_logger.debug(String.format("Cancelling the maintenance mode of child datastores in datastore cluster %d", primaryStorageId));
                 }
-                // Cancel maintenance mode of already prepared child storage pools
-                maintenanceSuccessfulStoragePools.add(childStore);
-                for (DataStore dataStore: maintenanceSuccessfulStoragePools) {
-                    lifeCycle.cancelMaintain(dataStore);
-                }
-                // Set back to Up state of remaining child storage pools and datastore cluster
-                while (iteratorChildDatastore.hasNext()) {
-                    StoragePoolVO childDatastore = iteratorChildDatastore.next();
-                    childDatastore.setStatus(StoragePoolStatus.Up);
+                // Set to ErrorInMaintenance state of all child storage pools and datastore cluster
+                for (StoragePoolVO childDatastore : childDatastores) {
+                    childDatastore.setStatus(StoragePoolStatus.ErrorInMaintenance);
                     _storagePoolDao.update(childDatastore.getId(), childDatastore);
                 }
-                datastoreCluster.setStatus(StoragePoolStatus.Up);
+                datastoreCluster.setStatus(StoragePoolStatus.ErrorInMaintenance);
                 _storagePoolDao.update(datastoreCluster.getId(), datastoreCluster);
                 throw new CloudRuntimeException(String.format("Failed to prepare maintenance mode for datastore cluster %d with error %s %s", primaryStorageId, e.getMessage(), e));
             }
-            maintenanceSuccessfulStoragePools.add(childStore);
         }
     }
 
