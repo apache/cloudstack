@@ -198,7 +198,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="allowed && hyperVMWShow && currentForm !== 'Upload' && deployAsIsSupported">
+        <a-row :gutter="12" v-if="hyperVMWShow && currentForm === 'Create' && deployAsIsSupported">
           <a-col :md="24" :lg="12">
             <a-form-item :label="$t('label.deployasis')">
               <a-switch v-decorator="['deployasis']" />
