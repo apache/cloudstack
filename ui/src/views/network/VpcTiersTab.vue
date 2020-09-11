@@ -52,7 +52,7 @@
               </div>
               <div>
                 <router-link :to="{ path: '/acllist/' + network.aclid }">
-                  {{ network.aclid }}
+                  {{ network.aclname }}
                 </router-link>
               </div>
             </div>
