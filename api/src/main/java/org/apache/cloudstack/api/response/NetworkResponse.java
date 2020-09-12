@@ -238,6 +238,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "If the network has redundant routers enabled", since = "4.11.1")
     private Boolean redundantRouter;
 
+    @SerializedName(ApiConstants.ACL_NAME)
+    @Param(description = "ACL name associated with the VPC network", since = "4.15.0")
+    private String aclName;
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -457,5 +461,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setRedundantRouter(Boolean redundantRouter) {
         this.redundantRouter = redundantRouter;
+    }
+
+    public String getAclName() {
+        return aclName;
+    }
+
+    public void setAclName(String aclName) {
+        this.aclName = aclName;
     }
 }

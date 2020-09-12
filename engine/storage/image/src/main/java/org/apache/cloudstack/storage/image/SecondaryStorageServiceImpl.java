@@ -165,7 +165,11 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 }
 
             } else {
-                destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
+                if (destData instanceof  VolumeInfo) {
+                    ((VolumeInfo) destData).processEventOnly(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
+                } else {
+                    destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
+                }
                 if (destData instanceof SnapshotInfo) {
                     SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySourceSnapshot(srcData.getId(), DataStoreRole.Image);
                     SnapshotDataStoreVO destSnapshotStore = snapshotStoreDao.findBySnapshot(srcData.getId(), DataStoreRole.Image);
