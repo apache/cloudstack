@@ -375,7 +375,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
             // Select host endpoint such that the load is balanced out
             List<EndPoint> eps = _epSelector.findAllEndpointsForScope(srcdata.getDataStore());
-            if (eps.isEmpty()) {
+            if (eps == null || eps.isEmpty()) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
                 s_logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
