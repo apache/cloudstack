@@ -7,7 +7,7 @@
 
     This is a self-contained file which doesn't import WebUtil or external CSS.
 
-    Copyright (C) 2018 The noVNC Authors
+    Copyright (C) 2019 The noVNC Authors
     noVNC is licensed under the MPL 2.0 (see LICENSE.txt)
     This file is licensed under the 2-Clause BSD license (see LICENSE.txt).
 
@@ -17,6 +17,10 @@
     <title>noVNC</title>
 
     <meta charset="utf-8">
+
+    <!-- Always force latest IE rendering engine (even in intranet) &
+                Chrome Frame. Remove this if you use the .htaccess -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
     <style>
 
@@ -49,14 +53,7 @@
             padding: 5px 5px 4px 5px;
             cursor: pointer;
         }
-        #sendCtrlEscButton {
-            position: fixed;
-            top: 0px;
-            left: 0px;
-            border: 1px outset;
-            padding: 5px 5px 4px 5px;
-            cursor: pointer;
-        }
+
         #screen {
             flex: 1; /* fill remaining space */
             overflow: hidden;
@@ -68,18 +65,7 @@
     <script src="vendor/promise.js"></script>
 
     <!-- ES2015/ES6 modules polyfill -->
-    <script type="module">
-        window._noVNC_has_module_support = true;
-    </script>
-    <script>
-        window.addEventListener("load", function() {
-            if (window._noVNC_has_module_support) return;
-            const loader = document.createElement("script");
-            loader.src = "vendor/browser-es-module-loader/dist/" +
-                "browser-es-module-loader.js";
-            document.head.appendChild(loader);
-        });
-    </script>
+    <script nomodule src="vendor/browser-es-module-loader/dist/browser-es-module-loader.js"></script>
 
     <!-- actual script modules -->
     <script type="module" crossorigin="anonymous">
@@ -92,7 +78,7 @@
         // When this function is called we have
         // successfully connected to a server
         function connectedToServer(e) {
-            status("Connected");
+            status("Connected to " + desktopName);
         }
 
         // This function is called when we are disconnected
@@ -125,11 +111,6 @@
             return false;
         }
 
-        function sendCtrlEsc() {
-            rfb.sendCtrlEsc();
-            return false;
-        }
-
         // Show a status text in the top bar
         function status(text) {
             document.getElementById('status').textContent = text;
@@ -146,7 +127,6 @@
             // because Firefox < 53 has a bug w.r.t location.search
             const re = new RegExp('.*[?&]' + name + '=([^&#]*)'),
                   match = document.location.href.match(re);
-            if (typeof defaultValue === 'undefined') { defaultValue = null; }
 
             if (match) {
                 // We have to decode the URL since want the cleartext value
@@ -159,14 +139,11 @@
         document.getElementById('sendCtrlAltDelButton')
             .onclick = sendCtrlAltDel;
 
-        document.getElementById('sendCtrlEscButton')
-            .onclick = sendCtrlEsc;
-
         // Read parameters specified in the URL query string
         // By default, use the host and port of server that served this file
         const host = readQueryVariable('host', window.location.hostname);
         let port = readQueryVariable('port', window.location.port);
-        const password = readQueryVariable('password', '');
+        const password = readQueryVariable('password');
         const path = readQueryVariable('path', 'websockify');
 
         // | | |         | | |
@@ -187,8 +164,6 @@
             url += ':' + port;
         }
         url += '/' + path;
-        const token = readQueryVariable('token', '');
-        url += '?token=' + token;
 
         // Creating a new RFB object will start a new connection
         rfb = new RFB(document.getElementById('screen'), url,
@@ -210,7 +185,6 @@
     <div id="top_bar">
         <div id="status">Loading</div>
         <div id="sendCtrlAltDelButton">Send CtrlAltDel</div>
-        <div id="sendCtrlEscButton">Send CtrlEsc</div>
     </div>
     <div id="screen">
         <!-- This is where the remote screen will appear -->
