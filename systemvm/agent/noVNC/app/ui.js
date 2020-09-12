@@ -41,6 +41,8 @@ const UI = {
     reconnectCallback: null,
     reconnectPassword: null,
 
+    fullScreen: false,
+
     prime() {
         return WebUtil.initSettings().then(() => {
             if (document.readyState === "interactive" || document.readyState === "complete") {
@@ -158,6 +160,7 @@ const UI = {
         /* Populate the controls if defaults are provided in the URL */
         UI.initSetting('host', window.location.hostname);
         UI.initSetting('port', port);
+        UI.initSetting('token', window.location.token);
         UI.initSetting('encrypt', (window.location.protocol === "https:"));
         UI.initSetting('view_clip', false);
         UI.initSetting('resize', 'off');
@@ -317,10 +320,10 @@ const UI = {
     addClipboardHandlers() {
         document.getElementById("noVNC_clipboard_button")
             .addEventListener('click', UI.toggleClipboardPanel);
-        document.getElementById("noVNC_clipboard_text")
-            .addEventListener('change', UI.clipboardSend);
         document.getElementById("noVNC_clipboard_clear_button")
             .addEventListener('click', UI.clipboardClear);
+        document.getElementById("noVNC_clipboard_send_button")
+            .addEventListener('click', UI.clipboardSend);
     },
 
     // Add a call to save settings when the element changes,
@@ -944,6 +947,8 @@ const UI = {
             UI.closeClipboardPanel();
         } else {
             UI.openClipboardPanel();
+            setTimeout(() => document
+                .getElementById('noVNC_clipboard_text').focus(), 100);
         }
     },
 
@@ -955,14 +960,13 @@ const UI = {
 
     clipboardClear() {
         document.getElementById('noVNC_clipboard_text').value = "";
-        UI.rfb.clipboardPasteFrom("");
     },
 
     clipboardSend() {
         const text = document.getElementById('noVNC_clipboard_text').value;
-        Log.Debug(">> UI.clipboardSend: " + text.substr(0, 40) + "...");
-        UI.rfb.clipboardPasteFrom(text);
-        Log.Debug("<< UI.clipboardSend");
+        UI.rfb.sendText(text);
+        UI.closeClipboardPanel();
+        UI.focusOnConsole();
     },
 
 /* ------^-------
@@ -991,6 +995,7 @@ const UI = {
         const host = UI.getSetting('host');
         const port = UI.getSetting('port');
         const path = UI.getSetting('path');
+        const token = UI.getSetting('token')
 
         if (typeof password === 'undefined') {
             password = WebUtil.getConfigVar('password');
@@ -1022,6 +1027,7 @@ const UI = {
             url += ':' + port;
         }
         url += '/' + path;
+        url += '?token=' + token;
 
         UI.rfb = new RFB(document.getElementById('noVNC_container'), url,
                          { shared: UI.getSetting('shared'),
@@ -1087,9 +1093,9 @@ const UI = {
 
         let msg;
         if (UI.getSetting('encrypt')) {
-            msg = _("Connected (encrypted) to ") + UI.desktopName;
+            msg = _("Connected");
         } else {
-            msg = _("Connected (unencrypted) to ") + UI.desktopName;
+            msg = _("Connected")
         }
         UI.showStatus(msg);
         UI.updateVisualState('connected');
@@ -1206,38 +1212,14 @@ const UI = {
  * ------v------*/
 
     toggleFullscreen() {
-        if (document.fullscreenElement || // alternative standard method
-            document.mozFullScreenElement || // currently working methods
-            document.webkitFullscreenElement ||
-            document.msFullscreenElement) {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-        } else {
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
-            } else if (document.documentElement.mozRequestFullScreen) {
-                document.documentElement.mozRequestFullScreen();
-            } else if (document.documentElement.webkitRequestFullscreen) {
-                document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-            } else if (document.body.msRequestFullscreen) {
-                document.body.msRequestFullscreen();
-            }
-        }
-        UI.updateFullscreenButton();
+        this.fullScreen = !this.fullScreen
+        UI.rfb.scaleViewport = this.fullScreen
+        UI.updateFullscreenButton(this.fullScreen);
+        UI.focusOnConsole();
     },
 
-    updateFullscreenButton() {
-        if (document.fullscreenElement || // alternative standard method
-            document.mozFullScreenElement || // currently working methods
-            document.webkitFullscreenElement ||
-            document.msFullscreenElement ) {
+    updateFullscreenButton(fullScreen) {
+        if (fullScreen) {
             document.getElementById('noVNC_fullscreen_button')
                 .classList.add("noVNC_selected");
         } else {
@@ -1598,21 +1580,24 @@ const UI = {
         UI.idleControlbar();
     },
 
-    sendKey(keysym, code, down) {
-        UI.rfb.sendKey(keysym, code, down);
-
-        // Move focus to the screen in order to be able to use the
-        // keyboard right after these extra keys.
-        // The exception is when a virtual keyboard is used, because
-        // if we focus the screen the virtual keyboard would be closed.
-        // In this case we focus our special virtual keyboard input
-        // element instead.
+    // Move focus to the screen in order to be able to use the
+    // keyboard right after these extra keys.
+    // The exception is when a virtual keyboard is used, because
+    // if we focus the screen the virtual keyboard would be closed.
+    // In this case we focus our special virtual keyboard input
+    // element instead.
+    focusOnConsole() {
         if (document.getElementById('noVNC_keyboard_button')
             .classList.contains("noVNC_selected")) {
             document.getElementById('noVNC_keyboardinput').focus();
         } else {
             UI.rfb.focus();
         }
+    },
+
+    sendKey(keysym, code, down) {
+        UI.rfb.sendKey(keysym, code, down);
+        UI.focusOnConsole()
         // fade out the controlbar to highlight that
         // the focus has been moved to the screen
         UI.idleControlbar();

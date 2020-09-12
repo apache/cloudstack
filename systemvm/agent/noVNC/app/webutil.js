@@ -115,13 +115,8 @@ export function eraseCookie(name) {
 let settings = {};
 
 export function initSettings() {
-    if (!window.chrome || !window.chrome.storage) {
-        settings = {};
-        return Promise.resolve();
-    }
-
-    return new Promise(resolve => window.chrome.storage.sync.get(resolve))
-        .then((cfg) => { settings = cfg; });
+    settings = {};
+    return Promise.resolve();
 }
 
 // Update the settings cache, but do not write to permanent storage
@@ -134,22 +129,13 @@ export function writeSetting(name, value) {
     "use strict";
     if (settings[name] === value) return;
     settings[name] = value;
-    if (window.chrome && window.chrome.storage) {
-        window.chrome.storage.sync.set(settings);
-    } else {
-        localStorage.setItem(name, value);
-    }
 }
 
 export function readSetting(name, defaultValue) {
     "use strict";
     let value;
-    if ((name in settings) || (window.chrome && window.chrome.storage)) {
-        value = settings[name];
-    } else {
-        value = localStorage.getItem(name);
-        settings[name] = value;
-    }
+    value = settings[name];
+
     if (typeof value === "undefined") {
         value = null;
     }
@@ -169,11 +155,6 @@ export function eraseSetting(name) {
     // between this delete and the next read, it could lead to an unexpected
     // value change.
     delete settings[name];
-    if (window.chrome && window.chrome.storage) {
-        window.chrome.storage.sync.remove(name);
-    } else {
-        localStorage.removeItem(name);
-    }
 }
 
 export function injectParamIfMissing(path, param, value) {

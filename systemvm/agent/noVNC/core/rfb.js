@@ -23,6 +23,7 @@ import Cursor from "./util/cursor.js";
 import Websock from "./websock.js";
 import DES from "./des.js";
 import KeyTable from "./input/keysym.js";
+import USKeyTable from "./input/uskeysym.js";
 import XtScancode from "./input/xtscancodes.js";
 import { encodings } from "./encodings.js";
 import "./util/polyfill.js";
@@ -87,7 +88,7 @@ export default class RFB extends EventTargetMixin {
         this._rfbCredentials = options.credentials || {};
         this._shared = 'shared' in options ? !!options.shared : true;
         this._repeaterID = options.repeaterID || '';
-        this._wsProtocols = options.wsProtocols || [];
+        this._wsProtocols = ['binary'];
 
         // Internal state
         this._rfbConnectionState = '';
@@ -419,6 +420,23 @@ export default class RFB extends EventTargetMixin {
         setTimeout(this._initMsg.bind(this), 0);
     }
 
+    sendText(text) {
+        for (var i = 0; i < text.length; i++) {
+            const character = text.charAt(i);
+            var charCode = USKeyTable[character] || false;
+            if (charCode) {
+                this.sendKey(charCode, character, true);
+                this.sendKey(charCode, character, false);
+            } else {
+                charCode = text.charCodeAt(i)
+                this.sendKey(KeyTable.XK_Shift_L, "ShiftLeft", true);
+                this.sendKey(charCode, character, true);
+                this.sendKey(charCode, character, false);
+                this.sendKey(KeyTable.XK_Shift_L, "ShiftLeft", false);
+            }
+        }
+    }
+
     sendCtrlAltDel() {
         if (this._rfbConnectionState !== 'connected' || this._viewOnly) { return; }
         Log.Info("Sending Ctrl-Alt-Del");
@@ -428,6 +446,16 @@ export default class RFB extends EventTargetMixin {
         this.sendKey(KeyTable.XK_Delete, "Delete", true);
         this.sendKey(KeyTable.XK_Delete, "Delete", false);
         this.sendKey(KeyTable.XK_Alt_L, "AltLeft", false);
+        this.sendKey(KeyTable.XK_Control_L, "ControlLeft", false);
+    }
+
+    sendCtrlEsc() {
+        if (this._rfb_connection_state !== 'connected' || this._viewOnly) { return; }
+        Log.Info("Sending Ctrl-Esc");
+
+        this.sendKey(KeyTable.XK_Control_L, "ControlLeft", true);
+        this.sendKey(KeyTable.XK_Escape, "Escape", true);
+        this.sendKey(KeyTable.XK_Escape, "Escape", false);
         this.sendKey(KeyTable.XK_Control_L, "ControlLeft", false);
     }
 

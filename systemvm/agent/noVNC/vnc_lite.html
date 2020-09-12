@@ -53,7 +53,14 @@
             padding: 5px 5px 4px 5px;
             cursor: pointer;
         }
-
+        #sendCtrlEscButton {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            border: 1px outset;
+            padding: 5px 5px 4px 5px;
+            cursor: pointer;
+        }
         #screen {
             flex: 1; /* fill remaining space */
             overflow: hidden;
@@ -78,7 +85,7 @@
         // When this function is called we have
         // successfully connected to a server
         function connectedToServer(e) {
-            status("Connected to " + desktopName);
+            status("Connected");
         }
 
         // This function is called when we are disconnected
@@ -111,6 +118,11 @@
             return false;
         }
 
+        function sendCtrlEsc() {
+            rfb.sendCtrlEsc();
+            return false;
+        }
+
         // Show a status text in the top bar
         function status(text) {
             document.getElementById('status').textContent = text;
@@ -127,6 +139,7 @@
             // because Firefox < 53 has a bug w.r.t location.search
             const re = new RegExp('.*[?&]' + name + '=([^&#]*)'),
                   match = document.location.href.match(re);
+            if (typeof defaultValue === 'undefined') { defaultValue = null; }
 
             if (match) {
                 // We have to decode the URL since want the cleartext value
@@ -139,11 +152,14 @@
         document.getElementById('sendCtrlAltDelButton')
             .onclick = sendCtrlAltDel;
 
+        document.getElementById('sendCtrlEscButton')
+            .onclick = sendCtrlEsc;
+
         // Read parameters specified in the URL query string
         // By default, use the host and port of server that served this file
         const host = readQueryVariable('host', window.location.hostname);
         let port = readQueryVariable('port', window.location.port);
-        const password = readQueryVariable('password');
+        const password = readQueryVariable('password', '');
         const path = readQueryVariable('path', 'websockify');
 
         // | | |         | | |
@@ -164,6 +180,8 @@
             url += ':' + port;
         }
         url += '/' + path;
+        const token = readQueryVariable('token', '');
+        url += '?token=' + token;
 
         // Creating a new RFB object will start a new connection
         rfb = new RFB(document.getElementById('screen'), url,
@@ -185,6 +203,7 @@
     <div id="top_bar">
         <div id="status">Loading</div>
         <div id="sendCtrlAltDelButton">Send CtrlAltDel</div>
+        <div id="sendCtrlEscButton">Send CtrlEsc</div>
     </div>
     <div id="screen">
         <!-- This is where the remote screen will appear -->
