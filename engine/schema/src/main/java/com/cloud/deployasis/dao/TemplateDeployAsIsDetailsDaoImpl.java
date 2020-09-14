@@ -58,7 +58,7 @@ public class TemplateDeployAsIsDetailsDaoImpl extends ResourceDetailsDaoBase<Tem
     @Override
     public List<TemplateDeployAsIsDetailVO> listDetailsByTemplateIdMatchingPrefix(long templateId, String prefix) {
         SearchCriteria<TemplateDeployAsIsDetailVO> ssc = createSearchCriteria();
-        ssc.addAnd("resouceId", SearchCriteria.Op.EQ, templateId);
+        ssc.addAnd("resourceId", SearchCriteria.Op.EQ, templateId);
         ssc.addAnd("name", SearchCriteria.Op.LIKE, prefix + "%");
 
         return search(ssc, null);
