@@ -1753,11 +1753,11 @@ export default {
     },
     fetchTemplateNics (template) {
       var nics = []
-      if (template && template.details && Object.keys(template.details).length > 0) {
-        var keys = Object.keys(template.details)
-        keys = keys.filter(key => key.startsWith('ACS-network-'))
+      if (template && template.deployasisdetails && Object.keys(template.deployasisdetails).length > 0) {
+        var keys = Object.keys(template.deployasisdetails)
+        keys = keys.filter(key => key.startsWith('network-'))
         for (var key of keys) {
-          var propertyMap = JSON.parse(template.details[key])
+          var propertyMap = JSON.parse(template.deployasisdetails[key])
           nics.push(propertyMap)
         }
         nics.sort(function (a, b) {
@@ -1778,11 +1778,11 @@ export default {
     },
     fetchTemplateProperties (template) {
       var properties = []
-      if (template && template.details && Object.keys(template.details).length > 0) {
-        var keys = Object.keys(template.details)
-        keys = keys.filter(key => key.startsWith('ACS-property-'))
+      if (template && template.deployasisdetails && Object.keys(template.deployasisdetails).length > 0) {
+        var keys = Object.keys(template.deployasisdetails)
+        keys = keys.filter(key => key.startsWith('property-'))
         for (var key of keys) {
-          var propertyMap = JSON.parse(template.details[key])
+          var propertyMap = JSON.parse(template.deployasisdetails[key])
           properties.push(propertyMap)
         }
         properties.sort(function (a, b) {
@@ -1793,11 +1793,11 @@ export default {
     },
     fetchTemplateConfigurations (template) {
       var configurations = []
-      if (template && template.details && Object.keys(template.details).length > 0) {
-        var keys = Object.keys(template.details)
-        keys = keys.filter(key => key.startsWith('ACS-configuration-'))
+      if (template && template.deployasisdetails && Object.keys(template.deployasisdetails).length > 0) {
+        var keys = Object.keys(template.deployasisdetails)
+        keys = keys.filter(key => key.startsWith('configuration-'))
         for (var key of keys) {
-          var configuration = JSON.parse(template.details[key])
+          var configuration = JSON.parse(template.deployasisdetails[key])
           configuration.name = configuration.label
           configuration.displaytext = configuration.label
           configuration.iscustomized = true
@@ -1822,15 +1822,15 @@ export default {
     },
     fetchTemplateLicenses (template) {
       var licenses = []
-      if (template && template.details && Object.keys(template.details).length > 0) {
-        var keys = Object.keys(template.details)
-        const prefix = /ACS-eula-\d-/
-        keys = keys.filter(key => key.startsWith('ACS-eula-')).sort()
+      if (template && template.deployasisdetails && Object.keys(template.deployasisdetails).length > 0) {
+        var keys = Object.keys(template.deployasisdetails)
+        const prefix = /eula-\d-/
+        keys = keys.filter(key => key.startsWith('eula-')).sort()
         for (var key of keys) {
           var license = {
             id: this.escapePropertyKey(key.replace(' ', '-')),
             name: key.replace(prefix, ''),
-            text: template.details[key]
+            text: template.deployasisdetails[key]
           }
           licenses.push(license)
         }
