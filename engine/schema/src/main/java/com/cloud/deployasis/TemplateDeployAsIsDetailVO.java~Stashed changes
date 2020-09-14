@@ -14,20 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
+package com.cloud.deployasis;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name = "vm_template_details")
-public class VMTemplateDetailVO implements ResourceDetail {
+@Table(name = "template_deploy_as_is_details")
+public class TemplateDeployAsIsDetailVO implements ResourceDetail {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -39,20 +41,17 @@ public class VMTemplateDetailVO implements ResourceDetail {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "value", length = 1024)
+    @Lob
+    @Column(name = "value", length = 65535)
     private String value;
 
-    @Column(name = "display")
-    private boolean display = true;
-
-    public VMTemplateDetailVO() {
+    public TemplateDeployAsIsDetailVO() {
     }
 
-    public VMTemplateDetailVO(long templateId, String name, String value, boolean display) {
+    public TemplateDeployAsIsDetailVO(long templateId, String name, String value) {
         this.resourceId = templateId;
         this.name = name;
         this.value = value;
-        this.display = display;
     }
 
     @Override
@@ -60,24 +59,21 @@ public class VMTemplateDetailVO implements ResourceDetail {
         return id;
     }
 
-    @Override
     public long getResourceId() {
         return resourceId;
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public String getValue() {
         return value;
     }
 
     @Override
     public boolean isDisplay() {
-        return display;
+        return true;
     }
 
     public void setId(long id) {

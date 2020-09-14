@@ -199,6 +199,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "VMware only: true if template is deployed without orchestrating disks and networks but \"as-is\" defined in the template.")
     private Boolean deployAsIs;
 
+    @SerializedName(ApiConstants.DEPLOY_AS_IS_DETAILS)
+    @Param(description = "VMware only: additional key/value details tied with deploy-as-is template")
+    private Map<String, String> deployAsIsDetails;
+
     @SerializedName("parenttemplateid")
     @Param(description = "if Datadisk template, then id of the root disk template this template belongs to")
     @Deprecated(since = "4.15")
@@ -428,5 +432,20 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setRequiresHvm(Boolean requiresHvm) {
         this.requiresHvm = requiresHvm;
+    }
+
+    public Map<String, String> getDeployAsIsDetails() {
+        return this.deployAsIsDetails;
+    }
+
+    public void setDeployAsIsDetails(Map<String, String> details) {
+        this.deployAsIsDetails = details;
+    }
+
+    public void addDeployAsIsDetail(String key, String value) {
+        if (this.deployAsIsDetails == null) {
+            setDeployAsIsDetails(new HashMap<>());
+        }
+        this.deployAsIsDetails.put(key,value);
     }
 }

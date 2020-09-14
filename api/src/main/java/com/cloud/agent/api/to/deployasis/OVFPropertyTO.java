@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.agent.api.storage;
+package com.cloud.agent.api.to.deployasis;
 
 import com.cloud.agent.api.LogLevel;
 
@@ -30,7 +30,7 @@ import com.cloud.agent.api.LogLevel;
  * Choose "Remote HTTP and SSH Client Routes" to route only traffic destined for the management client(s), when they are on remote networks.</Description>
  *       </Property>
  */
-public class OVFPropertyTO {
+public class OVFPropertyTO implements TemplateDeployAsIsInformationTO {
 
     private String key;
     private String type;

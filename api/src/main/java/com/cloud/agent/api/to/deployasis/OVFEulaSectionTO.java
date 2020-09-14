@@ -16,43 +16,31 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package com.cloud.agent.api.storage;
+package com.cloud.agent.api.to.deployasis;
 
-import java.util.List;
+import com.cloud.agent.api.LogLevel;
 
-public class OVFConfigurationTO {
-
-    private final String id;
-    private final String label;
-    private final String description;
-    private List<OVFVirtualHardwareItemTO> hardwareItems;
+/**
+ * End-user licence agreement
+ */
+public class OVFEulaSectionTO implements TemplateDeployAsIsInformationTO {
+    private String info;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private byte[] compressedLicense;
     private int index;
 
-    public OVFConfigurationTO(String id, String label, String description, int index) {
-        this.id = id;
-        this.label = label;
-        this.description = description;
-        this.index = index;
+    public OVFEulaSectionTO(String info, byte[] license, int eulaIndex) {
+        this.info = info;
+        this.compressedLicense = license;
+        this.index = eulaIndex;
     }
 
-    public String getId() {
-        return id;
+    public String getInfo() {
+        return this.info;
     }
 
-    public String getLabel() {
-        return label;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setHardwareItems(List<OVFVirtualHardwareItemTO> items) {
-        this.hardwareItems = items;
-    }
-
-    public List<OVFVirtualHardwareItemTO> getHardwareItems() {
-        return hardwareItems;
+    public byte[] getCompressedLicense() {
+        return this.compressedLicense;
     }
 
     public int getIndex() {

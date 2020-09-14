@@ -26,9 +26,12 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 
 public class DownloadAnswer extends Answer {
     private String jobId;
@@ -44,7 +47,7 @@ public class DownloadAnswer extends Answer {
     @LogLevel(LogLevel.Log4jLevel.Off)
     private List<OVFPropertyTO> ovfProperties;
     @LogLevel(LogLevel.Log4jLevel.Off)
-    private List<NetworkPrerequisiteTO> networkRequirements;
+    private List<OVFNetworkTO> networkRequirements;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private List<DatadiskTO> disks;
     @LogLevel(LogLevel.Log4jLevel.Off)
@@ -169,11 +172,11 @@ public class DownloadAnswer extends Answer {
         this.ovfProperties = ovfProperties;
     }
 
-    public List<NetworkPrerequisiteTO> getNetworkRequirements() {
+    public List<OVFNetworkTO> getNetworkRequirements() {
         return networkRequirements;
     }
 
-    public void setNetworkRequirements(List<NetworkPrerequisiteTO> networkRequirements) {
+    public void setNetworkRequirements(List<OVFNetworkTO> networkRequirements) {
         this.networkRequirements = networkRequirements;
     }
 

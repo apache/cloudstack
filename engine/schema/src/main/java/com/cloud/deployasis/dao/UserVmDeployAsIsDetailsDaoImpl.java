@@ -14,20 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
+package com.cloud.deployasis.dao;
 
-
+import com.cloud.deployasis.UserVmDeployAsIsDetailVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
-
-import com.cloud.storage.VMTemplateDetailVO;
-
 @Component
-public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
+public class UserVmDeployAsIsDetailsDaoImpl extends ResourceDetailsDaoBase<UserVmDeployAsIsDetailVO> implements UserVmDeployAsIsDetailsDao {
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
-        super.addDetail(new VMTemplateDetailVO(resourceId, key, value, display));
+        super.addDetail(new UserVmDeployAsIsDetailVO(resourceId, key, value));
     }
 }

@@ -37,10 +37,10 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.storage.OVFEulaSectionTO;
-import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
+import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
 import com.cloud.agent.api.to.DatadiskTO;
-import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.S3TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader;
@@ -58,7 +58,7 @@ import com.cloud.storage.template.RawImageProcessor;
 import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.TemplateConstants;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -132,7 +132,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private final long id;
         private final ResourceType resourceType;
         private List<OVFPropertyTO> ovfProperties;
-        private List<NetworkPrerequisiteTO> networks;
+        private List<OVFNetworkTO> networks;
         private List<DatadiskTO> disks;
         private OVFVirtualHardwareSectionTO hardwareSection;
         private List<OVFEulaSectionTO> eulaSections;
@@ -239,11 +239,11 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             this.ovfProperties = ovfProperties;
         }
 
-        public List<NetworkPrerequisiteTO> getNetworks() {
+        public List<OVFNetworkTO> getNetworks() {
             return networks;
         }
 
-        public void setNetworks(List<NetworkPrerequisiteTO> networks) {
+        public void setNetworks(List<OVFNetworkTO> networks) {
             this.networks = networks;
         }
 

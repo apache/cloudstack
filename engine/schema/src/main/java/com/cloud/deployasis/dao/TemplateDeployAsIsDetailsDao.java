@@ -14,20 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
+package com.cloud.deployasis.dao;
 
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
+import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-import org.springframework.stereotype.Component;
+import java.util.List;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+public interface TemplateDeployAsIsDetailsDao extends GenericDao<TemplateDeployAsIsDetailVO, Long>, ResourceDetailsDao<TemplateDeployAsIsDetailVO> {
 
-import com.cloud.storage.VMTemplateDetailVO;
-
-@Component
-public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
-
-    @Override
-    public void addDetail(long resourceId, String key, String value, boolean display) {
-        super.addDetail(new VMTemplateDetailVO(resourceId, key, value, display));
-    }
+    OVFPropertyTO findPropertyByTemplateAndKey(long templateId, String key);
+    List<TemplateDeployAsIsDetailVO> listDetailsByTemplateIdMatchingPrefix(long templateId, String prefix);
+    List<OVFNetworkTO> listNetworkRequirementsByTemplateId(long templateId);
 }

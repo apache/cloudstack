@@ -14,45 +14,44 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
+package com.cloud.deployasis;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name = "vm_template_details")
-public class VMTemplateDetailVO implements ResourceDetail {
+@Table(name = "user_vm_deploy_as_is_details")
+public class UserVmDeployAsIsDetailVO implements ResourceDetail {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
-    @Column(name = "template_id")
-    private long resourceId;
+    @Column(name = "vm_id")
+    private long vmId;
 
     @Column(name = "name")
     private String name;
 
-    @Column(name = "value", length = 1024)
+    @Lob
+    @Column(name = "value", length = 65535)
     private String value;
 
-    @Column(name = "display")
-    private boolean display = true;
-
-    public VMTemplateDetailVO() {
+    public UserVmDeployAsIsDetailVO() {
     }
 
-    public VMTemplateDetailVO(long templateId, String name, String value, boolean display) {
-        this.resourceId = templateId;
+    public UserVmDeployAsIsDetailVO(long vmId, String name, String value) {
+        this.vmId = vmId;
         this.name = name;
         this.value = value;
-        this.display = display;
     }
 
     @Override
@@ -60,32 +59,29 @@ public class VMTemplateDetailVO implements ResourceDetail {
         return id;
     }
 
-    @Override
     public long getResourceId() {
-        return resourceId;
+        return vmId;
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public String getValue() {
         return value;
     }
 
     @Override
     public boolean isDisplay() {
-        return display;
+        return true;
     }
 
     public void setId(long id) {
         this.id = id;
     }
 
-    public void setResourceId(long resourceId) {
-        this.resourceId = resourceId;
+    public void setVmId(long resourceId) {
+        this.vmId = resourceId;
     }
 
     public void setName(String name) {

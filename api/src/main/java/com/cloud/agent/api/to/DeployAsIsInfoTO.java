@@ -16,36 +16,37 @@
 // under the License.
 package com.cloud.agent.api.to;
 
+import com.cloud.agent.api.LogLevel;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class DeployAsIsInfoTO {
 
-    private boolean deployAsIs;
     private String templatePath;
-    private String deploymentConfiguration;
+    private String destStoragePool;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private Map<String, String> properties = new HashMap<>();
 
     public DeployAsIsInfoTO() {
     }
 
-    public boolean isDeployAsIs() {
-        return deployAsIs;
-    }
-
-    public void setDeployAsIs(boolean deployAsIs) {
-        this.deployAsIs = deployAsIs;
+    public DeployAsIsInfoTO(String templatePath, String destStoragePool, Map<String, String> properties) {
+        this.templatePath = templatePath;
+        this.destStoragePool = destStoragePool;
+        this.properties = properties;
     }
 
     public String getTemplatePath() {
         return templatePath;
     }
 
-    public void setTemplatePath(String templateInSecondaryPath) {
-        this.templatePath = templateInSecondaryPath;
+    public Map<String, String> getProperties() {
+        return properties;
     }
 
-    public String getDeploymentConfiguration() {
-        return deploymentConfiguration;
+    public String getDestStoragePool() {
+        return destStoragePool;
     }
 
-    public void setDeploymentConfiguration(String deploymentConfiguration) {
-        this.deploymentConfiguration = deploymentConfiguration;
-    }
 }

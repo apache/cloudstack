@@ -1472,8 +1472,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (disk.getType() != Volume.Type.ISO) {
                 final VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
                 final VolumeVO volume = _volsDao.findById(vol.getId());
-                if (vmSpec.getDeployAsIsInfo() != null && vmSpec.getDeployAsIsInfo().isDeployAsIs()
-                        && StringUtils.isNotBlank(vol.getPath())) {
+                if (vmSpec.getDeployAsIsInfo() != null && StringUtils.isNotBlank(vol.getPath())) {
                     volume.setPath(vol.getPath());
                     _volsDao.update(volume.getId(), volume);
                 }

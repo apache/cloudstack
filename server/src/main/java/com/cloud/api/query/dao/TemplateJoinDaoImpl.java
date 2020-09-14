@@ -26,6 +26,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.deployasis.DeployAsIsConstants;
+import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
@@ -83,6 +86,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private ImageStoreDao dataStoreDao;
     @Inject
     private VMTemplateDetailsDao _templateDetailsDao;
+    @Inject
+    private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -240,6 +245,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         if (detailsView.contains(ApiConstants.DomainDetails.all)) {
             Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(template.getId());
             templateResponse.setDetails(details);
+
+            setDeployAsIsDetails(template, templateResponse);
         }
 
         // update tag information
@@ -270,6 +277,19 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
         templateResponse.setObjectName("template");
         return templateResponse;
+    }
+
+    private void setDeployAsIsDetails(TemplateJoinVO template, TemplateResponse templateResponse) {
+        if (template.isDeployAsIs()) {
+            List<TemplateDeployAsIsDetailVO> deployAsIsDetails = templateDeployAsIsDetailsDao.listDetails(template.getId());
+            for (TemplateDeployAsIsDetailVO deployAsIsDetailVO : deployAsIsDetails) {
+                if (deployAsIsDetailVO.getName().startsWith(DeployAsIsConstants.OVF_HARDWARE_ITEM_PREFIX)) {
+                    //Do not list hardware items
+                    continue;
+                }
+                templateResponse.addDeployAsIsDetail(deployAsIsDetailVO.getName(), deployAsIsDetailVO.getValue());
+            }
+        }
     }
 
     //TODO: This is to keep compatibility with 4.1 API, where updateTemplateCmd and updateIsoCmd will return a simpler TemplateResponse

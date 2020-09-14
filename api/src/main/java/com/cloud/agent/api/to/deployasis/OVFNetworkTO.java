@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.net;
+package com.cloud.agent.api.to.deployasis;
 
 /**
  * container for the network prerequisites as found in the appliance template
@@ -38,7 +38,7 @@ package org.apache.cloudstack.api.net;
  * </Item>
  * {code}
  */
-public class NetworkPrerequisiteTO {
+public class OVFNetworkTO implements TemplateDeployAsIsInformationTO {
     String name;
     String networkDescription;
 

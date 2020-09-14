@@ -39,10 +39,15 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
+import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.utils.compression.CompressionUtil;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -573,7 +578,7 @@ public class OVFHelper {
         return null;
     }
 
-    public List<NetworkPrerequisiteTO> getNetPrerequisitesFromDocument(Document doc) throws InternalErrorException {
+    public List<OVFNetworkTO> getNetPrerequisitesFromDocument(Document doc) throws InternalErrorException {
         if (doc == null) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("no document to parse; returning no prerequiste networks");
@@ -581,7 +586,7 @@ public class OVFHelper {
             return Collections.emptyList();
         }
 
-        Map<String, NetworkPrerequisiteTO> nets = getNetworksFromDocumentTree(doc);
+        Map<String, OVFNetworkTO> nets = getNetworksFromDocumentTree(doc);
 
         checkForOnlyOneSystemNode(doc);
 
@@ -590,7 +595,7 @@ public class OVFHelper {
         return new ArrayList<>(nets.values());
     }
 
-    private void matchNicsToNets(Map<String, NetworkPrerequisiteTO> nets, Node systemElement) {
+    private void matchNicsToNets(Map<String, OVFNetworkTO> nets, Node systemElement) {
         final DocumentTraversal traversal = (DocumentTraversal) systemElement;
         final NodeIterator iterator = traversal.createNodeIterator(systemElement, NodeFilter.SHOW_ELEMENT, null, true);
         if (s_logger.isTraceEnabled()) {
@@ -606,9 +611,9 @@ public class OVFHelper {
                     if(s_logger.isInfoEnabled()) {
                         s_logger.info(String.format("found a nic definition without a network definition byname %s, adding it to the list.", name));
                     }
-                    nets.put(name, new NetworkPrerequisiteTO());
+                    nets.put(name, new OVFNetworkTO());
                 }
-                NetworkPrerequisiteTO thisNet = nets.get(name);
+                OVFNetworkTO thisNet = nets.get(name);
                 if (e.getParentNode() != null) {
                     fillNicPrerequisites(thisNet,e.getParentNode());
                 }
@@ -625,7 +630,7 @@ public class OVFHelper {
      * @param nic the object to carry through the system
      * @param parentNode the xml container node for nic data
      */
-    private void fillNicPrerequisites(NetworkPrerequisiteTO nic, Node parentNode) {
+    private void fillNicPrerequisites(OVFNetworkTO nic, Node parentNode) {
         String addressOnParentStr = getChildNodeValue(parentNode, "AddressOnParent");
         String automaticAllocationStr = getChildNodeValue(parentNode, "AutomaticAllocation");
         String description = getChildNodeValue(parentNode, "Description");
@@ -667,9 +672,9 @@ public class OVFHelper {
         }
     }
 
-    private Map<String, NetworkPrerequisiteTO> getNetworksFromDocumentTree(Document doc) {
+    private Map<String, OVFNetworkTO> getNetworksFromDocumentTree(Document doc) {
         NodeList networkElements = doc.getElementsByTagName("Network");
-        Map<String, NetworkPrerequisiteTO> nets = new HashMap<>();
+        Map<String, OVFNetworkTO> nets = new HashMap<>();
         for (int i = 0; i < networkElements.getLength(); i++) {
 
             Element networkElement = (Element)networkElements.item(i);
@@ -677,7 +682,7 @@ public class OVFHelper {
 
             String description = getChildNodeValue(networkElement, "Description");
 
-            NetworkPrerequisiteTO network = new NetworkPrerequisiteTO();
+            OVFNetworkTO network = new OVFNetworkTO();
             network.setName(networkName);
             network.setNetworkDescription(description);
 

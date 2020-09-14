@@ -14,10 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api.storage;
+package com.cloud.agent.api.to.deployasis;
 
 // From: https://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData.xsd
-public class OVFVirtualHardwareItemTO {
+public class OVFVirtualHardwareItemTO implements TemplateDeployAsIsInformationTO{
 
     //From: https://schemas.dmtf.org/wbem/cim-html/2/CIM_ResourceAllocationSettingData.html
     public enum HardwareResourceType {
