@@ -59,7 +59,7 @@ public interface SnapshotManager extends Configurable {
     public static final ConfigKey<Boolean> BackupSnapshotAfterTakingSnapshot = new ConfigKey<Boolean>(Boolean.class, "snapshot.backup.to.secondary",  "Snapshots", "true",
             "Indicates whether to always backup primary storage snapshot to secondary storage. Keeping snapshots only on Primary storage is applicable for KVM + Ceph only.", false, ConfigKey.Scope.Global, null);
 
-    public static final ConfigKey<Boolean> VMsnapshotKVM = new ConfigKey<>(Boolean.class, "kvm.vmstoragesnapshot.enabled", "Snapshots", "false", "For live snapshot of virtual machine instance on KVM hypervisor without memory", false, ConfigKey.Scope.Global, null);
+    public static final ConfigKey<Boolean> VMsnapshotKVM = new ConfigKey<>(Boolean.class, "kvm.vmstoragesnapshot.enabled", "Snapshots", "false", "For live snapshot of virtual machine instance on KVM hypervisor without memory. Requieres qemu version 1.6+ (on NFS or Local file system) and qemu-guest-agent installed on guest VM", false, ConfigKey.Scope.Global, null);
 
     void deletePoliciesForVolume(Long volumeId);
 
