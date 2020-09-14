@@ -36,7 +36,7 @@ public class UserVmDeployAsIsDetailVO implements ResourceDetail {
     private long id;
 
     @Column(name = "vm_id")
-    private long vmId;
+    private long resourceId;
 
     @Column(name = "name")
     private String name;
@@ -49,7 +49,7 @@ public class UserVmDeployAsIsDetailVO implements ResourceDetail {
     }
 
     public UserVmDeployAsIsDetailVO(long vmId, String name, String value) {
-        this.vmId = vmId;
+        this.resourceId = vmId;
         this.name = name;
         this.value = value;
     }
@@ -60,7 +60,7 @@ public class UserVmDeployAsIsDetailVO implements ResourceDetail {
     }
 
     public long getResourceId() {
-        return vmId;
+        return resourceId;
     }
 
     public String getName() {
@@ -80,8 +80,8 @@ public class UserVmDeployAsIsDetailVO implements ResourceDetail {
         this.id = id;
     }
 
-    public void setVmId(long resourceId) {
-        this.vmId = resourceId;
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
     }
 
     public void setName(String name) {
