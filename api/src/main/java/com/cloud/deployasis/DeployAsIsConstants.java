@@ -18,10 +18,10 @@ package com.cloud.deployasis;
 
 public interface DeployAsIsConstants {
 
-    String ACS_PROPERTY_PREFIX = "ACS-property-";
-    String REQUIRED_NETWORK_PREFIX = "ACS-network-";
-    String OVF_HARDWARE_CONFIGURATION_PREFIX = "ACS-configuration-";
-    String OVF_HARDWARE_ITEM_PREFIX = "ACS-hardware-item-";
-    String OVF_EULA_SECTION_PREFIX = "ACS-eula-";
+    String PROPERTY_PREFIX = "property-";
+    String NETWORK_PREFIX = "network-";
+    String CONFIGURATION_PREFIX = "configuration-";
+    String HARDWARE_ITEM_PREFIX = "hardware-item-";
+    String EULA_PREFIX = "eula-";
 
 }

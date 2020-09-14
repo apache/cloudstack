@@ -176,18 +176,18 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
 
     private String getKeyFromInformationTO(TemplateDeployAsIsInformationTO informationTO) {
         if (informationTO instanceof OVFPropertyTO) {
-            return DeployAsIsConstants.ACS_PROPERTY_PREFIX + ((OVFPropertyTO) informationTO).getKey();
+            return DeployAsIsConstants.PROPERTY_PREFIX + ((OVFPropertyTO) informationTO).getKey();
         } else if (informationTO instanceof OVFNetworkTO) {
-            return DeployAsIsConstants.REQUIRED_NETWORK_PREFIX + ((OVFNetworkTO) informationTO).getName();
+            return DeployAsIsConstants.NETWORK_PREFIX + ((OVFNetworkTO) informationTO).getName();
         } else if (informationTO instanceof OVFConfigurationTO) {
-            return DeployAsIsConstants.OVF_HARDWARE_CONFIGURATION_PREFIX +
+            return DeployAsIsConstants.CONFIGURATION_PREFIX +
                     ((OVFConfigurationTO) informationTO).getIndex() + "-" + ((OVFConfigurationTO) informationTO).getId();
         } else if (informationTO instanceof OVFVirtualHardwareItemTO) {
             String key = ((OVFVirtualHardwareItemTO) informationTO).getResourceType().getName().trim().replaceAll("\\s","")
                     + "-" + ((OVFVirtualHardwareItemTO) informationTO).getInstanceId();
-            return DeployAsIsConstants.OVF_HARDWARE_ITEM_PREFIX + key;
+            return DeployAsIsConstants.HARDWARE_ITEM_PREFIX + key;
         } else if (informationTO instanceof OVFEulaSectionTO) {
-            return DeployAsIsConstants.OVF_EULA_SECTION_PREFIX + ((OVFEulaSectionTO) informationTO).getIndex() +
+            return DeployAsIsConstants.EULA_PREFIX + ((OVFEulaSectionTO) informationTO).getIndex() +
                     "-" + ((OVFEulaSectionTO) informationTO).getInfo();
         }
         return null;
