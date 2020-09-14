@@ -36,7 +36,7 @@ public class TemplateDeployAsIsDetailVO implements ResourceDetail {
     private long id;
 
     @Column(name = "template_id")
-    private long templateId;
+    private long resourceId;
 
     @Column(name = "name")
     private String name;
@@ -49,7 +49,7 @@ public class TemplateDeployAsIsDetailVO implements ResourceDetail {
     }
 
     public TemplateDeployAsIsDetailVO(long templateId, String name, String value) {
-        this.templateId = templateId;
+        this.resourceId = templateId;
         this.name = name;
         this.value = value;
     }
@@ -60,7 +60,7 @@ public class TemplateDeployAsIsDetailVO implements ResourceDetail {
     }
 
     public long getResourceId() {
-        return templateId;
+        return resourceId;
     }
 
     public String getName() {
@@ -80,8 +80,8 @@ public class TemplateDeployAsIsDetailVO implements ResourceDetail {
         this.id = id;
     }
 
-    public void setTemplateId(long resourceId) {
-        this.templateId = resourceId;
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
     }
 
     public void setName(String name) {

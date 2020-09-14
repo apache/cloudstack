@@ -45,7 +45,7 @@ public class TemplateDeployAsIsDetailsDaoImpl extends ResourceDetailsDaoBase<Tem
     @Override
     public OVFPropertyTO findPropertyByTemplateAndKey(long templateId, String key) {
         SearchCriteria<TemplateDeployAsIsDetailVO> sc = createSearchCriteria();
-        sc.addAnd("templateId", SearchCriteria.Op.EQ, templateId);
+        sc.addAnd("resourceId", SearchCriteria.Op.EQ, templateId);
         sc.addAnd("name", SearchCriteria.Op.EQ, key.startsWith(DeployAsIsConstants.PROPERTY_PREFIX) ? key : DeployAsIsConstants.PROPERTY_PREFIX + key);
         OVFPropertyTO property = null;
         TemplateDeployAsIsDetailVO detail = findOneBy(sc);
@@ -58,7 +58,7 @@ public class TemplateDeployAsIsDetailsDaoImpl extends ResourceDetailsDaoBase<Tem
     @Override
     public List<TemplateDeployAsIsDetailVO> listDetailsByTemplateIdMatchingPrefix(long templateId, String prefix) {
         SearchCriteria<TemplateDeployAsIsDetailVO> ssc = createSearchCriteria();
-        ssc.addAnd("templateId", SearchCriteria.Op.EQ, templateId);
+        ssc.addAnd("resouceId", SearchCriteria.Op.EQ, templateId);
         ssc.addAnd("name", SearchCriteria.Op.LIKE, prefix + "%");
 
         return search(ssc, null);
