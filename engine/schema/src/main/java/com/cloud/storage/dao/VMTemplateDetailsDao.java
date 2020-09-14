@@ -16,25 +16,11 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import com.cloud.agent.api.storage.OVFPropertyTO;
-import com.cloud.agent.api.to.DatadiskTO;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.utils.db.GenericDao;
 
-import java.util.List;
-
 public interface VMTemplateDetailsDao extends GenericDao<VMTemplateDetailVO, Long>, ResourceDetailsDao<VMTemplateDetailVO> {
 
-    boolean existsOption(long templateId, String key);
-    OVFPropertyTO findPropertyByTemplateAndKey(long templateId, String key);
-    void saveOptions(List<OVFPropertyTO> opts);
-    List<OVFPropertyTO> listPropertiesByTemplateId(long templateId);
-    List<NetworkPrerequisiteTO> listNetworkRequirementsByTemplateId(long templateId);
-    List<DatadiskTO> listDisksByTemplateId(long templateId);
-
-    List<VMTemplateDetailVO> listDetailsByTemplateIdMatchingPrefix(long templateId, String prefix);
-    String getTemplateEulaSectionsUrl(long templateId);
 }

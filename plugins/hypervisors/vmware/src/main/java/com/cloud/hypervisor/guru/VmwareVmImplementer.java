@@ -16,9 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.guru;
 
-import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.agent.api.to.DeployAsIsInfoTO;
-import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -35,12 +33,8 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.ImageStore;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -51,10 +45,8 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -65,7 +57,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 class VmwareVmImplementer {
     private static final Logger LOGGER = Logger.getLogger(VmwareVmImplementer.class);
@@ -89,9 +80,9 @@ class VmwareVmImplementer {
     @Inject
     VMTemplatePoolDao templateStoragePoolDao;
     @Inject
-    VMTemplateDetailsDao templateDetailsDao;
-    @Inject
     VmwareManager vmwareMgr;
+    @Inject
+    DeployAsIsHelper deployAsIsHelper;
 
     private Boolean globalNestedVirtualisationEnabled;
     private Boolean globalNestedVPerVMEnabled;
@@ -183,9 +174,7 @@ class VmwareVmImplementer {
         }
 
         if (deployAsIs) {
-            List<OVFPropertyTO> ovfProperties = getOvfPropertyList(vm, details);
-            handleOvfProperties(vm, to, details, ovfProperties);
-            setDeployAsIsParams(vm, to, details);
+            setDeployAsIsInfoTO(vm, to, details);
         }
 
         setDetails(to, details);
@@ -193,44 +182,25 @@ class VmwareVmImplementer {
         return to;
     }
 
-    private void setDeployAsIsParams(VirtualMachineProfile vm, VirtualMachineTO to, Map<String, String> details) {
-        DeployAsIsInfoTO info = new DeployAsIsInfoTO();
-
-        String configuration = null;
-        if (details.containsKey(VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION)) {
-            configuration = details.get(VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
-            info.setDeploymentConfiguration(configuration);
-        }
-
-        // Deploy as-is disks are all allocated to the same storage pool
-        String deployAsIsStoreUuid = vm.getDisks().get(0).getData().getDataStore().getUuid();
-        StoragePoolVO storagePoolVO = storagePoolDao.findByUuid(deployAsIsStoreUuid);
-        VMTemplateStoragePoolVO tmplRef = templateStoragePoolDao.findByPoolTemplate(storagePoolVO.getId(), vm.getTemplate().getId(), configuration);
-        if (tmplRef != null) {
-            info.setTemplatePath(tmplRef.getInstallPath());
-        }
-
-        info.setDeployAsIs(true);
+    /**
+     * Set the information relevant for deploy-as-is VMs on the VM TO
+     */
+    private void setDeployAsIsInfoTO(VirtualMachineProfile vm, VirtualMachineTO to, Map<String, String> details) {
+        String configuration = details.getOrDefault(VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION, null);
+        Map<String, String> properties = deployAsIsHelper.getVirtualMachineDeployAsIsProperties(vm);
+        String destStoragePool = deployAsIsHelper.getAllocatedVirtualMachineDestinationStoragePool(vm);
+        String templatePath = deployAsIsHelper.getAllocatedVirtualMachineTemplatePath(vm, configuration, destStoragePool);
+        DeployAsIsInfoTO info = new DeployAsIsInfoTO(templatePath, destStoragePool, properties);
         to.setDeployAsIsInfo(info);
     }
 
     private void setDetails(VirtualMachineTO to, Map<String, String> details) {
-        Map<String, String> detailsToSend = new HashMap<>();
-        for (String key: details.keySet()) {
-            if (key.startsWith(ImageStore.OVF_EULA_SECTION_PREFIX) ||
-                    key.startsWith(ImageStore.OVF_HARDWARE_CONFIGURATION_PREFIX) ||
-                    key.startsWith(ImageStore.OVF_HARDWARE_ITEM_PREFIX)) {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("Discarding detail for VM %s: %s => %s", to.getName(), key, details.get(key)));
-                }
-                continue;
-            }
-            if (LOGGER.isTraceEnabled()) {
+        if (LOGGER.isTraceEnabled()) {
+            for (String key : details.keySet()) {
                 LOGGER.trace(String.format("Detail for VM %s: %s => %s", to.getName(), key, details.get(key)));
             }
-            detailsToSend.put(key, details.get(key));
         }
-        to.setDetails(detailsToSend);
+        to.setDetails(details);
     }
 
     private void configureDomainRouterNicsAndDetails(VirtualMachineProfile vm, VirtualMachineTO to, Map<String, String> details, List<NicProfile> nicProfiles) {
@@ -318,49 +288,6 @@ class VmwareVmImplementer {
         }
     }
 
-    private void handleOvfProperties(VirtualMachineProfile vm, VirtualMachineTO to, Map<String, String> details, List<OVFPropertyTO> ovfProperties) {
-        if (CollectionUtils.isNotEmpty(ovfProperties)) {
-            removeOvfPropertiesFromDetails(ovfProperties, details);
-            to.setOvfProperties(ovfProperties);
-        }
-    }
-
-    private DiskTO getRootDiskTOFromVM(VirtualMachineProfile vm) {
-        DiskTO rootDiskTO;
-        List<DiskTO> rootDiskList;
-        rootDiskList = vm.getDisks().stream().filter(x -> x.getType() == Volume.Type.ROOT).collect(Collectors.toList());
-        if (rootDiskList.size() != 1) {
-            if (vm.getTemplate().isDeployAsIs()) {
-                rootDiskList = vm.getDisks().stream().filter(x -> x.getType() == null).collect(Collectors.toList());
-                if (rootDiskList.size() < 1) {
-                    throw new CloudRuntimeException("Did not find a template to serve as root disk for VM " + vm.getHostName());
-                }
-            } else {
-                throw new CloudRuntimeException("Did not find only one root disk for VM " + vm.getHostName());
-            }
-        }
-        rootDiskTO = rootDiskList.get(0);
-        return rootDiskTO;
-    }
-
-    private List<OVFPropertyTO> getOvfPropertyList(VirtualMachineProfile vm, Map<String, String> details) {
-        List<OVFPropertyTO> ovfProperties = new ArrayList<OVFPropertyTO>();
-        for (String detailKey : details.keySet()) {
-            if (detailKey.startsWith(ImageStore.ACS_PROPERTY_PREFIX)) {
-                OVFPropertyTO propertyTO = templateDetailsDao.findPropertyByTemplateAndKey(vm.getTemplateId(), detailKey);
-                String vmPropertyKey = detailKey.replace(ImageStore.ACS_PROPERTY_PREFIX, "");
-                if (propertyTO == null) {
-                    LOGGER.warn(String.format("OVF property %s not found on template, discarding", vmPropertyKey));
-                    continue;
-                }
-                propertyTO.setKey(vmPropertyKey);
-                propertyTO.setValue(details.get(detailKey));
-                ovfProperties.add(propertyTO);
-            }
-        }
-        return ovfProperties;
-    }
-
     private void addReservationDetails(long clusterId, Map<String, String> details) {
         details.put(VMwareGuru.VmwareReserveCpu.key(), VMwareGuru.VmwareReserveCpu.valueIn(clusterId).toString());
         details.put(VMwareGuru.VmwareReserveMemory.key(), VMwareGuru.VmwareReserveMemory.valueIn(clusterId).toString());
@@ -406,16 +333,6 @@ class VmwareVmImplementer {
         }
 // there should also be
 //        details.put(VmDetailConstants.BOOT_TYPE, to.getBootType());
-    }
-
-    /*
-        Remove OVF properties from details to be sent to hypervisor (avoid duplicate data)
-     */
-    private void removeOvfPropertiesFromDetails(List<OVFPropertyTO> ovfProperties, Map<String, String> details) {
-        for (OVFPropertyTO propertyTO : ovfProperties) {
-            String key = propertyTO.getKey();
-            details.remove(ApiConstants.PROPERTIES + "-" + key);
-        }
     }
 
     /**

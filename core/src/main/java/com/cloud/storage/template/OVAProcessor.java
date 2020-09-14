@@ -28,12 +28,12 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.agent.api.storage.OVFConfigurationTO;
-import com.cloud.agent.api.storage.OVFEulaSectionTO;
-import com.cloud.agent.api.storage.OVFPropertyTO;
-import com.cloud.agent.api.storage.OVFVirtualHardwareItemTO;
-import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
+import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
+import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -115,7 +115,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             info.disks = disks;
         }
 
-        List<NetworkPrerequisiteTO> nets = ovfHelper.getNetPrerequisitesFromDocument(doc);
+        List<OVFNetworkTO> nets = ovfHelper.getNetPrerequisitesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(nets)) {
             LOGGER.info("Found " + nets.size() + " prerequisite networks");
             info.networks = nets;

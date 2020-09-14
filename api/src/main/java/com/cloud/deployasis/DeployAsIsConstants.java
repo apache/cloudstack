@@ -14,20 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
+package com.cloud.deployasis;
 
+public interface DeployAsIsConstants {
 
-import org.springframework.stereotype.Component;
+    String ACS_PROPERTY_PREFIX = "ACS-property-";
+    String REQUIRED_NETWORK_PREFIX = "ACS-network-";
+    String OVF_HARDWARE_CONFIGURATION_PREFIX = "ACS-configuration-";
+    String OVF_HARDWARE_ITEM_PREFIX = "ACS-hardware-item-";
+    String OVF_EULA_SECTION_PREFIX = "ACS-eula-";
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
-
-import com.cloud.storage.VMTemplateDetailVO;
-
-@Component
-public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
-
-    @Override
-    public void addDetail(long resourceId, String key, String value, boolean display) {
-        super.addDetail(new VMTemplateDetailVO(resourceId, key, value, display));
-    }
 }

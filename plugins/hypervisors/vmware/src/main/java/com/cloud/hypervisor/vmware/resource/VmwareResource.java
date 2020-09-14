@@ -47,7 +47,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DeployAsIsInfoTO;
-import com.cloud.storage.ImageStore;
 import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
@@ -56,7 +55,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -180,7 +178,7 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -253,7 +251,6 @@ import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -1842,14 +1839,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             DiskTO[] specDisks = vmSpec.getDisks();
             DeployAsIsInfoTO deployAsIsInfo = vmSpec.getDeployAsIsInfo();
-            boolean installAsIs = deployAsIsInfo != null && deployAsIsInfo.isDeployAsIs();
+            boolean installAsIs = deployAsIsInfo != null;
             if (installAsIs && dcMo.findVm(vmInternalCSName) == null) {
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("Deploying OVA from as is");
                 }
                 String deployAsIsTemplate = deployAsIsInfo.getTemplatePath();
-                String destDatastore = getDatastoreFromSpecDisks(specDisks);
-                String deploymentConfiguration = deployAsIsInfo.getDeploymentConfiguration();
+                String destDatastore = deployAsIsInfo.getDestStoragePool();
                 vmInVcenter = _storageProcessor.cloneVMFromTemplate(deployAsIsTemplate, vmInternalCSName, destDatastore);
                 mapSpecDisksToClonedDisks(vmInVcenter, vmInternalCSName, specDisks);
             }
@@ -1996,7 +1992,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("current count(s) desired: %d/ found:%d. now adding device to device count for vApp config ISO", totalChangeDevices, hackDeviceCount));
             }
-            if (vmSpec.getOvfProperties() != null) {
+            if (deployAsIsInfo != null && deployAsIsInfo.getProperties() != null) {
                 totalChangeDevices++;
             }
 
@@ -2381,18 +2377,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // config video card
             configureVideoCard(vmMo, vmSpec, vmConfigSpec);
 
-            // Set OVF properties (if available)
-            List<OVFPropertyTO> ovfProperties = vmSpec.getOvfProperties();
-            VmConfigInfo templateVappConfig;
-            if (ovfProperties != null) {
-                VirtualMachineMO templateVMmo = dcMo.findVm(deployAsIsInfo.getTemplatePath());
-                templateVappConfig = templateVMmo.getConfigInfo().getVAppConfig();
-                // Set OVF properties (if available)
-                if (CollectionUtils.isNotEmpty(ovfProperties)) {
-                    s_logger.info("Copying OVF properties from template and setting them to the values the user provided");
-                    copyVAppConfigsFromTemplate(templateVappConfig, ovfProperties, vmConfigSpec);
-                }
-            }
+            setDeployAsIsProperties(vmMo, deployAsIsInfo, vmConfigSpec);
 
             setBootOptions(vmSpec, bootMode, vmConfigSpec);
 
@@ -2483,26 +2468,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private String getDatastoreFromSpecDisks(DiskTO[] specDisks) {
-        if (specDisks.length == 0) {
-            return null;
+    /**
+     * Set OVF properties (if available)
+     */
+    private void setDeployAsIsProperties(VirtualMachineMO vmMo, DeployAsIsInfoTO deployAsIsInfo,
+                                         VirtualMachineConfigSpec vmConfigSpec) throws Exception {
+        if (deployAsIsInfo != null) {
+            Map<String, String> properties = deployAsIsInfo.getProperties();
+            VmConfigInfo vAppConfig = vmMo.getConfigInfo().getVAppConfig();
+            s_logger.info("Copying OVF properties to the values the user provided");
+            setVAppPropertiesToConfigSpec(vAppConfig, properties, vmConfigSpec);
         }
-
-        Map<String, List<DiskTO>> psDisksMap = Arrays.asList(specDisks).stream()
-                .filter(x -> x.getType() != Volume.Type.ISO && x.getData() != null && x.getData().getDataStore() != null)
-                .collect(Collectors.groupingBy(x -> x.getData().getDataStore().getUuid()));
-
-        String dataStore;
-        if (MapUtils.isEmpty(psDisksMap)) {
-            s_logger.error("Could not find a destination datastore for VM volumes");
-            return null;
-        } else {
-            dataStore = psDisksMap.keySet().iterator().next();
-            if (psDisksMap.keySet().size() > 1) {
-                s_logger.info("Found multiple destination datastores for VM volumes, selecting " + dataStore);
-            }
-        }
-        return dataStore;
     }
 
     /**
@@ -2624,17 +2600,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     /**
      * Set the properties section from existing vApp configuration and values set on ovfProperties
      */
-    protected List<VAppPropertySpec> copyVAppConfigPropertySectionFromOVF(VmConfigInfo vAppConfig, List<OVFPropertyTO> ovfProperties) {
+    protected List<VAppPropertySpec> copyVAppConfigPropertySectionFromOVF(VmConfigInfo vAppConfig, Map<String, String> ovfProperties) {
         List<VAppPropertyInfo> productFromOvf = vAppConfig.getProperty();
         List<VAppPropertySpec> specs = new ArrayList<>();
-        Map<String, Pair<String, Boolean>> ovfMap = getOVFMap(ovfProperties);
         for (VAppPropertyInfo info : productFromOvf) {
             VAppPropertySpec spec = new VAppPropertySpec();
-            if (ovfMap.containsKey(info.getId())) {
-                Pair<String, Boolean> pair = ovfMap.get(info.getId());
-                String value = pair.first();
-                boolean isPassword = pair.second();
-                info.setValue(isPassword ? DBEncryptionUtil.decrypt(value) : value);
+            if (ovfProperties.containsKey(info.getId())) {
+                String value = ovfProperties.get(info.getId());
+                info.setValue(value);
             }
             spec.setInfo(info);
             spec.setOperation(ArrayUpdateOperation.ADD);
@@ -2662,9 +2635,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      * Set the vApp configuration to vmConfig spec, copying existing configuration from vAppConfig
      * and seting properties values from ovfProperties
      */
-    protected void copyVAppConfigsFromTemplate(VmConfigInfo vAppConfig,
-                                               List<OVFPropertyTO> ovfProperties,
-                                               VirtualMachineConfigSpec vmConfig) throws Exception {
+    protected void setVAppPropertiesToConfigSpec(VmConfigInfo vAppConfig,
+                                                 Map<String, String> ovfProperties,
+                                                 VirtualMachineConfigSpec vmConfig) throws Exception {
         VmConfigSpec vmConfigSpec = new VmConfigSpec();
         vmConfigSpec.getEula().addAll(vAppConfig.getEula());
         vmConfigSpec.setInstallBootStopDelay(vAppConfig.getInstallBootStopDelay());
@@ -3009,10 +2982,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private static void configCustomExtraOption(List<OptionValue> extraOptions, VirtualMachineTO vmSpec) {
         // we no longer to validation anymore
         for (Map.Entry<String, String> entry : vmSpec.getDetails().entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(VmDetailConstants.BOOT_MODE) ||
-                    entry.getKey().startsWith(ImageStore.REQUIRED_NETWORK_PREFIX) ||
-                    entry.getKey().startsWith(ImageStore.ACS_PROPERTY_PREFIX) ||
-                    entry.getKey().startsWith(ImageStore.DISK_DEFINITION_PREFIX)) {
+            if (entry.getKey().equalsIgnoreCase(VmDetailConstants.BOOT_MODE)) {
                 continue;
             }
             OptionValue newVal = new OptionValue();

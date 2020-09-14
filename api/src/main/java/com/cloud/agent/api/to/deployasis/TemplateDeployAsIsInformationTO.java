@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,20 +15,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
+//
+package com.cloud.agent.api.to.deployasis;
 
+import java.io.Serializable;
 
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
-
-import com.cloud.storage.VMTemplateDetailVO;
-
-@Component
-public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
-
-    @Override
-    public void addDetail(long resourceId, String key, String value, boolean display) {
-        super.addDetail(new VMTemplateDetailVO(resourceId, key, value, display));
-    }
+public interface TemplateDeployAsIsInformationTO extends Serializable {
 }

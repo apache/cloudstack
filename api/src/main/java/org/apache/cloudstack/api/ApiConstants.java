@@ -826,6 +826,7 @@ public class ApiConstants {
     public static final String BOOT_MODE = "bootmode";
     public static final String BOOT_INTO_SETUP = "bootintosetup";
     public static final String DEPLOY_AS_IS = "deployasis";
+    public static final String DEPLOY_AS_IS_DETAILS = "deployasisdetails";
     public static final String CROSS_ZONES = "crossZones";
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";

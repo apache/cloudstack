@@ -17,10 +17,11 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.google.gson.Gson;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -45,8 +46,8 @@ public class DownloadAnswerTest {
     {
         List<OVFPropertyTO> properties = new ArrayList<>();
         properties.add(new OVFPropertyTO());
-        List<NetworkPrerequisiteTO> networks = new ArrayList<>();
-        networks.add(new NetworkPrerequisiteTO());
+        List<OVFNetworkTO> networks = new ArrayList<>();
+        networks.add(new OVFNetworkTO());
 
         answer.setOvfProperties(properties);
         answer.setNetworkRequirements(networks);

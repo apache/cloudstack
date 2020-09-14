@@ -16,11 +16,11 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package com.cloud.agent.api.storage;
+package com.cloud.agent.api.to.deployasis;
 
 import java.util.List;
 
-public class OVFVirtualHardwareSectionTO {
+public class OVFVirtualHardwareSectionTO implements TemplateDeployAsIsInformationTO {
 
     public OVFVirtualHardwareSectionTO() {
     }

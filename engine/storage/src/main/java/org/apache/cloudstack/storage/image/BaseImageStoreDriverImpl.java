@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.PreparedStatement;
@@ -33,19 +32,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.storage.OVFConfigurationTO;
-import com.cloud.agent.api.storage.OVFEulaSectionTO;
-import com.cloud.agent.api.storage.OVFPropertyTO;
-import com.cloud.agent.api.storage.OVFVirtualHardwareItemTO;
-import com.cloud.agent.api.storage.OVFVirtualHardwareSectionTO;
-import com.cloud.storage.ImageStore;
 import com.cloud.storage.Upload;
-import com.cloud.storage.VMTemplateDetailVO;
-import com.cloud.utils.compression.CompressionUtil;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -89,7 +77,6 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
@@ -123,13 +110,13 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     AlertManager _alertMgr;
     @Inject
-    VMTemplateDetailsDao templateDetailsDao;
-    @Inject
     DefaultEndPointSelector _defaultEpSelector;
     @Inject
     AccountDao _accountDao;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    DeployAsIsHelper deployAsIsHelper;
     @Inject
     HostDao hostDao;
     @Inject
@@ -142,14 +129,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     AgentManager agentMgr;
 
     protected String _proxy = null;
-
-    private static Gson gson;
-
-    static {
-        GsonBuilder builder = new GsonBuilder();
-        builder.disableHtmlEscaping();
-        gson = builder.create();
-    }
 
     protected Proxy getHttpProxy() {
         if (_proxy == null) {
@@ -211,91 +190,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
     }
 
-    /**
-     * Persist OVF properties as template details for template with id = templateId
-     */
-    private void persistOVFProperties(List<OVFPropertyTO> ovfProperties, long templateId) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("saving properties for template %d as details", templateId));
-        }
-        for (OVFPropertyTO property : ovfProperties) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("saving property %s for template %d as detail", property.getKey(), templateId));
-            }
-            persistOvfPropertyAsSetOfTemplateDetails(templateId, property);
-        }
-    }
-
-    private void persistOvfPropertyAsSetOfTemplateDetails(long templateId, OVFPropertyTO property) {
-        String key = property.getKey();
-        String propKey = ImageStore.ACS_PROPERTY_PREFIX + key;
-        try {
-            String propValue = gson.toJson(property);
-            savePropertyAttribute(templateId, propKey, propValue);
-        } catch (RuntimeException re) {
-            LOGGER.error("gson marshalling of property object fails: " + propKey,re);
-        }
-    }
-
-    private void persistNetworkRequirements(List<NetworkPrerequisiteTO> networkRequirements, long templateId) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("saving network requirements for template %d as details", templateId));
-        }
-        for (NetworkPrerequisiteTO network : networkRequirements) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("saving property %s for template %d as detail", network.getName(), templateId));
-            }
-            persistRequiredNetworkAsASingleTemplateDetail(templateId, network);
-        }
-    }
-
-    private void persistDiskDefinitions(List<DatadiskTO> disks, long templateId) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("saving disk definitionsn for template %d as details", templateId));
-        }
-        for (DatadiskTO disk : disks) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("saving property %s for template %d as detail", disk.getDiskId(), templateId));
-            }
-            persistDiskDefinitionAsASingleTemplateDetail(templateId, disk);
-        }
-    }
-
-    private void persistRequiredNetworkAsASingleTemplateDetail(long templateId, NetworkPrerequisiteTO network) {
-        String key = network.getName();
-        String propKey = ImageStore.REQUIRED_NETWORK_PREFIX + key;
-        try {
-            String propValue = gson.toJson(network);
-            savePropertyAttribute(templateId, propKey, propValue);
-        } catch (RuntimeException re) {
-            LOGGER.warn("gson marshalling of network object fails: " + propKey,re);
-        }
-    }
-
-    private void persistDiskDefinitionAsASingleTemplateDetail(long templateId, DatadiskTO disk) {
-        String key = disk.getDiskId();
-        String propKey = ImageStore.DISK_DEFINITION_PREFIX + key;
-        try {
-            String propValue = gson.toJson(disk);
-            savePropertyAttribute(templateId, propKey, propValue);
-        } catch (RuntimeException re) {
-            LOGGER.warn("gson marshalling of disk definition object fails: " + propKey,re);
-        }
-    }
-
-    private void savePropertyAttribute(long templateId, String key, String value) {
-        if ( templateDetailsDao.findDetail(templateId,key) != null) {
-            LOGGER.debug(String.format("detail '%s' existed for template %d, deleting.", key, templateId));
-            templateDetailsDao.removeDetail(templateId,key);
-        }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("template detail for template %d to save is '%s': '%s'", templateId, key, value));
-        }
-        VMTemplateDetailVO detailVO = new VMTemplateDetailVO(templateId, key, value, false);
-        LOGGER.debug("Persisting template details " + detailVO.getName() + " from OVF properties for template " + templateId);
-        templateDetailsDao.persist(detailVO);
-    }
-
     protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
                                                CreateContext<CreateCmdResult> context) {
         if (LOGGER.isDebugEnabled()) {
@@ -304,17 +198,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();
-        List<OVFPropertyTO> ovfProperties = answer.getOvfProperties();
-        List<NetworkPrerequisiteTO> networkRequirements = answer.getNetworkRequirements();
-        List<DatadiskTO> disks = answer.getDisks();
-        OVFVirtualHardwareSectionTO ovfHardwareSection = answer.getOvfHardwareSection();
-        List<OVFEulaSectionTO> eulaSections = answer.getEulaSections();
 
         VMTemplateVO template = _templateDao.findById(obj.getId());
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                persistExtraDetails(obj, ovfProperties, networkRequirements, disks, ovfHardwareSection, eulaSections);
+                if (template.isDeployAsIs()) {
+                    deployAsIsHelper.persistTemplateDeployAsIsDetails(template.getId(), answer);
+                }
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
@@ -354,82 +245,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
             }
-            persistExtraDetails(obj, ovfProperties, networkRequirements, disks, ovfHardwareSection, eulaSections);
+            if (template.isDeployAsIs()) {
+                deployAsIsHelper.persistTemplateDeployAsIsDetails(template.getId(), answer);
+            }
 
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
         }
         return null;
-    }
-
-    private void persistExtraDetails(DataObject obj, List<OVFPropertyTO> ovfProperties, List<NetworkPrerequisiteTO> networkRequirements, List<DatadiskTO> disks, OVFVirtualHardwareSectionTO ovfHardwareSection, List<OVFEulaSectionTO> eulaSections) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("saving %d ovf properties for template '%s' as details", ovfProperties != null ? ovfProperties.size() : 0, obj.getUuid()));
-        }
-        if (CollectionUtils.isNotEmpty(ovfProperties)) {
-            persistOVFProperties(ovfProperties, obj.getId());
-        }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("saving %d required network requirements for template '%s' as details", networkRequirements != null ? networkRequirements.size() : 0, obj.getUuid()));
-        }
-        if (CollectionUtils.isNotEmpty(networkRequirements)) {
-            persistNetworkRequirements(networkRequirements, obj.getId());
-        }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("saving %d disks definitions for template '%s' as details", disks != null ? disks.size() : 0, obj.getUuid()));
-        }
-        if (CollectionUtils.isNotEmpty(disks)) {
-            persistDiskDefinitions(disks, obj.getId());
-        }
-        if (CollectionUtils.isNotEmpty(eulaSections)) {
-            persistEulaSectionsAsTemplateDetails(eulaSections, obj.getId());
-        }
-        persistOVFHardwareSectionAsTemplateDetails(ovfHardwareSection, obj.getId());
-    }
-
-    private void persistEulaSectionsAsTemplateDetails(List<OVFEulaSectionTO> eulaSections, long templateId) {
-        CompressionUtil compressionUtil = new CompressionUtil();
-        for (OVFEulaSectionTO eulaSectionTO : eulaSections) {
-            String key = ImageStore.OVF_EULA_SECTION_PREFIX + eulaSectionTO.getIndex() + "-" + eulaSectionTO.getInfo();
-            byte[] compressedLicense = eulaSectionTO.getCompressedLicense();
-            try {
-                String detailValue = compressionUtil.decompressByteArary(compressedLicense);
-                savePropertyAttribute(templateId, key, detailValue);
-            } catch (IOException e) {
-                LOGGER.error("Could not decompress the license for template " + templateId, e);
-            }
-        }
-    }
-
-    /**
-     * Persist template details for template with ID=templateId, with name=key and value=json(object)
-     */
-    private void persistTemplateDetailGsonEncoded(long templateId, String key, Object object) {
-        try {
-            String propValue = gson.toJson(object);
-            savePropertyAttribute(templateId, key, propValue);
-        } catch (RuntimeException re) {
-            LOGGER.error("gson marshalling of property object fails: " + key, re);
-        }
-    }
-
-    private void persistOVFHardwareSectionAsTemplateDetails(OVFVirtualHardwareSectionTO ovfHardwareSection, long templateId) {
-        if (ovfHardwareSection != null) {
-            if (CollectionUtils.isNotEmpty(ovfHardwareSection.getConfigurations())) {
-                for (OVFConfigurationTO configuration : ovfHardwareSection.getConfigurations()) {
-                    String key = configuration.getId();
-                    String propKey = ImageStore.OVF_HARDWARE_CONFIGURATION_PREFIX + configuration.getIndex() + "-" + key;
-                    persistTemplateDetailGsonEncoded(templateId, propKey, configuration);
-                }
-            }
-            if (CollectionUtils.isNotEmpty(ovfHardwareSection.getCommonHardwareItems())) {
-                for (OVFVirtualHardwareItemTO item : ovfHardwareSection.getCommonHardwareItems()) {
-                    String key = item.getResourceType().getName().trim().replaceAll("\\s","") + "-" + item.getInstanceId();
-                    String propKey = ImageStore.OVF_HARDWARE_ITEM_PREFIX + key;
-                    persistTemplateDetailGsonEncoded(templateId, propKey, item);
-                }
-            }
-        }
     }
 
     protected Void

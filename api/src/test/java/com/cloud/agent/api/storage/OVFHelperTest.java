@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
+import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
+import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
 import org.junit.Assert;
 import org.junit.Test;
 import org.xml.sax.SAXException;

@@ -47,12 +47,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
+import com.cloud.deployasis.UserVmDeployAsIsDetailVO;
+import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.ImageStore;
-import com.cloud.storage.VMTemplateDetailVO;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -83,7 +83,7 @@ import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -507,7 +507,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private ResourceTagDao resourceTagDao;
     @Inject
-    private VMTemplateDetailsDao templateDetailsDao;
+    private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
+    @Inject
+    private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2503,17 +2505,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         }
                     }
                 }
-                for (String detailName : details.keySet()) {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace(String.format("looking for vm detail '%s'", detailName));
-                    }
-                    if (detailName.startsWith(ImageStore.ACS_PROPERTY_PREFIX)) {
-                        OVFPropertyTO propertyTO = templateDetailsDao.findPropertyByTemplateAndKey(vmInstance.getTemplateId(),detailName);
-                        if (propertyTO != null && propertyTO.isPassword()) {
-                            details.put(detailName, DBEncryptionUtil.encrypt(details.get(detailName)));
-                        }
-                    }
-                }
                 vmInstance.setDetails(details);
                 _vmDao.saveDetails(vmInstance);
             }
@@ -4007,11 +3998,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 vm.setDetail(VmDetailConstants.DEPLOY_VM, "true");
 
-                copyDiskDetailsToVm(vm, template);
-
-                setPropertiesOnVM(vm, userVmOVFPropertiesMap);
-
-                copyNetworkRequirementsToVm(vm, template);
+                persistVMDeployAsIsProperties(vm, userVmOVFPropertiesMap);
 
                 _vmDao.saveDetails(vm);
                 if (!isImport) {
@@ -4056,33 +4043,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         });
     }
 
-    private void copyNetworkRequirementsToVm(UserVmVO vm, VirtualMachineTemplate template) {
-        if (template.isDeployAsIs()) {
-            List<VMTemplateDetailVO> details = templateDetailsDao.listDetailsByTemplateIdMatchingPrefix(template.getId(), ImageStore.REQUIRED_NETWORK_PREFIX);
-            for (VMTemplateDetailVO detail : details) {
-                vm.setDetail(detail.getName(), detail.getValue());
-            }
-        }
-    }
-
-    private void copyDiskDetailsToVm(UserVmVO vm, VirtualMachineTemplate template) {
-        if (template.isDeployAsIs()) {
-            List<VMTemplateDetailVO> details = templateDetailsDao.listDetailsByTemplateIdMatchingPrefix(template.getId(), ImageStore.DISK_DEFINITION_PREFIX);
-            for (VMTemplateDetailVO detail : details) {
-                vm.setDetail(detail.getName(), detail.getValue());
-            }
-        }
-    }
-
     /**
      * take the properties and set them on the vm.
      * consider should we be complete, and make sure all default values are copied as well if known?
      * I.E. iterate over the template details as well to copy any that are not defined yet.
      */
-    private void setPropertiesOnVM(UserVmVO vm, Map<String, String> userVmOVFPropertiesMap) {
+    private void persistVMDeployAsIsProperties(UserVmVO vm, Map<String, String> userVmOVFPropertiesMap) {
         if (MapUtils.isNotEmpty(userVmOVFPropertiesMap)) {
             for (String key : userVmOVFPropertiesMap.keySet()) {
-                String detailKey = ImageStore.ACS_PROPERTY_PREFIX + key;
+                String detailKey = key;
                 String value = userVmOVFPropertiesMap.get(key);
 
                 // Sanitize boolean values to expected format and encrypt passwords
@@ -4092,7 +4061,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     } else if (value.equalsIgnoreCase("False")) {
                         value = "False";
                     } else {
-                        OVFPropertyTO propertyTO = templateDetailsDao.findPropertyByTemplateAndKey(vm.getTemplateId(), key);
+                        OVFPropertyTO propertyTO = templateDeployAsIsDetailsDao.findPropertyByTemplateAndKey(vm.getTemplateId(), key);
                         if (propertyTO != null && propertyTO.isPassword()) {
                             value = DBEncryptionUtil.encrypt(value);
                         }
@@ -4101,7 +4070,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace(String.format("setting property '%s' as '%s' with value '%s'", key, detailKey, value));
                 }
-                vm.setDetail(detailKey, value);
+                UserVmDeployAsIsDetailVO detail = new UserVmDeployAsIsDetailVO(vm.getId(), detailKey, value);
+                userVmDeployAsIsDetailsDao.persist(detail);
             }
         }
     }
@@ -7378,19 +7348,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private LinkedHashMap<Integer, Long> getVmOvfNetworkMapping(DataCenter zone, Account owner, VirtualMachineTemplate template, Map<Integer, Long> vmNetworkMapping) throws InsufficientCapacityException, ResourceAllocationException {
         LinkedHashMap<Integer, Long> mapping = new LinkedHashMap<>();
         if (ImageFormat.OVA.equals(template.getFormat())) {
-            List<NetworkPrerequisiteTO> networkPrerequisiteTOList =
-                    templateDetailsDao.listNetworkRequirementsByTemplateId(template.getId());
-            if (CollectionUtils.isNotEmpty(networkPrerequisiteTOList)) {
+            List<OVFNetworkTO> OVFNetworkTOList =
+                    templateDeployAsIsDetailsDao.listNetworkRequirementsByTemplateId(template.getId());
+            if (CollectionUtils.isNotEmpty(OVFNetworkTOList)) {
                 Network lastMappedNetwork = null;
-                for (NetworkPrerequisiteTO networkPrerequisiteTO : networkPrerequisiteTOList) {
-                    Long networkId = vmNetworkMapping.get(networkPrerequisiteTO.getInstanceID());
+                for (OVFNetworkTO OVFNetworkTO : OVFNetworkTOList) {
+                    Long networkId = vmNetworkMapping.get(OVFNetworkTO.getInstanceID());
                     if (networkId == null && lastMappedNetwork == null) {
                         lastMappedNetwork = getNetworkForOvfNetworkMapping(zone, owner);
                     }
                     if (networkId == null) {
                         networkId = lastMappedNetwork.getId();
                     }
-                    mapping.put(networkPrerequisiteTO.getInstanceID(), networkId);
+                    mapping.put(OVFNetworkTO.getInstanceID(), networkId);
                 }
             }
         }

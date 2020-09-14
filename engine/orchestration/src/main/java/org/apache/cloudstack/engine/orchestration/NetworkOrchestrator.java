@@ -40,9 +40,10 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.net.NetworkPrerequisiteTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -181,7 +182,6 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
@@ -304,7 +304,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     UserVmManager _userVmMgr;
     @Inject
-    VMTemplateDetailsDao templateDetailsDao;
+    TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -884,7 +884,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
                 }
 
-                List<NetworkPrerequisiteTO> netprereqs = templateDetailsDao.listNetworkRequirementsByTemplateId(vm.getTemplate().getId());
+                List<OVFNetworkTO> netprereqs = templateDeployAsIsDetailsDao.listNetworkRequirementsByTemplateId(vm.getTemplate().getId());
                 if (size < netprereqs.size()) {
                     size = netprereqs.size();
                 }

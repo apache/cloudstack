@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
-import com.cloud.agent.api.LogLevel;
-import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
@@ -80,8 +78,6 @@ public class VirtualMachineTO {
 
     Map<String, String> guestOsDetails = new HashMap<String, String>();
     Map<String, String> extraConfig = new HashMap<>();
-    @LogLevel(LogLevel.Log4jLevel.Off)
-    List<OVFPropertyTO> ovfProperties;
     DeployAsIsInfoTO deployAsIsInfo;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
@@ -376,13 +372,6 @@ public class VirtualMachineTO {
         return extraConfig;
     }
 
-    public List<OVFPropertyTO> getOvfProperties() {
-        return ovfProperties;
-    }
-
-    public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
-        this.ovfProperties = ovfProperties;
-    }
     public String getBootType() {
         return bootType;
     }
