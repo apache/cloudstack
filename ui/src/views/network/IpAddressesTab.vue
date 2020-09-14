@@ -272,7 +272,7 @@ export default {
           errorMethod: () => {
             this.fetchData()
           },
-          loadingMessage: `${this.$t('label.acquiring.ip')}} ${this.$t('label.for')} ${this.resource.name} ${this.$t('label.is.in.progress')}}`,
+          loadingMessage: `${this.$t('label.acquiring.ip')} ${this.$t('label.for')} ${this.resource.name} ${this.$t('label.is.in.progress')}`,
           catchMessage: this.$t('error.fetching.async.job.result')
         })
       }).catch(error => {
