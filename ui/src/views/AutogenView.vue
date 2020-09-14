@@ -876,30 +876,32 @@ export default {
       }
     },
     callGroupApi (params, resourceName) {
-      api(this.currentAction.api, params).then(json => {
-        this.handleResponse(json, resourceName, false)
+      const action = this.currentAction
+      api(action.api, params).then(json => {
+        this.handleResponse(json, resourceName, action, false)
       }).catch(error => {
         this.$notifyError(error)
       })
     },
-    handleResponse (response, resourceName, showLoading = true) {
+    handleResponse (response, resourceName, action, showLoading = true) {
       for (const obj in response) {
         if (obj.includes('response')) {
           if (response[obj].jobid) {
             const jobid = response[obj].jobid
-            this.$store.dispatch('AddAsyncJob', { title: this.$t(this.currentAction.label), jobid: jobid, description: resourceName, status: 'progress' })
-            this.pollActionCompletion(jobid, this.currentAction, resourceName, showLoading)
+            this.$store.dispatch('AddAsyncJob', { title: this.$t(action.label), jobid: jobid, description: resourceName, status: 'progress' })
+            this.pollActionCompletion(jobid, action, resourceName, showLoading)
             return true
           } else {
-            var message = this.$t(this.currentAction.label) + (resourceName ? ' - ' + resourceName : '')
+            var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
+              (resourceName ? ' - ' + resourceName : '')
             var duration = 2
-            if (this.currentAction.successMessage) {
-              message = message + ' - ' + this.$t(this.currentAction.successMessage)
+            if (action.additionalMessage) {
+              message = message + ' - ' + this.$t(action.successMessage)
               duration = 5
             }
             this.$message.success({
               content: message,
-              key: this.currentAction.label + resourceName,
+              key: action.label + resourceName,
               duration: duration
             })
           }
@@ -911,76 +913,78 @@ export default {
     execSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
-        if (!err) {
-          const params = {}
-          if ('id' in this.resource && this.currentAction.params.map(i => { return i.name }).includes('id')) {
-            params.id = this.resource.id
-          }
-          for (const key in values) {
-            const input = values[key]
-            for (const param of this.currentAction.params) {
-              if (param.name !== key) {
-                continue
-              }
-              if (input === undefined || input === null || input === '') {
-                if (param.type === 'boolean') {
-                  params[key] = false
-                }
-                break
-              }
-              if (this.currentAction.mapping && key in this.currentAction.mapping && this.currentAction.mapping[key].options) {
-                params[key] = this.currentAction.mapping[key].options[input]
-              } else if (param.type === 'list') {
-                params[key] = input.map(e => { return param.opts[e].id }).reduce((str, name) => { return str + ',' + name })
-              } else if (param.name === 'account' || param.name === 'keypair') {
-                if (['addAccountToProject', 'createAccount'].includes(this.currentAction.api)) {
-                  params[key] = input
-                } else {
-                  params[key] = param.opts[input].name
-                }
-              } else {
-                params[key] = input
+        if (err) {
+          return
+        }
+        const params = {}
+        const action = this.currentAction
+        if ('id' in this.resource && action.params.map(i => { return i.name }).includes('id')) {
+          params.id = this.resource.id
+        }
+        for (const key in values) {
+          const input = values[key]
+          for (const param of action.params) {
+            if (param.name !== key) {
+              continue
+            }
+            if (input === undefined || input === null || input === '') {
+              if (param.type === 'boolean') {
+                params[key] = false
               }
               break
             }
-          }
-
-          for (const key in this.currentAction.defaultArgs) {
-            if (!params[key]) {
-              params[key] = this.currentAction.defaultArgs[key]
-            }
-          }
-
-          if (this.currentAction.mapping) {
-            for (const key in this.currentAction.mapping) {
-              if (!this.currentAction.mapping[key].value) {
-                continue
+            if (action.mapping && key in action.mapping && action.mapping[key].options) {
+              params[key] = action.mapping[key].options[input]
+            } else if (param.type === 'list') {
+              params[key] = input.map(e => { return param.opts[e].id }).reduce((str, name) => { return str + ',' + name })
+            } else if (param.name === 'account' || param.name === 'keypair') {
+              if (['addAccountToProject', 'createAccount'].includes(action.api)) {
+                params[key] = input
+              } else {
+                params[key] = param.opts[input].name
               }
-              params[key] = this.currentAction.mapping[key].value(this.resource, params)
-            }
-          }
-
-          const resourceName = params.displayname || params.displaytext || params.name || params.hostname || params.username || params.ipaddress || params.virtualmachinename || this.resource.name
-
-          var hasJobId = false
-          this.actionLoading = true
-          api(this.currentAction.api, params).then(json => {
-            hasJobId = this.handleResponse(json, resourceName)
-            if ((this.currentAction.icon === 'delete' || ['archiveEvents', 'archiveAlerts'].includes(this.currentAction.api)) && this.dataView) {
-              this.$router.go(-1)
             } else {
-              if (!hasJobId) {
-                this.fetchData()
-              }
+              params[key] = input
             }
-          }).catch(error => {
-            console.log(error)
-            this.$notifyError(error)
-          }).finally(f => {
-            this.actionLoading = false
-            this.closeAction()
-          })
+            break
+          }
         }
+
+        for (const key in action.defaultArgs) {
+          if (!params[key]) {
+            params[key] = action.defaultArgs[key]
+          }
+        }
+
+        if (action.mapping) {
+          for (const key in action.mapping) {
+            if (!action.mapping[key].value) {
+              continue
+            }
+            params[key] = action.mapping[key].value(this.resource, params)
+          }
+        }
+
+        const resourceName = params.displayname || params.displaytext || params.name || params.hostname || params.username || params.ipaddress || params.virtualmachinename || this.resource.name
+
+        var hasJobId = false
+        this.actionLoading = true
+        api(action.api, params).then(json => {
+          hasJobId = this.handleResponse(json, resourceName, action)
+          if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts'].includes(action.api)) && this.dataView) {
+            this.$router.go(-1)
+          } else {
+            if (!hasJobId) {
+              this.fetchData()
+            }
+          }
+        }).catch(error => {
+          console.log(error)
+          this.$notifyError(error)
+        }).finally(f => {
+          this.actionLoading = false
+          this.closeAction()
+        })
       })
     },
     changeFilter (filter) {

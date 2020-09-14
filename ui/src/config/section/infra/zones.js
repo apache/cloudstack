@@ -201,7 +201,7 @@ export default {
       icon: 'block',
       label: 'label.update.vmware.datacenter',
       message: 'message.restart.mgmt.server',
-      successMessage: 'message.restart.mgmt.server',
+      additionalMessage: 'message.restart.mgmt.server',
       dataView: true,
       show: record => record.vmwaredc,
       args: ['zoneid', 'name', 'vcenter', 'username', 'password'],
