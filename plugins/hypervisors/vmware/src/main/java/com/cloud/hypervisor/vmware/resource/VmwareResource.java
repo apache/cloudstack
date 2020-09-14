@@ -2881,43 +2881,51 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         DatastoreMO dsMo = volumeDsDetails.second();
+        String datastoreDiskPath;
 
-        // we will honor vCenter's meta if it exists
-        if (diskInfo != null) {
-            // to deal with run-time upgrade to maintain the new datastore folder structure
-            String disks[] = diskInfo.getDiskChain();
-            for (int i = 0; i < disks.length; i++) {
-                DatastoreFile file = new DatastoreFile(disks[i]);
-                if (!isManaged && file.getDir() != null && file.getDir().isEmpty()) {
-                    s_logger.info("Perform run-time datastore folder upgrade. sync " + disks[i] + " to VM folder");
-                    disks[i] = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, file.getFileBaseName(), VmwareManager.s_vmwareSearchExcludeFolder.value());
-                }
+        if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+            datastoreDiskPath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
+            if (!dsMo.fileExists(datastoreDiskPath)) {
+                datastoreDiskPath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmMo.getName(), volumeTO.getPath() + ".vmdk");
             }
-            return disks;
-        }
-
-        final String datastoreDiskPath;
-
-        if (isManaged) {
-            String vmdkPath = new DatastoreFile(volumeTO.getPath()).getFileBaseName();
-
-            if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
-                if (vmdkPath == null) {
-                    vmdkPath = volumeTO.getName();
-                }
-
-                datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, vmdkPath);
-            } else {
-                if (vmdkPath == null) {
-                    vmdkPath = dsMo.getName();
-                }
-
-                datastoreDiskPath = dsMo.getDatastorePath(vmdkPath + VMDK_EXTENSION);
+            if (!dsMo.fileExists(datastoreDiskPath)) {
+                datastoreDiskPath = dsMo.searchFileInSubFolders(volumeTO.getPath() + ".vmdk", true, null);
             }
         } else {
-            datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
-        }
+            // we will honor vCenter's meta if it exists
+            if (diskInfo != null) {
+                // to deal with run-time upgrade to maintain the new datastore folder structure
+                String disks[] = diskInfo.getDiskChain();
+                for (int i = 0; i < disks.length; i++) {
+                    DatastoreFile file = new DatastoreFile(disks[i]);
+                    if (!isManaged && file.getDir() != null && file.getDir().isEmpty()) {
+                        s_logger.info("Perform run-time datastore folder upgrade. sync " + disks[i] + " to VM folder");
+                        disks[i] = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, file.getFileBaseName(), VmwareManager.s_vmwareSearchExcludeFolder.value());
+                    }
+                }
+                return disks;
+            }
 
+            if (isManaged) {
+                String vmdkPath = new DatastoreFile(volumeTO.getPath()).getFileBaseName();
+
+                if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
+                    if (vmdkPath == null) {
+                        vmdkPath = volumeTO.getName();
+                    }
+
+                    datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, vmdkPath);
+                } else {
+                    if (vmdkPath == null) {
+                        vmdkPath = dsMo.getName();
+                    }
+
+                    datastoreDiskPath = dsMo.getDatastorePath(vmdkPath + VMDK_EXTENSION);
+                }
+            } else {
+                datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
+            }
+        }
         if (!dsMo.fileExists(datastoreDiskPath)) {
             s_logger.warn("Volume " + volumeTO.getId() + " does not seem to exist on datastore, out of sync? path: " + datastoreDiskPath);
         }

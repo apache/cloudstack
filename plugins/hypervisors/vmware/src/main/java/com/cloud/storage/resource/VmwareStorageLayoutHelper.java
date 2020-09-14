@@ -262,8 +262,8 @@ public class VmwareStorageLayoutHelper implements Configurable {
 
                 s_logger.info("Check if we need to move " + fileFullDsPath + " to its root location");
                 DatastoreMO dsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(file.getDatastoreName()));
-                if (dsMo.getMor() != null) {
-                    DatastoreFile targetFile = new DatastoreFile(file.getDatastoreName(), file.getFileName());
+                if (dsMo.getMor() != null && !dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                    DatastoreFile targetFile = new DatastoreFile(file.getDatastoreName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, file.getFileName());
                     if (!targetFile.getPath().equalsIgnoreCase(file.getPath())) {
                         s_logger.info("Move " + file.getPath() + " -> " + targetFile.getPath());
                         dsMo.moveDatastoreFile(file.getPath(), dcMo.getMor(), dsMo.getMor(), targetFile.getPath(), dcMo.getMor(), true);
