@@ -283,7 +283,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         if (template.isDeployAsIs()) {
             List<TemplateDeployAsIsDetailVO> deployAsIsDetails = templateDeployAsIsDetailsDao.listDetails(template.getId());
             for (TemplateDeployAsIsDetailVO deployAsIsDetailVO : deployAsIsDetails) {
-                if (deployAsIsDetailVO.getName().startsWith(DeployAsIsConstants.OVF_HARDWARE_ITEM_PREFIX)) {
+                if (deployAsIsDetailVO.getName().startsWith(DeployAsIsConstants.HARDWARE_ITEM_PREFIX)) {
                     //Do not list hardware items
                     continue;
                 }

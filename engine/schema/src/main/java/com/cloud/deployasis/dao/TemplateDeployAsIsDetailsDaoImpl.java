@@ -46,7 +46,7 @@ public class TemplateDeployAsIsDetailsDaoImpl extends ResourceDetailsDaoBase<Tem
     public OVFPropertyTO findPropertyByTemplateAndKey(long templateId, String key) {
         SearchCriteria<TemplateDeployAsIsDetailVO> sc = createSearchCriteria();
         sc.addAnd("templateId", SearchCriteria.Op.EQ, templateId);
-        sc.addAnd("name", SearchCriteria.Op.EQ, key.startsWith(DeployAsIsConstants.ACS_PROPERTY_PREFIX) ? key : DeployAsIsConstants.ACS_PROPERTY_PREFIX + key);
+        sc.addAnd("name", SearchCriteria.Op.EQ, key.startsWith(DeployAsIsConstants.PROPERTY_PREFIX) ? key : DeployAsIsConstants.PROPERTY_PREFIX + key);
         OVFPropertyTO property = null;
         TemplateDeployAsIsDetailVO detail = findOneBy(sc);
         if (detail != null) {
@@ -66,7 +66,7 @@ public class TemplateDeployAsIsDetailsDaoImpl extends ResourceDetailsDaoBase<Tem
 
     @Override
     public List<OVFNetworkTO> listNetworkRequirementsByTemplateId(long templateId) {
-        List<TemplateDeployAsIsDetailVO> networkDetails = listDetailsByTemplateIdMatchingPrefix(templateId, DeployAsIsConstants.REQUIRED_NETWORK_PREFIX);
+        List<TemplateDeployAsIsDetailVO> networkDetails = listDetailsByTemplateIdMatchingPrefix(templateId, DeployAsIsConstants.NETWORK_PREFIX);
         List<OVFNetworkTO> networkPrereqs = new ArrayList<>();
         for (TemplateDeployAsIsDetailVO property : networkDetails) {
             OVFNetworkTO ovfPropertyTO = gson.fromJson(property.getValue(), OVFNetworkTO.class);
