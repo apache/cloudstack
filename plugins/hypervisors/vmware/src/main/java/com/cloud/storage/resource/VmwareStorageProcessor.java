@@ -2086,16 +2086,28 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 if (isManaged) {
                     datastoreVolumePath = dsMo.getDatastorePath((vmdkPath != null ? vmdkPath : dsMo.getName()) + ".vmdk");
                 } else {
-                    datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
+                    if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                        datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
+                        if (!dsMo.fileExists(datastoreVolumePath)) {
+                            datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                        }
+                        if (!dsMo.fileExists(datastoreVolumePath)) {
+                            datastoreVolumePath = dsMo.searchFileInSubFolders(volumeTO.getPath() + ".vmdk", true, null);
+                        }
+                    } else {
+                        datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
+                    }
                 }
             } else {
                 if (isManaged) {
                     datastoreVolumePath = dsMo.getDatastorePath((vmdkPath != null ? vmdkPath : dsMo.getName()) + ".vmdk");
                 } else {
                     datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
-
                     if (!dsMo.fileExists(datastoreVolumePath)) {
                         datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                    }
+                    if (!dsMo.fileExists(datastoreVolumePath)) {
+                        datastoreVolumePath = dsMo.searchFileInSubFolders(volumeTO.getPath() + ".vmdk", true, null);
                     }
                 }
             }
@@ -2127,7 +2139,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 if (isManaged) {
                     handleDatastoreAndVmdkDetachManaged(cmd, diskUuid, iScsiName, storageHost, storagePort);
                 } else {
-                    VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath(), vmName, VmwareManager.s_vmwareSearchExcludeFolder.value());
+                    if (!dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                        VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath(), vmName, VmwareManager.s_vmwareSearchExcludeFolder.value());
+                    }
                 }
             }
 
