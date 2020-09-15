@@ -26,6 +26,7 @@ from marvin.cloudstackAPI import (listInfrastructure,
                                   listKubernetesClusters,
                                   createKubernetesCluster,
                                   stopKubernetesCluster,
+                                  startKubernetesCluster,
                                   deleteKubernetesCluster,
                                   upgradeKubernetesCluster,
                                   scaleKubernetesCluster,
@@ -49,6 +50,8 @@ from marvin.lib.decoratorGenerators import skipTestIf
 import time
 
 _multiprocess_shared_ = True
+
+k8s_cluster = None
 
 class TestKubernetesCluster(cloudstackTestCase):
 
@@ -176,7 +179,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        if version_delete_failed == True:            
+        if version_delete_failed == True:
             raise Exception("Warning: Exception during cleanup, unable to delete Kubernetes supported versions")
         return
 
@@ -273,7 +276,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         versionResponse = cls.apiclient.listKubernetesSupportedVersions(listKubernetesSupportedVersionsCmd)
         return versionResponse[0]
 
-    @classmethod 
+    @classmethod
     def addKubernetesSupportedVersion(cls, version_service):
         addKubernetesSupportedVersionCmd = addKubernetesSupportedVersion.addKubernetesSupportedVersionCmd()
         addKubernetesSupportedVersionCmd.semanticversion = version_service["semanticversion"]
@@ -303,13 +306,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            # Delete any existing Kubernetes cluster for account
-            clusters = self.listKubernetesCluster()
-            if clusters != None:
-                for cluster in clusters:
-                    self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
             cleanup_resources(self.apiclient, self.cleanup)
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -326,59 +323,143 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
-        name = 'testcluster-' + random_gen()
-        self.debug("Creating for Kubernetes cluster with name %s" % name)
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster()
 
-        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deployed, now stopping it" % k8s_cluster.id)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_2.id)
+        self.stopAndVerifyKubernetesCluster(k8s_cluster.id)
 
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now stopping it" % cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully stopped, now starting it again" % k8s_cluster.id)
 
-        self.stopAndVerifyKubernetesCluster(cluster_response.id)
+        try:
+            k8s_cluster = self.startKubernetesCluster(k8s_cluster.id)
+        except Exception as e:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Failed to start Kubernetes cluster due to: %s" % e)
 
-        self.debug("Kubernetes cluster with ID: %s successfully stopped, now deleting it" % cluster_response.id)
-
-        self.deleteKubernetesClusterAndVerify(cluster_response.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
+        self.verifyKubernetesClusterState(k8s_cluster, 'Running')
 
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_02_deploy_kubernetes_ha_cluster(self):
-        """Test to deploy a new Kubernetes cluster
+    def test_02_invalid_upgrade_kubernetes_cluster(self):
+        """Test to check for failure while tying to upgrade a Kubernetes cluster to a lower version
 
         # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
+        # 1. upgradeKubernetesCluster should fail
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
-        name = 'testcluster-' + random_gen()
-        self.debug("Creating for Kubernetes cluster with name %s" % name)
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster()
 
-        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_3.id, 1, 2)
+        self.debug("Upgrading Kubernetes cluster with ID: %s to a lower version" % k8s_cluster.id)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_3.id, 1, 2)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now deleting it" % cluster_response.id)
-
-        self.deleteKubernetesClusterAndVerify(cluster_response.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
+        try:
+            k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_1.id)
+            self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % kubernetes_version_1.id)
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Kubernetes cluster upgraded to a lower Kubernetes supported version. Must be an error.")
+        except Exception as e:
+            self.debug("Upgrading Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
 
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_03_deploy_invalid_kubernetes_ha_cluster(self):
-        """Test to deploy a new Kubernetes cluster
+    def test_03_deploy_and_upgrade_kubernetes_cluster(self):
+        """Test to deploy a new Kubernetes cluster and upgrade it to newer version
 
         # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
+        # 1. upgradeKubernetesCluster should return valid info for the cluster
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster()
+
+        self.debug("Upgrading Kubernetes cluster with ID: %s" % k8s_cluster.id)
+
+        try:
+            k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_3.id)
+        except Exception as e:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Failed to upgrade Kubernetes cluster due to: %s" % e)
+
+        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_3.id)
+
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_04_deploy_and_scale_kubernetes_cluster(self):
+        """Test to deploy a new Kubernetes cluster and check for failure while tying to scale it
+
+        # Validate the following:
+        # 1. scaleKubernetesCluster should return valid info for the cluster when it is scaled up
+        # 2. scaleKubernetesCluster should return valid info for the cluster when it is scaled down
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster()
+
+        self.debug("Upscaling Kubernetes cluster with ID: %s" % k8s_cluster.id)
+
+        try:
+            k8s_cluster = self.scaleKubernetesCluster(k8s_cluster.id, 2)
+        except Exception as e:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Failed to upscale Kubernetes cluster due to: %s" % e)
+
+        self.verifyKubernetesClusterScale(k8s_cluster, 2)
+
+        self.debug("Kubernetes cluster with ID: %s successfully upscaled, now downscaling it" % k8s_cluster.id)
+
+        try:
+            k8s_cluster = self.scaleKubernetesCluster(k8s_cluster.id, 1)
+        except Exception as e:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Failed to downscale Kubernetes cluster due to: %s" % e)
+
+        self.verifyKubernetesClusterScale(k8s_cluster)
+
+        self.debug("Kubernetes cluster with ID: %s successfully downscaled" % k8s_cluster.id)
+
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_05_delete_kubernetes_cluster(self):
+        """Test to delete an existing Kubernetes cluster
+
+        # Validate the following:
+        # 1. deleteKubernetesCluster should delete an existing Kubernetes cluster
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster()
+
+        self.debug("Deleting Kubernetes cluster with ID: %s" % k8s_cluster.id)
+
+        self.deleteKubernetesClusterAndVerify(k8s_cluster.id)
+
+        self.debug("Kubernetes cluster with ID: %s successfully deleted" % k8s_cluster.id)
+
+        k8s_cluster = None
+
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_06_deploy_invalid_kubernetes_ha_cluster(self):
+        """Test to deploy an invalid HA Kubernetes cluster
+
+        # Validate the following:
+        # 1. createKubernetesCluster should fail as version doesn't support HA
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
@@ -388,7 +469,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         try:
             cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id, 1, 2)
             self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % cluster_response.id)
-            self.deleteKubernetesCluster(cluster_response.id)
+            self.deleteKubernetesClusterAndVerify(cluster_response.id, False, True)
             self.fail("HA Kubernetes cluster deployed with Kubernetes supported version below version 1.16.0. Must be an error.")
         except CloudstackAPIException as e:
             self.debug("HA Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
@@ -397,161 +478,65 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_04_deploy_and_upgrade_kubernetes_cluster(self):
-        """Test to deploy a new Kubernetes cluster and upgrade it to newer version
+    def test_07_deploy_kubernetes_ha_cluster(self):
+        """Test to deploy a new Kubernetes cluster
 
         # Validate the following:
         # 1. createKubernetesCluster should return valid info for new cluster
         # 2. The Cloud Database contains the valid information
-        # 3. upgradeKubernetesCluster should return valid info for the cluster
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
-        name = 'testcluster-' + random_gen()
-        self.debug("Creating for Kubernetes cluster with name %s" % name)
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster(1, 2)
 
-        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id)
-
-        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_2.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
-
-        try:
-            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kubernetes_version_3.id)
-        except Exception as e:
-            self.deleteKubernetesCluster(cluster_response.id)
-            self.fail("Failed to upgrade Kubernetes cluster due to: %s" % e)
-
-        self.verifyKubernetesClusterUpgrade(cluster_response, self.kubernetes_version_3.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully upgraded, now deleting it" % cluster_response.id)
-
-        self.deleteKubernetesClusterAndVerify(cluster_response.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
+        self.debug("HA Kubernetes cluster with ID: %s successfully deployed" % k8s_cluster.id)
 
         return
 
-
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_05_deploy_and_upgrade_kubernetes_ha_cluster(self):
+    def test_08_deploy_and_upgrade_kubernetes_ha_cluster(self):
         """Test to deploy a new HA Kubernetes cluster and upgrade it to newer version
 
         # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
-        # 3. upgradeKubernetesCluster should return valid info for the cluster
+        # 1. upgradeKubernetesCluster should return valid info for the cluster
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
-        name = 'testcluster-' + random_gen()
-        self.debug("Creating for Kubernetes cluster with name %s" % name)
-
-        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_3.id, 1, 2)
-
-        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_3.id, 1, 2)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now upgrading it" % cluster_response.id)
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster(1, 2)
 
         try:
-            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kubernetes_version_4.id)
+            k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_4.id)
         except Exception as e:
-            self.deleteKubernetesCluster(cluster_response.id)
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
             self.fail("Failed to upgrade Kubernetes HA cluster due to: %s" % e)
 
-        self.verifyKubernetesClusterUpgrade(cluster_response, self.kubernetes_version_4.id)
+        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_4.id)
 
-        self.debug("Kubernetes cluster with ID: %s successfully upgraded, now deleting it" % cluster_response.id)
-
-        self.deleteKubernetesClusterAndVerify(cluster_response.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully upgraded" % k8s_cluster.id)
 
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_06_deploy_and_invalid_upgrade_kubernetes_cluster(self):
-        """Test to deploy a new Kubernetes cluster and check for failure while tying to upgrade it to a lower version
+    def test_09_delete_kubernetes_ha_cluster(self):
+        """Test to delete a HA Kubernetes cluster
 
         # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
-        # 3. upgradeKubernetesCluster should fail
+        # 1. deleteKubernetesCluster should delete an existing HA Kubernetes cluster
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
-        name = 'testcluster-' + random_gen()
-        self.debug("Creating for Kubernetes cluster with name %s" % name)
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster(1, 2)
 
-        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id)
+        self.debug("Deleting Kubernetes cluster with ID: %s" % k8s_cluster.id)
 
-        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_2.id)
+        self.deleteKubernetesClusterAndVerify(k8s_cluster.id)
 
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now scaling it" % cluster_response.id)
-
-        try:
-            cluster_response = self.upgradeKubernetesCluster(cluster_response.id, self.kubernetes_version_1.id)
-            self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % kubernetes_version_1.id)
-            self.deleteKubernetesCluster(cluster_response.id)
-            self.fail("Kubernetes cluster upgraded to a lower Kubernetes supported version. Must be an error.")
-        except Exception as e:
-            self.debug("Upgrading Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
-
-        self.debug("Deleting Kubernetes cluster with ID: %s" % cluster_response.id)
-
-        self.deleteKubernetesClusterAndVerify(cluster_response.id, True)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
-
-        return
-
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
-    @skipTestIf("hypervisorNotSupported")
-    def test_07_deploy_and_scale_kubernetes_cluster(self):
-        """Test to deploy a new Kubernetes cluster and check for failure while tying to scale it
-
-        # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
-        # 3. scaleKubernetesCluster should return valid info for the cluster when it is scaled up
-        # 4. scaleKubernetesCluster should return valid info for the cluster when it is scaled down
-        """
-        if self.setup_failed == True:
-            self.fail("Setup incomplete")
-        name = 'testcluster-' + random_gen()
-        self.debug("Creating for Kubernetes cluster with name %s" % name)
-
-        cluster_response = self.createKubernetesCluster(name, self.kubernetes_version_2.id)
-
-        self.verifyKubernetesCluster(cluster_response, name, self.kubernetes_version_2.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now upscaling it" % cluster_response.id)
-
-        try:
-            cluster_response = self.scaleKubernetesCluster(cluster_response.id, 2)
-        except Exception as e:
-            self.deleteKubernetesCluster(cluster_response.id)
-            self.fail("Failed to upscale Kubernetes cluster due to: %s" % e)
-
-        self.verifyKubernetesClusterScale(cluster_response, 2)
-
-        self.debug("Kubernetes cluster with ID: %s successfully upscaled, now downscaling it" % cluster_response.id)
-
-        try:
-            cluster_response = self.scaleKubernetesCluster(cluster_response.id, 1)
-        except Exception as e:
-            self.deleteKubernetesCluster(cluster_response.id)
-            self.fail("Failed to downscale Kubernetes cluster due to: %s" % e)
-
-        self.verifyKubernetesClusterScale(cluster_response)
-
-        self.debug("Kubernetes cluster with ID: %s successfully downscaled, now deleting it" % cluster_response.id)
-
-        self.deleteKubernetesClusterAndVerify(cluster_response.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully deleted" % cluster_response.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deleted" % k8s_cluster.id)
 
         return
 
@@ -560,7 +545,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         if cluster_id != None:
             listKubernetesClustersCmd.id = cluster_id
         clusterResponse = self.apiclient.listKubernetesClusters(listKubernetesClustersCmd)
-        if cluster_id != None:
+        if cluster_id != None and clusterResponse != None:
             return clusterResponse[0]
         return clusterResponse
 
@@ -587,6 +572,12 @@ class TestKubernetesCluster(cloudstackTestCase):
         response = self.apiclient.stopKubernetesCluster(stopKubernetesClusterCmd)
         return response
 
+    def startKubernetesCluster(self, cluster_id):
+        startKubernetesClusterCmd = startKubernetesCluster.startKubernetesClusterCmd()
+        startKubernetesClusterCmd.id = cluster_id
+        response = self.apiclient.startnetesCluster(startKubernetesClusterCmd)
+        return response
+
     def deleteKubernetesCluster(self, cluster_id):
         deleteKubernetesClusterCmd = deleteKubernetesCluster.deleteKubernetesClusterCmd()
         deleteKubernetesClusterCmd.id = cluster_id
@@ -607,18 +598,47 @@ class TestKubernetesCluster(cloudstackTestCase):
         response = self.apiclient.scaleKubernetesCluster(scaleKubernetesClusterCmd)
         return response
 
-    def verifyKubernetesCluster(self, cluster_response, name, version_id, size=1, master_nodes=1):
+    def getValidKubernetesCluster(self, size=1, master_nodes=1):
+        cluster = k8s_cluster
+        version = self.kubernetes_version_2
+        if master_nodes != 1:
+            version = self.kubernetes_version_3
+        valid = True
+        if cluster == None:
+            valid = False
+            self.debug("No existing cluster available, k8s_cluster: %s" % cluster)
+        if valid == True and cluster.id == None:
+            valid = False
+            self.debug("ID for existing cluster not found, k8s_cluster ID: %s" % cluster.id)
+        if valid == True:
+            try:
+                self.verifyKubernetesCluster(cluster, cluster.name, None, size, master_nodes)
+                self.debug("Existing Kubernetes cluster available with name %s" % cluster.name)
+            except  AssertionError as error:
+                valid = False
+                self.debug("Existing cluster failed verification due to %s, need to deploy a new one" % error)
+                self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
+        if valid == False:
+            name = 'testcluster-' + random_gen()
+            self.debug("Creating for Kubernetes cluster with name %s" % name)
+            cluster = self.createKubernetesCluster(name, version.id, size, master_nodes)
+            self.verifyKubernetesCluster(cluster, name, version.id, size, master_nodes)
+        return cluster
+
+    def verifyKubernetesCluster(self, cluster_response, name, version_id=None, size=1, master_nodes=1):
         """Check if Kubernetes cluster is valid"""
 
         self.verifyKubernetesClusterState(cluster_response, 'Running')
 
-        self.assertEqual(
-            cluster_response.name,
-            name,
-            "Check KubernetesCluster name {}, {}".format(cluster_response.name, name)
-        )
+        if name != None:
+            self.assertEqual(
+                cluster_response.name,
+                name,
+                "Check KubernetesCluster name {}, {}".format(cluster_response.name, name)
+            )
 
-        self.verifyKubernetesClusterVersion(cluster_response, version_id)
+        if version_id != None:
+            self.verifyKubernetesClusterVersion(cluster_response, version_id)
 
         self.assertEqual(
             cluster_response.zoneid,
@@ -710,7 +730,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             if forced:
                 cluster = self.listKubernetesCluster(cluster_id)
                 if cluster != None:
-                    if cluster.state in ['Running', 'Upgrading', 'Scaling']:
+                    if cluster.state in ['Starting', 'Running', 'Upgrading', 'Scaling']:
                         self.stopKubernetesCluster(cluster_id)
                         self.deleteKubernetesCluster(cluster_id)
                     else:
@@ -724,8 +744,9 @@ class TestKubernetesCluster(cloudstackTestCase):
                         cmd.id = cluster.networkid
                         cmd.forced = True
                         self.apiclient.deleteNetwork(cmd)
-
-
+                        self.dbclient.execute("update kubernetes_cluster set state='Destroyed', removed=now() where uuid = '%s';" % cluster.id)
+            else:
+                raise Exception("Error: Exception during delete cluster : %s" % e)
 
         if verify == True and forceDeleted == False:
             self.assertEqual(
