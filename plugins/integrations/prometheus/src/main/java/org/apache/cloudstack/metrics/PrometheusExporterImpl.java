@@ -49,12 +49,12 @@ import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.host.dao.HostTagsDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageStats;
@@ -241,6 +241,16 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 continue;
             }
             metricsList.add(new ItemVM(zoneName, zoneUuid, state.name().toLowerCase(), count));
+        }
+        List<String> allHostTags = new ArrayList<String>();
+        for (final HostVO host : hostDao.listAll()) {
+            allHostTags.addAll(_hostTagsDao.gethostTags(host.getId()));
+        }
+        for (final State state : State.values()) {
+            for (final String hosttag : allHostTags) {
+                final Long count = vmDao.countByZoneAndStateAndHostTag(dcId, state, hosttag);
+                metricsList.add(new ItemVMByTag(zoneName, zoneUuid, state.name().toLowerCase(), count, hosttag));
+            }
         }
     }
 
@@ -436,6 +446,28 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             return String.format("%s{zone=\"%s\",filter=\"%s\"} %d", name, zoneName, filter, total);
+        }
+    }
+
+    class ItemVMByTag extends Item {
+        String zoneName;
+        String zoneUuid;
+        String filter;
+        long total;
+        String hosttags;
+
+        public ItemVMByTag(final String zn, final String zu, final String st, long cnt, final String tags) {
+            super("cloudstack_vms_total_by_tag");
+            zoneName = zn;
+            zoneUuid = zu;
+            filter = st;
+            total = cnt;
+            hosttags = tags;
+        }
+
+        @Override
+        public String toMetricsString() {
+            return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %d", name, zoneName, filter, hosttags, total);
         }
     }
 

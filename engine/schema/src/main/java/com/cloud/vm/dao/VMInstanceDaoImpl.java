@@ -808,6 +808,27 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public Long countByZoneAndStateAndHostTag(long dcId, State state, String hostTag) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        String sql = "SELECT COUNT(1) FROM vm_instance vi "
+                + "JOIN service_offering so ON vi.service_offering_id=so.id "
+                + "JOIN vm_template vt ON vi.vm_template_id = vt.id "
+                + "WHERE vi.data_center_id= " + dcId + " AND vi.state = '" + state + "' AND vi.removed IS NULL "
+                + "AND (so.host_tag='" + hostTag + "' OR vt.template_tag='" + hostTag + "')";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error counting vms by host tag", e);
+        }
+        return 0L;
+    }
+
+    @Override
     public List<VMInstanceVO> listNonRemovedVmsByTypeAndNetwork(long networkId, VirtualMachine.Type... types) {
         if (NetworkTypeSearch == null) {
 
