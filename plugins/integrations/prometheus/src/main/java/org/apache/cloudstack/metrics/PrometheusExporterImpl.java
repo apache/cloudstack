@@ -18,7 +18,9 @@ package org.apache.cloudstack.metrics;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -47,6 +49,7 @@ import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -106,6 +109,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private AccountDao _accountDao;
     @Inject
     private ResourceCountDao _resourceCountDao;
+    @Inject
+    private HostTagsDao _hostTagsDao;
 
     public PrometheusExporterImpl() {
         super();
@@ -115,6 +120,10 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total = 0;
         int up = 0;
         int down = 0;
+        Map<String, Integer> total_hosts = new HashMap<>();
+        Map<String, Integer> up_hosts = new HashMap<>();
+        Map<String, Integer> down_hosts = new HashMap<>();
+
         for (final HostVO host : hostDao.listAll()) {
             if (host == null || host.getType() != Host.Type.Routing || host.getDataCenterId() != dcId) {
                 continue;
@@ -130,6 +139,23 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             final DedicatedResourceVO dr = _dedicatedDao.findByHostId(host.getId());
             int isDedicated = (dr != null) ? 1 : 0;
             metricsList.add(new ItemHostIsDedicated(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), isDedicated));
+
+            List<String> hostTags = _hostTagsDao.gethostTags(host.getId());
+            for (String tag : hostTags) {
+                Integer current = total_hosts.get(tag) != null ? total_hosts.get(tag) : 0;
+                total_hosts.put(tag, current + 1);
+            }
+            if (host.getStatus() == Status.Up) {
+                for (String tag : hostTags) {
+                    Integer current = up_hosts.get(tag) != null ? up_hosts.get(tag) : 0;
+                    up_hosts.put(tag, current + 1);
+                }
+            } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down) {
+                for (String tag : hostTags) {
+                    Integer current = down_hosts.get(tag) != null ? down_hosts.get(tag) : 0;
+                    down_hosts.put(tag, current + 1);
+                }
+            }
 
             // Get account, domain details for dedicated hosts
             if (isDedicated == 1) {
@@ -188,9 +214,24 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             metricsList.add(new ItemVMCore(zoneName, zoneUuid, null, null, null, ALLOCATED, coreCapacity.get(0).getAllocatedCapacity() != null ? coreCapacity.get(0).getAllocatedCapacity() : 0, 0));
         }
 
-        metricsList.add(new ItemHost(zoneName, zoneUuid, ONLINE, up));
-        metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, down));
-        metricsList.add(new ItemHost(zoneName, zoneUuid, TOTAL, total));
+        metricsList.add(new ItemHost(zoneName, zoneUuid, ONLINE, up, null));
+        metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, down, null));
+        metricsList.add(new ItemHost(zoneName, zoneUuid, TOTAL, total, null));
+        for (Map.Entry<String, Integer> entry : total_hosts.entrySet()) {
+            String tag = entry.getKey();
+            Integer count = entry.getValue();
+            metricsList.add(new ItemHost(zoneName, zoneUuid, TOTAL, count, tag));
+            if (up_hosts.get(tag) != null) {
+                metricsList.add(new ItemHost(zoneName, zoneUuid, ONLINE, up_hosts.get(tag), tag));
+            } else {
+                metricsList.add(new ItemHost(zoneName, zoneUuid, ONLINE, 0, tag));
+            }
+            if (down_hosts.get(tag) != null) {
+                metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, down_hosts.get(tag), tag));
+            } else {
+                metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, 0, tag));
+            }
+        }
     }
 
     private void addVMMetrics(final List<Item> metricsList, final long dcId, final String zoneName, final String zoneUuid) {
@@ -423,17 +464,22 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         String zoneUuid;
         String state;
         int total;
+        String hosttags;
 
-        public ItemHost(final String zn, final String zu, final String st, int cnt) {
+        public ItemHost(final String zn, final String zu, final String st, int cnt, final String tags) {
             super("cloudstack_hosts_total");
             zoneName = zn;
             zoneUuid = zu;
             state = st;
             total = cnt;
+            hosttags = tags;
         }
 
         @Override
         public String toMetricsString() {
+            if (! Strings.isNullOrEmpty(hosttags)) {
+                return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %d", name, zoneName, state, hosttags, total);
+            }
             return String.format("%s{zone=\"%s\",filter=\"%s\"} %d", name, zoneName, state, total);
         }
     }
