@@ -1590,7 +1590,7 @@ export default {
             if (this.$route.query.zoneid) {
               zoneid = this.$route.query.zoneid
             } else if (this.options.zones.length === 1) {
-              zoneid = 'this.options.zones[0].id'
+              zoneid = this.options.zones[0].id
             }
             if (zoneid) {
               this.form.getFieldDecorator(['zoneid'], { initialValue: zoneid })
