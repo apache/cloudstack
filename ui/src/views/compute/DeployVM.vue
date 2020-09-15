@@ -1442,6 +1442,7 @@ export default {
               message: this.$t('message.request.failed'),
               description: this.$t('message.step.4.continue')
             })
+            this.loading.deploy = false
             return
           }
           for (let j = 0; j < arrNetwork.length; j++) {
