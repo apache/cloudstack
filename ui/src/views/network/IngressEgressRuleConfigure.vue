@@ -83,7 +83,7 @@
       style="overflow-y: auto"
       :columns="columns"
       :dataSource="rules"
-      :pagination="{ pageSizeOptions: ['10', '20', '40', '80', '100', '500'], showSizeChanger: true}"
+      :pagination="{ pageSizeOptions: ['10', '20', '40', '80', '100', '200'], showSizeChanger: true}"
       :rowKey="record => record.ruleid">
       <template slot="protocol" slot-scope="record">
         {{ record.protocol | capitalise }}

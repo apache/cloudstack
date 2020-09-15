@@ -57,7 +57,7 @@
         :pageSize="options.pageSize"
         :total="total"
         :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '500'] : ['10', '20', '50', '100', '500']"
+        :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '200'] : ['10', '20', '50', '100', '200']"
         @change="handleTableChange"
         @showSizeChange="handlePageSizeChange"
         showSizeChanger>
@@ -151,7 +151,7 @@ export default {
         this.dataSource = this.items
         this.defaultPagination = {
           showSizeChanger: true,
-          pageSizeOptions: this.mixinDevice === 'desktop' ? ['20', '50', '100', '500'] : ['10', '20', '50', '100', '500']
+          pageSizeOptions: this.mixinDevice === 'desktop' ? ['20', '50', '100', '200'] : ['10', '20', '50', '100', '200']
         }
         return
       }
