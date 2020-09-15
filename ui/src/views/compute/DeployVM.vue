@@ -288,7 +288,6 @@
                     </div>
                     <div v-show="!(vm.templateid && templateNics && templateNics.length > 0)" >
                       <network-selection
-                        v-if="!networkId"
                         :items="options.networks"
                         :row-count="rowCount.networks"
                         :value="networkOfferingIds"
@@ -935,9 +934,6 @@ export default {
     networkId () {
       return this.$route.query.networkid || null
     },
-    networkName () {
-      return this.$route.query.name || null
-    },
     showSecurityGroupSection () {
       return this.networks.length > 0 && this.zone.securitygroupsenabled
     }
@@ -976,9 +972,7 @@ export default {
       this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
       this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
       this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-      if (!this.networkId) {
-        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
-      }
+      this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
       this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
       if (this.zone) {
@@ -1129,15 +1123,6 @@ export default {
       this.form.getFieldDecorator([field], { initialValue: this.dataPreFill[field] })
     },
     fetchData () {
-      if (this.networkId) {
-        this.updateNetworks([this.networkId])
-        this.updateDefaultNetworks(this.networkId)
-        this.networks = [{
-          id: this.networkId,
-          name: this.networkName
-        }]
-      }
-
       if (this.dataPreFill.zoneid) {
         this.fetchDataByZone(this.dataPreFill.zoneid)
       } else {
@@ -1600,9 +1585,17 @@ export default {
             }
           })
 
-          if (name === 'zones' && this.options.zones.length === 1) {
-            this.form.getFieldDecorator(['zoneid'], { initialValue: this.options.zones[0].id })
-            this.onSelectZoneId(this.options.zones[0].id)
+          if (name === 'zones') {
+            let zoneid = ''
+            if (this.$route.query.zoneid) {
+              zoneid = this.$route.query.zoneid
+            } else if (this.options.zones.length === 1) {
+              zoneid = 'this.options.zones[0].id'
+            }
+            if (zoneid) {
+              this.form.getFieldDecorator(['zoneid'], { initialValue: zoneid })
+              this.onSelectZoneId(zoneid)
+            }
           }
         })
       }).catch(function (error) {
@@ -1714,7 +1707,9 @@ export default {
       this.tabKey = 'templateid'
       _.each(this.params, (param, name) => {
         if (this.networkId && name === 'networks') {
-          return true
+          param.options = {
+            id: this.networkId
+          }
         }
         if (!('isLoad' in param) || param.isLoad) {
           this.fetchOptions(param, name, ['zones'])

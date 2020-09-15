@@ -67,7 +67,7 @@
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
                 :disabled="!('deployVirtualMachine' in $store.getters.apis)"
-                @click="$router.push({ path: '/action/deployVirtualMachine?networkid=' + network.id + '&name=' + network.name })">
+                @click="$router.push({ path: '/action/deployVirtualMachine?networkid=' + network.id + '&zoneid=' + network.zoneid })">
                 {{ $t('label.vm.add') }}
               </a-button>
               <a-table
