@@ -4752,8 +4752,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
             morDestintionDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
             destinationDsMo = new DatastoreMO(hyperHost.getContext(), morDestintionDS);
-            if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL"))
-                vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
+            vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
 
             if (destinationDsMo.getDatastoreType().equalsIgnoreCase("VVOL"))
                 vmName = getWorkerName(getServiceContext(), cmd, 0, destinationDsMo);
