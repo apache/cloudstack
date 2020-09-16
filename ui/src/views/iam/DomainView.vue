@@ -181,7 +181,14 @@ export default {
           duration: 0
         })
 
-        if ([401, 405].includes(error.response.status)) {
+        if ([401].includes(error.response.status)) {
+          store.dispatch('Logout').then(() => {
+            this.$router.push({ path: '/user/login', query: { redirect: this.$route.fullPath } })
+          })
+          return
+        }
+
+        if ([405].includes(error.response.status)) {
           this.$router.push({ path: '/exception/403' })
         }
 

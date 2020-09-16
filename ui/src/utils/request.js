@@ -18,11 +18,11 @@
 import Vue from 'vue'
 import axios from 'axios'
 import router from '@/router'
-import store from '@/store'
 import { VueAxios } from './axios'
 import notification from 'ant-design-vue/es/notification'
 import { CURRENT_PROJECT } from '@/store/mutation-types'
 import i18n from '@/locales'
+import store from '@/store'
 
 const service = axios.create({
   timeout: 600000
@@ -46,9 +46,7 @@ const err = (error) => {
         key: 'http-401'
       })
       store.dispatch('Logout').then(() => {
-        setTimeout(() => {
-          window.location.reload()
-        }, 1500)
+        router.go(0)
       })
     }
     if (response.status === 404) {
