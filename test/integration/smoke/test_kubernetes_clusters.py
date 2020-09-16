@@ -575,7 +575,7 @@ class TestKubernetesCluster(cloudstackTestCase):
     def startKubernetesCluster(self, cluster_id):
         startKubernetesClusterCmd = startKubernetesCluster.startKubernetesClusterCmd()
         startKubernetesClusterCmd.id = cluster_id
-        response = self.apiclient.startnetesCluster(startKubernetesClusterCmd)
+        response = self.apiclient.startKubernetesCluster(startKubernetesClusterCmd)
         return response
 
     def deleteKubernetesCluster(self, cluster_id):
@@ -611,18 +611,29 @@ class TestKubernetesCluster(cloudstackTestCase):
             valid = False
             self.debug("ID for existing cluster not found, k8s_cluster ID: %s" % cluster.id)
         if valid == True:
+            cluster_id = cluster.id
+            cluster = self.listKubernetesCluster(cluster_id)
+            if cluster == None:
+                valid = False
+                self.debug("Existing cluster, k8s_cluster ID: %s not returned by list API" % cluster_id)
+        if valid == True:
             try:
                 self.verifyKubernetesCluster(cluster, cluster.name, None, size, master_nodes)
                 self.debug("Existing Kubernetes cluster available with name %s" % cluster.name)
             except  AssertionError as error:
                 valid = False
                 self.debug("Existing cluster failed verification due to %s, need to deploy a new one" % error)
-                self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
         if valid == False:
             name = 'testcluster-' + random_gen()
             self.debug("Creating for Kubernetes cluster with name %s" % name)
-            cluster = self.createKubernetesCluster(name, version.id, size, master_nodes)
-            self.verifyKubernetesCluster(cluster, name, version.id, size, master_nodes)
+            try:
+                self.deleteAllLeftoverClusters()
+                cluster = self.createKubernetesCluster(name, version.id, size, master_nodes)
+                self.verifyKubernetesCluster(cluster, name, version.id, size, master_nodes)
+            except Exception as ex:
+                self.fail("Kubernetes cluster deployment failed: %s" % ex)
+            except AssertionError as err:
+                self.fail("Kubernetes cluster deployment failed during cluster verification: %s" % err)
         return cluster
 
     def verifyKubernetesCluster(self, cluster_response, name, version_id=None, size=1, master_nodes=1):
@@ -762,3 +773,9 @@ class TestKubernetesCluster(cloudstackTestCase):
                 None,
                 "KubernetesCluster not removed in DB, {}".format(db_cluster_removed)
             )
+
+    def deleteAllLeftoverClusters(self):
+        clusters = self.listKubernetesCluster()
+        if clusters != None:
+            for cluster in clusters:
+                self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
