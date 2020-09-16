@@ -254,6 +254,7 @@ export default {
             this.$set(this.resource, 'isDel', true)
             this.parentUpdActionData(this.resource)
           }
+          this.parentCloseAction()
         }).catch(error => {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -261,7 +262,6 @@ export default {
           })
         }).finally(f => {
           this.action.loading = false
-          this.parentCloseAction()
         })
       })
     },

@@ -426,12 +426,12 @@ export default {
             message: 'Network',
             description: this.$t('message.success.create.l2.network')
           })
+          this.$emit('refresh-data')
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
-          this.$emit('refresh-data')
           this.actionLoading = false
-          this.closeAction()
         })
       })
     },

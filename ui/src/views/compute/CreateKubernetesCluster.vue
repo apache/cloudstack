@@ -485,12 +485,12 @@ export default {
               this.$emit('refresh-data')
             }
           })
+          this.closeAction()
+          this.$emit('refresh-data')
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
-          this.$emit('refresh-data')
           this.loading = false
-          this.closeAction()
         })
       })
     },

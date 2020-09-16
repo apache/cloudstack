@@ -485,11 +485,11 @@ export default {
             description: this.$t('message.success.create.isolated.network')
           })
           this.$emit('refresh-data')
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.actionLoading = false
-          this.closeAction()
         })
       })
     },

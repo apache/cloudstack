@@ -503,15 +503,14 @@ export default {
           message: this.$t('message.success.upload'),
           description: this.$t('message.success.upload.template.description')
         })
+        this.$emit('refresh-data')
+        this.closeAction()
       }).catch(e => {
         this.$notification.error({
           message: this.$t('message.upload.failed'),
           description: `${this.$t('message.upload.template.failed.description')} -  ${e}`,
           duration: 0
         })
-      }).finally(() => {
-        this.$emit('refresh-data')
-        this.closeAction()
       })
     },
     fetchZone () {
@@ -881,12 +880,12 @@ export default {
               message: this.$t('label.register.template'),
               description: `${this.$t('message.success.register.template')} ${params.name}`
             })
+            this.$emit('refresh-data')
+            this.closeAction()
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {
             this.loading = false
-            this.$emit('refresh-data')
-            this.closeAction()
           })
         } else {
           this.loading = true

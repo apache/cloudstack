@@ -229,10 +229,8 @@ export default {
               description: `${this.$t('message.upload.iso.failed.description')} -  ${e}`,
               duration: 0
             })
-            this.closeAction()
           }).finally(() => {
             this.loading = false
-            this.closeAction()
           })
         })
       })

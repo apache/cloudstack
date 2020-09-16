@@ -289,15 +289,14 @@ export default {
           message: this.$t('message.success.upload'),
           description: this.$t('message.success.upload.description')
         })
+        this.closeAction()
+        this.$emit('refresh-data')
       }).catch(e => {
         this.$notification.error({
           message: this.$t('message.upload.failed'),
           description: `${this.$t('message.upload.iso.failed.description')} -  ${e}`,
           duration: 0
         })
-      }).finally(() => {
-        this.closeAction()
-        this.$emit('refresh-data')
       })
     },
     handleSubmit (e) {
@@ -337,12 +336,12 @@ export default {
               message: this.$t('label.action.register.iso'),
               description: `${this.$t('message.success.register.iso')} ${params.name}`
             })
+            this.closeAction()
+            this.$emit('refresh-data')
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {
             this.loading = false
-            this.closeAction()
-            this.$emit('refresh-data')
           })
         } else {
           if (this.fileList.length !== 1) {

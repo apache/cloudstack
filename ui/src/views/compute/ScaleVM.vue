@@ -182,8 +182,6 @@ export default {
         this.parentFetchData()
       }).catch(error => {
         this.$notifyError(error)
-        this.$parent.$parent.close()
-        this.parentFetchData()
       }).finally(() => {
         this.loading = false
       })

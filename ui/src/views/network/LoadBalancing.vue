@@ -689,7 +689,6 @@ export default {
           })
         }).catch(error => {
           this.$notifyError(error)
-          this.closeModal()
         })
       })
     },
@@ -725,7 +724,6 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
-        this.closeModal()
       })
     },
     openStickinessModal (id) {
@@ -786,7 +784,6 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
-        this.closeModal()
       })
     },
     handleDeleteStickinessPolicy () {
@@ -819,7 +816,6 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
-        this.closeModal()
       })
     },
     handleSubmitStickinessForm (e) {
@@ -933,7 +929,6 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
         this.loading = false
-        this.closeModal()
       })
     },
     handleDeleteRule (rule) {
@@ -969,7 +964,6 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
         this.loading = false
-        this.closeModal()
       })
     },
     handleOpenAddVMModal () {

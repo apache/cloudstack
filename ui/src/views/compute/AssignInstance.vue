@@ -212,13 +212,12 @@ export default {
         this.$notification.success({
           message: this.$t('label.loadbalancerinstance')
         })
-        this.loading = false
         this.$parent.$parent.close()
         this.parentFetchData()
       }).catch(error => {
         this.$notifyError(error)
-        this.$parent.$parent.close()
-        this.parentFetchData()
+      }).finally(() => {
+        this.loading = false
       })
     }
   }

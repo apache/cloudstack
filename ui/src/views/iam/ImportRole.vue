@@ -178,11 +178,11 @@ export default {
             description: 'Sucessfully imported role ' + params.name
           })
         }
+        this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
-        this.closeAction()
       })
     },
     rulesCsvToJson (rulesCsv) {

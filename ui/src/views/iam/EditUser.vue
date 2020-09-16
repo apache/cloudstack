@@ -201,6 +201,7 @@ export default {
             message: this.$t('label.edit.user'),
             description: `${this.$t('message.success.update.user')} ${params.username}`
           })
+          this.closeAction()
         }).catch(error => {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -209,7 +210,6 @@ export default {
           })
         }).finally(() => {
           this.loading = false
-          this.closeAction()
         })
       })
     },

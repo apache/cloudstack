@@ -216,6 +216,8 @@ export default {
           loadingMessage: `${this.$t('label.assigning.vms')} ${this.$t('label.to')} ${this.resource.name}`,
           catchMessage: this.$t('error.fetching.async.job.result')
         })
+        this.$emit('refresh-data')
+        this.closeModal()
       }).catch(error => {
         this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,
@@ -224,8 +226,6 @@ export default {
         })
       }).finally(() => {
         this.fetchLoading = false
-        this.$emit('refresh-data')
-        this.closeModal()
       })
     },
     changePage (page, pageSize) {

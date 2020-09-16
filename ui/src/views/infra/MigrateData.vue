@@ -150,12 +150,12 @@ export default {
               duration: 0
             })
           }
+          this.parentFetchData()
+          this.closeAction()
         }).catch(error => {
           console.log(error)
         })
         this.loading = false
-        this.parentFetchData()
-        this.closeAction()
       })
     },
     migrateData (args, title) {

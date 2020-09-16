@@ -667,12 +667,12 @@ export default {
             message: this.$t('label.add.primary.storage'),
             description: this.$t('label.add.primary.storage')
           })
+          this.closeModal()
+          this.parentFetchData()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.closeModal()
-          this.parentFetchData()
         })
       })
     }

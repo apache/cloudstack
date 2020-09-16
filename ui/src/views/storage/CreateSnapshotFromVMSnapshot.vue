@@ -116,12 +116,12 @@ export default {
             loadingMessage: this.$t('message.create.snapshot.from.vmsnapshot.progress'),
             catchMessage: this.$t('error.fetching.async.job.result')
           })
+          this.$emit('refresh-data')
+          this.closeModal()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.$emit('refresh-data')
-          this.closeModal()
         })
       })
     },

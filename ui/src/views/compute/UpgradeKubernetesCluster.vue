@@ -170,12 +170,12 @@ export default {
               this.$emit('refresh-data')
             }
           })
+          this.$emit('refresh-data')
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
-          this.$emit('refresh-data')
           this.loading = false
-          this.closeAction()
         })
       })
     },

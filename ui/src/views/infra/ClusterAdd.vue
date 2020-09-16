@@ -240,6 +240,9 @@ export default {
         if (cluster.id && this.showDedicated) {
           this.dedicateCluster(cluster.id)
         }
+        this.parentFetchData()
+        this.parentToggleLoading()
+        this.$parent.$parent.close()
       }).catch(error => {
         this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,
@@ -248,9 +251,6 @@ export default {
         })
       }).finally(() => {
         this.loading = false
-        this.parentFetchData()
-        this.parentToggleLoading()
-        this.$parent.$parent.close()
       })
     },
     dedicateCluster (clusterId) {

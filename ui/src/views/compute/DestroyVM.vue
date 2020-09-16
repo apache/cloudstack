@@ -136,12 +136,12 @@ export default {
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: `${this.$t('message.success.delete.vm')} ${this.resource.name}`
           })
+          this.parentFetchData()
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.parentFetchData()
-          this.closeAction()
         })
       })
     },

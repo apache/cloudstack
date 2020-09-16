@@ -249,20 +249,17 @@ export default {
         isextractable: this.resource.isExtractable,
         featured: this.resource.featured,
         op: this.selectedOperation.toLowerCase()
+      }).then(response => {
+        this.$notification.success({
+          message: `${this.$t('label.success.updated')} ${resourceType} ${this.$t('label.permissions')}`
+        })
+        this.closeModal()
+        this.parentFetchData()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(e => {
+        this.loading = false
       })
-        .then(response => {
-          this.$notification.success({
-            message: `${this.$t('label.success.updated')} ${resourceType} ${this.$t('label.permissions')}`
-          })
-        })
-        .catch(error => {
-          this.$notifyError(error)
-        })
-        .finally(e => {
-          this.loading = false
-          this.closeModal()
-          this.parentFetchData()
-        })
     }
   }
 }

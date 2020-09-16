@@ -278,12 +278,12 @@ export default {
             message: this.$t('label.add.secondary.storage'),
             description: this.$t('label.add.secondary.storage')
           })
+          this.closeModal()
+          this.parentFetchData()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.closeModal()
-          this.parentFetchData()
         })
       })
     }

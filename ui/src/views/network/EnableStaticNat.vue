@@ -246,11 +246,11 @@ export default {
         networkid: this.selectedVpcTier
       }).then(() => {
         this.parentFetchData()
+        this.handleClose()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
-        this.handleClose()
       })
     },
     handleClose () {

@@ -284,11 +284,11 @@ export default {
             message: this.$t('label.action.update.offering.access'),
             description: this.$t('label.action.update.offering.access')
           })
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.closeAction()
         })
       })
     },

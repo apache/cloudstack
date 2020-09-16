@@ -247,12 +247,12 @@ export default {
         }
         api('addKubernetesSupportedVersion', params).then(json => {
           this.$message.success(`${this.$t('message.success.add.kuberversion')}: ${values.semanticversion}`)
+          this.$emit('refresh-data')
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
-          this.$emit('refresh-data')
           this.loading = false
-          this.closeAction()
         })
       })
     },

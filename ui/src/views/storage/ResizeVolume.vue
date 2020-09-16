@@ -121,6 +121,7 @@ export default {
               this.closeModal()
             }
           })
+          this.closeModal()
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
@@ -129,7 +130,6 @@ export default {
           })
         }).finally(() => {
           this.loading = false
-          this.closeModal()
         })
       })
     },

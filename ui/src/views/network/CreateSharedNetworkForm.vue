@@ -794,12 +794,12 @@ export default {
             description: this.$t('message.success.add.guest.network')
           })
           this.resetForm()
+          this.$emit('refresh-data')
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
-          this.$emit('refresh-data')
           this.actionLoading = false
-          this.closeAction()
         })
       })
     },

@@ -343,12 +343,10 @@ export default {
             }
           })
           this.closeModal()
+          this.form.resetFields()
         }).catch(error => {
           console.error(error)
           this.$message.error(this.$t('message.success.add.vpn.customer.gateway'))
-        }).finally(() => {
-          this.form.resetFields()
-          this.closeModal()
         })
       })
     }

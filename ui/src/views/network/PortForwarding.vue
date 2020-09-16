@@ -469,7 +469,6 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
-        this.closeModal()
         this.fetchData()
       })
     },
@@ -548,7 +547,6 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
-        this.closeModal()
       })
     },
     handleDeleteTag (tag) {
@@ -583,7 +581,6 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
-        this.closeModal()
       })
     },
     openAddVMModal () {

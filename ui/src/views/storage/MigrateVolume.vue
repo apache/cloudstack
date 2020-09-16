@@ -156,12 +156,10 @@ export default {
             this.parentFetchData()
           }
         })
-      }).catch(error => {
-        this.$notifyError(error)
-        this.closeModal()
-      }).finally(() => {
         this.closeModal()
         this.parentFetchData()
+      }).catch(error => {
+        this.$notifyError(error)
       })
     }
   }

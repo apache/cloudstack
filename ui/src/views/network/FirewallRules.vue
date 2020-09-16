@@ -343,7 +343,6 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
-        this.closeModal()
       }).finally(() => {
         this.addTagLoading = false
       })
@@ -379,7 +378,6 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
-        this.closeModal()
       })
     },
     handleChangePage (page, pageSize) {

@@ -135,11 +135,11 @@ export default {
               catchMessage: this.$t('error.fetching.async.job.result')
             })
           }
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.closeAction()
         })
       })
     }

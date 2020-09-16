@@ -105,6 +105,7 @@ export default {
             description: values.samlEnable ? `${this.$t('message.success.enable.saml.auth')} ${this.$t('label.for')} ${this.resource.username}`
               : `${this.$t('message.success.disable.saml.auth')} ${this.$t('label.for')} ${this.resource.username}`
           })
+          this.handleClose()
         }).catch(error => {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -113,7 +114,6 @@ export default {
           })
         }).finally(() => {
           this.loading = false
-          this.handleClose()
         })
       })
     }

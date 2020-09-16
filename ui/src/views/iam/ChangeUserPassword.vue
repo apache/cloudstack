@@ -145,12 +145,12 @@ export default {
             message: this.$t('label.action.change.password'),
             description: `${this.$t('message.success.change.password')} ${this.resource.username}`
           })
+          this.$emit('refresh-data')
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
-          this.$emit('refresh-data')
           this.loading = false
-          this.closeAction()
         })
       })
     },

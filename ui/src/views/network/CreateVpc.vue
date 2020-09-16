@@ -222,11 +222,11 @@ export default {
             })
             this.$emit('refresh-data')
           }
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.closeAction()
         })
       })
     }

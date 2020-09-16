@@ -294,6 +294,8 @@ export default {
         if (host.id && this.showDedicated) {
           this.dedicateHost(host.id)
         }
+        this.parentFetchData()
+        this.$parent.$parent.close()
       }).catch(error => {
         this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,
@@ -302,8 +304,6 @@ export default {
         })
       }).finally(() => {
         this.loading = false
-        this.parentFetchData()
-        this.$parent.$parent.close()
       })
     },
     dedicateHost (hostId) {

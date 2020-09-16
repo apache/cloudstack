@@ -349,12 +349,10 @@ export default {
                   description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
                   duration: 0
                 })
-              }).finally(() => {
-                this.loading = false
-                this.closeAction()
               })
             }
           }
+          this.closeAction()
         }).catch(error => {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -363,7 +361,6 @@ export default {
           })
         }).finally(() => {
           this.loading = false
-          this.closeAction()
         })
       })
     },

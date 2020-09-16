@@ -199,8 +199,6 @@ export default {
             duration: 0
           })
           this.loading = false
-          this.parentFetchData()
-          this.$parent.$parent.close()
         })
       })
     },

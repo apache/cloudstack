@@ -1061,12 +1061,12 @@ export default {
             ? `${this.$t('message.create.service.offering')}: `
             : `${this.$t('message.create.compute.offering')}: `
           this.$message.success(message + values.name)
+          this.$emit('refresh-data')
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.$emit('refresh-data')
-          this.closeAction()
         })
       })
     },

@@ -240,12 +240,12 @@ export default {
             message: this.$t('label.update.project.role'),
             description: this.$t('label.update.project.role')
           })
+          this.fetchData()
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.fetchData()
-          this.closeAction()
         })
       })
     },
@@ -278,12 +278,12 @@ export default {
             message: this.$t('label.create.project.role'),
             description: this.$t('label.create.project.role')
           })
+          this.fetchData()
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.fetchData()
-          this.closeAction()
         })
       })
     },
@@ -297,12 +297,12 @@ export default {
           message: this.$t('label.delete.project.role'),
           description: this.$t('label.delete.project.role')
         })
+        this.fetchData()
+        this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
-        this.fetchData()
-        this.closeAction()
       })
     }
   }

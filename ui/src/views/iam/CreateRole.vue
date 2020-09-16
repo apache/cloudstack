@@ -162,11 +162,11 @@ export default {
             description: 'Sucessfully created role ' + params.name
           })
         }
+        this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
-        this.closeAction()
       })
     },
     fetchRoles () {

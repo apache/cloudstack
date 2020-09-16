@@ -402,12 +402,12 @@ export default {
         }
         api('createVPCOffering', params).then(json => {
           this.$message.success(`${this.$t('message.create.vpc.offering')}: ` + values.name)
+          this.$emit('refresh-data')
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.$emit('refresh-data')
-          this.closeAction()
         })
       })
     },

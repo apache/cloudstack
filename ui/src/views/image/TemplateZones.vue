@@ -280,12 +280,12 @@ export default {
           loadingMessage: `${this.$t('label.deleting.template')} ${this.resource.name} ${this.$t('label.in.progress')}`,
           catchMessage: this.$t('error.fetching.async.job.result')
         })
+        this.onCloseModal()
+        this.fetchData()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.deleteLoading = false
-        this.onCloseModal()
-        this.fetchData()
       })
     },
     fetchZoneData () {

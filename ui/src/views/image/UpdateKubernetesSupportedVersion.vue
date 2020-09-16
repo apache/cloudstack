@@ -130,12 +130,12 @@ export default {
         }
         api('updateKubernetesSupportedVersion', params).then(json => {
           this.$message.success(`${this.$t('message.success.update.kubeversion')}: ${this.resource.name}`)
+          this.$emit('refresh-data')
+          this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
-          this.$emit('refresh-data')
           this.loading = false
-          this.closeAction()
         })
       })
     },
