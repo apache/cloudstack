@@ -32,7 +32,6 @@ import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.vo.DomainJoinVO;
-import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
@@ -101,8 +100,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total = 0;
         int up = 0;
         int down = 0;
-        for (final HostJoinVO host : hostJoinDao.listAll()) {
-            if (host == null || host.getType() != Host.Type.Routing || host.getZoneId() != dcId) {
+        for (final HostVO host : hostDao.listAll()) {
+            if (host == null || host.getType() != Host.Type.Routing || host.getDataCenterId() != dcId) {
                 continue;
             }
             total++;
