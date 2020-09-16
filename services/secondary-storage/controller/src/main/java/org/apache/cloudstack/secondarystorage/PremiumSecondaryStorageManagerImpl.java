@@ -97,7 +97,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
 
         activeCommandSearch = _cmdExecLogDao.createSearchBuilder();
         activeCommandSearch.and("created", activeCommandSearch.entity().getCreated(), Op.GTEQ);
-        activeCommandSearch.join("hostSearch", hostSearch, activeCommandSearch.entity().getInstanceId(), hostSearch.entity().getId(), JoinType.INNER);
+        activeCommandSearch.join("hostSearch", hostSearch, activeCommandSearch.entity().getHostId(), hostSearch.entity().getId(), JoinType.INNER);
 
         activeCopyCommandSearch = _cmdExecLogDao.createSearchBuilder();
         activeCopyCommandSearch.and("created", activeCopyCommandSearch.entity().getCreated(), Op.GTEQ);
