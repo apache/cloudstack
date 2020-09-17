@@ -239,6 +239,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
 
         User user = validateUser(userId, accountId, domainId);
+        if (user != null) {
+            owner = _accountDao.findById(user.getAccountId());
+        }
 
         //do resource limit check
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.project);
@@ -559,9 +562,11 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
         User user = CallContext.current().getCallingUser();
         ProjectVO project = _projectDao.findByProjectAccountId(accountId);
-        ProjectAccount userProjectAccount = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
-        if (userProjectAccount != null) {
-            return _projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), accountId);
+        if (project != null) {
+            ProjectAccount userProjectAccount = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
+            if (userProjectAccount != null) {
+                return _projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), accountId);
+            }
         }
         return _projectAccountDao.canAccessProjectAccount(caller.getId(), accountId);
     }
