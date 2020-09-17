@@ -62,11 +62,11 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.commons.lang3.StringUtils;
 
 public class PrometheusExporterImpl extends ManagerBase implements PrometheusExporter, Manager {
     private static final Logger LOG = Logger.getLogger(PrometheusExporterImpl.class);
@@ -172,11 +172,11 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             final String cpuFactor = String.valueOf(CapacityManager.CpuOverprovisioningFactor.valueIn(host.getClusterId()));
             final CapacityVO cpuCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU);
             if (cpuCapacity != null) {
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, cpuCapacity.getUsedCapacity(), hosttags));
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, cpuCapacity.getTotalCapacity(), hosttags));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, cpuCapacity.getUsedCapacity(), isDedicated, hosttags));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, cpuCapacity.getTotalCapacity(), isDedicated, hosttags));
             } else {
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, 0L, hosttags));
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, 0L, hosttags));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, 0L, isDedicated, hosttags));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, 0L, isDedicated, hosttags));
             }
 
             final String memoryFactor = String.valueOf(CapacityManager.MemOverprovisioningFactor.valueIn(host.getClusterId()));
@@ -203,7 +203,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
         final List<CapacityDaoImpl.SummedCapacity> cpuCapacity = capacityDao.findCapacityBy((int) Capacity.CAPACITY_TYPE_CPU, dcId, null, null);
         if (cpuCapacity != null && cpuCapacity.size() > 0) {
-            metricsList.add(new ItemHostCpu(zoneName, zoneUuid, null, null, null, null, ALLOCATED, cpuCapacity.get(0).getAllocatedCapacity() != null ? cpuCapacity.get(0).getAllocatedCapacity() : 0, ""));
+            metricsList.add(new ItemHostCpu(zoneName, zoneUuid, null, null, null, null, ALLOCATED, cpuCapacity.get(0).getAllocatedCapacity() != null ? cpuCapacity.get(0).getAllocatedCapacity() : 0, 0, ""));
         }
 
         final List<CapacityDaoImpl.SummedCapacity> memCapacity = capacityDao.findCapacityBy((int) Capacity.CAPACITY_TYPE_MEMORY, dcId, null, null);
@@ -233,6 +233,13 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             } else {
                 metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, 0, tag));
             }
+        }
+        for (Map.Entry<String, Integer> entry : total_hosts.entrySet()) {
+            String tag = entry.getKey();
+            Ternary<Long, Long, Long> allocatedCapacityByTag = capacityDao.findCapacityByZoneAndHostTag(dcId, tag);
+            metricsList.add(new ItemVMCore(zoneName, zoneUuid, null, null, null, ALLOCATED, allocatedCapacityByTag.first(), 0, tag));
+            metricsList.add(new ItemHostCpu(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.second(),0, tag));
+            metricsList.add(new ItemHostMemory(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.third(), 0, tag));
         }
     }
 
@@ -512,6 +519,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             if (! Strings.isNullOrEmpty(hosttags)) {
+                name = "cloudstack_hosts_total_by_tag";
                 return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %d", name, zoneName, state, hosttags, total);
             }
             return String.format("%s{zone=\"%s\",filter=\"%s\"} %d", name, zoneName, state, total);
@@ -547,7 +555,12 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             if (StringUtils.isAllEmpty(hostName, ip)) {
-                return String.format("%s{zone=\"%s\",filter=\"%s\"} %d", name, zoneName, filter, core);
+                if (Strings.isNullOrEmpty(hosttags)) {
+                    return String.format("%s{zone=\"%s\",filter=\"%s\"} %d", name, zoneName, filter, core);
+                } else {
+                    name = "cloudstack_host_vms_cores_total_by_tag";
+                    return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %d", name, zoneName, filter, hosttags, core);
+                }
             }
             return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\",filter=\"%s\",dedicated=\"%d\",tags=\"%s\"} %d", name, zoneName, hostName, ip, filter, isDedicated, hosttags, core);
         }
@@ -562,9 +575,10 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         String overProvisioningFactor;
         String filter;
         double mhertz;
+        int isDedicated;
         String hosttags;
 
-        public ItemHostCpu(final String zn, final String zu, final String hn, final String hu, final String hip, final String of, final String fl, final double mh, final String tags) {
+        public ItemHostCpu(final String zn, final String zu, final String hn, final String hu, final String hip, final String of, final String fl, final double mh, final int dedicated, final String tags) {
             super("cloudstack_host_cpu_usage_mhz_total");
             zoneName = zn;
             zoneUuid = zu;
@@ -574,13 +588,19 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             overProvisioningFactor = of;
             filter = fl;
             mhertz = mh;
+            isDedicated = dedicated;
             hosttags = tags;
         }
 
         @Override
         public String toMetricsString() {
             if (StringUtils.isAllEmpty(hostName, ip)) {
-                return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, mhertz);
+                if (Strings.isNullOrEmpty(hosttags)) {
+                    return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, mhertz);
+                } else {
+                    name = "cloudstack_host_cpu_usage_mhz_total_by_tag";
+                    return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %.2f", name, zoneName, filter, hosttags, mhertz);
+                }
             }
             return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\",overprovisioningfactor=\"%s\",filter=\"%s\",tags=\"%s\"} %.2f", name, zoneName, hostName, ip, overProvisioningFactor, filter, hosttags, mhertz);
         }
@@ -615,7 +635,12 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             if (StringUtils.isAllEmpty(hostName, ip)) {
-                return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, miBytes);
+                if (Strings.isNullOrEmpty(hosttags)) {
+                    return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, miBytes);
+                } else {
+                    name = "cloudstack_host_memory_usage_mibs_total_by_tag";
+                    return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %.2f", name, zoneName, filter, hosttags, miBytes);
+                }
             }
             return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\",overprovisioningfactor=\"%s\",filter=\"%s\",dedicated=\"%d\",tags=\"%s\"} %.2f", name, zoneName, hostName, ip, overProvisioningFactor, filter, isDedicated, hosttags, miBytes);
         }
