@@ -294,6 +294,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             ResourceUnavailableException, InsufficientCapacityException {
         List<UserVm> nodes = new ArrayList<>();
         for (int i = offset + 1; i <= nodeCount; i++) {
+            // TODO : Get sensible naming / rename them
             UserVm vm = createKubernetesNode(publicIpAddress, i);
             addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
             startKubernetesVM(vm);

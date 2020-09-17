@@ -359,6 +359,10 @@ public class KubernetesClusterActionWorker {
         return clusterVMs;
     }
 
+    protected List<KubernetesClusterVmMapVO> getKubernetesClusterVMMapsForNodes(List<Long> nodeIds) {
+        return kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(kubernetesCluster.getId(), nodeIds);
+    }
+
     protected List<UserVm> getKubernetesClusterVMs() {
         List<UserVm> vmList = new ArrayList<>();
         List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();

@@ -19,6 +19,7 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -65,6 +66,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
     private ServiceOffering serviceOffering;
     private Long clusterSize;
+    private List<Long> nodeIds;
     private KubernetesCluster.State originalState;
     private Network network;
     private long scaleTimeoutTime;
@@ -72,11 +74,18 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     public KubernetesClusterScaleWorker(final KubernetesCluster kubernetesCluster,
                                         final ServiceOffering serviceOffering,
                                         final Long clusterSize,
+                                        final List<Long> nodeIds,
                                         final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
         this.serviceOffering = serviceOffering;
-        this.clusterSize = clusterSize;
+        this.nodeIds = nodeIds;
         this.originalState = kubernetesCluster.getState();
+        if (this.nodeIds != null) {
+            this.clusterSize = kubernetesCluster.getNodeCount() - this.nodeIds.size();
+        } else {
+            this.clusterSize = clusterSize;
+        }
+
     }
 
     protected void init() {
@@ -302,16 +311,11 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         kubernetesCluster = updateKubernetesClusterEntry(null, serviceOffering);
     }
 
-    private void scaleDownKubernetesClusterSize() throws CloudRuntimeException {
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleDownRequested);
-        }
-        final List<KubernetesClusterVmMapVO> originalVmList  = getKubernetesClusterVMMaps();
-        int i = originalVmList.size() - 1;
+    private void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
         List<Long> removedVmIds = new ArrayList<>();
-        while (i >= kubernetesCluster.getMasterNodeCount() + clusterSize) {
-            KubernetesClusterVmMapVO vmMapVO = originalVmList.get(i);
+        for (KubernetesClusterVmMapVO vmMapVO : vmMaps) {
             UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
+            LOGGER.info(String.format("Remving vm : %s", userVM.getUuid()));
             if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, failed to remove Kubernetes node: %s running on VM : %s", kubernetesCluster.getName(), userVM.getHostName(), userVM.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
@@ -333,14 +337,29 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             if (System.currentTimeMillis() > scaleTimeoutTime) {
                 logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, scaling action timed out", kubernetesCluster.getName()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
-            i--;
         }
+
         // Scale network rules to update firewall rule
         try {
             scaleKubernetesClusterNetworkRules(null, removedVmIds);
         } catch (ManagementServerException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to update network rules", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
         }
+    }
+
+    private void scaleDownKubernetesClusterSize() throws CloudRuntimeException {
+        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleDownRequested);
+        }
+        List<KubernetesClusterVmMapVO> vmList;
+        if (this.nodeIds != null) {
+            vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds);
+        } else {
+            vmList  = getKubernetesClusterVMMaps();
+            vmList = vmList.subList((int) (kubernetesCluster.getMasterNodeCount() + clusterSize), vmList.size());
+        }
+        Collections.reverse(vmList);
+        removeNodesFromCluster(vmList);
     }
 
     private void scaleUpKubernetesClusterSize(final long newVmCount) throws CloudRuntimeException {

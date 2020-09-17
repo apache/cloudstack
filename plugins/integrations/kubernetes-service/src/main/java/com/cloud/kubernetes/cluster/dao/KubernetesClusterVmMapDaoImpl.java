@@ -34,6 +34,7 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
     public KubernetesClusterVmMapDaoImpl() {
         clusterIdSearch = createSearchBuilder();
         clusterIdSearch.and("clusterId", clusterIdSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        clusterIdSearch.and("vmIdsIN", clusterIdSearch.entity().getVmId(), SearchCriteria.Op.IN);
         clusterIdSearch.done();
     }
 
@@ -42,5 +43,13 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
         SearchCriteria<KubernetesClusterVmMapVO> sc = clusterIdSearch.create();
         sc.setParameters("clusterId", clusterId);
         return listBy(sc, null);
+    }
+
+    @Override
+    public List<KubernetesClusterVmMapVO> listByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds) {
+        SearchCriteria<KubernetesClusterVmMapVO> sc = clusterIdSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("vmIdsIN", vmIds.toArray());
+        return listBy(sc);
     }
 }
