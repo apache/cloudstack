@@ -1253,7 +1253,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     workerVmMo.destroy();
                 }
             } catch (Throwable e) {
-                s_logger.warn("Failed to destroy worker VM created for detached volume");
+                s_logger.error("Failed to destroy worker VM created for detached volume");
             }
         }
     }
