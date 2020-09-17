@@ -47,7 +47,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume;
