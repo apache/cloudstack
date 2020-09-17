@@ -427,6 +427,9 @@ public class VmwareContext {
 
         conn.setChunkedStreamingMode(ChunkSize);
         conn.setRequestMethod(httpMethod);
+        if (urlString.endsWith(".iso")) {
+            conn.setRequestProperty("Overwrite", "t");
+        }
         conn.setRequestProperty("Connection", "Keep-Alive");
         String contentType = urlString.endsWith(".iso") ?
                 "application/octet-stream" :
