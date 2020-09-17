@@ -1049,8 +1049,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
-
-        if (DataStoreRole.Image == srcDataStore.getRole()  && DataStoreRole.Image == destDataStore.getRole()) {
+        if (DataStoreRole.Image == srcDataStore.getRole() && DataStoreRole.Image == destDataStore.getRole() &&
+            srcDataStore instanceof NfsTO && destDataStore instanceof NfsTO &&
+            ((srcData.getObjectType() == DataObjectType.TEMPLATE && destData.getObjectType() == DataObjectType.TEMPLATE) ||
+                    (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.SNAPSHOT) ||
+                    (srcData.getObjectType() == DataObjectType.VOLUME && destData.getObjectType() == DataObjectType.VOLUME))) {
             return copyFromNfsToNfs(cmd);
         }
 

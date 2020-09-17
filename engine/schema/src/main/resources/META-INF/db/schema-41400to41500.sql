@@ -194,3 +194,29 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hype
 
 -- Copy XenServer 8.0 hypervisor guest OS mappings to XenServer8.1
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '8.1.0', guest_os_name, guest_os_id, utc_timestamp(), 0 FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='8.0.0';
+
+ALTER TABLE `cloud`.`image_store` ADD COLUMN `readonly` boolean DEFAULT false COMMENT 'defines status of image store';
+
+ALTER VIEW `cloud`.`image_store_view` AS
+    select
+        image_store.id,
+        image_store.uuid,
+        image_store.name,
+        image_store.image_provider_name,
+        image_store.protocol,
+        image_store.url,
+        image_store.scope,
+        image_store.role,
+        image_store.readonly,
+        image_store.removed,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        image_store_details.name detail_name,
+        image_store_details.value detail_value
+    from
+        `cloud`.`image_store`
+            left join
+        `cloud`.`data_center` ON image_store.data_center_id = data_center.id
+            left join
+        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
