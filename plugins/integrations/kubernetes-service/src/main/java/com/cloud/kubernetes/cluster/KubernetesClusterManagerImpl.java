@@ -845,6 +845,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final Long kubernetesClusterId = cmd.getId();
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         final Long clusterSize = cmd.getClusterSize();
+        final List<Long> nodeIds = cmd.getNodeIds();
         if (kubernetesClusterId == null || kubernetesClusterId < 1L) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
         }
@@ -856,13 +857,25 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (zone == null) {
             logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
+        if (nodeIds != null) {
+            if (clusterSize != null || serviceOfferingId != null) {
+                throw new InvalidParameterValueException("nodeids can not be passed along with clustersize or service offering");
+            }
+            List<KubernetesClusterVmMapVO> nodes = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(kubernetesCluster.getId(), nodeIds);
+            // TODO : Ensure the vm is not the master node
+            nodeIds.stream().forEach(x -> LOGGER.info(String.format("Node: %d", x)));
+            if (nodes == null || nodes.size() != nodeIds.size()) {
+                nodes.stream().forEach(x -> LOGGER.info(String.format("NodeMap: %d", x.vmId)));
+                throw new InvalidParameterValueException("Invalid node ids");
+            }
+        } else {
+            if (serviceOfferingId == null && clusterSize == null) {
+                throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled, either a new service offering or a new cluster size or nodeids to be removed must be passed", kubernetesCluster.getUuid()));
+            }
+        }
 
         Account caller = CallContext.current().getCallingAccount();
         accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
-
-        if (serviceOfferingId == null && clusterSize == null) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled, either a new service offering or a new cluster size must be passed", kubernetesCluster.getName()));
-        }
 
         final KubernetesSupportedVersion clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
         if (clusterVersion == null) {
@@ -1227,8 +1240,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         validateKubernetesClusterScaleParameters(cmd);
         KubernetesClusterScaleWorker scaleWorker =
-                new KubernetesClusterScaleWorker(kubernetesClusterDao.findById(cmd.getId()),
-                        serviceOfferingDao.findById(cmd.getServiceOfferingId()), cmd.getClusterSize(), this);
+            new KubernetesClusterScaleWorker(kubernetesClusterDao.findById(cmd.getId()),
+                serviceOfferingDao.findById(cmd.getServiceOfferingId()), cmd.getClusterSize(),
+                cmd.getNodeIds(), this);
         scaleWorker = ComponentContext.inject(scaleWorker);
         return scaleWorker.scaleCluster();
     }
@@ -1522,16 +1536,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
-                KubernetesServiceEnabled,
-                KubernetesClusterHyperVTemplateName,
-                KubernetesClusterKVMTemplateName,
-                KubernetesClusterVMwareTemplateName,
-                KubernetesClusterXenserverTemplateName,
-                KubernetesClusterNetworkOffering,
-                KubernetesClusterStartTimeout,
-                KubernetesClusterScaleTimeout,
-                KubernetesClusterUpgradeTimeout,
-                KubernetesClusterExperimentalFeaturesEnabled
+            KubernetesServiceEnabled,
+            KubernetesClusterHyperVTemplateName,
+            KubernetesClusterKVMTemplateName,
+            KubernetesClusterVMwareTemplateName,
+            KubernetesClusterXenserverTemplateName,
+            KubernetesClusterNetworkOffering,
+            KubernetesClusterStartTimeout,
+            KubernetesClusterScaleTimeout,
+            KubernetesClusterUpgradeTimeout,
+            KubernetesClusterExperimentalFeaturesEnabled
         };
     }
 }

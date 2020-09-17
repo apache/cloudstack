@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -30,6 +32,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
@@ -71,6 +74,14 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
             description = "number of Kubernetes cluster nodes")
     private Long clusterSize;
 
+    @Parameter(name = ApiConstants.NODE_IDS,
+        type = CommandType.LIST,
+        collectionType = CommandType.UUID,
+        entityType = UserVmResponse.class,
+        description = "the IDs of the nodes to be removed")
+    private List<Long> nodeIds;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -85,6 +96,10 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
 
     public Long getClusterSize() {
         return clusterSize;
+    }
+
+    public List<Long> getNodeIds() {
+        return nodeIds;
     }
 
     @Override
