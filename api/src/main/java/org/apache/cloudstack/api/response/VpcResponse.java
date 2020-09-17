@@ -67,6 +67,10 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @Param(description = "vpc offering id the VPC is created from")
     private String vpcOfferingId;
 
+    @SerializedName(ApiConstants.VPC_OFF_NAME)
+    @Param(description = "vpc offering name the VPC is created from", since = "4.13.2")
+    private String vpcOfferingName;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date this VPC was created")
     private Date created;
@@ -182,6 +186,10 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
 
     public void setVpcOfferingId(final String vpcOfferingId) {
         this.vpcOfferingId = vpcOfferingId;
+    }
+
+    public void setVpcOfferingName(final String vpcOfferingName) {
+        this.vpcOfferingName = vpcOfferingName;
     }
 
     public List<NetworkResponse> getNetworks() {

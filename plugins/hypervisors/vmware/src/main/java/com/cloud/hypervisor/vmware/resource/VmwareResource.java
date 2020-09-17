@@ -200,7 +200,6 @@ import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.InternalErrorException;
@@ -6411,16 +6410,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private static String getRouterSshControlIp(NetworkElementCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String routerGuestIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
-        String zoneNetworkType = cmd.getAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE);
-
-        if (routerGuestIp != null && zoneNetworkType != null && NetworkType.valueOf(zoneNetworkType) == NetworkType.Basic) {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("In Basic zone mode, use router's guest IP for SSH control. guest IP : " + routerGuestIp);
-
-            return routerGuestIp;
-        }
-
         if (s_logger.isDebugEnabled())
             s_logger.debug("Use router's private IP for SSH control. IP : " + routerIp);
         return routerIp;

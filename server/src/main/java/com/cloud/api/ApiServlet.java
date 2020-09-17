@@ -213,7 +213,7 @@ public class ApiServlet extends HttpServlet {
                     try {
                         responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                         if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
-                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
+                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
                         }
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
@@ -238,9 +238,14 @@ public class ApiServlet extends HttpServlet {
                             } catch (final IllegalStateException ignored) {
                             }
                         }
-                        Cookie sessionKeyCookie = new Cookie(ApiConstants.SESSIONKEY, "");
-                        sessionKeyCookie.setMaxAge(0);
-                        resp.addCookie(sessionKeyCookie);
+                        final Cookie[] cookies = req.getCookies();
+                        if (cookies != null) {
+                            for (final Cookie cookie : cookies) {
+                                cookie.setValue("");
+                                cookie.setMaxAge(0);
+                                resp.addCookie(cookie);
+                            }
+                        }
                     }
                     HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.JSONcontentType.value());
                     return;

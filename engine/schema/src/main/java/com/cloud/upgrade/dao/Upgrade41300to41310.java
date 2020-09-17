@@ -14,24 +14,39 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.vpc.dao;
+package com.cloud.upgrade.dao;
 
-import java.util.List;
+import java.io.InputStream;
+import java.sql.Connection;
 
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.StaticRouteVO;
-import com.cloud.utils.db.GenericDao;
+public class Upgrade41300to41310 implements DbUpgrade {
+    @Override
+    public String[] getUpgradableVersionRange() {
+        return new String[] {"4.13.0.0", "4.13.1.0"};
+    }
 
-public interface StaticRouteDao extends GenericDao<StaticRouteVO, Long> {
+    @Override
+    public String getUpgradedVersion() {
+        return "4.13.1.0";
+    }
 
-    boolean setStateToAdd(StaticRouteVO rule);
+    @Override
+    public boolean supportsRollingUpgrade() {
+        return false;
+    }
 
-    List<? extends StaticRoute> listByVpcIdAndNotRevoked(long vpcId);
+    @Override
+    public InputStream[] getPrepareScripts() {
+        return new InputStream[0];
+    }
 
-    List<StaticRouteVO> listByVpcId(long vpcId);
+    @Override
+    public void performDataMigration(Connection conn) {
 
-    List<StaticRouteVO> listByGatewayId(long gatewayId);
+    }
 
-    long countRoutesByGateway(long gatewayId);
-
+    @Override
+    public InputStream[] getCleanupScripts() {
+        return new InputStream[0];
+    }
 }

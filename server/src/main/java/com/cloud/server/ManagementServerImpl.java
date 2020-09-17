@@ -1321,6 +1321,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
+        if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
+            final DataCenterVO dc = _dcDao.findById(srcHost.getDataCenterId());
+            _dpMgr.checkForNonDedicatedResources(vmProfile, dc, excludes);
+        }
+
         for (final HostAllocator allocator : hostAllocators) {
             if (canMigrateWithStorage) {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts, HostAllocator.RETURN_UPTO_ALL, false);
@@ -4086,15 +4091,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         _itMgr.checkIfCanUpgrade(systemVm, newServiceOffering);
 
-        final boolean result = _itMgr.upgradeVmDb(systemVmId, serviceOfferingId);
-
-        if (newServiceOffering.isDynamic()) {
-            //save the custom values to the database.
-            _userVmMgr.saveCustomOfferingDetails(systemVmId, newServiceOffering);
-        }
-        if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
-            _userVmMgr.removeCustomOfferingDetails(systemVmId);
-        }
+        final boolean result = _itMgr.upgradeVmDb(systemVmId, newServiceOffering, currentServiceOffering);
 
         if (result) {
             return _vmInstanceDao.findById(systemVmId);

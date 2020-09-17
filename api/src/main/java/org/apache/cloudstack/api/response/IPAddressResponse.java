@@ -136,8 +136,13 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private String purpose;
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "VPC the ip belongs to")
+    @Param(description = "VPC id the ip belongs to")
     private String vpcId;
+
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "VPC name the ip belongs to", since = "4.13.2")
+    private String vpcName;
+
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated with ip address", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
@@ -271,6 +276,10 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     public void setVpcId(String vpcId) {
         this.vpcId = vpcId;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
     }
 
     public void setTags(List<ResourceTagResponse> tags) {

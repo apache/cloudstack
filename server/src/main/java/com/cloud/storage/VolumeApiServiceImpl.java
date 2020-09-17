@@ -109,11 +109,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
@@ -1186,6 +1188,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             /* Xen only works offline, SR does not support VDI.resizeOnline */
             if (currentSize != newSize && _volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer && !userVm.getState().equals(State.Stopped)) {
                 throw new InvalidParameterValueException(errorMsg);
+            }
+
+            /* Do not resize volume of running vm on KVM host if host is not Up or not Enabled */
+            if (currentSize != newSize && userVm.getState() == State.Running && userVm.getHypervisorType() == HypervisorType.KVM) {
+                if (userVm.getHostId() == null) {
+                    throw new InvalidParameterValueException("Cannot find the hostId of running vm " + userVm.getUuid());
+                }
+                HostVO host = _hostDao.findById(userVm.getHostId());
+                if (host == null) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running does not exist");
+                } else if (host.getStatus() != Status.Up) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running is not Up");
+                } else if (host.getResourceState() != ResourceState.Enabled) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running is not Enabled");
+                }
             }
         }
 

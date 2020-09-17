@@ -781,7 +781,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         ResponseView respView = ResponseView.Restricted;
-        if (cmd instanceof ListVMsCmdByAdmin) {
+        Account caller = CallContext.current().getCallingAccount();
+        if (_accountMgr.isRootAdmin(caller.getId())) {
             respView = ResponseView.Full;
         }
         List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(), result.first().toArray(new UserVmJoinVO[result.first().size()]));
@@ -1691,7 +1692,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         ResponseView respView = ResponseView.Restricted;
         Account account = CallContext.current().getCallingAccount();
-        if (_accountMgr.isAdmin(account.getAccountId())) {
+        if (_accountMgr.isRootAdmin(account.getAccountId())) {
             respView = ResponseView.Full;
         }
 
@@ -2881,7 +2882,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
 
         ResponseView respView = ResponseView.Restricted;
-        if (cmd instanceof ListZonesCmdByAdmin) {
+        if (cmd instanceof ListZonesCmdByAdmin || CallContext.current().getCallingAccount().getType() == Account.ACCOUNT_TYPE_ADMIN) {
             respView = ResponseView.Full;
         }
 
@@ -3154,12 +3155,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId);
+                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique());
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId) {
+            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -3176,7 +3177,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", SortKeyAscending.value());
 
         SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair
+        if (showUnique) {
+            sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct templateId
+        } else {
+            sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair
+        }
         if (ids != null && !ids.isEmpty()) {
             sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         }
@@ -3413,29 +3418,41 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
         } else {
             sc.addAnd("templateState", SearchCriteria.Op.IN, new State[] {State.Active, State.UploadAbandoned, State.UploadError, State.NotUploaded, State.UploadInProgress});
-            final String[] distinctColumns = {"temp_zone_pair"};
-            uniqueTmplPair = _templateJoinDao.searchAndDistinctCount(sc, searchFilter, distinctColumns);
+            if (showUnique) {
+                final String[] distinctColumns = {"id"};
+                uniqueTmplPair = _templateJoinDao.searchAndDistinctCount(sc, searchFilter, distinctColumns);
+            } else {
+                final String[] distinctColumns = {"temp_zone_pair"};
+                uniqueTmplPair = _templateJoinDao.searchAndDistinctCount(sc, searchFilter, distinctColumns);
+            }
         }
 
-        Integer count = uniqueTmplPair.second();
-        if (count.intValue() == 0) {
-            // empty result
-            return uniqueTmplPair;
-        }
-        List<TemplateJoinVO> uniqueTmpls = uniqueTmplPair.first();
-        String[] tzIds = new String[uniqueTmpls.size()];
-        int i = 0;
-        for (TemplateJoinVO v : uniqueTmpls) {
-            tzIds[i++] = v.getTempZonePair();
-        }
-        List<TemplateJoinVO> vrs = _templateJoinDao.searchByTemplateZonePair(showRemovedTmpl, tzIds);
-        return new Pair<List<TemplateJoinVO>, Integer>(vrs, count);
+        return findTemplatesByIdOrTempZonePair(uniqueTmplPair, showRemovedTmpl, showUnique);
 
         // TODO: revisit the special logic for iso search in
         // VMTemplateDaoImpl.searchForTemplates and understand why we need to
         // specially handle ISO. The original logic is very twisted and no idea
         // about what the code was doing.
 
+    }
+
+    // findTemplatesByIdOrTempZonePair returns the templates with the given ids if showUnique is true, or else by the TempZonePair
+    private Pair<List<TemplateJoinVO>, Integer> findTemplatesByIdOrTempZonePair(Pair<List<TemplateJoinVO>, Integer> templateDataPair, boolean showRemoved, boolean showUnique) {
+        Integer count = templateDataPair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return templateDataPair;
+        }
+        List<TemplateJoinVO> templateData = templateDataPair.first();
+        List<TemplateJoinVO> templates = null;
+        if (showUnique) {
+            Long[] templateIds = templateData.stream().map(template -> template.getId()).toArray(Long[]::new);
+            templates = _templateJoinDao.findByDistinctIds(templateIds);
+        } else {
+            String[] templateZonePairs = templateData.stream().map(template -> template.getTempZonePair()).toArray(String[]::new);
+            templates = _templateJoinDao.searchByTemplateZonePair(showRemoved, templateZonePairs);
+        }
+        return new Pair<List<TemplateJoinVO>, Integer>(templates, count);
     }
 
     @Override
@@ -3480,7 +3497,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(),
-                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null);
+                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null, cmd.getShowUnique());
     }
 
     @Override
@@ -3608,25 +3625,30 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (domainId != null) {
                 SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId,
                         affinityGroupName, affinityGroupType, keyword);
-                affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
+                Pair<List<AffinityGroupJoinVO>, Integer> groupsPair = listDomainLevelAffinityGroups(scDomain, searchFilter, domainId);
+                affinityGroups.addAll(groupsPair.first());
+                count += groupsPair.second();
             } else {
 
                 for (Long permAcctId : permittedAccounts) {
                     Account permittedAcct = _accountDao.findById(permAcctId);
                     SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId,
                             affinityGroupName, affinityGroupType, keyword);
-
-                    affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, permittedAcct.getDomainId()));
+                    Pair<List<AffinityGroupJoinVO>, Integer> groupsPair = listDomainLevelAffinityGroups(scDomain, searchFilter, permittedAcct.getDomainId());
+                    affinityGroups.addAll(groupsPair.first());
+                    count += groupsPair.second();
                 }
             }
         } else if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
             // list all domain level affinity groups for the domain admin case
             SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
                     affinityGroupType, keyword);
-            affinityGroups.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
+            Pair<List<AffinityGroupJoinVO>, Integer> groupsPair = listDomainLevelAffinityGroups(scDomain, searchFilter, domainId);
+            affinityGroups.addAll(groupsPair.first());
+            count += groupsPair.second();
         }
 
-        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, uniqueGroupsPair.second());
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, count);
 
     }
 
@@ -3724,7 +3746,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
     }
 
-    private List<AffinityGroupJoinVO> listDomainLevelAffinityGroups(SearchCriteria<AffinityGroupJoinVO> sc, Filter searchFilter, long domainId) {
+    private Pair<List<AffinityGroupJoinVO>, Integer> listDomainLevelAffinityGroups(SearchCriteria<AffinityGroupJoinVO> sc, Filter searchFilter, long domainId) {
         List<Long> affinityGroupIds = new ArrayList<Long>();
         Set<Long> allowedDomains = _domainMgr.getDomainParentIds(domainId);
         List<AffinityGroupDomainMapVO> maps = _affinityGroupDomainMapDao.listByDomain(allowedDomains.toArray());
@@ -3748,7 +3770,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             Integer count = uniqueGroupsPair.second();
             if (count.intValue() == 0) {
                 // empty result
-                return new ArrayList<AffinityGroupJoinVO>();
+                return new Pair<>(new ArrayList<AffinityGroupJoinVO>(), 0);
             }
             List<AffinityGroupJoinVO> uniqueGroups = uniqueGroupsPair.first();
             Long[] vrIds = new Long[uniqueGroups.size()];
@@ -3757,9 +3779,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 vrIds[i++] = v.getId();
             }
             List<AffinityGroupJoinVO> vrs = _affinityGroupJoinDao.searchByIds(vrIds);
-            return vrs;
+            return new Pair<>(vrs, count);
         } else {
-            return new ArrayList<AffinityGroupJoinVO>();
+            return new Pair<>(new ArrayList<AffinityGroupJoinVO>(), 0);
         }
     }
 
