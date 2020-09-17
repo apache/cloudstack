@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -130,6 +131,7 @@ import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -240,6 +242,8 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.common.base.Strings;
+
+import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, VmWorkJobHandler, Listener, Configurable {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
@@ -3311,15 +3315,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
             }
 
-            if (dest != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Found destination " + dest + " for migrating to.");
+            if (dest == null) {
+                Optional<DeployDestination> deployDestination = Optional.empty();
+                if (MIGRATE_VM_ACROSS_CLUSTERS.value() && !checkIfVmHasClusterWideVolumes(vm.getId())) {
+                    s_logger.info("Searching for hosts in different clusters for vm migration");
+                    deployDestination = getSuitableDeploymentDestination(profile, excludes, planner, host, poolId);
                 }
-            } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find destination for migrating the vm " + profile);
+                if (deployDestination.isEmpty()) {
+                    s_logger.warn("Unable to find destination for migrating the vm " + profile);
+                    throw new InsufficientServerCapacityException("Unable to find a server to migrate to.", host.getClusterId());
                 }
-                throw new InsufficientServerCapacityException("Unable to find a server to migrate to.", host.getClusterId());
+                dest = deployDestination.get();
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found destination " + dest + " for migrating to.");
             }
 
             excludes.addHost(dest.getHost().getId());
@@ -3346,6 +3355,52 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new CloudRuntimeException("Unable to migrate " + vm);
             }
         }
+    }
+
+    /**
+     * Find a destination host across all clusters in the same zone which has the same hypervisor type as the
+     * virtual machine running on the host
+     * @param profile
+     * @param excludes
+     * @param planner
+     * @param host
+     * @param poolId
+     * @return Optional<DeployDestination>
+     * @throws InsufficientServerCapacityException
+     */
+    private Optional<DeployDestination> getSuitableDeploymentDestination(final VirtualMachineProfile profile,
+                                                                         final ExcludeList excludes,
+                                                                         final DeploymentPlanner planner,
+                                                                         final Host host,
+                                                                         Long poolId) throws InsufficientServerCapacityException {
+        DataCenterDeployment plan;
+        DeployDestination dest;
+
+        List<ClusterVO> clusterList = _clusterDao.listByDcHyType(host.getDataCenterId(), host.getHypervisorType().toString());
+        // find a suitable target cluster which can used for vm migration
+        for (ClusterVO cluster : clusterList) {
+            plan = new DataCenterDeployment(cluster.getDataCenterId(), cluster.getPodId(), cluster.getId(), null, poolId, null);
+            dest = _dpMgr.planDeployment(profile, plan, excludes, planner);
+            if (dest != null) {
+                return Optional.of(dest);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Check if the virtual machine has any volume in cluster-wide pool
+     * @param vmId id of the virtual machine
+     * @return true if volume exists on cluster-wide pool else false
+     */
+    @Override
+    public boolean checkIfVmHasClusterWideVolumes(Long vmId) {
+        final List<VolumeVO> volumesList = _volsDao.findCreatedByInstance(vmId);
+
+        return volumesList.parallelStream()
+                .anyMatch(vol -> _storagePoolDao.findById(vol.getPoolId()).getScope().equals(ScopeType.CLUSTER));
+
     }
 
     protected class CleanupTask extends ManagedContextRunnable {

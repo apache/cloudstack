@@ -181,6 +181,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
 
+import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 
 @Component
@@ -1262,7 +1263,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 return true;
             }
 
-            final List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+            List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+            if (hosts == null || hosts.isEmpty()) {
+                s_logger.warn("Unable to find a host for vm migration in cluster: " + host.getClusterId());
+                if (MIGRATE_VM_ACROSS_CLUSTERS.value()) {
+                    s_logger.info("Looking for hosts across different clusters in zone: " + host.getDataCenterId());
+                    hosts = listAllUpAndEnabledHosts(Host.Type.Routing, null, null, host.getDataCenterId());
+                    if (hosts == null || hosts.isEmpty()) {
+                        s_logger.warn("Unable to find a host for vm migration in zone: " + host.getDataCenterId());
+                        return false;
+                    }
+                    // Dont migrate vm if it has volumes on cluster-wide pool
+                    for (final VMInstanceVO vm : vms) {
+                        if (_vmMgr.checkIfVmHasClusterWideVolumes(vm.getId())) {
+                            s_logger.warn("Unable to migrate vm " + vm.getInstanceName() + " as it has volumes on cluster-wide pool");
+                            return false;
+                        }
+                    }
+                } else {
+                    s_logger.warn("Not migrating VM across cluster since " + MIGRATE_VM_ACROSS_CLUSTERS.key() + " is false");
+                    return false;
+                }
+            }
+
             for (final VMInstanceVO vm : vms) {
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
                         || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
