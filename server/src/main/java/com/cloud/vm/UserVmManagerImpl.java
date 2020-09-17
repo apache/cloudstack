@@ -1477,16 +1477,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Integer chosenID = nic.getDeviceId();
         Integer existingID = existing.getDeviceId();
 
-        nic.setDefaultNic(true);
-        nic.setDeviceId(existingID);
-        existingVO.setDefaultNic(false);
-        existingVO.setDeviceId(chosenID);
-
-        nic = _nicDao.persist(nic);
-        existingVO = _nicDao.persist(existingVO);
-
         Network newdefault = null;
-        newdefault = _networkModel.getDefaultNetworkForVm(vmId);
+        if (_itMgr.updateDefaultNicForVM(vmInstance, nic, existingVO)) {
+            newdefault = _networkModel.getDefaultNetworkForVm(vmId);
+        }
 
         if (newdefault == null) {
             nic.setDefaultNic(false);
@@ -6137,6 +6131,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (newAccount.getState() == Account.State.disabled) {
             throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
+        }
+
+        if (cmd.getProjectId() != null && cmd.getDomainId() == null) {
+            throw new InvalidParameterValueException("Please provide a valid domain ID; cannot assign VM to a project if domain ID is NULL.");
         }
 
         //check caller has access to both the old and new account

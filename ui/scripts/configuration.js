@@ -4517,6 +4517,10 @@
 
                     detailView: {
                         name: 'label.network.offering.details',
+                        viewAll: {
+                            label: 'label.networks',
+                            path: 'network'
+                        },
                         actions: {
                             edit: {
                                 label: 'label.edit',

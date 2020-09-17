@@ -592,8 +592,11 @@ class libvirtConfigUbuntu(serviceCfgBase):
             cfo.addEntry("group", "\"root\"")
             cfo.save()
 
-            self.syscfg.svo.stopService("libvirt-bin")
-            self.syscfg.svo.enableService("libvirt-bin")
+            if os.path.exists("/lib/systemd/system/libvirtd.service"):
+                bash("systemctl restart libvirtd")
+            else:
+                self.syscfg.svo.stopService("libvirt-bin")
+                self.syscfg.svo.enableService("libvirt-bin")
             if os.path.exists("/lib/systemd/system/libvirt-bin.socket"):
                 bash("systemctl stop libvirt-bin.socket")
             return True

@@ -187,6 +187,8 @@ public interface VirtualMachineManager extends Manager {
      */
     boolean removeNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
+    Boolean updateDefaultNicForVM(VirtualMachine vm, Nic nic, Nic defaultNic);
+
     /**
      * @param vm
      * @param network
