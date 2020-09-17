@@ -1708,7 +1708,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         //check if there are any secondary stores attached to the zone
-        if(!_imageStoreDao.findByScope(new ZoneScope(zoneId)).isEmpty()) {
+        if(!_imageStoreDao.findByZone(new ZoneScope(zoneId), null).isEmpty()) {
             throw new CloudRuntimeException(errorMsg + "there are Secondary storages in this zone");
         }
 

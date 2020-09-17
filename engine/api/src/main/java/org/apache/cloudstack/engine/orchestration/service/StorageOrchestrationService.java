@@ -14,39 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.engine.subsystem.api.storage;
+
+package org.apache.cloudstack.engine.orchestration.service;
 
 import java.util.List;
 
-import com.cloud.storage.Snapshot;
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.response.MigrationResponse;
+import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 
-public interface SnapshotInfo extends DataObject, Snapshot {
-    SnapshotInfo getParent();
-
-    String getPath();
-
-    SnapshotInfo getChild();
-
-    List<SnapshotInfo> getChildren();
-
-    VolumeInfo getBaseVolume();
-
-    void addPayload(Object data);
-
-    Object getPayload();
-
-    void setFullBackup(Boolean fullBackup);
-
-    Boolean getFullBackup();
-
-    Long getDataCenterId();
-
-    ObjectInDataStoreStateMachine.State getStatus();
-
-    boolean isRevertable();
-
-    long getPhysicalSize();
-
-    void markBackedUp() throws CloudRuntimeException;
+public interface StorageOrchestrationService {
+    MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, MigrationPolicy migrationPolicy);
 }

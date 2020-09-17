@@ -67,6 +67,7 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
         osResponse.setName(ids.getName());
         osResponse.setProviderName(ids.getProviderName());
         osResponse.setProtocol(ids.getProtocol());
+        osResponse.setReadonly(ids.isReadonly());
         String url = ids.getUrl();
         //if store is type cifs, remove the password
         if(ids.getProtocol().equals("cifs".toString())) {

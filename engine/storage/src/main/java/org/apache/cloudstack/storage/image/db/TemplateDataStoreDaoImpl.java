@@ -97,6 +97,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
         templateSearch = createSearchBuilder();
         templateSearch.and("template_id", templateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        templateSearch.and("download_state", templateSearch.entity().getDownloadState(), SearchCriteria.Op.NEQ);
         templateSearch.and("destroyed", templateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         templateSearch.done();
 
@@ -414,6 +415,15 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     public List<TemplateDataStoreVO> listByTemplate(long templateId) {
         SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
         sc.setParameters("template_id", templateId);
+        sc.setParameters("destroyed", false);
+        return search(sc, null);
+    }
+
+    @Override
+    public List<TemplateDataStoreVO> listByTemplateNotBypassed(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("download_state", Status.BYPASSED);
         sc.setParameters("destroyed", false);
         return search(sc, null);
     }

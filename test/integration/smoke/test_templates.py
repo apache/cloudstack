@@ -961,6 +961,40 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_09_list_templates_download_details(self):
+        """Test if list templates returns download details"""
+
+        # Validate the following
+        # 1. ListTemplates API has been extended to support viewing the download details - progress, download states and datastore
+
+        list_template_response = Template.list(
+                                    self.apiclient,
+                                    templatefilter='all',
+                                    account=self.user.name,
+                                    domainid=self.user.domainid
+                                    )
+        self.assertEqual(
+                            isinstance(list_template_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+
+        self.assertNotEqual(
+                            len(list_template_response),
+                            0,
+                            "Check template available in List Templates"
+                        )
+
+        for template in list_template_response:
+            self.assertNotEqual(
+                        len(template.downloaddetails),
+                        0,
+                        "Not all templates have download details"
+                        )
+
+        return
+
 class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
 
     @classmethod

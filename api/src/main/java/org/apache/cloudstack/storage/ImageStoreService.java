@@ -14,39 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import java.util.List;
+package org.apache.cloudstack.storage;
 
-import com.cloud.storage.Snapshot;
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
+import org.apache.cloudstack.api.response.MigrationResponse;
 
-public interface SnapshotInfo extends DataObject, Snapshot {
-    SnapshotInfo getParent();
+public interface ImageStoreService {
 
-    String getPath();
-
-    SnapshotInfo getChild();
-
-    List<SnapshotInfo> getChildren();
-
-    VolumeInfo getBaseVolume();
-
-    void addPayload(Object data);
-
-    Object getPayload();
-
-    void setFullBackup(Boolean fullBackup);
-
-    Boolean getFullBackup();
-
-    Long getDataCenterId();
-
-    ObjectInDataStoreStateMachine.State getStatus();
-
-    boolean isRevertable();
-
-    long getPhysicalSize();
-
-    void markBackedUp() throws CloudRuntimeException;
+    public static enum MigrationPolicy {
+        BALANCE, COMPLETE
+    }
+    MigrationResponse migrateData(MigrateSecondaryStorageDataCmd cmd);
 }

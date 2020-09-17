@@ -29,7 +29,7 @@ public interface ImageStoreDao extends GenericDao<ImageStoreVO, Long> {
 
     List<ImageStoreVO> findByProvider(String provider);
 
-    List<ImageStoreVO> findByScope(ZoneScope scope);
+    List<ImageStoreVO> findByZone(ZoneScope scope, Boolean readonly);
 
     List<ImageStoreVO> findRegionImageStores();
 

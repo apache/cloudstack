@@ -14,39 +14,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
+import java.util.Map;
 
-import com.cloud.storage.Snapshot;
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.command.CommandResult;
 
-public interface SnapshotInfo extends DataObject, Snapshot {
-    SnapshotInfo getParent();
+import com.cloud.utils.Pair;
 
-    String getPath();
+public interface SecondaryStorageService {
+    class DataObjectResult extends CommandResult {
+        private final DataObject data;
 
-    SnapshotInfo getChild();
+        public DataObjectResult(DataObject data) {
+            super();
+            this.data = data;
+        }
 
-    List<SnapshotInfo> getChildren();
+        public DataObject getData() {
+            return this.data;
+        }
 
-    VolumeInfo getBaseVolume();
-
-    void addPayload(Object data);
-
-    Object getPayload();
-
-    void setFullBackup(Boolean fullBackup);
-
-    Boolean getFullBackup();
-
-    Long getDataCenterId();
-
-    ObjectInDataStoreStateMachine.State getStatus();
-
-    boolean isRevertable();
-
-    long getPhysicalSize();
-
-    void markBackedUp() throws CloudRuntimeException;
+    }
+    AsyncCallFuture<DataObjectResult> migrateData(DataObject srcDataObject, DataStore srcDatastore, DataStore destDatastore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain);
 }

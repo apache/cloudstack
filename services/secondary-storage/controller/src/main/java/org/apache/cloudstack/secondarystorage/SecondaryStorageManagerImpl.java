@@ -266,6 +266,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     static final ConfigKey<String> NTPServerConfig = new ConfigKey<String>(String.class, "ntp.server.list", "Advanced", null,
             "Comma separated list of NTP servers to configure in Secondary storage VM", false, ConfigKey.Scope.Global, null);
 
+    static final ConfigKey<Integer> MaxNumberOfSsvmsForMigration = new ConfigKey<Integer>("Advanced", Integer.class, "max.ssvm.count", "5",
+            "Number of additional SSVMs to handle migration of data objects concurrently", true, ConfigKey.Scope.Global);
+
     public SecondaryStorageManagerImpl() {
     }
 
@@ -720,7 +723,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         return null;
     }
 
-    private void allocCapacity(long dataCenterId, SecondaryStorageVm.Role role) {
+    public void allocCapacity(long dataCenterId, SecondaryStorageVm.Role role) {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Allocate secondary storage vm standby capacity for data center : " + dataCenterId);
         }
@@ -822,7 +825,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 return false;
             }
 
-            List<DataStore> stores = _dataStoreMgr.getImageStoresByScope(new ZoneScope(dataCenterId));
+            List<DataStore> stores = _dataStoreMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(dataCenterId));
             if (stores.size() < 1) {
                 s_logger.debug("No image store added  in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
                 return false;
@@ -1374,7 +1377,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating, State.Starting,
                 State.Stopped, State.Stopping);
         int vmSize = (ssVms == null) ? 0 : ssVms.size();
-        List<DataStore> ssStores = _dataStoreMgr.getImageStoresByScope(new ZoneScope(dataCenterId));
+        List<DataStore> ssStores = _dataStoreMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(dataCenterId));
         int storeSize = (ssStores == null) ? 0 : ssStores.size();
         if (storeSize > vmSize) {
             s_logger.info("No secondary storage vms found in datacenter id=" + dataCenterId + ", starting a new one");
@@ -1516,7 +1519,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {NTPServerConfig};
+        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration};
     }
 
 }
