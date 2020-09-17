@@ -379,6 +379,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.fail("Setup incomplete")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster()
+        time.sleep(self.services["sleep"])
 
         self.debug("Upgrading Kubernetes cluster with ID: %s" % k8s_cluster.id)
 
@@ -506,7 +507,9 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.fail("Setup incomplete")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
+        time.sleep(self.services["sleep"])
 
+        self.debug("Upgrading HA Kubernetes cluster with ID: %s" % k8s_cluster.id)
         try:
             k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_4.id)
         except Exception as e:
