@@ -117,6 +117,7 @@ export default {
       } else {
         this.osLogo = 'linux'
       }
+      this.$emit('update-osname', this.name)
     }
   }
 }
