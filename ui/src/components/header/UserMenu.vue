@@ -66,10 +66,10 @@ export default {
     ...mapGetters(['nickname', 'avatar']),
     handleLogout () {
       return this.Logout({}).then(() => {
-        window.location.reload()
+        this.$router.push('/user/login')
       }).catch(err => {
         this.$message.error({
-          title: '错误',
+          title: 'Failed to Logout',
           description: err.message
         })
       })
