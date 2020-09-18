@@ -111,7 +111,7 @@
       <template slot="actions" slot-scope="record">
         <div class="actions">
           <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(record)"></a-button>
-          <a-button :disabled="!('editLoadBalancerRule' in $store.getters.apis)" shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
+          <a-button :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
@@ -170,7 +170,7 @@
 
       <div v-show="!tagsModalLoading" class="tags-container">
         <div class="tags" v-for="(tag, index) in tags" :key="index">
-          <a-tag :key="index" :closable="'deleteTag' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+          <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
         </div>
