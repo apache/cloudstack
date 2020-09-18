@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
-import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
