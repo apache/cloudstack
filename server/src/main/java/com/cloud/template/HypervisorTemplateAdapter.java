@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 
 import com.cloud.configuration.Config;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -129,6 +130,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     VMTemplateDao templateDao;
     @Inject
     private VMTemplateDetailsDao templateDetailsDao;
+    @Inject
+    private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     @Override
     public String getName() {
@@ -597,6 +600,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
             // Remove template details
             templateDetailsDao.removeDetails(template.getId());
+
+            // Remove deploy-as-is details
+            if (template.isDeployAsIs()) {
+                templateDeployAsIsDetailsDao.removeDetails(template.getId());
+            }
 
         }
         return success;
