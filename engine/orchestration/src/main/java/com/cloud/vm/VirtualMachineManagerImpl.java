@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -344,6 +345,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private NetworkDetailsDao networkDetailsDao;
     @Inject
     private SecurityGroupManager _securityGroupManager;
+    @Inject
+    private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -593,6 +596,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         guru.finalizeExpunge(vm);
         //remove the overcommit details from the uservm details
         userVmDetailsDao.removeDetails(vm.getId());
+
+        // Remove details if VM deploy as-is
+        long templateId = vm.getTemplateId();
+        VMTemplateVO template = _templateDao.findById(templateId);
+        if (template != null && template.isDeployAsIs()) {
+            userVmDeployAsIsDetailsDao.removeDetails(vm.getId());
+        }
 
         // send hypervisor-dependent commands before removing
         final List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
