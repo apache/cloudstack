@@ -534,7 +534,7 @@ public class VmwareHelper {
     }
 
     public static void setBasicVmConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz, int memoryMB, int memoryReserveMB,
-            String guestOsIdentifier, boolean limitCpuUse) {
+                                        String guestOsIdentifier, boolean limitCpuUse, boolean deployAsIs) {
 
         // VM config basics
         vmConfig.setMemoryMB((long)memoryMB);
@@ -560,7 +560,11 @@ public class VmwareHelper {
         memInfo.setReservation((long)memoryReserveMB);
         vmConfig.setMemoryAllocation(memInfo);
 
-        vmConfig.setGuestId(guestOsIdentifier);
+        if (!deployAsIs) {
+            // Deploy as-is uses the cloned VM guest OS
+            vmConfig.setGuestId(guestOsIdentifier);
+        }
+
     }
 
     public static VirtualDevice prepareUSBControllerDevice() {

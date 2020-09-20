@@ -1479,7 +1479,7 @@ public class HypervisorHostHelper {
         if (vmInternalCSName == null)
             vmInternalCSName = vmName;
 
-        VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse);
+        VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse, false);
 
         String recommendedController = host.getRecommendedDiskController(guestOsIdentifier);
         String newRootDiskController = controllerInfo.first();
