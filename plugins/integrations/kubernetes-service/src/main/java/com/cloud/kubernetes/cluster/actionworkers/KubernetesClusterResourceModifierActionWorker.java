@@ -294,8 +294,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             ResourceUnavailableException, InsufficientCapacityException {
         List<UserVm> nodes = new ArrayList<>();
         for (int i = offset + 1; i <= nodeCount; i++) {
-            // TODO : Get sensible naming / rename them
-            UserVm vm = createKubernetesNode(publicIpAddress, i);
+            UserVm vm = createKubernetesNode(publicIpAddress);
             addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
             startKubernetesVM(vm);
             vm = userVmDao.findById(vm.getId());
@@ -315,7 +314,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return provisionKubernetesClusterNodeVms(nodeCount, 0, publicIpAddress);
     }
 
-    protected UserVm createKubernetesNode(String joinIp, int nodeInstance) throws ManagementServerException,
+    protected UserVm createKubernetesNode(String joinIp) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm nodeVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
@@ -329,7 +328,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, nodeInstance));
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, suffix);
         String k8sNodeConfig = null;
         try {
             k8sNodeConfig = getKubernetesNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
@@ -512,15 +512,5 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             prefix = prefix.substring(0, 40);
         }
         return prefix;
-    }
-
-    protected String getKubernetesClusterNodeAvailableName(final String hostName) {
-        String name = hostName;
-        int suffix = 1;
-        while (vmInstanceDao.findVMByHostName(name) != null) {
-            name = String.format("%s-%d", hostName, suffix);
-            suffix++;
-        }
-        return name;
     }
 }
