@@ -247,10 +247,6 @@ export default {
     margin: 2rem 0;
   }
 
-  /deep/.ant-table-tbody > tr td:not(:first-child) {
-    vertical-align: baseline;
-  }
-
   /deep/.ant-table-tbody > tr > td {
     cursor: pointer;
   }
