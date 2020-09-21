@@ -54,7 +54,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostTagsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageStats;
@@ -66,6 +65,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class PrometheusExporterImpl extends ManagerBase implements PrometheusExporter, Manager {
@@ -88,6 +88,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private HostJoinDao hostJoinDao;
     @Inject
     private VMInstanceDao vmDao;
+    @Inject
+    private UserVmDao uservmDao;
     @Inject
     private VolumeDao volumeDao;
     @Inject
@@ -395,6 +397,10 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         }
     }
 
+    private void addDomainMetrics(final List<Item> metricsList, final String zoneName, final String zoneUuid) {
+        metricsList.add(new ItemActiveDomains(zoneName, zoneUuid, _accountDao.getActiveDomains()));
+    }
+
     @Override
     public void updateMetrics() {
         final List<Item> latestMetricsItems = new ArrayList<Item>();
@@ -409,6 +415,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 addStorageMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
                 addIpAddressMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
                 addVlanMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
+                addDomainMetrics(latestMetricsItems, zoneName, zoneUuid);
             }
             addDomainLimits(latestMetricsItems);
             addDomainResourceCount(latestMetricsItems);
@@ -832,6 +839,24 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\"} %d", name, zoneName, hostName, hostIp, isDedicated);
         }
 
+    }
+
+    class ItemActiveDomains extends Item {
+        String zoneName;
+        String zoneUuid;
+        int total;
+
+        public ItemActiveDomains(final String zn, final String zu, final int cnt) {
+            super("cloudstack_active_domains_total");
+            zoneName = zn;
+            zoneUuid = zu;
+            total = cnt;
+        }
+
+        @Override
+        public String toMetricsString() {
+            return String.format("%s{zone=\"%s\"} %d", name, zoneName, total);
+        }
     }
 
     class ItemHostDedicatedToAccount extends Item {
