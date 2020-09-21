@@ -277,11 +277,14 @@
                           ]"
                           :placeholder="nic.networkDescription"
                           :filterOption="(input, option) => {
-                            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                            return option.componentOptions.children[0].children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                           }"
                         >
                           <a-select-option v-for="opt in options.networks" :key="opt.id">
-                            {{ opt.name || opt.description }}
+                            <span v-if="opt.type!=='L2'">
+                              {{ opt.name || opt.description }} ({{ `${$t('label.cidr')}: ${opt.cidr}` }})
+                            </span>
+                            <span v-else>{{ opt.name || opt.description }}</span>
                           </a-select-option>
                         </a-select>
                       </a-form-item>
