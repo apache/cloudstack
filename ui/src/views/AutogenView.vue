@@ -465,6 +465,9 @@ export default {
       })
     },
     fetchData (params = {}) {
+      if (this.$route.name === 'deployVirtualMachine') {
+        return
+      }
       if (this.routeName !== this.$route.name) {
         this.routeName = this.$route.name
         this.items = []
