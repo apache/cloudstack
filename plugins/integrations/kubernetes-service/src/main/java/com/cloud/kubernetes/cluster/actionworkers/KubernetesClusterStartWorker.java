@@ -195,11 +195,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = kubernetesClusterNodeNamePrefix + "-master";
-        if (kubernetesCluster.getMasterNodeCount() > 1) {
-            hostName += "-1";
-        }
-        hostName = getKubernetesClusterNodeAvailableName(hostName);
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-master-%s", kubernetesClusterNodeNamePrefix, suffix);
         boolean haSupported = isKubernetesVersionSupportsHA();
         String k8sMasterConfig = null;
         try {
@@ -254,7 +251,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-master-%d", kubernetesClusterNodeNamePrefix, additionalMasterNodeInstance + 1));
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-master-%s", kubernetesClusterNodeNamePrefix, suffix);
         String k8sMasterConfig = null;
         try {
             k8sMasterConfig = getKubernetesAdditionalMasterConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
