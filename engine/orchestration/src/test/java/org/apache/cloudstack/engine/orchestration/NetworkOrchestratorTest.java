@@ -521,6 +521,11 @@ public class NetworkOrchestratorTest extends TestCase {
         encodeVlanIdIntoBroadcastUriPrepareAndTest("vxlan://123", "vlan", "vxlan", "vxlan://123");
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void encodeVlanIdIntoBroadcastUriTestNullNetwork() {
+        URI resultUri = testOrchastrator.encodeVlanIdIntoBroadcastUri("vxlan://123", null);
+    }
+
     private void encodeVlanIdIntoBroadcastUriPrepareAndTest(String vlanId, String isolationMethod, String expectedIsolation, String expectedUri) {
         PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO();
         List<String> isolationMethods = new ArrayList<>();
