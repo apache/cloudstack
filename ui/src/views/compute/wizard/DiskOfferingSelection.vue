@@ -28,6 +28,7 @@
       :dataSource="tableSource"
       :pagination="false"
       :rowSelection="rowSelection"
+      :customRow="onClickRow"
       size="middle"
       :scroll="{ y: 225 }"
     >
@@ -228,6 +229,16 @@ export default {
       this.options.page = page
       this.options.pageSize = pageSize
       this.$emit('handle-search-filter', this.options)
+    },
+    onClickRow (record) {
+      return {
+        on: {
+          click: () => {
+            this.selectedRowKeys = [record.key]
+            this.$emit('select-disk-offering-item', record.key)
+          }
+        }
+      }
     }
   }
 }
@@ -236,5 +247,9 @@ export default {
 <style lang="less" scoped>
   .ant-table-wrapper {
     margin: 2rem 0;
+  }
+
+  /deep/.ant-table-tbody > tr > td {
+    cursor: pointer;
   }
 </style>

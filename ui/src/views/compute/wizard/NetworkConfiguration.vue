@@ -21,6 +21,7 @@
     :dataSource="dataItems"
     :pagination="false"
     :rowSelection="rowSelection"
+    :customRow="onClickRow"
     :rowKey="record => record.id"
     size="middle"
     :scroll="{ y: 225 }"
@@ -224,6 +225,18 @@ export default {
     },
     intToIp4 (int) {
       return [(int >>> 24) & 0xFF, (int >>> 16) & 0xFF, (int >>> 8) & 0xFF, int & 0xFF].join('.')
+    },
+    onClickRow (record, index) {
+      return {
+        on: {
+          click: (event) => {
+            if (event.target.tagName.toLowerCase() !== 'input') {
+              this.selectedRowKeys = [record.id]
+              this.$emit('select-default-network-item', record.id)
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -236,6 +249,10 @@ export default {
 
   /deep/.ant-table-tbody > tr td:not(:first-child) {
     vertical-align: baseline;
+  }
+
+  /deep/.ant-table-tbody > tr > td {
+    cursor: pointer;
   }
 
   .ant-form .ant-form-item {

@@ -23,7 +23,7 @@
       size="small"
       :dataSource="osList"
       :pagination="false">
-      <a-list-item slot="renderItem" slot-scope="os, osIndex" key="os.id">
+      <a-list-item slot="renderItem" slot-scope="os, osIndex" key="os.id" @click="onClickRow(os)">
         <a-radio-group
           class="radio-group"
           :key="osIndex"
@@ -129,6 +129,10 @@ export default {
       this.options.page = page
       this.options.pageSize = pageSize
       this.$emit('handle-search-filter', this.options)
+    },
+    onClickRow (os) {
+      this.value = os.id
+      this.$emit('emit-update-template-iso', this.inputDecorator, this.value)
     }
   }
 }
@@ -159,5 +163,9 @@ export default {
   .pagination {
     margin-top: 20px;
     float: right;
+  }
+
+  /deep/.ant-list-split .ant-list-item {
+    cursor: pointer;
   }
 </style>
