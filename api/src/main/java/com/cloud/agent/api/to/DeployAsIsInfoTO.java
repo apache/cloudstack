@@ -27,14 +27,17 @@ public class DeployAsIsInfoTO {
     private String destStoragePool;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private Map<String, String> properties = new HashMap<>();
+    private Map<Integer, String> nicAdapterMap = new HashMap();
 
     public DeployAsIsInfoTO() {
     }
 
-    public DeployAsIsInfoTO(String templatePath, String destStoragePool, Map<String, String> properties) {
+    public DeployAsIsInfoTO(String templatePath, String destStoragePool, Map<String, String> properties,
+                            Map<Integer, String> nicAdapterMap) {
         this.templatePath = templatePath;
         this.destStoragePool = destStoragePool;
         this.properties = properties;
+        this.nicAdapterMap = nicAdapterMap;
     }
 
     public String getTemplatePath() {
@@ -49,4 +52,7 @@ public class DeployAsIsInfoTO {
         return destStoragePool;
     }
 
+    public Map<Integer, String> getNicAdapterMap() {
+        return nicAdapterMap;
+    }
 }

@@ -22,6 +22,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
 import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
 import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
@@ -45,6 +46,7 @@ import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -144,6 +146,24 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
             }
         }
         return null;
+    }
+
+    @Override
+    public Map<Integer, String> getAllocatedVirtualMachineNicsAdapterMapping(VirtualMachineProfile vm, NicTO[] nics) {
+        Map<Integer, String> map = new HashMap<>();
+        List<OVFNetworkTO> networks = templateDeployAsIsDetailsDao.listNetworkRequirementsByTemplateId(vm.getTemplateId());
+        if (ArrayUtils.isNotEmpty(nics)) {
+            if (nics.length != networks.size()) {
+                String msg = "Different number of networks provided vs networks defined in deploy-as-is template";
+                LOGGER.error(msg);
+                return map;
+            }
+            for (int i = 0; i < nics.length; i++) {
+                // The nic Adapter is defined on the resource sub type
+                map.put(nics[i].getDeviceId(), networks.get(i).getResourceSubType());
+            }
+        }
+        return map;
     }
 
     private void persistTemplateDeployAsIsInformationTOList(long templateId,

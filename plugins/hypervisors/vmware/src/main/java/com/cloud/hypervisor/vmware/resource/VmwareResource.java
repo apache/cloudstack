@@ -2223,9 +2223,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.valueOf(vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER));
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("VM " + vmInternalCSName + " will be started with NIC device type: " + nicDeviceType);
+            VirtualEthernetCardType nicDeviceType;
 
             NiciraNvpApiVersion.logNiciraApiVersion();
 
@@ -2233,6 +2231,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
+                String adapterTypeStr = deployAsIs ?
+                        deployAsIsInfo.getNicAdapterMap().get(nicTo.getDeviceId()) :
+                        vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER);
+                nicDeviceType = VirtualEthernetCardType.valueOf(adapterTypeStr);
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("VM " + vmInternalCSName + " will be started with NIC device type: " + nicDeviceType + " on NIC device " + nicTo.getDeviceId());
+                }
                 boolean configureVServiceInNexus = (nicTo.getType() == TrafficType.Guest) && (vmSpec.getDetails().containsKey("ConfigureVServiceInNexus"));
                 VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, configureVServiceInNexus, vmType);

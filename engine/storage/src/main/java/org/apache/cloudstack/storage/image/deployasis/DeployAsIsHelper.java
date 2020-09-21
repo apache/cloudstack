@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.image.deployasis;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.vm.VirtualMachineProfile;
 
 import java.util.Map;
@@ -28,4 +29,6 @@ public interface DeployAsIsHelper {
 
     String getAllocatedVirtualMachineTemplatePath(VirtualMachineProfile vm, String configuration, String destStoragePool);
     String getAllocatedVirtualMachineDestinationStoragePool(VirtualMachineProfile vm);
+
+    Map<Integer, String> getAllocatedVirtualMachineNicsAdapterMapping(VirtualMachineProfile vm, NicTO[] nics);
 }
