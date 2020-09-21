@@ -161,6 +161,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                     KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         }
         initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
+        initArgs += String.format(" --kubernetes-version=%s", kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId()).getSemanticVersion());
         k8sMasterConfig = k8sMasterConfig.replace(clusterInitArgsKey, initArgs);
         k8sMasterConfig = k8sMasterConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         return k8sMasterConfig;
