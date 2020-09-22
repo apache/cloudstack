@@ -1858,7 +1858,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
                         String deployAsIsTemplate = deployAsIsInfo.getTemplatePath();
                         String destDatastore = deployAsIsInfo.getDestStoragePool();
-                        vmMo = _storageProcessor.cloneVMFromTemplate(deployAsIsTemplate, vmInternalCSName, destDatastore);
+                        _storageProcessor.cloneVMFromTemplate(hyperHost, deployAsIsTemplate, vmInternalCSName, destDatastore);
+                        vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+                        if (vmMo == null) {
+                            s_logger.info("Cloned deploy-as-is VM " + vmInternalCSName + " is not in this host, relocating it");
+                            vmMo = takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
+                        }
                         mapSpecDisksToClonedDisks(vmMo, vmInternalCSName, specDisks);
                     } else {
                         Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;

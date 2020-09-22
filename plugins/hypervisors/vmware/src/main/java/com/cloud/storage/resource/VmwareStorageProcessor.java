@@ -3729,10 +3729,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
     /**
      * Return the cloned VM from the template
      */
-    public VirtualMachineMO cloneVMFromTemplate(String templateName, String cloneName, String templatePrimaryStoreUuid) {
+    public VirtualMachineMO cloneVMFromTemplate(VmwareHypervisorHost hyperHost, String templateName, String cloneName, String templatePrimaryStoreUuid) {
         try {
-            VmwareContext context = hostService.getServiceContext(null);
-            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
+            VmwareContext context = hyperHost.getContext();
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             VirtualMachineMO templateMo = dcMo.findVm(templateName);
             if (templateMo == null) {
@@ -3744,7 +3743,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (morDatastore == null) {
                 throw new CloudRuntimeException("Unable to find datastore in vSphere");
             }
-            s_logger.info("Cloning VM " + cloneName + " from template " + templatePrimaryStoreUuid);
+            s_logger.info("Cloning VM " + cloneName + " from template " + templateName + " into datastore " + templatePrimaryStoreUuid);
             if (!_fullCloneFlag) {
                 createVMLinkedClone(templateMo, dcMo, cloneName, morDatastore, morPool);
             } else {
