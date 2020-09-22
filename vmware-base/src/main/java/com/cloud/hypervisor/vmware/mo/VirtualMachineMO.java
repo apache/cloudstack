@@ -3030,7 +3030,7 @@ public class VirtualMachineMO extends BaseMO {
         return deviceNumber;
     }
 
-    private List<VirtualDevice> getNicDevices(boolean sorted) throws Exception {
+    public List<VirtualDevice> getNicDevices(boolean sorted) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
         List<VirtualDevice> nics = new ArrayList<VirtualDevice>();
