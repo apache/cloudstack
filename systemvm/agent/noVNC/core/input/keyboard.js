@@ -1,6 +1,6 @@
 /*
  * noVNC: HTML5 VNC client
- * Copyright (C) 2018 The noVNC Authors
+ * Copyright (C) 2019 The noVNC Authors
  * Licensed under MPL 2.0 or any later version (see LICENSE.txt)
  */
 
@@ -118,9 +118,7 @@ export default class Keyboard {
 
         // We cannot handle keys we cannot track, but we also need
         // to deal with virtual keyboards which omit key info
-        // (iOS omits tracking info on keyup events, which forces us to
-        // special treat that platform here)
-        if ((code === 'Unidentified') || browser.isIOS()) {
+        if (code === 'Unidentified') {
             if (keysym) {
                 // If it's a virtual keyboard then it should be
                 // sufficient to just send press and release right
@@ -137,7 +135,7 @@ export default class Keyboard {
         // keys around a bit to make things more sane for the remote
         // server. This method is used by RealVNC and TigerVNC (and
         // possibly others).
-        if (browser.isMac()) {
+        if (browser.isMac() || browser.isIOS()) {
             switch (keysym) {
                 case KeyTable.XK_Super_L:
                     keysym = KeyTable.XK_Alt_L;
@@ -164,7 +162,7 @@ export default class Keyboard {
         // state change events. That gets extra confusing for CapsLock
         // which toggles on each press, but not on release. So pretend
         // it was a quick press and release of the button.
-        if (browser.isMac() && (code === 'CapsLock')) {
+        if ((browser.isMac() || browser.isIOS()) && (code === 'CapsLock')) {
             this._sendKeyEvent(KeyTable.XK_Caps_Lock, 'CapsLock', true);
             this._sendKeyEvent(KeyTable.XK_Caps_Lock, 'CapsLock', false);
             stopEvent(e);
@@ -276,13 +274,28 @@ export default class Keyboard {
         }
 
         // See comment in _handleKeyDown()
-        if (browser.isMac() && (code === 'CapsLock')) {
+        if ((browser.isMac() || browser.isIOS()) && (code === 'CapsLock')) {
             this._sendKeyEvent(KeyTable.XK_Caps_Lock, 'CapsLock', true);
             this._sendKeyEvent(KeyTable.XK_Caps_Lock, 'CapsLock', false);
             return;
         }
 
         this._sendKeyEvent(this._keyDownList[code], code, false);
+
+        // Windows has a rather nasty bug where it won't send key
+        // release events for a Shift button if the other Shift is still
+        // pressed
+        if (browser.isWindows() && ((code === 'ShiftLeft') ||
+                                    (code === 'ShiftRight'))) {
+            if ('ShiftRight' in this._keyDownList) {
+                this._sendKeyEvent(this._keyDownList['ShiftRight'],
+                                   'ShiftRight', false);
+            }
+            if ('ShiftLeft' in this._keyDownList) {
+                this._sendKeyEvent(this._keyDownList['ShiftLeft'],
+                                   'ShiftLeft', false);
+            }
+        }
     }
 
     _handleAltGrTimeout() {
@@ -299,8 +312,11 @@ export default class Keyboard {
         Log.Debug("<< Keyboard.allKeysUp");
     }
 
-    // Firefox Alt workaround, see below
+    // Alt workaround for Firefox on Windows, see below
     _checkAlt(e) {
+        if (e.skipCheckAlt) {
+            return;
+        }
         if (e.altKey) {
             return;
         }
@@ -315,6 +331,7 @@ export default class Keyboard {
             const event = new KeyboardEvent('keyup',
                                             { key: downList[code],
                                               code: code });
+            event.skipCheckAlt = true;
             target.dispatchEvent(event);
         });
     }
@@ -331,9 +348,10 @@ export default class Keyboard {
         // Release (key up) if window loses focus
         window.addEventListener('blur', this._eventHandlers.blur);
 
-        // Firefox has broken handling of Alt, so we need to poll as
-        // best we can for releases (still doesn't prevent the menu
-        // from popping up though as we can't call preventDefault())
+        // Firefox on Windows has broken handling of Alt, so we need to
+        // poll as best we can for releases (still doesn't prevent the
+        // menu from popping up though as we can't call
+        // preventDefault())
         if (browser.isWindows() && browser.isFirefox()) {
             const handler = this._eventHandlers.checkalt;
             ['mousedown', 'mouseup', 'mousemove', 'wheel',
