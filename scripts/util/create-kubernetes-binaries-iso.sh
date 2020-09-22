@@ -86,7 +86,7 @@ if [ $? -ne 0 ]; then
     fi
 fi
 mkdir -p "${working_dir}/docker"
-output=`${k8s_dir}/kubeadm config images list`
+output=`${k8s_dir}/kubeadm config images list --kubernetes-version=${RELEASE}`
 while read -r line; do
     echo "Downloading docker image $line ---"
     sudo docker pull "$line"
