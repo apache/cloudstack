@@ -1044,13 +1044,25 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+    private boolean shouldPerformDataMigration(DataTO srcData, DataTO destData) {
+        DataStoreTO srcDataStore = srcData.getDataStore();
+        DataStoreTO destDataStore = destData.getDataStore();
+        if (DataStoreRole.Image == srcDataStore.getRole() && DataStoreRole.Image == destDataStore.getRole() &&
+                srcDataStore instanceof NfsTO && destDataStore instanceof NfsTO &&
+                ((srcData.getObjectType() == DataObjectType.TEMPLATE && destData.getObjectType() == DataObjectType.TEMPLATE) ||
+                        (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.SNAPSHOT) ||
+                        (srcData.getObjectType() == DataObjectType.VOLUME && destData.getObjectType() == DataObjectType.VOLUME))) {
+            return true;
+        }
+        return false;
+    }
+
     protected Answer execute(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
-
-        if (DataStoreRole.Image == srcDataStore.getRole()  && DataStoreRole.Image == destDataStore.getRole()) {
+        if (shouldPerformDataMigration(srcData, destData)) {
             return copyFromNfsToNfs(cmd);
         }
 
