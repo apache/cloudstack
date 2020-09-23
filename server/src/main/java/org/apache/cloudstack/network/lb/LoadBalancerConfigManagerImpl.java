@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.lb;
+package org.apache.cloudstack.network.lb;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,8 +34,7 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.rules.LoadBalancerConfig;
-import com.cloud.network.rules.LoadBalancerConfig.Scope;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -53,11 +52,11 @@ import org.apache.cloudstack.api.command.user.loadbalancer.ReplaceLoadBalancerCo
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerConfigCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig.Scope;
 import org.apache.log4j.Logger;
 
 public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBalancerConfigService, LoadBalancerConfigManager {
-    private static final Logger s_logger = Logger.getLogger(LoadBalancerConfigManagerImpl.class);
+    private static final Logger LOGGER = Logger.getLogger(LoadBalancerConfigManagerImpl.class);
 
     @Inject
     LoadBalancerConfigDao _lbConfigDao;
@@ -135,7 +134,7 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             configs = _lbConfigDao.search(sc, null);
         }
         if (cmd.listAll()) {
-            s_logger.debug("Adding config keys for scope " + scope);
+            LOGGER.debug("Adding config keys for scope " + scope);
             Map<String, LoadBalancerConfigVO> configsMap = new LinkedHashMap<String, LoadBalancerConfigVO>();
             for (LoadBalancerConfigVO config : configs) {
                 configsMap.put(config.getName(), config);
@@ -371,17 +370,17 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
     private boolean applyLbConfigsForNetwork(Long networkId) {
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Lb, Provider.VirtualRouter) &&
                 !_ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Lb, Provider.VPCVirtualRouter)) {
-            s_logger.info("Lb is not supported or not provided by VirtualRouter/VpcVirtualRouter in network " + networkId);
+            LOGGER.info("Lb is not supported or not provided by VirtualRouter/VpcVirtualRouter in network " + networkId);
             return false;
         }
         try {
             if (!_lbMgr.applyLoadBalancersForNetwork(networkId, Scheme.Public)) {
-                s_logger.warn("Failed to apply LB configs of network id=" + networkId);
+                LOGGER.warn("Failed to apply LB configs of network id=" + networkId);
                 return false;
             }
             return true;
         } catch (ResourceUnavailableException ex) {
-            s_logger.error("Failed to apply LB configs in virtual router on network: " + networkId, ex);
+            LOGGER.error("Failed to apply LB configs in virtual router on network: " + networkId, ex);
             throw new CloudRuntimeException("Failed to apply LB configs in virtual router on network: " + networkId);
         }
     }

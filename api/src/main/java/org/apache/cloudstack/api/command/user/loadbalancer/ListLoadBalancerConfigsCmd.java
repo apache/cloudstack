@@ -29,16 +29,16 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LoadBalancerConfigResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 import org.apache.log4j.Logger;
-
-import com.cloud.network.rules.LoadBalancerConfig;
 
 @APICommand(name = "listLoadBalancerConfigs", description = "Lists load balancer configs.",
         responseObject = LoadBalancerConfigResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.15",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListLoadBalancerConfigsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListLoadBalancerConfigsCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(ListLoadBalancerConfigsCmd.class.getName());
 
     private static final String s_name = "listloadbalancerconfigsresponse";
 

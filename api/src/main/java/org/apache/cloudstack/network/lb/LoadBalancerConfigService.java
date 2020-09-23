@@ -14,11 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.lb;
+package org.apache.cloudstack.network.lb;
 
 import java.util.List;
-
-import com.cloud.network.rules.LoadBalancerConfig;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerConfigCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLoadBalancerConfigCmd;

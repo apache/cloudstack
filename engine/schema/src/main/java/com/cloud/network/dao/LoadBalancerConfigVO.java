@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.network.rules.LoadBalancerConfig;
 import com.cloud.utils.db.GenericDao;
 
 import java.util.Date;
@@ -29,6 +28,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
 
 @Entity

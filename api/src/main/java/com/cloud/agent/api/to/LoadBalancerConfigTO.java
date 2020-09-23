@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.agent.api.to;
 
-import com.cloud.network.rules.LoadBalancerConfig;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 
 public class LoadBalancerConfigTO {
     private String name;

@@ -33,8 +33,9 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
-import com.cloud.network.rules.LoadBalancerConfig;
 import com.cloud.utils.Pair;
+
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 
 public class LoadBalancerTO {
     String uuid;

@@ -24,21 +24,22 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.LoadBalancerConfigResponse;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.LoadBalancerConfig;
 import com.cloud.network.vpc.Vpc;
 
 @APICommand(name = "updateLoadBalancerConfig", description = "Updates a load balancer config",
         responseObject = LoadBalancerConfigResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.15",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateLoadBalancerConfigCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateLoadBalancerConfigCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(UpdateLoadBalancerConfigCmd.class.getName());
     private static final String s_name = "updateloadbalancerconfigresponse";
 
     /////////////////////////////////////////////////////

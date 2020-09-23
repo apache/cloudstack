@@ -25,21 +25,22 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.LoadBalancerConfigResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.LoadBalancerConfig;
 import com.cloud.network.vpc.Vpc;
 
 @APICommand(name = "deleteLoadBalancerConfig", description = "Deletes a load balancer config.",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.15",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteLoadBalancerConfigCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteLoadBalancerConfigCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(DeleteLoadBalancerConfigCmd.class.getName());
     private static final String s_name = "deleteloadbalancerconfigresponse";
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

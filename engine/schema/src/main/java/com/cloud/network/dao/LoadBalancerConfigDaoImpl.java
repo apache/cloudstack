@@ -19,7 +19,8 @@ package com.cloud.network.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.network.rules.LoadBalancerConfig.Scope;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig.Scope;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;

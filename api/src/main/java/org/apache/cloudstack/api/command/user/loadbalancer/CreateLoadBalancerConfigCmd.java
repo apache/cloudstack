@@ -28,22 +28,23 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LoadBalancerConfigResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig.Scope;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.LoadBalancerConfig;
-import com.cloud.network.rules.LoadBalancerConfig.Scope;
 import com.cloud.network.vpc.Vpc;
 
 @APICommand(name = "createLoadBalancerConfig", description = "Creates a load balancer config",
         responseObject = LoadBalancerConfigResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.15",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateLoadBalancerConfigCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerConfigCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(CreateLoadBalancerConfigCmd.class.getName());
 
     private static final String s_name = "createloadbalancerconfigresponse";
 
@@ -147,7 +148,7 @@ public class CreateLoadBalancerConfigCmd extends BaseAsyncCreateCmd {
             }
             lbConfigResponse.setResponseName(getCommandName());
         } catch (Exception ex) {
-            s_logger.warn("Failed to create LB config due to exception ", ex);
+            LOGGER.warn("Failed to create LB config due to exception ", ex);
         }
     }
 

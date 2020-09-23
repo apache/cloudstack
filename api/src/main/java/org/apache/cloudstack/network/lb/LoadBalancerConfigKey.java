@@ -20,8 +20,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.cloud.network.rules.LoadBalancerConfig.SSLConfiguration;
-import com.cloud.network.rules.LoadBalancerConfig.Scope;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig.SSLConfiguration;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig.Scope;
+
 import com.cloud.utils.Pair;
 
 public enum LoadBalancerConfigKey {

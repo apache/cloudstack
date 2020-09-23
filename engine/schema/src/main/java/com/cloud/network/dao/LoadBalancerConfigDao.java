@@ -18,8 +18,9 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.rules.LoadBalancerConfig.Scope;
 import com.cloud.utils.db.GenericDao;
+
+import org.apache.cloudstack.network.lb.LoadBalancerConfig.Scope;
 
 public interface LoadBalancerConfigDao extends GenericDao<LoadBalancerConfigVO, Long> {
 

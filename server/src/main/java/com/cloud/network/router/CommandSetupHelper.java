@@ -28,6 +28,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -94,7 +95,6 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.dao.VpnUserDao;
-import com.cloud.network.lb.LoadBalancerConfigManager;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;

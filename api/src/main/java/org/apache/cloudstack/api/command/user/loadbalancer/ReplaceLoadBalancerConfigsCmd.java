@@ -30,21 +30,22 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
-import com.cloud.network.rules.LoadBalancerConfig;
 import com.cloud.network.vpc.Vpc;
 
 @APICommand(name = "replaceLoadBalancerConfigs", description = "Replaces load balancer configs of vpc/network/rule",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.15",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ReplaceLoadBalancerConfigsCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ReplaceLoadBalancerConfigsCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(ReplaceLoadBalancerConfigsCmd.class.getName());
     private static final String s_name = "replaceloadbalancerconfigsresponse";
 
     /////////////////////////////////////////////////////

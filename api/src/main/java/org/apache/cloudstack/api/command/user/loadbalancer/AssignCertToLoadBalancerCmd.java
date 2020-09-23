@@ -62,6 +62,7 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
     Long certId;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false,
+        since = "4.15",
         description = "Force assign the certificate. If there is a certificate bound to the LB, it will be removed")
     private Boolean forced;
 

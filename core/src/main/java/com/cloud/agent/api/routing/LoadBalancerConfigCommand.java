@@ -22,7 +22,8 @@ package com.cloud.agent.api.routing;
 import com.cloud.agent.api.to.LoadBalancerConfigTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.network.rules.LoadBalancerConfig;
+
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 
 import java.util.ArrayList;
 import java.util.List;
