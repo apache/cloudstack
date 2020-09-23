@@ -4770,6 +4770,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         ManagedObjectReference morSourceDS = null;
         ManagedObjectReference morDestintionDS = null;
         String vmdkDataStorePath = null;
+        boolean isvVolsInvolved = false;
 
         String vmName = null;
         try {
@@ -4780,10 +4781,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
             morDestintionDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
             destinationDsMo = new DatastoreMO(hyperHost.getContext(), morDestintionDS);
-            vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
 
-            if (destinationDsMo.getDatastoreType().equalsIgnoreCase("VVOL"))
+            vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
+            if (destinationDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                isvVolsInvolved = true;
                 vmName = getWorkerName(getServiceContext(), cmd, 0, destinationDsMo);
+            }
 
             // OfflineVmwareMigration: refactor for re-use
             // OfflineVmwareMigration: 1. find data(store)
@@ -4808,12 +4811,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                     vmdkDataStorePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, path, vmdkFileName);
                 }
-                if (!dsMo.fileExists(vmdkDataStorePath)) {
+                if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), path) || !dsMo.fileExists(vmdkDataStorePath)) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(String.format("path not found (%s), trying under '%s'", vmdkFileName, vmName));
                     }
                     vmdkDataStorePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, vmdkFileName);
                 }
+                if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmName) || !dsMo.fileExists(vmdkDataStorePath)) {
+                    vmdkDataStorePath = dsMo.searchFileInSubFolders(vmdkFileName, true, null);
+                }
+
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(String.format("attaching %s to %s for migration", vmdkDataStorePath, vmMo.getVmName()));
                 }
@@ -4880,21 +4887,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         }
         if (answer instanceof MigrateVolumeAnswer) {
-            String newPath = ((MigrateVolumeAnswer) answer).getVolumePath();
-            String vmdkFileName = newPath + VMDK_EXTENSION;
-            try {
-                VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, newPath, vmName);
-                vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
+            if (!isvVolsInvolved) {
+                String newPath = ((MigrateVolumeAnswer) answer).getVolumePath();
+                String vmdkFileName = newPath + VMDK_EXTENSION;
+                try {
+                    VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, newPath, vmName);
+                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
 
-                if (!dsMo.fileExists(vmdkDataStorePath)) {
-                    String msg = String.format("Migration of volume '%s' failed; file (%s) not found as path '%s'", cmd.getVolumePath(), vmdkFileName, vmdkDataStorePath);
-                    s_logger.error(msg);
+                    if (!dsMo.fileExists(vmdkDataStorePath)) {
+                        String msg = String.format("Migration of volume '%s' failed; file (%s) not found as path '%s'", cmd.getVolumePath(), vmdkFileName, vmdkDataStorePath);
+                        s_logger.error(msg);
+                        answer = new Answer(cmd, false, msg);
+                    }
+                } catch (Exception e) {
+                    String msg = String.format("Migration of volume '%s' failed due to %s", cmd.getVolumePath(), e.getLocalizedMessage());
+                    s_logger.error(msg, e);
                     answer = new Answer(cmd, false, msg);
                 }
-            } catch (Exception e) {
-                String msg = String.format("Migration of volume '%s' failed due to %s", cmd.getVolumePath(), e.getLocalizedMessage());
-                s_logger.error(msg, e);
-                answer = new Answer(cmd, false, msg);
             }
         }
         return answer;

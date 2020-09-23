@@ -2091,9 +2091,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         if (!dsMo.fileExists(datastoreVolumePath)) {
                             datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
                         }
-                        if (!dsMo.fileExists(datastoreVolumePath)) {
+                        if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmName) || !dsMo.fileExists(datastoreVolumePath)) {
+                            datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath(), volumeTO.getPath() + ".vmdk");
+                        }
+                        if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), volumeTO.getPath()) || !dsMo.fileExists(datastoreVolumePath)) {
                             datastoreVolumePath = dsMo.searchFileInSubFolders(volumeTO.getPath() + ".vmdk", true, null);
                         }
+
                     } else {
                         datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
                     }
@@ -3592,7 +3596,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception("Unable to create container VM for volume creation");
             }
 
-            clonedVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
+            if(!primaryDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                clonedVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
+            }
             clonedVm.detachAllDisks();
             return _storage.getSize(srcOVFFileName);
         } finally {
