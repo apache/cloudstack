@@ -47,7 +47,13 @@ Customize themes like colors, border color, etc.
 }
 ```
 
+- `@logo-background-color` changes the logo background color.
+- `@navigation-background-color` changes the navigation menu background color.
+- `@navigation-text-color` changes the navigation text color.
 - `@primary-color` change the major background color of the page (background button, icon hover, etc).
+- `@link-color` changes the link color.
+- `@link-hover-color` changes the link hover color.
+- `@loading-color` changes the message loading color and page loading bar at the top page.
 - `@success-color` change success state color.
 - `@processing-color` change processing state color. Exp: progress status.
 - `@warning-color` change warning state color.
