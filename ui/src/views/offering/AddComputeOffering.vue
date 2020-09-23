@@ -933,7 +933,7 @@ export default {
           issystem: this.isSystem,
           name: values.name,
           displaytext: values.displaytext,
-          storagetype: values.storageType,
+          storagetype: values.storagetype,
           provisioningtype: values.provisioningtype,
           cachemode: values.cachemode,
           customized: values.offeringtype !== 'fixed',
