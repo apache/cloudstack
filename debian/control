@@ -9,7 +9,7 @@ Homepage: http://www.cloudstack.org/
 
 Package: cloudstack-common
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}, genisoimage, nfs-common, python3-pip, python3-distutils, python3-netaddr
+Depends: ${misc:Depends}, ${python3:Depends}, genisoimage, nfs-common, python3-pip, python3-distutils | python3-distutils-extra, python3-netaddr
 Conflicts: cloud-scripts, cloud-utils, cloud-system-iso, cloud-console-proxy, cloud-daemonize, cloud-deps, cloud-python, cloud-setup
 Description: A common package which contains files which are shared by several CloudStack packages
 
