@@ -894,7 +894,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         DiskOfferingVO newDiskOffering = null;
 
-        if (cmd.getNewDiskOfferingId() != null && volume.getDiskOfferingId() != cmd.getNewDiskOfferingId()) {
+        if (cmd.getNewDiskOfferingId() != null) {
             newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
         }
 
@@ -913,6 +913,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // if we are to use the existing disk offering
         if (newDiskOffering == null) {
+            if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0) {
+                throw new InvalidParameterValueException(
+                        "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
+                                + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
+                                + "For more details please check out the Official Resizing Volumes documentation.");
+            }
             newSize = cmd.getSize();
             newHypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve();
 
@@ -958,10 +964,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("Requested disk offering has been removed.");
             }
 
-            if (!DiskOfferingVO.Type.Disk.equals(newDiskOffering.getType())) {
-                throw new InvalidParameterValueException("Requested disk offering type is invalid.");
-            }
-
             if (diskOffering.getTags() != null) {
                 if (!StringUtils.areTagsEqual(diskOffering.getTags(), newDiskOffering.getTags())) {
                     throw new InvalidParameterValueException("The tags on the new and old disk offerings must match.");
@@ -972,7 +974,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             _configMgr.checkDiskOfferingAccess(_accountMgr.getActiveAccountById(volume.getAccountId()), newDiskOffering, _dcDao.findById(volume.getDataCenterId()));
 
-            if (newDiskOffering.isCustomized()) {
+            if (newDiskOffering.getDiskSize() > 0 && DiskOfferingVO.Type.Service.equals(newDiskOffering.getType())) {
+                newSize = newDiskOffering.getDiskSize();
+            } else if (newDiskOffering.isCustomized()) {
                 newSize = cmd.getSize();
 
                 if (newSize == null) {
@@ -989,9 +993,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newSize = newDiskOffering.getDiskSize();
             }
 
-            if (!volume.getSize().equals(newSize) && !volume.getVolumeType().equals(Volume.Type.DATADISK)) {
-                throw new InvalidParameterValueException("Only data volumes can be resized via a new disk offering.");
-            }
+            Long instanceId = volume.getInstanceId();
+            VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
+            checkIfVolumeIsRootAndVmIsRunning(newSize, volume, vmInstanceVO);
 
             if (newDiskOffering.isCustomizedIops() != null && newDiskOffering.isCustomizedIops()) {
                 newMinIops = cmd.getMinIops() != null ? cmd.getMinIops() : volume.getMinIops();
@@ -1138,6 +1142,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, newDiskOffering != null ? cmd.getNewDiskOfferingId() : null,
                 shrinkOk);
+    }
+
+    private void checkIfVolumeIsRootAndVmIsRunning(Long newSize, VolumeVO volume, VMInstanceVO vmInstanceVO) {
+        if (!volume.getSize().equals(newSize) && volume.getVolumeType().equals(Volume.Type.ROOT) && !State.Stopped.equals(vmInstanceVO.getState())) {
+            throw new InvalidParameterValueException(String.format("Cannot resize ROOT volume [%s] when VM is not on Stopped State. VM %s is in state %.", volume.getName(), vmInstanceVO
+                    .getInstanceName(), vmInstanceVO.getState()));
+        }
     }
 
     private void validateIops(Long minIops, Long maxIops) {

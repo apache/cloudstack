@@ -1066,6 +1066,10 @@ cloudStack.docs = {
         desc: 'Volume size in GB (1GB = 1,073,741,824 bytes)',
         externalLink: ''
     },
+    helpRootDiskSizeGb: {
+        desc: 'Root disk size in GB',
+        externalLink: ''
+    },
     // Add VPC
     helpVPCName: {
         desc: 'A name for the new VPC',
