@@ -810,8 +810,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             String vmdkName = volume.getName();
             String vmdkFileBaseName = null;
-            if (template.isDeployAsIs()) {
-                s_logger.info("Volume from deploy-as-is template, no need to create the volume at this point, VM will be cloned");
+            if (template.isDeployAsIs() && volume.getVolumeType() == Volume.Type.ROOT) {
+                s_logger.info("ROOT Volume from deploy-as-is template, no need to create the volume at this point, will be cloned from template");
             } else {
                 if (srcStore == null) {
                     // create a root volume for blank VM (created from ISO)
