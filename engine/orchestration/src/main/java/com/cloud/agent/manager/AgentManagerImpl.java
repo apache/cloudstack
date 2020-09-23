@@ -1080,10 +1080,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         ReadyCommand ready = null;
         try {
             final List<String> agentMSHostList = new ArrayList<>();
+            String lbAlgorithm = null;
             if (startup != null && startup.length > 0) {
                 final String agentMSHosts = startup[0].getMsHostList();
                 if (!Strings.isNullOrEmpty(agentMSHosts)) {
-                    agentMSHostList.addAll(Arrays.asList(agentMSHosts.split(",")));
+                    String[] msHosts = agentMSHosts.split("@");
+                    if (msHosts.length > 1) {
+                        lbAlgorithm = msHosts[1];
+                    }
+                    agentMSHostList.addAll(Arrays.asList(msHosts[0].split(",")));
                 }
             }
 
@@ -1091,7 +1096,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (host != null) {
                 ready = new ReadyCommand(host.getDataCenterId(), host.getId());
 
-                if (!indirectAgentLB.compareManagementServerList(host.getId(), host.getDataCenterId(), agentMSHostList)) {
+                if (!indirectAgentLB.compareManagementServerList(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
                     final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
                     ready.setMsHostList(newMSList);
                     ready.setLbAlgorithm(indirectAgentLB.getLBAlgorithmName());
