@@ -201,7 +201,7 @@
         <a-row :gutter="12" v-if="hyperVMWShow && currentForm === 'Create' && deployAsIsSupported">
           <a-col :md="24" :lg="12">
             <a-form-item :label="$t('label.deployasis')">
-              <a-switch v-decorator="['deployasis']" />
+              <a-switch v-decorator="['deployasis']" @change="handleChangeDeployAsIs" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -234,7 +234,7 @@
               </a-select>
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="12" v-if="hyperVMWShow">
+          <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployAsIsSelected">
             <a-form-item :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-decorator="['rootDiskControllerType', {
@@ -253,7 +253,7 @@
               </a-select>
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="12" v-if="hyperVMWShow">
+          <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployAsIsSelected">
             <a-form-item :label="$t('label.nicadaptertype')">
               <a-select
                 v-decorator="['nicAdapterType', {
@@ -290,9 +290,9 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12">
+        <a-row :gutter="12" v-if="!deployAsIsSelected">
           <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('label.ostypeid')">
+            <a-form-item :label="$t('label.ostypeid')" v-if="!deployAsIsSelected">
               <a-select
                 showSearch
                 v-decorator="['ostypeid', {
@@ -411,6 +411,7 @@ export default {
       format: {},
       osTypes: {},
       defaultOsType: '',
+      defaultOsId: null,
       xenServerProvider: false,
       hyperKVMShow: false,
       hyperXenServerShow: false,
@@ -421,6 +422,7 @@ export default {
       rootAdmin: 'Admin',
       allowed: false,
       allowDirectDownload: false,
+      deployAsIsSelected: false,
       uploadParams: null,
       currentForm: this.action.currentAction.icon === 'plus' ? 'Create' : 'Upload'
     }
@@ -572,6 +574,7 @@ export default {
         const listOsTypes = json.listostypesresponse.ostype
         this.$set(this.osTypes, 'opts', listOsTypes)
         this.defaultOsType = this.osTypes.opts[1].description
+        this.defaultOsId = this.osTypes.opts[1].id
       }).finally(() => {
         this.osTypes.loading = false
       })
@@ -805,6 +808,7 @@ export default {
       this.hyperVMWShow = false
       this.hyperKVMShow = false
       this.allowDirectDownload = false
+      this.deployAsIsSelected = false
 
       this.resetSelect()
       this.fetchFormat(hyperVisor)
@@ -819,6 +823,9 @@ export default {
           return
         }
         let params = {}
+        if (this.deployAsIsSelected) {
+          params.ostypeid = this.defaultOsId
+        }
         for (const key in values) {
           const input = values[key]
 
@@ -909,6 +916,9 @@ export default {
     },
     handleChangeDirect (checked) {
       this.allowDirectDownload = checked
+    },
+    handleChangeDeployAsIs (checked) {
+      this.deployAsIsSelected = checked
     },
     validZone (zones) {
       const allZoneExists = zones.filter(zone => zone === this.$t('label.all.zone'))
