@@ -2788,24 +2788,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // Copy volume from primary to secondary storage
         VolumeInfo srcVol = volFactory.getVolume(volumeId);
-        AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
-        // Check if you got a valid answer.
+        VolumeInfo destVol = volFactory.getVolume(volumeId, DataStoreRole.Image);
         VolumeApiResult cvResult = null;
-        try {
-            cvResult = cvAnswer.get();
-        } catch (InterruptedException e1) {
-            s_logger.debug("failed copy volume", e1);
-            throw new CloudRuntimeException("Failed to copy volume", e1);
-        } catch (ExecutionException e1) {
-            s_logger.debug("failed copy volume", e1);
-            throw new CloudRuntimeException("Failed to copy volume", e1);
+        if (destVol == null) {
+            AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
+            // Check if you got a valid answer.
+            try {
+                cvResult = cvAnswer.get();
+            } catch (InterruptedException e1) {
+                s_logger.debug("failed copy volume", e1);
+                throw new CloudRuntimeException("Failed to copy volume", e1);
+            } catch (ExecutionException e1) {
+                s_logger.debug("failed copy volume", e1);
+                throw new CloudRuntimeException("Failed to copy volume", e1);
+            }
+            if (cvResult == null || cvResult.isFailed()) {
+                String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
+                throw new CloudRuntimeException(errorString);
+            }
         }
-        if (cvResult == null || cvResult.isFailed()) {
-            String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
-            throw new CloudRuntimeException(errorString);
-        }
-
-        VolumeInfo vol = cvResult.getVolume();
+        VolumeInfo vol = cvResult != null ? cvResult.getVolume() : destVol;
 
         String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat(), vol);
         VolumeDataStoreVO volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);

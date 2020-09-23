@@ -253,7 +253,7 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId) {
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-        List<DataStore> stores = _storeMgr.getImageStoresByScope(new ZoneScope(dcId));
+        List<DataStore> stores = _storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(dcId));
         if (stores == null || stores.isEmpty()) {
             return;
         }

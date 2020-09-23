@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -775,32 +775,3 @@ class cloudAgentConfig(serviceCfgBase):
 
     def restore(self):
         return True
-
-class firewallConfigServer(firewallConfigBase):
-    def __init__(self, syscfg):
-        super(firewallConfigServer, self).__init__(syscfg)
-        #9090 is used for cluster management server
-        if self.syscfg.env.svrMode == "myCloud":
-            self.ports = "443 8080 8250 8443 9090".split()
-        else:
-            self.ports = "8080 8250 9090".split()
-
-class ubuntuFirewallConfigServer(firewallConfigServer):
-    def allowPort(self, port):
-        status = False
-        try:
-            status = bash("iptables-save|grep INPUT|grep -w %s"%port).isSuccess()
-        except:
-            pass
-
-        if not status:
-            bash("ufw allow %s/tcp"%port)
-
-    def config(self):
-        try:
-            for port in self.ports:
-                self.allowPort(port)
-
-            return True
-        except:
-            raise

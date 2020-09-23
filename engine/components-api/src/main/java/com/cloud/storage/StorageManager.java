@@ -112,6 +112,12 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
             "In second, timeout for download template to primary storage", false);
 
+    ConfigKey<Integer>  SecStorageMaxMigrateSessions = new ConfigKey<Integer>("Advanced", Integer.class, "secstorage.max.migrate.sessions", "2",
+            "The max number of concurrent copy command execution sessions that an SSVM can handle", true, ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
+            "Maximum wait time for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
+
     /**
      * Returns a comma separated list of tags for the specified storage pool
      * @param poolId

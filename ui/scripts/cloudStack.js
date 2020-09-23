@@ -280,6 +280,15 @@
 
                 var loginCmdText = array1.join("");
 
+                // Logout before login is called to purge any duplicate sessionkey cookies
+                // to handle edge cases around upgrades and using legacy UI with Primate
+                $.ajax({
+                    url: createURL('logout'),
+                    async: false,
+                    success: function() {},
+                    error: function() {}
+                });
+
                 $.ajax({
                     type: "POST",
                     data: "command=login" + loginCmdText + "&response=json",

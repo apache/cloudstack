@@ -1658,6 +1658,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 User user = CallContext.current().getCallingUser();
                 Project project = projectDao.findByProjectAccountId(network.getAccountId());
+                if (project == null) {
+                    throw new CloudRuntimeException("Unable to find project to which the network belongs to");
+                }
                 ProjectAccount projectAccountUser = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
                 if (projectAccountUser != null) {
                     if (!_projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), network.getAccountId())) {

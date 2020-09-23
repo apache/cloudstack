@@ -20,20 +20,17 @@ package org.apache.cloudstack.storage.image;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-
-import com.cloud.agent.api.storage.OVFPropertyTO;
-import com.cloud.storage.Upload;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
-import com.cloud.storage.TemplateOVFPropertyVO;
-import com.cloud.utils.crypt.DBEncryptionUtil;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -47,24 +44,42 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateDatadiskTemplateCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.GetDatadisksAnswer;
 import com.cloud.agent.api.storage.GetDatadisksCommand;
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.dao.HostDao;
+import com.cloud.secstorage.CommandExecLogDao;
+import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.TemplateOVFPropertyVO;
+import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -72,9 +87,12 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.agent.api.to.DatadiskTO;
-import com.cloud.utils.net.Proxy;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Proxy;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private static final Logger s_logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
@@ -106,6 +124,16 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     ResourceLimitService _resourceLimitMgr;
     @Inject
     TemplateOVFPropertiesDao templateOvfPropertiesDao;
+    @Inject
+    HostDao hostDao;
+    @Inject
+    CommandExecLogDao _cmdExecLogDao;
+    @Inject
+    StorageManager storageMgr;
+    @Inject
+    protected SecondaryStorageVmDao _secStorageVmDao;
+    @Inject
+    AgentManager agentMgr;
 
     protected String _proxy = null;
 
@@ -333,10 +361,77 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        if (!canCopy(srcdata, destData)) {
+            return;
+        }
+
+        if ((srcdata.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE) ||
+                (srcdata.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) ||
+                (srcdata.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME)) {
+
+            int nMaxExecutionMinutes = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
+            CopyCommand cmd = new CopyCommand(srcdata.getTO(), destData.getTO(), nMaxExecutionMinutes * 60 * 1000, true);
+            Answer answer = null;
+
+            // Select host endpoint such that the load is balanced out
+            List<EndPoint> eps = _epSelector.findAllEndpointsForScope(srcdata.getDataStore());
+            if (eps == null || eps.isEmpty()) {
+                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                s_logger.error(errMsg);
+                answer = new Answer(cmd, false, errMsg);
+            } else {
+                // select endpoint with least number of commands running on them
+                answer = sendToLeastBusyEndpoint(eps, cmd);
+            }
+            CopyCommandResult result = new CopyCommandResult("", answer);
+            callback.complete(result);
+        }
+    }
+
+    private Answer sendToLeastBusyEndpoint(List<EndPoint> eps, CopyCommand cmd) {
+        Answer answer = null;
+        EndPoint endPoint = null;
+        Long epId = ssvmWithLeastMigrateJobs();
+        if (epId == null) {
+            Collections.shuffle(eps);
+            endPoint = eps.get(0);
+        } else {
+            List<EndPoint> remainingEps = eps.stream().filter(ep -> ep.getId() != epId ).collect(Collectors.toList());
+            if (!remainingEps.isEmpty()) {
+                Collections.shuffle(remainingEps);
+                endPoint = remainingEps.get(0);
+            } else {
+                endPoint = _defaultEpSelector.getEndPointFromHostId(epId);
+            }
+        }
+        CommandExecLogVO execLog = new CommandExecLogVO(endPoint.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(endPoint.getId()).getName()).getId(), "DataMigrationCommand", 1);
+        Long cmdExecId = _cmdExecLogDao.persist(execLog).getId();
+        String errMsg = null;
+        try {
+            answer = agentMgr.send(endPoint.getId(), cmd);
+            answer.setContextParam("cmd", cmdExecId.toString());
+            return answer;
+        }  catch (AgentUnavailableException e) {
+            errMsg = e.toString();
+            s_logger.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
+        } catch (OperationTimedoutException e) {
+            errMsg = e.toString();
+            s_logger.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
+        }
+        throw new CloudRuntimeException("Failed to send command, due to Agent:" + endPoint.getId() + ", " + errMsg);
     }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
+        DataStore srcStore = srcData.getDataStore();
+        DataStore destStore = destData.getDataStore();
+        if ((srcData.getDataStore().getTO() instanceof NfsTO && destData.getDataStore().getTO() instanceof NfsTO) &&
+                (srcStore.getRole() == DataStoreRole.Image && destStore.getRole() == DataStoreRole.Image) &&
+                ((srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE) ||
+                (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) ||
+                (srcData.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME))) {
+            return true;
+        }
         return false;
     }
 
@@ -398,5 +493,29 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         result.setResult(errMsg);
         callback.complete(result);
         return null;
+    }
+
+    private Integer getCopyCmdsCountToSpecificSSVM(Long ssvmId) {
+        return _cmdExecLogDao.getCopyCmdCountForSSVM(ssvmId);
+    }
+
+    private Long ssvmWithLeastMigrateJobs() {
+        s_logger.debug("Picking ssvm from the pool with least commands running on it");
+        String query = "select host_id, count(*) from cmd_exec_log group by host_id order by 2 limit 1;";
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+        Long epId = null;
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(query);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.getFetchSize() > 0) {
+                rs.absolute(1);
+                epId = (long) rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            s_logger.debug("SQLException caught", e);
+        }
+        return epId;
     }
 }

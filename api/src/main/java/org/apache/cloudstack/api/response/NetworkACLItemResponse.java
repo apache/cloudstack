@@ -73,6 +73,10 @@ public class NetworkACLItemResponse extends BaseResponse {
     @Param(description = "the ID of the ACL this item belongs to")
     private String aclId;
 
+    @SerializedName(ApiConstants.ACL_NAME)
+    @Param(description = "the name of the ACL this item belongs to")
+    private String aclName;
+
     @SerializedName(ApiConstants.NUMBER)
     @Param(description = "Number of the ACL Item")
     private Integer number;
@@ -131,6 +135,10 @@ public class NetworkACLItemResponse extends BaseResponse {
 
     public void setAclId(String aclId) {
         this.aclId = aclId;
+    }
+
+    public void setAclName(String aclName) {
+        this.aclName = aclName;
     }
 
     public void setNumber(Integer number) {

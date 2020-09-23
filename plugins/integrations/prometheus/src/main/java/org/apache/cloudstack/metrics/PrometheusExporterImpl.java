@@ -220,7 +220,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             metricsList.add(new ItemPool(zoneName, zoneUuid, poolName, poolPath, "primary", poolFactor, TOTAL, totalCapacity));
         }
 
-        for (final ImageStore imageStore : imageStoreDao.findByScope(new ZoneScope(dcId))) {
+        for (final ImageStore imageStore : imageStoreDao.findByZone(new ZoneScope(dcId), null)) {
             final StorageStats stats = ApiDBUtils.getSecondaryStorageStatistics(imageStore.getId());
             metricsList.add(new ItemPool(zoneName, zoneUuid, imageStore.getName(), imageStore.getUrl(), "secondary", null, USED, stats != null ? stats.getByteUsed() : 0));
             metricsList.add(new ItemPool(zoneName, zoneUuid, imageStore.getName(), imageStore.getUrl(), "secondary", null, TOTAL, stats != null ? stats.getCapacityBytes() : 0));

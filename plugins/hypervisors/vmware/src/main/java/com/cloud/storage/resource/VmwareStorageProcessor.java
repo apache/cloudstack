@@ -1186,31 +1186,43 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String volumePath = volume.getPath();
 
         String details = null;
-
+        VirtualMachineMO vmMo = null;
+        VirtualMachineMO workerVmMo = null;
         VmwareContext context = hostService.getServiceContext(cmd);
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(volume.getVmName());
-            if (vmMo == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() +
-                            ", try within datacenter");
+            if (volume.getVmName() == null) {
+                ManagedObjectReference secMorDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, volume.getDataStore().getUuid());
+                DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), secMorDs);
+                workerVmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, "workervm"+volume.getUuid());
+                if (workerVmMo == null) {
+                    throw new Exception("Unable to find created worker VM");
                 }
-                vmMo = hyperHost.findVmOnPeerHyperHost(volume.getVmName());
-
+                vmMo = workerVmMo;
+                String vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumePath + ".vmdk");
+                vmMo.attachDisk(new String[] {vmdkDataStorePath}, secMorDs);
+            } else {
+                vmMo = hyperHost.findVmOnHyperHost(volume.getVmName());
                 if (vmMo == null) {
-                    // This means either the volume is on a zone wide storage pool or VM is deleted by external entity.
-                    // Look for the VM in the datacenter.
-                    ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
-                    DatacenterMO dcMo = new DatacenterMO(context, dcMor);
-                    vmMo = dcMo.findVm(volume.getVmName());
-                }
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() +
+                                ", try within datacenter");
+                    }
+                    vmMo = hyperHost.findVmOnPeerHyperHost(volume.getVmName());
 
-                if (vmMo == null) {
-                    String msg = "Unable to find the owner VM for volume operation. vm: " + volume.getVmName();
-                    s_logger.error(msg);
-                    throw new Exception(msg);
+                    if (vmMo == null) {
+                        // This means either the volume is on a zone wide storage pool or VM is deleted by external entity.
+                        // Look for the VM in the datacenter.
+                        ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+                        DatacenterMO dcMo = new DatacenterMO(context, dcMor);
+                        vmMo = dcMo.findVm(volume.getVmName());
+                    }
+
+                    if (vmMo == null) {
+                        String msg = "Unable to find the owner VM for volume operation. vm: " + volume.getVmName();
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
                 }
             }
 
@@ -1234,6 +1246,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             details = "create template from volume exception: " + VmwareHelper.getExceptionMessage(e);
             return new CopyCmdAnswer(details);
+        } finally {
+            try {
+                if (volume.getVmName() == null && workerVmMo != null) {
+                    workerVmMo.detachAllDisks();
+                    workerVmMo.destroy();
+                }
+            } catch (Throwable e) {
+                s_logger.error("Failed to destroy worker VM created for detached volume");
+            }
         }
     }
 
