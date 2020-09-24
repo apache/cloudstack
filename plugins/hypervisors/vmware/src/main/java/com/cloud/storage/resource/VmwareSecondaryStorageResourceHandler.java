@@ -66,7 +66,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
      * private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
      */
 
-    public VmwareSecondaryStorageResourceHandler(PremiumSecondaryStorageResource resource, Integer nfsVersion) {
+    public VmwareSecondaryStorageResourceHandler(PremiumSecondaryStorageResource resource, String nfsVersion) {
         _resource = resource;
         _storageMgr = new VmwareStorageManagerImpl(this, nfsVersion);
         _gson = GsonHelper.getGsonLogger();
@@ -307,7 +307,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     @Override
-    public String getMountPoint(String storageUrl, Integer nfsVersion) {
+    public String getMountPoint(String storageUrl, String nfsVersion) {
         return _resource.getRootDir(storageUrl, nfsVersion);
     }
 }

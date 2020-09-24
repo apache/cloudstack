@@ -38,6 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -585,7 +586,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         final Long dcId = host.getDataCenterId();
-        final ReadyCommand ready = new ReadyCommand(dcId, host.getId());
+        final ReadyCommand ready = new ReadyCommand(dcId, host.getId(), NumbersUtil.enableHumanReadableSizes);
         final Answer answer = easySend(hostId, ready);
         if (answer == null || !answer.getResult()) {
             // this is tricky part for secondary storage
@@ -1090,7 +1091,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             final HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
             if (host != null) {
-                ready = new ReadyCommand(host.getDataCenterId(), host.getId());
+                ready = new ReadyCommand(host.getDataCenterId(), host.getId(), NumbersUtil.enableHumanReadableSizes);
 
                 if (!indirectAgentLB.compareManagementServerList(host.getId(), host.getDataCenterId(), agentMSHostList)) {
                     final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);

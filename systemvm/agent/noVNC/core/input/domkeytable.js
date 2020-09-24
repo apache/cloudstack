@@ -43,12 +43,10 @@ addStandard("CapsLock", KeyTable.XK_Caps_Lock);
 addLeftRight("Control", KeyTable.XK_Control_L, KeyTable.XK_Control_R);
 // - Fn
 // - FnLock
-addLeftRight("Hyper", KeyTable.XK_Super_L, KeyTable.XK_Super_R);
 addLeftRight("Meta", KeyTable.XK_Super_L, KeyTable.XK_Super_R);
 addStandard("NumLock", KeyTable.XK_Num_Lock);
 addStandard("ScrollLock", KeyTable.XK_Scroll_Lock);
 addLeftRight("Shift", KeyTable.XK_Shift_L, KeyTable.XK_Shift_R);
-addLeftRight("Super", KeyTable.XK_Super_L, KeyTable.XK_Super_R);
 // - Symbol
 // - SymbolLock
 
@@ -72,6 +70,9 @@ addNumpad("PageUp", KeyTable.XK_Prior, KeyTable.XK_KP_Prior);
 // 2.5. Editing Keys
 
 addStandard("Backspace", KeyTable.XK_BackSpace);
+// Browsers send "Clear" for the numpad 5 without NumLock because
+// Windows uses VK_Clear for that key. But Unix expects KP_Begin for
+// that scenario.
 addNumpad("Clear", KeyTable.XK_Clear, KeyTable.XK_KP_Begin);
 addStandard("Copy", KeyTable.XF86XK_Copy);
 // - CrSel
@@ -194,7 +195,8 @@ addStandard("F35", KeyTable.XK_F35);
 addStandard("Close", KeyTable.XF86XK_Close);
 addStandard("MailForward", KeyTable.XF86XK_MailForward);
 addStandard("MailReply", KeyTable.XF86XK_Reply);
-addStandard("MainSend", KeyTable.XF86XK_Send);
+addStandard("MailSend", KeyTable.XF86XK_Send);
+// - MediaClose
 addStandard("MediaFastForward", KeyTable.XF86XK_AudioForward);
 addStandard("MediaPause", KeyTable.XF86XK_AudioPause);
 addStandard("MediaPlay", KeyTable.XF86XK_AudioPlay);
@@ -218,11 +220,9 @@ addStandard("SpellCheck", KeyTable.XF86XK_Spell);
 
 // - AudioBalanceLeft
 // - AudioBalanceRight
-// - AudioBassDown
 // - AudioBassBoostDown
 // - AudioBassBoostToggle
 // - AudioBassBoostUp
-// - AudioBassUp
 // - AudioFaderFront
 // - AudioFaderRear
 // - AudioSurroundModeNext
@@ -243,12 +243,12 @@ addStandard("MicrophoneVolumeMute", KeyTable.XF86XK_AudioMicMute);
 
 // 2.14. Application Keys
 
-addStandard("LaunchCalculator", KeyTable.XF86XK_Calculator);
+addStandard("LaunchApplication1", KeyTable.XF86XK_MyComputer);
+addStandard("LaunchApplication2", KeyTable.XF86XK_Calculator);
 addStandard("LaunchCalendar", KeyTable.XF86XK_Calendar);
 addStandard("LaunchMail", KeyTable.XF86XK_Mail);
 addStandard("LaunchMediaPlayer", KeyTable.XF86XK_AudioMedia);
 addStandard("LaunchMusicPlayer", KeyTable.XF86XK_Music);
-addStandard("LaunchMyComputer", KeyTable.XF86XK_MyComputer);
 addStandard("LaunchPhone", KeyTable.XF86XK_Phone);
 addStandard("LaunchScreenSaver", KeyTable.XF86XK_ScreenSaver);
 addStandard("LaunchSpreadsheet", KeyTable.XF86XK_Excel);

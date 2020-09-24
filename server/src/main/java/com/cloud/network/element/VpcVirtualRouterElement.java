@@ -200,6 +200,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         if (network.isRollingRestart()) {
             params.put(VirtualMachineProfile.Param.RollingRestart, true);
+            vpc.setRollingRestart(true);
         }
 
         final RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create()

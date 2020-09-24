@@ -77,9 +77,12 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     }
 
     @Override
-    public List<ImageStoreVO> findByScope(ZoneScope scope) {
+    public List<ImageStoreVO> findByZone(ZoneScope scope, Boolean readonly) {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
         sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
+        if (readonly != null) {
+            sc.addAnd("readonly", SearchCriteria.Op.EQ, readonly);
+        }
         if (scope.getScopeId() != null) {
             SearchCriteria<ImageStoreVO> scc = createSearchCriteria();
             scc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);

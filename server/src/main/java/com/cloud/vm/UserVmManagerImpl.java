@@ -328,6 +328,8 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
 
@@ -1475,16 +1477,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Integer chosenID = nic.getDeviceId();
         Integer existingID = existing.getDeviceId();
 
-        nic.setDefaultNic(true);
-        nic.setDeviceId(existingID);
-        existingVO.setDefaultNic(false);
-        existingVO.setDeviceId(chosenID);
-
-        nic = _nicDao.persist(nic);
-        existingVO = _nicDao.persist(existingVO);
-
         Network newdefault = null;
-        newdefault = _networkModel.getDefaultNetworkForVm(vmId);
+        if (_itMgr.updateDefaultNicForVM(vmInstance, nic, existingVO)) {
+            newdefault = _networkModel.getDefaultNetworkForVm(vmId);
+        }
 
         if (newdefault == null) {
             nic.setDefaultNic(false);
@@ -2835,7 +2831,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         Boolean enterSetup = cmd.getBootIntoSetup();
-        if (enterSetup != null && !HypervisorType.VMware.equals(vmInstance.getHypervisorType())) {
+        if (enterSetup != null && enterSetup && !HypervisorType.VMware.equals(vmInstance.getHypervisorType())) {
             throw new InvalidParameterValueException("Booting into a hardware setup menu is not implemented on " + vmInstance.getHypervisorType());
         }
         UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, enterSetup == null ? false : cmd.getBootIntoSetup());
@@ -3733,7 +3729,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String instanceName = null;
         String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
-        if (_instanceNameFlag && hypervisor.equals(HypervisorType.VMware)) {
+        if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType)) {
             if (hostName == null) {
                 if (displayName != null) {
                     hostName = displayName;
@@ -4027,8 +4023,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     {
         // rootdisksize must be larger than template.
         if ((rootDiskSize << 30) < templateVO.getSize()) {
-            Long templateVOSizeGB = templateVO.getSize() / GiB_TO_BYTES;
-            String error = "Unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)";
+            String error = "Unsupported: rootdisksize override is smaller than template size " + toHumanReadableSize(templateVO.getSize());
             s_logger.error(error);
             throw new InvalidParameterValueException(error);
         } else if ((rootDiskSize << 30) > templateVO.getSize()) {
@@ -4039,10 +4034,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.error(error);
                 throw new InvalidParameterValueException(error);
             } else {
-                s_logger.debug("Rootdisksize override validation successful. Template root disk size " + (templateVO.getSize() / GiB_TO_BYTES) + "GB Root disk size specified " + rootDiskSize + "GB");
+                s_logger.debug("Rootdisksize override validation successful. Template root disk size " + toHumanReadableSize(templateVO.getSize()) + " Root disk size specified " + rootDiskSize + " GB");
             }
         } else {
-            s_logger.debug("Root disk size specified is " + (rootDiskSize << 30) + "B and Template root disk size is " + templateVO.getSize() + "B. Both are equal so no need to override");
+            s_logger.debug("Root disk size specified is " + toHumanReadableSize(rootDiskSize << 30) + " and Template root disk size is " + toHumanReadableSize(templateVO.getSize()) + ". Both are equal so no need to override");
             customParameters.remove(VmDetailConstants.ROOT_DISK_SIZE);
         }
     }
@@ -4170,15 +4165,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                             || (previousvmNetworkStats.getCurrentBytesReceived() != vmNetworkStat_lock.getCurrentBytesReceived()))) {
                                 s_logger.debug("vm network stats changed from the time GetNmNetworkStatsCommand was sent. " +
                                         "Ignoring current answer. Host: " + host.getName()  + " . VM: " + vmNetworkStat.getVmName() +
-                                        " Sent(Bytes): " + vmNetworkStat.getBytesSent() + " Received(Bytes): " + vmNetworkStat.getBytesReceived());
+                                        " Sent(Bytes): " + toHumanReadableSize(vmNetworkStat.getBytesSent()) + " Received(Bytes): " + toHumanReadableSize(vmNetworkStat.getBytesReceived()));
                                 continue;
                             }
 
                             if (vmNetworkStat_lock.getCurrentBytesSent() > vmNetworkStat.getBytesSent()) {
                                 if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Sent # of bytes that's less than the last one.  " +
+                                   s_logger.debug("Sent # of bytes that's less than the last one.  " +
                                             "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmNetworkStat.getVmName() +
-                                            " Reported: " + vmNetworkStat.getBytesSent() + " Stored: " + vmNetworkStat_lock.getCurrentBytesSent());
+                                            " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesSent()) + " Stored: " + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesSent()));
                                 }
                                 vmNetworkStat_lock.setNetBytesSent(vmNetworkStat_lock.getNetBytesSent() + vmNetworkStat_lock.getCurrentBytesSent());
                             }
@@ -4188,7 +4183,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Received # of bytes that's less than the last one.  " +
                                             "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmNetworkStat.getVmName() +
-                                            " Reported: " + vmNetworkStat.getBytesReceived() + " Stored: " + vmNetworkStat_lock.getCurrentBytesReceived());
+                                            " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesReceived()) + " Stored: " + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesReceived()));
                                 }
                                 vmNetworkStat_lock.setNetBytesReceived(vmNetworkStat_lock.getNetBytesReceived() + vmNetworkStat_lock.getCurrentBytesReceived());
                             }
@@ -4982,7 +4977,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStat.getBytesRead()) {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Read # of Bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: " + host.getName()
-                                    + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getBytesRead() + " Stored: " + vmDiskStat_lock.getCurrentBytesRead());
+                                    + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " Stored: " + toHumanReadableSize(vmDiskStat_lock.getCurrentBytesRead()));
                                 }
                                 vmDiskStat_lock.setNetBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
                             }
@@ -4990,8 +4985,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             if (vmDiskStat_lock.getCurrentBytesWrite() > vmDiskStat.getBytesWrite()) {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Write # of Bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: " + host.getName()
-                                    + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getBytesWrite() + " Stored: "
-                                    + vmDiskStat_lock.getCurrentBytesWrite());
+                                    + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesWrite()) + " Stored: "
+                                    + toHumanReadableSize(vmDiskStat_lock.getCurrentBytesWrite()));
                                 }
                                 vmDiskStat_lock.setNetBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
                             }
@@ -6138,6 +6133,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
         }
 
+        if (cmd.getProjectId() != null && cmd.getDomainId() == null) {
+            throw new InvalidParameterValueException("Please provide a valid domain ID; cannot assign VM to a project if domain ID is NULL.");
+        }
+
         //check caller has access to both the old and new account
         _accountMgr.checkAccess(caller, null, true, oldAccount);
         _accountMgr.checkAccess(caller, null, true, newAccount);
@@ -6614,11 +6613,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException {
+        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId);
+    }
 
+    @Override
+    public UserVm restoreVirtualMachine(final Account caller, final long vmId, final Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException {
         Long userId = caller.getId();
-        Account owner = _accountDao.findById(vm.getAccountId());
         _userDao.findById(userId);
-        long vmId = vm.getId();
+        UserVmVO vm = _vmDao.findById(vmId);
+        Account owner = _accountDao.findById(vm.getAccountId());
         boolean needRestart = false;
 
         // Input validation

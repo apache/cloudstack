@@ -17,6 +17,19 @@
 
 package org.apache.cloudstack.acl.dao;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
+import org.apache.cloudstack.acl.RolePermissionVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -27,18 +40,6 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.acl.RolePermission.Permission;
-import org.apache.cloudstack.acl.RolePermissionVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 @Component
 public class RolePermissionsDaoImpl extends GenericDaoBase<RolePermissionVO, Long> implements RolePermissionsDao {

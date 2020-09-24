@@ -22,7 +22,7 @@
 
 import cloudstack_pluginlib as lib
 import logging
-import commands
+import subprocess
 import os
 import sys
 import subprocess

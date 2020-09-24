@@ -101,6 +101,10 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     @Param(description = "ACL Id set for private gateway")
     private String aclId;
 
+    @SerializedName(ApiConstants.ACL_NAME)
+    @Param(description = "ACL name set for private gateway")
+    private String aclName;
+
     @Override
     public String getObjectId() {
         return this.id;
@@ -181,6 +185,10 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
 
     public void setAclId(String aclId) {
         this.aclId = aclId;
+    }
+
+    public void setAclName(String aclName) {
+        this.aclName = aclName;
     }
 
 }

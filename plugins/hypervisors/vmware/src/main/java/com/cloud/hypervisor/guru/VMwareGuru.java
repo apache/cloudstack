@@ -149,6 +149,8 @@ import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
@@ -914,7 +916,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     VolumeVO vol = _volumeDao.findByUuidIncludingRemoved(volId);
                     usedVols.put(backedUpVol.getUuid(), true);
                     map.put(disk, vol);
-                    s_logger.debug("VM restore mapping for disk " + disk.getBacking() + " (capacity: " + disk.getCapacityInBytes() + ") with volume ID" + vol.getId());
+                    s_logger.debug("VM restore mapping for disk " + disk.getBacking() + " (capacity: " + toHumanReadableSize(disk.getCapacityInBytes()) + ") with volume ID" + vol.getId());
                 }
             }
         }
@@ -1011,7 +1013,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmRestored);
         String diskPath = vmRestored.getVmdkFileBaseName(restoredDisk);
 
-        s_logger.debug("Restored disk size=" + restoredDisk.getCapacityInKB() + " path=" + diskPath);
+        s_logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB()) + " path=" + diskPath);
 
         // Detach restored VM disks
         vmRestored.detachAllDisks();

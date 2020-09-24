@@ -136,6 +136,8 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener,
 StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
@@ -267,7 +269,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             s_logger.debug("DeploymentPlanner allocation algorithm: " + planner);
 
             s_logger.debug("Trying to allocate a host and storage pools from dc:" + plan.getDataCenterId() + ", pod:" + plan.getPodId() + ",cluster:" +
-                    plan.getClusterId() + ", requested cpu: " + cpu_requested + ", requested ram: " + ram_requested);
+                    plan.getClusterId() + ", requested cpu: " + cpu_requested + ", requested ram: " + toHumanReadableSize(ram_requested));
 
             s_logger.debug("Is ROOT volume READY (pool already allocated)?: " + (plan.getPoolId() != null ? "Yes" : "No"));
         }

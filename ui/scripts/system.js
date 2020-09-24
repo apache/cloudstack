@@ -17023,6 +17023,8 @@
                                     if (args.data.annotation != null && args.data.annotation.length > 0)
                                         array1.push("&annotation=" + args.data.annotation);
 
+                                    if (args.data.name != null && args.data.name.length > 0)
+                                        array1.push("&name=" + args.data.name);
                                     $.ajax({
                                         url: createURL("updateHost&id=" + args.context.hosts[0].id + array1.join("")),
                                         dataType: "json",
@@ -17662,6 +17664,10 @@
                                                     id: 'nestedcloudstack',
                                                     description: 'nested-cloudstack - controls host that is a VM in a parent cloudstack (testing purposes only)'
                                                 });
+                                                items.push({
+                                                    id: 'redfish',
+                                                    description: 'redfish - controls host using a redfish java client'
+                                                });
                                                 args.response.success({
                                                     data: items
                                                 });
@@ -17957,7 +17963,8 @@
 
                                 fields:[ {
                                     name: {
-                                        label: 'label.name'
+                                        label: 'label.name',
+                                        isEditable: true
                                     }
                                 },
                                 {
@@ -19552,6 +19559,9 @@
                                         array1.push("&capacityiops=" + capacityIops);
                                     }
 
+                                    if (args.data.name != null && args.data.name.length > 0)
+                                        array1.push("&name=" + args.data.name);
+
                                     $.ajax({
                                         url: createURL("updateStoragePool&id=" + args.context.primarystorages[0].id + array1.join("")),
                                         dataType: "json",
@@ -19684,7 +19694,8 @@
                                 title: 'label.details',
                                 fields:[ {
                                     name: {
-                                        label: 'label.name'
+                                        label: 'label.name',
+                                        isEditable: true
                                     }
                                 },
                                 {

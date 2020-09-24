@@ -114,6 +114,7 @@ public class ApiConstants {
     public static final String DISK_IO_WRITE = "diskiowrite";
     public static final String DISK_IO_PSTOTAL = "diskiopstotal";
     public static final String DISK_SIZE = "disksize";
+    public static final String DOWNLOAD_DETAILS = "downloaddetails";
     public static final String UTILIZATION = "utilization";
     public static final String DRIVER = "driver";
     public static final String ROOT_DISK_SIZE = "rootdisksize";
@@ -235,6 +236,7 @@ public class ApiConstants {
     public static final String MAX_MEMORY = "maxmemory";
     public static final String MIN_CPU_NUMBER = "mincpunumber";
     public static final String MIN_MEMORY = "minmemory";
+    public static final String MIGRATION_TYPE = "migrationtype";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
@@ -348,11 +350,14 @@ public class ApiConstants {
     public static final String STORAGE_POLICY = "storagepolicy";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
+    public static final String OWNER = "owner";
+    public static final String SWAP_OWNER = "swapowner";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
+    public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
     public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
@@ -474,12 +479,15 @@ public class ApiConstants {
     public static final String PROJECT = "project";
     public static final String ROLE = "role";
     public static final String ROLE_ID = "roleid";
+    public static final String PROJECT_ROLE_ID = "projectroleid";
+    public static final String PROJECT_ROLE_NAME = "projectrolename";
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
     public static final String RULES = "rules";
     public static final String RULE_ID = "ruleid";
+    public static final String PROJECT_ROLE_PERMISSION_ID = "projectrolepermissionid";
     public static final String RULE_ORDER = "ruleorder";
     public static final String USER = "user";
     public static final String ACTIVE_ONLY = "activeonly";
@@ -714,6 +722,7 @@ public class ApiConstants {
     public static final String AFFINITY_GROUP_ID = "affinitygroupid";
     public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
     public static final String ACL_ID = "aclid";
+    public static final String ACL_NAME = "aclname";
     public static final String NUMBER = "number";
     public static final String IS_DYNAMICALLY_SCALABLE = "isdynamicallyscalable";
     public static final String ROUTING = "isrouting";
@@ -783,6 +792,8 @@ public class ApiConstants {
     public static final String EXITCODE = "exitcode";
     public static final String TARGET_ID = "targetid";
     public static final String FILES = "files";
+    public static final String SRC_POOL = "srcpool";
+    public static final String DEST_POOLS = "destpools";
     public static final String VOLUME_IDS = "volumeids";
 
     public static final String ROUTER_ID = "routerid";

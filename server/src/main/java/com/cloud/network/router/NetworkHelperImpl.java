@@ -710,8 +710,8 @@ public class NetworkHelperImpl implements NetworkHelper {
         if (guestNetwork != null) {
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
+            final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
             if (!routerDeploymentDefinition.isPublicNetwork()) {
-                final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
                 if (guestNetwork.getCidr() != null) {
                     if (placeholder != null && placeholder.getIPv4Address() != null) {
                         s_logger.debug("Requesting ipv4 address " + placeholder.getIPv4Address() + " stored in placeholder nic for the network "
@@ -744,6 +744,9 @@ public class NetworkHelperImpl implements NetworkHelper {
                         }
                     }
                 }
+            } else if (placeholder != null) {
+                // Remove placeholder nic if router has public network
+                _nicDao.remove(placeholder.getId());
             }
 
             final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);

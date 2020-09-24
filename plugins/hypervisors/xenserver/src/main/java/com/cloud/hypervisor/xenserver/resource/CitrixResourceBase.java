@@ -164,6 +164,8 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.XenAPIObject;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process to
  * perform the required functionalities for CloudStack.
@@ -1799,7 +1801,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             cmd.setDom0MinMemory(dom0Ram);
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Total Ram: " + ram + " dom0 Ram: " + dom0Ram);
+                s_logger.debug("Total Ram: " + toHumanReadableSize(ram) + " dom0 Ram: " + toHumanReadableSize(dom0Ram));
             }
 
             PIF pif = PIF.getByUuid(conn, _host.getPrivatePif());
@@ -3088,7 +3090,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // stability
         if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <=
             // static max
-            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax + ", can lead to stability issues. Setting static max as much as dynamic max ");
+            s_logger.warn("dynamic max " + toHumanReadableSize(dynamicMaxRam) + " cant be greater than static max " + toHumanReadableSize(staticMax) + ", this can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;
@@ -3102,7 +3104,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (dynamicMinRam < recommendedValue) { // XS contraint that dynamic min
             // > static min
-            s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues");
+            s_logger.warn("Vm ram is set to dynamic min " + toHumanReadableSize(dynamicMinRam) + " and is less than the recommended static min " + toHumanReadableSize(recommendedValue) + ", this could lead to stability issues");
         }
         return dynamicMinRam;
     }
@@ -3329,13 +3331,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                 VDI memoryVDI = vmsnap.getSuspendVDI(conn);
                                 if (!isRefNull(memoryVDI)) {
                                     size = size + memoryVDI.getPhysicalUtilisation(conn);
-                                    s_logger.debug("memoryVDI size :" + size);
+                                    s_logger.debug("memoryVDI size :" + toHumanReadableSize(size));
                                     String parentUuid = memoryVDI.getSmConfig(conn).get("vhd-parent");
                                     VDI pMemoryVDI = VDI.getByUuid(conn, parentUuid);
                                     if (!isRefNull(pMemoryVDI)) {
                                         size = size + pMemoryVDI.getPhysicalUtilisation(conn);
                                     }
-                                    s_logger.debug("memoryVDI size+parent :" + size);
+                                    s_logger.debug("memoryVDI size+parent :" + toHumanReadableSize(size));
                                 }
                             }
                         } catch (Exception e) {
@@ -4215,7 +4217,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             final long vdiVirtualSize = vdi.getVirtualSize(conn);
 
             if (vdiVirtualSize != volumeSize) {
-                s_logger.info("Resizing the data disk (VDI) from vdiVirtualSize: " + vdiVirtualSize + " to volumeSize: " + volumeSize);
+                s_logger.info("Resizing the data disk (VDI) from vdiVirtualSize: " + toHumanReadableSize(vdiVirtualSize) + " to volumeSize: " + toHumanReadableSize(volumeSize));
 
                 try {
                     vdi.resize(conn, volumeSize);

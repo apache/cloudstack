@@ -28,7 +28,7 @@ public class KVMPhysicalDisk {
 
         rbdOpts = "rbd:" + image;
         rbdOpts += ":mon_host=" + monHost;
-        if (monPort != 6789) {
+        if (monPort > 0) {
             rbdOpts += "\\\\:" + monPort;
         }
 
