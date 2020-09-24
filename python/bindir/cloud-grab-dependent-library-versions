@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -18,8 +18,8 @@
 
 import subprocess
 
-depLibraries = ['python', 'python3', 'bzip2', 'gzip', 'unzip', 'openssh-clients', 'nfs-utils', 'wget', 'ws-commons-util', 'commons-dbcp',
-                'commons-collections', 'commons-httpclient', 'jpackage-utils', 'MySQL-python', 'python-paramiko', 'ipmitool', 'commons-httpclient', 'commons-collections',
+depLibraries = ['bzip2', 'gzip', 'unzip', 'openssh-clients', 'nfs-utils', 'wget', 'ws-commons-util', 'commons-dbcp',
+                'commons-collections', 'commons-httpclient', 'jpackage-utils', 'mysql-connector-python3', 'python3', 'python-paramiko', 'ipmitool', 'commons-httpclient', 'commons-collections',
                 'commons-pool', 'commons-dbcp', 'jakarta-commons-logging', 'java-*-openjdk']
 
 def runCmd(cmds):
@@ -43,7 +43,7 @@ def getDependentLibraryInfo():
             key = key.strip()
             value = value.strip()
             if key == 'Name' and "*" not in pkgname and pkgname not in value:
-                print "Required package name %s doesn't equal to package %s installed"%(pkgname, value)
+                print("Required package name %s doesn't equal to package %s installed"%(pkgname, value))
                 return 'UNKNOWN'
             if 'Version' in key: return value
             if 'Description' in key: return 'UNKNOWN' # we hit the end
@@ -56,20 +56,20 @@ def getDependentLibraryInfo():
             result = runCmd(cmd)
             version = getVersion(result, l)
             libraryMap[l] = version
-        except Exception, e:
-            print "When finding %s, encounters %s"%(l, e)
+        except Exception as e:
+            print("When finding %s, encounters %s"%(l, e))
             continue
     return libraryMap
 
 def arrangeOutPut(libraryMap):
     msg = ['\n\n\nBelow is the checking list of library version that CloudStack depends on:']
     for l in depLibraries:
-        if libraryMap.has_key(l):
+        if l in libraryMap:
             entry = "%-40s:    %s"%(l, libraryMap[l])
         else:
             entry = "%-40s:    %s"%(l, 'UNKNOWN')
         msg.append(entry)
-    print '\n'.join(msg)
+    print('\n'.join(msg))
         
 if __name__ == '__main__':
     arrangeOutPut(getDependentLibraryInfo())
