@@ -244,6 +244,7 @@ export default {
       resourceType: 'PublicIpAddress',
       columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
       details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename'],
+      component: () => import('@/views/network/PublicIpResource.vue'),
       tabs: [{
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')

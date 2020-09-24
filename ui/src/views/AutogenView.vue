@@ -290,7 +290,7 @@
     </div>
 
     <div v-if="dataView">
-      <slot v-if="$route.path.startsWith('/quotasummary')"></slot>
+      <slot v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
       <resource-view
         v-else
         :resource="resource"
