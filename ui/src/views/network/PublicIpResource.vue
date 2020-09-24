@@ -17,29 +17,46 @@
 
 <template>
   <div>
-    <autogen-view @change-resource="changeResource"/>
-    <resource-view
-      v-if="isPublicIpAddress && 'id' in resource"
-      :loading="loading"
-      :resource="resource"
-      :tabs="tabs" />
+    <autogen-view @change-resource="changeResource">
+      <div slot="action">
+        <action-button
+          :style="{ float: device === 'mobile' ? 'left' : 'right' }"
+          :loading="loading"
+          :actions="actions"
+          :selectedRowKeys="selectedRowKeys"
+          :dataView="true"
+          :resource="resource"/>
+      </div>
+      <div slot="resource">
+        <resource-view
+          v-if="isPublicIpAddress && 'id' in resource"
+          :loading="loading"
+          :resource="resource"
+          :tabs="tabs" />
+      </div>
+    </autogen-view>
   </div>
 </template>
 
 <script>
-import AutogenView from '@/views/AutogenView.vue'
 import { api } from '@api'
+import AutogenView from '@/views/AutogenView.vue'
 import ResourceView from '@/components/view/ResourceView'
+import ActionButton from '@/components/view/ActionButton'
+import { mixinDevice } from '@/utils/mixin.js'
 
 export default {
   name: 'PublicIpResource',
   components: {
     AutogenView,
-    ResourceView
+    ResourceView,
+    ActionButton
   },
   data () {
     return {
       loading: false,
+      selectedRowKeys: [],
+      actions: [],
       resource: {},
       tabs: [{
         name: 'details',
@@ -47,6 +64,7 @@ export default {
       }]
     }
   },
+  mixins: [mixinDevice],
   provide: function () {
     return {
       parentFetchData: this.fetchData(),
@@ -75,22 +93,35 @@ export default {
       if (Object.keys(this.resource).length === 0) {
         return
       }
+
       this.loading = true
       this.portFWRuleCount = await this.fetchPortFWRule()
+
       if (this.portFWRuleCount > 0) {
         this.tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'loadbalancing')
-        this.loading = false
-        return
-      }
-      this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
-      if (this.loadBalancerRuleCount > 0) {
-        this.tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'portforwarding')
-        this.loading = false
-        return
+      } else {
+        this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
+
+        if (this.loadBalancerRuleCount > 0) {
+          this.tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'portforwarding')
+          this.loading = false
+        } else {
+          this.tabs = this.$route.meta.tabs
+        }
       }
 
-      this.tabs = this.$route.meta.tabs
+      await this.fetchAction()
       this.loading = false
+    },
+    fetchAction () {
+      this.actions = []
+      if (this.$route.meta.actions) {
+        this.actions = this.$route.meta.actions
+      }
+
+      if (this.portFWRuleCount > 0 || this.loadBalancerRuleCount > 0) {
+        this.actions = this.actions.filter(action => action.api !== 'enableStaticNat')
+      }
     },
     fetchPortFWRule () {
       return new Promise((resolve, reject) => {
