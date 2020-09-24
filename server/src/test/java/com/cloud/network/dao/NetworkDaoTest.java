@@ -52,4 +52,14 @@ public class NetworkDaoTest extends TestCase {
         Assert.assertFalse(dao.isNetworkOverlappingRequestedPvlan(existingPrimaryVlan, existingSecondaryVlan, Network.PVlanType.Community,
                 existingPrimaryVlan, requestedVlan, Network.PVlanType.Community));
     }
+
+    public void testNetworkOverlappingVlanPvlanTrue() {
+        Assert.assertTrue(dao.isNetworkOverlappingRequestedPvlan(existingPrimaryVlan, existingSecondaryVlan, existingPrimaryVlan));
+        Assert.assertTrue(dao.isNetworkOverlappingRequestedPvlan(existingPrimaryVlan, existingSecondaryVlan, existingSecondaryVlan));
+    }
+
+    public void testNetworkOverlappingVlanPvlanFalse() {
+        Assert.assertFalse(dao.isNetworkOverlappingRequestedPvlan(existingPrimaryVlan, existingSecondaryVlan, requestedVlan));
+    }
+
 }

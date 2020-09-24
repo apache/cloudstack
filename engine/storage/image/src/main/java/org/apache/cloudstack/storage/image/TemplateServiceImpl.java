@@ -253,7 +253,7 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId) {
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-        List<DataStore> stores = _storeMgr.getImageStoresByScope(new ZoneScope(dcId));
+        List<DataStore> stores = _storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(dcId));
         if (stores == null || stores.isEmpty()) {
             return;
         }
@@ -671,7 +671,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
-        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
+        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
         ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO(), nfsVersion);
         EndPoint ep = _epSelector.select(ssStore);
         Answer answer = null;

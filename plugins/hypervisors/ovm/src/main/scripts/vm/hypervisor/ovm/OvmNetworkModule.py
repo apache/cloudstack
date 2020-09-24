@@ -184,8 +184,8 @@ class OvmNetwork(OvmObject):
         @return : success
         ex. {bridge:xapi100, attach:eth0.100}
         create bridge interface, and attached it 
-        cmd 1: brctl addbr bridge
-        cmd 2: brctl addif brdige attach
+        cmd 1: ip link add bridge
+        cmd 2: ip link set dev
         """
         
         if "xenbr" not in bridge.name and "vlan" not in bridge.name:
@@ -206,8 +206,8 @@ class OvmNetwork(OvmObject):
             logger.error(self._createBridge, msg)
             raise Exception(msg)
 
-        doCmd(['brctl', 'addbr', bridge.name])
-        doCmd(['brctl', 'addif', bridge.name, bridge.attach])
+        doCmd(['ip', 'link', 'add', 'name', bridge.name, 'type', 'bridge'])
+        doCmd(['ip', 'link', 'set', 'dev', bridge.attach, 'master', bridge.name])
         self.bringUP(bridge.name)
         logger.debug(self._createBridge, "Create bridge %s on %s successfully"%(bridge.name, bridge.attach))
         return self.bridges[bridge.name]
@@ -228,7 +228,7 @@ class OvmNetwork(OvmObject):
             logger.debug(self._deleteBridge, "There are still some interfaces(%s) on bridge %s"%(bridge.interfaces, bridge.name))
             return False
         self.bringDown(bridge.name)
-        doCmd(['brctl', 'delbr', bridge.name])
+        doCmd(['ip', 'link', 'del', bridge.name])
         logger.debug(self._deleteBridge, "Delete bridge %s successfully"%bridge.name)
         return True
         

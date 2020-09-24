@@ -426,7 +426,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     }
 
     @Override
-    public boolean deleteVMSnapshotFromDB(VMSnapshot vmSnapshot) {
+    public boolean deleteVMSnapshotFromDB(VMSnapshot vmSnapshot, boolean unmanage) {
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
@@ -435,9 +435,14 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         }
         UserVm userVm = userVmDao.findById(vmSnapshot.getVmId());
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
+        long full_chain_size = 0;
         for (VolumeObjectTO volumeTo: volumeTOs) {
             volumeTo.setSize(0);
             publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshot, userVm, volumeTo);
+            full_chain_size += volumeTo.getSize();
+        }
+        if (unmanage) {
+            publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshot, userVm, full_chain_size, 0L);
         }
         return vmSnapshotDao.remove(vmSnapshot.getId());
     }

@@ -18,7 +18,7 @@
 package org.apache.cloudstack.api;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
+import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.metrics.MetricsService;
@@ -30,7 +30,7 @@ import java.util.List;
 @APICommand(name = ListVMsMetricsCmd.APINAME, description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.9.3", authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListVMsMetricsCmd extends ListVMsCmdByAdmin {
+public class ListVMsMetricsCmd extends ListVMsCmd {
     public static final String APINAME = "listVirtualMachinesMetrics";
 
     @Inject

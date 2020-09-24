@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade cleanup from 4.14.0.0 to 4.15.0.0
 --;
+
+-- remove the old NetApp storage APIs (unsupported since 4.12) from role_permissions
+DELETE from `cloud`.`role_permissions` WHERE rule IN ('createPool', 'modifyPool', 'deletePool', 'listPools', 'associateLun', 'dissociateLun', 'createLunOnFiler', 'destroyLunOnFiler', 'listLunsOnFiler', 'createVolumeOnFiler', 'destroyVolumeOnFiler', 'listVolumesOnFiler');

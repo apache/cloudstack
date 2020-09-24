@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -94,6 +96,11 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
         }
 
         return _projectService.getProjectOwner(id).getId();
+    }
+
+    @Override
+    public List<Long> getEntityOwnerIds() {
+        return _projectService.getProjectOwners(id);
     }
 
 }

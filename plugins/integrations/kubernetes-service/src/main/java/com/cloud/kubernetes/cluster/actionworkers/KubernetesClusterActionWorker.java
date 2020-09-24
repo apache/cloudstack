@@ -122,6 +122,7 @@ public class KubernetesClusterActionWorker {
 
     protected KubernetesCluster kubernetesCluster;
     protected Account owner;
+    protected VirtualMachineTemplate clusterTemplate;
     protected File sshKeyFile;
     protected String publicIpAddress;
     protected int sshPort;
@@ -136,6 +137,7 @@ public class KubernetesClusterActionWorker {
 
     protected void init() {
         this.owner = accountDao.findById(kubernetesCluster.getAccountId());
+        this.clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
         this.sshKeyFile = getManagementServerSshPublicKeyFile();
     }
 

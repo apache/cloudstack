@@ -109,11 +109,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
@@ -1190,6 +1192,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (currentSize != newSize && _volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer && !userVm.getState().equals(State.Stopped)) {
                 throw new InvalidParameterValueException(errorMsg);
             }
+
+            /* Do not resize volume of running vm on KVM host if host is not Up or not Enabled */
+            if (currentSize != newSize && userVm.getState() == State.Running && userVm.getHypervisorType() == HypervisorType.KVM) {
+                if (userVm.getHostId() == null) {
+                    throw new InvalidParameterValueException("Cannot find the hostId of running vm " + userVm.getUuid());
+                }
+                HostVO host = _hostDao.findById(userVm.getHostId());
+                if (host == null) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running does not exist");
+                } else if (host.getStatus() != Status.Up) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running is not Up");
+                } else if (host.getResourceState() != ResourceState.Enabled) {
+                    throw new InvalidParameterValueException("The KVM host where vm is running is not Enabled");
+                }
+            }
         }
 
         ResizeVolumePayload payload = new ResizeVolumePayload(newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk, instanceName, hosts, isManaged);
@@ -2182,7 +2199,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // OfflineVmwareMigration: check storage tags on disk(offering)s in comparison to destination storage pool
         // OfflineVmwareMigration: if no match return a proper error now
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-        if (diskOffering.equals(null)) {
+        if (diskOffering == null) {
             throw new CloudRuntimeException("volume '" + vol.getUuid() + "', has no diskoffering. Migration target cannot be checked.");
         }
         if (!doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
@@ -2771,24 +2788,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // Copy volume from primary to secondary storage
         VolumeInfo srcVol = volFactory.getVolume(volumeId);
-        AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
-        // Check if you got a valid answer.
+        VolumeInfo destVol = volFactory.getVolume(volumeId, DataStoreRole.Image);
         VolumeApiResult cvResult = null;
-        try {
-            cvResult = cvAnswer.get();
-        } catch (InterruptedException e1) {
-            s_logger.debug("failed copy volume", e1);
-            throw new CloudRuntimeException("Failed to copy volume", e1);
-        } catch (ExecutionException e1) {
-            s_logger.debug("failed copy volume", e1);
-            throw new CloudRuntimeException("Failed to copy volume", e1);
+        if (destVol == null) {
+            AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
+            // Check if you got a valid answer.
+            try {
+                cvResult = cvAnswer.get();
+            } catch (InterruptedException e1) {
+                s_logger.debug("failed copy volume", e1);
+                throw new CloudRuntimeException("Failed to copy volume", e1);
+            } catch (ExecutionException e1) {
+                s_logger.debug("failed copy volume", e1);
+                throw new CloudRuntimeException("Failed to copy volume", e1);
+            }
+            if (cvResult == null || cvResult.isFailed()) {
+                String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
+                throw new CloudRuntimeException(errorString);
+            }
         }
-        if (cvResult == null || cvResult.isFailed()) {
-            String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
-            throw new CloudRuntimeException(errorString);
-        }
-
-        VolumeInfo vol = cvResult.getVolume();
+        VolumeInfo vol = cvResult != null ? cvResult.getVolume() : destVol;
 
         String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat(), vol);
         VolumeDataStoreVO volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);

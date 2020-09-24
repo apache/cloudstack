@@ -139,6 +139,7 @@ import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -714,10 +715,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (rootDisksize != null) {
             rootDisksize = rootDisksize * 1024 * 1024 * 1024;
             if (rootDisksize > size) {
-                s_logger.debug("Using root disk size of " + rootDisksize + " Bytes for volume " + name);
+                s_logger.debug("Using root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes for volume " + name);
                 size = rootDisksize;
             } else {
-                s_logger.debug("Using root disk size of " + size + " Bytes for volume " + name + "since specified root disk size of " + rootDisksize + " Bytes is smaller than template");
+                s_logger.debug("Using root disk size of " + toHumanReadableSize(size) + " Bytes for volume " + name + "since specified root disk size of " + toHumanReadableSize(rootDisksize) + " Bytes is smaller than template");
             }
         }
 
@@ -1679,5 +1680,28 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol.setState(Volume.State.Ready);
         vol = _volsDao.persist(vol);
         return toDiskProfile(vol, offering);
+    }
+
+    @Override
+    public void unmanageVolumes(long vmId) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Unmanaging storage for vm: " + vmId);
+        }
+        final List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (VolumeVO vol : volumesForVm) {
+                    boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || vol.getState() == Volume.State.Expunged
+                            || vol.getState() == Volume.State.Expunging);
+                    if (volumeAlreadyDestroyed) {
+                        s_logger.debug("Skipping destroy for the volume " + vol + " as its in state " + vol.getState().toString());
+                    } else {
+                        volService.unmanageVolume(vol.getId());
+                    }
+                }
+            }
+        });
     }
 }

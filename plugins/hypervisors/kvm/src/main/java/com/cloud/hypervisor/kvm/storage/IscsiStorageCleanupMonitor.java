@@ -38,6 +38,7 @@ public class IscsiStorageCleanupMonitor implements Runnable{
     private static final String ISCSI_PATH_PREFIX = "/dev/disk/by-path";
     private static final String KEYWORD_ISCSI = "iscsi";
     private static final String KEYWORD_IQN = "iqn";
+    private static final String REGEX_PART = "\\S+part\\d+$";
 
     private IscsiAdmStorageAdaptor iscsiStorageAdaptor;
 
@@ -114,7 +115,7 @@ public class IscsiStorageCleanupMonitor implements Runnable{
 
                     //check the volume map. If an entry exists change the status to True
                     for (final LibvirtVMDef.DiskDef disk : disks) {
-                        if (diskStatusMap.containsKey(disk.getDiskPath())) {
+                        if (diskStatusMap.containsKey(disk.getDiskPath())&&!disk.getDiskPath().matches(REGEX_PART)) {
                             diskStatusMap.put(disk.getDiskPath(), true);
                             s_logger.debug("active disk found by cleanup thread" + disk.getDiskPath());
                         }

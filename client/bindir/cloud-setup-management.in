@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -35,26 +35,27 @@ if __name__ == '__main__':
     if options.https:
         glbEnv.svrMode = "HttpsServer"
     if options.tomcat7:
-        print "The --tomcat7 option is deprecated, CloudStack now uses embedded Jetty server."
+        print("The --tomcat7 option is deprecated, CloudStack now uses embedded Jetty server.")
     if options.nostart:
         glbEnv.noStart = True
 
     glbEnv.mode = "Server"
 
-    print "Starting to configure CloudStack Management Server:"
+    print("Starting to configure CloudStack Management Server:")
     try:
         syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
     except UnknownSystemException:
-        print >>sys.stderr, ("Error: CloudStack failed to detect your "
-                "operating system. Exiting.")
+        print("Error: CloudStack failed to detect your "
+                "operating system. Exiting.", file=sys.stderr)
         sys.exit(1)
     try:
-    	syscfg.registerService(cloudManagementConfig)
+        syscfg.registerService(cloudManagementConfig)
         syscfg.config()
-        print "CloudStack Management Server setup is Done!"
-    except (CloudRuntimeException, CloudInternalException), e:
-        print e
-        print "Try to restore your system:"
+        print("CloudStack Management Server setup is Done!")
+        print("Please ensure the following ports are open for the management server to function properly : 8080 8250 8443 9090")
+    except (CloudRuntimeException, CloudInternalException) as e:
+        print(e)
+        print("Try to restore your system:")
         try:
             syscfg.restore()
         except:

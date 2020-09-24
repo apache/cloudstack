@@ -60,7 +60,7 @@ public class ClusterAlertAdapter extends AdapterBase implements AlertAdapter {
     private void onClusterNodeJoined(Object sender, ClusterNodeJoinEventArgs args) {
         if (s_logger.isDebugEnabled()) {
             for (ManagementServerHostVO mshost : args.getJoinedNodes()) {
-                s_logger.debug("Handle cluster node join alert, joined node: " + mshost.getServiceIP() + ", msidL: " + mshost.getMsid());
+                s_logger.debug("Handle cluster node join alert, joined node: " + mshost.getServiceIP() + ", msid: " + mshost.getMsid());
             }
         }
 

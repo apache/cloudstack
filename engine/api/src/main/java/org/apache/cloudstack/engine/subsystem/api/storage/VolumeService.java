@@ -93,4 +93,6 @@ public interface VolumeService {
     SnapshotInfo takeSnapshot(VolumeInfo volume);
 
     VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, long volumeId, HypervisorType hyperType);
+
+    void unmanageVolume(long volumeId);
 }

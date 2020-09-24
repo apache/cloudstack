@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -45,9 +44,6 @@ import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
-import org.apache.cloudstack.api.response.RollingMaintenanceHostSkippedResponse;
-import org.apache.cloudstack.api.response.RollingMaintenanceHostUpdatedResponse;
-import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
@@ -68,7 +64,6 @@ import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
@@ -116,6 +111,10 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceHostSkippedResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceHostUpdatedResponse;
+import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SSHKeyPairResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
@@ -296,6 +295,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
+import com.cloud.resource.RollingMaintenanceManager;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
@@ -349,6 +349,8 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -620,6 +622,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
+            vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
                 vmSnapshotResponse.setZoneId(datacenter.getUuid());
@@ -875,6 +878,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             Vpc vpc = ApiDBUtils.findVpcById(ipAddr.getVpcId());
             if (vpc != null) {
                 ipResponse.setVpcId(vpc.getUuid());
+                ipResponse.setVpcName(vpc.getName());
             }
         }
 
@@ -1378,11 +1382,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 HostPodVO pod = ApiDBUtils.findPodById(vm.getPodIdToDeployIn());
                 if (pod != null) {
                     vmResponse.setPodId(pod.getUuid());
+                    vmResponse.setPodName(pod.getName());
                 }
             }
             VMTemplateVO template = ApiDBUtils.findTemplateById(vm.getTemplateId());
             if (template != null) {
                 vmResponse.setTemplateId(template.getUuid());
+                vmResponse.setTemplateName(template.getName());
             }
             vmResponse.setCreated(vm.getCreated());
 
@@ -2273,6 +2279,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
             if (acl != null) {
                 response.setAclId(acl.getUuid());
+                response.setAclName(acl.getName());
             }
         }
 
@@ -2402,6 +2409,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         NetworkACL acl = ApiDBUtils.findByNetworkACLId(aclItem.getAclId());
         if (acl != null) {
             response.setAclId(acl.getUuid());
+            response.setAclName(acl.getName());
         }
 
         //set tag information
@@ -2901,6 +2909,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         VpcOffering voff = ApiDBUtils.findVpcOfferingById(vpc.getVpcOfferingId());
         if (voff != null) {
             response.setVpcOfferingId(voff.getUuid());
+            response.setVpcOfferingName(voff.getName());
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
@@ -2973,6 +2982,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (result.getVpcId() != null) {
             Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
 
         DataCenter zone = ApiDBUtils.findZoneById(result.getZoneId());
@@ -2994,6 +3004,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         NetworkACL acl =  ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
         if (acl != null) {
             response.setAclId(acl.getUuid());
+            response.setAclName(acl.getName());
         }
 
         response.setObjectName("privategateway");
@@ -3163,6 +3174,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
         if (vpc != null) {
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
         response.setRemoved(result.getRemoved());
         response.setForDisplay(result.isDisplay());
@@ -3378,6 +3390,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 resourceType = ResourceTag.ResourceObjectType.UserVm;
                 usageRecResponse.setUsageId(vm.getUuid());
                 resourceId = vm.getId();
+                usageRecResponse.setOsTypeId(vm.getGuestOSId());
             }
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());
@@ -3475,7 +3488,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append("Bytes received by network ");
                 }
                 if (network != null) {
-                    builder.append(network.getName()).append(" (").append(network.getUuid()).append(") ");
+                    if (network.getName() != null) {
+                        builder.append(network.getName());
+                    }
+                    if (network.getUuid() != null){
+                        builder.append(" (").append(network.getUuid()).append(") ");
+                    }
+                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue())  + " ");
                 }
                 if (vm != null) {
                     builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
@@ -3512,6 +3531,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (volume != null) {
                     builder.append(" and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
+                if (usageRecord.getRawUsage()!= null){
+                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue()));
+                }
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
@@ -3542,6 +3564,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (template != null) {
                     builder.append(" and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
                 }
+                if (usageRecord.getSize() != null) {
+                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
+                }
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.TEMPLATE || usageRecord.getUsageType() == UsageTypes.ISO) {
@@ -3569,7 +3594,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 if (tmpl != null) {
                     builder.append(" for ").append(tmpl.getName()).append(" (").append(tmpl.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getSize()).append(" and virtual size ").append(usageRecord.getVirtualSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize())).append(" and virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3588,7 +3613,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 builder.append("Snapshot usage ");
                 if (snap != null) {
                     builder.append("for ").append(snap.getName()).append(" (").append(snap.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3735,6 +3760,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (diskOff != null) {
                     builder.append(" using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
                 }
+                if (usageRecord.getSize() != null){
+                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
+                }
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME_SECONDARY) {
@@ -3744,7 +3772,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 builder.append("Volume on secondary storage usage");
                 if (volume != null) {
                     builder.append(" for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -3768,7 +3796,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
-                            .append("with size ").append(usageRecord.getVirtualSize());
+                            .append("with size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }

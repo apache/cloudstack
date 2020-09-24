@@ -208,7 +208,9 @@ public class TemplateObject implements TemplateInfo {
                     CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
                     TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
                     TemplateDataStoreVO templateStoreRef = templateStoreDao.findByStoreTemplate(getDataStore().getId(), getId());
-                    templateStoreRef.setInstallPath(newTemplate.getPath());
+                    if (newTemplate.getPath() != null) {
+                        templateStoreRef.setInstallPath(newTemplate.getPath());
+                    }
                     templateStoreRef.setDownloadPercent(100);
                     templateStoreRef.setDownloadState(Status.DOWNLOADED);
                     templateStoreRef.setSize(newTemplate.getSize());

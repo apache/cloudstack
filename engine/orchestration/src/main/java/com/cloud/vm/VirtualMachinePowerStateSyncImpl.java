@@ -80,7 +80,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
             if (_instanceDao.updatePowerState(entry.getKey(), hostId, entry.getValue(), DateUtil.currentGMTTime())) {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("VM state report is updated. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
+                    s_logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
                 }
 
                 _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
@@ -139,7 +139,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
                 if (s_logger.isInfoEnabled()) {
                     String lastTime = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss.SSS'Z'").format(vmStateUpdateTime);
-                    s_logger.info(
+                    s_logger.debug(
                             String.format("Detected missing VM. host: %d, vm id: %d(%s), power state: %s, last state update: %s"
                                     , hostId
                                     , instance.getId()
@@ -189,7 +189,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             if (vm != null) {
                 map.put(vm.getId(), entry.getValue().getState());
             } else {
-                s_logger.info("Unable to find matched VM in CloudStack DB. name: " + entry.getKey());
+                s_logger.debug("Unable to find matched VM in CloudStack DB. name: " + entry.getKey());
             }
         }
 

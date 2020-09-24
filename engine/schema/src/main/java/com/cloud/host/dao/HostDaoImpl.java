@@ -90,7 +90,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> DcPrivateIpAddressSearch;
     protected SearchBuilder<HostVO> DcStorageIpAddressSearch;
     protected SearchBuilder<HostVO> PublicIpAddressSearch;
-    protected SearchBuilder<HostVO> AnyIpAddressSearch;
+    protected SearchBuilder<HostVO> UnremovedIpAddressSearch;
 
     protected SearchBuilder<HostVO> GuidSearch;
     protected SearchBuilder<HostVO> DcSearch;
@@ -107,6 +107,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected SearchBuilder<HostVO> MaintenanceCountSearch;
     protected SearchBuilder<HostVO> HostTypeCountSearch;
+    protected SearchBuilder<HostVO> HostTypeZoneCountSearch;
     protected SearchBuilder<HostVO> ClusterStatusSearch;
     protected SearchBuilder<HostVO> TypeNameZoneSearch;
     protected SearchBuilder<HostVO> AvailHypevisorInZone;
@@ -166,6 +167,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostTypeCountSearch.and("type", HostTypeCountSearch.entity().getType(), SearchCriteria.Op.EQ);
         HostTypeCountSearch.and("removed", HostTypeCountSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         HostTypeCountSearch.done();
+
+        HostTypeZoneCountSearch = createSearchBuilder();
+        HostTypeZoneCountSearch.and("type", HostTypeZoneCountSearch.entity().getType(), SearchCriteria.Op.EQ);
+        HostTypeZoneCountSearch.and("dc", HostTypeZoneCountSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        HostTypeZoneCountSearch.and("removed", HostTypeZoneCountSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        HostTypeZoneCountSearch.done();
 
         TypePodDcStatusSearch = createSearchBuilder();
         HostVO entity = TypePodDcStatusSearch.entity();
@@ -227,10 +234,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         PublicIpAddressSearch.and("publicIpAddress", PublicIpAddressSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
         PublicIpAddressSearch.done();
 
-        AnyIpAddressSearch = createSearchBuilder();
-        AnyIpAddressSearch.or("publicIpAddress", AnyIpAddressSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
-        AnyIpAddressSearch.or("privateIpAddress", AnyIpAddressSearch.entity().getPrivateIpAddress(), SearchCriteria.Op.EQ);
-        AnyIpAddressSearch.done();
+        UnremovedIpAddressSearch = createSearchBuilder();
+        UnremovedIpAddressSearch.and("removed", UnremovedIpAddressSearch.entity().getRemoved(), Op.NULL); // We don't want any removed hosts
+        UnremovedIpAddressSearch.and().op("publicIpAddress", UnremovedIpAddressSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        UnremovedIpAddressSearch.or("privateIpAddress", UnremovedIpAddressSearch.entity().getPrivateIpAddress(), SearchCriteria.Op.EQ);
+        UnremovedIpAddressSearch.cp();
+        UnremovedIpAddressSearch.done();
 
         GuidSearch = createSearchBuilder();
         GuidSearch.and("guid", GuidSearch.entity().getGuid(), SearchCriteria.Op.EQ);
@@ -308,12 +317,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
         UnmanagedDirectConnectSearch.and("resourceStates", UnmanagedDirectConnectSearch.entity().getResourceState(), SearchCriteria.Op.NIN);
         UnmanagedDirectConnectSearch.and("clusterIn", UnmanagedDirectConnectSearch.entity().getClusterId(), SearchCriteria.Op.IN);
-        /*
-         * UnmanagedDirectConnectSearch.op(SearchCriteria.Op.OR, "managementServerId",
-         * UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
-         * UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(),
-         * SearchCriteria.Op.LTEQ); UnmanagedDirectConnectSearch.cp(); UnmanagedDirectConnectSearch.cp();
-         */
         try {
             HostTransferSearch = _hostTransferDao.createSearchBuilder();
         } catch (Throwable e) {
@@ -448,6 +451,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public Integer countAllByType(final Host.Type type) {
         SearchCriteria<HostVO> sc = HostTypeCountSearch.create();
         sc.setParameters("type", type);
+        return getCount(sc);
+    }
+
+    @Override
+    public Integer countAllByTypeInZone(long zoneId, Type type) {
+        SearchCriteria<HostVO> sc = HostTypeCountSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("dc", zoneId);
         return getCount(sc);
     }
 
@@ -1116,7 +1127,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public HostVO findByIp(final String ipAddress) {
-        SearchCriteria<HostVO> sc = AnyIpAddressSearch.create();
+        SearchCriteria<HostVO> sc = UnremovedIpAddressSearch.create();
         sc.setParameters("publicIpAddress", ipAddress);
         sc.setParameters("privateIpAddress", ipAddress);
         return findOneBy(sc);
@@ -1263,6 +1274,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("type", Type.Routing);
         sc.setParameters("status", Status.Up);
         return listBy(sc);
+    }
+
+    @Override
+    public HostVO findByName(String name) {
+        SearchCriteria<HostVO> sc = NameSearch.create();
+        sc.setParameters("name", name);
+        return findOneBy(sc);
     }
 
     private ResultSet executeSqlGetResultsetForMethodFindHostInZoneToExecuteCommand(HypervisorType hypervisorType, long zoneId, TransactionLegacy tx, String sql) throws SQLException {

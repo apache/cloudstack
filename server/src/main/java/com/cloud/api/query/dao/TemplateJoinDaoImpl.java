@@ -25,10 +25,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ChildTemplateResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -36,6 +32,12 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -48,6 +50,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -68,10 +71,18 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private AccountService _accountService;
     @Inject
     private VMTemplateDao _vmTemplateDao;
+    @Inject
+    private TemplateDataStoreDao _templateStoreDao;
+    @Inject
+    private ImageStoreDao dataStoreDao;
+    @Inject
+    private VMTemplateDetailsDao _templateDetailsDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdSearch;
+
+    private final SearchBuilder<TemplateJoinVO> tmpltIdsSearch;
 
     private final SearchBuilder<TemplateJoinVO> tmpltZoneSearch;
 
@@ -88,6 +99,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         tmpltIdSearch.and("id", tmpltIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         tmpltIdSearch.done();
 
+        tmpltIdsSearch = createSearchBuilder();
+        tmpltIdsSearch.and("idsIN", tmpltIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        tmpltIdsSearch.groupBy(tmpltIdsSearch.entity().getId());
+        tmpltIdsSearch.done();
+
         tmpltZoneSearch = createSearchBuilder();
         tmpltZoneSearch.and("id", tmpltZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
         tmpltZoneSearch.and("dataCenterId", tmpltZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -98,6 +114,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         activeTmpltSearch.and("store_id", activeTmpltSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("type", activeTmpltSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("templateState", activeTmpltSearch.entity().getTemplateState(), SearchCriteria.Op.EQ);
+        activeTmpltSearch.and("public", activeTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
         activeTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
@@ -131,7 +148,18 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     @Override
     public TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO template) {
+        List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId());
+        List<Map<String, String>> downloadProgressDetails = new ArrayList();
+        HashMap<String, String> downloadDetailInImageStores = null;
+        for (TemplateDataStoreVO templateInStore : templatesInStore) {
+            downloadDetailInImageStores = new HashMap<>();
+            downloadDetailInImageStores.put("datastore", dataStoreDao.findById(templateInStore.getDataStoreId()).getName());
+            downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
+            downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
+            downloadProgressDetails.add(downloadDetailInImageStores);
+        }
         TemplateResponse templateResponse = new TemplateResponse();
+        templateResponse.setDownloadProgress(downloadProgressDetails);
         templateResponse.setId(template.getUuid());
         templateResponse.setName(template.getName());
         templateResponse.setDisplayText(template.getDisplayText());
@@ -202,11 +230,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         // set details map
-        if (template.getDetailName() != null) {
-            Map<String, String> details = new HashMap<>();
-            details.put(template.getDetailName(), template.getDetailValue());
-            templateResponse.setDetails(details);
-        }
+        Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(template.getId());
+        templateResponse.setDetails(details);
 
         // update tag information
         long tag_id = template.getTagId();
@@ -471,6 +496,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
         sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
+        sc.setParameters("public", Boolean.FALSE);
         return searchIncludingRemoved(sc, null, null, false);
     }
 
@@ -479,6 +505,16 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         List<TemplateJoinVO> objects = searchIncludingRemoved(sc, filter, null, false);
         Integer count = getCount(sc);
         return new Pair<List<TemplateJoinVO>, Integer>(objects, count);
+    }
+
+    @Override
+    public List<TemplateJoinVO> findByDistinctIds(Long... ids) {
+        if (ids == null || ids.length == 0) {
+            return new ArrayList<TemplateJoinVO>();
+        }
+        SearchCriteria<TemplateJoinVO> sc = tmpltIdsSearch.create();
+        sc.setParameters("idsIN", ids);
+        return searchIncludingRemoved(sc, null, null, false);
     }
 
 }

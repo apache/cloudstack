@@ -264,6 +264,27 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 
+    @Override
+    public List<EndPoint> findAllEndpointsForScope(DataStore store) {
+        Long dcId = null;
+        Scope storeScope = store.getScope();
+        if (storeScope.getScopeType() == ScopeType.ZONE) {
+            dcId = storeScope.getScopeId();
+        }
+        // find ssvm that can be used to download data to store. For zone-wide
+        // image store, use SSVM for that zone. For region-wide store,
+        // we can arbitrarily pick one ssvm to do that task
+        List<HostVO> ssAHosts = listUpAndConnectingSecondaryStorageVmHost(dcId);
+        if (ssAHosts == null || ssAHosts.isEmpty()) {
+            return null;
+        }
+        List<EndPoint> endPoints = new ArrayList<EndPoint>();
+        for (HostVO host: ssAHosts) {
+            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
+        }
+        return endPoints;
+    }
+
     private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (dcId != null) {
@@ -333,7 +354,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
     }
 
-    private EndPoint getEndPointFromHostId(Long hostId) {
+    public EndPoint getEndPointFromHostId(Long hostId) {
         HostVO host = hostDao.findById(hostId);
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }

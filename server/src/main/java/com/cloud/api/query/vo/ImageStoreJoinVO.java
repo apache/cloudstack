@@ -67,6 +67,9 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Enumerated(value = EnumType.STRING)
     private DataStoreRole role;
 
+    @Column(name = "readonly")
+    private boolean readonly = false;
+
     @Column(name = "data_center_id")
     private long zoneId;
 
@@ -127,5 +130,9 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
 
     public Date getRemoved() {
         return removed;
+    }
+
+    public boolean isReadonly() {
+        return readonly;
     }
 }

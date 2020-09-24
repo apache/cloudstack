@@ -22,6 +22,10 @@ import java.util.Map;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.usage.Usage;
@@ -66,6 +70,7 @@ import com.cloud.projects.Project;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -76,10 +81,6 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 
 public class EventTypes {
 
@@ -102,6 +103,7 @@ public class EventTypes {
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
     public static final String EVENT_VM_EXPUNGE = "VM.EXPUNGE";
     public static final String EVENT_VM_IMPORT = "VM.IMPORT";
+    public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -184,9 +186,18 @@ public class EventTypes {
     public static final String EVENT_ROLE_CREATE = "ROLE.CREATE";
     public static final String EVENT_ROLE_UPDATE = "ROLE.UPDATE";
     public static final String EVENT_ROLE_DELETE = "ROLE.DELETE";
+    public static final String EVENT_ROLE_IMPORT = "ROLE.IMPORT";
     public static final String EVENT_ROLE_PERMISSION_CREATE = "ROLE.PERMISSION.CREATE";
     public static final String EVENT_ROLE_PERMISSION_UPDATE = "ROLE.PERMISSION.UPDATE";
     public static final String EVENT_ROLE_PERMISSION_DELETE = "ROLE.PERMISSION.DELETE";
+
+    // Project Role events
+    public static final  String EVENT_PROJECT_ROLE_CREATE = "PROJECT.ROLE.CREATE";
+    public static final  String EVENT_PROJECT_ROLE_UPDATE = "PROJECT.ROLE.UPDATE";
+    public static final  String EVENT_PROJECT_ROLE_DELETE = "PROJECT.ROLE.DELETE";
+    public static final String EVENT_PROJECT_ROLE_PERMISSION_CREATE = "PROJECT.ROLE.PERMISSION.CREATE";
+    public static final String EVENT_PROJECT_ROLE_PERMISSION_UPDATE = "PROJECT.ROLE.PERMISSION.UPDATE";
+    public static final String EVENT_PROJECT_ROLE_PERMISSION_DELETE = "PROJECT.ROLE.PERMISSION.DELETE";
 
     // CA events
     public static final String EVENT_CA_CERTIFICATE_ISSUE = "CA.CERTIFICATE.ISSUE";
@@ -229,6 +240,7 @@ public class EventTypes {
     public static final String EVENT_TEMPLATE_EXTRACT = "TEMPLATE.EXTRACT";
     public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";
     public static final String EVENT_TEMPLATE_CLEANUP = "TEMPLATE.CLEANUP";
+    public static final String EVENT_FILE_MIGRATE = "FILE.MIGRATE";
 
     // Volume Events
     public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";
@@ -319,6 +331,8 @@ public class EventTypes {
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
     public static final String EVENT_STORAGE_IP_RANGE_UPDATE = "STORAGE.IP.RANGE.UPDATE";
 
+    public static final String EVENT_IMAGE_STORE_DATA_MIGRATE = "IMAGE.STORE.MIGRATE.DATA";
+
     // Configuration Table
     public static final String EVENT_CONFIGURATION_VALUE_EDIT = "CONFIGURATION.VALUE.EDIT";
 
@@ -397,9 +411,11 @@ public class EventTypes {
     public static final String EVENT_PROJECT_ACTIVATE = "PROJECT.ACTIVATE";
     public static final String EVENT_PROJECT_SUSPEND = "PROJECT.SUSPEND";
     public static final String EVENT_PROJECT_ACCOUNT_ADD = "PROJECT.ACCOUNT.ADD";
+    public static final String EVENT_PROJECT_USER_ADD = "PROJECT.USER.ADD";
     public static final String EVENT_PROJECT_INVITATION_UPDATE = "PROJECT.INVITATION.UPDATE";
     public static final String EVENT_PROJECT_INVITATION_REMOVE = "PROJECT.INVITATION.REMOVE";
     public static final String EVENT_PROJECT_ACCOUNT_REMOVE = "PROJECT.ACCOUNT.REMOVE";
+    public static final String EVENT_PROJECT_USER_REMOVE = "PROJECT.USER.REMOVE";
 
     // Network as a Service
     public static final String EVENT_NETWORK_ELEMENT_CONFIGURE = "NETWORK.ELEMENT.CONFIGURE";
@@ -624,6 +640,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_RESTORE, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_EXPUNGE, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_IMPORT, VirtualMachine.class);
+        entityEventDetails.put(EVENT_VM_UNMANAGE, VirtualMachine.class);
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class);
@@ -689,6 +706,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROLE_CREATE, Role.class);
         entityEventDetails.put(EVENT_ROLE_UPDATE, Role.class);
         entityEventDetails.put(EVENT_ROLE_DELETE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_IMPORT, Role.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_CREATE, RolePermission.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_UPDATE, RolePermission.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_DELETE, RolePermission.class);
@@ -1007,6 +1025,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_POD_ROLLING_MAINTENANCE, PodResponse.class);
         entityEventDetails.put(EVENT_CLUSTER_ROLLING_MAINTENANCE, ClusterResponse.class);
         entityEventDetails.put(EVENT_HOST_ROLLING_MAINTENANCE, HostResponse.class);
+
+        entityEventDetails.put(EVENT_IMAGE_STORE_DATA_MIGRATE, ImageStore.class);
     }
 
     public static String getEntityForEvent(String eventName) {
