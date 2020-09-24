@@ -226,6 +226,21 @@
                 </template>
               </a-step>
               <a-step
+                :title="$t('label.data.disk')"
+                :status="zoneSelected ? 'process' : 'wait'"
+                v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
+                <template slot="description">
+                  <div v-if="zoneSelected">
+                    <multi-disk-selection
+                      :items="template.childtemplates"
+                      :diskOfferings="options.diskOfferings"
+                      :zoneId="zoneId"
+                      @select-multi-disk-offering="updateMultiDiskOffering($event)" />
+                  </div>
+                </template>
+              </a-step>
+              <a-step
+                v-else
                 :title="tabKey == 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
@@ -607,6 +622,7 @@ import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelec
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
+import MultiDiskSelection from '@views/compute/wizard/MultiDiskSelection'
 import TemplateIsoSelection from '@views/compute/wizard/TemplateIsoSelection'
 import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection'
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
@@ -623,6 +639,7 @@ export default {
     AffinityGroupSelection,
     TemplateIsoSelection,
     DiskSizeSelection,
+    MultiDiskSelection,
     DiskOfferingSelection,
     InfoCard,
     ComputeOfferingSelection,
@@ -1040,7 +1057,11 @@ export default {
         }
       }
 
-      if (this.diskOffering) {
+      if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
+        this.vm.diskofferingid = ''
+        this.vm.diskofferingname = ''
+        this.vm.diskofferingsize = ''
+      } else if (this.diskOffering) {
         this.vm.diskofferingid = this.diskOffering.id
         this.vm.diskofferingname = this.diskOffering.displaytext
         this.vm.diskofferingsize = this.diskOffering.disksize
@@ -1072,6 +1093,7 @@ export default {
     })
     this.form.getFieldDecorator('computeofferingid', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('diskofferingid', { initialValue: undefined, preserve: true })
+    this.form.getFieldDecorator('multidiskoffering', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('affinitygroupids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('networkids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('keypair', { initialValue: undefined, preserve: true })
@@ -1286,6 +1308,11 @@ export default {
         diskofferingid: id
       })
     },
+    updateMultiDiskOffering (value) {
+      this.form.setFieldsValue({
+        multidiskoffering: value
+      })
+    },
     updateAffinityGroups (ids) {
       this.form.setFieldsValue({
         affinitygroupids: ids
@@ -1408,9 +1435,22 @@ export default {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
         // step 4: select disk offering
-        deployVmData.diskofferingid = values.diskofferingid
-        if (values.size) {
-          deployVmData.size = values.size
+        if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
+          if (values.multidiskoffering) {
+            let i = 0
+            Object.entries(values.multidiskoffering).forEach(([disk, offering]) => {
+              const diskKey = `datadiskofferinglist[${i}].datadisktemplateid`
+              const offeringKey = `datadiskofferinglist[${i}].diskofferingid`
+              deployVmData[diskKey] = disk
+              deployVmData[offeringKey] = offering
+              i++
+            })
+          }
+        } else {
+          deployVmData.diskofferingid = values.diskofferingid
+          if (values.size) {
+            deployVmData.size = values.size
+          }
         }
         // step 5: select an affinity group
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')

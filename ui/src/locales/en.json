@@ -1466,6 +1466,7 @@
 "label.no.grouping": "(no grouping)",
 "label.no.isos": "No available ISOs",
 "label.no.items": "No Available Items",
+"label.no.matching.offering": "No matching offering found",
 "label.no.security.groups": "No Available Security Groups",
 "label.noderootdisksize": "Node root disk size (in GB)",
 "label.nodiskcache": "No disk cache",

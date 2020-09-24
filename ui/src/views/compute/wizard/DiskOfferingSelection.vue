@@ -133,6 +133,9 @@ export default {
   },
   created () {
     this.initDataItem()
+    if (this.items) {
+      this.dataItems = this.dataItems.concat(this.items)
+    }
   },
   computed: {
     tableSource () {
