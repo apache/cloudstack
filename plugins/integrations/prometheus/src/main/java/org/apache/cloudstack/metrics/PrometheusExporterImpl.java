@@ -401,6 +401,17 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         metricsList.add(new ItemActiveDomains(zoneName, zoneUuid, _accountDao.getActiveDomains()));
     }
 
+    private void addAccountMetrics(final List<Item> metricsList, final long dcId, final String zoneName, final String zoneUuid) {
+        metricsList.add(new ItemActiveAccounts(zoneName, zoneUuid, uservmDao.getActiveAccounts(dcId)));
+    }
+
+    private void addVMsBySizeMetrics(final List<Item> metricsList, final long dcId, final String zoneName, final String zoneUuid) {
+        List<Ternary<Integer, Integer, Integer>> vms = uservmDao.countVmsBySize(dcId, PrometheusExporterServer.PrometheusExporterOfferingCountLimit.value());
+        for (Ternary<Integer, Integer, Integer> vm : vms) {
+            metricsList.add(new ItemVMsBySize(zoneName, zoneUuid, vm.first(), vm.second(), vm.third()));
+        }
+    }
+
     @Override
     public void updateMetrics() {
         final List<Item> latestMetricsItems = new ArrayList<Item>();
@@ -416,6 +427,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 addIpAddressMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
                 addVlanMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
                 addDomainMetrics(latestMetricsItems, zoneName, zoneUuid);
+                addAccountMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
+                addVMsBySizeMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
             }
             addDomainLimits(latestMetricsItems);
             addDomainResourceCount(latestMetricsItems);
@@ -916,6 +929,46 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             return String.format("%s{domain=\"%s\", type=\"%s\"} %d", name, domainName, resourceType, miBytes);
+        }
+    }
+
+    class ItemActiveAccounts extends Item {
+        String zoneName;
+        String zoneUuid;
+        int total;
+
+        public ItemActiveAccounts(final String zn, final String zu, final int cnt) {
+            super("cloudstack_active_accounts_total");
+            zoneName = zn;
+            zoneUuid = zu;
+            total = cnt;
+        }
+
+        @Override
+        public String toMetricsString() {
+            return String.format("%s{zone=\"%s\"} %d", name, zoneName, total);
+        }
+    }
+
+    class ItemVMsBySize extends Item {
+        String zoneName;
+        String zoneUuid;
+        int cpu;
+        int memory;
+        int total;
+
+        public ItemVMsBySize(final String zn, final String zu, final int c, final int m, int cnt) {
+            super("cloudstack_vms_total_by_size");
+            zoneName = zn;
+            zoneUuid = zu;
+            cpu = c;
+            memory = m;
+            total = cnt;
+        }
+
+        @Override
+        public String toMetricsString() {
+            return String.format("%s{zone=\"%s\",cpu=\"%d\",memory=\"%d\"} %d", name, zoneName, cpu, memory, total);
         }
     }
 }
