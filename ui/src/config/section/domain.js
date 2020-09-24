@@ -130,7 +130,6 @@ export default {
       listView: true,
       dataView: true,
       show: (record, store) => {
-        console.log(record)
         return ['Admin'].includes(store.userInfo.roletype) && record.level !== 0 ||
           ['DomainAdmin'].includes(store.userInfo.roletype) && record.domainid !== store.userInfo.domainid
       },

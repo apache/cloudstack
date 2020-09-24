@@ -345,6 +345,7 @@ export default {
     reloadTreeData (objData) {
       if (objData && objData[0].isDel) {
         this.treeVerticalData = this.treeVerticalData.filter(item => item.id !== objData[0].id)
+        this.treeVerticalData = this.treeVerticalData.filter(item => item.parentdomainid !== objData[0].id)
       } else {
         // data response from action
         let jsonResponse = this.getResponseJsonData(objData[0])
