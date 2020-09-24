@@ -1180,7 +1180,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // find a usable device number in VMware environment
-            VirtualDevice[] nicDevices = vmMo.getNicDevices();
+            VirtualDevice[] nicDevices = vmMo.getSortedNicDevices();
             int deviceNumber = -1;
             for (VirtualDevice device : nicDevices) {
                 if (device.getUnitNumber() > deviceNumber)
@@ -1380,7 +1380,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         int nicIndex = allocPublicNicIndex(vmMo);
 
         try {
-            VirtualDevice[] nicDevices = vmMo.getNicDevices();
+            VirtualDevice[] nicDevices = vmMo.getSortedNicDevices();
 
             VirtualEthernetCard device = (VirtualEthernetCard) nicDevices[nicIndex];
 
