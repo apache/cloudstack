@@ -65,7 +65,9 @@
         <a-col
           :span="device === 'mobile' ? 24 : 12"
           :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+          <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
           <action-button
+            v-else
             :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: 'inline-flex' }"
             :loading="loading"
             :actions="actions"
@@ -290,7 +292,7 @@
     </div>
 
     <div v-if="dataView">
-      <slot v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
+      <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
       <resource-view
         v-else
         :resource="resource"
