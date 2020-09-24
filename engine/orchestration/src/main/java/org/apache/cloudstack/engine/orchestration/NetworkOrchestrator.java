@@ -2279,7 +2279,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         if (vlanSpecified) {
-            URI uri = BroadcastDomainType.fromString(vlanId);
+            URI uri = encodeVlanIdIntoBroadcastUri(vlanId, pNtwk);
             //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
             if (!(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
                 throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
@@ -2424,7 +2424,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             //Logical router's UUID provided as VLAN_ID
                             userNetwork.setVlanIdAsUUID(vlanIdFinal); //Set transient field
                         } else {
-                            uri = BroadcastDomainType.fromString(vlanIdFinal);
+                            uri = encodeVlanIdIntoBroadcastUri(vlanIdFinal, pNtwk);
                         }
                         userNetwork.setBroadcastUri(uri);
                         if (!vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
@@ -2473,6 +2473,25 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         CallContext.current().setEventDetails("Network Id: " + network.getId());
         CallContext.current().putContextParameter(Network.class, network.getUuid());
         return network;
+    }
+
+    /**
+     * Encodes VLAN/VXLAN ID into a Broadcast URI according to the isolation method from the Physical Network.
+     * @return Broadcast URI, e.g. 'vlan://vlan_ID' or 'vxlan://vlxan_ID'
+     */
+    protected URI encodeVlanIdIntoBroadcastUri(String vlanId, PhysicalNetwork pNtwk) {
+        if (pNtwk == null) {
+            throw new InvalidParameterValueException(String.format("Failed to encode VLAN/VXLAN %s into a Broadcast URI. Physical Network cannot be null.", vlanId));
+        }
+
+        if(StringUtils.isNotBlank(pNtwk.getIsolationMethods().get(0))) {
+            String isolationMethod = pNtwk.getIsolationMethods().get(0).toLowerCase();
+            String vxlan = BroadcastDomainType.Vxlan.toString().toLowerCase();
+            if(isolationMethod.equals(vxlan)) {
+                return BroadcastDomainType.encodeStringIntoBroadcastUri(vlanId, BroadcastDomainType.Vxlan);
+            }
+        }
+        return BroadcastDomainType.fromString(vlanId);
     }
 
   /**
