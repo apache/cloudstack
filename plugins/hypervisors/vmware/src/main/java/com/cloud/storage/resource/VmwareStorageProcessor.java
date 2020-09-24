@@ -2348,7 +2348,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             VirtualMachineMO vmMo = null;
             String volumeUuid = UUID.randomUUID().toString().replace("-", "");
 
-            String volumeDatastorePath = dsMo.getDatastorePath(volumeUuid + ".vmdk");
+            String volumeDatastorePath = VmwareStorageLayoutHelper.getDatastorePathBaseFolderFromVmdkFileName(dsMo, volumeUuid + ".vmdk");
             VolumeObjectTO newVol = new VolumeObjectTO();
 
             try {
