@@ -19,6 +19,7 @@ import Cookies from 'js-cookie'
 import Vue from 'vue'
 import md5 from 'md5'
 import message from 'ant-design-vue/es/message'
+import notification from 'ant-design-vue/es/notification'
 import router from '@/router'
 import store from '@/store'
 import { login, logout, api } from '@/api'
@@ -112,6 +113,8 @@ const user = {
           commit('SET_LDAP', {})
           commit('SET_CLOUDIAN', {})
 
+          notification.destroy()
+
           resolve()
         }).catch(error => {
           reject(error)
@@ -148,6 +151,8 @@ const user = {
           api('listZones', { listall: true }).then(json => {
             const zones = json.listzonesresponse.zone || []
             commit('SET_ZONES', zones)
+          }).catch(error => {
+            reject(error)
           })
           api('listApis').then(response => {
             const apis = {}

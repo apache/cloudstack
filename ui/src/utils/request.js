@@ -37,16 +37,29 @@ const err = (error) => {
       notification.error({ message: i18n.t('label.forbidden'), description: data.message })
     }
     if (response.status === 401) {
-      if (response.config && response.config.params && ['listIdps'].includes(response.config.params.command)) {
+      if (response.config && response.config.params && ['listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
         return
+      }
+      for (const key in response.data) {
+        if (key.includes('response')) {
+          if (response.data[key].errortext.includes('not available for user')) {
+            notification.error({
+              message: 'Error',
+              description: response.data[key].errortext + ' ' + i18n.t('error.unable.to.proceed'),
+              duration: 0
+            })
+            return
+          }
+        }
       }
       notification.error({
         message: i18n.t('label.unauthorized'),
         description: i18n.t('message.authorization.failed'),
-        key: 'http-401'
+        key: 'http-401',
+        duration: 0
       })
       store.dispatch('Logout').then(() => {
-        router.go(0)
+        router.push({ path: '/user/login', query: { redirect: router.history.current.fullPath } })
       })
     }
     if (response.status === 404) {

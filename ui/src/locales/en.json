@@ -25,6 +25,7 @@
 "error.release.dedicate.zone": "Failed to release dedicated zone",
 "error.session.expired": "Your session has expired.",
 "error.unable.to.reach.management.server": "Unable to reach Management Server",
+"error.unable.to.proceed": "Unable to proceed. Please contact your administrator",
 "error.unresolved.internet.name": "Your internet name cannot be resolved.",
 "firewall.close": "Firewall",
 "force.delete.domain.warning": "Warning: Choosing this option will cause the deletion of all child domains and all associated accounts and their resources.",

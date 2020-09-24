@@ -66,7 +66,8 @@ router.beforeEach((to, from, next) => {
           .catch(() => {
             notification.error({
               message: 'Error',
-              description: i18n.t('message.error.discovering.feature')
+              description: i18n.t('message.error.discovering.feature'),
+              duration: 0
             })
             store.dispatch('Logout').then(() => {
               next({ path: '/user/login', query: { redirect: to.fullPath } })

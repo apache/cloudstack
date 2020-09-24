@@ -175,18 +175,15 @@ export default {
         this.resource = domains[0] || {}
         this.treeSelected = domains[0] || {}
       }).catch(error => {
+        if ([401].includes(error.response.status)) {
+          return
+        }
+
         this.$notification.error({
           message: this.$t('message.request.failed'),
           description: error.response.headers['x-description'],
           duration: 0
         })
-
-        if ([401].includes(error.response.status)) {
-          store.dispatch('Logout').then(() => {
-            this.$router.push({ path: '/user/login', query: { redirect: this.$route.fullPath } })
-          })
-          return
-        }
 
         if ([405].includes(error.response.status)) {
           this.$router.push({ path: '/exception/403' })

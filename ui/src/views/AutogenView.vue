@@ -648,19 +648,16 @@ export default {
           }
         }
       }).catch(error => {
+        if ([401].includes(error.response.status)) {
+          return
+        }
+
         if (Object.keys(this.searchParams).length > 0) {
           this.itemCount = 0
           this.items = []
           this.$message.error({
             content: error.response.headers['x-description'],
             duration: 5
-          })
-          return
-        }
-
-        if ([401].includes(error.response.status)) {
-          store.dispatch('Logout').then(() => {
-            this.$router.push({ path: '/user/login', query: { redirect: this.$route.fullPath } })
           })
           return
         }
@@ -892,6 +889,9 @@ export default {
       api(action.api, params).then(json => {
         this.handleResponse(json, resourceName, action, false)
       }).catch(error => {
+        if ([401].includes(error.response.status)) {
+          return
+        }
         this.$notifyError(error)
       })
     },
@@ -992,6 +992,10 @@ export default {
           }
           this.closeAction()
         }).catch(error => {
+          if ([401].includes(error.response.status)) {
+            return
+          }
+
           console.log(error)
           this.$notifyError(error)
         }).finally(f => {
