@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -217,13 +218,13 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
     }
 
     @Override
-    public synchronized List<VirtualMachineMO> listVmsOnHyperHost(String vmName) throws Exception {
+    public synchronized List<VirtualMachineMO> listVmsOnHyperHostWithHypervisorName(String vmName) throws Exception {
         List<VirtualMachineMO> vms = new ArrayList<>();
         List<ManagedObjectReference> hosts = _context.getVimClient().getDynamicProperty(_mor, "host");
-        if (hosts != null && hosts.size() > 0) {
+        if (CollectionUtils.isNotEmpty(hosts)) {
             for (ManagedObjectReference morHost : hosts) {
                 HostMO hostMo = new HostMO(_context, morHost);
-                vms.addAll(hostMo.listVmsOnHyperHost(vmName));
+                vms.addAll(hostMo.listVmsOnHyperHostWithHypervisorName(vmName));
             }
         }
         return vms;
