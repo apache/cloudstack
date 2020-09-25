@@ -406,7 +406,6 @@ export default {
       this.fetchData()
     })
     eventBus.$on('exec-action', (action, isGroupAction) => {
-      console.log(action, isGroupAction)
       this.execAction(action, isGroupAction)
     })
   },
