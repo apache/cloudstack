@@ -2474,9 +2474,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                     List<Map<String, String>> dynamicTargetsToRemove = null;
 
+                    boolean deployAsIs = vol.isDeployAsIs();
                     if (vmMo != null) {
                         if (s_logger.isInfoEnabled()) {
-                            s_logger.info("Destroy root volume and VM itself. vmName " + vmName);
+                            if (deployAsIs) {
+                                s_logger.info("Destroying root volume " + vol.getPath() + " of deploy-as-is VM " + vmName);
+                            } else {
+                                s_logger.info("Destroy root volume and VM itself. vmName " + vmName);
+                            }
                         }
 
                         VirtualMachineDiskInfo diskInfo = null;
@@ -2522,6 +2527,24 @@ public class VmwareStorageProcessor implements StorageProcessor {
                                 if (netDetails.getVMMorsOnNetwork() == null || netDetails.getVMMorsOnNetwork().length == 1) {
                                     resource.cleanupNetwork(hostMo, netDetails);
                                 }
+                            }
+                        }
+                    } else if (deployAsIs) {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Destroying root volume " + vol.getPath() + " of already removed deploy-as-is VM " + vmName);
+                        }
+                        // The disks of the deploy-as-is VM have been detached from the VM and moved to root folder
+                        String deployAsIsRootDiskPath = dsMo.searchFileInSubFolders(vol.getPath() + VmwareResource.VMDK_EXTENSION,
+                                true, null);
+                        if (StringUtils.isNotBlank(deployAsIsRootDiskPath)) {
+                            if (s_logger.isInfoEnabled()) {
+                                s_logger.info("Removing disk " + deployAsIsRootDiskPath);
+                            }
+                            dsMo.deleteFile(deployAsIsRootDiskPath, morDc, true);
+                            String deltaFilePath = dsMo.searchFileInSubFolders(vol.getPath() + "-delta" + VmwareResource.VMDK_EXTENSION,
+                                    true, null);
+                            if (StringUtils.isNotBlank(deltaFilePath)) {
+                                dsMo.deleteFile(deltaFilePath, morDc, true);
                             }
                         }
                     }
