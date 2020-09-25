@@ -25,7 +25,8 @@
           :actions="actions"
           :selectedRowKeys="selectedRowKeys"
           :dataView="true"
-          :resource="resource"/>
+          :resource="resource"
+          @exec-action="(action) => execAction(action, action.groupAction && !dataView)" />
       </div>
       <div slot="resource">
         <resource-view
@@ -40,10 +41,11 @@
 
 <script>
 import { api } from '@api'
+import { mixinDevice } from '@/utils/mixin.js'
+import eventBus from '@/config/eventBus'
 import AutogenView from '@/views/AutogenView.vue'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
-import { mixinDevice } from '@/utils/mixin.js'
 
 export default {
   name: 'PublicIpResource',
@@ -158,6 +160,9 @@ export default {
     },
     toggleLoading () {
       this.loading = !this.loading
+    },
+    execAction (action, isGroupAction) {
+      eventBus.$emit('exec-action', action, isGroupAction)
     }
   }
 }

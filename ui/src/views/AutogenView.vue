@@ -405,6 +405,10 @@ export default {
     eventBus.$on('async-job-complete', () => {
       this.fetchData()
     })
+    eventBus.$on('exec-action', (action, isGroupAction) => {
+      console.log(action, isGroupAction)
+      this.execAction(action, isGroupAction)
+    })
   },
   mounted () {
     if (this.device === 'desktop') {
