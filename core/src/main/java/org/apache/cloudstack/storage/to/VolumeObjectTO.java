@@ -62,6 +62,7 @@ public class VolumeObjectTO implements DataTO {
     private Hypervisor.HypervisorType hypervisorType;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
+    private boolean deployAsIs;
 
     public VolumeObjectTO() {
 
@@ -102,6 +103,7 @@ public class VolumeObjectTO implements DataTO {
         setDeviceId(volume.getDeviceId());
         this.migrationOptions = volume.getMigrationOptions();
         this.directDownload = volume.isDirectDownload();
+        this.deployAsIs = volume.isDeployAsIs();
     }
 
     public String getUuid() {
@@ -312,5 +314,9 @@ public class VolumeObjectTO implements DataTO {
 
     public boolean isDirectDownload() {
         return directDownload;
+    }
+
+    public boolean isDeployAsIs() {
+        return deployAsIs;
     }
 }
