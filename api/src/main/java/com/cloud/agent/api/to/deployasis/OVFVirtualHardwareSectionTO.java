@@ -25,12 +25,15 @@ public class OVFVirtualHardwareSectionTO implements TemplateDeployAsIsInformatio
     public OVFVirtualHardwareSectionTO() {
     }
 
+    private String minimiumHardwareVersion;
     private List<OVFConfigurationTO> configurations;
     private List<OVFVirtualHardwareItemTO> commonHardwareItems;
 
-    public OVFVirtualHardwareSectionTO(List<OVFConfigurationTO> configurations, List<OVFVirtualHardwareItemTO> commonHardwareItems) {
+    public OVFVirtualHardwareSectionTO(List<OVFConfigurationTO> configurations, List<OVFVirtualHardwareItemTO> commonHardwareItems,
+                                       String minimumHardwareVersion) {
         this.configurations = configurations;
         this.commonHardwareItems = commonHardwareItems;
+        this.minimiumHardwareVersion = minimumHardwareVersion;
     }
 
     public List<OVFConfigurationTO> getConfigurations() {
@@ -39,5 +42,9 @@ public class OVFVirtualHardwareSectionTO implements TemplateDeployAsIsInformatio
 
     public List<OVFVirtualHardwareItemTO> getCommonHardwareItems() {
         return commonHardwareItems;
+    }
+
+    public String getMinimiumHardwareVersion() {
+        return minimiumHardwareVersion;
     }
 }

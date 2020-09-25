@@ -516,3 +516,6 @@ ALTER VIEW `cloud`.`image_store_view` AS
         `cloud`.`data_center` ON image_store.data_center_id = data_center.id
             left join
         `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
+
+-- OVF configured OS while registering deploy-as-is templates
+INSERT IGNORE INTO `cloud`.`guest_os` (uuid, category_id, display_name, created) VALUES (UUID(), 11, 'OVF Configured OS', now());

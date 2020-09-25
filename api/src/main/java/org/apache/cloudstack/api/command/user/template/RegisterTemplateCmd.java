@@ -347,5 +347,9 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Parameter directdownload is only allowed for KVM templates");
         }
+
+        if (isDeployAsIs() && !getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameter deployasis is only allowed for VMware templates");
+        }
     }
 }

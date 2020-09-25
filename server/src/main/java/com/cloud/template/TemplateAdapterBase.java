@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.storage.upload.params.IsoUploadParams;
 import com.cloud.storage.upload.params.TemplateUploadParams;
 import com.cloud.storage.upload.params.UploadParams;
@@ -166,6 +167,13 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
             if (requiresHVM == null) {
                 requiresHVM = true;
+            }
+            if (deployAsIs) {
+                GuestOS deployAsIsGuestOs = ApiDBUtils.findGuestOSByDisplayName(DeployAsIsConstants.DEFAULT_GUEST_OS_DEPLOY_AS_IS);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Setting default guest OS for deploy-as-is template while the template registration is not completed");
+                }
+                guestOSId = deployAsIsGuestOs.getId();
             }
         }
 

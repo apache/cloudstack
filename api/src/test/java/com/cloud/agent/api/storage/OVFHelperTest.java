@@ -20,6 +20,8 @@ import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
 import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
 import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
+import com.cloud.utils.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -62,204 +64,210 @@ public class OVFHelperTest {
                     "  </DeploymentOptionSection>";
 
     private String ovfFileVirtualHardwareSection =
+            "<VirtualSystem>\n" +
+            "<OperatingSystemSection ovf:id=\"100\" vmw:osType=\"other26xLinux64Guest\">\n" +
+            "      <Info>The kind of installed guest operating system</Info>\n" +
+            "      <Description>Other 2.6x Linux (64-bit)</Description>\n" +
+            "</OperatingSystemSection>\n" +
             "<VirtualHardwareSection ovf:transport=\"iso\">\n" +
-                    "      <Info>Virtual hardware requirements</Info>\n" +
-                    "      <System>\n" +
-                    "        <vssd:ElementName>Virtual Hardware Family</vssd:ElementName>\n" +
-                    "        <vssd:InstanceID>0</vssd:InstanceID>\n" +
-                    "        <vssd:VirtualSystemIdentifier>ASAv</vssd:VirtualSystemIdentifier>\n" +
-                    "        <vssd:VirtualSystemType>vmx-08,vmx-09</vssd:VirtualSystemType>\n" +
-                    "      </System>\n" +
-                    "      <Item ovf:configuration=\"ASAv5 ASAv10\">\n" +
-                    "        <rasd:AllocationUnits>hertz * 10^6</rasd:AllocationUnits>\n" +
-                    "        <rasd:Description>Number of Virtual CPUs</rasd:Description>\n" +
-                    "        <rasd:ElementName>1 virtual CPU(s)</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>1</rasd:InstanceID>\n" +
-                    "        <rasd:Limit>5000</rasd:Limit>\n" +
-                    "        <rasd:Reservation>1000</rasd:Reservation>\n" +
-                    "        <rasd:ResourceType>3</rasd:ResourceType>\n" +
-                    "        <rasd:VirtualQuantity>1</rasd:VirtualQuantity>\n" +
-                    "      </Item>\n" +
-                    "      <Item ovf:configuration=\"ASAv30\">\n" +
-                    "        <rasd:AllocationUnits>hertz * 10^6</rasd:AllocationUnits>\n" +
-                    "        <rasd:Description>Number of Virtual CPUs</rasd:Description>\n" +
-                    "        <rasd:ElementName>4 virtual CPU(s)</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>1</rasd:InstanceID>\n" +
-                    "        <rasd:Limit>20000</rasd:Limit>\n" +
-                    "        <rasd:Reservation>1000</rasd:Reservation>\n" +
-                    "        <rasd:ResourceType>3</rasd:ResourceType>\n" +
-                    "        <rasd:VirtualQuantity>4</rasd:VirtualQuantity>\n" +
-                    "      </Item>\n" +
-                    "      <Item ovf:configuration=\"ASAv5 ASAv10\">\n" +
-                    "        <rasd:AllocationUnits>byte * 2^20</rasd:AllocationUnits>\n" +
-                    "        <rasd:Description>Memory Size</rasd:Description>\n" +
-                    "        <rasd:ElementName>2048MB of memory</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>2</rasd:InstanceID>\n" +
-                    "        <rasd:Limit>2048</rasd:Limit>\n" +
-                    "        <rasd:Reservation>2048</rasd:Reservation>\n" +
-                    "        <rasd:ResourceType>4</rasd:ResourceType>\n" +
-                    "        <rasd:VirtualQuantity>2048</rasd:VirtualQuantity>\n" +
-                    "      </Item>\n" +
-                    "      <Item ovf:configuration=\"ASAv30\">\n" +
-                    "        <rasd:AllocationUnits>byte * 2^20</rasd:AllocationUnits>\n" +
-                    "        <rasd:Description>Memory Size</rasd:Description>\n" +
-                    "        <rasd:ElementName>8192MB of memory</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>2</rasd:InstanceID>\n" +
-                    "        <rasd:Limit>8192</rasd:Limit>\n" +
-                    "        <rasd:Reservation>8192</rasd:Reservation>\n" +
-                    "        <rasd:ResourceType>4</rasd:ResourceType>\n" +
-                    "        <rasd:VirtualQuantity>8192</rasd:VirtualQuantity>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:Address>0</rasd:Address>\n" +
-                    "        <rasd:Description>SCSI Controller</rasd:Description>\n" +
-                    "        <rasd:ElementName>SCSI controller 0</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>3</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>lsilogic</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>6</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:Address>0</rasd:Address>\n" +
-                    "        <rasd:Description>IDE Controller</rasd:Description>\n" +
-                    "        <rasd:ElementName>IDE 0</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>4</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceType>5</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item ovf:required=\"false\">\n" +
-                    "        <rasd:AddressOnParent>0</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:ElementName>CD/DVD Drive</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>5</rasd:InstanceID>\n" +
-                    "        <rasd:Parent>4</rasd:Parent>\n" +
-                    "        <rasd:ResourceType>15</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item ovf:required=\"false\">\n" +
-                    "        <rasd:AddressOnParent>1</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:ElementName>CD/DVD Drive</rasd:ElementName>\n" +
-                    "        <rasd:HostResource>ovf:/file/file3</rasd:HostResource>\n" +
-                    "        <rasd:InstanceID>18</rasd:InstanceID>\n" +
-                    "        <rasd:Parent>4</rasd:Parent>\n" +
-                    "        <rasd:ResourceType>15</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>7</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>Management0-0</rasd:Connection>\n" +
-                    "        <rasd:Description>E1000 Ethernet adapter on \"Management Network\"</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 1</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>6</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>0</rasd:AddressOnParent>\n" +
-                    "        <rasd:ElementName>Hard disk 1</rasd:ElementName>\n" +
-                    "        <rasd:HostResource>ovf:/disk/vmdisk1</rasd:HostResource>\n" +
-                    "        <rasd:InstanceID>7</rasd:InstanceID>\n" +
-                    "        <rasd:Parent>3</rasd:Parent>\n" +
-                    "        <rasd:ResourceType>17</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>1</rasd:AddressOnParent>\n" +
-                    "        <rasd:ElementName>Hard disk 2</rasd:ElementName>\n" +
-                    "        <rasd:HostResource>ovf:/disk/vmdisk2</rasd:HostResource>\n" +
-                    "        <rasd:InstanceID>8</rasd:InstanceID>\n" +
-                    "        <rasd:Parent>3</rasd:Parent>\n" +
-                    "        <rasd:ResourceType>17</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>8</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>GigabitEthernet0-0</rasd:Connection>\n" +
-                    "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 2</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>9</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>9</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>GigabitEthernet0-1</rasd:Connection>\n" +
-                    "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 3</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>10</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>10</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>GigabitEthernet0-2</rasd:Connection>\n" +
-                    "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 4</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>11</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>11</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>GigabitEthernet0-3</rasd:Connection>\n" +
-                    "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 5</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>12</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>12</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>GigabitEthernet0-4</rasd:Connection>\n" +
-                    "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 6</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>13</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>13</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>GigabitEthernet0-5</rasd:Connection>\n" +
-                    "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 7</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>14</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>14</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>GigabitEthernet0-6</rasd:Connection>\n" +
-                    "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 8</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>15</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>15</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>GigabitEthernet0-7</rasd:Connection>\n" +
-                    "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 9</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>16</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <Item>\n" +
-                    "        <rasd:AddressOnParent>16</rasd:AddressOnParent>\n" +
-                    "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
-                    "        <rasd:Connection>GigabitEthernet0-8</rasd:Connection>\n" +
-                    "        <rasd:Description>Default HA failover E1000 Ethernet adapter, or additional standalone general purpose adapter</rasd:Description>\n" +
-                    "        <rasd:ElementName>Network adapter 10</rasd:ElementName>\n" +
-                    "        <rasd:InstanceID>17</rasd:InstanceID>\n" +
-                    "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
-                    "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
-                    "      </Item>\n" +
-                    "      <vmw:ExtraConfig vmw:key=\"monitor_control.pseudo_perfctr\" vmw:value=\"TRUE\"></vmw:ExtraConfig>\n" +
-                    "    </VirtualHardwareSection>";
+            "      <Info>Virtual hardware requirements</Info>\n" +
+            "      <System>\n" +
+            "        <vssd:ElementName>Virtual Hardware Family</vssd:ElementName>\n" +
+            "        <vssd:InstanceID>0</vssd:InstanceID>\n" +
+            "        <vssd:VirtualSystemIdentifier>ASAv</vssd:VirtualSystemIdentifier>\n" +
+            "        <vssd:VirtualSystemType>vmx-08,vmx-09</vssd:VirtualSystemType>\n" +
+            "      </System>\n" +
+            "      <Item ovf:configuration=\"ASAv5 ASAv10\">\n" +
+            "        <rasd:AllocationUnits>hertz * 10^6</rasd:AllocationUnits>\n" +
+            "        <rasd:Description>Number of Virtual CPUs</rasd:Description>\n" +
+            "        <rasd:ElementName>1 virtual CPU(s)</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>1</rasd:InstanceID>\n" +
+            "        <rasd:Limit>5000</rasd:Limit>\n" +
+            "        <rasd:Reservation>1000</rasd:Reservation>\n" +
+            "        <rasd:ResourceType>3</rasd:ResourceType>\n" +
+            "        <rasd:VirtualQuantity>1</rasd:VirtualQuantity>\n" +
+            "      </Item>\n" +
+            "      <Item ovf:configuration=\"ASAv30\">\n" +
+            "        <rasd:AllocationUnits>hertz * 10^6</rasd:AllocationUnits>\n" +
+            "        <rasd:Description>Number of Virtual CPUs</rasd:Description>\n" +
+            "        <rasd:ElementName>4 virtual CPU(s)</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>1</rasd:InstanceID>\n" +
+            "        <rasd:Limit>20000</rasd:Limit>\n" +
+            "        <rasd:Reservation>1000</rasd:Reservation>\n" +
+            "        <rasd:ResourceType>3</rasd:ResourceType>\n" +
+            "        <rasd:VirtualQuantity>4</rasd:VirtualQuantity>\n" +
+            "      </Item>\n" +
+            "      <Item ovf:configuration=\"ASAv5 ASAv10\">\n" +
+            "        <rasd:AllocationUnits>byte * 2^20</rasd:AllocationUnits>\n" +
+            "        <rasd:Description>Memory Size</rasd:Description>\n" +
+            "        <rasd:ElementName>2048MB of memory</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>2</rasd:InstanceID>\n" +
+            "        <rasd:Limit>2048</rasd:Limit>\n" +
+            "        <rasd:Reservation>2048</rasd:Reservation>\n" +
+            "        <rasd:ResourceType>4</rasd:ResourceType>\n" +
+            "        <rasd:VirtualQuantity>2048</rasd:VirtualQuantity>\n" +
+            "      </Item>\n" +
+            "      <Item ovf:configuration=\"ASAv30\">\n" +
+            "        <rasd:AllocationUnits>byte * 2^20</rasd:AllocationUnits>\n" +
+            "        <rasd:Description>Memory Size</rasd:Description>\n" +
+            "        <rasd:ElementName>8192MB of memory</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>2</rasd:InstanceID>\n" +
+            "        <rasd:Limit>8192</rasd:Limit>\n" +
+            "        <rasd:Reservation>8192</rasd:Reservation>\n" +
+            "        <rasd:ResourceType>4</rasd:ResourceType>\n" +
+            "        <rasd:VirtualQuantity>8192</rasd:VirtualQuantity>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:Address>0</rasd:Address>\n" +
+            "        <rasd:Description>SCSI Controller</rasd:Description>\n" +
+            "        <rasd:ElementName>SCSI controller 0</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>3</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>lsilogic</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>6</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:Address>0</rasd:Address>\n" +
+            "        <rasd:Description>IDE Controller</rasd:Description>\n" +
+            "        <rasd:ElementName>IDE 0</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>4</rasd:InstanceID>\n" +
+            "        <rasd:ResourceType>5</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item ovf:required=\"false\">\n" +
+            "        <rasd:AddressOnParent>0</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:ElementName>CD/DVD Drive</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>5</rasd:InstanceID>\n" +
+            "        <rasd:Parent>4</rasd:Parent>\n" +
+            "        <rasd:ResourceType>15</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item ovf:required=\"false\">\n" +
+            "        <rasd:AddressOnParent>1</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:ElementName>CD/DVD Drive</rasd:ElementName>\n" +
+            "        <rasd:HostResource>ovf:/file/file3</rasd:HostResource>\n" +
+            "        <rasd:InstanceID>18</rasd:InstanceID>\n" +
+            "        <rasd:Parent>4</rasd:Parent>\n" +
+            "        <rasd:ResourceType>15</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>7</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>Management0-0</rasd:Connection>\n" +
+            "        <rasd:Description>E1000 Ethernet adapter on \"Management Network\"</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 1</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>6</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>0</rasd:AddressOnParent>\n" +
+            "        <rasd:ElementName>Hard disk 1</rasd:ElementName>\n" +
+            "        <rasd:HostResource>ovf:/disk/vmdisk1</rasd:HostResource>\n" +
+            "        <rasd:InstanceID>7</rasd:InstanceID>\n" +
+            "        <rasd:Parent>3</rasd:Parent>\n" +
+            "        <rasd:ResourceType>17</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>1</rasd:AddressOnParent>\n" +
+            "        <rasd:ElementName>Hard disk 2</rasd:ElementName>\n" +
+            "        <rasd:HostResource>ovf:/disk/vmdisk2</rasd:HostResource>\n" +
+            "        <rasd:InstanceID>8</rasd:InstanceID>\n" +
+            "        <rasd:Parent>3</rasd:Parent>\n" +
+            "        <rasd:ResourceType>17</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>8</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>GigabitEthernet0-0</rasd:Connection>\n" +
+            "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 2</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>9</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>9</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>GigabitEthernet0-1</rasd:Connection>\n" +
+            "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 3</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>10</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>10</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>GigabitEthernet0-2</rasd:Connection>\n" +
+            "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 4</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>11</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>11</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>GigabitEthernet0-3</rasd:Connection>\n" +
+            "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 5</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>12</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>12</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>GigabitEthernet0-4</rasd:Connection>\n" +
+            "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 6</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>13</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>13</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>GigabitEthernet0-5</rasd:Connection>\n" +
+            "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 7</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>14</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>14</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>GigabitEthernet0-6</rasd:Connection>\n" +
+            "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 8</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>15</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>15</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>GigabitEthernet0-7</rasd:Connection>\n" +
+            "        <rasd:Description>General purpose E1000 Ethernet adapter</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 9</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>16</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <Item>\n" +
+            "        <rasd:AddressOnParent>16</rasd:AddressOnParent>\n" +
+            "        <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>\n" +
+            "        <rasd:Connection>GigabitEthernet0-8</rasd:Connection>\n" +
+            "        <rasd:Description>Default HA failover E1000 Ethernet adapter, or additional standalone general purpose adapter</rasd:Description>\n" +
+            "        <rasd:ElementName>Network adapter 10</rasd:ElementName>\n" +
+            "        <rasd:InstanceID>17</rasd:InstanceID>\n" +
+            "        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>\n" +
+            "        <rasd:ResourceType>10</rasd:ResourceType>\n" +
+            "      </Item>\n" +
+            "      <vmw:ExtraConfig vmw:key=\"monitor_control.pseudo_perfctr\" vmw:value=\"TRUE\"></vmw:ExtraConfig>\n" +
+            "    </VirtualHardwareSection>\n" +
+            "</VirtualSystem>";
 
     private String eulaSections =
             "<VirtualSystem>\n" +
@@ -728,5 +736,18 @@ public class OVFHelperTest {
     public void testGetOVFPropertiesWithCategories() throws IOException, SAXException, ParserConfigurationException {
         List<OVFPropertyTO> props = ovfHelper.getOVFPropertiesFromXmlString(productSectionWithCategories);
         Assert.assertEquals(18, props.size());
+    }
+
+    @Test
+    public void testGetOperatingSystemInfo() throws IOException, SAXException, ParserConfigurationException {
+        Pair<String, String> guestOsPair = ovfHelper.getOperatingSystemInfoFromXmlString(ovfFileVirtualHardwareSection);
+        Assert.assertEquals("other26xLinux64Guest", guestOsPair.first());
+        Assert.assertEquals("Other 2.6x Linux (64-bit)", guestOsPair.second());
+    }
+
+    @Test
+    public void testGetMinimumHardwareVersion() throws IOException, SAXException, ParserConfigurationException {
+        OVFVirtualHardwareSectionTO hardwareSection = ovfHelper.getVirtualHardwareSectionFromXmlString(ovfFileVirtualHardwareSection);
+        Assert.assertEquals("vmx-08", hardwareSection.getMinimiumHardwareVersion());
     }
 }

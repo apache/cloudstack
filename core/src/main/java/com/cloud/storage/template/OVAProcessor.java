@@ -28,6 +28,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
 import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
 import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
@@ -35,6 +36,7 @@ import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
 import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -107,30 +109,34 @@ public class OVAProcessor extends AdapterBase implements Processor {
         OVFHelper ovfHelper = new OVFHelper();
         Document doc = ovfHelper.getDocumentFromFile(ovfFilePath);
 
-        List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, doc, null);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("Found %d disks in template %s", CollectionUtils.isNotEmpty(disks) ? disks.size() : 0, ovfFilePath));
-        }
-        if (CollectionUtils.isNotEmpty(disks)) {
-            info.disks = disks;
-        }
+        OVFInformationTO ovfInformationTO = createOvfInformationTO(ovfHelper, doc, ovfFilePath);
+        info.ovfInformationTO = ovfInformationTO;
+    }
 
+    private OVFInformationTO createOvfInformationTO(OVFHelper ovfHelper, Document doc, String ovfFilePath) throws InternalErrorException {
+        OVFInformationTO ovfInformationTO = new OVFInformationTO();
+
+        List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, doc, null);
+        if (CollectionUtils.isNotEmpty(disks)) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Found %d disks in template %s", disks.size(), ovfFilePath));
+            }
+            ovfInformationTO.setDisks(disks);
+        }
         List<OVFNetworkTO> nets = ovfHelper.getNetPrerequisitesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(nets)) {
             LOGGER.info("Found " + nets.size() + " prerequisite networks");
-            info.networks = nets;
+            ovfInformationTO.setNetworks(nets);
         } else if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("no net prerequisites found in template %s", ovfFilePath));
         }
-
         List<OVFPropertyTO> ovfProperties = ovfHelper.getConfigurableOVFPropertiesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(ovfProperties)) {
             LOGGER.info("Found " + ovfProperties.size() + " configurable OVF properties");
-            info.ovfProperties = ovfProperties;
+            ovfInformationTO.setProperties(ovfProperties);
         } else if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("no ovf properties found in template %s", ovfFilePath));
         }
-
         OVFVirtualHardwareSectionTO hardwareSection = ovfHelper.getVirtualHardwareSectionFromDocument(doc);
         List<OVFConfigurationTO> configurations = hardwareSection.getConfigurations();
         if (CollectionUtils.isNotEmpty(configurations)) {
@@ -140,12 +146,21 @@ public class OVAProcessor extends AdapterBase implements Processor {
         if (CollectionUtils.isNotEmpty(hardwareItems)) {
             LOGGER.info("Found " + hardwareItems.size() + " virtual hardware items");
         }
-        info.hardwareSection = hardwareSection;
+        if (StringUtils.isNotBlank(hardwareSection.getMinimiumHardwareVersion())) {
+            LOGGER.info("Found minimum hardware version " + hardwareSection.getMinimiumHardwareVersion());
+        }
+        ovfInformationTO.setHardwareSection(hardwareSection);
         List<OVFEulaSectionTO> eulaSections = ovfHelper.getEulaSectionsFromDocument(doc);
         if (CollectionUtils.isNotEmpty(eulaSections)) {
             LOGGER.info("Found " + eulaSections.size() + " license agreements");
-            info.eulaSections = eulaSections;
+            ovfInformationTO.setEulaSections(eulaSections);
         }
+        Pair<String, String> guestOsPair = ovfHelper.getOperatingSystemInfoFromDocument(doc);
+        if (guestOsPair != null) {
+            LOGGER.info("Found guest OS information: " + guestOsPair.first() + " - " + guestOsPair.second());
+            ovfInformationTO.setGuestOsInfo(guestOsPair);
+        }
+        return ovfInformationTO;
     }
 
     private void setFileSystemAccessRights(String templatePath) {
