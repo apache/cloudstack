@@ -20,18 +20,13 @@
 package com.cloud.agent.api.storage;
 
 import java.io.File;
-import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
-import com.cloud.agent.api.to.DatadiskTO;
-import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
-import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
-import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 
 public class DownloadAnswer extends Answer {
     private String jobId;
@@ -45,15 +40,7 @@ public class DownloadAnswer extends Answer {
     private String checkSum;
 
     @LogLevel(LogLevel.Log4jLevel.Off)
-    private List<OVFPropertyTO> ovfProperties;
-    @LogLevel(LogLevel.Log4jLevel.Off)
-    private List<OVFNetworkTO> networkRequirements;
-    @LogLevel(LogLevel.Log4jLevel.Off)
-    private List<DatadiskTO> disks;
-    @LogLevel(LogLevel.Log4jLevel.Off)
-    private OVFVirtualHardwareSectionTO ovfHardwareSection;
-    @LogLevel(LogLevel.Log4jLevel.Off)
-    private List<OVFEulaSectionTO> eulaSections;
+    private OVFInformationTO ovfInformationTO;
 
     public String getCheckSum() {
         return checkSum;
@@ -164,43 +151,11 @@ public class DownloadAnswer extends Answer {
         return templatePhySicalSize;
     }
 
-    public List<OVFPropertyTO> getOvfProperties() {
-        return ovfProperties;
+    public OVFInformationTO getOvfInformationTO() {
+        return ovfInformationTO;
     }
 
-    public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
-        this.ovfProperties = ovfProperties;
-    }
-
-    public List<OVFNetworkTO> getNetworkRequirements() {
-        return networkRequirements;
-    }
-
-    public void setNetworkRequirements(List<OVFNetworkTO> networkRequirements) {
-        this.networkRequirements = networkRequirements;
-    }
-
-    public List<DatadiskTO> getDisks() {
-        return disks;
-    }
-
-    public void setDisks(List<DatadiskTO> disks) {
-        this.disks = disks;
-    }
-
-    public OVFVirtualHardwareSectionTO getOvfHardwareSection() {
-        return ovfHardwareSection;
-    }
-
-    public void setOvfHardwareSection(OVFVirtualHardwareSectionTO ovfHardwareSection) {
-        this.ovfHardwareSection = ovfHardwareSection;
-    }
-
-    public List<OVFEulaSectionTO> getEulaSections() {
-        return eulaSections;
-    }
-
-    public void setEulaSections(List<OVFEulaSectionTO> eulaSections) {
-        this.eulaSections = eulaSections;
+    public void setOvfInformationTO(OVFInformationTO ovfInformationTO) {
+        this.ovfInformationTO = ovfInformationTO;
     }
 }

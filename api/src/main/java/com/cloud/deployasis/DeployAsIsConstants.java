@@ -24,4 +24,5 @@ public interface DeployAsIsConstants {
     String HARDWARE_ITEM_PREFIX = "hardware-item-";
     String EULA_PREFIX = "eula-";
 
+    String DEFAULT_GUEST_OS_DEPLOY_AS_IS = "OVF Configured OS";
 }

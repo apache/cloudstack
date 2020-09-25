@@ -17,6 +17,7 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -49,8 +50,10 @@ public class DownloadAnswerTest {
         List<OVFNetworkTO> networks = new ArrayList<>();
         networks.add(new OVFNetworkTO());
 
-        answer.setOvfProperties(properties);
-        answer.setNetworkRequirements(networks);
+        OVFInformationTO informationTO = new OVFInformationTO();
+        informationTO.setProperties(properties);
+        informationTO.setNetworks(networks);
+        answer.setOvfInformationTO(informationTO);
 
         String json = gson.toJson(answer);
         Answer received = gson.fromJson(json, Answer.class);

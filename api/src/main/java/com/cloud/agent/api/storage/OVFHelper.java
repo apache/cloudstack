@@ -46,6 +46,7 @@ import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
 import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.utils.Pair;
 import com.cloud.utils.compression.CompressionUtil;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.commons.collections.CollectionUtils;
@@ -217,6 +218,12 @@ public class OVFHelper {
         return getConfigurableOVFPropertiesFromDocument(doc);
     }
 
+    protected Pair<String, String> getOperatingSystemInfoFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
+        InputSource is = new InputSource(new StringReader(ovfString));
+        final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+        return getOperatingSystemInfoFromDocument(doc);
+    }
+
     protected List<OVFConfigurationTO> getOVFDeploymentOptionsFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
         InputSource is = new InputSource(new StringReader(ovfString));
         final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
@@ -227,6 +234,12 @@ public class OVFHelper {
         InputSource is = new InputSource(new StringReader(ovfString));
         final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
         return getVirtualHardwareItemsFromDocumentTree(doc);
+    }
+
+    protected OVFVirtualHardwareSectionTO getVirtualHardwareSectionFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
+        InputSource is = new InputSource(new StringReader(ovfString));
+        final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+        return getVirtualHardwareSectionFromDocument(doc);
     }
 
     protected List<OVFEulaSectionTO> getOVFEulaSectionFromXmlString(final String ovfString) throws ParserConfigurationException, IOException, SAXException {
@@ -726,7 +739,26 @@ public class OVFHelper {
         if (CollectionUtils.isNotEmpty(items)) {
             commonItems = items.stream().filter(x -> StringUtils.isBlank(x.getConfigurationIds())).collect(Collectors.toList());
         }
-        return new OVFVirtualHardwareSectionTO(configurations, commonItems);
+        String minimumHardwareVersion = getMinimumHardwareVersionFromDocumentTree(doc);
+        return new OVFVirtualHardwareSectionTO(configurations, commonItems, minimumHardwareVersion);
+    }
+
+    private String getMinimumHardwareVersionFromDocumentTree(Document doc) {
+        String version = null;
+        if (doc != null) {
+            NodeList systemNodeList = doc.getElementsByTagName("System");
+            if (systemNodeList.getLength() != 0) {
+                Node systemItem = systemNodeList.item(0);
+                String hardwareVersions = getChildNodeValue(systemItem, "VirtualSystemType");
+                if (StringUtils.isNotBlank(hardwareVersions)) {
+                    String[] versions = hardwareVersions.split(",");
+                    // Order the hardware versions and retrieve the minimum version
+                    List<String> versionsList = Arrays.stream(versions).sorted().collect(Collectors.toList());
+                    version = versionsList.get(0);
+                }
+            }
+        }
+        return version;
     }
 
     private List<OVFConfigurationTO> getDeploymentOptionsFromDocumentTree(Document doc) {
@@ -867,6 +899,21 @@ public class OVFHelper {
         }
 
         return eulas;
+    }
+
+    public Pair<String, String> getOperatingSystemInfoFromDocument(Document doc) {
+        if (doc == null) {
+            return null;
+        }
+        NodeList guesOsList = doc.getElementsByTagName("OperatingSystemSection");
+        if (guesOsList.getLength() == 0) {
+            return null;
+        }
+        Node guestOsNode = guesOsList.item(0);
+        Element guestOsElement = (Element) guestOsNode;
+        String osType = getNodeAttribute(guestOsElement, "vmw", "osType");
+        String description = getChildNodeValue(guestOsNode, "Description");
+        return new Pair<>(osType, description);
     }
 
     class OVFFile {

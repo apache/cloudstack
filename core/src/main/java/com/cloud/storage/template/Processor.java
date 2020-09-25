@@ -21,16 +21,11 @@ package com.cloud.storage.template;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
-import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
-import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
-import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
-import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
-import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 
 /**
  * Generic interface to process different types of image formats
@@ -58,11 +53,7 @@ public interface Processor extends Adapter {
         public long virtualSize;
         public String filename;
         public boolean isCorrupted;
-        public List<OVFPropertyTO> ovfProperties;
-        public List<OVFNetworkTO> networks;
-        public List<DatadiskTO> disks;
-        public OVFVirtualHardwareSectionTO hardwareSection;
-        public List<OVFEulaSectionTO> eulaSections;
+        public OVFInformationTO ovfInformationTO;
     }
 
     long getVirtualSize(File file) throws IOException;

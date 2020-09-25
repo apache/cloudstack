@@ -37,10 +37,7 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
-import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
-import com.cloud.agent.api.to.DatadiskTO;
-import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.S3TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader;
@@ -58,7 +55,6 @@ import com.cloud.storage.template.RawImageProcessor;
 import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.TemplateConstants;
-import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -66,7 +62,6 @@ import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -131,11 +126,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private long templatePhysicalSize;
         private final long id;
         private final ResourceType resourceType;
-        private List<OVFPropertyTO> ovfProperties;
-        private List<OVFNetworkTO> networks;
-        private List<DatadiskTO> disks;
-        private OVFVirtualHardwareSectionTO hardwareSection;
-        private List<OVFEulaSectionTO> eulaSections;
+        private OVFInformationTO ovfInformationTO;
 
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
                 String installPathPrefix, ResourceType resourceType) {
@@ -231,44 +222,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             this.checksum = checksum;
         }
 
-        public List<OVFPropertyTO> getOvfProperties() {
-            return ovfProperties;
+        public OVFInformationTO getOvfInformationTO() {
+            return ovfInformationTO;
         }
 
-        public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
-            this.ovfProperties = ovfProperties;
-        }
-
-        public List<OVFNetworkTO> getNetworks() {
-            return networks;
-        }
-
-        public void setNetworks(List<OVFNetworkTO> networks) {
-            this.networks = networks;
-        }
-
-        public List<DatadiskTO> getDisks() {
-            return disks;
-        }
-
-        public void setDisks(List<DatadiskTO> disks) {
-            this.disks = disks;
-        }
-
-        public void setVirtualHardwareSection(OVFVirtualHardwareSectionTO section) {
-            this.hardwareSection = section;
-        }
-
-        public OVFVirtualHardwareSectionTO getVirtualHardwareSection() {
-            return this.hardwareSection;
-        }
-
-        public List<OVFEulaSectionTO> getEulaSections() {
-            return eulaSections;
-        }
-
-        public void setEulaSections(List<OVFEulaSectionTO> eulaSections) {
-            this.eulaSections = eulaSections;
+        public void setOvfInformationTO(OVFInformationTO ovfInformationTO) {
+            this.ovfInformationTO = ovfInformationTO;
         }
     }
 
@@ -563,18 +522,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 }
                 dnld.setTemplatesize(info.virtualSize);
                 dnld.setTemplatePhysicalSize(info.size);
-                if (CollectionUtils.isNotEmpty(info.ovfProperties)) {
-                    dnld.setOvfProperties(info.ovfProperties);
-                }
-                if (CollectionUtils.isNotEmpty(info.networks)) {
-                    dnld.setNetworks(info.networks);
-                }
-                if (CollectionUtils.isNotEmpty(info.disks)) {
-                    dnld.setDisks(info.disks);
-                }
-                dnld.setVirtualHardwareSection(info.hardwareSection);
-                if (CollectionUtils.isNotEmpty(info.eulaSections)) {
-                    dnld.setEulaSections(info.eulaSections);
+                if (info.ovfInformationTO != null) {
+                    dnld.setOvfInformationTO(info.ovfInformationTO);
                 }
                 break;
             }
@@ -876,18 +825,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             answer =
                     new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId),
                             getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
-            if (CollectionUtils.isNotEmpty(dj.getOvfProperties())) {
-                answer.setOvfProperties(dj.getOvfProperties());
-            }
-            if (CollectionUtils.isNotEmpty(dj.getNetworks())) {
-                answer.setNetworkRequirements(dj.getNetworks());
-            }
-            if (CollectionUtils.isNotEmpty(dj.getDisks())) {
-                answer.setDisks(dj.getDisks());
-            }
-            answer.setOvfHardwareSection(dj.getVirtualHardwareSection());
-            if (CollectionUtils.isNotEmpty(dj.getEulaSections())) {
-                answer.setEulaSections(dj.getEulaSections());
+            if (dj.getOvfInformationTO() != null) {
+                answer.setOvfInformationTO(dj.getOvfInformationTO());
             }
             jobs.remove(jobId);
             return answer;
