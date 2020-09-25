@@ -110,7 +110,6 @@ export default {
   }
 
   &.light {
-    background-color: #fff;
     box-shadow: 2px 0px 8px 0px rgba(29, 35, 41, 0.05);
 
     .ant-menu-light {
