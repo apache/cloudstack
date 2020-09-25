@@ -83,7 +83,7 @@ public class RedfishClient {
     private final static String ODATA_ID = "@odata.id";
     private final static String MEMBERS = "Members";
     private final static String EXPECTED_HTTP_STATUS = "2XX";
-    private final static int WAIT_FOR_REQUEST_RETRY = 3;
+    private final static int WAIT_FOR_REQUEST_RETRY = 1;
 
 
     /**
@@ -226,23 +226,30 @@ public class RedfishClient {
     }
 
     protected HttpResponse retryHttpRequest(String url, HttpRequestBase httpReq, HttpClient client) {
-        LOGGER.error(String.format("Failed to execute HTTP %s request [URL: %s]. Executing the request again.", httpReq.getMethod(), url));
+        LOGGER.warn(String.format("Failed to execute HTTP %s request [URL: %s]. Executing the request again.", httpReq.getMethod(), url));
+        HttpResponse response = null;
         for (int attempt = 1; attempt < redfishRequestMaxRetries + 1; attempt++) {
             try {
                 TimeUnit.SECONDS.sleep(WAIT_FOR_REQUEST_RETRY);
                 LOGGER.debug(String.format("Retry HTTP %s request [URL: %s], attempt %d/%d.", httpReq.getMethod(), url, attempt, redfishRequestMaxRetries));
-                return client.execute(httpReq);
+                response = client.execute(httpReq);
             } catch (IOException | InterruptedException e) {
                 if (attempt == redfishRequestMaxRetries) {
-                    throw new RedfishException(String.format("Failed to execute HTTP %s request attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, redfishRequestMaxRetries,url, e));
+                    throw new RedfishException(String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, redfishRequestMaxRetries,url, e));
                 } else {
-                    LOGGER.error(
-                            String.format("Failed to execute HTTP %s request attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, redfishRequestMaxRetries,
+                    LOGGER.warn(
+                            String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, redfishRequestMaxRetries,
                                     url, e));
                 }
             }
         }
-        throw new RedfishException(String.format("Failed to execute HTTP %s request [URL: %s].", httpReq.getMethod(), url));
+
+        if (response == null) {
+            throw new RedfishException(String.format("Failed to execute HTTP %s request [URL: %s].", httpReq.getMethod(), url));
+        }
+
+        LOGGER.debug(String.format("Successfully executed HTTP %s request [URL: %s].", httpReq.getMethod(), url));
+        return response;
     }
 
     /**
