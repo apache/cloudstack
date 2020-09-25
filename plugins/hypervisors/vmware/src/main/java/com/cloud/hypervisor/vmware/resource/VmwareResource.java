@@ -318,8 +318,8 @@ import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
-import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineBootOptions;
+import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
@@ -1180,7 +1180,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // find a usable device number in VMware environment
-            VirtualDevice[] nicDevices = vmMo.getNicDevices();
+            VirtualDevice[] nicDevices = vmMo.getSortedNicDevices();
             int deviceNumber = -1;
             for (VirtualDevice device : nicDevices) {
                 if (device.getUnitNumber() > deviceNumber)
@@ -1380,7 +1380,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         int nicIndex = allocPublicNicIndex(vmMo);
 
         try {
-            VirtualDevice[] nicDevices = vmMo.getNicDevices();
+            VirtualDevice[] nicDevices = vmMo.getSortedNicDevices();
 
             VirtualEthernetCard device = (VirtualEthernetCard) nicDevices[nicIndex];
 
@@ -7135,7 +7135,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
 
             String vmName = cmd.getInstanceName();
-            List<VirtualMachineMO> vmMos = hyperHost.listVmsOnHyperHost(vmName);
+            List<VirtualMachineMO> vmMos = hyperHost.listVmsOnHyperHostWithHypervisorName(vmName);
 
             for (VirtualMachineMO vmMo : vmMos) {
                 if (vmMo == null) {
