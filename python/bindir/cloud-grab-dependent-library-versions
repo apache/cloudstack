@@ -19,7 +19,7 @@
 import subprocess
 
 depLibraries = ['bzip2', 'gzip', 'unzip', 'openssh-clients', 'nfs-utils', 'wget', 'ws-commons-util', 'commons-dbcp',
-                'commons-collections', 'commons-httpclient', 'jpackage-utils', 'mysql-connector-python3', 'python3', 'python-paramiko', 'ipmitool', 'commons-httpclient', 'commons-collections',
+                'commons-collections', 'commons-httpclient', 'jpackage-utils', 'mysql-connector-python3', 'python-paramiko', 'ipmitool', 'commons-httpclient', 'commons-collections',
                 'commons-pool', 'commons-dbcp', 'jakarta-commons-logging', 'java-*-openjdk']
 
 def runCmd(cmds):
