@@ -2208,7 +2208,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
 
-        if (org.apache.commons.lang3.StringUtils.isBlank(ip6Gateway) || org.apache.commons.lang3.StringUtils.isBlank(ip6Cidr)) {
+        if (StringUtils.isBlank(ip6Gateway) || StringUtils.isBlank(ip6Cidr)) {
             throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
         }
 
@@ -2223,7 +2223,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network!");
         }
 
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(startIPv6)) {
+        if (StringUtils.isNotBlank(startIPv6)) {
             if (!NetUtils.isValidIp6(startIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
             }
@@ -2232,7 +2232,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         }
 
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(endIPv6)) {
+        if (StringUtils.isNotBlank(endIPv6)) {
             if (!NetUtils.isValidIp6(endIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
             }
