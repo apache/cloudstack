@@ -112,7 +112,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item v-if="this.isAdminOrDomainAdmin()">
+        <a-form-item v-if="this.isAdminOrDomainAdmin() && !domainid">
           <span slot="label">
             {{ $t('label.domain') }}
             <a-tooltip :title="apiParams.domainid.description">
@@ -121,9 +121,7 @@
           </span>
           <a-select
             :loading="domainLoading"
-            v-decorator="['domainid', {
-              initialValue: selectedDomain,
-              rules: [{ required: true, message: $t('message.error.select') }] }]"
+            v-decorator="['domainid']"
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="domain in domainsList" :key="domain.id">
               {{ domain.name }}
@@ -215,7 +213,8 @@ export default {
       selectedIdp: '',
       loadingAccount: false,
       accountList: [],
-      account: null
+      account: null,
+      domainid: null
     }
   },
   beforeCreate () {
@@ -236,11 +235,14 @@ export default {
   methods: {
     fetchData () {
       this.account = this.$route.query && this.$route.query.account ? this.$route.query.account : null
-      this.fetchDomains()
-      this.fetchTimeZone()
+      this.domainid = this.$route.query && this.$route.query.domainid ? this.$route.query.domainid : null
+      if (!this.domianid) {
+        this.fetchDomains()
+      }
       if (!this.account) {
         this.fetchAccount()
       }
+      this.fetchTimeZone()
       if ('listIdps' in this.$store.getters.apis) {
         this.fetchIdps()
       }
@@ -313,14 +315,21 @@ export default {
           email: values.email,
           firstname: values.firstname,
           lastname: values.lastname,
-          domainid: values.domainid,
           accounttype: 0
         }
-        if (!this.account) {
-          params.account = this.accountList[values.account].name
-        } else {
+
+        if (this.account) {
           params.account = this.account
+        } else if (values.account) {
+          params.account = this.accountList[values.account].name
         }
+
+        if (this.domainid) {
+          params.domainid = this.domainid
+        } else if (values.domainid) {
+          params.domainid = values.domainid
+        }
+
         if (this.isValidValueForKey(values, 'timezone') && values.timezone.length > 0) {
           params.timezone = values.timezone
         }
