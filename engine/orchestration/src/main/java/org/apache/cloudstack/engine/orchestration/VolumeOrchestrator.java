@@ -1238,8 +1238,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         details.put(DiskTO.MOUNT_POINT, volumeInfo.get_iScsiName());
 
         VolumeVO volume = _volumeDao.findById(volumeInfo.getId());
-
         details.put(DiskTO.PROTOCOL_TYPE, (volume.getPoolType() != null) ? volume.getPoolType().toString() : null);
+
+         if (volume.getPoolId() != null) {
+            StoragePoolVO poolVO = _storagePoolDao.findById(volume.getPoolId());
+            if (poolVO.getParent() != 0L) {
+                details.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+            }
+        }
 
         ChapInfo chapInfo = volService.getChapInfo(volumeInfo, dataStore);
 
@@ -1704,7 +1710,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public void updateVolumeDiskChain(long volumeId, String path, String chainInfo) {
+    public void updateVolumeDiskChain(long volumeId, String path, String chainInfo, String updatedDataStoreUUID) {
         VolumeVO vol = _volsDao.findById(volumeId);
         boolean needUpdate = false;
         // Volume path is not getting updated in the DB, need to find reason and fix the issue.
@@ -1719,10 +1725,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             needUpdate = true;
         }
 
+        if (updatedDataStoreUUID != null) {
+            needUpdate = true;
+        }
+
         if (needUpdate) {
             s_logger.info("Update volume disk chain info. vol: " + vol.getId() + ", " + vol.getPath() + " -> " + path + ", " + vol.getChainInfo() + " -> " + chainInfo);
             vol.setPath(path);
             vol.setChainInfo(chainInfo);
+            if (updatedDataStoreUUID != null) {
+                List<StoragePoolVO> pools = _storagePoolDao.listPoolsByLikePath(updatedDataStoreUUID);
+                if (pools != null && !pools.isEmpty()) {
+                    vol.setPoolId(pools.get(0).getId());
+                }
+            }
             _volsDao.update(volumeId, vol);
         }
     }
