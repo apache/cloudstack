@@ -19,6 +19,7 @@ package org.apache.cloudstack.affinity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -91,6 +92,43 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
         DataCenter dc = _dcDao.findById(vm.getDataCenterId());
         List<DedicatedResourceVO> resourceList = new ArrayList<DedicatedResourceVO>();
+
+        // Check if the host is dedicated on which vm is running
+        DedicatedResourceVO dedicatedHost = _dedicatedDao.findByHostId(vm.getHostId());
+
+        if (dedicatedHost != null) {
+            // If the source host is dedicated then only the hosts which belong
+            // to the same affinity group are suitable for migration.
+            // Add other hosts to the avoid list
+            List<HostVO> allHosts = _hostDao.listAll();
+
+            // Get all the hosts which belong to same affinity group
+            List<DedicatedResourceVO> dedicatedHostsList = _dedicatedDao.listByAffinityGroupId(dedicatedHost.getAffinityGroupId());
+            Set<Long> dedicatedHostIds = dedicatedHostsList.parallelStream()
+                                                    .map(DedicatedResourceVO::getHostId)
+                                                    .collect(Collectors.toSet());
+            // Check if host matches the affinity group id
+            for (HostVO hostVO : allHosts) {
+                if (!dedicatedHostIds.contains(hostVO.getId())) {
+                    avoid.addHost(hostVO.getId());
+                }
+            }
+        } else {
+            // If host is not dedicated then all the hosts that are dedicated to
+            // different domain/account are not suitable for migration
+            List<DedicatedResourceVO> dedicatedHosts = _dedicatedDao.listAll();
+            for (DedicatedResourceVO host : dedicatedHosts) {
+                // Hosts dedicated to different account are not suitable for migration
+                if (host.getAccountId() != null) {
+                    if (host.getAccountId() != vm.getAccountId()) {
+                        avoid.addHost(host.getHostId());
+                    }
+                }
+                if (host.getDomainId() != vm.getDomainId()) {
+                    avoid.addHost(host.getHostId());
+                }
+            }
+        }
 
         if (vmGroupMappings != null && !vmGroupMappings.isEmpty()) {
 

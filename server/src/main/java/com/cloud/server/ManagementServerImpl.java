@@ -1343,12 +1343,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // call affinitygroup chain
-        final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
-
-        if (vmGroupCount > 0) {
-            for (final AffinityGroupProcessor processor : _affinityProcessors) {
-                processor.process(vmProfile, plan, excludes);
-            }
+        for (final AffinityGroupProcessor processor : _affinityProcessors) {
+            processor.process(vmProfile, plan, excludes);
         }
 
         if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
