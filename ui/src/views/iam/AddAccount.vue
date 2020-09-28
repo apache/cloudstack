@@ -167,7 +167,8 @@
           <a-select
             showSearch
             v-decorator="['timezone']"
-            :loading="timeZoneLoading">
+            :loading="timeZoneLoading"
+            :placeholder="apiParams.timezone.description">
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -270,6 +271,9 @@ export default {
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
+    isDomainAdmin () {
+      return this.$store.getters.userInfo.roletype === 'DomainAdmin'
+    },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
@@ -311,6 +315,12 @@ export default {
       api('listRoles').then(response => {
         this.roles = response.listrolesresponse.role || []
         this.selectedRole = this.roles[0].id
+        if (this.isDomainAdmin()) {
+          const userRole = this.roles.filter(role => role.type === 'User')
+          if (userRole.length > 0) {
+            this.selectedRole = userRole[0].id
+          }
+        }
       }).finally(() => {
         this.roleLoading = false
       })
