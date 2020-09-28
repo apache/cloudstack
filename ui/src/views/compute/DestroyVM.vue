@@ -134,9 +134,15 @@ export default {
             jobId,
             loadingMessage: `${this.$t('message.deleting.vm')} ${this.resource.name}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: `${this.$t('message.success.delete.vm')} ${this.resource.name}`
+            successMessage: `${this.$t('message.success.delete.vm')} ${this.resource.name}`,
+            successMethod: () => {
+              if (this.$route.path.includes('/vm/') && values.expunge) {
+                this.$router.go(-1)
+              } else {
+                this.parentFetchData()
+              }
+            }
           })
-          this.parentFetchData()
           this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
