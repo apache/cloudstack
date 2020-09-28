@@ -83,7 +83,7 @@ public class RedfishClient {
     private final static String ODATA_ID = "@odata.id";
     private final static String MEMBERS = "Members";
     private final static String EXPECTED_HTTP_STATUS = "2XX";
-    private final static int WAIT_FOR_REQUEST_RETRY = 1;
+    private final static int WAIT_FOR_REQUEST_RETRY = 2;
 
 
     /**
@@ -219,7 +219,7 @@ public class RedfishClient {
             return client.execute(httpReq);
         } catch (IOException e) {
             if (redfishRequestMaxRetries == 0) {
-                throw new RedfishException(String.format("Failed to execute HTTP %s request [URL: %s] due to exception.", httpReq.getMethod(), url), e);
+                throw new RedfishException(String.format("Failed to execute HTTP %s request [URL: %s] due to exception %s.", httpReq.getMethod(), url, e), e);
             }
             return retryHttpRequest(url, httpReq, client);
         }
