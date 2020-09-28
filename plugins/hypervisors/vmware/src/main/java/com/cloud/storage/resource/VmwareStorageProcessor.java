@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.cloud.hypervisor.vmware.mo.VirtualStorageObjectManagerMO;
+import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.vmware.vim25.BaseConfigInfoDiskFileBackingInfo;
 import com.vmware.vim25.VStorageObject;
 import com.vmware.vim25.VirtualDiskType;
@@ -2081,6 +2082,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             DatastoreMO dsMo = new DatastoreMO(context, morDs);
             String datastoreVolumePath;
+            boolean datastoreChangeObserved = false;
 
             if (isAttach) {
                 if (isManaged) {
@@ -2106,6 +2108,25 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 if (isManaged) {
                     datastoreVolumePath = dsMo.getDatastorePath((vmdkPath != null ? vmdkPath : dsMo.getName()) + ".vmdk");
                 } else {
+                    String datastoreUUID = primaryStore.getUuid();
+                    if (disk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && disk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                        DatastoreMO diskDatastoreMoFromVM = getDiskDatastoreMofromVM(hyperHost, context, vmMo, disk);
+                        if (diskDatastoreMoFromVM != null) {
+                            String actualPoolUuid = diskDatastoreMoFromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                            if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
+                                s_logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumeTO.getPath(), actualPoolUuid));
+                                datastoreChangeObserved = true;
+                                datastoreUUID = actualPoolUuid;
+                            }
+                        }
+                    }
+                    if (storagePort == DEFAULT_NFS_PORT) {
+                        morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(diskUuid) : datastoreUUID);
+                    } else {
+                        morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : datastoreUUID);
+                    }
+                    dsMo = new DatastoreMO(context, morDs);
+
                     datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
                     if (!dsMo.fileExists(datastoreVolumePath)) {
                         datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
@@ -2147,6 +2168,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath(), vmName, VmwareManager.s_vmwareSearchExcludeFolder.value());
                     }
                 }
+                if (datastoreChangeObserved)
+                    answer.setContextParam("datastoreName", dsMo.getName());
             }
 
             return answer;
@@ -2170,6 +2193,44 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             return new AttachAnswer(msg);
         }
+    }
+
+    private DatastoreMO getDiskDatastoreMofromVM(VmwareHypervisorHost hyperHost, VmwareContext context,
+                                                 VirtualMachineMO vmMo, DiskTO disk) throws Exception {
+        assert (hyperHost != null) && (context != null);
+        List<Pair<Integer, ManagedObjectReference>> diskDatastores = vmMo.getAllDiskDatastores();
+        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+        VolumeObjectTO volume = (VolumeObjectTO) disk.getData();
+        String diskBackingFileBaseName = volume.getPath();
+        for (Pair<Integer, ManagedObjectReference> diskDatastore : diskDatastores) {
+            DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), diskDatastore.second());
+            String dsName = dsMo.getName();
+
+            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(diskBackingFileBaseName, dsName);
+            if (diskInfo != null) {
+                s_logger.info("Found existing disk info from volume path: " + volume.getPath());
+                return dsMo;
+            } else {
+                String chainInfo = volume.getChainInfo();
+                if (chainInfo != null) {
+                    VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
+                    if (infoInChain != null) {
+                        String[] disks = infoInChain.getDiskChain();
+                        if (disks.length > 0) {
+                            for (String diskPath : disks) {
+                                DatastoreFile file = new DatastoreFile(diskPath);
+                                diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
+                                if (diskInfo != null) {
+                                    s_logger.info("Found existing disk from chain info: " + diskPath);
+                                    return dsMo;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private boolean expandVirtualDisk(VirtualMachineMO vmMo, String datastoreVolumePath, long currentSizeInBytes) throws Exception {

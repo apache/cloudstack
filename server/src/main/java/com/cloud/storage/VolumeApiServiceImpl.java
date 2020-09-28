@@ -2025,6 +2025,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
             DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+            Map<String, String> details = new HashMap<String, String>();
+            disk.setDetails(details);
+            if (volume.getPoolId() != null) {
+                StoragePoolVO poolVO = _storagePoolDao.findById(volume.getPoolId());
+                if (poolVO.getParent() != 0L) {
+                    details.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+                }
+            }
 
             DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
 
@@ -2045,6 +2053,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
+            String datastoreName = answer.getContextParam("datastoreName");
+            if (datastoreName != null) {
+                List<StoragePoolVO> storagePoolVOS = _storagePoolDao.listPoolsByLikePath(datastoreName);
+                if (storagePoolVOS != null && !storagePoolVOS.isEmpty()) {
+                    VolumeVO volumeVO = _volsDao.findById(volumeId);
+                    volumeVO.setPoolId(storagePoolVOS.get(0).getId());
+                    _volsDao.update(volumeVO.getId(), volumeVO);
+                } else {
+                    s_logger.warn(String.format("Unable to find datastore %s while updating the new datastore of the volume %d", datastoreName, volumeId));
+                }
+            }
 
             // volume.getPoolId() should be null if the VM we are detaching the disk from has never been started before
             if (volume.getPoolId() != null) {
@@ -3041,6 +3060,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     details.put(DiskTO.CHAP_TARGET_USERNAME, chapInfo.getTargetUsername());
                     details.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
                 }
+
+                if (volumeToAttach.getPoolId() != null) {
+                    StoragePoolVO poolVO = _storagePoolDao.findById(volumeToAttach.getPoolId());
+                    if (poolVO.getParent() != 0L) {
+                        details.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+                    }
+                }
+
                 _userVmDao.loadDetails(vm);
                 Map<String, String> controllerInfo = new HashMap<String, String>();
                 controllerInfo.put(VmDetailConstants.ROOT_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER));

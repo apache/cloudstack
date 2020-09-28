@@ -63,6 +63,7 @@ public class VolumeObjectTO implements DataTO {
     private MigrationOptions migrationOptions;
     private boolean directDownload;
     private boolean deployAsIs;
+    private String updatedDataStoreUUID;
 
     public VolumeObjectTO() {
 
@@ -319,4 +320,13 @@ public class VolumeObjectTO implements DataTO {
     public boolean isDeployAsIs() {
         return deployAsIs;
     }
+
+    public String getUpdatedDataStoreUUID() {
+        return updatedDataStoreUUID;
+    }
+
+    public void setUpdatedDataStoreUUID(String updatedDataStoreUUID) {
+        this.updatedDataStoreUUID = updatedDataStoreUUID;
+    }
+
 }

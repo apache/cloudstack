@@ -1791,13 +1791,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            DatastoreMO dsRootVolumeIsOn = getDatastoreThatRootDiskIsOn(dataStoresDetails, disks);
-            if (dsRootVolumeIsOn == null) {
-                String msg = "Unable to locate datastore details of root volume";
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
-
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
             VirtualDevice[] nicDevices = null;
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
@@ -1806,12 +1799,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int numScsiControllerForSystemVm = 1;
             boolean hasSnapshot = false;
 
+            List<Pair<Integer, ManagedObjectReference>> diskDatastores = null;
             if (vmMo != null) {
                 s_logger.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
                 if (getVmPowerState(vmMo) != PowerState.PowerOff)
                     vmMo.safePowerOff(_shutdownWaitMs);
 
                 // retrieve disk information before we tear down
+                diskDatastores = vmMo.getAllDiskDatastores();
                 diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 hasSnapshot = vmMo.hasSnapshot();
                 nicDevices = vmMo.getNicDevices();
@@ -1836,6 +1831,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     diskInfoBuilder = vmMo.getDiskInfoBuilder();
                     hasSnapshot = vmMo.hasSnapshot();
+                    diskDatastores = vmMo.getAllDiskDatastores();
 
                     tearDownVmDevices(vmMo, hasSnapshot, deployAsIs);
                     ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, systemVmScsiControllerType,
@@ -1866,32 +1862,33 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
                         mapSpecDisksToClonedDisks(vmMo, vmInternalCSName, specDisks);
                     } else {
-                        Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
+                        DiskTO rootDisk = null;
                         for (DiskTO vol : disks) {
                             if (vol.getType() == Volume.Type.ROOT) {
-                                Map<String, String> details = vol.getDetails();
-                                boolean managed = false;
-
-                                if (details != null) {
-                                    managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-                                }
-
-                                if (managed) {
-                                    String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
-
-                                    rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
-                                } else {
-                                    DataStoreTO primaryStore = vol.getData().getDataStore();
-
-                                    rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
+                                rootDisk = vol;
+                            }
+                        }
+                        Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = getDatastoreThatDiskIsOn(dataStoresDetails, rootDisk);
+                        assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
+                        DatastoreMO dsRootVolumeIsOn = rootDiskDataStoreDetails.second();
+                        if (dsRootVolumeIsOn == null) {
+                                String msg = "Unable to locate datastore details of root volume";
+                                s_logger.error(msg);
+                                throw new Exception(msg);
+                            }
+                        if (rootDisk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && rootDisk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                            if (diskInfoBuilder != null) {
+                                DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, rootDisk, diskDatastores);
+                                if (diskDatastoreMofromVM != null) {
+                                    String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                                    if (!actualPoolUuid.equalsIgnoreCase(rootDisk.getData().getDataStore().getUuid())) {
+                                        dsRootVolumeIsOn = diskDatastoreMofromVM;
+                                    }
                                 }
                             }
                         }
 
-                        assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
-
-                        boolean vmFolderExists = rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter);
-                        String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
+                        boolean vmFolderExists = dsRootVolumeIsOn.folderExists(String.format("[%s]", dsRootVolumeIsOn.getName()), vmNameOnVcenter);                        String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
                         if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
                             registerVm(vmNameOnVcenter, dsRootVolumeIsOn);
                             vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
@@ -2121,13 +2118,30 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         iScsiName = details.get(DiskTO.IQN);
                     }
 
+                    String primaryStoreUuid = primaryStore.getUuid();
                     // if the storage is managed, iScsiName should not be null
-                    String datastoreName = managed ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid();
+                    String datastoreName = managed ? VmwareResource.getDatastoreName(iScsiName) : primaryStoreUuid;
                     Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
 
                     assert (volumeDsDetails != null);
+                    if (volumeDsDetails == null) {
+                        throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
+                    }
 
-                    String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, vol, matchingExistingDisk, dataStoresDetails);
+                    if (vol.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && vol.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                        if (diskInfoBuilder != null && matchingExistingDisk == null) {
+                            DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, vol, diskDatastores);
+                            if (diskDatastoreMofromVM != null) {
+                                String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                                if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
+                                    volumeDsDetails = new Pair<>(diskDatastoreMofromVM.getMor(), diskDatastoreMofromVM);
+                                    ((PrimaryDataStoreTO)primaryStore).setUuid(actualPoolUuid);
+                                }
+                            }
+                        }
+                    }
+
+                    String[] diskChain = syncDiskChain(dcMo, vmMo, vol, matchingExistingDisk, volumeDsDetails.second());
 
                     int deviceNumber = -1;
                     if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) {
@@ -2872,31 +2886,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     // return the finalized disk chain for startup, from top to bottom
-    private String[] syncDiskChain(DatacenterMO dcMo, VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO vol, VirtualMachineDiskInfo diskInfo,
-                                   HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails) throws Exception {
+    private String[] syncDiskChain(DatacenterMO dcMo, VirtualMachineMO vmMo, DiskTO vol, VirtualMachineDiskInfo diskInfo,
+                                   DatastoreMO dsMo) throws Exception {
 
         VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
-        DataStoreTO primaryStore = volumeTO.getDataStore();
         Map<String, String> details = vol.getDetails();
         boolean isManaged = false;
-        String iScsiName = null;
 
         if (details != null) {
             isManaged = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-            iScsiName = details.get(DiskTO.IQN);
         }
 
-        // if the storage is managed, iScsiName should not be null
-        String datastoreName = isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid();
-        Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
-
-        if (volumeDsDetails == null) {
-            throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
-        }
-
-        DatastoreMO dsMo = volumeDsDetails.second();
         String datastoreDiskPath;
-
         if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
             datastoreDiskPath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
             if (!dsMo.fileExists(datastoreDiskPath)) {
@@ -3327,6 +3328,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     volInSpec.setPath(datastoreVolumePath);
                 } else {
                     volInSpec.setPath(file.getFileBaseName());
+                    if (!file.getDatastoreName().equals(volumeTO.getDataStore().getUuid()))
+                        volInSpec.setUpdatedDataStoreUUID(file.getDatastoreName());
                 }
                 volInSpec.setChainInfo(_gson.toJson(diskInfo));
             }
@@ -3462,6 +3465,41 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return path.substring(0, endIndex).trim();
     }
 
+    private DatastoreMO getDataStoreWhereDiskExists(VmwareHypervisorHost hyperHost, VmwareContext context,
+                                               VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO disk, List<Pair<Integer, ManagedObjectReference>> diskDatastores) throws Exception {
+        VolumeObjectTO volume = (VolumeObjectTO) disk.getData();
+        String diskBackingFileBaseName = volume.getPath();
+        for (Pair<Integer, ManagedObjectReference> diskDatastore : diskDatastores) {
+            DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), diskDatastore.second());
+            String dsName = dsMo.getName();
+
+            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(diskBackingFileBaseName, dsName);
+            if (diskInfo != null) {
+                s_logger.info("Found existing disk info from volume path: " + volume.getPath());
+                return dsMo;
+            } else {
+                String chainInfo = volume.getChainInfo();
+                if (chainInfo != null) {
+                    VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
+                    if (infoInChain != null) {
+                        String[] disks = infoInChain.getDiskChain();
+                        if (disks.length > 0) {
+                            for (String diskPath : disks) {
+                                DatastoreFile file = new DatastoreFile(diskPath);
+                                diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
+                                if (diskInfo != null) {
+                                    s_logger.info("Found existing disk from chain info: " + diskPath);
+                                    return dsMo;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> inferDatastoreDetailsFromDiskInfo(VmwareHypervisorHost hyperHost, VmwareContext context,
                                                                                                          DiskTO[] disks, Command cmd) throws Exception {
         HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> mapIdToMors = new HashMap<>();
@@ -3534,39 +3572,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return mapIdToMors;
     }
 
-    private DatastoreMO getDatastoreThatRootDiskIsOn(HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails, DiskTO disks[]) {
+    private Pair<ManagedObjectReference, DatastoreMO> getDatastoreThatDiskIsOn(HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails, DiskTO vol) {
         Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
 
-        for (DiskTO vol : disks) {
-            if (vol.getType() == Volume.Type.ROOT) {
-                Map<String, String> details = vol.getDetails();
-                boolean managed = false;
+        Map<String, String> details = vol.getDetails();
+        boolean managed = false;
 
-                if (details != null) {
-                    managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-                }
-
-                if (managed) {
-                    String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
-
-                    rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
-
-                    break;
-                } else {
-                    DataStoreTO primaryStore = vol.getData().getDataStore();
-
-                    rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
-
-                    break;
-                }
-            }
+        if (details != null) {
+            managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
         }
 
-        if (rootDiskDataStoreDetails != null) {
-            return rootDiskDataStoreDetails.second();
+        if (managed) {
+            String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
+            rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
+        } else {
+            DataStoreTO primaryStore = vol.getData().getDataStore();
+            rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
         }
 
-        return null;
+        return rootDiskDataStoreDetails;
     }
 
     private String getPvlanInfo(NicTO nicTo) {

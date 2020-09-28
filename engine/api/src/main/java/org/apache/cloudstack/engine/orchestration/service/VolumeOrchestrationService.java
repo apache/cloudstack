@@ -134,7 +134,7 @@ public interface VolumeOrchestrationService {
 
     StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
 
-    void updateVolumeDiskChain(long volumeId, String path, String chainInfo);
+    void updateVolumeDiskChain(long volumeId, String path, String chainInfo, String updatedDataStoreUUID);
 
     /**
      * Imports an existing volume for a VM into database. Useful while ingesting an unmanaged VM.

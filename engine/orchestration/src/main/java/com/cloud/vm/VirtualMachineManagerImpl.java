@@ -1491,9 +1491,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 // Before doing this, in a certain situation, getPath() from VolumeObjectTO
                 // returned null instead of an actual path (because it was out of date with the DB).
                 if(vol.getPath() != null) {
-                    volumeMgr.updateVolumeDiskChain(vol.getId(), vol.getPath(), vol.getChainInfo());
+                    volumeMgr.updateVolumeDiskChain(vol.getId(), vol.getPath(), vol.getChainInfo(), vol.getUpdatedDataStoreUUID());
                 } else {
-                    volumeMgr.updateVolumeDiskChain(vol.getId(), volume.getPath(), vol.getChainInfo());
+                    volumeMgr.updateVolumeDiskChain(vol.getId(), volume.getPath(), vol.getChainInfo(), vol.getUpdatedDataStoreUUID());
                 }
             }
         }
