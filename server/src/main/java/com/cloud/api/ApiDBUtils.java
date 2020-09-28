@@ -1568,7 +1568,7 @@ public class ApiDBUtils {
     }
 
     public static VpcVO findVpcById(long vpcId) {
-        return s_vpcDao.findById(vpcId);
+        return s_vpcDao.findByIdIncludingRemoved(vpcId);
     }
 
     public static SnapshotPolicy findSnapshotPolicyById(long policyId) {
