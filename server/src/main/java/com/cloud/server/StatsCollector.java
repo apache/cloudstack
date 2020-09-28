@@ -36,6 +36,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -1027,8 +1028,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                             storagePoolStats.put(pool.getId(), (StorageStats)answer);
 
                             // Seems like we have dynamically updated the pool size since the prev. size and the current do not match
-                            if (_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()) {
+                            if (pool.getCapacityBytes() != ((StorageStats)answer).getCapacityBytes() ||
+                                    pool.getUsedBytes() != ((StorageStats)answer).getByteUsed()) {
                                 pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
+                                if (pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY)) {
+                                    pool.setUsedBytes(((StorageStats) answer).getByteUsed());
+                                    pool.setUpdateTime(new Date());
+                                }
                                 _storagePoolDao.update(pool.getId(), pool);
                             }
                         }
