@@ -146,10 +146,10 @@
             <a-radio-button value="">
               {{ $t('label.none') }}
             </a-radio-button>
-            <a-radio-button value="accept">
+            <a-radio-button value="true">
               {{ $t('label.accept') }}
             </a-radio-button>
-            <a-radio-button value="reject">
+            <a-radio-button value="false">
               {{ $t('label.reject') }}
             </a-radio-button>
           </a-radio-group>
@@ -164,10 +164,10 @@
             <a-radio-button value="">
               {{ $t('label.none') }}
             </a-radio-button>
-            <a-radio-button value="accept">
+            <a-radio-button value="true">
               {{ $t('label.accept') }}
             </a-radio-button>
-            <a-radio-button value="reject">
+            <a-radio-button value="false">
               {{ $t('label.reject') }}
             </a-radio-button>
           </a-radio-group>
@@ -182,10 +182,10 @@
             <a-radio-button value="">
               {{ $t('label.none') }}
             </a-radio-button>
-            <a-radio-button value="accept">
+            <a-radio-button value="true">
               {{ $t('label.accept') }}
             </a-radio-button>
-            <a-radio-button value="reject">
+            <a-radio-button value="false">
               {{ $t('label.reject') }}
             </a-radio-button>
           </a-radio-group>
@@ -894,13 +894,13 @@ export default {
         if ('egressdefaultpolicy' in values && values.egressdefaultpolicy !== 'allow') {
           params.egressdefaultpolicy = false
         }
-        if ('promiscuousmode' in values) {
+        if (values.promiscuousmode) {
           params['details[0].promiscuousMode'] = values.promiscuousmode
         }
-        if ('macaddresschanges' in values) {
+        if (values.macaddresschanges) {
           params['details[0].macaddresschanges'] = values.macaddresschanges
         }
-        if ('forgedtransmits' in values) {
+        if (values.forgedtransmits) {
           params['details[0].forgedtransmits'] = values.forgedtransmits
         }
         if (values.ispublic !== true) {
