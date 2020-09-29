@@ -650,7 +650,7 @@ export default {
           params.storagepolicy = values.storagepolicy
         }
         api('createDiskOffering', params).then(json => {
-          this.$message.success(`${this.$t('message.disk.offering.created')} ${values.name}}`)
+          this.$message.success(`${this.$t('message.disk.offering.created')} ${values.name}`)
           this.$emit('refresh-data')
           this.closeAction()
         }).catch(error => {

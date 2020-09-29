@@ -62,7 +62,7 @@
           <a-form-item :label="$t('label.name')">
             <a-input
               v-decorator="['name', {
-                rules: [{ required: true, message: `${this.$t('label.upload.template.from.local')}` }]
+                rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
               }]"
               :placeholder="apiParams.name.description" />
           </a-form-item>
