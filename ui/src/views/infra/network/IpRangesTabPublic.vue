@@ -76,7 +76,7 @@
       style="overflow-y: auto"
       :current="page"
       :pageSize="pageSize"
-      :total="items.length"
+      :total="total"
       :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="changePage"
@@ -221,6 +221,7 @@ export default {
     return {
       componentLoading: false,
       items: [],
+      total: 0,
       selectedItem: null,
       accountModal: false,
       addAccountModal: false,
@@ -290,6 +291,7 @@ export default {
         pagesize: this.pageSize
       }).then(response => {
         this.items = response.listvlaniprangesresponse.vlaniprange ? response.listvlaniprangesresponse.vlaniprange : []
+        this.total = response.listvlaniprangesresponse.count || 0
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {

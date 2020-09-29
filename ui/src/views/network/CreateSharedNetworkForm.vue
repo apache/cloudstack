@@ -432,6 +432,10 @@ export default {
     physicalNetworks: {
       type: Array,
       default: null
+    },
+    resource: {
+      type: Object,
+      default: () => { return {} }
     }
   },
   data () {
@@ -454,6 +458,11 @@ export default {
       projects: [],
       projectLoading: false,
       selectedProject: {}
+    }
+  },
+  watch: {
+    resource (newItem, oldItem) {
+      this.fetchData()
     }
   },
   beforeCreate () {
@@ -499,6 +508,7 @@ export default {
       return this.isValidValueForKey(obj, key) && obj[key].length > 0
     },
     fetchZoneData () {
+      this.zones = []
       if (this.zone !== null) {
         this.zones.push(this.zone)
         if (this.arrayHasItems(this.zones)) {
@@ -509,6 +519,9 @@ export default {
         }
       } else {
         const params = {}
+        if (this.resource.zoneid) {
+          params.id = this.resource.zoneid
+        }
         params.listAll = true
         this.zoneLoading = true
         api('listZones', params).then(json => {

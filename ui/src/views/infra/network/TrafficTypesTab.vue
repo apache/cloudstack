@@ -26,6 +26,10 @@
           <div><strong>{{ $t(type) }}</strong></div>
           <div>{{ item[type] || $t('label.network.label.display.for.blank.value') }}</div>
         </div>
+        <div v-if="item.traffictype === 'Guest'">
+          <a-divider />
+          <IpRangesTabGuest :resource="resource" :loading="loading" />
+        </div>
         <div v-if="item.traffictype === 'Public'">
           <div style="margin-bottom: 10px;">
             <div><strong>{{ $t('label.traffictype') }}</strong></div>
@@ -57,13 +61,15 @@ import { mixinDevice } from '@/utils/mixin.js'
 import IpRangesTabPublic from './IpRangesTabPublic'
 import IpRangesTabManagement from './IpRangesTabManagement'
 import IpRangesTabStorage from './IpRangesTabStorage'
+import IpRangesTabGuest from './IpRangesTabGuest'
 
 export default {
   name: 'TrafficTypesTab',
   components: {
     IpRangesTabPublic,
     IpRangesTabManagement,
-    IpRangesTabStorage
+    IpRangesTabStorage,
+    IpRangesTabGuest
   },
   mixins: [mixinDevice],
   props: {

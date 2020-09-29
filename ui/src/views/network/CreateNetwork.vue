@@ -21,6 +21,7 @@
       <a-tab-pane :tab="$t('label.isolated')" key="1" v-if="this.isAdvancedZoneWithoutSGAvailable()">
         <CreateIsolatedNetworkForm
           :loading="loading"
+          :resource="resource"
           @close-action="closeAction"
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
@@ -28,6 +29,7 @@
       <a-tab-pane :tab="$t('label.l2')" key="2">
         <CreateL2NetworkForm
           :loading="loading"
+          :resource="resource"
           @close-action="closeAction"
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
@@ -35,6 +37,7 @@
       <a-tab-pane :tab="$t('label.shared')" key="3" v-if="this.isAdmin()">
         <CreateSharedNetworkForm
           :loading="loading"
+          :resource="resource"
           @close-action="closeAction"
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
@@ -70,6 +73,11 @@ export default {
       actionZoneLoading: false
     }
   },
+  watch: {
+    resource (newItem, oldItem) {
+      this.fetchData()
+    }
+  },
   mounted () {
     this.fetchData()
   },
@@ -83,6 +91,9 @@ export default {
     },
     fetchActionZoneData () {
       const params = {}
+      if (this.resource && this.resource.zoneid) {
+        params.id = this.resource.zoneid
+      }
       params.listAll = true
       this.actionZonesLoading = true
       api('listZones', params).then(json => {

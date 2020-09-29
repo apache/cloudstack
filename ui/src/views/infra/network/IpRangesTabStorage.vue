@@ -55,7 +55,7 @@
       style="overflow-y: auto"
       :current="page"
       :pageSize="pageSize"
-      :total="items.length"
+      :total="total"
       :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="changePage"
@@ -136,6 +136,7 @@ export default {
     return {
       componentLoading: false,
       items: [],
+      total: 0,
       pods: [],
       domains: [],
       domainsLoading: false,
@@ -198,7 +199,8 @@ export default {
         page: this.page,
         pageSize: this.pageSize
       }).then(response => {
-        this.items = response.liststoragenetworkiprangeresponse.storagenetworkiprange ? response.liststoragenetworkiprangeresponse.storagenetworkiprange : []
+        this.items = response.liststoragenetworkiprangeresponse.storagenetworkiprange || []
+        this.total = response.liststoragenetworkiprangeresponse.count || 0
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {

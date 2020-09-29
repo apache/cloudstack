@@ -78,7 +78,7 @@
       centered
       width="auto">
       <create-network
-        :resource="{}"
+        :resource="{ zoneid: zoneId }"
         @refresh-data="handleSearch"
         @close-action="showCreateForm = false"
       />

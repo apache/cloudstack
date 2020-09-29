@@ -236,6 +236,10 @@ export default {
     vpc: {
       type: Object,
       default: null
+    },
+    resource: {
+      type: Object,
+      default: () => { return {} }
     }
   },
   data () {
@@ -252,6 +256,11 @@ export default {
       selectedNetworkOffering: {},
       accountVisible: this.isAdminOrDomainAdmin(),
       isolatePvlanType: 'none'
+    }
+  },
+  watch: {
+    resource (newItem, oldItem) {
+      this.fetchData()
     }
   },
   beforeCreate () {
@@ -297,7 +306,11 @@ export default {
       return this.isValidValueForKey(obj, key) && obj[key].length > 0
     },
     fetchZoneData () {
+      this.zones = []
       const params = {}
+      if (this.resource.zoneid) {
+        params.id = this.resource.zoneid
+      }
       params.listAll = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
