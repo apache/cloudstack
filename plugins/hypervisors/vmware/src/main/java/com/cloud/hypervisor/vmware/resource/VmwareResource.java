@@ -2229,7 +2229,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
                 String adapterTypeStr = deployAsIs ?
-                        deployAsIsInfo.getNicAdapterMap().get(nicTo.getDeviceId()) :
+                        mapAdapterType(deployAsIsInfo.getNicAdapterMap().get(nicTo.getDeviceId())) :
                         vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER);
                 nicDeviceType = VirtualEthernetCardType.valueOf(adapterTypeStr);
 
@@ -2400,6 +2400,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return startAnswer;
         } finally {
         }
+    }
+
+    private String mapAdapterType(String adapterStringFromOVF) {
+        if (StringUtils.isBlank(adapterStringFromOVF) || adapterStringFromOVF.equalsIgnoreCase(VirtualEthernetCardType.E1000.toString())) {
+            return VirtualEthernetCardType.E1000.toString();
+        } else if (adapterStringFromOVF.equalsIgnoreCase(VirtualEthernetCardType.PCNet32.toString())) {
+            return VirtualEthernetCardType.PCNet32.toString();
+        } else if (adapterStringFromOVF.equalsIgnoreCase(VirtualEthernetCardType.Vmxnet2.toString())) {
+            return VirtualEthernetCardType.Vmxnet2.toString();
+        } else if (adapterStringFromOVF.equalsIgnoreCase(VirtualEthernetCardType.Vmxnet3.toString())) {
+            return VirtualEthernetCardType.Vmxnet3.toString();
+        }
+        return VirtualEthernetCardType.E1000.toString();
     }
 
     private int getDisksChangesNumberFromDisksSpec(DiskTO[] disks, boolean deployAsIs) {
