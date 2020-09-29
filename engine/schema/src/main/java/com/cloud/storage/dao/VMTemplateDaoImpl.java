@@ -95,6 +95,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     protected SearchBuilder<VMTemplateVO> AccountIdSearch;
     protected SearchBuilder<VMTemplateVO> NameSearch;
+    protected SearchBuilder<VMTemplateVO> ValidNameSearch;
     protected SearchBuilder<VMTemplateVO> TmpltsInZoneSearch;
     protected SearchBuilder<VMTemplateVO> ActiveTmpltSearch;
     private SearchBuilder<VMTemplateVO> PublicSearch;
@@ -138,8 +139,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     @Override
     public VMTemplateVO findValidByTemplateName(String templateName) {
-        SearchCriteria<VMTemplateVO> sc = NameSearch.create();
+        SearchCriteria<VMTemplateVO> sc = ValidNameSearch.create();
         sc.setParameters("name", templateName);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
         return findOneBy(sc);
     }
 
@@ -319,6 +321,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         UniqueNameSearch.and("uniqueName", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        ValidNameSearch = createSearchBuilder();
+        ValidNameSearch.and("name", ValidNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        ValidNameSearch.and("state", ValidNameSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ValidNameSearch.and("removed", ValidNameSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 
         NameAccountIdSearch = createSearchBuilder();
         NameAccountIdSearch.and("name", NameAccountIdSearch.entity().getName(), SearchCriteria.Op.EQ);
