@@ -517,5 +517,21 @@ ALTER VIEW `cloud`.`image_store_view` AS
             left join
         `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
 
--- OVF configured OS while registering deploy-as-is templates
-INSERT IGNORE INTO `cloud`.`guest_os` (uuid, category_id, display_name, created) VALUES (UUID(), 11, 'OVF Configured OS', now());
+-- OVF configured OS while registering deploy-as-is templates Linux 3.x Kernel OS
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (305, UUID(), 11, 'OVF Configured OS', now());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (306, UUID(), 2, 'Linux 3.x Kernel (64 bit)', now());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (307, UUID(), 2, 'Linux 3.x Kernel (32 bit)', now());
+
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.0', 'other3xLinux64Guest', 306, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'other3xLinux64Guest', 306, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.7', 'other3xLinux64Guest', 306, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.7.1', 'other3xLinux64Guest', 306, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.7.2', 'other3xLinux64Guest', 306, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.7.3', 'other3xLinux64Guest', 306, now(), 0);
+
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.0', 'other3xLinuxGuest', 307, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.5', 'other3xLinuxGuest', 307, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.7', 'other3xLinuxGuest', 307, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.7.1', 'other3xLinuxGuest', 307, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.7.2', 'other3xLinuxGuest', 307, now(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '6.7.3', 'other3xLinuxGuest', 307, now(), 0);

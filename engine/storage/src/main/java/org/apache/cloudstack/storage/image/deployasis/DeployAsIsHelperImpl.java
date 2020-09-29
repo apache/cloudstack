@@ -69,10 +69,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Component
 public class DeployAsIsHelperImpl implements DeployAsIsHelper {
@@ -167,11 +165,10 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 if (CollectionUtils.isNotEmpty(guestOsMappings)) {
-                    Pair<Boolean, Set<String>> result = updateDeployAsIsTemplateToExistingGuestOs(template, guestOsMappings, guestOsDescription);
-                    if (!result.first()) {
-                        // If couldnt find a guest OS matching the display name, create a new guest OS
-                        updateDeployAsIsTemplateToNewGuestOs(template, guestOsType, guestOsDescription, hypervisor, result.second());
-                    }
+                    GuestOSHypervisorVO mapping = guestOsMappings.get(0);
+                    long guestOsId = mapping.getGuestOsId();
+                    LOGGER.info("Updating deploy-as-is template guest OS to " + guestOsType);
+                    updateTemplateGuestOsId(template, guestOsId);
                 } else {
                     // The guest OS is not present in DB, create a new guest OS entry and mappings for supported versions
                     List<String> hypervisorVersions = guestOSHypervisorDao.listHypervisorSupportedVersionsFromMinimumVersion(
@@ -180,31 +177,6 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
                 }
             }
         });
-    }
-
-    /**
-     * Return true if the template guest OS can be updated to an existing guest OS matching the display name to
-     * the guest OS description from the OVF. (the second element of the returned pair is not used)
-     * If the guest OS does not exist, return false and the hypervisor versions that the guest OS must support
-     */
-    private Pair<Boolean, Set<String>> updateDeployAsIsTemplateToExistingGuestOs(VMTemplateVO template,
-                                                                                 List<GuestOSHypervisorVO> guestOsMappings,
-                                                                                 String guestOsDescription) {
-        Set<String> versionsToSupport = new HashSet<>();
-        for (GuestOSHypervisorVO mapping : guestOsMappings) {
-            long guestOsId = mapping.getGuestOsId();
-            GuestOSVO guestOs = guestOSDao.findById(guestOsId);
-            versionsToSupport.add(mapping.getHypervisorVersion());
-            if (guestOs.getDisplayName().equalsIgnoreCase(guestOsDescription)) {
-                LOGGER.info("Found guest OS mapping for OVF read guest OS " + guestOsDescription +
-                        " to hypervisor version " + mapping.getHypervisorVersion());
-                LOGGER.info("Updating deploy-as-is template guest OS to " + guestOs.getDisplayName());
-                updateTemplateGuestOsId(template, guestOsId);
-                return new Pair<>(true, versionsToSupport);
-            }
-        }
-        LOGGER.info("Could not map the OVF read guest OS " + guestOsDescription + " to an existing guest OS");
-        return new Pair<>(false, versionsToSupport);
     }
 
     /**

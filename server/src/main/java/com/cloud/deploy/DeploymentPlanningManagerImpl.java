@@ -320,8 +320,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     return null;
                 }
 
+                boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
                 if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-                    DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>());
+                    DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>(), displayStorage);
                     s_logger.debug("Returning Deployment Destination: " + dest);
                     return dest;
                 }
@@ -351,7 +352,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         for (Volume vol : readyAndReusedVolumes) {
                             storageVolMap.remove(vol);
                         }
-                        DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap);
+                        DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap, displayStorage);
                         s_logger.debug("Returning Deployment Destination: " + dest);
                         return dest;
                     }
@@ -440,6 +441,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
                         }
 
+                        boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
                         if (hostHasCapacity
                                 && hostHasCpuCapability) {
                             s_logger.debug("The last host of this VM is UP and has enough capacity");
@@ -449,7 +451,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             Pod pod = _podDao.findById(host.getPodId());
                             Cluster cluster = _clusterDao.findById(host.getClusterId());
                             if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-                                DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>());
+                                DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>(), displayStorage);
                                 s_logger.debug("Returning Deployment Destination: " + dest);
                                 return dest;
                             }
@@ -482,7 +484,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                         storageVolMap.remove(vol);
                                     }
                                     DeployDestination dest = new DeployDestination(dc, pod, cluster, host,
-                                            storageVolMap);
+                                            storageVolMap, displayStorage);
                                     s_logger.debug("Returning Deployment Destination: " + dest);
                                     return dest;
                                 }
@@ -553,6 +555,13 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
 
         return dest;
+    }
+
+    /**
+     * Display storage in the logs by default if the template is not deploy-as-is.
+     */
+    private boolean getDisplayStorageFromVmProfile(VirtualMachineProfile vmProfile) {
+        return vmProfile == null || vmProfile.getTemplate() == null || !vmProfile.getTemplate().isDeployAsIs();
     }
 
     @Override
@@ -1121,7 +1130,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             for (Volume vol : readyAndReusedVolumes) {
                                 storageVolMap.remove(vol);
                             }
-                            DeployDestination dest = new DeployDestination(dc, pod, clusterVO, host, storageVolMap);
+                            boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
+                            DeployDestination dest = new DeployDestination(dc, pod, clusterVO, host, storageVolMap, displayStorage);
                             s_logger.debug("Returning Deployment Destination: " + dest);
                             return dest;
                         }
@@ -1329,6 +1339,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             if (hostCanAccessPool && haveEnoughSpace && hostAffinityCheck && checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
                 s_logger.debug("Found a potential host " + "id: " + potentialHost.getId() + " name: " + potentialHost.getName() +
                         " and associated storage pools for this VM");
+                volumeAllocationMap.clear();
                 return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
             } else {
                 avoid.addHost(potentialHost.getId());

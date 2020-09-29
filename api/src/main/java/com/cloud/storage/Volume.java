@@ -235,4 +235,6 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
     boolean isDisplayVolume();
 
     boolean isDisplay();
+
+    boolean isDeployAsIs();
 }
