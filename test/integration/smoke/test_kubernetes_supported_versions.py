@@ -130,12 +130,12 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         # 2. The Cloud Database contains the valid information when listKubernetesSupportedVersions is called
         """
 
-        version = '1.16.3'
-        name = 'v' + version + '-' + random_gen()
+        version = self.services["cks_kubernetes_versions"]["1.16.3"]
+        name = 'v' + version["semanticversion"] + '-' + random_gen()
 
         self.debug("Adding Kubernetes supported version with name: %s" % name)
 
-        version_response = self.addKubernetesSupportedVersion(version, name, self.zone.id, self.kubernetes_version_iso_url)
+        version_response = self.addKubernetesSupportedVersion(version["semanticversion"], name, self.zone.id, version["url"], version["mincpunumber"], version["minmemory"])
 
         list_versions_response = self.listKubernetesSupportedVersion(version_response.id)
 
@@ -147,8 +147,8 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
 
         self.assertEqual(
             list_versions_response.semanticversion,
-            version,
-            "Check KubernetesSupportedVersion version {}, {}".format(list_versions_response.semanticversion, version)
+            version["semanticversion"],
+            "Check KubernetesSupportedVersion version {}, {}".format(list_versions_response.semanticversion, version["semanticversion"])
         )
         self.assertEqual(
             list_versions_response.zoneid,
@@ -228,14 +228,14 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
             self.debug("Unsupported version error check successful, API failure: %s" % e)
         return
 
-    def addKubernetesSupportedVersion(self, version, name, zoneId, isoUrl):
+    def addKubernetesSupportedVersion(self, version, name, zoneId, isoUrl, mincpunumber=2, minmemory=2048):
         addKubernetesSupportedVersionCmd = addKubernetesSupportedVersion.addKubernetesSupportedVersionCmd()
         addKubernetesSupportedVersionCmd.semanticversion = version
         addKubernetesSupportedVersionCmd.name = name
         addKubernetesSupportedVersionCmd.zoneid = zoneId
         addKubernetesSupportedVersionCmd.url = isoUrl
-        addKubernetesSupportedVersionCmd.mincpunumber = 2
-        addKubernetesSupportedVersionCmd.minmemory = 2048
+        addKubernetesSupportedVersionCmd.mincpunumber = mincpunumber
+        addKubernetesSupportedVersionCmd.minmemory = minmemory
         versionResponse = self.apiclient.addKubernetesSupportedVersion(addKubernetesSupportedVersionCmd)
         if not versionResponse:
             self.cleanup.append(versionResponse)
