@@ -188,8 +188,12 @@ class VmwareVmImplementer {
     private void setDeployAsIsInfoTO(VirtualMachineProfile vm, VirtualMachineTO to, Map<String, String> details) {
         String configuration = details.getOrDefault(VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION, null);
         Map<String, String> properties = deployAsIsHelper.getVirtualMachineDeployAsIsProperties(vm);
-        String destStoragePool = deployAsIsHelper.getAllocatedVirtualMachineDestinationStoragePool(vm);
-        String templatePath = deployAsIsHelper.getAllocatedVirtualMachineTemplatePath(vm, configuration, destStoragePool);
+        String templatePath = null;
+        String destStoragePool = null;
+        if (vm.getVirtualMachine().getState() == VirtualMachine.State.Starting) {
+            destStoragePool = deployAsIsHelper.getAllocatedVirtualMachineDestinationStoragePool(vm);
+            templatePath = deployAsIsHelper.getAllocatedVirtualMachineTemplatePath(vm, configuration, destStoragePool);
+        }
         Map<Integer, String> nicsAdapterMapping = deployAsIsHelper.getAllocatedVirtualMachineNicsAdapterMapping(vm, to.getNics());
         DeployAsIsInfoTO info = new DeployAsIsInfoTO(templatePath, destStoragePool, properties, nicsAdapterMapping);
         to.setDeployAsIsInfo(info);
