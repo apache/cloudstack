@@ -1077,7 +1077,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (accountUUID == null) {
                     accountUUID = UUID.randomUUID().toString();
                 }
-                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, accountUUID);
+
+                Account account = null;
+                if (accountNameFinal == userName) {
+                    account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, accountUUID);
+                } else {
+                    account = _accountDao.findActiveAccount(accountNameFinal, domainIdFinal);
+                    if (account != null) {
+                        throw new InvalidParameterValueException("The specified account: " + accountNameFinal + " does not exist");
+                    }
+                }
                 long accountId = account.getId();
 
                 // create the first user for the account
