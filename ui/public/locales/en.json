@@ -2210,6 +2210,7 @@
 "label.templatenames": "Template",
 "label.templates": "Templates",
 "label.templatesubject": "Subject",
+"label.templatetag": "Template Tag",
 "label.templatetotal": "Template",
 "label.templatetype": "Template Type",
 "label.tftp.dir": "TFTP Directory",

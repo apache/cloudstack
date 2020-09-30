@@ -247,7 +247,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         if (template.getSourceTemplateId() != null) {
             templateResponse.setSourceTemplateId(template.getSourceTemplateUuid());
         }
-        templateResponse.setTemplateTag(template.getTemplateTag());
+        if (view == ResponseView.Full) {
+            templateResponse.setTemplateTag(template.getTemplateTag());
+        }
 
         if (template.getParentTemplateId() != null) {
             templateResponse.setParentTemplateId(template.getParentTemplateUuid());
@@ -416,7 +418,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             isAdmin = true;
         }
 
-        // If the user is an admin, add the template download status
+        // If the user is an admin, add the template download status and template tag
         if (isAdmin || caller.getId() == iso.getAccountId()) {
             // add download status
             if (iso.getDownloadState() != Status.DOWNLOADED) {
@@ -463,6 +465,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
+
+        // Update ISO template tag
+        if (_accountService.isRootAdmin(caller.getId())) {
+            isoResponse.setTemplateTag(iso.getTemplateTag());
+        }
 
         isoResponse.setObjectName("iso");
         return isoResponse;

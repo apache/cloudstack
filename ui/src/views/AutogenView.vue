@@ -1367,6 +1367,9 @@ export default {
               if (param.type === 'boolean') {
                 params[key] = false
               }
+              if (param.name === 'templatetag') {
+                params[key] = ''
+              }
               break
             }
             if (input === '' && !['tags', 'hosttags', 'storagetags'].includes(key)) {

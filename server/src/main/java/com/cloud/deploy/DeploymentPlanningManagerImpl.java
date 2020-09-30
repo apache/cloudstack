@@ -245,6 +245,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     protected ResourceManager _resourceMgr;
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    protected VMTemplateDao _templateDao;
 
     protected List<DeploymentPlanner> _planners;
 
@@ -667,13 +669,22 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     private boolean checkVmProfileAndHost(final VirtualMachineProfile vmProfile, final HostVO host) {
         ServiceOffering offering = vmProfile.getServiceOffering();
-        if (offering.getHostTag() != null) {
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmProfile.getVirtualMachine().getTemplateId());
+        if (offering.getHostTag() != null || template.getTemplateTag() != null) {
             _hostDao.loadHostTags(host);
             if (!host.checkHostServiceOfferingTags(offering)) {
                 s_logger.debug("Service Offering host tag does not match the last host of this VM");
                 return false;
             }
+
+            if (template.getTemplateTag() != null && (!(host.getHostTags() != null
+                    && host.getHostTags().contains(template.getTemplateTag())))) {
+                s_logger.debug("Template tag does not match the last host tag of this VM");
+                return false;
+            }
         }
+
+
         long guestOSId = vmProfile.getTemplate().getGuestOSId();
         GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
         if (guestOS != null) {
@@ -681,7 +692,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), "guest.os.category.id");
             if (hostDetail != null) {
                 String guestOSCategoryIdString = hostDetail.getValue();
-                if (String.valueOf(guestOSCategoryId) != guestOSCategoryIdString) {
+                if (!String.valueOf(guestOSCategoryId).equals(guestOSCategoryIdString)) {
                     s_logger.debug("The last host has different guest.os.category.id than guest os category of VM, skipping");
                     return false;
                 }

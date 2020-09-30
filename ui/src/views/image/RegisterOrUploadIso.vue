@@ -137,6 +137,14 @@
           <a-switch v-model:checked="form.isfeatured" />
         </a-form-item>
 
+        <a-form-item :label="$t('label.templatetag')" v-if="$store.getters.userInfo.roletype === 'Admin'">
+          <a-input
+            v-decorator="['templatetag', {
+              rules: [{ required: false }]
+            }]"
+            :placeholder="apiParams.templatetag.description" />
+        </a-form-item>
+
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>

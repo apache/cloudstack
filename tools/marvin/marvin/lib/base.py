@@ -713,10 +713,12 @@ class VirtualMachine:
 
         return VirtualMachine(virtual_machine.__dict__, services)
 
-    def start(self, apiclient):
+    def start(self, apiclient, hostid = None):
         """Start the instance"""
         cmd = startVirtualMachine.startVirtualMachineCmd()
         cmd.id = self.id
+        if hostid is not None:
+            cmd.hostid = hostid
         apiclient.startVirtualMachine(cmd)
         response = self.getState(apiclient, VirtualMachine.RUNNING)
         if response[0] == FAIL:
@@ -1378,6 +1380,8 @@ class Template:
             "isextractable"] if "isextractable" in services else False
         cmd.passwordenabled = services[
             "passwordenabled"] if "passwordenabled" in services else False
+        cmd.templatetag = services[
+            "templatetag"] if "templatetag" in services else None
 
         if volumeid:
             cmd.volumeid = volumeid
@@ -1445,6 +1449,8 @@ class Template:
         cmd.passwordenabled = services[
             "passwordenabled"] if "passwordenabled" in services else False
         cmd.deployasis = services["deployasis"] if "deployasis" in services else False
+        cmd.templatetag = services[
+            "templatetag"] if "templatetag" in services else None
 
         if account:
             cmd.account = account
@@ -1667,6 +1673,8 @@ class Iso:
             cmd.isfeatured = services["isfeatured"]
         if "ispublic" in services:
             cmd.ispublic = services["ispublic"]
+        if "templatetag" in services:
+            cmd.templatetag = services["templatetag"]
 
         if account:
             cmd.account = account

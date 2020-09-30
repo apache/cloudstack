@@ -319,6 +319,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "creating iso")
     public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException {
+        Account account = CallContext.current().getCallingAccount();
+        if (cmd.getTemplateTag() != null) {
+            if (!_accountService.isRootAdmin(account.getId())) {
+                throw new PermissionDeniedException("Parameter templatetag can only be specified by Root Admin, permission denied");
+            }
+        }
+
         TemplateAdapter adapter = getAdapter(HypervisorType.None);
         TemplateProfile profile = adapter.prepare(cmd);
         VMTemplateVO template = adapter.create(profile);
@@ -1875,6 +1882,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         String templateTag = cmd.getTemplateTag();
         if (templateTag != null) {
+            if (!_accountService.isRootAdmin(caller.getId())) {
+                throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
+            }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Adding template tag: " + templateTag);
             }
@@ -2056,6 +2066,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
         boolean cleanupDetails = cmd.isCleanupDetails();
+        boolean isRootAdmin = _accountService.isRootAdmin(account.getId());
 
         // verify that template exists
         VMTemplateVO template = _tmpltDao.findById(id);
@@ -2071,13 +2082,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // do a permission check
         _accountMgr.checkAccess(account, AccessType.OperateEntry, true, template);
         if (cmd.isRoutingType() != null) {
-            if (!_accountService.isRootAdmin(account.getId())) {
+            if (!isRootAdmin) {
                 throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
             }
         }
 
         // update template type
         TemplateType templateType = null;
+        String templateTag = null;
         if (cmd instanceof UpdateTemplateCmd) {
             String newType = ((UpdateTemplateCmd)cmd).getTemplateType();
             if (newType != null) {
@@ -2096,6 +2108,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (templateType != null && (templateType == TemplateType.SYSTEM || templateType == TemplateType.BUILTIN) && !template.isCrossZones()) {
                 throw new InvalidParameterValueException("System and Builtin templates must be cross zone");
             }
+            templateTag = ((UpdateTemplateCmd) cmd).getTemplateTag();
+            if (templateTag != null) {
+                if (!isRootAdmin) {
+                    throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
+                }
+            }
+        } else if (cmd instanceof UpdateIsoCmd) {
+            templateTag = ((UpdateIsoCmd)cmd).getTemplateTag();
         }
 
         // update is needed if any of the fields below got filled by the user
@@ -2112,6 +2132,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isDynamicallyScalable == null &&
                   isRoutingTemplate == null &&
                   templateType == null &&
+                  templateTag == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
@@ -2207,6 +2228,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         else if (details != null && !details.isEmpty()) {
             template.setDetails(details);
             _tmpltDao.saveDetails(template);
+        }
+
+        if (templateTag != null) {
+            if (templateTag.isEmpty()) {
+                template.setTemplateTag(null);
+            } else {
+                template.setTemplateTag(templateTag);
+            }
         }
 
         _tmpltDao.update(id, template);

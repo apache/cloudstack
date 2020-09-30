@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import com.cloud.server.ResourceIcon;
-import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
@@ -33,6 +32,8 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 
@@ -89,6 +90,9 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the isos")
     private Boolean showIcon;
+
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, since = "4.16", description = "show ISO's which matches the tag", authorized = {RoleType.Admin})
+    private String templateTag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -155,6 +159,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         }
 
         return onlyReady;
+    }
+
+    public String getTemplateTag() {
+        return templateTag;
     }
 
     /////////////////////////////////////////////////////

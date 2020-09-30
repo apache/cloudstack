@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -96,6 +97,12 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             description = "comma separated list of template details requested, value can be a list of [ all, min]")
     private List<String> viewDetails;
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the templates")
+    private Boolean showIcon;
+
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, since = "4.16", description = "show templates with matching templatetag", authorized = {RoleType.Admin})
+    private String templateTag;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -164,8 +171,9 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         return onlyReady;
     }
 
-    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the templates")
-    private Boolean showIcon;
+    public String getTemplateTag() {
+        return templateTag;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

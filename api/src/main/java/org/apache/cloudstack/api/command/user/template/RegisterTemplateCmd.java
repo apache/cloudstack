@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -127,7 +128,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the checksum value of this template. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
-    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.", authorized = {RoleType.Admin})
     private String templateTag;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register template for the project")

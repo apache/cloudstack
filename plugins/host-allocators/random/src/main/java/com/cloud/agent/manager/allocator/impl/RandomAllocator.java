@@ -38,6 +38,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
@@ -71,19 +72,15 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
             return suitableHosts;
         }
         String hostTag = offering.getHostTag();
+        StringBuilder message = new StringBuilder();
+        message.append("Looking for hosts in dc: ").append(dcId)
+                .append("  pod: ").append(podId)
+                .append(" cluster: ").append(clusterId);
+
         if (hostTag != null) {
-            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having host tag:" + hostTag);
-        } else {
-            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
-        }
-        if (hosts != null) {
-            // retain all computing hosts, regardless of whether they support routing...it's random after all
-            hostsCopy = new ArrayList<Host>(hosts);
-            if (hostTag != null) {
-                hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag));
-            } else {
-                hostsCopy.retainAll(_resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId));
-            }
+            message.append(" having host tag:").append(hostTag);
+            s_logger.debug(message.toString());
+            hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag));
         } else {
             // list all computing hosts, regardless of whether they support routing...it's random after all
             hostsCopy = new ArrayList<HostVO>();
@@ -93,6 +90,15 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
                 hostsCopy = _resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId);
             }
         }
+
+        VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
+        String templateTag = template.getTemplateTag();
+        if (templateTag != null) {
+            message.append(" having template tag:").append(templateTag);
+            s_logger.debug(message.toString());
+            hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, templateTag));
+        }
+
         s_logger.debug("Random Allocator found " + hostsCopy.size() + "  hosts");
         if (hostsCopy.size() == 0) {
             return suitableHosts;

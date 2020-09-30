@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -36,6 +39,13 @@ public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd implements UserCmd 
     private static final String s_name = "updateisoresponse";
 
     /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this iso.", authorized = {RoleType.Admin})
+    private String templateTag;
+
+    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
@@ -47,6 +57,10 @@ public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd implements UserCmd 
     @Override
     public String getFormat() {
         return null;
+    }
+
+    public String getTemplateTag() {
+        return templateTag;
     }
 
     /////////////////////////////////////////////////////

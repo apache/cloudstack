@@ -305,7 +305,7 @@ def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
 def get_template(
         apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
         template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
-        hypervisor=None):
+        hypervisor=None, template_tag=None):
     '''
     @Name : get_template
     @Desc : Retrieves the template Information based upon inputs provided
@@ -331,6 +331,8 @@ def get_template(
         cmd.projectid = project_id
     if account is not None:
         cmd.account = account
+    if template_tag is not None:
+        cmd.templatetag = template_tag
 
     '''
     Get the Templates pertaining to the inputs provided
