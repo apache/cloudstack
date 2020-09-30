@@ -204,13 +204,18 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                 if (template.isDeployAsIs()) {
-                    deployAsIsHelper.persistTemplateDeployAsIsDetails(template.getId(), answer);
+                    boolean persistDeployAsIs = deployAsIsHelper.persistTemplateDeployAsIsDetails(template.getId(), answer, tmpltStoreVO);
+                    if (!persistDeployAsIs) {
+                        LOGGER.info("Failed persisting deploy-as-is template details for template " + template.getName());
+                        return null;
+                    }
                 }
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
                 return null;
             }
+            LOGGER.info("Updating store ref entry for template " + template.getName());
             TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
             updateBuilder.setDownloadPercent(answer.getDownloadPct());
             updateBuilder.setDownloadState(answer.getDownloadStatus());
@@ -244,9 +249,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 VMTemplateVO templateDaoBuilder = _templateDao.createForUpdate();
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
-            }
-            if (template.isDeployAsIs()) {
-                deployAsIsHelper.persistTemplateDeployAsIsDetails(template.getId(), answer);
             }
 
             CreateCmdResult result = new CreateCmdResult(null, null);

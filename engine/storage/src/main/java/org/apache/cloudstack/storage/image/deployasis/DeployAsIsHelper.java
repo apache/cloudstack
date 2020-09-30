@@ -19,12 +19,13 @@ package org.apache.cloudstack.storage.image.deployasis;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import java.util.Map;
 
 public interface DeployAsIsHelper {
 
-    void persistTemplateDeployAsIsDetails(long templateId, DownloadAnswer answer);
+    boolean persistTemplateDeployAsIsDetails(long templateId, DownloadAnswer answer, TemplateDataStoreVO tmpltStoreVO);
     Map<String, String> getVirtualMachineDeployAsIsProperties(VirtualMachineProfile vmId);
 
     String getAllocatedVirtualMachineTemplatePath(VirtualMachineProfile vm, String configuration, String destStoragePool);

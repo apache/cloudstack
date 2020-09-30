@@ -40,6 +40,7 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -50,15 +51,15 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.compression.CompressionUtil;
 import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
@@ -71,6 +72,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Failed;
 
 @Component
 public class DeployAsIsHelperImpl implements DeployAsIsHelper {
@@ -94,6 +97,8 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
     private GuestOSHypervisorDao guestOSHypervisorDao;
     @Inject
     private GuestOSCategoryDao guestOSCategoryDao;
+    @Inject
+    private TemplateDataStoreDao templateDataStoreDao;
 
     static {
         GsonBuilder builder = new GsonBuilder();
@@ -101,45 +106,52 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
         gson = builder.create();
     }
 
-    public void persistTemplateDeployAsIsDetails(long templateId, DownloadAnswer answer) {
-        OVFInformationTO ovfInformationTO = answer.getOvfInformationTO();
-        if (ovfInformationTO != null) {
-            List<OVFPropertyTO> ovfProperties = ovfInformationTO.getProperties();
-            List<OVFNetworkTO> networkRequirements = ovfInformationTO.getNetworks();
-            OVFVirtualHardwareSectionTO ovfHardwareSection = ovfInformationTO.getHardwareSection();
-            List<OVFEulaSectionTO> eulaSections = ovfInformationTO.getEulaSections();
-            Pair<String, String> guestOsInfo = ovfInformationTO.getGuestOsInfo();
+    public boolean persistTemplateDeployAsIsDetails(long templateId, DownloadAnswer answer, TemplateDataStoreVO tmpltStoreVO) {
+        try {
+            OVFInformationTO ovfInformationTO = answer.getOvfInformationTO();
+            if (ovfInformationTO != null) {
+                List<OVFPropertyTO> ovfProperties = ovfInformationTO.getProperties();
+                List<OVFNetworkTO> networkRequirements = ovfInformationTO.getNetworks();
+                OVFVirtualHardwareSectionTO ovfHardwareSection = ovfInformationTO.getHardwareSection();
+                List<OVFEulaSectionTO> eulaSections = ovfInformationTO.getEulaSections();
+                Pair<String, String> guestOsInfo = ovfInformationTO.getGuestOsInfo();
 
-            if (CollectionUtils.isNotEmpty(ovfProperties)) {
-                persistTemplateDeployAsIsInformationTOList(templateId, ovfProperties);
-            }
-            if (CollectionUtils.isNotEmpty(networkRequirements)) {
-                persistTemplateDeployAsIsInformationTOList(templateId, networkRequirements);
-            }
-            if (CollectionUtils.isNotEmpty(eulaSections)) {
-                persistTemplateDeployAsIsInformationTOList(templateId, eulaSections);
-            }
-            String minimumHardwareVersion = null;
-            if (ovfHardwareSection != null) {
-                if (CollectionUtils.isNotEmpty(ovfHardwareSection.getConfigurations())) {
-                    persistTemplateDeployAsIsInformationTOList(templateId, ovfHardwareSection.getConfigurations());
+                if (CollectionUtils.isNotEmpty(ovfProperties)) {
+                    persistTemplateDeployAsIsInformationTOList(templateId, ovfProperties);
                 }
-                if (CollectionUtils.isNotEmpty(ovfHardwareSection.getCommonHardwareItems())) {
-                    persistTemplateDeployAsIsInformationTOList(templateId, ovfHardwareSection.getCommonHardwareItems());
+                if (CollectionUtils.isNotEmpty(networkRequirements)) {
+                    persistTemplateDeployAsIsInformationTOList(templateId, networkRequirements);
                 }
-                minimumHardwareVersion = ovfHardwareSection.getMinimiumHardwareVersion();
-            }
-            if (guestOsInfo != null) {
-                String osType = guestOsInfo.first();
-                String osDescription = guestOsInfo.second();
-                LOGGER.info("Guest OS information retrieved from the template: " + osType + " - " + osDescription);
-                try {
+                if (CollectionUtils.isNotEmpty(eulaSections)) {
+                    persistTemplateDeployAsIsInformationTOList(templateId, eulaSections);
+                }
+                String minimumHardwareVersion = null;
+                if (ovfHardwareSection != null) {
+                    if (CollectionUtils.isNotEmpty(ovfHardwareSection.getConfigurations())) {
+                        persistTemplateDeployAsIsInformationTOList(templateId, ovfHardwareSection.getConfigurations());
+                    }
+                    if (CollectionUtils.isNotEmpty(ovfHardwareSection.getCommonHardwareItems())) {
+                        persistTemplateDeployAsIsInformationTOList(templateId, ovfHardwareSection.getCommonHardwareItems());
+                    }
+                    minimumHardwareVersion = ovfHardwareSection.getMinimiumHardwareVersion();
+                }
+                if (guestOsInfo != null) {
+                    String osType = guestOsInfo.first();
+                    String osDescription = guestOsInfo.second();
+                    LOGGER.info("Guest OS information retrieved from the template: " + osType + " - " + osDescription);
                     handleGuestOsFromOVFDescriptor(templateId, osType, osDescription, minimumHardwareVersion);
-                } catch (Exception e) {
-                    LOGGER.error("Error handling the guest OS read from the OVF " + osType, e);
                 }
             }
+        } catch (Exception e) {
+            LOGGER.error("Error persisting deploy-as-is details for template " + templateId, e);
+            tmpltStoreVO.setErrorString(e.getMessage());
+            tmpltStoreVO.setState(Failed);
+            tmpltStoreVO.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+            templateDataStoreDao.update(tmpltStoreVO.getId(), tmpltStoreVO);
+            return false;
         }
+        LOGGER.info("Successfully persisted deploy-as-is details for template " + templateId);
+        return true;
     }
 
     /**
@@ -161,22 +173,14 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
         List<GuestOSHypervisorVO> guestOsMappings = guestOSHypervisorDao.listByOsNameAndHypervisorMinimumVersion(guestOsType,
                 hypervisor.toString(), minimumHypervisorVersion);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                if (CollectionUtils.isNotEmpty(guestOsMappings)) {
-                    GuestOSHypervisorVO mapping = guestOsMappings.get(0);
-                    long guestOsId = mapping.getGuestOsId();
-                    LOGGER.info("Updating deploy-as-is template guest OS to " + guestOsType);
-                    updateTemplateGuestOsId(template, guestOsId);
-                } else {
-                    // The guest OS is not present in DB, create a new guest OS entry and mappings for supported versions
-                    List<String> hypervisorVersions = guestOSHypervisorDao.listHypervisorSupportedVersionsFromMinimumVersion(
-                            hypervisor.toString(), minimumHypervisorVersion);
-                    updateDeployAsIsTemplateToNewGuestOs(template, guestOsType, guestOsDescription, hypervisor, hypervisorVersions);
-                }
-            }
-        });
+        if (CollectionUtils.isNotEmpty(guestOsMappings)) {
+            GuestOSHypervisorVO mapping = guestOsMappings.get(0);
+            long guestOsId = mapping.getGuestOsId();
+            LOGGER.info("Updating deploy-as-is template guest OS to " + guestOsType);
+            updateTemplateGuestOsId(template, guestOsId);
+        } else {
+            throw new CloudRuntimeException("Did not find a guest OS with type " + guestOsType);
+        }
     }
 
     /**
