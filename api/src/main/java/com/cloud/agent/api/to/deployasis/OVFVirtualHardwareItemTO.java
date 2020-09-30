@@ -16,10 +16,16 @@
 // under the License.
 package com.cloud.agent.api.to.deployasis;
 
-// From: https://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData.xsd
+/**
+ * A hardware item class representing a hardware item read from the OVF.
+ * From: https://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData.xsd
+ */
 public class OVFVirtualHardwareItemTO implements TemplateDeployAsIsInformationTO{
 
-    //From: https://schemas.dmtf.org/wbem/cim-html/2/CIM_ResourceAllocationSettingData.html
+    /**
+     * The hardware item type
+     * From: https://schemas.dmtf.org/wbem/cim-html/2/CIM_ResourceAllocationSettingData.html
+     */
     public enum HardwareResourceType {
         Other("Other", 1),
         ComputerSystem ("Computer System", 2),

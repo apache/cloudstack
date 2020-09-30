@@ -89,7 +89,8 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     @Parameter(name = ApiConstants.DETAILS,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "comma separated list of template details requested, value can be a list of [ all, resource, min]")
+            since = "4.15",
+            description = "comma separated list of template details requested, value can be a list of [ all, min]")
     private List<String> viewDetails;
 
     /////////////////////////////////////////////////////

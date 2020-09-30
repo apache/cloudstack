@@ -27,6 +27,9 @@ import com.cloud.utils.Pair;
 
 import java.util.List;
 
+/**
+ * Placeholder class for all the subclasses obtained from the OVF parsing
+ */
 public class OVFInformationTO {
 
     @LogLevel(LogLevel.Log4jLevel.Off)
