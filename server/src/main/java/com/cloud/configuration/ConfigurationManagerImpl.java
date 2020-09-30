@@ -415,10 +415,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             "Maximum IOPS read burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
     public final static ConfigKey<Long> IOPS_MAX_WRITE_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.iops.maximum.write.length", "Advanced", "0",
             "Maximum IOPS write burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
-
     public static final ConfigKey<Boolean> ADD_HOST_ON_SERVICE_RESTART_KVM = new ConfigKey<Boolean>(Boolean.class, "add.host.on.service.restart.kvm", "Advanced", "true",
             "Indicates whether the host will be added back to cloudstack after restarting agent service on host. If false it wont be added back even after service restart",
             true, ConfigKey.Scope.Global, null);
+    public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<Boolean>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
+                        "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
+                        true, ConfigKey.Scope.Zone, null);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -6437,6 +6439,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
-                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM};
+                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE};
     }
 }
