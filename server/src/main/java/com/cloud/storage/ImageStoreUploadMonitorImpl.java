@@ -412,7 +412,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             if (tmpTemplate.getFormat().equals(Storage.ImageFormat.OVA)) {
                                 final DataStore store = dataStoreManager.getDataStore(templateDataStore.getDataStoreId(), templateDataStore.getDataStoreRole());
                                 final TemplateInfo templateInfo = templateFactory.getTemplate(tmpTemplate.getId(), store);
-                                if (!templateService.createOvaDataDiskTemplates(templateInfo, template.isDeployAsIs())) {
+                                if (!templateService.createOvaDataDiskTemplates(templateInfo, true)) {
                                     tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.ABANDONED);
                                     tmpTemplateDataStore.setState(State.Failed);
                                     stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);

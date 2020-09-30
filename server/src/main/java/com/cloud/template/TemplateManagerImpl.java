@@ -1898,7 +1898,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false);
 
         if (sourceTemplateId != null) {
             if (s_logger.isDebugEnabled()) {

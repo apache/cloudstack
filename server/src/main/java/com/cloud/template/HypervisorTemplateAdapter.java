@@ -601,10 +601,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // Remove template details
             templateDetailsDao.removeDetails(template.getId());
 
-            // Remove deploy-as-is details
-            if (template.isDeployAsIs()) {
-                templateDeployAsIsDetailsDao.removeDetails(template.getId());
-            }
+            // Remove deploy-as-is details (if any)
+            templateDeployAsIsDetailsDao.removeDetails(template.getId());
 
         }
         return success;

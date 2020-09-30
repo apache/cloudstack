@@ -575,7 +575,7 @@ public class VolumeServiceImpl implements VolumeService {
                 s_logger.info("Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId);
             }
             templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId(), deployAsIsConfiguration);
-            if (templatePoolRef != null && templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready && !template.isDeployAsIs()) {
+            if (templatePoolRef != null && templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
                 s_logger.info(
                         "Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId + ", But Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
                 createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
@@ -588,7 +588,7 @@ public class VolumeServiceImpl implements VolumeService {
             s_logger.info("lock is acquired for VMTemplateStoragePool " + templatePoolRefId);
         }
         try {
-            if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready && !template.isDeployAsIs()) {
+            if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
                 s_logger.info("Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
                 createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
                 return;
