@@ -1617,6 +1617,10 @@ public class HypervisorHostHelper {
         vmConfig.setName(vmName);
         if (hardwareVersion != null){
             vmConfig.setVersion(("vmx-" + hardwareVersion));
+        }  else {
+            ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), hyperHost.getHyperHostCluster());
+            DatacenterMO dataCenterMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
+            setVMHardwareVersion(vmConfig, clusterMo, dataCenterMo);
         }
         vmConfig.setMemoryMB((long)4);
         vmConfig.setNumCPUs(1);

@@ -1130,9 +1130,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
 
+            String hardwareVersion = String.valueOf(vmMo.getVirtualHardwareVersion());
+
             // 4 MB is the minimum requirement for VM memory in VMware
             Pair<VirtualMachineMO, String[]> cloneResult =
-                    vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), null);
+                    vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), hardwareVersion);
             clonedVm = cloneResult.first();
 
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
