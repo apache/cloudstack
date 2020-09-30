@@ -59,7 +59,9 @@ const err = (error) => {
         duration: 0
       })
       store.dispatch('Logout').then(() => {
-        router.push({ path: '/user/login', query: { redirect: router.history.current.fullPath } })
+        if (router.history.current.path !== '/user/login') {
+          router.push({ path: '/user/login', query: { redirect: router.history.current.fullPath } })
+        }
       })
     }
     if (response.status === 404) {
