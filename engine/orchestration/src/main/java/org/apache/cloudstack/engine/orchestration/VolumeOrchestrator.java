@@ -759,7 +759,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
         if (rootDisksize != null) {
-            if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.User) {
+            if (vm.getHypervisorType() == HypervisorType.VMware) {
                 // Volume size specified from template deploy-as-is
                 size = rootDisksize;
             } else {
