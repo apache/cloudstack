@@ -561,7 +561,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
      * Display storage in the logs by default if the template is not deploy-as-is.
      */
     private boolean getDisplayStorageFromVmProfile(VirtualMachineProfile vmProfile) {
-        return vmProfile == null || vmProfile.getTemplate() == null || !vmProfile.getTemplate().isDeployAsIs();
+        return vmProfile.getHypervisorType() != HypervisorType.VMware || vmProfile.getType() != VirtualMachine.Type.User;
     }
 
     @Override

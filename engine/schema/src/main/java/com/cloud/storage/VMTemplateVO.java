@@ -152,9 +152,6 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "parent_template_id")
     private Long parentTemplateId;
 
-    @Column(name = "deploy_as_is")
-    private boolean deployAsIs;
-
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -196,8 +193,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
-                        HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable, boolean directDownload,
-                        boolean deployAsIs) {
+                        HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable, boolean directDownload) {
         this(id,
             name,
             format,
@@ -222,7 +218,6 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         dynamicallyScalable = isDynamicallyScalable;
         state = State.Active;
         this.directDownload = directDownload;
-        this.deployAsIs = deployAsIs;
     }
 
     public static VMTemplateVO createPreHostIso(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type,
@@ -639,13 +634,5 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public void setParentTemplateId(Long parentTemplateId) {
         this.parentTemplateId = parentTemplateId;
-    }
-
-    @Override public boolean isDeployAsIs() {
-        return deployAsIs;
-    }
-
-    public void setDeployAsIs(boolean deployAsIs) {
-        this.deployAsIs = deployAsIs;
     }
 }

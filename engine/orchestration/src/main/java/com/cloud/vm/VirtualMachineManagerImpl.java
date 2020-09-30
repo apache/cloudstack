@@ -597,12 +597,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         //remove the overcommit details from the uservm details
         userVmDetailsDao.removeDetails(vm.getId());
 
-        // Remove details if VM deploy as-is
-        long templateId = vm.getTemplateId();
-        VMTemplateVO template = _templateDao.findById(templateId);
-        if (template != null && template.isDeployAsIs()) {
-            userVmDeployAsIsDetailsDao.removeDetails(vm.getId());
-        }
+        // Remove deploy as-is (if any)
+        userVmDeployAsIsDetailsDao.removeDetails(vm.getId());
 
         // send hypervisor-dependent commands before removing
         final List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
@@ -1116,7 +1112,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 if (dest != null) {
                     avoids.addHost(dest.getHost().getId());
-                    if (!template.isDeployAsIs()) {
+                    if (template.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.User) {
                         journal.record("Deployment found ", vmProfile, dest);
                     }
                 }

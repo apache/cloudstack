@@ -759,7 +759,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
         if (rootDisksize != null) {
-            if (template.isDeployAsIs()) {
+            if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.User) {
                 // Volume size specified from template deploy-as-is
                 size = rootDisksize;
             } else {
@@ -824,7 +824,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         int volumesNumber = 1;
         List<DatadiskTO> templateAsIsDisks = null;
         String configurationId = null;
-        if (template.isDeployAsIs()) {
+        if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.User) {
             UserVmDetailVO configurationDetail = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
             if (configurationDetail != null) {
                 configurationId = configurationDetail.getValue();
@@ -849,7 +849,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             String volumeName = name;
             Long volumeSize = rootDisksize;
             long deviceId = type.equals(Type.ROOT) ? 0L : 1L;
-            if (template.isDeployAsIs()) {
+            if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.User) {
                 int volumeNameSuffix = templateAsIsDisks.get(number).getDiskNumber();
                 volumeName = String.format("%s-%d", volumeName, volumeNameSuffix);
                 volumeSize = templateAsIsDisks.get(number).getVirtualSize();
