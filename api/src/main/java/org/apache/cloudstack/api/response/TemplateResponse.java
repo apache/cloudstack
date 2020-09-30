@@ -196,11 +196,13 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private Boolean directDownload;
 
     @SerializedName(ApiConstants.DEPLOY_AS_IS)
-    @Param(description = "VMware only: true if template is deployed without orchestrating disks and networks but \"as-is\" defined in the template.")
+    @Param(description = "VMware only: true if template is deployed without orchestrating disks and networks but \"as-is\" defined in the template.",
+            since = "4.15")
     private Boolean deployAsIs;
 
     @SerializedName(ApiConstants.DEPLOY_AS_IS_DETAILS)
-    @Param(description = "VMware only: additional key/value details tied with deploy-as-is template")
+    @Param(description = "VMware only: additional key/value details tied with deploy-as-is template",
+            since = "4.15")
     private Map<String, String> deployAsIsDetails;
 
     @SerializedName("parenttemplateid")

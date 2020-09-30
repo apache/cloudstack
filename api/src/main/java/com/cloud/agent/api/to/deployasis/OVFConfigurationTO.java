@@ -20,6 +20,9 @@ package com.cloud.agent.api.to.deployasis;
 
 import java.util.List;
 
+/**
+ * This class represents a template deployment option (configuration) parsed from the OVF
+ */
 public class OVFConfigurationTO implements TemplateDeployAsIsInformationTO {
 
     private final String id;

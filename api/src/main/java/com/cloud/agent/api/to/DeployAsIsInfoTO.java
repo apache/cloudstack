@@ -21,6 +21,9 @@ import com.cloud.agent.api.LogLevel;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * TO class sent to the hypervisor layer with the information needed to handle deploy-as-is VM deployments
+ */
 public class DeployAsIsInfoTO {
 
     private String templatePath;
