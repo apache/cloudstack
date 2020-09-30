@@ -127,4 +127,6 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     List<StoragePoolVO> listChildStoragePoolsInDatastoreCluster(long poolId);
 
     Integer countAll();
+
+    public List<StoragePoolVO> listPoolsByLikePath(String path);
 }
