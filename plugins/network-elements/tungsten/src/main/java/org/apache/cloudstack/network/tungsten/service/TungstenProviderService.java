@@ -6,11 +6,10 @@ import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProvider
 import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenProviderCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenProvidersCmd;
 
-import javax.naming.ConfigurationException;
 import java.util.List;
 
 public interface TungstenProviderService {
-    TungstenProvider addProvider(CreateTungstenProviderCmd cmd) throws ConfigurationException;
+    TungstenProvider addProvider(CreateTungstenProviderCmd cmd);
 
     TungstenProviderVO getTungstenProvider();
 

@@ -34,12 +34,11 @@ import org.apache.cloudstack.network.tungsten.vrouter.VRouterApiConnectorFactory
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.inject.Inject;
 
 @Component
 public class TungstenServiceImpl implements TungstenService {
@@ -84,9 +83,9 @@ public class TungstenServiceImpl implements TungstenService {
 
     @Override
     public VirtualNetwork createNetworkInTungsten(String networkUuid, String networkName, String projectUuid,
-        String networkIpamUuid, String ipAllocPoolStart, String ipAllocPoolEnd, String subnetIpPrefix,
-        int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
-        boolean isIpAddrFromStart) {
+                                                  String networkIpamUuid, String ipAllocPoolStart, String ipAllocPoolEnd, String subnetIpPrefix,
+                                                  int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
+                                                  boolean isIpAddrFromStart) {
         VirtualNetwork network = new VirtualNetwork();
         try {
             if (projectUuid != null) {
@@ -96,8 +95,8 @@ public class TungstenServiceImpl implements TungstenService {
             network.setUuid(networkUuid);
             network.setName(networkName);
             network.setNetworkIpam(getNetworkIpam(networkName, networkIpamUuid),
-                getVnSubnetsType(ipAllocPoolStart, ipAllocPoolEnd, subnetIpPrefix, subnetIpPrefixLength, defaultGateway,
-                    isDhcpEnabled, dnsNameservers, isIpAddrFromStart));
+                    getVnSubnetsType(ipAllocPoolStart, ipAllocPoolEnd, subnetIpPrefix, subnetIpPrefixLength, defaultGateway,
+                            isDhcpEnabled, dnsNameservers, isIpAddrFromStart));
             _api.create(network);
             return (VirtualNetwork) _api.findByFQN(VirtualNetwork.class, getFqnName(network));
         } catch (IOException e) {
@@ -133,12 +132,12 @@ public class TungstenServiceImpl implements TungstenService {
 
     @Override
     public InstanceIp createInstanceIpInTungsten(String instanceIpName, String tungstenVmInterfaceUuid,
-        String tungstenNetworkUuid, String tungstenInstanceIpAddress) {
+                                                 String tungstenNetworkUuid, String tungstenInstanceIpAddress) {
         InstanceIp instanceIp = new InstanceIp();
         try {
             instanceIp.setName(instanceIpName);
             VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) _api.findById(
-                VirtualMachineInterface.class, tungstenVmInterfaceUuid);
+                    VirtualMachineInterface.class, tungstenVmInterfaceUuid);
             VirtualNetwork virtualNetwork = (VirtualNetwork) _api.findById(VirtualNetwork.class, tungstenNetworkUuid);
             if (virtualNetwork != null)
                 instanceIp.setVirtualNetwork(virtualNetwork);
@@ -155,8 +154,8 @@ public class TungstenServiceImpl implements TungstenService {
 
     @Override
     public VirtualMachineInterface createVmInterfaceInTungsten(String vmiUuid, String vmInterfaceName,
-        String tungstenProjectUuid, String tungstenNetworkUuid, String tungstenVmUuid, String tungstenSecurityGroupUuid,
-        List<String> tungstenVmInterfaceMacAddresses) {
+                                                               String tungstenProjectUuid, String tungstenNetworkUuid, String tungstenVmUuid, String tungstenSecurityGroupUuid,
+                                                               List<String> tungstenVmInterfaceMacAddresses) {
         VirtualMachineInterface virtualMachineInterface = new VirtualMachineInterface();
         try {
             virtualMachineInterface.setUuid(vmiUuid);
@@ -177,7 +176,7 @@ public class TungstenServiceImpl implements TungstenService {
                 virtualMachineInterface.setMacAddresses(new MacAddressesType(tungstenVmInterfaceMacAddresses));
             _api.create(virtualMachineInterface);
             return (VirtualMachineInterface) _api.findByFQN(VirtualMachineInterface.class,
-                getFqnName(virtualMachineInterface));
+                    getFqnName(virtualMachineInterface));
         } catch (IOException e) {
             //            s_logger.error("Unable to read " + configuration, e);
             return null;
@@ -195,19 +194,19 @@ public class TungstenServiceImpl implements TungstenService {
         if (virtualMachine == null)
             return;
         if (virtualMachine.getVirtualMachineInterfaceBackRefs() != null
-            && !virtualMachine.getVirtualMachineInterfaceBackRefs().isEmpty()) {
+                && !virtualMachine.getVirtualMachineInterfaceBackRefs().isEmpty()) {
             removeVirtualMachineInterfaceBackRefs(virtualMachine.getVirtualMachineInterfaceBackRefs());
         }
         _api.delete(VirtualMachine.class, virtualMachine.getUuid());
     }
 
     public void removeVirtualMachineInterfaceBackRefs(
-        List<ObjectReference<ApiPropertyBase>> virtualMachineInterfaceBackRefs) throws IOException {
+            List<ObjectReference<ApiPropertyBase>> virtualMachineInterfaceBackRefs) throws IOException {
         for (ObjectReference<ApiPropertyBase> item : virtualMachineInterfaceBackRefs) {
             VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) _api.findById(
-                VirtualMachineInterface.class, item.getUuid());
+                    VirtualMachineInterface.class, item.getUuid());
             if (virtualMachineInterface.getInstanceIpBackRefs() != null
-                && !virtualMachineInterface.getInstanceIpBackRefs().isEmpty()) {
+                    && !virtualMachineInterface.getInstanceIpBackRefs().isEmpty()) {
                 for (ObjectReference<ApiPropertyBase> instanceIp : virtualMachineInterface.getInstanceIpBackRefs()) {
                     _api.delete(InstanceIp.class, instanceIp.getUuid());
                 }
@@ -218,16 +217,16 @@ public class TungstenServiceImpl implements TungstenService {
 
     @Override
     public VnSubnetsType getVnSubnetsType(String ipAllocPoolStart, String ipAllocPoolEnd, String subnetIpPrefix,
-        int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
-        boolean isIpAddrFromStart) {
+                                          int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
+                                          boolean isIpAddrFromStart) {
         List<VnSubnetsType.IpamSubnetType.AllocationPoolType> allocationPoolTypes = new ArrayList<>();
         if (ipAllocPoolStart != null && ipAllocPoolEnd != null) {
             allocationPoolTypes.add(
-                new VnSubnetsType.IpamSubnetType.AllocationPoolType(ipAllocPoolStart, ipAllocPoolEnd));
+                    new VnSubnetsType.IpamSubnetType.AllocationPoolType(ipAllocPoolStart, ipAllocPoolEnd));
         }
         VnSubnetsType.IpamSubnetType ipamSubnetType = new VnSubnetsType.IpamSubnetType(
-            new SubnetType(subnetIpPrefix, subnetIpPrefixLength), defaultGateway, null, isDhcpEnabled, dnsNameservers,
-            allocationPoolTypes, isIpAddrFromStart, null, null, null);
+                new SubnetType(subnetIpPrefix, subnetIpPrefixLength), defaultGateway, null, isDhcpEnabled, dnsNameservers,
+                allocationPoolTypes, isIpAddrFromStart, null, null, null);
         return new VnSubnetsType(Arrays.asList(ipamSubnetType), null);
     }
 
@@ -256,19 +255,20 @@ public class TungstenServiceImpl implements TungstenService {
 
     /**
      * Get the tungsten project that match the project from cloudstack
-     *
-     * @param owner
+     * <p>
+     * @param accountId
+     * @param domainId
      * @return
      * @throws IOException
      */
     @Override
-    public Project getTungstenNetworkProject(Account owner) throws IOException {
-        ProjectVO cloudstackProject = getProject(owner.getAccountId());
-        DomainVO cloudstackDomain = getDomain(owner.getDomainId());
+    public Project getTungstenNetworkProject(long accountId, long domainId) throws IOException {
+        ProjectVO cloudstackProject = getProject(accountId);
+        DomainVO cloudstackDomain = getDomain(domainId);
         Domain tungstenDomain;
         Project tungstenProject;
         //get the tungsten domain
-        if (cloudstackDomain.getId() != com.cloud.domain.Domain.ROOT_DOMAIN) {
+        if (cloudstackDomain != null && cloudstackDomain.getId() != com.cloud.domain.Domain.ROOT_DOMAIN) {
             tungstenDomain = (Domain) _api.findById(Domain.class, cloudstackDomain.getUuid());
             if (tungstenDomain == null) {
                 tungstenDomain = createDomainInTungsten(cloudstackDomain.getName(), cloudstackDomain.getUuid());
@@ -281,7 +281,7 @@ public class TungstenServiceImpl implements TungstenService {
             tungstenProject = (Project) _api.findById(Project.class, cloudstackProject.getUuid());
             if (tungstenProject == null) {
                 tungstenProject = createProjectInTungsten(cloudstackProject.getName(), cloudstackProject.getUuid(),
-                    tungstenDomain);
+                        tungstenDomain);
             }
         } else {
             tungstenProject = getDefaultTungstenProject();
@@ -299,7 +299,7 @@ public class TungstenServiceImpl implements TungstenService {
      * @throws IOException
      */
     public Project createProjectInTungsten(String projectName, String projectUuid, Domain tungstenDomain)
-        throws IOException {
+            throws IOException {
         Project tungstenProject = new Project();
         tungstenProject.setDisplayName(projectName);
         tungstenProject.setName(projectName);
@@ -415,7 +415,7 @@ public class TungstenServiceImpl implements TungstenService {
 
     @Override
     public VirtualNetwork createTungstenVirtualNetwork(Network network, Project project, NetworkIpam networkIpam,
-        VnSubnetsType subnet) {
+                                                       VnSubnetsType subnet) {
         try {
             VirtualNetwork virtualNetwork = new VirtualNetwork();
             virtualNetwork.setUuid(network.getUuid());
@@ -448,7 +448,7 @@ public class TungstenServiceImpl implements TungstenService {
 
     @Override
     public VirtualMachineInterface createVmInterfaceInTungsten(NicProfile nicProfile, VirtualNetwork vn,
-        VirtualMachine vm, Project project) {
+                                                               VirtualMachine vm, Project project) {
         VirtualMachineInterface virtualMachineInterface = new VirtualMachineInterface();
         try {
             virtualMachineInterface.setUuid(nicProfile.getUuid());
@@ -461,7 +461,7 @@ public class TungstenServiceImpl implements TungstenService {
             virtualMachineInterface.setMacAddresses(macAddressesType);
             _api.create(virtualMachineInterface);
             return (VirtualMachineInterface) _api.findById(VirtualMachineInterface.class,
-                virtualMachineInterface.getUuid());
+                    virtualMachineInterface.getUuid());
         } catch (IOException e) {
             s_logger.error("Unable to create tungsten virtual machine interface", e);
             return null;

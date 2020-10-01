@@ -22034,6 +22034,7 @@
                 nspid: nspMap[ "Tungsten"].id,
                 tungstenproviderhostname: args.data.hostname,
                 name: args.data.name,
+                physicalnetworkid: selectedPhysicalNetworkObj.id,
                 tungstenproviderport: args.data.port,
                 tungstenprovidervrouter: args.data.vrouter,
                 tungstenprovidervrouterport: args.data.vrouterport

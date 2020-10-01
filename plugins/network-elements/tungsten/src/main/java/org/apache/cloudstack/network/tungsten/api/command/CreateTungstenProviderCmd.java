@@ -15,6 +15,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -23,7 +24,6 @@ import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
 import org.apache.cloudstack.network.tungsten.service.TungstenResponseHelper;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 @APICommand(name = "createTungstenProvider",
         description = "Create tungsten provider in cloudstack",
@@ -44,6 +44,9 @@ public class CreateTungstenProviderCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Project ID for the service instance")
     private Long projectId;
+
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "the Physical Network ID")
+    private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.NSP_ID, type = CommandType.UUID, entityType = ProviderResponse.class, description = "network service provider id")
     private Long nspId;
@@ -87,20 +90,20 @@ public class CreateTungstenProviderCmd extends BaseAsyncCreateCmd {
         return vrouterPort;
     }
 
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+
     @Inject
     private TungstenProviderService tungstenProviderService;
 
     @Override
     public void create() throws ResourceAllocationException {
-        try {
-            TungstenProvider tungstenProvider = tungstenProviderService.addProvider(this);
-            if (tungstenProvider != null) {
-                setEntityId(tungstenProvider.getId());
-                setEntityUuid(tungstenProvider.getUuid());
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create tungsten provider");
-            }
-        } catch (ConfigurationException e) {
+        TungstenProvider tungstenProvider = tungstenProviderService.addProvider(this);
+        if (tungstenProvider != null) {
+            setEntityId(tungstenProvider.getId());
+            setEntityUuid(tungstenProvider.getUuid());
+        } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create tungsten provider");
         }
     }

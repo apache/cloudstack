@@ -1,7 +1,6 @@
 package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.network.Network;
-import com.cloud.user.Account;
 import com.cloud.vm.NicProfile;
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.ApiObjectBase;
@@ -31,18 +30,18 @@ public interface TungstenService {
     VRouterApiConnector get_vrouterApi();
 
     VirtualNetwork createNetworkInTungsten(String networkUuid, String networkName, String projectUuid,
-        String networkIpamUuid, String ipAllocPoolStart, String ipAllocPoolEnd, String subnetIpPrefix,
-        int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
-        boolean isIpAddrFromStart);
+                                           String networkIpamUuid, String ipAllocPoolStart, String ipAllocPoolEnd, String subnetIpPrefix,
+                                           int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
+                                           boolean isIpAddrFromStart);
 
     VirtualMachine createVmInTungsten(String vmUuid, String vmName);
 
     InstanceIp createInstanceIpInTungsten(String instanceIpName, String tungstenVmInterfaceUuid,
-        String tungstenNetworkUuid, String tungstenInstanceIpAddress);
+                                          String tungstenNetworkUuid, String tungstenInstanceIpAddress);
 
     VirtualMachineInterface createVmInterfaceInTungsten(String vmiUuid, String vmInterfaceName,
-        String tungstenProjectUuid, String tungstenNetworkUuid, String tungstenVmUuid, String tungstenSecurityGroupUuid,
-        List<String> tungstenVmInterfaceMacAddresses);
+                                                        String tungstenProjectUuid, String tungstenNetworkUuid, String tungstenVmUuid, String tungstenSecurityGroupUuid,
+                                                        List<String> tungstenVmInterfaceMacAddresses);
 
     VirtualNetwork deleteNetworkFromTungsten(String tungstenNetworkUuid) throws IOException;
 
@@ -50,7 +49,7 @@ public interface TungstenService {
 
     void expugeVmFromTungsten(String vmUuid) throws IOException;
 
-    Project getTungstenNetworkProject(Account owner) throws IOException;
+    Project getTungstenNetworkProject(long accountId, long domainId) throws IOException;
 
     void addTungstenVrouterPort(Port port) throws IOException;
 
@@ -59,18 +58,18 @@ public interface TungstenService {
     InstanceIp createInstanceIpInTungsten(VirtualNetwork vn, VirtualMachineInterface vmi, NicProfile nic);
 
     VirtualMachineInterface createVmInterfaceInTungsten(NicProfile nicProfile, VirtualNetwork vn, VirtualMachine vm,
-        Project project);
+                                                        Project project);
 
     ApiObjectBase getObject(Class<? extends ApiObjectBase> obj, String uuid) throws IOException;
 
     NetworkIpam getDefaultProjectNetworkIpam(Project project) throws IOException;
 
     VnSubnetsType getVnSubnetsType(String ipAllocPoolStart, String ipAllocPoolEnd, String subnetIpPrefix,
-        int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
-        boolean isIpAddrFromStart);
+                                   int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
+                                   boolean isIpAddrFromStart);
 
     VirtualNetwork createTungstenVirtualNetwork(Network network, Project project, NetworkIpam networkIpam,
-        VnSubnetsType subnet);
+                                                VnSubnetsType subnet);
 
     void deleteObject(Class<? extends ApiObjectBase> obj, String uuid) throws IOException;
 }

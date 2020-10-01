@@ -8,5 +8,7 @@ public interface TungstenProviderDao extends GenericDao<TungstenProviderVO, Long
 
     TungstenProviderVO findByUuid(String uuid);
 
+    TungstenProviderVO findByPhysicalNetworkId(long physicalNetworkId);
+
     void deleteProviderByUuid(String providerUuid);
 }

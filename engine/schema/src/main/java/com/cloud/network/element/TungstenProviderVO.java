@@ -22,8 +22,14 @@ public class TungstenProviderVO implements TungstenProvider {
     @Column(name = "nsp_id")
     private long nspId;
 
+    @Column(name = "physical_network_id")
+    private long physicalNetworkId;
+
     @Column(name = "uuid")
     private String uuid;
+
+    @Column(name = "host_id")
+    private long hostId;
 
     @Column(name = "provider_name")
     private String providerName;
@@ -44,14 +50,16 @@ public class TungstenProviderVO implements TungstenProvider {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public TungstenProviderVO(long nspId, String providerName, String port, String hostname, String vrouter, String vrouterPort) {
+    public TungstenProviderVO(long nspId, long physicalNetworkId, String providerName, long hostId, String port, String hostname, String vrouter, String vrouterPort) {
         this.nspId = nspId;
+        this.physicalNetworkId = physicalNetworkId;
         this.uuid = UUID.randomUUID().toString();
         this.providerName = providerName;
         this.port = port;
         this.hostname = hostname;
         this.vrouter = vrouter;
         this.vrouterPort = vrouterPort;
+        this.hostId = hostId;
     }
 
     @Override
@@ -104,6 +112,14 @@ public class TungstenProviderVO implements TungstenProvider {
         this.nspId = nspId;
     }
 
+    public long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+
+    public void setPhysicalNetworkId(long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
+
     public String getVrouter() {
         return vrouter;
     }
@@ -118,5 +134,13 @@ public class TungstenProviderVO implements TungstenProvider {
 
     public void setVrouterPort(final String vrouterPort) {
         this.vrouterPort = vrouterPort;
+    }
+
+    public long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(long hostId) {
+        this.hostId = hostId;
     }
 }
