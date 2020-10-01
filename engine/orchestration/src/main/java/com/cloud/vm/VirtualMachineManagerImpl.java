@@ -1112,7 +1112,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 if (dest != null) {
                     avoids.addHost(dest.getHost().getId());
-                    if (template.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.User) {
+                    if (!template.isDeployAsIs()) {
                         journal.record("Deployment found ", vmProfile, dest);
                     }
                 }

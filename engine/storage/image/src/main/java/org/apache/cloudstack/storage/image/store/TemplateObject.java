@@ -376,10 +376,10 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public boolean isDeployAsIs() {
-        if (getHypervisorType() == HypervisorType.VMware) {
-            return true;
+        if (this.imageVO == null) {
+            return false;
         }
-        return false;
+        return this.imageVO.isDeployAsIs();
     }
 
     public void setInstallPath(String installPath) {

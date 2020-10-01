@@ -412,7 +412,7 @@ public class TemplateServiceImpl implements TemplateService {
                                         VirtualMachineTemplate.Event event = VirtualMachineTemplate.Event.OperationSucceeded;
                                         // For multi-disk OVA, check and create data disk templates
                                         if (tmplt.getFormat().equals(ImageFormat.OVA)) {
-                                            if (!createOvaDataDiskTemplates(_templateFactory.getTemplate(tmlpt.getId(), store), true)) {
+                                            if (!createOvaDataDiskTemplates(_templateFactory.getTemplate(tmlpt.getId(), store), tmplt.isDeployAsIs())) {
                                                 event = VirtualMachineTemplate.Event.OperationFailed;
                                             }
                                         }
@@ -710,7 +710,7 @@ public class TemplateServiceImpl implements TemplateService {
 
         // For multi-disk OVA, check and create data disk templates
         if (template.getFormat().equals(ImageFormat.OVA)) {
-            if (!createOvaDataDiskTemplates(template, true)) {
+            if (!createOvaDataDiskTemplates(template, template.isDeployAsIs())) {
                 template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
                 result.setResult(callbackResult.getResult());
                 if (parentCallback != null) {
@@ -799,7 +799,7 @@ public class TemplateServiceImpl implements TemplateService {
         String templateName = dataDiskTemplate.isIso() ? dataDiskTemplate.getPath().substring(dataDiskTemplate.getPath().lastIndexOf(File.separator) + 1) : template.getName() + suffix + diskCount;
         VMTemplateVO templateVO = new VMTemplateVO(templateId, templateName, format, false, false, false, ttype, template.getUrl(),
                 template.requiresHvm(), template.getBits(), template.getAccountId(), null, templateName, false, guestOsId, false, template.getHypervisorType(), null,
-                null, false, false, false);
+                null, false, false, false, false);
         if (dataDiskTemplate.isIso()){
             templateVO.setUniqueName(templateName);
         }

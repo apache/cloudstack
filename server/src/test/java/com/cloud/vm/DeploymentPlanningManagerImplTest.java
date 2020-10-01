@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.host.Host;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.junit.Before;
@@ -165,6 +166,10 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(_plannerHostReserveDao.persist(Matchers.any(PlannerHostReservationVO.class))).thenReturn(reservationVO);
         Mockito.when(_plannerHostReserveDao.findById(Matchers.anyLong())).thenReturn(reservationVO);
         Mockito.when(_affinityGroupVMMapDao.countAffinityGroupsForVm(Matchers.anyLong())).thenReturn(0L);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.isDeployAsIs()).thenReturn(false);
+        Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
 
         VMInstanceVO vm = new VMInstanceVO();
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
