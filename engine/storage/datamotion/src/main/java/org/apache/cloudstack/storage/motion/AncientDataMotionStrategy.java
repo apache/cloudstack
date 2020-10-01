@@ -556,7 +556,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (snapshotFullBackup != null) {
             fullSnapshot = snapshotFullBackup;
         }
-        boolean isKVMsnapshotsEnabled = SnapshotManager.VMsnapshotKVM.value() == null || SnapshotManager.VMsnapshotKVM.value();
+        boolean isKVMsnapshotsEnabled = SnapshotManager.VMsnapshotKVM.value() != null && SnapshotManager.VMsnapshotKVM.value();
         Map<String, String> options = new HashMap<String, String>();
         options.put("fullSnapshot", fullSnapshot.toString());
         String param = isKVMsnapshotsEnabled && snapshotInfo.getState() == Snapshot.State.BackingUpForVM  ? String.valueOf(true) : String.valueOf(false);

@@ -359,7 +359,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("Can not snapshot memory when VM is not in Running state");
         }
 
-        boolean isKVMsnapshotsEnabled = SnapshotManager.VMsnapshotKVM.value() == null || SnapshotManager.VMsnapshotKVM.value();
+        boolean isKVMsnapshotsEnabled = SnapshotManager.VMsnapshotKVM.value() != null && SnapshotManager.VMsnapshotKVM.value();
 
         // for KVM, only allow snapshot with memory when VM is in running state
         if (userVmVo.getHypervisorType() == HypervisorType.KVM && userVmVo.getState() == State.Running && !snapshotMemory) {
