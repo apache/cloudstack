@@ -355,7 +355,7 @@ export default {
 
       const params = {}
       params.zoneid = this.stepData.zoneReturned.id
-      params.domain = this.prefillContent.domainId ? this.prefillContent.domainId.value : null
+      params.domainid = this.prefillContent.domainId ? this.prefillContent.domainId.value : null
       params.account = this.prefillContent.account ? this.prefillContent.account.value : null
 
       try {
