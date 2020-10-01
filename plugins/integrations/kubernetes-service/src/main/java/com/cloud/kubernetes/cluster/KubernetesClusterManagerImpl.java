@@ -862,12 +862,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 throw new InvalidParameterValueException("nodeids can not be passed along with clustersize or service offering");
             }
             List<KubernetesClusterVmMapVO> nodes = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(kubernetesCluster.getId(), nodeIds);
-            // TODO : Ensure the vm is not the master node
-            nodeIds.stream().forEach(x -> LOGGER.info(String.format("Node: %d", x)));
+            // Do all the nodes exist ?
             if (nodes == null || nodes.size() != nodeIds.size()) {
-                nodes.stream().forEach(x -> LOGGER.info(String.format("NodeMap: %d", x.vmId)));
                 throw new InvalidParameterValueException("Invalid node ids");
             }
+            // Ensure there's always a master
+            long mastersToRemove = nodes.stream().filter(x -> x.isMaster()).count();
+            if (mastersToRemove >= kubernetesCluster.getMasterNodeCount()) {
+                throw new InvalidParameterValueException("Can not remove all masters from a cluster");
+            }
+
         } else {
             if (serviceOfferingId == null && clusterSize == null) {
                 throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled, either a new service offering or a new cluster size or nodeids to be removed must be passed", kubernetesCluster.getUuid()));

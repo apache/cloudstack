@@ -833,3 +833,6 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_vers
 
 -- Fix OS category for Guest OS 'Other PV Virtio-SCSI (64-bit)'
 UPDATE `cloud`.`guest_os` SET category_id = 7 WHERE id = 275 AND display_name = 'Other PV Virtio-SCSI (64-bit)';
+
+-- TODO : Move to 416
+ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `is_master` tinyint(1) NOT NULL DEFAULT '0';
