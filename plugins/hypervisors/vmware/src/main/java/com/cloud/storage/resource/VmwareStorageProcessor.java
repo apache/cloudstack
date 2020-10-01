@@ -1196,7 +1196,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (volume.getVmName() == null) {
                 ManagedObjectReference secMorDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, volume.getDataStore().getUuid());
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), secMorDs);
-                workerVmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, "workervm"+volume.getUuid());
+                workerVmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, "workervm"+volume.getUuid(), null);
                 if (workerVmMo == null) {
                     throw new Exception("Unable to find created worker VM");
                 }
