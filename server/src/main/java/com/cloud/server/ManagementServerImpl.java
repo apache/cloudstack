@@ -1279,7 +1279,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword, null, null, srcHost.getHypervisorType(),
-                    srcHost.getHypervisorVersion());
+                    null);
             allHosts = allHostsPair.first();
             allHosts.remove(srcHost);
 
@@ -1300,7 +1300,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                                 // source volume.
                                 iterator.remove();
                             } else {
-                                if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
+                                boolean hostSupportsStorageMigration = true;
+                                if (!srcHost.getHypervisorVersion().equals(host.getHypervisorVersion())) {
+                                    HypervisorCapabilitiesVO hostCapabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(host.getHypervisorType(), host.getHypervisorVersion());
+                                    if (hostCapabilities == null && HypervisorType.KVM.equals(host.getHypervisorType())) {
+                                        List<HypervisorCapabilitiesVO> hypervisorCapabilitiesList = _hypervisorCapabilitiesDao.listAllByHypervisorType(HypervisorType.KVM);
+                                        if (hypervisorCapabilitiesList != null) {
+                                            for (HypervisorCapabilitiesVO hypervisorCapabilities : hypervisorCapabilitiesList) {
+                                                if (hypervisorCapabilities.isStorageMotionSupported()) {
+                                                    hostCapabilities = hypervisorCapabilities;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    hostSupportsStorageMigration = hostCapabilities != null && hostCapabilities.isStorageMotionSupported();
+                                }
+                                if (hostSupportsStorageMigration && hasSuitablePoolsForVolume(volume, host, vmProfile)) {
                                     requiresStorageMotion.put(host, true);
                                 } else {
                                     iterator.remove();

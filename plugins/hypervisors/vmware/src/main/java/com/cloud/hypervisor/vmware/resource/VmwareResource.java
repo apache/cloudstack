@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -55,6 +58,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -318,8 +322,8 @@ import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
-import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineBootOptions;
+import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
@@ -340,9 +344,6 @@ import com.vmware.vim25.VmConfigSpec;
 import com.vmware.vim25.VmfsDatastoreInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
-
-import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -4117,7 +4118,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(MigrateVmToPoolCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info(String.format("excuting MigrateVmToPoolCommand %s -> %s", cmd.getVmName(), cmd.getDestinationPool()));
+            s_logger.info(String.format("Executing MigrateVmToPoolCommand %s -> %s", cmd.getVmName(), cmd.getDestinationPool()));
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("MigrateVmToPoolCommand: " + _gson.toJson(cmd));
             }
@@ -4129,13 +4130,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VirtualMachineMO vmMo = getVirtualMachineMO(vmName, hyperHost);
             if (vmMo == null) {
-                String msg = "VM " + vmName + " does not exist in VMware datacenter";
-                s_logger.error(msg);
-                throw new CloudRuntimeException(msg);
+                s_logger.info("VM " + vmName + " was not found in the cluster of host " + hyperHost.getHyperHostName() + ". Looking for the VM in datacenter.");
+                ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+                DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), dcMor);
+                vmMo = dcMo.findVm(vmName);
+                if (vmMo == null) {
+                    String msg = "VM " + vmName + " does not exist in VMware datacenter";
+                    s_logger.error(msg);
+                    throw new CloudRuntimeException(msg);
+                }
             }
-
-            String poolUuid = cmd.getDestinationPool();
-            return migrateAndAnswer(vmMo, poolUuid, hyperHost, cmd);
+            return migrateAndAnswer(vmMo, cmd.getDestinationPool(), hyperHost, cmd);
         } catch (Throwable e) { // hopefully only CloudRuntimeException :/
             if (e instanceof Exception) {
                 return new Answer(cmd, (Exception) e);
@@ -4149,37 +4154,46 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid, VmwareHypervisorHost hyperHost, Command cmd) throws Exception {
-        ManagedObjectReference morDs = getTargetDatastoreMOReference(poolUuid, hyperHost);
+        String targetClusterHostName = null;
+
+        VmwareHypervisorHost targetClusterHost = null;
+        List<Pair<VolumeTO, StorageFilerTO>> volToFiler = new ArrayList<>();
+        if (cmd instanceof MigrateVmToPoolCommand) {
+            MigrateVmToPoolCommand mcmd = (MigrateVmToPoolCommand)cmd;
+            targetClusterHostName = mcmd.getTargetClusterHost();
+            volToFiler = mcmd.getVolumeToFilerAsList();
+        } else if (cmd instanceof MigrateVolumeCommand) {
+            targetClusterHostName = ((MigrateVolumeCommand)cmd).getTargetClusterHost();
+        }
+        if (StringUtils.isNotBlank(targetClusterHostName)) {
+            String targetClusterHostMorInfo = targetClusterHostName.split("@")[0];
+            ManagedObjectReference morTgtClusterHost = new ManagedObjectReference();
+            morTgtClusterHost.setType(targetClusterHostMorInfo.split(":")[0]);
+            morTgtClusterHost.setValue(targetClusterHostMorInfo.split(":")[1]);
+            targetClusterHost = new HostMO(getServiceContext(), morTgtClusterHost);
+        }
 
         try {
             // OfflineVmwareMigration: getVolumesFromCommand(cmd);
-            Map<Integer, Long> volumeDeviceKey = getVolumesFromCommand(vmMo, cmd);
-            if (s_logger.isTraceEnabled()) {
-                for (Integer diskId : volumeDeviceKey.keySet()) {
-                    s_logger.trace(String.format("disk to migrate has disk id %d and volumeId %d", diskId, volumeDeviceKey.get(diskId)));
+            Map<Integer, Long> volumeDeviceKey = new HashMap<>();
+            if (CollectionUtils.isEmpty(volToFiler)) { // Else device keys will be found in relocateVirtualMachine
+                volumeDeviceKey = getVolumesFromCommand(vmMo, cmd);
+                if (s_logger.isTraceEnabled()) {
+                    for (Integer diskId: volumeDeviceKey.keySet()) {
+                        s_logger.trace(String.format("Disk to migrate has disk id %d and volumeId %d", diskId, volumeDeviceKey.get(diskId)));
+                    }
                 }
             }
-            if (vmMo.changeDatastore(morDs)) {
-                // OfflineVmwareMigration: create target specification to include in answer
-                // Consolidate VM disks after successful VM migration
-                // In case of a linked clone VM, if VM's disks are not consolidated, further VM operations such as volume snapshot, VM snapshot etc. will result in DB inconsistencies.
-                if (!vmMo.consolidateVmDisks()) {
-                    s_logger.warn("VM disk consolidation failed after storage migration. Yet proceeding with VM migration.");
-                } else {
-                    s_logger.debug("Successfully consolidated disks of VM " + vmMo.getVmName() + ".");
-                }
-                return createAnswerForCmd(vmMo, poolUuid, cmd, volumeDeviceKey);
-            } else {
-                return new Answer(cmd, false, "failed to changes data store for VM" + vmMo.getVmName());
-            }
+            List<VolumeObjectTO> volumeToList = relocateVirtualMachine(hyperHost, vmMo.getName(), null, null, targetClusterHost, poolUuid, volToFiler);
+            return createAnswerForCmd(vmMo, poolUuid, volumeToList, cmd, volumeDeviceKey);
         } catch (Exception e) {
-            String msg = "change data store for VM " + vmMo.getVmName() + " failed";
+            String msg = "Change data store for VM " + vmMo.getVmName() + " failed";
             s_logger.error(msg + ": " + e.getLocalizedMessage());
             throw new CloudRuntimeException(msg, e);
         }
     }
 
-    Answer createAnswerForCmd(VirtualMachineMO vmMo, String poolUuid, Command cmd, Map<Integer, Long> volumeDeviceKey) throws Exception {
+    Answer createAnswerForCmd(VirtualMachineMO vmMo, String poolUuid, List<VolumeObjectTO> volumeObjectToList, Command cmd, Map<Integer, Long> volumeDeviceKey) throws Exception {
         List<VolumeObjectTO> volumeToList = new ArrayList<>();
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
         VirtualDisk[] disks = vmMo.getAllDiskDevice();
@@ -4194,16 +4208,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
             throw new CloudRuntimeException("not expecting more then  one disk after migrate volume command");
         } else if (cmd instanceof MigrateVmToPoolCommand) {
-            for (VirtualDisk disk : disks) {
-                VolumeObjectTO newVol = new VolumeObjectTO();
-                String newPath = vmMo.getVmdkFileBaseName(disk);
-                VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolUuid);
-                newVol.setId(volumeDeviceKey.get(disk.getKey()));
-                newVol.setPath(newPath);
-                newVol.setChainInfo(_gson.toJson(diskInfo));
-                volumeToList.add(newVol);
+            if (poolUuid != null) {
+                for (VirtualDisk disk : disks) {
+                    VolumeObjectTO newVol = new VolumeObjectTO();
+                    String newPath = vmMo.getVmdkFileBaseName(disk);
+                    String poolName = poolUuid.replace("-", "");
+                    VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolName);
+                    newVol.setId(volumeDeviceKey.get(disk.getKey()));
+                    newVol.setPath(newPath);
+                    newVol.setChainInfo(_gson.toJson(diskInfo));
+                    newVol.setDataStoreUuid(poolUuid);
+                    volumeToList.add(newVol);
+                }
+            } else if (CollectionUtils.isNotEmpty(volumeObjectToList)) {
+                volumeToList = volumeObjectToList;
             }
-            return new MigrateVmToPoolAnswer((MigrateVmToPoolCommand) cmd, volumeToList);
+            return new MigrateVmToPoolAnswer((MigrateVmToPoolCommand)cmd, volumeToList);
         }
         return new Answer(cmd, false, null);
     }
@@ -7184,5 +7204,292 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         return new PrepareUnmanageVMInstanceAnswer(cmd, true, "OK");
+    }
+
+    /*
+     * Method to relocate a virtual machine. This migrates VM and its volumes to given host, datastores.
+     * It is used for MigrateVolumeCommand (detached volume case), MigrateVmToPoolCommand and MigrateVmWithStorageCommand.
+     */
+
+    private List<VolumeObjectTO> relocateVirtualMachine(final VmwareHypervisorHost hypervisorHost,
+                                                        final String name, final VirtualMachineTO vmTo,
+                                                        final String targetHost, final VmwareHypervisorHost targetClusterHost,
+                                                        final String poolUuid, final List<Pair<VolumeTO, StorageFilerTO>> volToFiler) throws Exception {
+        String vmName = name;
+        if (vmName == null && vmTo != null) {
+            vmName = vmTo.getName();
+        }
+        VmwareHypervisorHost sourceHyperHost = hypervisorHost;
+        VmwareHypervisorHost targetHyperHost = targetClusterHost;
+        VirtualMachineMO vmMo = null;
+        ManagedObjectReference morSourceHostDc = null;
+        ManagedObjectReference morTargetHostDc = null;
+        ManagedObjectReference morTargetHost = new ManagedObjectReference();
+        VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
+        List<VirtualMachineRelocateSpecDiskLocator> diskLocators = new ArrayList<VirtualMachineRelocateSpecDiskLocator>();
+        Set<String> mountedDatastoresAtSource = new HashSet<String>();
+        List<VolumeObjectTO> volumeToList =  new ArrayList<>();
+        Map<Long, Integer> volumeDeviceKey = new HashMap<Long, Integer>();
+        if (StringUtils.isNotBlank(targetHost)) {
+            String targetHostMorInfo = targetHost.split("@")[0];
+            morTargetHost.setType(targetHostMorInfo.split(":")[0]);
+            morTargetHost.setValue(targetHostMorInfo.split(":")[1]);
+        }
+
+        try {
+            if (sourceHyperHost == null) {
+                sourceHyperHost = getHyperHost(getServiceContext());
+            }
+            if (targetHyperHost == null && StringUtils.isNotBlank(targetHost)) {
+                targetHyperHost = new HostMO(getServiceContext(), morTargetHost);
+            }
+            morSourceHostDc = sourceHyperHost.getHyperHostDatacenter();
+            DatacenterMO dcMo = new DatacenterMO(sourceHyperHost.getContext(), morSourceHostDc);
+            if (targetHyperHost != null) {
+                morTargetHostDc = targetHyperHost.getHyperHostDatacenter();
+                if (!morSourceHostDc.getValue().equalsIgnoreCase(morTargetHostDc.getValue())) {
+                    String msg = "VM " + vmName + " cannot be migrated between different datacenter";
+                    throw new CloudRuntimeException(msg);
+                }
+            }
+
+            // find VM through source host (VM is not at the target host yet)
+            vmMo = sourceHyperHost.findVmOnHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " does not exist on host: " + sourceHyperHost.getHyperHostName();
+                s_logger.warn(msg);
+                // find VM through source host (VM is not at the target host yet)
+                vmMo = dcMo.findVm(vmName);
+                if (vmMo == null) {
+                    msg = "VM " + vmName + " does not exist on datacenter: " + dcMo.getName();
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+                // VM host has changed
+                sourceHyperHost = vmMo.getRunningHost();
+            }
+
+            vmName = vmMo.getName();
+            String srcHostApiVersion = ((HostMO)sourceHyperHost).getHostAboutInfo().getApiVersion();
+
+            if (StringUtils.isNotBlank(poolUuid)) {
+                String dsName = poolUuid.replace("-", "");
+                ManagedObjectReference morDatastore = null;
+                String msg;
+                if (targetClusterHost != null) {
+                    morDatastore = dcMo.findDatastore(dsName);
+                } else {
+                    morDatastore = getTargetDatastoreMOReference(dsName, sourceHyperHost);
+                }
+                if (morDatastore == null) {
+                    msg = "Unable to find the target datastore: " + dsName +
+                            (targetClusterHost != null ? "in datacenter: " + dcMo.getName() : " on host: " + sourceHyperHost.getHyperHostName()) +
+                            " to execute migration";
+                    s_logger.error(msg);
+                    throw new CloudRuntimeException(msg);
+                }
+                relocateSpec.setDatastore(morDatastore);
+            } else if (CollectionUtils.isNotEmpty(volToFiler)) {
+                // Specify destination datastore location for each volume
+                for (Pair<VolumeTO, StorageFilerTO> entry : volToFiler) {
+                    VolumeTO volume = entry.first();
+                    StorageFilerTO filerTo = entry.second();
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(String.format("Preparing spec for volume: %s to migrate it to datastore: %s", volume.getName(), filerTo.getUuid()));
+                    }
+                    String dsName = filerTo.getUuid().replace("-", "");
+                    ManagedObjectReference morVolumeDatastore = dcMo.findDatastore(dsName);
+                    if (morVolumeDatastore == null) {
+                        String msg = "Unable to find the target datastore: " + dsName + " in datacenter: " + dcMo.getName() + " to execute migration";
+                        s_logger.error(msg);
+                        throw new CloudRuntimeException(msg);
+                    }
+
+                    String mountedDs = getMountedDatastoreName(sourceHyperHost, srcHostApiVersion, filerTo);
+                    if (mountedDs != null) {
+                        mountedDatastoresAtSource.add(mountedDs);
+                    }
+
+                    if (volume.getType() == Volume.Type.ROOT) {
+                        relocateSpec.setDatastore(morVolumeDatastore);
+                    }
+                    VirtualMachineRelocateSpecDiskLocator diskLocator = new VirtualMachineRelocateSpecDiskLocator();
+                    diskLocator.setDatastore(morVolumeDatastore);
+                    Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, volume.getPath() + VMDK_EXTENSION);
+                    String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
+                    if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
+                        vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);
+                    }
+                    int diskId = diskInfo.first().getKey();
+                    diskLocator.setDiskId(diskId);
+
+                    diskLocators.add(diskLocator);
+                    volumeDeviceKey.put(volume.getId(), diskId);
+                }
+                // If a target datastore is provided for the VM, then by default all volumes associated with the VM will be migrated to that target datastore.
+                // Hence set the existing datastore as target datastore for volumes that are not to be migrated.
+                List<Pair<Integer, ManagedObjectReference>> diskDatastores = vmMo.getAllDiskDatastores();
+                for (Pair<Integer, ManagedObjectReference> diskDatastore : diskDatastores) {
+                    if (!volumeDeviceKey.containsValue(diskDatastore.first().intValue())) {
+                        VirtualMachineRelocateSpecDiskLocator diskLocator = new VirtualMachineRelocateSpecDiskLocator();
+                        diskLocator.setDiskId(diskDatastore.first().intValue());
+                        diskLocator.setDatastore(diskDatastore.second());
+                        diskLocators.add(diskLocator);
+                    }
+                }
+
+                relocateSpec.getDisk().addAll(diskLocators);
+            }
+
+            // Specific section for MigrateVmWithStorageCommand
+            if (vmTo != null) {
+                // Prepare network at target before migration
+                NicTO[] nics = vmTo.getNics();
+                for (NicTO nic : nics) {
+                    // prepare network on the host
+                    prepareNetworkFromNicInfo(new HostMO(getServiceContext(), morTargetHost), nic, false, vmTo.getType());
+                }
+                // Ensure secondary storage mounted on target host
+                VmwareManager mgr = targetHyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+                Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
+                String secStoreUrl = secStoreUrlAndId.first();
+                Long secStoreId = secStoreUrlAndId.second();
+                if (secStoreUrl == null) {
+                    String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
+                    throw new Exception(msg);
+                }
+                mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
+                ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, targetHyperHost);
+                if (morSecDs == null) {
+                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+                    throw new Exception(msg);
+                }
+            }
+
+            if (srcHostApiVersion.compareTo("5.1") < 0) {
+                // Migrate VM's volumes to target datastore(s).
+                if (!vmMo.changeDatastore(relocateSpec)) {
+                    throw new Exception("Change datastore operation failed during storage migration");
+                } else {
+                    s_logger.debug("Successfully migrated storage of VM " + vmName + " to target datastore(s)");
+                }
+                // Migrate VM to target host.
+                if (targetHyperHost != null) {
+                    ManagedObjectReference morPool = targetHyperHost.getHyperHostOwnerResourcePool();
+                    if (!vmMo.migrate(morPool, targetHyperHost.getMor())) {
+                        throw new Exception("VM migration to target host failed during storage migration");
+                    } else {
+                        s_logger.debug("Successfully migrated VM " + vmName + " from " + sourceHyperHost.getHyperHostName() + " to " + targetHyperHost.getHyperHostName());
+                    }
+                }
+            } else {
+                // Add target host to relocate spec
+                if (targetHyperHost != null) {
+                    relocateSpec.setHost(targetHyperHost.getMor());
+                    relocateSpec.setPool(targetHyperHost.getHyperHostOwnerResourcePool());
+                }
+                if (!vmMo.changeDatastore(relocateSpec)) {
+                    throw new Exception("Change datastore operation failed during storage migration");
+                } else {
+                    s_logger.debug("Successfully migrated VM " + vmName +
+                            (targetClusterHost != null ? " from " + sourceHyperHost.getHyperHostName() + " to " + targetHyperHost.getHyperHostName() + " and " : " with ") +
+                            "its storage to target datastore(s)");
+                }
+            }
+
+            // Consolidate VM disks.
+            // In case of a linked clone VM, if VM's disks are not consolidated, further VM operations such as volume snapshot, VM snapshot etc. will result in DB inconsistencies.
+            if (!vmMo.consolidateVmDisks()) {
+                s_logger.warn("VM disk consolidation failed after storage migration. Yet proceeding with VM migration.");
+            } else {
+                s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
+            }
+
+            if (MapUtils.isNotEmpty(volumeDeviceKey)) {
+                // Update and return volume path and chain info for every disk because that could have changed after migration
+                VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+                for (Pair<VolumeTO, StorageFilerTO> entry : volToFiler) {
+                    final VolumeTO volume = entry.first();
+                    final long volumeId = volume.getId();
+                    VirtualDisk[] disks = vmMo.getAllDiskDevice();
+                    for (VirtualDisk disk : disks) {
+                        if (volumeDeviceKey.get(volumeId) == disk.getKey()) {
+                            VolumeObjectTO newVol = new VolumeObjectTO();
+                            newVol.setDataStoreUuid(entry.second().getUuid());
+                            String newPath = vmMo.getVmdkFileBaseName(disk);
+                            String poolName = entry.second().getUuid().replace("-", "");
+                            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolName);
+                            newVol.setId(volumeId);
+                            newVol.setPath(newPath);
+                            newVol.setChainInfo(_gson.toJson(diskInfo));
+                            volumeToList.add(newVol);
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encountered remote exception at vCenter, invalidating VMware session context");
+                invalidateServiceContext();
+            }
+            throw e;
+        } finally {
+            // Cleanup datastores mounted on source host
+            for (String mountedDatastore : mountedDatastoresAtSource) {
+                s_logger.debug("Attempting to unmount datastore " + mountedDatastore + " at " + sourceHyperHost.getHyperHostName());
+                try {
+                    sourceHyperHost.unmountDatastore(mountedDatastore);
+                } catch (Exception unmountEx) {
+                    s_logger.warn("Failed to unmount datastore " + mountedDatastore + " at " + sourceHyperHost.getHyperHostName() + ". Seems the datastore is still being used by " + sourceHyperHost.getHyperHostName() +
+                            ". Please unmount manually to cleanup.");
+                }
+                s_logger.debug("Successfully unmounted datastore " + mountedDatastore + " at " + sourceHyperHost.getHyperHostName());
+            }
+        }
+
+        // Only when volToFiler is not empty a filled list of VolumeObjectTO is returned else it will be empty
+        return volumeToList;
+    }
+
+    private String getMountedDatastoreName(VmwareHypervisorHost sourceHyperHost, String sourceHostApiVersion, StorageFilerTO filerTo) throws Exception {
+        String mountedDatastoreName = null;
+        // If host version is below 5.1 then simultaneous change of VM's datastore and host is not supported.
+        // So since only the datastore will be changed first, ensure the target datastore is mounted on source host.
+        if (sourceHostApiVersion.compareTo("5.1") < 0) {
+            s_logger.debug(String.format("Host: %s version is %s, vMotion without shared storage cannot be done. Check source host has target datastore mounted or can be mounted", sourceHyperHost.getHyperHostName(), sourceHostApiVersion));
+            ManagedObjectReference morVolumeDatastoreAtSource = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(sourceHyperHost, filerTo.getUuid());
+            String volumeDatastoreName = filerTo.getUuid().replace("-", "");
+            String volumeDatastoreHost = filerTo.getHost();
+            String volumeDatastorePath = filerTo.getPath();
+            int volumeDatastorePort = filerTo.getPort();
+
+            // If datastore is NFS and target datastore is not already mounted on source host then mount the datastore.
+            if (filerTo.getType().equals(StoragePoolType.NetworkFilesystem)) {
+                if (morVolumeDatastoreAtSource == null) {
+                    morVolumeDatastoreAtSource = sourceHyperHost.mountDatastore(false, volumeDatastoreHost, volumeDatastorePort, volumeDatastorePath, volumeDatastoreName);
+                    if (morVolumeDatastoreAtSource == null) {
+                        throw new Exception("Unable to mount NFS datastore " + volumeDatastoreHost + ":/" + volumeDatastorePath + " on host: " + sourceHyperHost.getHyperHostName());
+                    }
+                    mountedDatastoreName = volumeDatastoreName;
+                    s_logger.debug("Mounted NFS datastore " + volumeDatastoreHost + ":/" + volumeDatastorePath + " on host: " + sourceHyperHost.getHyperHostName());
+                }
+            }
+
+            // If datastore is VMFS and target datastore is not mounted or accessible to source host then fail migration.
+            if (filerTo.getType().equals(StoragePoolType.VMFS)) {
+                if (morVolumeDatastoreAtSource == null) {
+                    s_logger.warn("Host: " + sourceHyperHost.getHyperHostName() + " version is below 5.1, target VMFS datastore(s) need to be manually mounted on host for successful storage migration.");
+                    throw new Exception("Target VMFS datastore: " + volumeDatastorePath + " is not mounted on host: " + sourceHyperHost.getHyperHostName());
+                }
+                DatastoreMO dsAtSourceMo = new DatastoreMO(getServiceContext(), morVolumeDatastoreAtSource);
+                String srcHostValue = sourceHyperHost.getMor().getValue();
+                if (!dsAtSourceMo.isAccessibleToHost(srcHostValue)) {
+                    s_logger.warn("Host " + sourceHyperHost.getHyperHostName() + " version is below 5.1, target VMFS datastore(s) need to be accessible to host for a successful storage migration.");
+                    throw new Exception("Target VMFS datastore: " + volumeDatastorePath + " is not accessible on host: " + sourceHyperHost.getHyperHostName());
+                }
+            }
+        }
+        return mountedDatastoreName;
     }
 }

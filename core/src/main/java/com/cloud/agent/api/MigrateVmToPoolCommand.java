@@ -18,9 +18,12 @@
 //
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.to.VolumeTO;
-
 import java.util.Collection;
+import java.util.List;
+
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.utils.Pair;
 
 /**
  * used to tell the agent to migrate a vm to a different primary storage pool.
@@ -32,6 +35,8 @@ public class MigrateVmToPoolCommand extends Command {
     private String vmName;
     private String destinationPool;
     private boolean executeInSequence = false;
+    private List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerAsList;
+    private String targetClusterHost;
 
     protected MigrateVmToPoolCommand() {
     }
@@ -43,10 +48,14 @@ public class MigrateVmToPoolCommand extends Command {
      * @param destinationPool the primary storage pool to migrate the VM to
      * @param executeInSequence
      */
-    public MigrateVmToPoolCommand(String vmName, Collection<VolumeTO> volumes, String destinationPool, boolean executeInSequence) {
+    public MigrateVmToPoolCommand(String vmName, Collection<VolumeTO> volumes, String destinationPool,
+                                  List<Pair<VolumeTO, StorageFilerTO>>volumeToFilerto, String targetHost,
+                                  boolean executeInSequence) {
         this.vmName = vmName;
         this.volumes = volumes;
         this.destinationPool = destinationPool;
+        this.targetClusterHost = targetHost;
+        this.volumeToFilerAsList = volumeToFilerto;
         this.executeInSequence = executeInSequence;
     }
 
@@ -60,6 +69,14 @@ public class MigrateVmToPoolCommand extends Command {
 
     public String getVmName() {
         return vmName;
+    }
+
+    public List<Pair<VolumeTO, StorageFilerTO>> getVolumeToFilerAsList() {
+        return volumeToFilerAsList;
+    }
+
+    public String getTargetClusterHost() {
+        return targetClusterHost;
     }
 
     @Override

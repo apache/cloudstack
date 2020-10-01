@@ -151,7 +151,7 @@ public interface VirtualMachineManager extends Manager {
 
     VirtualMachine findById(long vmId);
 
-    void storageMigration(String vmUuid, StoragePool storagePoolId);
+    void storageMigration(String vmUuid, StoragePool storagePoolId, Map<Long, Long> volumeToPool);
 
     /**
      * @param vmInstance

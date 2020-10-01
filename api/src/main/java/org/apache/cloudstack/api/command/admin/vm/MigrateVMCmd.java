@@ -172,7 +172,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (getHostId() != null) {
                 migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
             } else if (getStoragePoolId() != null) {
-                migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
+                migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool, null);
             }
             if (migratedVm != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm) migratedVm).get(0);
