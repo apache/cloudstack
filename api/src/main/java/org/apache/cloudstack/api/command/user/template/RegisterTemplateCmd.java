@@ -162,13 +162,6 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                 description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
     private Boolean directDownload;
 
-    @Parameter(name= ApiConstants.DEPLOY_AS_IS,
-            type = CommandType.BOOLEAN,
-            description = "VMware only: true if template should not strip and define disks and networks but leave those to the template definition",
-            since = "4.15"
-    )
-    private Boolean deployAsIs;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -282,7 +275,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     }
 
     public Boolean isDeployAsIs() {
-        return deployAsIs == null ? false : deployAsIs;
+        return hypervisor != null && hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString());
     }
 
     /////////////////////////////////////////////////////
@@ -346,10 +339,6 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         if (isDirectDownload() && !getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.KVM.toString())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Parameter directdownload is only allowed for KVM templates");
-        }
-
-        if (isDeployAsIs() && !getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString())) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameter deployasis is only allowed for VMware templates");
         }
     }
 }
