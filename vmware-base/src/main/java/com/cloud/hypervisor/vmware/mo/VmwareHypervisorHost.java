@@ -53,7 +53,7 @@ public interface VmwareHypervisorHost {
 
     String getHyperHostDefaultGateway() throws Exception;
 
-    List<VirtualMachineMO> listVmsOnHyperHost(String name) throws Exception;
+    List<VirtualMachineMO> listVmsOnHyperHostWithHypervisorName(String name) throws Exception;
 
     VirtualMachineMO findVmOnHyperHost(String name) throws Exception;
 

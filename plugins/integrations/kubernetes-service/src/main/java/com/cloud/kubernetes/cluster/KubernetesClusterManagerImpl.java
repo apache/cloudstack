@@ -294,7 +294,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 LOGGER.warn(String.format("Global setting %s is empty. Template name need to be specified for Kubernetes service to function", templateKey));
                 return false;
             }
-            final VMTemplateVO template = templateDao.findByTemplateName(templateName);
+            final VMTemplateVO template = templateDao.findValidByTemplateName(templateName);
             if (template == null) {
                 LOGGER.warn(String.format("Unable to find the template %s to be used for provisioning Kubernetes cluster nodes", templateName));
                 return false;
@@ -377,22 +377,22 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private VMTemplateVO getKubernetesServiceTemplate(Hypervisor.HypervisorType hypervisorType) {
-        String tempalteName = null;
+        String templateName = null;
         switch (hypervisorType) {
             case Hyperv:
-                tempalteName = KubernetesClusterHyperVTemplateName.value();
+                templateName = KubernetesClusterHyperVTemplateName.value();
                 break;
             case KVM:
-                tempalteName = KubernetesClusterKVMTemplateName.value();
+                templateName = KubernetesClusterKVMTemplateName.value();
                 break;
             case VMware:
-                tempalteName = KubernetesClusterVMwareTemplateName.value();
+                templateName = KubernetesClusterVMwareTemplateName.value();
                 break;
             case XenServer:
-                tempalteName = KubernetesClusterXenserverTemplateName.value();
+                templateName = KubernetesClusterXenserverTemplateName.value();
                 break;
         }
-        return templateDao.findValidByTemplateName(tempalteName);
+        return templateDao.findValidByTemplateName(templateName);
     }
 
     private boolean validateIsolatedNetwork(Network network, int clusterTotalNodeCount) {
@@ -516,7 +516,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         boolean suitable_host_found = false;
         Cluster planCluster = null;
-        for (int i = 1; i <= nodesCount + 1; i++) {
+        for (int i = 1; i <= nodesCount; i++) {
             suitable_host_found = false;
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
@@ -537,7 +537,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
                 if (capacityManager.checkIfHostHasCapacity(h.getId(), cpu_requested * reserved, ram_requested * reserved, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(String.format("Found host ID: %s for with enough capacity, CPU=%d RAM=%d", h.getUuid(), cpu_requested * reserved, toHumanReadableSize(ram_requested * reserved)));
+                        LOGGER.debug(String.format("Found host ID: %s for with enough capacity, CPU=%d RAM=%s", h.getUuid(), cpu_requested * reserved, toHumanReadableSize(ram_requested * reserved)));
                     }
                     hostEntry.setValue(new Pair<HostVO, Integer>(h, reserved));
                     suitable_host_found = true;
@@ -558,7 +558,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             return new DeployDestination(zone, null, planCluster, null);
         }
-        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%d) with offering ID: %s",
+        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering ID: %s",
                 cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getUuid());
         LOGGER.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
@@ -993,7 +993,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         try {
             deployDestination = plan(totalNodeCount, zone, serviceOffering);
         } catch (InsufficientCapacityException e) {
-            logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to insufficient capacity for %d cluster nodes in zone ID: %s with service offering ID: %s", totalNodeCount, zone.getUuid(), serviceOffering.getUuid()));
+            logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to insufficient capacity for %d nodes cluster in zone ID: %s with service offering ID: %s", totalNodeCount, zone.getUuid(), serviceOffering.getUuid()));
         }
         if (deployDestination == null || deployDestination.getCluster() == null) {
             logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to error while finding suitable deployment plan for cluster in zone ID: %s", zone.getUuid()));

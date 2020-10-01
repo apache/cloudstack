@@ -185,7 +185,7 @@ def destroy_network_rules_for_nic(vm_name, vm_ip, vm_mac, vif, sec_ips):
         logging.debug("Ignoring failure to delete ebtable rules for vm: " + vm_name)
 
 def get_bridge_physdev(brname):
-    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1" % brname)
+    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1 | cut -d ':' -f1" % brname)
     return physdev.strip()
 
 
@@ -510,7 +510,7 @@ def check_default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brna
         rules = execute("iptables-save |grep -w %s |grep -w %s |grep -w %s" % (brfw, vif, vmchain_default))
     except:
         rules = None
-    if rules is None or rules is "":
+    if not rules:
         logging.debug("iptables rules do not exist, programming default rules for %s %s" % (vm_name,vif))
         default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips, is_first_nic)
     else:
@@ -519,7 +519,7 @@ def check_default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brna
             rules = execute("ebtables -t nat -L PREROUTING | grep %s |grep -w %s" % (vmchain_in, vif))
         except:
             rules = None
-        if rules is None or rules is "":
+        if not rules:
             logging.debug("ebtables rules do not exist, programming default ebtables rules for %s %s" % (vm_name,vif))
             default_ebtables_rules(vm_name, vm_ip, vm_mac, vif, is_first_nic)
             ips = sec_ips.split(';')
@@ -820,7 +820,7 @@ def network_rules_for_rebooted_vm(vmName):
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
     brName = execute("iptables-save | awk -F '-j ' '/FORWARD -o(.*)physdev-is-bridged(.*)BF/ {print $2}'").strip()
-    if brName is None or brName is "":
+    if not brName:
         brName = "cloudbr0"
     else:
         brName = execute("iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' |awk '{print $4}' | head -1").strip()
@@ -1368,13 +1368,13 @@ def verify_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec
 
     if brname is None:
         brname = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f3" % (vm_name, vm_mac)).strip()
-    if brname is None or brname == "":
+    if not brname:
         print("Cannot find bridge")
         sys.exit(1)
 
     if vif is None:
         vif = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f1" % (vm_name, vm_mac)).strip()
-    if vif is None or vif == "":
+    if not vif:
         print("Cannot find vif")
         sys.exit(1)
 

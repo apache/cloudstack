@@ -18,11 +18,14 @@ package com.cloud.hypervisor.vmware.mo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -497,10 +500,10 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     }
 
     @Override
-    public synchronized List<VirtualMachineMO> listVmsOnHyperHost(String vmName) throws Exception {
+    public synchronized List<VirtualMachineMO> listVmsOnHyperHostWithHypervisorName(String vmName) throws Exception {
         List<VirtualMachineMO> vms = new ArrayList<>();
-        if (vmName != null && !vmName.isEmpty()) {
-            vms.add(findVmOnHyperHost(vmName));
+        if (StringUtils.isNotEmpty(vmName)) {
+            vms.add(findVmOnHyperHostWithHypervisorName(vmName));
         } else {
             loadVmCache();
             vms.addAll(_vmCache.values());
@@ -1207,6 +1210,38 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             return true;
         }
         return false;
+    }
+
+    private synchronized VirtualMachineMO findVmOnHyperHostWithHypervisorName(String vmName) throws Exception {
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("find VM hypervisor name: " + vmName + " on host");
+
+        VirtualMachineMO vmMo = getVmWithHypervisorName(_vmCache.values(), vmName);
+        if (vmMo != null) {
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("VM hypervisor name: " + vmName + " found in host cache");
+            return vmMo;
+        }
+
+        s_logger.info("VM hypervisor name: " + vmName + " not found in host cache");
+        loadVmCache();
+
+        return getVmWithHypervisorName(_vmCache.values(), vmName);
+    }
+
+    private VirtualMachineMO getVmWithHypervisorName(Collection<VirtualMachineMO> vmList, String vmName) {
+        if (CollectionUtils.isNotEmpty(vmList)) {
+            for (VirtualMachineMO vm : vmList) {
+                try {
+                    if (StringUtils.isNotEmpty(vm.getVmName()) && vm.getVmName().equals(vmName)) {
+                        return vm;
+                    }
+                } catch (Exception e) {
+                    s_logger.debug("Failed to get VM name, ignoring exception", e);
+                }
+            }
+        }
+        return null;
     }
 
 }

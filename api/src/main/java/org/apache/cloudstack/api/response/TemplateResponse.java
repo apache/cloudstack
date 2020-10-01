@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -173,6 +174,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "additional key/value details tied with template")
     private Map details;
 
+    @SerializedName(ApiConstants.DOWNLOAD_DETAILS)
+    @Param(description = "Lists the download progress of a template across all secondary storages")
+    private List<Map<String, String>> downloadDetails;
+
     @SerializedName(ApiConstants.BITS)
     @Param(description = "the processor bit size", since = "4.10")
     private int bits;
@@ -253,6 +258,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setPublic(boolean isPublic) {
         this.isPublic = isPublic;
+    }
+
+    public void setDownloadProgress(List<Map<String, String>> downloadDetails) {
+        this.downloadDetails = downloadDetails;
     }
 
     public void setCreated(Date created) {

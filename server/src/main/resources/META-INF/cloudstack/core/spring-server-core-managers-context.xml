@@ -262,6 +262,8 @@
 
     <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
 
+    <bean id="imageStoreServiceImpl" class="com.cloud.storage.ImageStoreServiceImpl" />
+
     <bean id="AffinityGroupServiceImpl"
         class="org.apache.cloudstack.affinity.AffinityGroupServiceImpl">
         <property name="affinityGroupProcessors"

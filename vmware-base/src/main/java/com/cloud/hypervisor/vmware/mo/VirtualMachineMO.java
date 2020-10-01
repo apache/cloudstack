@@ -3060,6 +3060,10 @@ public class VirtualMachineMO extends BaseMO {
         return nics;
     }
 
+    public VirtualDevice[] getSortedNicDevices() throws Exception {
+        return getNicDevices(true).toArray(new VirtualDevice[0]);
+    }
+
     public VirtualDevice[] getNicDevices() throws Exception {
         return getNicDevices(false).toArray(new VirtualDevice[0]);
     }
