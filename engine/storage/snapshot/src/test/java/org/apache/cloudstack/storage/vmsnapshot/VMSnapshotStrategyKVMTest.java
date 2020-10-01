@@ -102,8 +102,6 @@ import junit.framework.TestCase;
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VMSnapshotStrategyKVMTest extends TestCase{
     List<StoragePoolVO> storage;
-//    @Inject
-//    VMSnapshotStrategy vmSnapshotStrategy;
     @Inject
     VMSnapshotHelper vmSnapshotHelper;
     @Inject
