@@ -21,6 +21,7 @@ import java.util.Date;
 import javax.inject.Inject;
 
 import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -445,7 +446,8 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public boolean isDeployAsIs() {
-        return getHypervisorType() == HypervisorType.VMware;
+        VMTemplateVO template = templateDao.findById(getTemplateId());
+        return template != null && template.isDeployAsIs();
     }
 
     @Override

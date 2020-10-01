@@ -265,7 +265,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         CallContext.current().setEventDetails("Id: " + id + " name: " + name);
         return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
             hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
-            sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload);
+            sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload, deployAsIs);
 
     }
 
@@ -376,7 +376,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.isPublic(), profile.isFeatured(), profile.isExtractable(),
                 profile.getTemplateType(), profile.getUrl(), profile.isRequiresHVM(), profile.getBits(), profile.getAccountId(), profile.getCheckSum(),
                 profile.getDisplayText(), profile.isPasswordEnabled(), profile.getGuestOsId(), profile.isBootable(), profile.getHypervisorType(),
-                profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload());
+                profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload(), profile.isDeployAsIs());
         template.setState(initialState);
 
         if (profile.isDirectDownload()) {

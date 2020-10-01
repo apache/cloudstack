@@ -253,7 +253,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         templateResponse.setDirectDownload(template.isDirectDownload());
-        templateResponse.setDeployAsIs(template.getHypervisorType() == HypervisorType.VMware);
+        templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
 
         //set template children disks
@@ -277,7 +277,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     private void setDeployAsIsDetails(TemplateJoinVO template, TemplateResponse templateResponse) {
-        if (template.getHypervisorType() == HypervisorType.VMware) {
+        if (template.isDeployAsIs()) {
             List<TemplateDeployAsIsDetailVO> deployAsIsDetails = templateDeployAsIsDetailsDao.listDetails(template.getId());
             for (TemplateDeployAsIsDetailVO deployAsIsDetailVO : deployAsIsDetails) {
                 if (deployAsIsDetailVO.getName().startsWith(DeployAsIsConstants.HARDWARE_ITEM_PREFIX)) {

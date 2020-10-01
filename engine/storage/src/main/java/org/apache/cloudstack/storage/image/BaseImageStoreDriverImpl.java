@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Upload;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
 import org.apache.log4j.Logger;
@@ -204,7 +203,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                if (template.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                if (template.isDeployAsIs()) {
                     boolean persistDeployAsIs = deployAsIsHelper.persistTemplateDeployAsIsDetails(template.getId(), answer, tmpltStoreVO);
                     if (!persistDeployAsIs) {
                         LOGGER.info("Failed persisting deploy-as-is template details for template " + template.getName());
