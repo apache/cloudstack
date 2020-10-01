@@ -295,7 +295,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         List<UserVm> nodes = new ArrayList<>();
         for (int i = offset + 1; i <= nodeCount; i++) {
             UserVm vm = createKubernetesNode(publicIpAddress);
-            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false);
             startKubernetesVM(vm);
             vm = userVmDao.findById(vm.getId());
             if (vm == null) {
