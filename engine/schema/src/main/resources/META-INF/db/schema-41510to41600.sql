@@ -19,3 +19,4 @@
 -- Schema upgrade from 4.15.1.0 to 4.16.0.0
 --;
 
+ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `is_master` tinyint(1) NOT NULL DEFAULT '0';
