@@ -274,7 +274,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             ManagementServerException, InsufficientCapacityException, ResourceUnavailableException {
         UserVm k8sMasterVM = null;
         k8sMasterVM = createKubernetesMaster(network, publicIpAddress);
-        addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId());
+        addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId(), true);
         startKubernetesVM(k8sMasterVM);
         k8sMasterVM = userVmDao.findById(k8sMasterVM.getId());
         if (k8sMasterVM == null) {
@@ -293,7 +293,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             for (int i = 1; i < kubernetesCluster.getMasterNodeCount(); i++) {
                 UserVm vm = null;
                 vm = createKubernetesAdditionalMaster(publicIpAddress, i);
-                addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+                addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), true);
                 startKubernetesVM(vm);
                 vm = userVmDao.findById(vm.getId());
                 if (vm == null) {
