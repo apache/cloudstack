@@ -1942,30 +1942,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) (vmSpec.getMaxRam() / (1024 * 1024)),
                     getReservedMemoryMb(vmSpec), guestOsId, vmSpec.getLimitCpuUse(), deployAsIs);
 
-            if (!deployAsIs) {
-                // Check for multi-cores per socket settings
-                int numCoresPerSocket = 1;
-                String coresPerSocket = vmSpec.getDetails().get(VmDetailConstants.CPU_CORE_PER_SOCKET);
-                if (coresPerSocket != null) {
-                    String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
-                    // Property 'numCoresPerSocket' is supported since vSphere API 5.0
-                    if (apiVersion.compareTo("5.0") >= 0) {
-                        numCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, 1);
-                        vmConfigSpec.setNumCoresPerSocket(numCoresPerSocket);
-                    }
+            // Check for multi-cores per socket settings
+            int numCoresPerSocket = 1;
+            String coresPerSocket = vmSpec.getDetails().get(VmDetailConstants.CPU_CORE_PER_SOCKET);
+            if (coresPerSocket != null) {
+                String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
+                // Property 'numCoresPerSocket' is supported since vSphere API 5.0
+                if (apiVersion.compareTo("5.0") >= 0) {
+                    numCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, 1);
+                    vmConfigSpec.setNumCoresPerSocket(numCoresPerSocket);
                 }
+            }
 
-                // Check for hotadd settings
-                vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId));
+            // Check for hotadd settings
+            vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId));
 
-                String hostApiVersion = ((HostMO) hyperHost).getHostAboutInfo().getApiVersion();
-                if (numCoresPerSocket > 1 && hostApiVersion.compareTo("5.0") < 0) {
-                    s_logger.warn("Dynamic scaling of CPU is not supported for Virtual Machines with multi-core vCPUs in case of ESXi hosts 4.1 and prior. Hence CpuHotAdd will not be"
-                            + " enabled for Virtual Machine: " + vmInternalCSName);
-                    vmConfigSpec.setCpuHotAddEnabled(false);
-                } else {
-                    vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId));
-                }
+            String hostApiVersion = ((HostMO) hyperHost).getHostAboutInfo().getApiVersion();
+            if (numCoresPerSocket > 1 && hostApiVersion.compareTo("5.0") < 0) {
+                s_logger.warn("Dynamic scaling of CPU is not supported for Virtual Machines with multi-core vCPUs in case of ESXi hosts 4.1 and prior. Hence CpuHotAdd will not be"
+                        + " enabled for Virtual Machine: " + vmInternalCSName);
+                vmConfigSpec.setCpuHotAddEnabled(false);
+            } else {
+                vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId));
             }
 
             configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
@@ -2479,11 +2477,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private String getGuestOsIdFromVmSpec(VirtualMachineTO vmSpec, boolean deployAsIs) {
-        String guestOsId = null;
-        if (!deployAsIs) {
-            guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
-        }
-        return guestOsId;
+        return translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
     }
 
     private Pair<String, String> getControllerInfoFromVmSpec(VirtualMachineTO vmSpec) throws CloudRuntimeException {

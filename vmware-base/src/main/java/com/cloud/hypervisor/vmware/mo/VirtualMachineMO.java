@@ -227,10 +227,14 @@ public class VirtualMachineMO extends BaseMO {
                                         s_logger.info("msg id: " + msg.getId());
                                         s_logger.info("msg text: " + msg.getText());
                                     }
+                                    String logMsg = "Found that VM has a pending question that we need to answer programmatically, question id: " + msg.getId();
                                     if ("msg.uuid.altered".equalsIgnoreCase(msg.getId())) {
-                                        s_logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + msg.getId()
-                                                + ", we will automatically answer as 'moved it' to address out of band HA for the VM");
+                                        s_logger.info(logMsg + ", we will automatically answer as 'moved it' to address out of band HA for the VM");
                                         vmMo.answerVM(question.getId(), "1");
+                                        break;
+                                    } else if (msg.getId().equalsIgnoreCase("msg.cpuid.noVHVQuestion")) {
+                                        s_logger.info(logMsg + ", automatically answering 'yes'");
+                                        vmMo.answerVM(question.getId(), "0");
                                         break;
                                     }
                                 }
