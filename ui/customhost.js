@@ -26,16 +26,13 @@ var custombrand = defaultbrand;
 // Grab the sub-domain, just in case the SLD is an IP Pathways SLD, we need this to see if this is a white-label
 var subdomain = (hostparts.length > 2 ? hostparts[hostparts.length - 3] : '');
 
-// If this part is a number, must be an IP, so use default branding
-if (!parseInt(sld)) {
-    // If this part is not one of the IP Pathways SLDs, use it as a white-label brand
-    if (!ippSLDs.includes(sld)) {
-        custombrand = sld;
-    }
-    // This is an IPP SLD, see if the sub-domain is one reserved for IPP, if not, use it as a white-label brand
-    else if (subdomain.length > 0 && !arrayHasPrefixFor(ippSubDomainPrefixes, subdomain)) {
-        custombrand = subdomain;
-    }
+// If this part is not one of the IP Pathways SLDs, use it as a white-label brand
+if (!ippSLDs.includes(sld)) {
+    custombrand = sld;
+}
+// This is an IPP SLD, see if the sub-domain is one reserved for IPP, if not, use it as a white-label brand
+else if (subdomain.length > 0 && !arrayHasPrefixFor(ippSubDomainPrefixes, subdomain)) {
+    custombrand = subdomain;
 }
 
 function getHostPath(host) {
