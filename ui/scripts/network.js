@@ -719,36 +719,6 @@
                                                     return false; //break each loop
                                                 }
                                             });
-
-                                            if (networkOfferingObj.fortungsten == true) {
-                                                args.$select.closest('.form-item').css('display', 'inline-block');
-                                                $.ajax({
-                                                    url: createURL('listTungstenVirtualRouters'),
-                                                    data: data,
-                                                    success: function(json) {
-                                                        var items = json.listtungstenvirtualroutersresponse.tungstenVirtualRouter;
-                                                        var data;
-                                                        if (items != null && items.length > 0) {
-                                                            data = $.map(items, function(item) {
-                                                                return {
-                                                                    id: item.uuid,
-                                                                    description: item.name
-                                                                }
-                                                            });
-                                                        }
-                                                        args.response.success({
-                                                            data: data
-                                                        });
-                                                    }
-                                                });
-                                                $form.find('.form-item[rel=networkDomain]').hide();
-                                            } else {
-                                                args.$select.closest('.form-item').hide();
-                                                $form.find('.form-item[rel=networkDomain]').show();
-                                                args.response.success({
-                                                    data: null
-                                                });
-                                            }
                                         }
                                     },
                                     externalId: {

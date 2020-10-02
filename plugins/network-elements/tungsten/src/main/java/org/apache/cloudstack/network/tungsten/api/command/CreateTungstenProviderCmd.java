@@ -7,7 +7,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.TungstenProvider;
-import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -21,7 +20,6 @@ import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
-import org.apache.cloudstack.network.tungsten.service.TungstenResponseHelper;
 
 import javax.inject.Inject;
 
@@ -120,13 +118,12 @@ public class CreateTungstenProviderCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        TungstenProviderVO tungstenProviderVO = tungstenProviderService.getTungstenProvider();
-        if (tungstenProviderVO == null)
+        TungstenProviderResponse tungstenProviderResponse = tungstenProviderService.getTungstenProvider();
+        if (tungstenProviderResponse == null)
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create tungsten provider");
         else {
-            TungstenProviderResponse response = TungstenResponseHelper.createTungstenProviderResponse(tungstenProviderVO);
-            response.setResponseName(getCommandName());
-            setResponseObject(response);
+            tungstenProviderResponse.setResponseName(getCommandName());
+            setResponseObject(tungstenProviderResponse);
         }
     }
 

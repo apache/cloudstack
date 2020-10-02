@@ -87,14 +87,9 @@ known_categories = {
     'OpenDaylight': 'Network',
     'createServiceInstance': 'Network',
     'addGloboDnsHost': 'Network',
-    'createTungstenVmInterface' : 'Tungsten',
-    'createTungstenInstanceIp' : 'Tungsten',
     'createTungstenController' : 'Tungsten',
     'createTungstenProvider' : 'Tungsten',
     'deleteTungstenProvider' : 'Tungsten',
-    'listTungstenVirtualMachines' : 'Tungsten',
-    'listTungstenVmInterfaces' : 'Tungsten',
-    'listTungstenVirtualRouters' : 'Tungsten',
     'listTungstenProviders' : 'Tungsten',
     'Vpn': 'VPN',
     'Limit': 'Limit',
@@ -294,7 +289,7 @@ def write_xml(out, user):
             f.write('''<div class="apismallbullet_box">
 <h5>%(category)s</h5>
 <ul>
-<xsl:for-each select="commands/command">
+<xsl:for-each select="command/command">
 %(all_strings)s
 </xsl:for-each>
 </ul>

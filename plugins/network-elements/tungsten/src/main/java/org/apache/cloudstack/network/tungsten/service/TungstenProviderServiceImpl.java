@@ -28,6 +28,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProviderCmd;
 import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenProviderCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenProvidersCmd;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 import org.apache.cloudstack.network.tungsten.resource.TungstenResource;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -146,10 +147,13 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
     }
 
     @Override
-    public TungstenProviderVO getTungstenProvider() {
+    public TungstenProviderResponse getTungstenProvider() {
         PhysicalNetworkServiceProviderVO provider = _physicalNetworkServiceProviderDao.findByProviderName(Network.Provider.Tungsten.getName());
         TungstenProviderVO tungstenProvider = _tungstenProviderDao.findByNspId(provider.getId());
-        return tungstenProvider;
+        if (tungstenProvider != null)
+            return createTungstenProviderResponse(tungstenProvider);
+        else
+            return null;
     }
 
     @Override
@@ -171,16 +175,23 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
     }
 
     @Override
-    public List<TungstenProviderVO> listProviders(ListTungstenProvidersCmd cmd) {
+    public List<TungstenProviderResponse> listProviders(ListTungstenProvidersCmd cmd) {
+        List<TungstenProviderResponse> tungstenProviders = new ArrayList<>();
         if (cmd.getTungstenProviderUuid() != null) {
-            List<TungstenProviderVO> tungstenProviders = new ArrayList<TungstenProviderVO>();
             TungstenProviderVO tungstenProvider = _tungstenProviderDao.findById(cmd.getTungstenProviderUuid());
             if (tungstenProvider != null) {
-                tungstenProviders.add(tungstenProvider);
+                TungstenProviderResponse response = createTungstenProviderResponse(tungstenProvider);
+                tungstenProviders.add(response);
+            }
+            return tungstenProviders;
+        } else {
+            List<TungstenProviderVO> providers = _tungstenProviderDao.listAll();
+            for (TungstenProviderVO item : providers) {
+                TungstenProviderResponse response = createTungstenProviderResponse(item);
+                tungstenProviders.add(response);
             }
             return tungstenProviders;
         }
-        return _tungstenProviderDao.listAll();
     }
 
     @Override
@@ -190,4 +201,15 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
         _physicalNetworkServiceProviderDao.update(networkServiceProvider.getId(), networkServiceProvider);
     }
 
+    public TungstenProviderResponse createTungstenProviderResponse(TungstenProviderVO tungstenProviderVO) {
+        TungstenProviderResponse tungstenProviderResponse = new TungstenProviderResponse();
+        tungstenProviderResponse.setHostname(tungstenProviderVO.getHostname());
+        tungstenProviderResponse.setName(tungstenProviderVO.getProviderName());
+        tungstenProviderResponse.setPort(tungstenProviderVO.getPort());
+        tungstenProviderResponse.setUuid(tungstenProviderVO.getUuid());
+        tungstenProviderResponse.setVrouter(tungstenProviderVO.getVrouter());
+        tungstenProviderResponse.setVrouterPort(tungstenProviderVO.getVrouterPort());
+        tungstenProviderResponse.setObjectName("tungstenProvider");
+        return tungstenProviderResponse;
+    }
 }
