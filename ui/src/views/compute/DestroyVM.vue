@@ -30,7 +30,7 @@
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
-          <a-switch v-decorator="['expunge']" />
+          <a-switch v-decorator="['expunge']" :auto-focus="true" />
         </a-form-item>
 
         <a-form-item v-if="volumes.length > 0">

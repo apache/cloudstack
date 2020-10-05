@@ -170,6 +170,7 @@
                   }]"
                   v-model="formModel[field.name]"
                   :placeholder="field.description"
+                  :autoFocus="fieldIndex === 0"
                 />
               </span>
               <span v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options">
