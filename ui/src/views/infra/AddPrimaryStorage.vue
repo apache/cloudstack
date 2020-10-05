@@ -296,6 +296,8 @@
 
 <script>
 import { api } from '@/api'
+import _ from 'lodash'
+
 export default {
   name: 'AddPrimaryStorage',
   props: {
@@ -410,6 +412,9 @@ export default {
       this.loading = true
       api('listStorageTags').then(json => {
         this.storageTags = json.liststoragetagsresponse.storagetag || []
+        if (this.storageTags) {
+          this.storageTags = _.uniqBy(this.storageTags, 'name')
+        }
       }).finally(() => {
         this.loading = false
       })
