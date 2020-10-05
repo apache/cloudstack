@@ -2582,12 +2582,32 @@
                             }
                         },
                         action: function(args) {
+                            var rootVolume = {};
                             $.ajax({
-                                url: createURL("migrateVirtualMachine&storageid=" + args.data.storageId + "&virtualmachineid=" + args.context.instances[0].id),
+                                url: createURL("listVolumes&virtualmachineid=" + args.context.instances[0].id),
                                 dataType: "json",
+                                async: false,
+                                success: function(json) {
+                                    var volumes = json.listvolumesresponse.volume;
+                                    $(volumes).each(function() {
+                                        if (this.type == 'ROOT') {
+                                            rootVolume = this
+                                            return false;
+                                        }
+                                    });
+                                }
+                            });
+                            var data = {
+                                'virtualmachineid': args.context.instances[0].id,
+                                'migrateto[0].volume': rootVolume.id,
+                                'migrateto[0].pool': args.data.storageId
+                            }
+                            $.ajax({
+                                url: createURL("migrateVirtualMachineWithVolume"),
+                                data: data,
                                 async: true,
                                 success: function(json) {
-                                    var jid = json.migratevirtualmachineresponse.jobid;
+                                    var jid = json.migratevirtualmachinewithvolumeresponse.jobid;
                                     args.response.success({
                                         _custom: {
                                             jobId: jid,
