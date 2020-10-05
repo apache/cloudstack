@@ -402,7 +402,12 @@ export default {
         this.fetchData()
       }
     })
-    eventBus.$on('async-job-complete', () => {
+    eventBus.$on('async-job-complete', (action) => {
+      if (this.$route.path.includes('/vm/')) {
+        if (action && 'api' in action && ['destroyVirtualMachine'].includes(action.api)) {
+          return
+        }
+      }
       this.fetchData()
     })
     eventBus.$on('exec-action', (action, isGroupAction) => {

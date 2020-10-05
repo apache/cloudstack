@@ -66,7 +66,7 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 2
           })
-          eventBus.$emit('async-job-complete')
+          eventBus.$emit('async-job-complete', action)
           successMethod(result)
         } else if (result.jobstatus === 2) {
           message.error({
@@ -88,7 +88,7 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 0
           })
-          eventBus.$emit('async-job-complete')
+          eventBus.$emit('async-job-complete', action)
           errorMethod(result)
         } else if (result.jobstatus === 0) {
           if (showLoading) {

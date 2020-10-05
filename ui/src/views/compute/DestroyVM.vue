@@ -141,6 +141,9 @@ export default {
               } else {
                 this.parentFetchData()
               }
+            },
+            action: {
+              api: 'destroyVirtualMachine'
             }
           })
           this.closeAction()
