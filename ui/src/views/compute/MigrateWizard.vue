@@ -21,13 +21,13 @@
       :placeholder="$t('label.search')"
       v-model="searchQuery"
       style="margin-bottom: 10px;"
-      @search="fetchData" />
+      @search="handleSearch" />
     <a-table
       size="small"
       style="overflow-y: auto"
       :loading="loading"
       :columns="columns"
-      :dataSource="hosts"
+      :dataSource="items"
       :pagination="false"
       :rowKey="record => record.id">
       <div slot="suitability" slot-scope="record">
@@ -95,6 +95,7 @@ export default {
     return {
       loading: true,
       hosts: [],
+      items: [],
       selectedHost: {},
       searchQuery: '',
       totalCount: 0,
@@ -129,23 +130,34 @@ export default {
   },
   methods: {
     fetchData () {
-      this.loading = true
-      api('findHostsForMigration', {
-        virtualmachineid: this.resource.id,
-        keyword: this.searchQuery,
-        page: this.page,
-        pagesize: this.pageSize
-      }).then(response => {
-        this.hosts = response.findhostsformigrationresponse.host
-        this.totalCount = response.findhostsformigrationresponse.count
-        if (this.totalCount > 0) {
-          this.totalCount -= 1
-        }
-      }).catch(error => {
-        this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
-      }).finally(() => {
-        this.loading = false
-      })
+      var page = 1
+      const hosts = []
+      const getNextPage = () => {
+        this.loading = true
+        api('findHostsForMigration', {
+          virtualmachineid: this.resource.id,
+          listAll: true,
+          details: 'min',
+          page: page,
+          pageSize: 500
+        }).then(response => {
+          if (response && response.findhostsformigrationresponse && response.findhostsformigrationresponse.host) {
+            hosts.push(...response.findhostsformigrationresponse.host)
+          }
+          if (response.findhostsformigrationresponse.host) {
+            page++
+            getNextPage()
+          }
+        }).catch(error => {
+          this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
+        }).finally(() => {
+          this.hosts = hosts
+          this.totalCount = this.hosts.length
+          this.items = this.hosts.slice(0, Math.min(this.totalCount, this.pageSize))
+          this.loading = false
+        })
+      }
+      getNextPage()
     },
     submitForm () {
       this.loading = true
@@ -181,15 +193,27 @@ export default {
         this.$message.error(`${this.$t('message.migrating.vm.to.host.failed')} ${this.selectedHost.name}`)
       })
     },
+    handleSearch () {
+      this.loading = true
+      this.page = 1
+      this.items = this.hosts.filter(x => x.name.toLowerCase().includes(this.searchQuery))
+      this.totalCount = this.items.length
+      this.items = this.items.slice((this.page - 1) * this.pageSize, Math.min(this.totalCount, this.page * this.pageSize))
+      this.loading = false
+    },
     handleChangePage (page, pageSize) {
+      this.loading = true
       this.page = page
       this.pageSize = pageSize
-      this.fetchData()
+      this.items = this.hosts.slice((this.page - 1) * this.pageSize, Math.min(this.totalCount, this.page * this.pageSize))
+      this.loading = false
     },
     handleChangePageSize (currentPage, pageSize) {
+      this.loading = true
       this.page = currentPage
       this.pageSize = pageSize
-      this.fetchData()
+      this.items = this.hosts.slice((this.page - 1) * this.pageSize, Math.min(this.totalCount, this.page * this.pageSize))
+      this.loading = false
     }
   },
   filters: {
