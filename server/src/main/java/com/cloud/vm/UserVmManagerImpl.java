@@ -6034,7 +6034,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Migration with storage isn't supported for source host ID: " + srcHost.getUuid() + " on hypervisor " + srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
         }
 
-        if (!srcHostVersion.equals(destinationHostVersion)) {
+        if (srcHostVersion != null && !srcHostVersion.equals(destinationHostVersion)) {
             HypervisorCapabilitiesVO destinationCapabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(destinationHost.getHypervisorType(), destinationHostVersion);
             if (destinationCapabilities == null && HypervisorType.KVM.equals(destinationHost.getHypervisorType())) {
                 List<HypervisorCapabilitiesVO> lstHypervisorCapabilities = _hypervisorCapabilitiesDao.listAllByHypervisorType(HypervisorType.KVM);

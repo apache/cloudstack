@@ -1273,6 +1273,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final Type hostType = srcHost.getType();
+        String sourceHostHypervisorVersion = srcHost.getHypervisorVersion();
+        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && sourceHostHypervisorVersion == null) {
+            sourceHostHypervisorVersion = "";
+        }
         Pair<List<HostVO>, Integer> allHostsPair = null;
         List<HostVO> allHosts = null;
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
@@ -1289,6 +1293,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
                 for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
+                    String hostHypervisorVersion = host.getHypervisorVersion();
+                    if (HypervisorType.KVM.equals(host.getHypervisorType()) && hostHypervisorVersion == null) {
+                        hostHypervisorVersion = "";
+                    }
 
                     if (volClusterId != null) {
                         if (storagePool.isLocal() || !host.getClusterId().equals(volClusterId) || usesLocal) {
@@ -1301,7 +1309,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                                 iterator.remove();
                             } else {
                                 boolean hostSupportsStorageMigration = true;
-                                if (!srcHost.getHypervisorVersion().equals(host.getHypervisorVersion())) {
+                                if (sourceHostHypervisorVersion != null && !sourceHostHypervisorVersion.equals(hostHypervisorVersion)) {
                                     HypervisorCapabilitiesVO hostCapabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(host.getHypervisorType(), host.getHypervisorVersion());
                                     if (hostCapabilities == null && HypervisorType.KVM.equals(host.getHypervisorType())) {
                                         List<HypervisorCapabilitiesVO> hypervisorCapabilitiesList = _hypervisorCapabilitiesDao.listAllByHypervisorType(HypervisorType.KVM);
