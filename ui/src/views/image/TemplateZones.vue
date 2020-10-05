@@ -32,7 +32,7 @@
       <template slot="action" slot-scope="text, record">
         <span style="margin-right: 5px">
           <a-button
-            :disabled="!('copyTemplate' in $store.getters.apis)"
+            :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
             icon="copy"
             shape="circle"
             :loading="copyLoading"
