@@ -910,55 +910,63 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private String createVMFolderWithVMName(VmwareContext context, VmwareHypervisorHost hyperHost, TemplateObjectTO template,
                                             VirtualMachineMO vmTemplate, VolumeObjectTO volume, DatacenterMO dcMo, DatastoreMO dsMo,
                                             String searchExcludedFolders) throws Exception {
-        ManagedObjectReference morDatastore = dsMo.getMor();
-        ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-        ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
         String vmdkName = volume.getName();
-        if (template.getSize() != null){
-            _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
-        }
-        if (!_fullCloneFlag) {
-            createVMLinkedClone(vmTemplate, dcMo, vmdkName, morDatastore, morPool);
-        } else {
-            createVMFullClone(vmTemplate, dcMo, dsMo,vmdkName, morDatastore, morPool);
-        }
+        try {
+            ManagedObjectReference morDatastore = dsMo.getMor();
+            ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+            ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+            if (template.getSize() != null){
+                _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
+            }
+            if (!_fullCloneFlag) {
+                createVMLinkedClone(vmTemplate, dcMo, vmdkName, morDatastore, morPool);
+            } else {
+                createVMFullClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
+            }
 
-        VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
-        assert (vmMo != null);
+            VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
+            assert (vmMo != null);
 
-        String vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
-        s_logger.info("Move volume out of volume-wrapper VM " + vmdkFileBaseName);
-        String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
-        String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
+            String vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
+            s_logger.info("Move volume out of volume-wrapper VM " + vmdkFileBaseName);
+            String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
+            String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
 
-        for (int i=0; i<vmwareLayoutFilePair.length; i++) {
-            dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
-        }
+            for (int i=0; i<vmwareLayoutFilePair.length; i++) {
+                dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
+            }
 
-        s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
-        vmMo.detachAllDisks();
+            s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
+            vmMo.detachAllDisks();
 
-        s_logger.info("destroy volume-wrapper VM " + vmdkName);
-        vmMo.destroy();
+            s_logger.info("destroy volume-wrapper VM " + vmdkName);
+            vmMo.destroy();
 
-        String srcFile = dsMo.getDatastorePath(vmdkName, true);
+            String srcFile = dsMo.getDatastorePath(vmdkName, true);
 
-        dsMo.deleteFile(srcFile, dcMo.getMor(), true, searchExcludedFolders);
+            dsMo.deleteFile(srcFile, dcMo.getMor(), true, searchExcludedFolders);
 
-        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
-            dsMo.deleteFolder(srcFile, dcMo.getMor());
-        }
+            if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
+                dsMo.deleteFolder(srcFile, dcMo.getMor());
+            }
 
-        // restoreVM - move the new ROOT disk into corresponding VM folder
-        VirtualMachineMO restoreVmMo = dcMo.findVm(volume.getVmName());
-        if (restoreVmMo != null) {
-            String vmNameInVcenter = restoreVmMo.getName(); // VM folder name in datastore will be VM's name in vCenter.
-            if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
-                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, searchExcludedFolders);
+            // restoreVM - move the new ROOT disk into corresponding VM folder
+            VirtualMachineMO restoreVmMo = dcMo.findVm(volume.getVmName());
+            if (restoreVmMo != null) {
+                String vmNameInVcenter = restoreVmMo.getName(); // VM folder name in datastore will be VM's name in vCenter.
+                if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
+                    VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, searchExcludedFolders);
+                }
+            }
+
+            return vmdkFileBaseName;
+        } finally {
+            // check if volume wrapper VM is cleaned, if not cleanup
+            VirtualMachineMO vmdknamedVM = dcMo.findVm(vmdkName);
+            if (vmdknamedVM != null) {
+                vmdknamedVM.destroy();
             }
         }
-
-        return vmdkFileBaseName;
     }
 
     private void createLinkedOrFullClone(TemplateObjectTO template, VolumeObjectTO volume, DatacenterMO dcMo, VirtualMachineMO vmMo, ManagedObjectReference morDatastore,
