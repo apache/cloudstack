@@ -482,7 +482,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 if (result.contains(pattern)) {
                     String[] resp = result.split(pattern);
                     String psswd = resp[1].toString().split(",")[0];
-                    result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "," + resp[1].split(",", 2)[1];
+                    result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****\"") + "," + resp[1].split(",", 2)[1];
                 }
             }
         }
