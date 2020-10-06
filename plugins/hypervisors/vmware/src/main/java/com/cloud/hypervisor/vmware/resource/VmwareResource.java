@@ -4175,8 +4175,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             // OfflineVmwareMigration: getVolumesFromCommand(cmd);
             Map<Integer, Long> volumeDeviceKey = new HashMap<>();
-            if (CollectionUtils.isEmpty(volToFiler)) { // Else device keys will be found in relocateVirtualMachine
-                volumeDeviceKey = getVolumesFromCommand(vmMo, cmd);
+            if (cmd instanceof MigrateVolumeCommand) { // Else device keys will be found in relocateVirtualMachine
+                MigrateVolumeCommand mcmd = (MigrateVolumeCommand) cmd;
+                addVolumeDiskmapping(vmMo, volumeDeviceKey, mcmd.getVolumePath(), mcmd.getVolumeId());
                 if (s_logger.isTraceEnabled()) {
                     for (Integer diskId: volumeDeviceKey.keySet()) {
                         s_logger.trace(String.format("Disk to migrate has disk id %d and volumeId %d", diskId, volumeDeviceKey.get(diskId)));
@@ -4184,7 +4185,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
             List<VolumeObjectTO> volumeToList = relocateVirtualMachine(hyperHost, vmMo.getName(), null, null, hostInTargetCluster, poolUuid, volToFiler);
-            return createAnswerForCmd(vmMo, poolUuid, volumeToList, cmd, volumeDeviceKey);
+            return createAnswerForCmd(vmMo, volumeToList, cmd, volumeDeviceKey);
         } catch (Exception e) {
             String msg = "Change data store for VM " + vmMo.getVmName() + " failed";
             s_logger.error(msg + ": " + e.getLocalizedMessage());
@@ -4192,7 +4193,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    Answer createAnswerForCmd(VirtualMachineMO vmMo, String poolUuid, List<VolumeObjectTO> volumeObjectToList, Command cmd, Map<Integer, Long> volumeDeviceKey) throws Exception {
+    Answer createAnswerForCmd(VirtualMachineMO vmMo, List<VolumeObjectTO> volumeObjectToList, Command cmd, Map<Integer, Long> volumeDeviceKey) throws Exception {
         List<VolumeObjectTO> volumeToList = new ArrayList<>();
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
         VirtualDisk[] disks = vmMo.getAllDiskDevice();
@@ -4211,20 +4212,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new MigrateVmToPoolAnswer((MigrateVmToPoolCommand)cmd, volumeToList);
         }
         return new Answer(cmd, false, null);
-    }
-
-    private Map<Integer, Long> getVolumesFromCommand(VirtualMachineMO vmMo, Command cmd) throws Exception {
-        Map<Integer, Long> volumeDeviceKey = new HashMap<Integer, Long>();
-        if (cmd instanceof MigrateVmToPoolCommand) {
-            MigrateVmToPoolCommand mcmd = (MigrateVmToPoolCommand) cmd;
-            for (VolumeTO volume : mcmd.getVolumes()) {
-                addVolumeDiskmapping(vmMo, volumeDeviceKey, volume.getPath(), volume.getId());
-            }
-        } else if (cmd instanceof MigrateVolumeCommand) {
-            MigrateVolumeCommand mcmd = (MigrateVolumeCommand) cmd;
-            addVolumeDiskmapping(vmMo, volumeDeviceKey, mcmd.getVolumePath(), mcmd.getVolumeId());
-        }
-        return volumeDeviceKey;
     }
 
     private void addVolumeDiskmapping(VirtualMachineMO vmMo, Map<Integer, Long> volumeDeviceKey, String volumePath, long volumeId) throws Exception {

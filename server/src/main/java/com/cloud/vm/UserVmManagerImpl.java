@@ -5492,8 +5492,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return _vmDao.findById(vmId);
     }
 
-    @Override
-    public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool, Map<String, String> volumeToPool) {
+    private VMInstanceVO preVmStorageMigrationCheck(Long vmId) {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
@@ -5529,40 +5528,48 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        Map<Long, Long> volumeToPoolIds = new HashMap<>();
-
-        if (destPool != null) {
-            checkDestinationHypervisorType(destPool, vm);
-            List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
-            for (VolumeVO volume : volumes) {
-                volumeToPoolIds.put(volume.getId(), destPool.getId());
-            }
-        } else if (MapUtils.isNotEmpty(volumeToPool)) {
-            Long poolClusterId = null;
-            for (Map.Entry<String, String> entry : volumeToPool.entrySet()) {
-                Volume volume = _volsDao.findByUuid(entry.getKey());
-                StoragePoolVO pool = _storagePoolDao.findPoolByUUID(entry.getValue());
-                if (poolClusterId != null &&
-                        !(ScopeType.CLUSTER.equals(pool.getScope()) || ScopeType.HOST.equals(pool.getScope())) &&
-                        !poolClusterId.equals(pool.getClusterId())) {
-                    throw new InvalidParameterValueException("VM's disk cannot be migrated, input destination storage pools belong to different clusters");
-                }
-                if (pool.getClusterId() != null) {
-                    poolClusterId = pool.getClusterId();
-                }
-                checkDestinationHypervisorType(pool, vm);
-                volumeToPoolIds.put(volume.getId(), pool.getId());
-            }
-        }
-
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
             throw new InvalidParameterValueException("VM's disk cannot be migrated, please remove all the VM Snapshots for this VM");
         }
 
+        return vm;
+    }
+
+    @Override
+    public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
+        VMInstanceVO vm = preVmStorageMigrationCheck(vmId);
+        Map<Long, Long> volumeToPoolIds = new HashMap<>();
+        checkDestinationHypervisorType(destPool, vm);
+        List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+        for (VolumeVO volume : volumes) {
+            volumeToPoolIds.put(volume.getId(), destPool.getId());
+        }
         _itMgr.storageMigration(vm.getUuid(), volumeToPoolIds);
         return _vmDao.findById(vm.getId());
+    }
 
+    @Override
+    public VirtualMachine vmStorageMigration(Long vmId, Map<String, String> volumeToPool) {
+        VMInstanceVO vm = preVmStorageMigrationCheck(vmId);
+        Map<Long, Long> volumeToPoolIds = new HashMap<>();
+        Long poolClusterId = null;
+        for (Map.Entry<String, String> entry : volumeToPool.entrySet()) {
+            Volume volume = _volsDao.findByUuid(entry.getKey());
+            StoragePoolVO pool = _storagePoolDao.findPoolByUUID(entry.getValue());
+            if (poolClusterId != null &&
+                    !(ScopeType.CLUSTER.equals(pool.getScope()) || ScopeType.HOST.equals(pool.getScope())) &&
+                    !poolClusterId.equals(pool.getClusterId())) {
+                throw new InvalidParameterValueException("VM's disk cannot be migrated, input destination storage pools belong to different clusters");
+            }
+            if (pool.getClusterId() != null) {
+                poolClusterId = pool.getClusterId();
+            }
+            checkDestinationHypervisorType(pool, vm);
+            volumeToPoolIds.put(volume.getId(), pool.getId());
+        }
+        _itMgr.storageMigration(vm.getUuid(), volumeToPoolIds);
+        return _vmDao.findById(vm.getId());
     }
 
     private void checkDestinationHypervisorType(StoragePool destPool, VMInstanceVO vm) {

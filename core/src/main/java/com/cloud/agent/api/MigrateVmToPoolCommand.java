@@ -18,7 +18,6 @@
 //
 package com.cloud.agent.api;
 
-import java.util.Collection;
 import java.util.List;
 
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -31,7 +30,6 @@ import com.cloud.utils.Pair;
  *
  */
 public class MigrateVmToPoolCommand extends Command {
-    private Collection<VolumeTO> volumes;
     private String vmName;
     private boolean executeInSequence = false;
     private List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerAsList;
@@ -43,22 +41,16 @@ public class MigrateVmToPoolCommand extends Command {
     /**
      *
      * @param vmName the name of the VM to migrate
-     * @param volumes used to supply feedback on vmware generated names
      * @param volumeToFilerTo the volume to primary storage pool map to migrate the VM to
+     * @param hostGuidInTargetCluster GUID of host in target cluster when migrating across clusters
      * @param executeInSequence
      */
-    public MigrateVmToPoolCommand(String vmName, Collection<VolumeTO> volumes,
-                                  List<Pair<VolumeTO, StorageFilerTO>>volumeToFilerTo, String hostGuidInTargetCluster,
-                                  boolean executeInSequence) {
+    public MigrateVmToPoolCommand(String vmName, List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo,
+                                  String hostGuidInTargetCluster, boolean executeInSequence) {
         this.vmName = vmName;
-        this.volumes = volumes;
         this.hostGuidInTargetCluster = hostGuidInTargetCluster;
         this.volumeToFilerAsList = volumeToFilerTo;
         this.executeInSequence = executeInSequence;
-    }
-
-    public Collection<VolumeTO> getVolumes() {
-        return volumes;
     }
 
     public String getVmName() {

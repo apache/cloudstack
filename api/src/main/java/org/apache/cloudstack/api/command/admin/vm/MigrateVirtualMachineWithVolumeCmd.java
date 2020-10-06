@@ -167,7 +167,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
                 }
                 migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, getVolumeToPool());
             } else if (MapUtils.isNotEmpty(migrateVolumeTo)) {
-                migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), null, getVolumeToPool());
+                migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), getVolumeToPool());
             }
             if (migratedVm != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm)migratedVm).get(0);
