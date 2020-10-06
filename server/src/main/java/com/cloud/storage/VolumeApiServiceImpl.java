@@ -3109,7 +3109,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     if (volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
                         volumeToAttach.setPath(answer.getDisk().getPath());
+                        _volsDao.update(volumeToAttach.getId(), volumeToAttach);
+                    }
 
+                    String chainInfo = answer.getContextParam("chainInfo");
+                    if (chainInfo != null) {
+                        volumeToAttach = _volsDao.findById(volumeToAttach.getId());
+                        volumeToAttach.setChainInfo(chainInfo);
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
                 } else {

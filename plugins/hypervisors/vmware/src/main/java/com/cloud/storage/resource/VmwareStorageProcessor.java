@@ -2184,6 +2184,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
 
                 vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController);
+                VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+                VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, dsMo.getName());
+                chainInfo = _gson.toJson(diskInfo);
 
                 if (isManaged) {
                     expandVirtualDisk(vmMo, datastoreVolumePath, volumeTO.getSize());
@@ -2201,14 +2204,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
                 if (datastoreChangeObserved) {
                     answer.setContextParam("datastoreName", dsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID));
-                    answer.setContextParam("chainInfo", chainInfo);
                 }
 
                 if (volumePathChangeObserved) {
                     answer.setContextParam("volumePath", volumePath);
-                    answer.setContextParam("chainInfo", chainInfo);
                 }
             }
+
+            if (chainInfo != null && !chainInfo.isEmpty())
+                answer.setContextParam("chainInfo", chainInfo);
 
             return answer;
         } catch (Throwable e) {
