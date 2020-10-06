@@ -391,12 +391,16 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private Answer sendToLeastBusyEndpoint(List<EndPoint> eps, CopyCommand cmd) {
         Answer answer = null;
         EndPoint endPoint = null;
-        Long epId = ssvmWithLeastMigrateJobs();
+        List<Long> epIds = ssvmWithLeastMigrateJobs();
+        Long epId = null;
+        if (!epIds.isEmpty()) {
+            epId = epIds.get(0);
+        }
         if (epId == null) {
             Collections.shuffle(eps);
             endPoint = eps.get(0);
         } else {
-            List<EndPoint> remainingEps = eps.stream().filter(ep -> ep.getId() != epId ).collect(Collectors.toList());
+            List<EndPoint> remainingEps = eps.stream().filter(ep -> !epIds.contains(ep.getId())).collect(Collectors.toList());
             if (!remainingEps.isEmpty()) {
                 Collections.shuffle(remainingEps);
                 endPoint = remainingEps.get(0);
@@ -495,27 +499,22 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-    private Integer getCopyCmdsCountToSpecificSSVM(Long ssvmId) {
-        return _cmdExecLogDao.getCopyCmdCountForSSVM(ssvmId);
-    }
-
-    private Long ssvmWithLeastMigrateJobs() {
+    private List<Long> ssvmWithLeastMigrateJobs() {
         s_logger.debug("Picking ssvm from the pool with least commands running on it");
-        String query = "select host_id, count(*) from cmd_exec_log group by host_id order by 2 limit 1;";
+        String query = "select host_id, count(*) from cmd_exec_log group by host_id order by 2;";
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
-        Long epId = null;
+        List<Long> result = new ArrayList<Long>();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(query);
             ResultSet rs = pstmt.executeQuery();
-            if (rs.getFetchSize() > 0) {
-                rs.absolute(1);
-                epId = (long) rs.getInt(1);
+            while (rs.next()) {
+                result.add((long) rs.getInt(1));
             }
         } catch (SQLException e) {
             s_logger.debug("SQLException caught", e);
         }
-        return epId;
+        return result;
     }
 }

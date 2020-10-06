@@ -1309,6 +1309,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 File srcDir = null;
                 if (srcFile.isFile() || srcFile.getName().contains(".")) {
                     srcDir = new File(srcFile.getParent());
+                } else if (!srcFile.isFile() && !srcFile.isDirectory()) {
+                    srcDir = new File(srcFile.getParent());
                 }
                 File destDir = null;
                 if (destFile.isFile()) {
@@ -1351,7 +1353,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 if (srcFile.isFile()) {
                     newVol.setPath(destData.getPath() + File.separator + srcFile.getName());
                 } else {
-                    newVol.setPath(destData.getPath());
+                    newVol.setPath(srcData.getPath());
                 }
                 newVol.setSize(getVirtualSize(srcFile, format));
                 retObj = newVol;
