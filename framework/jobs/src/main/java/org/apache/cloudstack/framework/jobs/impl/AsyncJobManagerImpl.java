@@ -475,7 +475,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return job;
     }
 
-    private String obfuscatePassword(String result, boolean hidePassword) {
+    public String obfuscatePassword(String result, boolean hidePassword) {
         if (hidePassword) {
             String pattern = "\"password\":";
             if (result != null) {
