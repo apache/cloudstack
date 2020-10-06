@@ -44,7 +44,9 @@ import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageStats;
@@ -71,6 +73,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
     @Inject
     private DataCenterDao dcDao;
+    @Inject
+    private HostDao hostDao;
     @Inject
     private HostJoinDao hostJoinDao;
     @Inject
