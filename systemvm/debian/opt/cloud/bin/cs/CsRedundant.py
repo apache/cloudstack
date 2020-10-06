@@ -194,7 +194,7 @@ class CsRedundant(object):
         heartbeat_cron.commit()
 
         proc = CsProcess(['/usr/sbin/keepalived'])
-        if not proc.find():
+        if proc.grep("/usr/sbin/keepalived") == -1:
             force_keepalived_restart = True
         if keepalived_conf.is_changed() or force_keepalived_restart:
             keepalived_conf.commit()
