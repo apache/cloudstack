@@ -992,7 +992,7 @@ export default {
         this.actionLoading = true
         api(action.api, params).then(json => {
           hasJobId = this.handleResponse(json, resourceName, action)
-          if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts'].includes(action.api)) && this.dataView) {
+          if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
             this.$router.go(-1)
           } else {
             if (!hasJobId) {
