@@ -1312,7 +1312,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     public Pair<List<T>, Integer> searchAndCount(final SearchCriteria<T> sc, final Filter filter) {
         List<T> objects = search(sc, filter, null, false);
-        Integer count = getCount(sc, false);
+        Integer count = getCount(sc);
         // Count cannot be less than the result set but can be higher due to pagination, see CLOUDSTACK-10320
         if (count < objects.size()) {
             count = objects.size();
@@ -1324,7 +1324,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     public Pair<List<T>, Integer> searchAndDistinctCount(final SearchCriteria<T> sc, final Filter filter) {
         List<T> objects = search(sc, filter, null, false);
-        Integer count = getDistinctCount(sc, false);
+        Integer count = getDistinctCount(sc);
         // Count cannot be 0 if there is at least a result in the list, see CLOUDSTACK-10320
         if (count == 0 && !objects.isEmpty()) {
             // Cannot assume if it's more than one since the count is distinct vs search
@@ -1337,7 +1337,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     public Pair<List<T>, Integer> searchAndDistinctCount(final SearchCriteria<T> sc, final Filter filter, final String[] distinctColumns) {
         List<T> objects = search(sc, filter, null, false);
-        Integer count = getDistinctCount(sc, distinctColumns, false);
+        Integer count = getDistinctCount(sc, distinctColumns);
         // Count cannot be 0 if there is at least a result in the list, see CLOUDSTACK-10320
         if (count == 0 && !objects.isEmpty()) {
             // Cannot assume if it's more than one since the count is distinct vs search
@@ -1928,14 +1928,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return sc;
     }
 
-    public Integer getDistinctCount(SearchCriteria<T> sc, boolean removed) {
-        if (!removed) {
-            sc = checkAndSetRemovedIsNull(sc);
-        }
-        return getDistinctCount(sc);
+    public Integer getDistinctCount(SearchCriteria<T> sc) {
+        sc = checkAndSetRemovedIsNull(sc);
+        return getDistinctCountIncludingRemoved(sc);
     }
 
-    public Integer getDistinctCount(SearchCriteria<T> sc) {
+    public Integer getDistinctCountIncludingRemoved(SearchCriteria<T> sc) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;
@@ -1993,14 +1991,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    public Integer getDistinctCount(SearchCriteria<T> sc, String[] distinctColumns, boolean removed) {
-        if (!removed) {
-            sc = checkAndSetRemovedIsNull(sc);
-        }
-        return getDistinctCount(sc, distinctColumns);
+    public Integer getDistinctCount(SearchCriteria<T> sc, String[] distinctColumns) {
+        sc = checkAndSetRemovedIsNull(sc);
+        return getDistinctCountIncludingRemoved(sc, distinctColumns);
     }
 
-    public Integer getDistinctCount(SearchCriteria<T> sc, String[] distinctColumns) {
+    public Integer getDistinctCountIncludingRemoved(SearchCriteria<T> sc, String[] distinctColumns) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (Strings.isNullOrEmpty(clause)) {
             clause = null;
@@ -2047,19 +2043,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     public Integer countAll() {
-        SearchCriteria<T> sc = null;
-        sc = checkAndSetRemovedIsNull(sc);
-        return getCount(sc);
-    }
-
-    public Integer getCount(SearchCriteria<T> sc, boolean removed) {
-        if (!removed) {
-            sc = checkAndSetRemovedIsNull(sc);
-        }
-        return getCount(sc);
+        return getCount(null);
     }
 
     public Integer getCount(SearchCriteria<T> sc) {
+        sc = checkAndSetRemovedIsNull(sc);
+        return getCountIncludingRemoved(sc);
+    }
+
+    public Integer getCountIncludingRemoved(SearchCriteria<T> sc) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;
