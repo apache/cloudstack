@@ -120,8 +120,17 @@ export default {
         if (this.resource && this.resource.virtualmachineid && this.resource.vpcid) {
           return false
         }
-        if (this.resource && this.resource.vpcid && tab.name !== 'firewall') {
+        // dont display any option for source NAT IP of VPC
+        if (this.resource && this.resource.vpcid && !this.resource.issourcenat && tab.name !== 'firewall') {
           return true
+        }
+        // display LB and PF options for isolated networks if static nat is disabled
+        if (this.resource && !this.resource.vpcid) {
+          if (!this.resource.isstaticnat) {
+            return true
+          } else if (tab.name === 'firewall') {
+            return true
+          }
         }
         return this.networkService && this.networkService.service &&
           tab.networkServiceFilter(this.networkService.service)

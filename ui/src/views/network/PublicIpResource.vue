@@ -99,13 +99,18 @@ export default {
       this.loading = true
       this.portFWRuleCount = await this.fetchPortFWRule()
 
-      if (this.portFWRuleCount > 0) {
+      // disable load balancing rules only if port forwarding is enabled and
+      // network belongs to VPC
+      if (this.portFWRuleCount > 0 && this.resource.vpcid) {
         this.tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'loadbalancing')
       } else {
         this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
 
+        // for isolated networks, display both LB and PF
+        // for VPC they are mutually exclusive
         if (this.loadBalancerRuleCount > 0) {
-          this.tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'portforwarding')
+          this.tabs =
+            this.resource.vpcid ? this.$route.meta.tabs.filter(tab => tab.name !== 'portforwarding') : this.$route.meta.tabs
           this.loading = false
         } else {
           this.tabs = this.$route.meta.tabs
