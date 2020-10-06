@@ -44,7 +44,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -213,15 +212,21 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     Long getClusterId(long vmId) {
         Long clusterId = null;
-        Long hostId;
-
-        hostId = _vmDao.findById(vmId).getHostId();
-        if (hostId == null) {
+        Long hostId = null;
+        VMInstanceVO vm = _vmDao.findById(vmId);
+        if (vm != null) {
+            hostId = _vmDao.findById(vmId).getHostId();
+        }
+        if (vm != null && hostId == null) {
             // If VM is in stopped state then hostId would be undefined. Hence read last host's Id instead.
             hostId = _vmDao.findById(vmId).getLastHostId();
         }
+        HostVO host = null;
         if (hostId != null) {
-            clusterId = _hostDao.findById(hostId).getClusterId();
+            host = _hostDao.findById(hostId);
+        }
+        if (host != null) {
+            clusterId = host.getClusterId();
         } else {
             List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
             if (CollectionUtils.isNotEmpty(volumes)) {
@@ -1073,34 +1078,26 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return null;
     }
 
-    @Override public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination, Map<Volume, StoragePool> volumeToPool) {
+    @Override public List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool) {
         List<Command> commands = new ArrayList<Command>();
 
         // OfflineVmwareMigration: specialised migration command
         List<VolumeTO> vols = new ArrayList<>();
-        List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerto = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
+        List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
         Long poolClusterId = null;
-        Host clusterHost = null;
-        if (destination != null) {
-            List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
-            for (Volume volume : volumes) {
-                VolumeTO vol = new VolumeTO(volume, destination);
-                vols.add(vol);
+        Host hostInTargetCluster = null;
+        for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
+            Volume volume = entry.getKey();
+            StoragePool pool = entry.getValue();
+            VolumeTO volumeTo = new VolumeTO(volume, _storagePoolDao.findById(pool.getId()));
+            StorageFilerTO filerTo = new StorageFilerTO(pool);
+            if (pool.getClusterId() != null) {
+                poolClusterId = pool.getClusterId();
             }
-        } else if (MapUtils.isNotEmpty(volumeToPool)) {
-            for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
-                Volume volume = entry.getKey();
-                StoragePool pool = entry.getValue();
-                VolumeTO volumeTo = new VolumeTO(volume, _storagePoolDao.findById(pool.getId()));
-                StorageFilerTO filerTo = new StorageFilerTO(pool);
-                if (pool.getClusterId() != null) {
-                    poolClusterId = pool.getClusterId();
-                }
-                volumeToFilerto.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
-                vols.add(volumeTo);
-            }
+            volumeToFilerTo.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
+            vols.add(volumeTo);
         }
-        final Long destClusterId = destination != null ? destination.getClusterId() : poolClusterId;
+        final Long destClusterId = poolClusterId;
         final Long srcClusterId = getClusterId(vm.getId());
         final boolean isInterClusterMigration = srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId);
         if (isInterClusterMigration) {
@@ -1109,14 +1106,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             // As this is offline migration VM won't be started on this host
             List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(destClusterId);
             if (CollectionUtils.isNotEmpty(hosts)) {
-                clusterHost = hosts.get(0);
+                hostInTargetCluster = hosts.get(0);
             }
-            if (clusterHost == null) {
+            if (hostInTargetCluster == null) {
                 throw new CloudRuntimeException("Migration failed, unable to find suitable target host for worker VM placement while migrating between storage pools of different clusters without shared storages");
             }
         }
         MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(), vols,
-                destination == null ? null : destination.getUuid(), volumeToFilerto, clusterHost == null ? null : clusterHost.getGuid(), true);
+                volumeToFilerTo, hostInTargetCluster == null ? null : hostInTargetCluster.getGuid(), true);
         commands.add(migrateVmToPoolCommand);
 
         // OfflineVmwareMigration: cleanup if needed

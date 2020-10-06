@@ -298,7 +298,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return false;
     }
 
-    public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination, Map<Volume, StoragePool> volumeToPool) {
+    public List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool) {
         return null;
     }
 }

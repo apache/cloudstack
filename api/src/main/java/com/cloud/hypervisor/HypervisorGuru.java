@@ -100,5 +100,5 @@ public interface HypervisorGuru extends Adapter {
      * @param destination the primary storage pool to migrate to
      * @return a list of commands to perform for a successful migration
      */
-    List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination, Map<Volume, StoragePool> volumeToPool);
+    List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool);
 }

@@ -33,10 +33,9 @@ import com.cloud.utils.Pair;
 public class MigrateVmToPoolCommand extends Command {
     private Collection<VolumeTO> volumes;
     private String vmName;
-    private String destinationPool;
     private boolean executeInSequence = false;
     private List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerAsList;
-    private String targetClusterHost;
+    private String hostGuidInTargetCluster;
 
     protected MigrateVmToPoolCommand() {
     }
@@ -45,26 +44,21 @@ public class MigrateVmToPoolCommand extends Command {
      *
      * @param vmName the name of the VM to migrate
      * @param volumes used to supply feedback on vmware generated names
-     * @param destinationPool the primary storage pool to migrate the VM to
+     * @param volumeToFilerTo the volume to primary storage pool map to migrate the VM to
      * @param executeInSequence
      */
-    public MigrateVmToPoolCommand(String vmName, Collection<VolumeTO> volumes, String destinationPool,
-                                  List<Pair<VolumeTO, StorageFilerTO>>volumeToFilerto, String targetHost,
+    public MigrateVmToPoolCommand(String vmName, Collection<VolumeTO> volumes,
+                                  List<Pair<VolumeTO, StorageFilerTO>>volumeToFilerTo, String hostGuidInTargetCluster,
                                   boolean executeInSequence) {
         this.vmName = vmName;
         this.volumes = volumes;
-        this.destinationPool = destinationPool;
-        this.targetClusterHost = targetHost;
-        this.volumeToFilerAsList = volumeToFilerto;
+        this.hostGuidInTargetCluster = hostGuidInTargetCluster;
+        this.volumeToFilerAsList = volumeToFilerTo;
         this.executeInSequence = executeInSequence;
     }
 
     public Collection<VolumeTO> getVolumes() {
         return volumes;
-    }
-
-    public String getDestinationPool() {
-        return destinationPool;
     }
 
     public String getVmName() {
@@ -75,8 +69,8 @@ public class MigrateVmToPoolCommand extends Command {
         return volumeToFilerAsList;
     }
 
-    public String getTargetClusterHost() {
-        return targetClusterHost;
+    public String getHostGuidInTargetCluster() {
+        return hostGuidInTargetCluster;
     }
 
     @Override

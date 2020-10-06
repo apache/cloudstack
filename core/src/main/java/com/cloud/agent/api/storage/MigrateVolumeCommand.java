@@ -34,7 +34,7 @@ public class MigrateVolumeCommand extends Command {
     StorageFilerTO sourcePool;
     String attachedVmName;
     Volume.Type volumeType;
-    String targetClusterHost;
+    String hostGuidInTargetCluster;
 
     private DataTO srcData;
     private DataTO destData;
@@ -71,7 +71,7 @@ public class MigrateVolumeCommand extends Command {
 
     public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool sourcePool, StoragePool targetPool, String targetClusterHost) {
         this(volumeId, volumePath, sourcePool, targetPool);
-        this.targetClusterHost = targetClusterHost;
+        this.hostGuidInTargetCluster = targetClusterHost;
     }
 
     @Override
@@ -131,8 +131,8 @@ public class MigrateVolumeCommand extends Command {
         return destDetails;
     }
 
-    public String getTargetClusterHost() {
-        return targetClusterHost;
+    public String getHostGuidInTargetCluster() {
+        return hostGuidInTargetCluster;
     }
 
     public int getWaitInMillSeconds() {

@@ -1244,15 +1244,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
+        String srcHostVersion = srcHost.getHypervisorVersion();
+        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && srcHostVersion == null) {
+            srcHostVersion = "";
+        }
 
         // Check if the vm can be migrated with storage.
         boolean canMigrateWithStorage = false;
 
         if (vm.getType() == VirtualMachine.Type.User) {
-            final HypervisorCapabilitiesVO capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
-            if (capabilities != null) {
-                canMigrateWithStorage = capabilities.isStorageMotionSupported();
-            }
+            canMigrateWithStorage = Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion));
         }
 
         // Check if the vm is using any disks on local storage.
@@ -1273,10 +1274,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final Type hostType = srcHost.getType();
-        String sourceHostHypervisorVersion = srcHost.getHypervisorVersion();
-        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && sourceHostHypervisorVersion == null) {
-            sourceHostHypervisorVersion = "";
-        }
         Pair<List<HostVO>, Integer> allHostsPair = null;
         List<HostVO> allHosts = null;
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
@@ -1293,9 +1290,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
                 for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
-                    String hostHypervisorVersion = host.getHypervisorVersion();
-                    if (HypervisorType.KVM.equals(host.getHypervisorType()) && hostHypervisorVersion == null) {
-                        hostHypervisorVersion = "";
+                    String hostVersion = host.getHypervisorVersion();
+                    if (HypervisorType.KVM.equals(host.getHypervisorType()) && hostVersion == null) {
+                        hostVersion = "";
                     }
 
                     if (volClusterId != null) {
@@ -1308,21 +1305,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                                 // source volume.
                                 iterator.remove();
                             } else {
-                                boolean hostSupportsStorageMigration = true;
-                                if (sourceHostHypervisorVersion != null && !sourceHostHypervisorVersion.equals(hostHypervisorVersion)) {
-                                    HypervisorCapabilitiesVO hostCapabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(host.getHypervisorType(), host.getHypervisorVersion());
-                                    if (hostCapabilities == null && HypervisorType.KVM.equals(host.getHypervisorType())) {
-                                        List<HypervisorCapabilitiesVO> hypervisorCapabilitiesList = _hypervisorCapabilitiesDao.listAllByHypervisorType(HypervisorType.KVM);
-                                        if (hypervisorCapabilitiesList != null) {
-                                            for (HypervisorCapabilitiesVO hypervisorCapabilities : hypervisorCapabilitiesList) {
-                                                if (hypervisorCapabilities.isStorageMotionSupported()) {
-                                                    hostCapabilities = hypervisorCapabilities;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    hostSupportsStorageMigration = hostCapabilities != null && hostCapabilities.isStorageMotionSupported();
+                                boolean hostSupportsStorageMigration = false;
+                                if ((srcHostVersion != null && srcHostVersion.equals(hostVersion)) ||
+                                        Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(host.getHypervisorType(), hostVersion))) {
+                                    hostSupportsStorageMigration = true;
                                 }
                                 if (hostSupportsStorageMigration && hasSuitablePoolsForVolume(volume, host, vmProfile)) {
                                     requiresStorageMotion.put(host, true);

@@ -40,7 +40,6 @@ import com.cloud.network.Network;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -151,7 +150,7 @@ public interface VirtualMachineManager extends Manager {
 
     VirtualMachine findById(long vmId);
 
-    void storageMigration(String vmUuid, StoragePool storagePoolId, Map<Long, Long> volumeToPool);
+    void storageMigration(String vmUuid, Map<Long, Long> volumeToPool);
 
     /**
      * @param vmInstance

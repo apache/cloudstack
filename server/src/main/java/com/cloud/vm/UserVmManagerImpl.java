@@ -198,7 +198,6 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.network.IpAddressManager;
@@ -5534,6 +5533,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (destPool != null) {
             checkDestinationHypervisorType(destPool, vm);
+            List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+            for (VolumeVO volume : volumes) {
+                volumeToPoolIds.put(volume.getId(), destPool.getId());
+            }
         } else if (MapUtils.isNotEmpty(volumeToPool)) {
             Long poolClusterId = null;
             for (Map.Entry<String, String> entry : volumeToPool.entrySet()) {
@@ -5557,7 +5560,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("VM's disk cannot be migrated, please remove all the VM Snapshots for this VM");
         }
 
-        _itMgr.storageMigration(vm.getUuid(), destPool, volumeToPoolIds);
+        _itMgr.storageMigration(vm.getUuid(), volumeToPoolIds);
         return _vmDao.findById(vm.getId());
 
     }
@@ -5998,56 +6001,32 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Cannot migrate VM, VM is already present on this host, please" + " specify valid destination host to migrate the VM");
         }
 
+        String srcHostVersion = srcHost.getHypervisorVersion();
+        String destHostVersion = destinationHost.getHypervisorVersion();
+
         // Check if the source and destination hosts are of the same type and support storage motion.
         if (!srcHost.getHypervisorType().equals(destinationHost.getHypervisorType())) {
             throw new CloudRuntimeException("The source and destination hosts are not of the same type and version. Source hypervisor type and version: " +
-                    srcHost.getHypervisorType().toString() + " " + srcHost.getHypervisorVersion() + ", Destination hypervisor type and version: " +
-                    destinationHost.getHypervisorType().toString() + " " + destinationHost.getHypervisorVersion());
+                    srcHost.getHypervisorType().toString() + " " + srcHostVersion + ", Destination hypervisor type and version: " +
+                    destinationHost.getHypervisorType().toString() + " " + destHostVersion);
         }
-
-        String srcHostVersion = srcHost.getHypervisorVersion();
-        String destinationHostVersion = destinationHost.getHypervisorVersion();
 
         if (HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
             if (srcHostVersion == null) {
                 srcHostVersion = "";
             }
 
-            if (destinationHostVersion == null) {
-                destinationHostVersion = "";
+            if (destHostVersion == null) {
+                destHostVersion = "";
             }
         }
 
-        HypervisorCapabilitiesVO sourceCapabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
-        if (sourceCapabilities == null && HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
-            List<HypervisorCapabilitiesVO> lstHypervisorCapabilities = _hypervisorCapabilitiesDao.listAllByHypervisorType(HypervisorType.KVM);
-            if (lstHypervisorCapabilities != null) {
-                for (HypervisorCapabilitiesVO hypervisorCapabilities : lstHypervisorCapabilities) {
-                    if (hypervisorCapabilities.isStorageMotionSupported()) {
-                        sourceCapabilities = hypervisorCapabilities;
-                        break;
-                    }
-                }
-            }
-        }
-        if (sourceCapabilities == null || !sourceCapabilities.isStorageMotionSupported()) {
+        if (!Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion))) {
             throw new CloudRuntimeException("Migration with storage isn't supported for source host ID: " + srcHost.getUuid() + " on hypervisor " + srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
         }
 
-        if (srcHostVersion != null && !srcHostVersion.equals(destinationHostVersion)) {
-            HypervisorCapabilitiesVO destinationCapabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(destinationHost.getHypervisorType(), destinationHostVersion);
-            if (destinationCapabilities == null && HypervisorType.KVM.equals(destinationHost.getHypervisorType())) {
-                List<HypervisorCapabilitiesVO> lstHypervisorCapabilities = _hypervisorCapabilitiesDao.listAllByHypervisorType(HypervisorType.KVM);
-                if (lstHypervisorCapabilities != null) {
-                    for (HypervisorCapabilitiesVO hypervisorCapabilities : lstHypervisorCapabilities) {
-                        if (hypervisorCapabilities.isStorageMotionSupported()) {
-                            destinationCapabilities = hypervisorCapabilities;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (destinationCapabilities == null || !destinationCapabilities.isStorageMotionSupported()) {
+        if (srcHostVersion == null || !srcHostVersion.equals(destHostVersion)) {
+            if (!Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(destinationHost.getHypervisorType(), destHostVersion))) {
                 throw new CloudRuntimeException("Migration with storage isn't supported for target host ID: " + srcHost.getUuid() + " on hypervisor " + srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
             }
         }

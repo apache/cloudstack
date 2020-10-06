@@ -189,16 +189,16 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         StoragePool targetPool = (StoragePool) destData.getDataStore();
         ScopeType targetScopeType = destData.getDataStore().getScope().getScopeType();
         Long hostId = null;
-        String targetClusterHostGuid = null;
+        String hostGuidInTargetCluster = null;
         // Find Volume source cluster and select any Vmware hypervisor host to attach worker VM
         if (ScopeType.CLUSTER.equals(sourceScopeType) && ScopeType.CLUSTER.equals(targetScopeType) && !sourcePool.getClusterId().equals(targetPool.getClusterId())) {
             // Without host vMotion might fail between non-shared storages with error similar to,
             // https://kb.vmware.com/s/article/1003795
             List<HostVO> hosts = hostDao.findHypervisorHostInCluster(targetPool.getClusterId());
             if (CollectionUtils.isNotEmpty(hosts)) {
-                targetClusterHostGuid = hosts.get(0).getGuid();
+                hostGuidInTargetCluster = hosts.get(0).getGuid();
             }
-            if (targetClusterHostGuid == null) {
+            if (hostGuidInTargetCluster == null) {
                 throw new CloudRuntimeException("Offline Migration failed, unable to find suitable target host for worker VM placement while migrating between storage pools of different cluster without shared storages");
             }
         } else if (ScopeType.CLUSTER.equals(sourceScopeType)) {
@@ -216,7 +216,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
                 , srcData.getTO().getPath()
                 , sourcePool
                 , targetPool
-                , targetClusterHostGuid);
+                , hostGuidInTargetCluster);
         // OfflineVmwareMigration: should be ((StoragePool)srcData.getDataStore()).getHypervisor() but that is NULL, so hardcoding
         Answer answer;
         if (hostId != null) {

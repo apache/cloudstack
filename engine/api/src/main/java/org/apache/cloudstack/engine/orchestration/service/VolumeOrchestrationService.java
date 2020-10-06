@@ -109,7 +109,7 @@ public interface VolumeOrchestrationService {
 
     void migrateVolumes(VirtualMachine vm, VirtualMachineTO vmTo, Host srcHost, Host destHost, Map<Volume, StoragePool> volumeToPool);
 
-    boolean storageMigration(VirtualMachineProfile vm, StoragePool destPool, Map<Volume, StoragePool> volumeToPool) throws StorageUnavailableException;
+    boolean storageMigration(VirtualMachineProfile vm, Map<Volume, StoragePool> volumeToPool) throws StorageUnavailableException;
 
     void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest);
 
