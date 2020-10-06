@@ -2896,14 +2896,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
 
-        List<VolumeVO> volumes = getVolumesFromIds(cmd);
+        List<VolumeVO> volumesToBeDeleted = getVolumesFromIds(cmd);
 
-        checkForUnattachedVolumes(vmId, volumes);
-        validateVolumes(volumes);
+        checkForUnattachedVolumes(vmId, volumesToBeDeleted);
+        validateVolumes(volumesToBeDeleted);
 
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
-        detachVolumesFromVm(volumes);
+        if (vm.getHypervisorType() == HypervisorType.VMware) {
+            List<VolumeVO> allVolumes = _volsDao.findByInstance(vm.getId());
+            allVolumes.removeIf(vol -> vol.getVolumeType() == Volume.Type.ROOT);
+            detachVolumesFromVm(allVolumes);
+        } else {
+            detachVolumesFromVm(volumesToBeDeleted);
+        }
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
@@ -2912,7 +2918,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        deleteVolumesFromVm(volumes);
+        deleteVolumesFromVm(volumesToBeDeleted);
 
         return destroyedVm;
     }

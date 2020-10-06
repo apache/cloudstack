@@ -1734,9 +1734,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setPath(path);
             vol.setChainInfo(chainInfo);
             if (updatedDataStoreUUID != null) {
-                List<StoragePoolVO> pools = _storagePoolDao.listPoolsByLikePath(updatedDataStoreUUID);
-                if (pools != null && !pools.isEmpty()) {
-                    vol.setPoolId(pools.get(0).getId());
+                StoragePoolVO pool = _storagePoolDao.findByUuid(updatedDataStoreUUID);
+                if (pool != null) {
+                    vol.setPoolId(pool.getId());
                 }
             }
             _volsDao.update(volumeId, vol);

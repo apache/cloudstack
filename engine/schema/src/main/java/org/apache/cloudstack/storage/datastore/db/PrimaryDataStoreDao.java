@@ -128,5 +128,4 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     Integer countAll();
 
-    public List<StoragePoolVO> listPoolsByLikePath(String path);
 }

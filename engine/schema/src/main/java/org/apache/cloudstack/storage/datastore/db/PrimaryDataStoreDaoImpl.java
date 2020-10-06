@@ -56,7 +56,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     private final SearchBuilder<StoragePoolVO> DcLocalStorageSearch;
     private final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
-    private final SearchBuilder<StoragePoolVO> PathLikeSearch;
 
     @Inject
     private StoragePoolDetailsDao _detailsDao;
@@ -134,16 +133,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         DcLocalStorageSearch.and("scope", DcLocalStorageSearch.entity().getScope(), SearchCriteria.Op.EQ);
         DcLocalStorageSearch.done();
 
-        PathLikeSearch = createSearchBuilder();
-        PathLikeSearch.and("path", PathLikeSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-        PathLikeSearch.done();
-    }
-
-    @Override
-    public List<StoragePoolVO> listPoolsByLikePath(String path) {
-        SearchCriteria<StoragePoolVO> sc = PathLikeSearch.create();
-        sc.setParameters("path", "%" + path + "%");
-        return listBy(sc);
     }
 
     @Override

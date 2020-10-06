@@ -2127,12 +2127,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
 
                     if (vol.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && vol.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
-                        if (diskInfoBuilder != null && matchingExistingDisk == null) {
+                        if (diskInfoBuilder != null && matchingExistingDisk != null) {
+                            String[] diskChain = matchingExistingDisk.getDiskChain();
+                            if (diskChain != null && diskChain.length > 0) {
+                                DatastoreFile file = new DatastoreFile(diskChain[0]);
+                                if (!file.getFileBaseName().equalsIgnoreCase(volumeTO.getPath())) {
+                                    if (s_logger.isInfoEnabled())
+                                        s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + file.getFileBaseName());
+                                    volumeTO.setPath(file.getFileBaseName());
+                                }
+                            }
                             DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, vol, diskDatastores);
                             if (diskDatastoreMofromVM != null) {
                                 String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                                if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
+                                if (actualPoolUuid != null && !actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
                                     volumeDsDetails = new Pair<>(diskDatastoreMofromVM.getMor(), diskDatastoreMofromVM);
+                                    if (s_logger.isInfoEnabled())
+                                        s_logger.info("Detected datastore uuid change on volume: " + volumeTO.getId() + " " + primaryStore.getUuid() + " -> " + actualPoolUuid);
                                     ((PrimaryDataStoreTO)primaryStore).setUuid(actualPoolUuid);
                                 }
                             }
@@ -3322,8 +3333,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     volInSpec.setPath(datastoreVolumePath);
                 } else {
                     volInSpec.setPath(file.getFileBaseName());
-                    if (!file.getDatastoreName().equals(volumeTO.getDataStore().getUuid()))
-                        volInSpec.setUpdatedDataStoreUUID(file.getDatastoreName());
+                    if (vol.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && vol.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                        volInSpec.setUpdatedDataStoreUUID(volumeTO.getDataStore().getUuid());
+                    }
                 }
                 volInSpec.setChainInfo(_gson.toJson(diskInfo));
             }

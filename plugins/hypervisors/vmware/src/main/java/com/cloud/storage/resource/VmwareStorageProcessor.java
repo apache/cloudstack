@@ -2041,8 +2041,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                                 String storageHost, int storagePort, Map<String, String> controllerInfo) {
         VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
         DataStoreTO primaryStore = volumeTO.getDataStore();
+        String volumePath = volumeTO.getPath();
 
-        String vmdkPath = isManaged ? resource.getVmdkPath(volumeTO.getPath()) : null;
+        String vmdkPath = isManaged ? resource.getVmdkPath(volumePath) : null;
 
         try {
             VmwareContext context = hostService.getServiceContext(null);
@@ -2091,25 +2092,27 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = new DatastoreMO(context, morDs);
             String datastoreVolumePath;
             boolean datastoreChangeObserved = false;
+            boolean volumePathChangeObserved = false;
+            String chainInfo = null;
 
             if (isAttach) {
                 if (isManaged) {
                     datastoreVolumePath = dsMo.getDatastorePath((vmdkPath != null ? vmdkPath : dsMo.getName()) + ".vmdk");
                 } else {
                     if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
-                        datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
+                        datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumePath + ".vmdk");
                         if (!dsMo.fileExists(datastoreVolumePath)) {
-                            datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                            datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumePath + ".vmdk");
                         }
                         if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmName) || !dsMo.fileExists(datastoreVolumePath)) {
-                            datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath(), volumeTO.getPath() + ".vmdk");
+                            datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, volumePath, volumePath + ".vmdk");
                         }
-                        if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), volumeTO.getPath()) || !dsMo.fileExists(datastoreVolumePath)) {
-                            datastoreVolumePath = dsMo.searchFileInSubFolders(volumeTO.getPath() + ".vmdk", true, null);
+                        if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), volumePath) || !dsMo.fileExists(datastoreVolumePath)) {
+                            datastoreVolumePath = dsMo.searchFileInSubFolders(volumePath + ".vmdk", true, null);
                         }
 
                     } else {
-                        datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
+                        datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, dsMo, volumePath, VmwareManager.s_vmwareSearchExcludeFolder.value());
                     }
                 }
             } else {
@@ -2118,13 +2121,30 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 } else {
                     String datastoreUUID = primaryStore.getUuid();
                     if (disk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && disk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
-                        DatastoreMO diskDatastoreMoFromVM = getDiskDatastoreMofromVM(hyperHost, context, vmMo, disk);
-                        if (diskDatastoreMoFromVM != null) {
-                            String actualPoolUuid = diskDatastoreMoFromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                            if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
-                                s_logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumeTO.getPath(), actualPoolUuid));
-                                datastoreChangeObserved = true;
-                                datastoreUUID = actualPoolUuid;
+                        VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(hyperHost, context, vmMo, disk);
+                        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+                        if (diskInfoBuilder != null && matchingExistingDisk != null) {
+                            String[] diskChain = matchingExistingDisk.getDiskChain();
+                            assert (diskChain.length > 0);
+                            DatastoreFile file = new DatastoreFile(diskChain[0]);
+                            if (!file.getFileBaseName().equalsIgnoreCase(volumePath)) {
+                                if (s_logger.isInfoEnabled())
+                                    s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumePath + " -> " + file.getFileBaseName());
+                                volumePathChangeObserved = true;
+                                volumePath = file.getFileBaseName();
+                                volumeTO.setPath(volumePath);
+                                chainInfo = _gson.toJson(matchingExistingDisk);
+                            }
+
+                            DatastoreMO diskDatastoreMofromVM = getDiskDatastoreMofromVM(hyperHost, context, vmMo, disk, diskInfoBuilder);
+                            if (diskDatastoreMofromVM != null) {
+                                String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                                if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
+                                    s_logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumePath, actualPoolUuid));
+                                    datastoreChangeObserved = true;
+                                    datastoreUUID = actualPoolUuid;
+                                    chainInfo = _gson.toJson(matchingExistingDisk);
+                                }
                             }
                         }
                     }
@@ -2135,15 +2155,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     }
                     dsMo = new DatastoreMO(context, morDs);
 
-                    datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
+                    datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumePath + ".vmdk");
                     if (!dsMo.fileExists(datastoreVolumePath)) {
-                        datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                        datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumePath + ".vmdk");
                     }
                     if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmName) || !dsMo.fileExists(datastoreVolumePath)) {
-                        datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath(), volumeTO.getPath() + ".vmdk");
+                        datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, volumePath, volumePath + ".vmdk");
                     }
-                    if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), volumeTO.getPath()) || !dsMo.fileExists(datastoreVolumePath)) {
-                        datastoreVolumePath = dsMo.searchFileInSubFolders(volumeTO.getPath() + ".vmdk", true, null);
+                    if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), volumePath) || !dsMo.fileExists(datastoreVolumePath)) {
+                        datastoreVolumePath = dsMo.searchFileInSubFolders(volumePath + ".vmdk", true, null);
                     }
                 }
             }
@@ -2176,11 +2196,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     handleDatastoreAndVmdkDetachManaged(cmd, diskUuid, iScsiName, storageHost, storagePort);
                 } else {
                     if (!dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
-                        VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath(), vmName, VmwareManager.s_vmwareSearchExcludeFolder.value());
+                        VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumePath, vmName, VmwareManager.s_vmwareSearchExcludeFolder.value());
                     }
                 }
-                if (datastoreChangeObserved)
-                    answer.setContextParam("datastoreName", dsMo.getName());
+                if (datastoreChangeObserved) {
+                    answer.setContextParam("datastoreName", dsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID));
+                    answer.setContextParam("chainInfo", chainInfo);
+                }
+
+                if (volumePathChangeObserved) {
+                    answer.setContextParam("volumePath", volumePath);
+                    answer.setContextParam("chainInfo", chainInfo);
+                }
             }
 
             return answer;
@@ -2206,11 +2233,58 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
+    private VirtualMachineDiskInfo getMatchingExistingDisk(VmwareHypervisorHost hyperHost, VmwareContext context, VirtualMachineMO vmMo, DiskTO vol)
+            throws Exception {
+        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+        if (diskInfoBuilder != null) {
+            VolumeObjectTO volume = (VolumeObjectTO) vol.getData();
+
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, volume.getDataStore().getUuid());
+            DatastoreMO dsMo = new DatastoreMO(context, morDs);
+
+            String dsName = dsMo.getName();
+
+            String diskBackingFileBaseName = volume.getPath();
+
+            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(diskBackingFileBaseName, dsName);
+            if (diskInfo != null) {
+                s_logger.info("Found existing disk info from volume path: " + volume.getPath());
+                return diskInfo;
+            } else {
+                String chainInfo = volume.getChainInfo();
+                if (chainInfo != null) {
+                    VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
+                    if (infoInChain != null) {
+                        String[] disks = infoInChain.getDiskChain();
+                        if (disks.length > 0) {
+                            for (String diskPath : disks) {
+                                DatastoreFile file = new DatastoreFile(diskPath);
+                                diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
+                                if (diskInfo != null) {
+                                    s_logger.info("Found existing disk from chain info: " + diskPath);
+                                    return diskInfo;
+                                }
+                            }
+                        }
+
+                        if (diskInfo == null) {
+                            diskInfo = diskInfoBuilder.getDiskInfoByDeviceBusName(infoInChain.getDiskDeviceBusName());
+                            if (diskInfo != null) {
+                                s_logger.info("Found existing disk from from chain device bus information: " + infoInChain.getDiskDeviceBusName());
+                                return diskInfo;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private DatastoreMO getDiskDatastoreMofromVM(VmwareHypervisorHost hyperHost, VmwareContext context,
-                                                 VirtualMachineMO vmMo, DiskTO disk) throws Exception {
+                                                 VirtualMachineMO vmMo, DiskTO disk, VirtualMachineDiskInfoBuilder diskInfoBuilder) throws Exception {
         assert (hyperHost != null) && (context != null);
         List<Pair<Integer, ManagedObjectReference>> diskDatastores = vmMo.getAllDiskDatastores();
-        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
         VolumeObjectTO volume = (VolumeObjectTO) disk.getData();
         String diskBackingFileBaseName = volume.getPath();
         for (Pair<Integer, ManagedObjectReference> diskDatastore : diskDatastores) {

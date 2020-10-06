@@ -2055,16 +2055,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _volsDao.detachVolume(volume.getId());
             String datastoreName = answer.getContextParam("datastoreName");
             if (datastoreName != null) {
-                List<StoragePoolVO> storagePoolVOS = _storagePoolDao.listPoolsByLikePath(datastoreName);
-                if (storagePoolVOS != null && !storagePoolVOS.isEmpty()) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(datastoreName);
+                if (storagePoolVO != null) {
                     VolumeVO volumeVO = _volsDao.findById(volumeId);
-                    volumeVO.setPoolId(storagePoolVOS.get(0).getId());
+                    volumeVO.setPoolId(storagePoolVO.getId());
                     _volsDao.update(volumeVO.getId(), volumeVO);
                 } else {
                     s_logger.warn(String.format("Unable to find datastore %s while updating the new datastore of the volume %d", datastoreName, volumeId));
                 }
             }
 
+            String volumePath = answer.getContextParam("volumePath");
+            if (volumePath != null) {
+                VolumeVO volumeVO = _volsDao.findById(volumeId);
+                volumeVO.setPath(volumePath);
+                _volsDao.update(volumeVO.getId(), volumeVO);
+            }
+
+            String chainInfo = answer.getContextParam("chainInfo");
+            if (chainInfo != null) {
+                VolumeVO volumeVO = _volsDao.findById(volumeId);
+                volumeVO.setChainInfo(chainInfo);
+                _volsDao.update(volumeVO.getId(), volumeVO);
+            }
             // volume.getPoolId() should be null if the VM we are detaching the disk from has never been started before
             if (volume.getPoolId() != null) {
                 DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
