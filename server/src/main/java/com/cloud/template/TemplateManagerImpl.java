@@ -2063,6 +2063,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             ex.addProxyObject(String.valueOf(id), "templateId");
             throw ex;
         }
+        long oldGuestOSId = template.getGuestOSId();
 
         verifyTemplateId(id);
 
@@ -2119,7 +2120,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (guestOSId != null) {
-            long oldGuestOSId = template.getGuestOSId();
             GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
 
             if (guestOS == null) {
