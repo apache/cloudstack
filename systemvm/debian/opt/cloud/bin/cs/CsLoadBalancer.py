@@ -46,7 +46,7 @@ class CsLoadBalancer(CsDataBag):
             CsHelper.copy(HAPROXY_CONF_T, HAPROXY_CONF_P)
 
             proc = CsProcess(['/run/haproxy.pid'])
-            if not proc.find():
+            if proc.grep("/usr/sbin/haproxy") == -1:
                 logging.debug("CsLoadBalancer:: will restart HAproxy!")
                 CsHelper.service("haproxy", "restart")
             else:
