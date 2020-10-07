@@ -1914,7 +1914,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private List<String> getVolumesByHost(HostVO host, StoragePool pool){
-        List<UserVmVO> vmsPerHost = _vmDao.listByHostId(host.getId());
+        List<VMInstanceVO> vmsPerHost = _vmInstanceDao.listByHostId(host.getId());
         return vmsPerHost.stream()
                 .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol -> vol.getState() == Volume.State.Ready ? vol.getPath() : null).filter(Objects::nonNull))
                 .collect(Collectors.toList());
