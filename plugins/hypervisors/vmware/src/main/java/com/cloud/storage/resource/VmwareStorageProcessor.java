@@ -849,8 +849,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         s_logger.warn("Template host in vSphere is not in connected state, request template reload");
                         return new CopyCmdAnswer("Template host in vSphere is not in connected state, request template reload");
                     }
-                    if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL") && volume.getVolumeType() == Volume.Type.ROOT) {
-                        vmdkFileBaseName = cloneVMwithVMname(context, hyperHost, template, vmTemplate, volume, dcMo, dsMo);
+                    if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                        vmdkFileBaseName = cloneVMforVvols(context, hyperHost, template, vmTemplate, volume, dcMo, dsMo);
                     } else {
                         vmdkFileBaseName = createVMFolderWithVMName(context, hyperHost, template, vmTemplate, volume, dcMo, dsMo, searchExcludedFolders);
                     }
@@ -858,9 +858,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 // restoreVM - move the new ROOT disk into corresponding VM folder
                 VirtualMachineMO restoreVmMo = dcMo.findVm(volume.getVmName());
                 if (restoreVmMo != null) {
-                    String vmNameInVcenter = restoreVmMo.getName(); // VM folder name in datastore will be VM's name in vCenter.
-                    if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
-                        VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, searchExcludedFolders);
+                    if (!dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                        String vmNameInVcenter = restoreVmMo.getName(); // VM folder name in datastore will be VM's name in vCenter.
+                        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
+                            VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, searchExcludedFolders);
+                        }
                     }
                 }
             }
@@ -887,24 +889,32 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private String cloneVMwithVMname(VmwareContext context, VmwareHypervisorHost hyperHost, TemplateObjectTO template,
-                                     VirtualMachineMO vmTemplate, VolumeObjectTO volume, DatacenterMO dcMo, DatastoreMO dsMo) throws Exception {
+    private String cloneVMforVvols(VmwareContext context, VmwareHypervisorHost hyperHost, TemplateObjectTO template,
+                                   VirtualMachineMO vmTemplate, VolumeObjectTO volume, DatacenterMO dcMo, DatastoreMO dsMo) throws Exception {
         ManagedObjectReference morDatastore = dsMo.getMor();
         ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
         ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
         if (template.getSize() != null) {
             _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
         }
+        String vmName = volume.getVmName();
+        if (volume.getVolumeType() == Volume.Type.DATADISK)
+            vmName = volume.getName();
         if (!_fullCloneFlag) {
-            createVMLinkedClone(vmTemplate, dcMo, volume.getVmName(), morDatastore, morPool);
+            createVMLinkedClone(vmTemplate, dcMo, vmName, morDatastore, morPool);
         } else {
-            createVMFullClone(vmTemplate, dcMo, dsMo, volume.getVmName(), morDatastore, morPool);
+            createVMFullClone(vmTemplate, dcMo, dsMo, vmName, morDatastore, morPool);
         }
 
-        VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(volume.getVmName());
+        VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmName);
         assert (vmMo != null);
-
-        return vmMo.getVmdkFileBaseNames().get(0);
+        String vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
+        if (volume.getVolumeType() == Volume.Type.DATADISK) {
+            s_logger.info("detach disks from volume-wrapper VM " + vmName);
+            vmMo.detachAllDisks();
+            vmMo.destroy();
+        }
+        return vmdkFileBaseName;
     }
 
     private String createVMFolderWithVMName(VmwareContext context, VmwareHypervisorHost hyperHost, TemplateObjectTO template,
