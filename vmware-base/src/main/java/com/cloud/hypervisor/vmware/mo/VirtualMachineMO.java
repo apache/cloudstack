@@ -2641,7 +2641,7 @@ public class VirtualMachineMO extends BaseMO {
                     VirtualDeviceBackingInfo backingInfo = ((VirtualDisk)device).getBacking();
                     if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
                         VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
-                        disks.add(new Pair<Integer, ManagedObjectReference>(new Integer(device.getUnitNumber()), diskBackingInfo.getDatastore()));
+                        disks.add(new Pair<Integer, ManagedObjectReference>(new Integer(device.getKey()), diskBackingInfo.getDatastore()));
                     }
                 }
             }
