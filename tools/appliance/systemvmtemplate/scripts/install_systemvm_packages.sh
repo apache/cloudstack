@@ -70,7 +70,7 @@ function install_packages() {
     radvd \
     sharutils genisoimage aria2 \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
-    virt-what open-vm-tools qemu-guest-agent hyperv-daemons
+    virt-what open-vm-tools qemu-guest-agent hyperv-daemons apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common cloud-init
 
   apt-get -y autoremove --purge
   apt-get clean
@@ -78,11 +78,21 @@ function install_packages() {
 
   ${apt_get} install links
 
+   curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+   apt-key fingerprint 0EBFCD88
+   df -h
   #32 bit architecture support for vhd-util: not required for 32 bit template
   if [ "${arch}" != "i386" ]; then
     dpkg --add-architecture i386
     apt-get update
     ${apt_get} install libuuid1:i386 libc6:i386
+
+    add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) \
+    stable"
+    apt-get update
+    apt-get -y install docker-ce docker-ce-cli containerd.io
   fi
 
   install_vhd_util

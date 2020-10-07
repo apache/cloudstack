@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
 . /lib/lsb/init-functions
@@ -588,6 +589,7 @@ routing_svcs() {
    if [ "$RROUTER" -eq "1" ]
    then
        echo "keepalived conntrackd" >> /var/cache/cloud/enabled_svcs
+       echo "dnsmasq" >> /var/cache/cloud/disabled_svcs
        echo "dnsmasq" >> /var/cache/cloud/disabled_svcs
    else
        echo "dnsmasq" >> /var/cache/cloud/enabled_svcs

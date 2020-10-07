@@ -349,10 +349,10 @@ function main() {
 
   # process the disk at dist
   kvm_export
-  ovm_export
-  xen_server_export
-  vmware_export
-  hyperv_export
+  #ovm_export
+  #xen_server_export
+  #vmware_export
+  #hyperv_export
   rm -f "dist/${appliance}"
   cd dist && chmod +r * && cd ..
   cd dist && md5sum * > md5sum.txt && cd ..

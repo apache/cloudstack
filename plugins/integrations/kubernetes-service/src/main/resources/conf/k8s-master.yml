@@ -20,7 +20,7 @@
 ssh_authorized_keys:
   {{ k8s.ssh.pub.key }}
 
-write-files:
+write_files:
   - path: /etc/conf.d/nfs
     permissions: '0644'
     content: |
@@ -116,9 +116,11 @@ write-files:
 
         mkdir -p /opt/bin
         cd /opt/bin
-        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} /opt/bin
+        # cp -a ${BINARIES_DIR}/k8s-node-setup.sh .
+        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} .
         chmod +x {kubeadm,kubelet,kubectl}
 
+        # bash -x /opt/bin/k8s-node-setup.sh
         sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
         mkdir -p /etc/systemd/system/kubelet.service.d
         sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
@@ -219,7 +221,7 @@ write-files:
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/core/success" ]]; then
+      if [[ -f "/home/debian/success" ]]; then
       echo "Already provisioned!"
       exit 0
       fi
@@ -228,7 +230,7 @@ write-files:
 
       if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
         echo "setup-kube-system is running!"
-        exit 1
+        # exit 1
       fi
       if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
         export PATH=$PATH:/opt/bin
@@ -255,40 +257,37 @@ write-files:
       kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
       kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
 
-      sudo touch /home/core/success
-      echo "true" > /home/core/success
+      sudo touch /home/debian/success
+      echo "true" > /home/debian/success
 
-coreos:
-  units:
-    - name: docker.service
-      command: start
-      enable: true
+  - path: /etc/systemd/system/setup-kube-system.service
+    permissions: 0755
+    owner: root:root
+    content: |
+      [Unit]
+      Requires=docker.service
+      After=docker.service
 
-    - name: setup-kube-system.service
-      command: start
-      content: |
-        [Unit]
-        Requires=docker.service
-        After=docker.service
+      [Service]
+      Type=simple
+      StartLimitInterval=0
+      ExecStart=/opt/bin/setup-kube-system
 
-        [Service]
-        Type=simple
-        StartLimitInterval=0
-        ExecStart=/opt/bin/setup-kube-system
+  - path: /etc/systemd/system/deploy-kube-system.service
+    permissions: 0755
+    owner: root:root
+    content: |
+      [Unit]
+      After=setup-kube-system.service
 
-    - name: deploy-kube-system.service
-      command: start
-      content: |
-        [Unit]
-        After=setup-kube-system.service
+      [Service]
+      Type=simple
+      StartLimitInterval=0
+      Restart=on-failure
+      ExecStartPre=/usr/bin/curl -k https://127.0.0.1:6443/version
+      ExecStart=/opt/bin/deploy-kube-system
 
-        [Service]
-        Type=simple
-        StartLimitInterval=0
-        Restart=on-failure
-        ExecStartPre=/usr/bin/curl -k https://127.0.0.1:6443/version
-        ExecStart=/opt/bin/deploy-kube-system
+runcmd:
+  - [ systemctl, start, setup-kube-system ]
+  - [ systemctl, start, deploy-kube-system ]
 
-  update:
-    group: stable
-    reboot-strategy: off

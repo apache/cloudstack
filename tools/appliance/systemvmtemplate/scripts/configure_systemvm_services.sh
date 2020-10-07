@@ -124,6 +124,14 @@ function configure_services() {
   systemctl disable hyperv-daemons.hv-vss-daemon.service
   systemctl disable qemu-guest-agent
 
+  # Disable docker service
+  systemctl disable docker
+
+  # Disable cloud init by default
+  touch /etc/cloud/cloud-init.disabled
+  systemctl stop cloud-init
+  systemctl disable cloud-init
+
   configure_apache2
   configure_strongswan
   configure_issue

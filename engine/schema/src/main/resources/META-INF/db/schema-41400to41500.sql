@@ -220,3 +220,5 @@ ALTER VIEW `cloud`.`image_store_view` AS
         `cloud`.`data_center` ON image_store.data_center_id = data_center.id
             left join
         `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
+
+ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_vm_type` varchar(255) DEFAULT "UserVM" COMMENT 'Defines the type of UserVM';

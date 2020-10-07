@@ -71,6 +71,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Strings;
 
@@ -201,7 +202,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null);
+                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, String.valueOf(UserVmManager.UserVmType.CKSNode));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created master VM ID: %s, %s in the Kubernetes cluster ID: %s", masterVm.getUuid(), hostName, kubernetesCluster.getUuid()));
         }
@@ -255,7 +256,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         additionalMasterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null);
+                null, addrs, null, null, null, customParameterMap, null, null, null, null, String.valueOf(UserVmManager.UserVmType.CKSNode));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created master VM ID: %s, %s in the Kubernetes cluster ID: %s", additionalMasterVm.getUuid(), hostName, kubernetesCluster.getUuid()));
         }

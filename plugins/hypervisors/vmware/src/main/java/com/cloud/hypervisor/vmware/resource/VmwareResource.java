@@ -1729,6 +1729,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String vmNameOnVcenter = names.second();
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
         String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+        s_logger.info("ROOT DISK CONTROLLER = "+ rootDiskController);
         DiskTO rootDiskTO = null;
         String bootMode = null;
         if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
@@ -1747,6 +1748,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         // Validate the controller types
         dataDiskController = DiskControllerType.getType(dataDiskController).toString();
         rootDiskController = DiskControllerType.getType(rootDiskController).toString();
+        s_logger.info("ROOT DISK CONTROLLER 2 = "+ rootDiskController);
 
         if (DiskControllerType.getType(rootDiskController) == DiskControllerType.none) {
             throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskController);

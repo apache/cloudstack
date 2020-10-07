@@ -55,6 +55,10 @@ public interface UserVmManager extends UserVmService {
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
+    public static enum UserVmType {
+        UserVM, AutoScaleVM, K8sMaster, K8sWorker, CKSNode
+    }
+
     /**
      * @param hostId get all of the virtual machines that belong to one host.
      * @return collection of VirtualMachine.

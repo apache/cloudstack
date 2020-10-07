@@ -71,12 +71,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.common.base.Strings;
 
 public class KubernetesClusterActionWorker {
 
-    public static final String CLUSTER_NODE_VM_USER = "core";
+    public static final String CLUSTER_NODE_VM_USER = "root";
     public static final int CLUSTER_API_PORT = 6443;
     public static final int CLUSTER_NODES_DEFAULT_START_SSH_PORT = 2222;
 
@@ -114,6 +115,8 @@ public class KubernetesClusterActionWorker {
     protected UserVmService userVmService;
     @Inject
     protected VlanDao vlanDao;
+    @Inject
+    protected VirtualMachineManager itMgr;
 
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;

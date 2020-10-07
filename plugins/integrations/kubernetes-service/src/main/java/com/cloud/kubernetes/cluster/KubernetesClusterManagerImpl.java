@@ -376,24 +376,30 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return null;
     }
 
-    private VMTemplateVO getKubernetesServiceTemplate(Hypervisor.HypervisorType hypervisorType) {
-        String tempalteName = null;
-        switch (hypervisorType) {
-            case Hyperv:
-                tempalteName = KubernetesClusterHyperVTemplateName.value();
-                break;
-            case KVM:
-                tempalteName = KubernetesClusterKVMTemplateName.value();
-                break;
-            case VMware:
-                tempalteName = KubernetesClusterVMwareTemplateName.value();
-                break;
-            case XenServer:
-                tempalteName = KubernetesClusterXenserverTemplateName.value();
-                break;
+    private VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType) {
+//        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
+//        if (template == null) {
+//            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenter.getId());
+//        }
+//        return  template;
+            String templateName = null;
+            switch (hypervisorType) {
+                case Hyperv:
+                    templateName = KubernetesClusterHyperVTemplateName.value();
+                    break;
+                case KVM:
+                    templateName = KubernetesClusterKVMTemplateName.value();
+                    break;
+                case VMware:
+                    templateName = KubernetesClusterVMwareTemplateName.value();
+                    break;
+                case XenServer:
+                    templateName = KubernetesClusterXenserverTemplateName.value();
+                    break;
+
+            }
+        return templateDao.findValidByTemplateName(templateName);
         }
-        return templateDao.findValidByTemplateName(tempalteName);
-    }
 
     private boolean validateIsolatedNetwork(Network network, int clusterTotalNodeCount) {
         if (Network.GuestType.Isolated.equals(network.getGuestType())) {
@@ -462,7 +468,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for creating clusters, service offering ID: %s", serviceOffering.getUuid()));
         }
         if (serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster template(CoreOS) needs minimum %d vCPUs and %d MB RAM", serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster template needs minimum %d vCPUs and %d MB RAM", serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
         }
         if (serviceOffering.getCpu() < version.getMinimumCpu()) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes version ID: %s needs minimum %d vCPUs", serviceOffering.getUuid(), version.getUuid(), version.getMinimumCpu()));
@@ -856,7 +862,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for Kubernetes clusters. Kubernetes cluster ID: %s, service offering ID: %s", kubernetesCluster.getUuid(), serviceOffering.getUuid()));
                 }
                 if (serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-                    throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled with service offering ID: %s, Kubernetes cluster template(CoreOS) needs minimum %d vCPUs and %d MB RAM",
+                    throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled with service offering ID: %s, Kubernetes cluster template needs minimum %d vCPUs and %d MB RAM",
                             kubernetesCluster.getUuid(), serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
                 }
                 if (serviceOffering.getCpu() < clusterVersion.getMinimumCpu()) {
@@ -1000,7 +1006,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)masterNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
-        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(deployDestination.getCluster().getHypervisorType());
+        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, deployDestination.getCluster().getHypervisorType());
         final long cores = serviceOffering.getCpu() * (masterNodeCount + clusterSize);
         final long memory = serviceOffering.getRamSize() * (masterNodeCount + clusterSize);
 
