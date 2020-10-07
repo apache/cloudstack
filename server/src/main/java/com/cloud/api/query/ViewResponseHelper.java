@@ -282,10 +282,7 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getId(), vrData);
 
             VolumeStats vs = null;
-            if (vr.getFormat() == ImageFormat.QCOW2) {
-                vs = ApiDBUtils.getVolumeStatistics(vrData.getId());
-            }
-            else if (vr.getFormat() == ImageFormat.VHD){
+            if (vr.getFormat() == ImageFormat.VHD || vr.getFormat() == ImageFormat.QCOW2){
                 vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
             }
             else if (vr.getFormat() == ImageFormat.OVA){

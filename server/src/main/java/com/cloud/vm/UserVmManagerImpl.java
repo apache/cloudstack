@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1885,18 +1886,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, List<String> volumeLocators, int timeout) {
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(clusterId, Status.Up);
         StoragePoolVO storagePool = _storagePoolDao.findPoolByUUID(poolUuid);
+        HashMap<String, VolumeStatsEntry> volumeStatsByUuid = new HashMap<>();
+
         for (HostVO neighbor : neighbors) {
-            // apply filters:
-            // - managed storage
-            // - local storage
-            if (storagePool.isManaged() || storagePool.isLocal()) {
-
-                volumeLocators = getVolumesByHost(neighbor, storagePool);
-
-            }
+            volumeLocators = getVolumesByHost(neighbor, storagePool);
 
             // - zone wide storage for specific hypervisortypes
-            if (ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType()) {
+            if ((ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType()) || (volumeLocators == null || volumeLocators.size() == 0)) {
                 // skip this neighbour if their hypervisor type is not the same as that of the store
                 continue;
             }
@@ -1911,16 +1907,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (answer instanceof GetVolumeStatsAnswer){
                 GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
-                return volstats.getVolumeStats();
+                volumeStatsByUuid.putAll(volstats.getVolumeStats());
             }
         }
-        return null;
+        return volumeStatsByUuid.size() > 0 ? volumeStatsByUuid : null;
     }
 
     private List<String> getVolumesByHost(HostVO host, StoragePool pool){
         List<UserVmVO> vmsPerHost = _vmDao.listByHostId(host.getId());
         return vmsPerHost.stream()
-                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol -> vol.getPath()))
+                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol -> vol.getState() == Volume.State.Ready ? vol.getPath() : null).filter(Objects::nonNull))
                 .collect(Collectors.toList());
     }
 
