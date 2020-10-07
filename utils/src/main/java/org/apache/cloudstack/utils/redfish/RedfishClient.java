@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -71,6 +72,7 @@ public class RedfishClient {
     private String password;
     private boolean useHttps;
     private boolean ignoreSsl;
+    private int redfishRequestMaxRetries;
 
     private final static String SYSTEMS_URL_PATH = "redfish/v1/Systems/";
     private final static String COMPUTER_SYSTEM_RESET_URL_PATH = "/Actions/ComputerSystem.Reset";
@@ -81,6 +83,8 @@ public class RedfishClient {
     private final static String ODATA_ID = "@odata.id";
     private final static String MEMBERS = "Members";
     private final static String EXPECTED_HTTP_STATUS = "2XX";
+    private final static int WAIT_FOR_REQUEST_RETRY = 2;
+
 
     /**
      * Redfish Command type: </br>
@@ -126,11 +130,12 @@ public class RedfishClient {
         ForceOff, ForceOn, ForceRestart, GracefulRestart, GracefulShutdown, Nmi, On, PowerCycle, PushPowerButton
     }
 
-    public RedfishClient(String username, String password, boolean useHttps, boolean ignoreSsl) {
+    public RedfishClient(String username, String password, boolean useHttps, boolean ignoreSsl, int redfishRequestRetries) {
         this.username = username;
         this.password = password;
         this.useHttps = useHttps;
         this.ignoreSsl = ignoreSsl;
+        this.redfishRequestMaxRetries = redfishRequestRetries;
     }
 
     protected String buildRequestUrl(String hostAddress, RedfishCmdType cmd, String resourceId) {
@@ -213,8 +218,38 @@ public class RedfishClient {
         try {
             return client.execute(httpReq);
         } catch (IOException e) {
-            throw new RedfishException(String.format("Failed to execute POST request [URL: %s] due to exception.", url, e));
+            if (redfishRequestMaxRetries == 0) {
+                throw new RedfishException(String.format("Failed to execute HTTP %s request [URL: %s] due to exception %s.", httpReq.getMethod(), url, e), e);
+            }
+            return retryHttpRequest(url, httpReq, client);
         }
+    }
+
+    protected HttpResponse retryHttpRequest(String url, HttpRequestBase httpReq, HttpClient client) {
+        LOGGER.warn(String.format("Failed to execute HTTP %s request [URL: %s]. Executing the request again.", httpReq.getMethod(), url));
+        HttpResponse response = null;
+        for (int attempt = 1; attempt < redfishRequestMaxRetries + 1; attempt++) {
+            try {
+                TimeUnit.SECONDS.sleep(WAIT_FOR_REQUEST_RETRY);
+                LOGGER.debug(String.format("Retry HTTP %s request [URL: %s], attempt %d/%d.", httpReq.getMethod(), url, attempt, redfishRequestMaxRetries));
+                response = client.execute(httpReq);
+            } catch (IOException | InterruptedException e) {
+                if (attempt == redfishRequestMaxRetries) {
+                    throw new RedfishException(String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, redfishRequestMaxRetries,url, e));
+                } else {
+                    LOGGER.warn(
+                            String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, redfishRequestMaxRetries,
+                                    url, e));
+                }
+            }
+        }
+
+        if (response == null) {
+            throw new RedfishException(String.format("Failed to execute HTTP %s request [URL: %s].", httpReq.getMethod(), url));
+        }
+
+        LOGGER.debug(String.format("Successfully executed HTTP %s request [URL: %s].", httpReq.getMethod(), url));
+        return response;
     }
 
     /**

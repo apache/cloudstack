@@ -198,24 +198,25 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
         if (cleanupNetwork) { // if network has additional VM, cannot proceed with cluster destroy
             NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
-            if (network == null) {
-                logAndThrow(Level.ERROR, String.format("Failed to find network for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
-            }
-            List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.User);
-            if (networkVMs.size() > clusterVMs.size()) {
-                logAndThrow(Level.ERROR, String.format("Network ID: %s for Kubernetes cluster ID: %s has instances using it which are not part of the Kubernetes cluster", network.getUuid(), kubernetesCluster.getUuid()));
-            }
-            for (VMInstanceVO vm : networkVMs) {
-                boolean vmFoundInKubernetesCluster = false;
-                for (KubernetesClusterVmMap clusterVM : clusterVMs) {
-                    if (vm.getId() == clusterVM.getVmId()) {
-                        vmFoundInKubernetesCluster = true;
-                        break;
+            if (network != null) {
+                List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.User);
+                if (networkVMs.size() > clusterVMs.size()) {
+                    logAndThrow(Level.ERROR, String.format("Network ID: %s for Kubernetes cluster ID: %s has instances using it which are not part of the Kubernetes cluster", network.getUuid(), kubernetesCluster.getUuid()));
+                }
+                for (VMInstanceVO vm : networkVMs) {
+                    boolean vmFoundInKubernetesCluster = false;
+                    for (KubernetesClusterVmMap clusterVM : clusterVMs) {
+                        if (vm.getId() == clusterVM.getVmId()) {
+                            vmFoundInKubernetesCluster = true;
+                            break;
+                        }
+                    }
+                    if (!vmFoundInKubernetesCluster) {
+                        logAndThrow(Level.ERROR, String.format("VM ID: %s which is not a part of Kubernetes cluster ID: %s is using Kubernetes cluster network ID: %s", vm.getUuid(), kubernetesCluster.getUuid(), network.getUuid()));
                     }
                 }
-                if (!vmFoundInKubernetesCluster) {
-                    logAndThrow(Level.ERROR, String.format("VM ID: %s which is not a part of Kubernetes cluster ID: %s is using Kubernetes cluster network ID: %s", vm.getUuid(), kubernetesCluster.getUuid(), network.getUuid()));
-                }
+            } else {
+                LOGGER.error(String.format("Failed to find network for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
             }
         }
         if (LOGGER.isInfoEnabled()) {

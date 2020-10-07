@@ -77,8 +77,17 @@ import com.google.common.base.Strings;
 
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 
+    private KubernetesSupportedVersion kubernetesClusterVersion;
+
     public KubernetesClusterStartWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
+    }
+
+    public KubernetesSupportedVersion getKubernetesClusterVersion() {
+        if (kubernetesClusterVersion == null) {
+            kubernetesClusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        }
+        return kubernetesClusterVersion;
     }
 
     private Pair<String, Map<Long, Network.IpAddresses>> getKubernetesMasterIpAddresses(final DataCenter zone, final Network network, final Account account) throws InsufficientAddressCapacityException {
@@ -106,7 +115,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
     private boolean isKubernetesVersionSupportsHA() {
         boolean haSupported = false;
-        final KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        KubernetesSupportedVersion version = getKubernetesClusterVersion();
         if (version != null) {
             try {
                 if (KubernetesVersionManagerImpl.compareSemanticVersions(version.getSemanticVersion(), KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT) >= 0) {
@@ -162,6 +171,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                     KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         }
         initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
+        initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
         k8sMasterConfig = k8sMasterConfig.replace(clusterInitArgsKey, initArgs);
         k8sMasterConfig = k8sMasterConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         return k8sMasterConfig;
