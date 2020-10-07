@@ -6860,8 +6860,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (needRestart) {
                 try {
                     if (vm.getDetail(VmDetailConstants.PASSWORD) != null) {
-                        params = new HashMap<VirtualMachineProfile.Param, Object>();
+                        params = new HashMap<>();
                         params.put(VirtualMachineProfile.Param.VmPassword, password);
+                    }
+                    if (template.isDeployAsIs()) {
+                        if (params == null) {
+                            params = new HashMap<>();
+                        }
+                        params.put(VirtualMachineProfile.Param.ReplaceDeployAsIs, true);
                     }
                     _itMgr.start(vm.getUuid(), params);
                     vm = _vmDao.findById(vmId);

@@ -48,6 +48,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DeployAsIsInfoTO;
 import com.cloud.agent.api.ValidateVcenterDetailsCommand;
+import com.cloud.storage.resource.VmwareStorageLayoutType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -1736,6 +1737,55 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private void restoreVirtualMachineVolumesFromTemplate(String vmInternalCSName, VirtualMachineTO vmSpec,
+                                                          VmwareHypervisorHost host, VirtualMachineMO virtualMachineMO,
+                                                          VmwareContext context, DatacenterMO dcMo) throws Exception {
+        DeployAsIsInfoTO deployAsIsInfo = vmSpec.getDeployAsIsInfo();
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Restoring VM " + vmInternalCSName + " volumes from template as-is");
+        }
+        String deployAsIsTemplate = deployAsIsInfo.getTemplatePath();
+        String destDatastore = deployAsIsInfo.getDestStoragePool();
+
+        String auxVMName = vmInternalCSName + "-aux";
+        _storageProcessor.cloneVMFromTemplate(host, deployAsIsTemplate, auxVMName, destDatastore);
+        VirtualMachineMO auxVM = host.findVmOnHyperHost(auxVMName);
+        if (auxVM == null) {
+            s_logger.info("Cloned deploy-as-is VM " + auxVMName + " is not in this host, relocating it");
+            auxVM = takeVmFromOtherHyperHost(host, auxVMName);
+        }
+        ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(host, destDatastore);
+        DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
+        List<String> vmdkFileBaseNames = auxVM.getVmdkFileBaseNames();
+        for (String vmdkFileBaseName : vmdkFileBaseNames) {
+            s_logger.info("Move volume out of volume-wrapper VM " + vmdkFileBaseName);
+            String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, auxVMName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
+            String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, auxVMName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
+            for (int i=0; i<vmwareLayoutFilePair.length; i++) {
+                dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
+            }
+        }
+        auxVM.detachAllDisks();
+        auxVM.destroy();
+        String vmNameInVcenter = virtualMachineMO.getName();
+        virtualMachineMO.tearDownDevices(new Class<?>[]{VirtualDisk.class});
+        for (String vmdkFileBaseName : vmdkFileBaseNames) {
+            String newPath = null;
+            if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
+                newPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, null);
+            }
+            virtualMachineMO.attachDisk(new String[] {newPath}, morDatastore);
+        }
+    }
+
+    private boolean isRestoreParameterSet(VirtualMachineTO vmSpec) {
+        DeployAsIsInfoTO deployAsIsInfo = vmSpec.getDeployAsIsInfo();
+        if (deployAsIsInfo != null) {
+            return deployAsIsInfo.isReplaceVm();
+        }
+        return false;
+    }
+
     protected StartAnswer execute(StartCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource StartCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
@@ -1910,6 +1960,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (vmMo == null) {
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
+            }
+
+            if (deployAsIs && isRestoreParameterSet(vmSpec)) {
+                restoreVirtualMachineVolumesFromTemplate(vmInternalCSName, vmSpec, hyperHost, vmMo, context, dcMo);
+                mapSpecDisksToClonedDisks(vmMo, vmInternalCSName, specDisks);
             }
 
             int disksChanges = getDisksChangesNumberFromDisksSpec(disks, deployAsIs);
@@ -2517,13 +2572,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private String getBootModeFromVmSpec(VirtualMachineTO vmSpec, boolean deployAsIs) {
         String bootMode = null;
-        if (!deployAsIs) {
-            if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
-                bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
-            }
-            if (null == bootMode) {
-                bootMode = ApiConstants.BootType.BIOS.toString();
-            }
+        if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
+            bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
+        }
+        if (bootMode == null) {
+            bootMode = ApiConstants.BootType.BIOS.toString();
         }
         return bootMode;
     }
