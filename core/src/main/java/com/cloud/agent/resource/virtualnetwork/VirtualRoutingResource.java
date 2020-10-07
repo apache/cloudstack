@@ -397,7 +397,7 @@ public class VirtualRoutingResource {
     }
 
     public boolean configureHostParams(final Map<String, String> params) {
-        if (_params.get("router.aggregation.command.each.timeout") != null) {
+        if (params.get("router.aggregation.command.each.timeout") != null) {
             String value = (String)params.get("router.aggregation.command.each.timeout");
             _eachTimeout = Duration.standardSeconds(NumbersUtil.parseLong(value, 600));
             if (s_logger.isDebugEnabled()){
