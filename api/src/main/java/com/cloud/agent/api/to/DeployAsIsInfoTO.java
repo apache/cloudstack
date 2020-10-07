@@ -31,16 +31,18 @@ public class DeployAsIsInfoTO {
     @LogLevel(LogLevel.Log4jLevel.Off)
     private Map<String, String> properties = new HashMap<>();
     private Map<Integer, String> nicAdapterMap = new HashMap();
+    boolean replaceVm;
 
     public DeployAsIsInfoTO() {
     }
 
     public DeployAsIsInfoTO(String templatePath, String destStoragePool, Map<String, String> properties,
-                            Map<Integer, String> nicAdapterMap) {
+                            Map<Integer, String> nicAdapterMap, boolean replaceVm) {
         this.templatePath = templatePath;
         this.destStoragePool = destStoragePool;
         this.properties = properties;
         this.nicAdapterMap = nicAdapterMap;
+        this.replaceVm = replaceVm;
     }
 
     public String getTemplatePath() {
@@ -57,5 +59,9 @@ public class DeployAsIsInfoTO {
 
     public Map<Integer, String> getNicAdapterMap() {
         return nicAdapterMap;
+    }
+
+    public boolean isReplaceVm() {
+        return replaceVm;
     }
 }
