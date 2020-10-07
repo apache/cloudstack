@@ -407,7 +407,7 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public void markAsVirtualMachine(ManagedObjectReference resourcePool, ManagedObjectReference host) throws Exception {
-        _context.getService().markAsVirtualMachine(_mor, pool, host);
+        _context.getService().markAsVirtualMachine(_mor, resourcePool, host);
     }
 
     public boolean isTemplate() throws Exception {
