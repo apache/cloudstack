@@ -252,6 +252,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateOVFPropertyVO;
@@ -499,6 +500,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private ResourceTagDao resourceTagDao;
     @Inject
     private TemplateOVFPropertiesDao templateOVFPropertiesDao;
+    @Inject
+    private StorageManager _storageManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -1982,10 +1985,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // apply filters:
             // - managed storage
             // - local storage
-            if (storagePool.isManaged() || storagePool.isLocal()) {
-
+            if ((storagePool.isManaged() && poolType != StoragePoolType.PowerFlex) || storagePool.isLocal()) {
                 volumeLocators = getVolumesByHost(neighbor, storagePool);
-
             }
 
             // - zone wide storage for specific hypervisortypes
@@ -1995,14 +1996,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
+            Answer answer = null;
 
-            if (timeout > 0) {
-                cmd.setWait(timeout/1000);
+            if (poolType == StoragePoolType.PowerFlex) {
+                // Get volume stats from the pool directly instead of sending cmd to host
+                // Added support for ScaleIO/PowerFlex pool only
+                answer = _storageManager.getVolumeStats(storagePool, cmd);
+            } else {
+                if (timeout > 0) {
+                    cmd.setWait(timeout/1000);
+                }
+
+                answer = _agentMgr.easySend(neighbor.getId(), cmd);
             }
 
-            Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
-
-            if (answer instanceof GetVolumeStatsAnswer){
+            if (answer != null && answer instanceof GetVolumeStatsAnswer) {
                 GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
                 return volstats.getVolumeStats();
             }

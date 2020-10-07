@@ -18,21 +18,17 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -41,11 +37,16 @@ import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateDataFactoryImpl implements TemplateDataFactory {
@@ -64,6 +65,16 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
     HostDao hostDao;
     @Inject
     PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Override
+    public TemplateInfo getTemplate(long templateId) {
+        VMTemplateVO templ = imageDataDao.findById(templateId);
+        if (templ != null) {
+            TemplateObject tmpl = TemplateObject.getTemplate(templ, null);
+            return tmpl;
+        }
+        return null;
+    }
 
     @Override
     public TemplateInfo getTemplate(long templateId, DataStore store) {
@@ -222,6 +233,33 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             directDownloadManager.downloadTemplate(templateId, pool, hostId);
         }
         DataStore store = storeMgr.getDataStore(pool, DataStoreRole.Primary);
+        return this.getTemplate(templateId, store);
+    }
+
+    @Override
+    public TemplateInfo getReadyBypassedTemplateOnManagedStorage(long templateId, TemplateInfo templateOnPrimary, Long poolId, Long hostId) {
+        VMTemplateVO templateVO = imageDataDao.findById(templateId);
+        if (templateVO == null || !templateVO.isDirectDownload()) {
+            return null;
+        }
+
+        if (poolId == null) {
+            throw new CloudRuntimeException("No storage pool specified to download template: " + templateId);
+        }
+
+        StoragePoolVO poolVO = primaryDataStoreDao.findById(poolId);
+        if (poolVO == null || !poolVO.isManaged()) {
+            return null;
+        }
+
+        VMTemplateStoragePoolVO spoolRef = templatePoolDao.findByPoolTemplate(poolId, templateId);
+        if (spoolRef == null) {
+            throw new CloudRuntimeException("Template not created on managed storage pool: " + poolId + " to copy the download template: " + templateId);
+        } else if (spoolRef.getDownloadState() == VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED) {
+            directDownloadManager.downloadTemplate(templateId, poolId, hostId);
+        }
+
+        DataStore store = storeMgr.getDataStore(poolId, DataStoreRole.Primary);
         return this.getTemplate(templateId, store);
     }
 

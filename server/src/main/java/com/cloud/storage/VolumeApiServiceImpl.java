@@ -67,6 +67,8 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
@@ -124,6 +126,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
@@ -204,6 +207,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private VolumeDao _volsDao;
     @Inject
+    private VolumeDetailsDao _volsDetailsDao;
+    @Inject
     private HostDao _hostDao;
     @Inject
     private SnapshotDao _snapshotDao;
@@ -221,6 +226,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private DiskOfferingDao _diskOfferingDao;
+    @Inject
+    private DiskOfferingDetailsDao _diskOfferingDetailsDao;
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -583,6 +590,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             parentVolume = null;
         }
 
+        Map<String, String> details = new HashMap<>();
         if (cmd.getDiskOfferingId() != null) { // create a new volume
 
             diskOfferingId = cmd.getDiskOfferingId();
@@ -624,6 +632,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 size = diskOffering.getDiskSize();
             }
 
+            DiskOfferingDetailVO bandwidthLimitDetail = _diskOfferingDetailsDao.findDetail(diskOfferingId, Volume.BANDWIDTH_LIMIT_IN_MBPS);
+            if (bandwidthLimitDetail != null) {
+                details.put(Volume.BANDWIDTH_LIMIT_IN_MBPS, bandwidthLimitDetail.getValue());
+            }
+            DiskOfferingDetailVO iopsLimitDetail = _diskOfferingDetailsDao.findDetail(diskOfferingId, Volume.IOPS_LIMIT);
+            if (iopsLimitDetail != null) {
+                details.put(Volume.IOPS_LIMIT, iopsLimitDetail.getValue());
+            }
+
             Boolean isCustomizedIops = diskOffering.isCustomizedIops();
 
             if (isCustomizedIops != null) {
@@ -651,6 +668,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     minIops = diskOffering.getMinIops();
                     maxIops = diskOffering.getMaxIops();
                 }
+            } else {
+                minIops = diskOffering.getMinIops();
+                maxIops = diskOffering.getMaxIops();
             }
 
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
@@ -740,11 +760,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String userSpecifiedName = getVolumeNameFromCommand(cmd);
 
         return commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
-                _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
+                _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details);
     }
 
     private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
-            final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid) {
+            final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid, final Map<String, String> details) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
@@ -774,6 +794,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     // for volume created from snapshot, create usage event after volume creation
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size,
                             Volume.class.getName(), volume.getUuid(), displayVolume);
+                }
+
+                if (volume != null && details != null) {
+                    List<VolumeDetailVO> volumeDetailsVO = new ArrayList<VolumeDetailVO>();
+                    if (details.containsKey(Volume.BANDWIDTH_LIMIT_IN_MBPS)) {
+                        volumeDetailsVO.add(new VolumeDetailVO(volume.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS, details.get(Volume.BANDWIDTH_LIMIT_IN_MBPS), false));
+                    }
+                    if (details.containsKey(Volume.IOPS_LIMIT)) {
+                        volumeDetailsVO.add(new VolumeDetailVO(volume.getId(), Volume.IOPS_LIMIT, details.get(Volume.IOPS_LIMIT), false));
+                    }
+                    if (!volumeDetailsVO.isEmpty()) {
+                        _volsDetailsDao.saveDetails(volumeDetailsVO);
+                    }
                 }
 
                 CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
@@ -949,7 +982,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newMaxIops = volume.getMaxIops();
             }
 
-            validateIops(newMinIops, newMaxIops);
+            validateIops(newMinIops, newMaxIops, volume.getPoolType());
         } else {
             if (newDiskOffering.getRemoved() != null) {
                 throw new InvalidParameterValueException("Requested disk offering has been removed.");
@@ -994,7 +1027,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newMinIops = cmd.getMinIops() != null ? cmd.getMinIops() : volume.getMinIops();
                 newMaxIops = cmd.getMaxIops() != null ? cmd.getMaxIops() : volume.getMaxIops();
 
-                validateIops(newMinIops, newMaxIops);
+                validateIops(newMinIops, newMaxIops, volume.getPoolType());
             } else {
                 newMinIops = newDiskOffering.getMinIops();
                 newMaxIops = newDiskOffering.getMaxIops();
@@ -1137,7 +1170,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 shrinkOk);
     }
 
-    private void validateIops(Long minIops, Long maxIops) {
+    private void validateIops(Long minIops, Long maxIops, Storage.StoragePoolType poolType) {
+        if (poolType == Storage.StoragePoolType.PowerFlex) {
+            // PowerFlex takes iopsLimit as input, skip minIops validation
+            minIops = (maxIops != null) ? Long.valueOf(0) : null;
+        }
+
         if ((minIops == null && maxIops != null) || (minIops != null && maxIops == null)) {
             throw new InvalidParameterValueException("Either 'miniops' and 'maxiops' must both be provided or neither must be provided.");
         }
@@ -1233,7 +1271,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setDiskOfferingId(newDiskOfferingId);
             }
 
-            if (currentSize != newSize) {
+            // Update size if volume has same size as before, else it is already updated
+            final VolumeVO volumeNow = _volsDao.findById(volumeId);
+            if (currentSize == volumeNow.getSize() && currentSize != newSize) {
                 volume.setSize(newSize);
             }
 
@@ -3001,6 +3041,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 details.put(DiskTO.IQN, volumeToAttach.get_iScsiName());
                 details.put(DiskTO.MOUNT_POINT, volumeToAttach.get_iScsiName());
                 details.put(DiskTO.PROTOCOL_TYPE, (volumeToAttach.getPoolType() != null) ? volumeToAttach.getPoolType().toString() : null);
+                details.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(volumeToAttachStoragePool.getId())));
 
                 if (chapInfo != null) {
                     details.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());

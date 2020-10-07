@@ -135,6 +135,7 @@ public class Storage {
         OCFS2(true, false),
         SMB(true, false),
         Gluster(true, false),
+        PowerFlex(true, true), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
         ManagedNFS(true, false);
 
         private final boolean shared;

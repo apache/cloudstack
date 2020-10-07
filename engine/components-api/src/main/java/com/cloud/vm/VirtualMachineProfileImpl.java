@@ -22,7 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.template.VirtualMachineTemplate;
@@ -49,6 +51,8 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     Float cpuOvercommitRatio = 1.0f;
     Float memoryOvercommitRatio = 1.0f;
 
+    Host _host = null;
+
     VirtualMachine.Type _type;
 
     List<String[]> vmData = null;
@@ -57,6 +61,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     String configDriveIsoBaseLocation = "/tmp/";
     String configDriveIsoRootFolder = null;
     String configDriveIsoFile = null;
+    NetworkElement.Location configDriveLocation = NetworkElement.Location.SECONDARY;
 
     public VirtualMachineProfileImpl(VirtualMachine vm, VirtualMachineTemplate template, ServiceOffering offering, Account owner, Map<Param, Object> params) {
         _vm = vm;
@@ -220,6 +225,19 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     }
 
     @Override
+    public Long getHostId() {
+        if (_host != null) {
+            return _host.getId();
+        }
+        return _vm.getHostId();
+    }
+
+    @Override
+    public void setHost(Host host) {
+        this._host = host;
+    }
+
+    @Override
     public String getHostName() {
         return _vm.getHostName();
     }
@@ -310,5 +328,15 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     @Override
     public void setConfigDriveIsoFile(String isoFile) {
         this.configDriveIsoFile = isoFile;
+    }
+
+    @Override
+    public NetworkElement.Location getConfigDriveLocation() {
+        return configDriveLocation;
+    }
+
+    @Override
+    public void setConfigDriveLocation(NetworkElement.Location location) {
+        this.configDriveLocation = location;
     }
 }

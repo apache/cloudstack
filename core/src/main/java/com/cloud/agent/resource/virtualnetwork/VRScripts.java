@@ -43,6 +43,7 @@ public class VRScripts {
 
     public final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     public final static Duration VR_SCRIPT_EXEC_TIMEOUT = Duration.standardMinutes(10);
+    public final static Duration VR_CMD_EXEC_TIMEOUT = Duration.standardMinutes(1);
     public final static Duration CONNECTION_TIMEOUT = Duration.standardMinutes(1);
 
     // New scripts for use with chef
@@ -75,4 +76,6 @@ public class VRScripts {
     public static final String DIAGNOSTICS = "diagnostics.py";
     public static final String RETRIEVE_DIAGNOSTICS = "get_diagnostics_files.py";
     public static final String VR_FILE_CLEANUP = "cleanup.sh";
+
+    public static final String ROUTER_FILESYSTEM_WRITABLE_CHECK = "filesystem_writable_check.py";
 }

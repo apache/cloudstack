@@ -186,6 +186,11 @@
             <artifactId>jackson-databind</artifactId>
             <version>${cs.jackson.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>${cs.commons-compress.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

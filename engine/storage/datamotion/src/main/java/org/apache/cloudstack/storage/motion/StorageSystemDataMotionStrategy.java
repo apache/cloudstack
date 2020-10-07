@@ -735,6 +735,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         details.put(DiskTO.MANAGED, Boolean.TRUE.toString());
         details.put(DiskTO.IQN, destVolumeInfo.get_iScsiName());
         details.put(DiskTO.STORAGE_HOST, destPool.getHostAddress());
+        details.put(DiskTO.PROTOCOL_TYPE, (destPool.getPoolType() != null) ? destPool.getPoolType().toString() : null);
 
         command.setDestDetails(details);
 
@@ -1786,6 +1787,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 StoragePoolVO destStoragePool = _storagePoolDao.findById(destDataStore.getId());
                 StoragePoolVO sourceStoragePool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
 
+                // do not initiate migration for the same PowerFlex/ScaleIO pool
+                if (sourceStoragePool.getId() == destStoragePool.getId() && sourceStoragePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                    continue;
+                }
+
                 if (!shouldMigrateVolume(sourceStoragePool, destHost, destStoragePool)) {
                     continue;
                 }
@@ -2197,15 +2203,15 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Volume with ID " + volumeInfo.getId() + " is not associated with a storage pool.");
             }
 
-            if (srcStoragePoolVO.isManaged()) {
-                throw new CloudRuntimeException("Migrating a volume online with KVM from managed storage is not currently supported.");
-            }
-
             DataStore dataStore = entry.getValue();
             StoragePoolVO destStoragePoolVO = _storagePoolDao.findById(dataStore.getId());
 
             if (destStoragePoolVO == null) {
                 throw new CloudRuntimeException("Destination storage pool with ID " + dataStore.getId() + " was not located.");
+            }
+
+            if (srcStoragePoolVO.isManaged() && srcStoragePoolVO.getId() != destStoragePoolVO.getId()) {
+                throw new CloudRuntimeException("Migrating a volume online with KVM from managed storage is not currently supported.");
             }
 
             if (storageTypeConsistency == null) {
@@ -2415,6 +2421,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         volumeDetails.put(DiskTO.STORAGE_HOST, storagePoolVO.getHostAddress());
         volumeDetails.put(DiskTO.STORAGE_PORT, String.valueOf(storagePoolVO.getPort()));
         volumeDetails.put(DiskTO.IQN, volumeVO.get_iScsiName());
+        volumeDetails.put(DiskTO.PROTOCOL_TYPE, (volumeVO.getPoolType() != null) ? volumeVO.getPoolType().toString() : null);
+        volumeDetails.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(storagePoolVO.getId())));
 
         volumeDetails.put(DiskTO.VOLUME_SIZE, String.valueOf(volumeVO.getSize()));
         volumeDetails.put(DiskTO.SCSI_NAA_DEVICE_ID, getVolumeProperty(volumeInfo.getId(), DiskTO.SCSI_NAA_DEVICE_ID));

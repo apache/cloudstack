@@ -1286,7 +1286,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
-        if (storagePoolVO.getPoolType() == StoragePoolType.RBD && !BackupSnapshotAfterTakingSnapshot.value()) {
+        if ((storagePoolVO.getPoolType() == StoragePoolType.RBD || storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) && !BackupSnapshotAfterTakingSnapshot.value()) {
             return DataStoreRole.Primary;
         }
 

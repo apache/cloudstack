@@ -56,6 +56,8 @@ public interface VmDetailConstants {
     String PASSWORD = "password";
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
 
+    String CONFIG_DRIVE_LOCATION = "configDriveLocation";
+
     // VM import with nic, disk and custom params for custom compute offering
     String NIC = "nic";
     String NETWORK = "network";

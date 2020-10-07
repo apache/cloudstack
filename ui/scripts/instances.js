@@ -4134,6 +4134,10 @@
                 allowedActions.push("storageSnapshot");
             }
 
+            if (jsonObj.hypervisor == 'KVM' && jsonObj.pooltype == 'PowerFlex') {
+                allowedActions.push("snapshot");
+            }
+
             allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors
             allowedActions.push("changeAffinity");
 

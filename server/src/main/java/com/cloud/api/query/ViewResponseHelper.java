@@ -26,9 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.configuration.Resource;
-import com.cloud.domain.Domain;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -59,6 +56,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -84,8 +82,10 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.configuration.Resource;
+import com.cloud.domain.Domain;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VolumeStats;
 import com.cloud.user.Account;
 
@@ -292,9 +292,13 @@ public class ViewResponseHelper {
                 if (vrData.getChainInfo() != null) {
                     vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
                 }
+            } else if (vr.getFormat() == ImageFormat.RAW) {
+                if (vrData.getPath() != null) {
+                    vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
+                }
             }
 
-            if (vs != null){
+            if (vs != null) {
                 long vsz = vs.getVirtualSize();
                 long psz = vs.getPhysicalSize() ;
                 double util = (double)psz/vsz;
