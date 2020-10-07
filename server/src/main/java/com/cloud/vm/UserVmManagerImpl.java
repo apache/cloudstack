@@ -5558,7 +5558,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Volume volume = _volsDao.findByUuid(entry.getKey());
             StoragePoolVO pool = _storagePoolDao.findPoolByUUID(entry.getValue());
             if (poolClusterId != null &&
-                    !(ScopeType.CLUSTER.equals(pool.getScope()) || ScopeType.HOST.equals(pool.getScope())) &&
+                    (ScopeType.CLUSTER.equals(pool.getScope()) || ScopeType.HOST.equals(pool.getScope())) &&
                     !poolClusterId.equals(pool.getClusterId())) {
                 throw new InvalidParameterValueException("VM's disk cannot be migrated, input destination storage pools belong to different clusters");
             }

@@ -4155,7 +4155,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid, VmwareHypervisorHost hyperHost, Command cmd) throws Exception {
         String hostNameInTargetCluster = null;
-        VmwareHypervisorHost hostInTargetCluster = null;
         List<Pair<VolumeTO, StorageFilerTO>> volToFiler = new ArrayList<>();
         if (cmd instanceof MigrateVmToPoolCommand) {
             MigrateVmToPoolCommand mcmd = (MigrateVmToPoolCommand)cmd;
@@ -4164,13 +4163,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else if (cmd instanceof MigrateVolumeCommand) {
             hostNameInTargetCluster = ((MigrateVolumeCommand)cmd).getHostGuidInTargetCluster();
         }
-        if (StringUtils.isNotBlank(hostNameInTargetCluster)) {
-            String hostInTargetClusterMorInfo = hostNameInTargetCluster.split("@")[0];
-            ManagedObjectReference morHostInTargetCluster = new ManagedObjectReference();
-            morHostInTargetCluster.setType(hostInTargetClusterMorInfo.split(":")[0]);
-            morHostInTargetCluster.setValue(hostInTargetClusterMorInfo.split(":")[1]);
-            hostInTargetCluster = new HostMO(getServiceContext(), morHostInTargetCluster);
-        }
+        VmwareHypervisorHost hostInTargetCluster = VmwareHelper.getHostMOFromHostName(getServiceContext(),
+                hostNameInTargetCluster);
 
         try {
             // OfflineVmwareMigration: getVolumesFromCommand(cmd);
@@ -4352,17 +4346,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ManagedObjectReference morSourceDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getSourcePool().getUuid());
             DatastoreMO sourceDsMo = new DatastoreMO(hyperHost.getContext(), morSourceDs);
             String targetDsName = cmd.getTargetPool().getUuid();
-            String hostNameInTargetCluster = cmd.getHostGuidInTargetCluster();
-            VmwareHypervisorHost hostInTargetCluster = null;
-            if (StringUtils.isNotBlank(hostNameInTargetCluster)) {
-                String hostInTargetClusterMorInfo = hostNameInTargetCluster.split("@")[0];
-                ManagedObjectReference morHostInTargetCluster = new ManagedObjectReference();
-                morHostInTargetCluster.setType(hostInTargetClusterMorInfo.split(":")[0]);
-                morHostInTargetCluster.setValue(hostInTargetClusterMorInfo.split(":")[1]);
-                hostInTargetCluster = new HostMO(getServiceContext(), morHostInTargetCluster);
-            }
+            VmwareHypervisorHost hostInTargetCluster = VmwareHelper.getHostMOFromHostName(getServiceContext(),
+                    cmd.getHostGuidInTargetCluster());
             VmwareHypervisorHost dsHost = hostInTargetCluster == null ? hyperHost : hostInTargetCluster;
-            ManagedObjectReference morTargetDS = getTargetDatastoreMOReference(targetDsName, hyperHost);
+            ManagedObjectReference morTargetDS = getTargetDatastoreMOReference(targetDsName, dsHost);
             if(morTargetDS == null) {
                 String msg = "Unable to find the target datastore: " + targetDsName + " on host: " + dsHost.getHyperHostName();
                 s_logger.error(msg);
@@ -6979,30 +6966,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareHypervisorHost targetHyperHost = hostInTargetCluster;
         VirtualMachineMO vmMo = null;
         ManagedObjectReference morSourceHostDc = null;
-        ManagedObjectReference morTargetHostDc = null;
-        ManagedObjectReference morTargetHost = new ManagedObjectReference();
         VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
         List<VirtualMachineRelocateSpecDiskLocator> diskLocators = new ArrayList<VirtualMachineRelocateSpecDiskLocator>();
         Set<String> mountedDatastoresAtSource = new HashSet<String>();
         List<VolumeObjectTO> volumeToList =  new ArrayList<>();
         Map<Long, Integer> volumeDeviceKey = new HashMap<Long, Integer>();
-        if (StringUtils.isNotBlank(targetHost)) {
-            String targetHostMorInfo = targetHost.split("@")[0];
-            morTargetHost.setType(targetHostMorInfo.split(":")[0]);
-            morTargetHost.setValue(targetHostMorInfo.split(":")[1]);
-        }
 
         try {
             if (sourceHyperHost == null) {
                 sourceHyperHost = getHyperHost(getServiceContext());
             }
             if (targetHyperHost == null && StringUtils.isNotBlank(targetHost)) {
-                targetHyperHost = new HostMO(getServiceContext(), morTargetHost);
+                targetHyperHost = VmwareHelper.getHostMOFromHostName(getServiceContext(), targetHost);
             }
             morSourceHostDc = sourceHyperHost.getHyperHostDatacenter();
             DatacenterMO dcMo = new DatacenterMO(sourceHyperHost.getContext(), morSourceHostDc);
             if (targetHyperHost != null) {
-                morTargetHostDc = targetHyperHost.getHyperHostDatacenter();
+                ManagedObjectReference morTargetHostDc = targetHyperHost.getHyperHostDatacenter();
                 if (!morSourceHostDc.getValue().equalsIgnoreCase(morTargetHostDc.getValue())) {
                     String msg = "VM " + vmName + " cannot be migrated between different datacenter";
                     throw new CloudRuntimeException(msg);
@@ -7093,12 +7073,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // Specific section for MigrateVmWithStorageCommand
-            if (vmTo != null) {
+            if (vmTo != null && targetHyperHost != null) {
                 // Prepare network at target before migration
                 NicTO[] nics = vmTo.getNics();
                 for (NicTO nic : nics) {
                     // prepare network on the host
-                    prepareNetworkFromNicInfo(new HostMO(getServiceContext(), morTargetHost), nic, false, vmTo.getType());
+                    prepareNetworkFromNicInfo((HostMO)targetHyperHost, nic, false, vmTo.getType());
                 }
                 // Ensure secondary storage mounted on target host
                 VmwareManager mgr = targetHyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);

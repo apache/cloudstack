@@ -191,20 +191,17 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         Long hostId = null;
         String hostGuidInTargetCluster = null;
         // Find Volume source cluster and select any Vmware hypervisor host to attach worker VM
-        if (ScopeType.CLUSTER.equals(sourceScopeType) && ScopeType.CLUSTER.equals(targetScopeType) && !sourcePool.getClusterId().equals(targetPool.getClusterId())) {
-            // Without host vMotion might fail between non-shared storages with error similar to,
-            // https://kb.vmware.com/s/article/1003795
-            List<HostVO> hosts = hostDao.findHypervisorHostInCluster(targetPool.getClusterId());
-            if (CollectionUtils.isNotEmpty(hosts)) {
-                hostGuidInTargetCluster = hosts.get(0).getGuid();
-            }
-            if (hostGuidInTargetCluster == null) {
-                throw new CloudRuntimeException("Offline Migration failed, unable to find suitable target host for worker VM placement while migrating between storage pools of different cluster without shared storages");
-            }
-        } else if (ScopeType.CLUSTER.equals(sourceScopeType)) {
-            hostId = findSuitableHostIdForWorkerVmPlacement(sourcePool.getClusterId());
-            if (hostId == null) {
-                throw new CloudRuntimeException("Offline Migration failed, unable to find suitable host for worker VM placement in the cluster of storage pool: " + sourcePool.getName());
+        if (ScopeType.CLUSTER.equals(sourceScopeType)) {
+            if (ScopeType.CLUSTER.equals(targetScopeType) && !sourcePool.getClusterId().equals(targetPool.getClusterId())) {
+                // Without host vMotion might fail between non-shared storages with error similar to,
+                // https://kb.vmware.com/s/article/1003795
+                List<HostVO> hosts = hostDao.findHypervisorHostInCluster(targetPool.getClusterId());
+                if (CollectionUtils.isNotEmpty(hosts)) {
+                    hostGuidInTargetCluster = hosts.get(0).getGuid();
+                }
+                if (hostGuidInTargetCluster == null) {
+                    throw new CloudRuntimeException("Offline Migration failed, unable to find suitable target host for worker VM placement while migrating between storage pools of different cluster without shared storages");
+                }
             }
         } else if (ScopeType.CLUSTER.equals(targetScopeType)) {
             hostId = findSuitableHostIdForWorkerVmPlacement(targetPool.getClusterId());
