@@ -245,10 +245,9 @@
                                             args.$select.change(function() {
                                                 var $form = $(this).closest('form');
                                                 if ($(this).val() == "VMware") {
-                                                    $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
-                                                    $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
-                                                    $form.find('.form-item[rel=deployAsIs]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
                                                     $form.find('.form-item[rel=directdownload]').hide();
@@ -259,7 +258,6 @@
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
                                                     $form.find('.form-item[rel=directdownload]').hide();
-                                                    $form.find('.form-item[rel=deployAsIs]').hide();
                                                     $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
 
                                                     if (isAdmin()) {
@@ -270,7 +268,6 @@
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
-                                                    $form.find('.form-item[rel=deployAsIs]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').css('display', 'inline-block');
                                                     $('#label_root_disk_controller').prop('selectedIndex', 2);
                                                     $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
@@ -284,7 +281,6 @@
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
                                                     $form.find('.form-item[rel=directdownload]').hide();
-                                                    $form.find('.form-item[rel=deployAsIs]').hide();
                                                     $form.find('.form-item[rel=requireshvm]').css('display', 'inline-block');
                                                 }
                                             });
@@ -466,13 +462,6 @@
                                                 data: items
                                             });
                                         }
-                                    },
-                                    deployAsIs : {
-                                        label: 'label.deploy.as.is',
-                                        docID: 'helpRegisterTemplateDeployAsIs',
-                                        isBoolean: true,
-                                        dependsOn: 'hypervisor',
-                                        isHidden: true
                                     },
                                     // fields for hypervisor == "VMware" (ends here)
 
@@ -692,11 +681,6 @@
                                 if (args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "") {
                                     $.extend(data, {
                                         'details[0].keyboard': args.data.keyboardType
-                                    });
-                                }
-                                if (args.$form.find('.form-item[rel=deployAsIs]').css("display") != "none" && args.data.deployAsIs != "") {
-                                    $.extend(data, {
-                                        deployAsIs: (args.data.deployAsIs == "on") ? "true" : "false"
                                     });
                                 }
                                 // for hypervisor == VMware (ends here)
@@ -1924,11 +1908,6 @@
                                         isBoolean: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
-                                    deployAsIs: {
-                                        label: 'label.deploy.as.is',
-                                        isBoolean: true,
-                                        converter: cloudStack.converters.toBooleanText
-                                    },
                                     isextractable: {
                                         label: 'label.extractable.lower',
                                         isBoolean: true,
@@ -2811,11 +2790,6 @@
                                         docID: 'helpRegisterISOFeatured',
                                         isBoolean: true,
                                         isHidden: true
-                                    },
-                                    deployAsIs : {
-                                        label: 'label.deploy.as.is',
-                                        docID: 'helpRegisterTemplateDeployAsIs',
-                                        isBoolean: true
                                     }
                                 }
                             },
@@ -2829,8 +2803,7 @@
                                     zoneid: args.data.zone,
                                     isextractable: (args.data.isExtractable == "on"),
                                     bootable: (args.data.isBootable == "on"),
-                                    directdownload: (args.data.directdownload == "on"),
-                                    deployAsIs: (args.data.deployAsIs == "on")
+                                    directdownload: (args.data.directdownload == "on")
                                 };
 
                                 if (args.$form.find('.form-item[rel=osTypeId]').css("display") != "none") {
@@ -3664,11 +3637,6 @@
                                     },
                                     directdownload: {
                                         label: 'label.direct.download',
-                                        isBoolean: true,
-                                        converter: cloudStack.converters.toBooleanText
-                                    },
-                                    deployAsIs: {
-                                        label: 'label.deploy.as.is',
                                         isBoolean: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
