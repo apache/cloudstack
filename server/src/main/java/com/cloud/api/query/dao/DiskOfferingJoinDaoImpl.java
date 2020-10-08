@@ -17,7 +17,13 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -30,9 +36,14 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import javax.inject.Inject;
+
 @Component
 public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, Long> implements DiskOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(DiskOfferingJoinDaoImpl.class);
+
+    @Inject
+    VsphereStoragePolicyDao _vsphereStoragePolicyDao;
 
     private final SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
     private final Attribute _typeAttr;
@@ -108,6 +119,15 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setIopsWriteRateMaxLength(offering.getIopsWriteRateMaxLength());
         diskOfferingResponse.setCacheMode(offering.getCacheMode());
         diskOfferingResponse.setObjectName("diskoffering");
+        Map<String, String> offeringDetails = ApiDBUtils.getResourceDetails(offering.getId(), ResourceTag.ResourceObjectType.DiskOffering);
+        if (offeringDetails != null && !offeringDetails.isEmpty()) {
+            String vsphereStoragePolicyId = offeringDetails.get(ApiConstants.STORAGE_POLICY);
+            if (vsphereStoragePolicyId != null) {
+                VsphereStoragePolicyVO vsphereStoragePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(vsphereStoragePolicyId));
+                if (vsphereStoragePolicyVO != null)
+                    diskOfferingResponse.setVsphereStoragePolicy(vsphereStoragePolicyVO.getName());
+            }
+        }
 
         return diskOfferingResponse;
     }
