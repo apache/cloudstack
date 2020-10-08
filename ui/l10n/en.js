@@ -674,7 +674,6 @@ var dictionary = {
 "label.deleting.processing":"Deleting....",
 "label.deny":"Deny",
 "label.deployment.planner":"Deployment planner",
-"label.deploy.as.is":"Deploy As-Is",
 "label.description":"Description",
 "label.destination.physical.network.id":"Destination physical network ID",
 "label.destination.zone":"Destination Zone",
