@@ -187,6 +187,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "max_memory")
     Integer maxMemory;
 
+    @Column(name = "vsphere_storage_policy")
+    String vsphereStoragePolicy;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -384,4 +387,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     public Integer getMaxMemory() {
         return maxMemory;
     }
+
+    public String getVsphereStoragePolicy() {
+        return vsphereStoragePolicy;
+    }
+
 }

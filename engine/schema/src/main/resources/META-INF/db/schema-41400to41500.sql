@@ -415,6 +415,7 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `service_offering`.`sort_key` AS `sort_key`,
         `service_offering`.`is_volatile` AS `is_volatile`,
         `service_offering`.`deployment_planner` AS `deployment_planner`,
+        `vsphere_storage_policy`.`value` AS `vsphere_storage_policy`,
         GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
         GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
         GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
@@ -450,6 +451,9 @@ CREATE VIEW `cloud`.`service_offering_view` AS
 			LEFT JOIN
 		`cloud`.`service_offering_details` AS `max_memory_details` ON `max_memory_details`.`service_offering_id` = `disk_offering`.`id`
 				AND `max_memory_details`.`name` = 'maxmemory'
+			LEFT JOIN
+		`cloud`.`service_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`service_offering_id` = `disk_offering`.`id`
+				AND `vsphere_storage_policy`.`name` = 'storagepolicy'
     WHERE
         `disk_offering`.`state`='Active'
     GROUP BY
