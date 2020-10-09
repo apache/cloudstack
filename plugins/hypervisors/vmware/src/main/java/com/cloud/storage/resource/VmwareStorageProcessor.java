@@ -396,7 +396,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         if (vmName != null) {
             String workerVmName = hostService.getWorkerName(context, cmd, 0);
 
-            VirtualMachineMO vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName);
+            VirtualMachineMO vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName, null);
 
             if (vmMo == null) {
                 throw new Exception("Unable to create a worker VM for volume creation");
@@ -794,7 +794,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 String dummyVmName = hostService.getWorkerName(context, cmd, 0);
 
                 try {
-                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
+                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
                     if (vmMo == null) {
                         throw new Exception("Unable to create a dummy VM for volume creation");
                     }
@@ -995,7 +995,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (vmMo == null || VmwareResource.getVmState(vmMo) == PowerState.PowerOff) {
                 // create a dummy worker vm for attaching the volume
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
-                workerVm = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName);
+                workerVm = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName, null);
 
                 if (workerVm == null) {
                     String msg = "Unable to create worker VM to execute CopyVolumeCommand";
@@ -1130,9 +1130,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
 
+            String hardwareVersion = String.valueOf(vmMo.getVirtualHardwareVersion());
+
             // 4 MB is the minimum requirement for VM memory in VMware
             Pair<VirtualMachineMO, String[]> cloneResult =
-                    vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+                    vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), hardwareVersion);
             clonedVm = cloneResult.first();
 
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
@@ -1194,7 +1196,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (volume.getVmName() == null) {
                 ManagedObjectReference secMorDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, volume.getDataStore().getUuid());
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), secMorDs);
-                workerVmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, "workervm"+volume.getUuid());
+                workerVmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, "workervm"+volume.getUuid(), null);
                 if (workerVmMo == null) {
                     throw new Exception("Unable to find created worker VM");
                 }
@@ -1551,7 +1553,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         ManagedObjectReference dsMor = hyperHost.findDatastoreByName(dsFile.getDatastoreName());
         DatastoreMO dsMo = new DatastoreMO(context, dsMor);
 
-        VirtualMachineMO workerVM = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
+        VirtualMachineMO workerVM = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName, null);
 
         if (workerVM == null) {
             throw new CloudRuntimeException("Failed to find the newly created worker VM: " + workerVMName);
@@ -1716,12 +1718,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
 
+            String virtualHardwareVersion = String.valueOf(vmMo.getVirtualHardwareVersion());
+
             String diskDevice = volumeDeviceInfo.second();
             String disks[] = vmMo.getCurrentSnapshotDiskChainDatastorePaths(diskDevice);
             if (clonedWorkerVMNeeded) {
                 // 4 MB is the minimum requirement for VM memory in VMware
                 Pair<VirtualMachineMO, String[]> cloneResult =
-                        vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, diskDevice, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+                        vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, diskDevice, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), virtualHardwareVersion);
                 clonedVm = cloneResult.first();
                 clonedVm.exportVm(exportPath, exportName, false, false);
             } else {
@@ -1798,7 +1802,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 if(vmMo == null) {
                     dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
                     workerVMName = hostService.getWorkerName(context, cmd, 0);
-                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
+                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName, null);
                     if (vmMo == null) {
                         throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
                     }
@@ -2251,7 +2255,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String dummyVmName = hostService.getWorkerName(context, cmd, 0);
             try {
                 s_logger.info("Create worker VM " + dummyVmName);
-                vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
+                vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
                 if (vmMo == null) {
                     throw new Exception("Unable to create a dummy VM for volume creation");
                 }
@@ -2934,7 +2938,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         String dummyVmName = hostService.getWorkerName(context, cmd, 0);
 
-        VirtualMachineMO vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
+        VirtualMachineMO vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
 
         if (vmMo == null) {
             throw new Exception("Unable to create a dummy VM for volume creation");
