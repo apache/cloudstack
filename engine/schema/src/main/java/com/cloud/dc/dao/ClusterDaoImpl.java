@@ -81,6 +81,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
         ZoneSearch = createSearchBuilder();
         ZoneSearch.and("dataCenterId", ZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneSearch.groupBy(ZoneSearch.entity().getHypervisorType());
         ZoneSearch.done();
 
         AvailHyperSearch = createSearchBuilder();
