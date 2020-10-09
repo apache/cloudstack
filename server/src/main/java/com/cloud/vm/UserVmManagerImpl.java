@@ -1883,13 +1883,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, List<String> volumeLocators, int timeout) {
+    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType,  int timeout) {
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(clusterId, Status.Up);
         StoragePoolVO storagePool = _storagePoolDao.findPoolByUUID(poolUuid);
         HashMap<String, VolumeStatsEntry> volumeStatsByUuid = new HashMap<>();
 
         for (HostVO neighbor : neighbors) {
-            volumeLocators = getVolumesByHost(neighbor, storagePool);
+            List<String> volumeLocators = getVolumesByHost(neighbor, storagePool);
 
             // - zone wide storage for specific hypervisortypes
             if ((ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType()) || (volumeLocators == null || volumeLocators.size() == 0)) {
@@ -1907,7 +1907,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (answer instanceof GetVolumeStatsAnswer){
                 GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
-                volumeStatsByUuid.putAll(volstats.getVolumeStats());
+                if (volstats.getVolumeStats() != null) {
+                    volumeStatsByUuid.putAll(volstats.getVolumeStats());
+                }
             }
         }
         return volumeStatsByUuid.size() > 0 ? volumeStatsByUuid : null;
@@ -1916,7 +1918,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private List<String> getVolumesByHost(HostVO host, StoragePool pool){
         List<VMInstanceVO> vmsPerHost = _vmInstanceDao.listByHostId(host.getId());
         return vmsPerHost.stream()
-                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol -> vol.getState() == Volume.State.Ready ? vol.getPath() : null).filter(Objects::nonNull))
+                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol ->
+                vol.getState() == Volume.State.Ready ? (vol.getFormat() == ImageFormat.OVA ? vol.getChainInfo() : vol.getPath()) : null).filter(Objects::nonNull))
                 .collect(Collectors.toList());
     }
 
