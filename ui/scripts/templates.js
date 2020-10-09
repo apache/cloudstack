@@ -2116,11 +2116,7 @@
                                                  createForm: {
                                                     title: 'label.action.delete.template',
                                                     desc: function(args) {
-                                                       if(args.context.templates[0].crossZones == true) {
-                                                          return 'message.action.delete.template.for.all.zones';
-                                                       } else {
-                                                          return 'message.action.delete.template';
-                                                       }
+                                                       return 'message.action.delete.template';
                                                       },
                                                     fields: {
                                                         forced: {
@@ -2137,9 +2133,7 @@
                                                  },
                                                  action: function(args) {
                                                      var queryParams = "deleteTemplate&id=" + args.context.templates[0].id;
-                                                     if (!args.context.templates[0].crossZones){
-                                                        queryParams += "&zoneid=" + args.context.zones[0].zoneid;
-                                                     }
+                                                     queryParams += "&zoneid=" + args.context.zones[0].zoneid;
                                                      $.ajax({
                                                          url: createURL(queryParams + "&forced=" + (args.data.forced == "on")),
                                                          dataType: "json",
@@ -3630,9 +3624,7 @@
                                             },
                                             action: function(args) {
                                                 var queryParams = "deleteIso&id=" + args.context.isos[0].id;
-                                                if (!args.context.isos[0].crossZones){
-                                                    queryParams += "&zoneid=" + args.context.zones[0].zoneid;
-                                                }
+                                                queryParams += "&zoneid=" + args.context.zones[0].zoneid;
                                                 $.ajax({
                                                     url: createURL(queryParams),
                                                     dataType: "json",
