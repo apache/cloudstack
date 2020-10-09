@@ -128,6 +128,15 @@ function configure_services() {
   systemctl disable docker
 
   # Disable cloud init by default
+cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
+datasource_list: ['CloudStack']
+datasource:
+  CloudStack:
+    max_wait: 120
+    timeout: 50
+EOF
+
+  sed -i 's/\(disable_root: \)\(.*\)/\1false/' /etc/cloud/cloud.cfg
   touch /etc/cloud/cloud-init.disabled
   systemctl stop cloud-init
   systemctl disable cloud-init

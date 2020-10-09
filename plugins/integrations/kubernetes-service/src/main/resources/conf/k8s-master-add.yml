@@ -22,7 +22,7 @@ ssh_authorized_keys:
 
 write_files:
   - path: /opt/bin/setup-kube-system
-    permissions: 0700
+    permissions: '0700'
     owner: root:root
     content: |
       #!/bin/bash -e
@@ -177,7 +177,7 @@ write_files:
       fi
 
   - path: /opt/bin/deploy-kube-system
-    permissions: 0700
+    permissions: '0700'
     owner: root:root
     content: |
       #!/bin/bash -e
@@ -204,7 +204,7 @@ write_files:
       echo "true" > /home/debian/success
 
   - path: /etc/systemd/system/setup-kube-system.service
-    permissions: 0755
+    permissions: '0755'
     owner: root:root
     content: |
       [Unit]
@@ -217,7 +217,7 @@ write_files:
       ExecStart=/opt/bin/setup-kube-system
 
   - path: /etc/systemd/system/deploy-kube-system.service
-    permissions: 0755
+    permissions: '0755'
     owner: root:root
     content: |
       [Unit]
@@ -231,5 +231,7 @@ write_files:
       ExecStart=/opt/bin/deploy-kube-system
 
 runcmd:
+  - [ systemctl, enable, --now, --no-block, docker ]
   - [ systemctl, start, setup-kube-system ]
   - [ systemctl, start, deploy-kube-system ]
+

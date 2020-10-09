@@ -354,9 +354,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private boolean isKubernetesServiceConfigured(DataCenter zone) {
-        if (!isKubernetesServiceTemplateConfigured(zone)) {
-            return false;
-        }
         if (!isKubernetesServiceNetworkOfferingConfigured(zone)) {
             return false;
         }
@@ -377,28 +374,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType) {
-//        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
-//        if (template == null) {
-//            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenter.getId());
-//        }
-//        return  template;
-            String templateName = null;
-            switch (hypervisorType) {
-                case Hyperv:
-                    templateName = KubernetesClusterHyperVTemplateName.value();
-                    break;
-                case KVM:
-                    templateName = KubernetesClusterKVMTemplateName.value();
-                    break;
-                case VMware:
-                    templateName = KubernetesClusterVMwareTemplateName.value();
-                    break;
-                case XenServer:
-                    templateName = KubernetesClusterXenserverTemplateName.value();
-                    break;
-
-            }
-        return templateDao.findValidByTemplateName(templateName);
+        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
+        if (template == null) {
+            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenter.getId());
+        }
+        return  template;
     }
 
     private boolean validateIsolatedNetwork(Network network, int clusterTotalNodeCount) {

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.kubernetes.cluster.dao;
 
-import com.cloud.kubernetes.cluster.KubernetesClusterVmMap;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.utils.db.GenericDao;
 

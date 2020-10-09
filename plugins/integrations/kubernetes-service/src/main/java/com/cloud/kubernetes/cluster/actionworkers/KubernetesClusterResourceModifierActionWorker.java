@@ -273,7 +273,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             Field f = startVm.getClass().getDeclaredField("id");
             f.setAccessible(true);
             f.set(startVm, vm.getId());
-            // userVmService.startVirtualMachine(startVm);
             itMgr.advanceStart(vm.getUuid(), null, null);
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("Started VM ID: %s in the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));

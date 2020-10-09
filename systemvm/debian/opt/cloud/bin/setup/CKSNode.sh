@@ -27,15 +27,12 @@ setup_k8s_node() {
 
     # set default ssh port and restart sshd service
     sed -i 's/3922/22/g' /etc/ssh/sshd_config
-    systemctl restart sshd
 
     swapoff -a
     sudo sed -ri '/\swap\s/s/^#?/#/' /etc/fstab
     log_it "Swap disabled"
 
-    systemctl enable docker
-    systemctl start docker
-
+    log_it "Setting up interfaces"
     setup_common eth0
     setup_system_rfc1918_internal
 
@@ -46,24 +43,18 @@ setup_k8s_node() {
     public_ip=`getPublicIp`
     echo "$public_ip $NAME" >> /etc/hosts
 
-    # enable cloud init
-cat <<EOF > cloudstack.cfg
-datasource:
-  CloudStack:
-    max_wait: 120
-    timeout: 50
-  datasource_list:
-    - CloudStack
-EOF
-
-    systemctl enable cloud-init
-
     disable_rpfilter
     enable_fwding 1
     enable_irqbalance 0
     setup_ntp
 
     rm -f /etc/logrotate.d/cloud
+
+    log_it "Starting cloud-init services"
+    systemctl enable --now --no-block docker
+    systemctl enable --now --no-block cloud-init
+    systemctl enable --now --no-block cloud-config
+    systemctl enable --now --no-block cloud-final
 }
 
 setup_k8s_node

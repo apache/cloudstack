@@ -88,7 +88,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
             // pass cmdline info to system vms
-            if (vmSpec.getType() != VirtualMachine.Type.User || (vmSpec.getBootArgs().contains("CKSNode"))) {
+            if (vmSpec.getType() != VirtualMachine.Type.User || (vmSpec.getBootArgs() != null && vmSpec.getBootArgs().contains("CKSNode"))) {
                 // try to patch and SSH into the systemvm for up to 5 minutes
                 if (vmSpec.getType() != VirtualMachine.Type.User) {
                     String controlIp = null;
@@ -101,7 +101,6 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
 
                     for (int count = 0; count < 10; count++) {
                         // wait and try passCmdLine for 30 seconds at most for CLOUDSTACK-2823
-                        s_logger.info("PEARL - adding cmdline args to vm");
                         if (libvirtComputingResource.passCmdLine(vmName, vmSpec.getBootArgs())) {
                             break;
                         }
@@ -116,7 +115,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         }
                     }
                 }
-                if (vmSpec.getBootArgs().contains("CKSNode")) {
+                if (vmSpec.getBootArgs() != null && vmSpec.getBootArgs().contains("CKSNode")) {
                     for (int count = 0; count < 10; count++) {
                         // wait and try passCmdLine for 30 seconds at most for CLOUDSTACK-2823
                         if (libvirtComputingResource.passCmdLine(vmName, vmSpec.getBootArgs())) {
