@@ -1148,13 +1148,13 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
-    public void createDisk(String vmdkDatastorePath, long sizeInMb, ManagedObjectReference morDs, int controllerKey) throws Exception {
-        createDisk(vmdkDatastorePath, VirtualDiskType.THIN, VirtualDiskMode.PERSISTENT, null, sizeInMb, morDs, controllerKey);
+    public void createDisk(String vmdkDatastorePath, long sizeInMb, ManagedObjectReference morDs, int controllerKey, String vSphereStoragePolicyId) throws Exception {
+        createDisk(vmdkDatastorePath, VirtualDiskType.THIN, VirtualDiskMode.PERSISTENT, null, sizeInMb, morDs, controllerKey, vSphereStoragePolicyId);
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
     public void createDisk(String vmdkDatastorePath, VirtualDiskType diskType, VirtualDiskMode diskMode, String rdmDeviceName, long sizeInMb,
-                           ManagedObjectReference morDs, int controllerKey) throws Exception {
+                           ManagedObjectReference morDs, int controllerKey, String vSphereStoragePolicyId) throws Exception {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - createDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + vmdkDatastorePath + ", sizeInMb: " + sizeInMb +
@@ -1219,7 +1219,14 @@ public class VirtualMachineMO extends BaseMO {
         deviceConfigSpec.setDevice(newDisk);
         deviceConfigSpec.setFileOperation(VirtualDeviceConfigSpecFileOperation.CREATE);
         deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-
+        if (!StringUtils.isEmpty(vSphereStoragePolicyId)) {
+            PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(getContext());
+            VirtualMachineDefinedProfileSpec diskProfileSpec = profMgrMo.getProfileSpec(vSphereStoragePolicyId);
+            deviceConfigSpec.getProfile().add(diskProfileSpec);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Adding vSphere storage profile: %s to volume [%s]", vSphereStoragePolicyId, vmdkDatastorePath));
+            }
+        }
         reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
         ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
@@ -1297,7 +1304,7 @@ public class VirtualMachineMO extends BaseMO {
         attachDisk(vmdkDatastorePathChain, morDs, null, null);
     }
 
-    public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController, String storagePolicyId) throws Exception {
+    public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController, String vSphereStoragePolicyId) throws Exception {
 
         if(s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
@@ -1338,12 +1345,12 @@ public class VirtualMachineMO extends BaseMO {
 
             deviceConfigSpec.setDevice(newDisk);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-            if (!StringUtils.isEmpty(storagePolicyId)) {
+            if (!StringUtils.isEmpty(vSphereStoragePolicyId)) {
                 PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(getContext());
-                VirtualMachineDefinedProfileSpec diskProfileSpec = profMgrMo.getProfileSpec(storagePolicyId);
+                VirtualMachineDefinedProfileSpec diskProfileSpec = profMgrMo.getProfileSpec(vSphereStoragePolicyId);
                 deviceConfigSpec.getProfile().add(diskProfileSpec);
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Adding vSphere storage profile: %s to volume [%s]", storagePolicyId, vmdkDatastorePathChain[0]));
+                    s_logger.debug(String.format("Adding vSphere storage profile: %s to volume [%s]", vSphereStoragePolicyId, vmdkDatastorePathChain[0]));
                 }
             }
             reConfigSpec.getDeviceChange().add(deviceConfigSpec);

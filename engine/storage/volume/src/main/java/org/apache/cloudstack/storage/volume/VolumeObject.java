@@ -796,22 +796,21 @@ public class VolumeObject implements VolumeInfo {
 
     public String getvSphereStoragePolicyId() {
         if (StringUtils.isEmpty(vSphereStoragePolicyId)) {
+            String storagePolicyVOid = null;
             if (Volume.Type.ROOT == getVolumeType()) {
                 Long vmId = volumeVO.getInstanceId();
                 if (vmId != null) {
                     VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
-                    String storagePolicyVOid = serviceOfferingDetailsDao.getDetail(vm.getServiceOfferingId(),
+                    storagePolicyVOid = serviceOfferingDetailsDao.getDetail(vm.getServiceOfferingId(),
                             ApiConstants.STORAGE_POLICY);
-                    VsphereStoragePolicyVO vsphereStoragePolicyVO = vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyVOid));
-                    vSphereStoragePolicyId = vsphereStoragePolicyVO.getPolicyId();
-
                 }
             } else {
-                String storagePolicyVOid = diskOfferingDetailsDao.getDetail(volumeVO.getDiskOfferingId(),
+                storagePolicyVOid = diskOfferingDetailsDao.getDetail(volumeVO.getDiskOfferingId(),
                         ApiConstants.STORAGE_POLICY);
+            }
+            if (storagePolicyVOid != null) {
                 VsphereStoragePolicyVO vsphereStoragePolicyVO = vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyVOid));
                 vSphereStoragePolicyId = vsphereStoragePolicyVO.getPolicyId();
-
             }
         }
         return vSphereStoragePolicyId;

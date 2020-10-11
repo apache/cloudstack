@@ -2038,7 +2038,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // check cummilative result for all volumes
         for (Pair<Volume, Answer> answer : answers) {
             if (!answer.second().getResult()) {
-                s_logger.debug(String.format("Storage pool %s is not complaince with storage policy for volume %s", pool.getName(), answer.first().getName()));
+                s_logger.debug(String.format("Storage pool %s is not compliance with storage policy for volume %s", pool.getUuid(), answer.first().getName()));
                 return false;
             }
         }

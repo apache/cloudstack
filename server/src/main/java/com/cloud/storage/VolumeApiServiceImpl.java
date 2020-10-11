@@ -2232,6 +2232,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Cannot migrate volume " + vol + "to the destination storage pool " + destPool.getName() + " as the storage pool is in maintenance mode.");
         }
 
+        String poolUuid =  destPool.getUuid();
         if (destPool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
             DataCenter dc = _entityMgr.findById(DataCenter.class, vol.getDataCenterId());
             Pod destPoolPod = _entityMgr.findById(Pod.class, destPool.getPodId());
@@ -2277,6 +2278,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 updateMissingRootDiskController(vm, vol.getChainInfo());
             }
         }
+
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volumeId);
+        if (hypervisorType.equals(HypervisorType.VMware)) {
+            try {
+                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(vol), destPool);
+                if (!isStoragePoolStoragepolicyComplaince) {
+                    throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", poolUuid, vol.getUuid()));
+                }
+            } catch (StorageUnavailableException e) {
+                throw new CloudRuntimeException(String.format("Could not verify storage policy compliance against storage pool %s due to exception %s", destPool.getUuid(), e.getMessage()));
+            }
+        }
+
         DiskOfferingVO newDiskOffering = retrieveAndValidateNewDiskOffering(cmd);
         validateConditionsToReplaceDiskOfferingOfVolume(vol, newDiskOffering, destPool);
         if (vm != null) {

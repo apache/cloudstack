@@ -831,7 +831,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         synchronized (this) {
                             s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
                             VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo, searchExcludedFolders);
-                            vmMo.createDisk(volumeDatastorePath, (long)(volume.getSize() / (1024L * 1024L)), morDatastore, -1);
+                            vmMo.createDisk(volumeDatastorePath, (long)(volume.getSize() / (1024L * 1024L)), morDatastore, -1, null);
                             vmMo.detachDisk(volumeDatastorePath, false);
                         }
                     } finally {
@@ -2497,6 +2497,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
         DataStoreTO primaryStore = volume.getDataStore();
+        String vSphereStoragePolicyId = volume.getvSphereStoragePolicyId();
 
         try {
             VmwareContext context = hostService.getServiceContext(null);
@@ -2534,7 +2535,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                     synchronized (this) {
                         try {
-                            vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
+                            vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey(), vSphereStoragePolicyId);
                             vmMo.detachDisk(volumeDatastorePath, false);
                         }
                         catch (Exception e1) {
@@ -3243,7 +3244,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         Long volumeSizeToUse = volumeSize < dsMo.getDatastoreSummary().getFreeSpace() ? volumeSize : dsMo.getDatastoreSummary().getFreeSpace();
 
-        vmMo.createDisk(vmdkDatastorePath, getMBsFromBytes(volumeSizeToUse), dsMo.getMor(), vmMo.getScsiDeviceControllerKey());
+        vmMo.createDisk(vmdkDatastorePath, getMBsFromBytes(volumeSizeToUse), dsMo.getMor(), vmMo.getScsiDeviceControllerKey(), null);
         vmMo.detachDisk(vmdkDatastorePath, false);
         vmMo.destroy();
     }
