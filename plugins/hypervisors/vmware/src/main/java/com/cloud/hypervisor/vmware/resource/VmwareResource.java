@@ -219,6 +219,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
+import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.StoragepodMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
@@ -289,6 +290,7 @@ import com.vmware.vim25.HostInternetScsiHba;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
+import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PerfCounterInfo;
@@ -1798,6 +1800,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VirtualMachineFileInfo existingVmFileInfo = null;
         VirtualMachineFileLayoutEx existingVmFileLayout = null;
         List<DatastoreMO> existingDatastores = new ArrayList<DatastoreMO>();
+        String diskStoragePolicyId = null;
+        String vmStoragePolicyId = null;
+        VirtualMachineDefinedProfileSpec diskProfileSpec = null;
+        VirtualMachineDefinedProfileSpec vmProfileSpec = null;
+
 
         DeployAsIsInfoTO deployAsIsInfo = vmSpec.getDeployAsIsInfo();
         boolean deployAsIs = deployAsIsInfo != null;
@@ -2218,8 +2225,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1);
 
-                    if (vol.getType() == Volume.Type.ROOT)
+                    diskStoragePolicyId = volumeTO.getvSphereStoragePolicyId();
+                    if (!StringUtils.isEmpty(diskStoragePolicyId)) {
+                        PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(context);
+                        diskProfileSpec = profMgrMo.getProfileSpec(diskStoragePolicyId);
+                        deviceConfigSpecArray[i].getProfile().add(diskProfileSpec);
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug(String.format("Adding vSphere storage profile: %s to virtual disk [%s]", diskStoragePolicyId, _gson.toJson(device)));
+                        }
+                    }
+                    if (vol.getType() == Volume.Type.ROOT) {
                         rootDiskTO = vol;
+                        vmStoragePolicyId = diskStoragePolicyId;
+                        vmProfileSpec = diskProfileSpec;
+                    }
                     deviceConfigSpecArray[i].setDevice(device);
                     deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
@@ -2393,6 +2412,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 setBootOptions(vmSpec, bootMode, vmConfigSpec);
             }
 
+            if (!StringUtils.isEmpty(vmStoragePolicyId)) {
+                vmConfigSpec.getVmProfile().add(vmProfileSpec);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("Configuring the VM %s with storage policy: %s", vmInternalCSName, vmStoragePolicyId));
+                }
+            }
             //
             // Configure VM
             //

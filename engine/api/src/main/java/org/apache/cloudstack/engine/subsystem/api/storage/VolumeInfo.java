@@ -87,4 +87,6 @@ public interface VolumeInfo extends DataObject, Volume {
     boolean isDeployAsIs();
 
     String getDeployAsIsConfiguration();
+
+    public String getvSphereStoragePolicyId();
 }

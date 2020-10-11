@@ -2052,6 +2052,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
         DataStoreTO primaryStore = volumeTO.getDataStore();
         String volumePath = volumeTO.getPath();
+        String storagePolicyId = volumeTO.getvSphereStoragePolicyId();
 
         String vmdkPath = isManaged ? resource.getVmdkPath(volumePath) : null;
 
@@ -2193,7 +2194,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     diskController = vmMo.getRecommendedDiskController(null);
                 }
 
-                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController);
+                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId);
                 VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, dsMo.getName());
                 chainInfo = _gson.toJson(diskInfo);

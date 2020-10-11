@@ -105,6 +105,7 @@ import com.vmware.vim25.VirtualMachineSnapshotInfo;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
+import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 
 import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -1293,10 +1294,10 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs) throws Exception {
-        attachDisk(vmdkDatastorePathChain, morDs, null);
+        attachDisk(vmdkDatastorePathChain, morDs, null, null);
     }
 
-    public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController) throws Exception {
+    public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController, String storagePolicyId) throws Exception {
 
         if(s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
@@ -1337,7 +1338,14 @@ public class VirtualMachineMO extends BaseMO {
 
             deviceConfigSpec.setDevice(newDisk);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-
+            if (!StringUtils.isEmpty(storagePolicyId)) {
+                PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(getContext());
+                VirtualMachineDefinedProfileSpec diskProfileSpec = profMgrMo.getProfileSpec(storagePolicyId);
+                deviceConfigSpec.getProfile().add(diskProfileSpec);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Adding vSphere storage profile: %s to volume [%s]", storagePolicyId, vmdkDatastorePathChain[0]));
+                }
+            }
             reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
             ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);

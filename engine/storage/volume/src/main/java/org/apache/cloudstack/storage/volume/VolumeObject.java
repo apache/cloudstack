@@ -20,12 +20,18 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.vm.VmDetailConstants;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -81,9 +87,17 @@ public class VolumeObject implements VolumeInfo {
     VMTemplateDao templateDao;
     @Inject
     VolumeDetailsDao volumeDetailsDao;
+    @Inject
+    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    DiskOfferingDetailsDao diskOfferingDetailsDao;
+    @Inject
+    VsphereStoragePolicyDao vsphereStoragePolicyDao;
+
     private Object payload;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
+    private String vSphereStoragePolicyId;
 
     public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -778,6 +792,29 @@ public class VolumeObject implements VolumeInfo {
         }
         this.processEventOnly(event);
 
+    }
+
+    public String getvSphereStoragePolicyId() {
+        if (StringUtils.isEmpty(vSphereStoragePolicyId)) {
+            if (Volume.Type.ROOT == getVolumeType()) {
+                Long vmId = volumeVO.getInstanceId();
+                if (vmId != null) {
+                    VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
+                    String storagePolicyVOid = serviceOfferingDetailsDao.getDetail(vm.getServiceOfferingId(),
+                            ApiConstants.STORAGE_POLICY);
+                    VsphereStoragePolicyVO vsphereStoragePolicyVO = vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyVOid));
+                    vSphereStoragePolicyId = vsphereStoragePolicyVO.getPolicyId();
+
+                }
+            } else {
+                String storagePolicyVOid = diskOfferingDetailsDao.getDetail(volumeVO.getDiskOfferingId(),
+                        ApiConstants.STORAGE_POLICY);
+                VsphereStoragePolicyVO vsphereStoragePolicyVO = vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyVOid));
+                vSphereStoragePolicyId = vsphereStoragePolicyVO.getPolicyId();
+
+            }
+        }
+        return vSphereStoragePolicyId;
     }
 
     @Override

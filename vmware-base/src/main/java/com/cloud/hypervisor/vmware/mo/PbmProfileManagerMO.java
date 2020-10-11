@@ -27,6 +27,7 @@ import com.vmware.pbm.PbmProfileResourceType;
 import com.vmware.pbm.PbmProfileResourceTypeEnum;
 import com.vmware.vim25.ManagedObjectReference;
 
+import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import org.apache.log4j.Logger;
 
 import java.util.Collections;
@@ -89,6 +90,15 @@ public class PbmProfileManagerMO extends BaseMO {
         resourceType.setResourceType(PbmProfileResourceTypeEnum.STORAGE.value());
         return resourceType;
     }
+
+
+    public VirtualMachineDefinedProfileSpec getProfileSpec(String profileId) throws Exception {
+        VirtualMachineDefinedProfileSpec profileSpec = new VirtualMachineDefinedProfileSpec();
+        PbmProfile profile = getStorageProfile(profileId);
+        profileSpec.setProfileId(profile.getProfileId().getUniqueId());
+        return profileSpec;
+    }
+
 }
 
 
