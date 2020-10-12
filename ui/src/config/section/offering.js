@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import store from '@/store'
 
 export default {
   name: 'offering',
@@ -29,7 +30,14 @@ export default {
       permission: ['listServiceOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created'],
+      details: () => {
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created']
+        if (store.getters.apis.createServiceOffering &&
+          store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
+          fields.splice(6, 0, 'vspherestoragepolicy')
+        }
+        return fields
+      },
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -111,7 +119,14 @@ export default {
       permission: ['listDiskOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'disksize', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'tags', 'domain', 'zone', 'created'],
+      details: () => {
+        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'tags', 'domain', 'zone', 'created']
+        if (store.getters.apis.createDiskOffering &&
+          store.getters.apis.createDiskOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
+          fields.splice(6, 0, 'vspherestoragepolicy')
+        }
+        return fields
+      },
       related: [{
         name: 'volume',
         title: 'label.volumes',

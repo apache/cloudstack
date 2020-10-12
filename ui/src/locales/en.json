@@ -2295,6 +2295,7 @@
 "label.vsmusername": "Nexus 1000v Username",
 "label.vsmusername.req": "Nexus 1000v Username",
 "label.vsphere.managed": "vSphere Managed",
+"label.vspherestoragepolicy": "vSphere Storage Policy",
 "label.vswitch.name": "vSwitch Name",
 "label.vswitch.type": "vSwitch Type",
 "label.vswitchguestname": "Guest Traffic vSwitch Name",
