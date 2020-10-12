@@ -69,6 +69,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -326,6 +327,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
 
         VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
         Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(0l);
+        Mockito.when(srcVolumeInfo.getVolumeType()).thenReturn(Volume.Type.ROOT);
 
         StoragePool srcStoragePool = Mockito.mock(StoragePool.class);
 

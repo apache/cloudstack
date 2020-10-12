@@ -1900,13 +1900,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 throw new CloudRuntimeException(errMsg);
             }
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             errMsg = "Copy operation failed in 'StorageSystemDataMotionStrategy.copyAsync': " + ex.getMessage();
-
+            LOGGER.error(errMsg, ex);
             throw new CloudRuntimeException(errMsg);
-        }
-        finally {
+        } finally {
             CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(errMsg);
 
             CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
