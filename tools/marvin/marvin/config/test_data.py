@@ -1995,7 +1995,8 @@ test_data = {
             "format": "qcow2",
             "hypervisor": "kvm",
             "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
+            #"url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
+            "url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/systemvmtemplate-kvm.qcow2.bz2",
             "requireshvm": "True",
             "ispublic": "True",
             "isextractable": "True"

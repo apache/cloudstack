@@ -60,6 +60,7 @@ import com.cloud.network.Network;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -500,6 +501,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 (Network.GuestType.Isolated.equals(network.getGuestType()) || kubernetesCluster.getMasterNodeCount() > 1)) { // Shared network, single-master cluster won't have an IP yet
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster" , kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
+        // Allow account creating the kubernetes cluster to access systemVM template
+        LaunchPermissionVO launchPermission =  new LaunchPermissionVO(clusterTemplate.getId(), owner.getId());
+        launchPermissionDao.persist(launchPermission);
+
         List<UserVm> clusterVMs = new ArrayList<>();
         UserVm k8sMasterVM = null;
         try {
@@ -566,6 +571,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+        // remove launch permissions
+        deleteTemplateLaunchPermission();
         return true;
     }
 

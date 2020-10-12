@@ -43,6 +43,8 @@ setup_k8s_node() {
     public_ip=`getPublicIp`
     echo "$public_ip $NAME" >> /etc/hosts
 
+    echo "export PATH='$PATH:/opt/bin/'">> ~/.bashrc
+
     disable_rpfilter
     enable_fwding 1
     enable_irqbalance 0

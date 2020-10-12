@@ -55,6 +55,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
@@ -117,6 +118,8 @@ public class KubernetesClusterActionWorker {
     protected VlanDao vlanDao;
     @Inject
     protected VirtualMachineManager itMgr;
+    @Inject
+    protected LaunchPermissionDao launchPermissionDao;
 
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
@@ -191,11 +194,19 @@ public class KubernetesClusterActionWorker {
         throw new CloudRuntimeException(message, e);
     }
 
+    protected void deleteTemplateLaunchPermission() {
+        if (clusterTemplate != null && owner != null) {
+            LOGGER.info("Removing launch permission for systemVM template");
+            launchPermissionDao.removePermissions(clusterTemplate.getId(), Collections.singletonList(owner.getId()));
+        }
+    }
+
     protected void logTransitStateAndThrow(final Level logLevel, final String message, final Long kubernetesClusterId, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
         logMessage(logLevel, message, e);
         if (kubernetesClusterId != null && event != null) {
             stateTransitTo(kubernetesClusterId, event);
         }
+        deleteTemplateLaunchPermission();
         if (e == null) {
             throw new CloudRuntimeException(message);
         }

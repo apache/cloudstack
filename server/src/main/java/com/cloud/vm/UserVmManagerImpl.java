@@ -504,8 +504,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private ResourceTagDao resourceTagDao;
     @Inject
     private TemplateOVFPropertiesDao templateOVFPropertiesDao;
-//    @Inject
-//    public KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
+
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;

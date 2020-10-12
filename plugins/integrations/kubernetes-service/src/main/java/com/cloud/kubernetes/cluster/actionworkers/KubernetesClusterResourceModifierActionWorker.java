@@ -70,6 +70,7 @@ import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -117,6 +118,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected VMInstanceDao vmInstanceDao;
     @Inject
     protected UserVmManager userVmManager;
+    @Inject
+    protected LaunchPermissionDao launchPermissionDao;
 
     protected String kubernetesClusterNodeNamePrefix;
 
