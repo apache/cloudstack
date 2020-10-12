@@ -155,7 +155,11 @@ export default {
         }).catch(error => {
           console.log(error)
         })
-        this.loading = false
+        setTimeout(() => {
+          this.$message.loading({ content: this.$t('label.migrating.data'), duration: 1 })
+          this.loading = false
+          this.closeAction()
+        }, 200)
       })
     },
     migrateData (args, title) {
@@ -163,6 +167,13 @@ export default {
         api('migrateSecondaryStorageData', args).then(async json => {
           const jobId = json.migratesecondarystoragedataresponse.jobid
           if (jobId) {
+            this.$store.dispatch('AddAsyncJob', {
+              title: title,
+              jobid: jobId,
+              description: this.$t('message.data.migration.progress'),
+              status: 'progress',
+              silent: true
+            })
             const result = await this.pollJob(jobId, title)
             if (result.jobstatus === 2) {
               reject(result.jobresult.errortext)
@@ -183,13 +194,6 @@ export default {
             if (result.jobstatus === 0) {
               return
             }
-            this.$store.dispatch('AddAsyncJob', {
-              title: title,
-              jobid: jobId,
-              description: 'imagestore',
-              status: 'progress',
-              silent: true
-            })
             clearInterval(asyncJobInterval)
             resolve(result)
           })
