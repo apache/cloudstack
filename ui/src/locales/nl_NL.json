@@ -926,6 +926,7 @@
 "label.isolatedpvlanid": "Secundair Geisoleerd VLAN ID",
 "label.isolation.method": "Isolatie methode",
 "label.isolation.mode": "Isolatie Modus",
+"label.isolationmethod": "Isolatie methode",
 "label.isolationmethods": "Isolatie methode",
 "label.isolationuri": "Isolatie URI",
 "label.isoname": "Gekoppelde ISO",

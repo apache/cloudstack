@@ -926,6 +926,7 @@
 "label.isolatedpvlanid": "Sekund\u00e6r Isolert VLAN ID",
 "label.isolation.method": "Isolasjonsmetode",
 "label.isolation.mode": "Isolasjonsmetode",
+"label.isolationmethod": "Isolasjonsmetode",
 "label.isolationmethods": "Isolasjonsmetode",
 "label.isolationuri": "Isolasjons URI",
 "label.isoname": "Tilknyttet ISO",

@@ -925,6 +925,7 @@
 "label.isolatedpvlanid": "\u5206\u96e2\u3055\u308c\u305f\u30bb\u30ab\u30f3\u30c0\u30ea VLAN ID",
 "label.isolation.method": "\u5206\u96e2\u65b9\u6cd5",
 "label.isolation.mode": "\u5206\u96e2\u30e2\u30fc\u30c9",
+"label.isolationmethod": "\u5206\u96e2\u65b9\u6cd5",
 "label.isolationmethods": "\u5206\u96e2\u65b9\u6cd5",
 "label.isolationuri": "\u5206\u96e2 URI",
 "label.isoname": "\u30a2\u30bf\u30c3\u30c1\u3055\u308c\u305f ISO",

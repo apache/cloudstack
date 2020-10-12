@@ -1133,6 +1133,7 @@
 "label.isolatedpvlantype": "Secondary VLAN Type",
 "label.isolation.method": "Isolation method",
 "label.isolation.mode": "Isolation Mode",
+"label.isolationmethod": "Isolation method",
 "label.isolationmethods": "Isolation method",
 "label.isolationuri": "Isolation URI",
 "label.isoname": "Attached ISO",

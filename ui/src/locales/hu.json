@@ -925,6 +925,7 @@
 "label.isolatedpvlanid": "M\u00e1sodlagos izol\u00e1lt VLAN ID",
 "label.isolation.method": "Izol\u00e1ci\u00f3 m\u00f3dszer",
 "label.isolation.mode": "Izol\u00e1ci\u00f3 m\u00f3d",
+"label.isolationmethod": "Izol\u00e1ci\u00f3 m\u00f3dszer",
 "label.isolationmethods": "Izol\u00e1ci\u00f3 m\u00f3dszer",
 "label.isolationuri": "Izol\u00e1ci\u00f3 URI",
 "label.isoname": "Kapcsolt ISO",

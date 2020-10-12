@@ -925,6 +925,7 @@
 "label.isolatedpvlanid": "Secondary Isolated VLAN ID",
 "label.isolation.method": "\ubd84\ub9ac \ubc29\ubc95",
 "label.isolation.mode": "\ubd84\ub9ac \ubaa8\ub4dc",
+"label.isolationmethod": "\ubd84\ub9ac \ubc29\ubc95",
 "label.isolationmethods": "\ubd84\ub9ac \ubc29\ubc95",
 "label.isolationuri": "Isolation URI",
 "label.isoname": "\uc5f0\uacb0 ISO",

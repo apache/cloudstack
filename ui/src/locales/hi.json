@@ -216,6 +216,7 @@
 "label.isextractable": "Extractable",
 "label.isolatedpvlanid": "माध्यमिक पृथक वीएलएएन आईडी",
 "label.isolatedpvlantype": "माध्यमिक पृथक वीएलएएन प्रकार",
+"label.isolationmethod": "अलगाव विधि",
 "label.isolationmethods": "अलगाव विधि",
 "label.isolationuri": "अलगाव URI",
 "label.isoname": "संलग्न आईएसओ",

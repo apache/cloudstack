@@ -926,6 +926,7 @@
 "label.isolatedpvlanid": "Secondary Isolated VLAN ID",
 "label.isolation.method": "Isolation method",
 "label.isolation.mode": "Isolation Mode",
+"label.isolationmethod": "Isolation method",
 "label.isolationmethods": "Isolation method",
 "label.isolationuri": "\u0639\u0632\u0644 \u0627\u0644\u0631\u0627\u0628\u0637",
 "label.isoname": "Attached ISO",

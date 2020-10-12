@@ -940,6 +940,7 @@
 "label.isolatedpvlanid": "ID de VLAN Aislada Secundaria",
 "label.isolation.method": "M\u00e9todo de aislamiento",
 "label.isolation.mode": "modo de aislamiento",
+"label.isolationmethod": "M\u00e9todo de aislamiento",
 "label.isolationmethods": "M\u00e9todo de aislamiento",
 "label.isolationuri": "URI de aislamiento",
 "label.isoname": "ISO Conectada",

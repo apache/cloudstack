@@ -926,6 +926,7 @@
 "label.isolatedpvlanid": "VLAN ID isol\u00e9 secondaire",
 "label.isolation.method": "Isolation",
 "label.isolation.mode": "Mode d'isolation",
+"label.isolationmethod": "Isolation",
 "label.isolationmethods": "Isolation",
 "label.isolationuri": "URI d'isolation",
 "label.isoname": "Image ISO attach\u00e9e",
