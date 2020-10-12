@@ -2670,13 +2670,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         List<VirtualDisk> virtualDisks = vmMo.getVirtualDisks();
                         List<String> managedDatastoreNames = getManagedDatastoreNamesFromVirtualDisks(virtualDisks);
 
-                        List<String> detachedDisks = vmMo.detachAllDisksExcept(vol.getPath(), diskInfo != null ? diskInfo.getDiskDeviceBusName() : null);
-                        VmwareStorageLayoutHelper.moveVolumeToRootFolder(new DatacenterMO(context, morDc), detachedDisks);
-
                         // let vmMo.destroy to delete volume for us
                         // vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
 
                         if (isManaged) {
+                            List<String> detachedDisks = vmMo.detachAllDisksExcept(vol.getPath(), diskInfo != null ? diskInfo.getDiskDeviceBusName() : null);
+                            VmwareStorageLayoutHelper.moveVolumeToRootFolder(new DatacenterMO(context, morDc), detachedDisks);
                             vmMo.unregisterVm();
                         }
                         else {
