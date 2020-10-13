@@ -1024,7 +1024,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("serviceOfferingId", serviceOffId);
         }
 
-        if(securityGroupId != null) {
+        if (securityGroupId != null) {
             sc.setParameters("securityGroupId", securityGroupId);
         }
 
@@ -1032,7 +1032,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("display", display);
         }
 
-        if (display != null) {
+        if (isHaEnabled != null) {
             sc.setParameters("haEnabled", isHaEnabled);
         }
 
