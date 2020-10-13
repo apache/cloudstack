@@ -253,60 +253,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         logTransitStateAndThrow(logLevel, message, null, null, ex);
     }
 
-    private boolean isKubernetesServiceTemplateConfigured(DataCenter zone) {
-        // Check Kubernetes VM template for zone
-        boolean isHyperVAvailable = false;
-        boolean isKVMAvailable = false;
-        boolean isVMwareAvailable = false;
-        boolean isXenserverAvailable = false;
-        List<ClusterVO> clusters = clusterDao.listByZoneId(zone.getId());
-        for (ClusterVO clusterVO : clusters) {
-            if (Hypervisor.HypervisorType.Hyperv.equals(clusterVO.getHypervisorType())) {
-                isHyperVAvailable = true;
-            }
-            if (Hypervisor.HypervisorType.KVM.equals(clusterVO.getHypervisorType())) {
-                isKVMAvailable = true;
-            }
-            if (Hypervisor.HypervisorType.VMware.equals(clusterVO.getHypervisorType())) {
-                isVMwareAvailable = true;
-            }
-            if (Hypervisor.HypervisorType.XenServer.equals(clusterVO.getHypervisorType())) {
-                isXenserverAvailable = true;
-            }
-        }
-        List<Pair<String, String>> templatePairs = new ArrayList<>();
-        if (isHyperVAvailable) {
-            templatePairs.add(new Pair<>(KubernetesClusterHyperVTemplateName.key(), KubernetesClusterHyperVTemplateName.value()));
-        }
-        if (isKVMAvailable) {
-            templatePairs.add(new Pair<>(KubernetesClusterKVMTemplateName.key(), KubernetesClusterKVMTemplateName.value()));
-        }
-        if (isVMwareAvailable) {
-            templatePairs.add(new Pair<>(KubernetesClusterVMwareTemplateName.key(), KubernetesClusterVMwareTemplateName.value()));
-        }
-        if (isXenserverAvailable) {
-            templatePairs.add(new Pair<>(KubernetesClusterXenserverTemplateName.key(), KubernetesClusterXenserverTemplateName.value()));
-        }
-        for (Pair<String, String> templatePair : templatePairs) {
-            String templateKey = templatePair.first();
-            String templateName = templatePair.second();
-            if (Strings.isNullOrEmpty(templateName)) {
-                LOGGER.warn(String.format("Global setting %s is empty. Template name need to be specified for Kubernetes service to function", templateKey));
-                return false;
-            }
-            final VMTemplateVO template = templateDao.findValidByTemplateName(templateName);
-            if (template == null) {
-                LOGGER.warn(String.format("Unable to find the template %s to be used for provisioning Kubernetes cluster nodes", templateName));
-                return false;
-            }
-            if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
-                LOGGER.warn(String.format("The template ID: %s, name: %s is not available for use in zone ID: %s provisioning Kubernetes cluster nodes", template.getUuid(), templateName, zone.getUuid()));
-                return false;
-            }
-        }
-        return true;
-    }
-
     private boolean isKubernetesServiceNetworkOfferingConfigured(DataCenter zone) {
         // Check network offering
         String networkOfferingName = KubernetesClusterNetworkOffering.value();
@@ -1487,10 +1433,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
                 KubernetesServiceEnabled,
-                KubernetesClusterHyperVTemplateName,
-                KubernetesClusterKVMTemplateName,
-                KubernetesClusterVMwareTemplateName,
-                KubernetesClusterXenserverTemplateName,
                 KubernetesClusterNetworkOffering,
                 KubernetesClusterStartTimeout,
                 KubernetesClusterScaleTimeout,

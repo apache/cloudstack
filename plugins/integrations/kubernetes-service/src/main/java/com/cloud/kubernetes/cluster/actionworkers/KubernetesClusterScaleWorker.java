@@ -46,6 +46,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
@@ -349,6 +350,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         List<UserVm> clusterVMs = new ArrayList<>();
         List<Long> clusterVMIds = new ArrayList<>();
+        LaunchPermissionVO launchPermission =  new LaunchPermissionVO(clusterTemplate.getId(), owner.getId());
+        launchPermissionDao.persist(launchPermission);
         try {
             clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), publicIpAddress);
         } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
@@ -368,6 +371,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         boolean readyNodesCountValid = KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(kubernetesClusterVO, publicIpAddress, sshPort,
                 CLUSTER_NODE_VM_USER, sshKeyFile, scaleTimeoutTime, 15000);
         detachIsoKubernetesVMs(clusterVMs);
+        deleteTemplateLaunchPermission();
         if (!readyNodesCountValid) { // Scaling failed
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling unsuccessful for Kubernetes cluster ID: %s as it does not have desired number of nodes in ready state", kubernetesCluster.getUuid()));
         }

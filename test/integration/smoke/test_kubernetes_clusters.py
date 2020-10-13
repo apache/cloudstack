@@ -63,7 +63,6 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
-        cls.cks_template_name_key = "cloud.kubernetes.cluster.template.name." + cls.hypervisor.lower()
 
         cls.hypervisorNotSupported = False
         if cls.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
@@ -82,8 +81,6 @@ class TestKubernetesCluster(cloudstackTestCase):
                                       "true")
                 cls.restartServer()
 
-            cls.cks_template = None
-            cls.initial_configuration_cks_template_name = None
             cls.cks_service_offering = None
 
             if cls.setup_failed == False:
@@ -120,20 +117,6 @@ class TestKubernetesCluster(cloudstackTestCase):
                         (cls.services["cks_kubernetes_versions"]["1.16.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.3"]["url"], e))
 
             if cls.setup_failed == False:
-                cls.cks_template = cls.getKubernetesTemplate()
-                if cls.cks_template == FAILED:
-                    assert False, "getKubernetesTemplate() failed to return template for hypervisor %s" % cls.hypervisor
-                    cls.setup_failed = True
-                else:
-                    cls._cleanup.append(cls.cks_template)
-
-            if cls.setup_failed == False:
-                cls.initial_configuration_cks_template_name = Configurations.list(cls.apiclient,
-                                                                                  name=cls.cks_template_name_key)[0].value
-                Configurations.update(cls.apiclient,
-                                      cls.cks_template_name_key,
-                                      cls.cks_template.name)
-
                 cks_offering_data = cls.services["cks_service_offering"]
                 cks_offering_data["name"] = 'CKS-Instance-' + random_gen()
                 cls.cks_service_offering = ServiceOffering.create(
@@ -161,13 +144,6 @@ class TestKubernetesCluster(cloudstackTestCase):
                 version_delete_failed = True
                 cls.debug("Error: Exception during cleanup for added Kubernetes supported versions: %s" % e)
         try:
-            # Restore original CKS template
-            if cls.cks_template != None:
-                cls.cks_template.delete(cls.apiclient)
-            if cls.hypervisorNotSupported == False and cls.initial_configuration_cks_template_name != None:
-                Configurations.update(cls.apiclient,
-                                      cls.cks_template_name_key,
-                                      cls.initial_configuration_cks_template_name)
             # Restore CKS enabled
             if cls.initial_configuration_cks_enabled not in ["true", True]:
                 cls.debug("Restoring Kubernetes Service enabled value")
@@ -216,41 +192,6 @@ class TestKubernetesCluster(cloudstackTestCase):
             return True
         except Exception:
             return False
-
-    @classmethod
-    def getKubernetesTemplate(cls, cks_templates=None):
-
-        if cks_templates is None:
-            cks_templates = cls.services["cks_templates"]
-
-        hypervisor = cls.hypervisor.lower()
-
-        if hypervisor not in cks_templates.keys():
-            cls.debug("Provided hypervisor has no CKS template")
-            return FAILED
-
-        cks_template = cks_templates[hypervisor]
-
-        cmd = listTemplates.listTemplatesCmd()
-        cmd.name = cks_template['name']
-        cmd.templatefilter = 'all'
-        cmd.zoneid = cls.zone.id
-        cmd.hypervisor = hypervisor
-        templates = cls.apiclient.listTemplates(cmd)
-
-        if validateList(templates)[0] != PASS:
-            details = None
-            if hypervisor in ["vmware"] and "details" in cks_template:
-                details = cks_template["details"]
-            template = Template.register(cls.apiclient, cks_template, zoneid=cls.zone.id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
-            template.download(cls.apiclient)
-            return template
-
-        for template in templates:
-            if template.isready and template.ispublic:
-                return Template(template.__dict__)
-
-        return FAILED
 
     @classmethod
     def waitForKubernetesSupportedVersionIsoReadyState(cls, version_id, retries=30, interval=60):
