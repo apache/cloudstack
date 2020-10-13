@@ -503,7 +503,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     @Override
     public Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter) {
         List<TemplateJoinVO> objects = searchIncludingRemoved(sc, filter, null, false);
-        Integer count = getCount(sc);
+        Integer count = getCountIncludingRemoved(sc);
         return new Pair<List<TemplateJoinVO>, Integer>(objects, count);
     }
 
