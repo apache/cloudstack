@@ -70,6 +70,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.Arrays;
 
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
@@ -78,8 +79,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     private static final Logger status_logger = Logger.getLogger(Status.class);
     private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
-    private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join host_tags on host.id = host_tags.host_id and host_tags.tag = ?";
+    private static final String LIST_CLUSTERID_FOR_HOST_TAG = "SELECT cluster_id FROM host JOIN (%s) AS tags ON host.id = tags.host_id;";
 
+    private static final String LIST_HOST_IDS_BY_COMPUTETAGS = "SELECT host_id, COUNT(tag) AS tag_count "
+                                                             + "FROM host_tags "
+                                                             + "WHERE tag IN(%s) "
+                                                             + "GROUP BY host_id "
+                                                             + "HAVING tag_count = %s ";
+    private static final String SEPARATOR = ",";
+    
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
     protected SearchBuilder<HostVO> IdStatusSearch;
@@ -704,11 +712,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag) {
-
-        SearchBuilder<HostTagVO> hostTagSearch = _hostTagsDao.createSearchBuilder();
-        HostTagVO tagEntity = hostTagSearch.entity();
-        hostTagSearch.and("tag", tagEntity.getTag(), SearchCriteria.Op.EQ);
-
         SearchBuilder<HostVO> hostSearch = createSearchBuilder();
         HostVO entity = hostSearch.entity();
         hostSearch.and("type", entity.getType(), SearchCriteria.Op.EQ);
@@ -717,10 +720,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         hostSearch.and("cluster", entity.getClusterId(), SearchCriteria.Op.EQ);
         hostSearch.and("status", entity.getStatus(), SearchCriteria.Op.EQ);
         hostSearch.and("resourceState", entity.getResourceState(), SearchCriteria.Op.EQ);
-        hostSearch.join("hostTagSearch", hostTagSearch, entity.getId(), tagEntity.getHostId(), JoinBuilder.JoinType.INNER);
+        
 
         SearchCriteria<HostVO> sc = hostSearch.create();
-        sc.setJoinParameters("hostTagSearch", "tag", hostTag);
         sc.setParameters("type", type.toString());
         if (podId != null) {
             sc.setParameters("pod", podId);
@@ -732,7 +734,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("status", Status.Up.toString());
         sc.setParameters("resourceState", ResourceState.Enabled.toString());
 
-        return listBy(sc);
+        List<HostVO> tmpHosts = listBy(sc);
+        List<HostVO> correctHostsByHostTags = new ArrayList();
+        List<Long> hostIdsByComputeOffTags = findHostByComputeOfferings(hostTag);
+
+        tmpHosts.forEach((host) -> { if(hostIdsByComputeOffTags.contains(host.getId())) correctHostsByHostTags.add(host);});
+
+        return correctHostsByHostTags;
     }
 
     @Override
@@ -1147,26 +1155,67 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<Long> listClustersByHostTag(String hostTagOnOffering) {
+    public List<Long> listClustersByHostTag(String computeOfferingTags) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
+        String sql = this.LIST_CLUSTERID_FOR_HOST_TAG;
         PreparedStatement pstmt = null;
-        List<Long> result = new ArrayList<Long>();
-        StringBuilder sql = new StringBuilder(LIST_CLUSTERID_FOR_HOST_TAG);
-        // during listing the clusters that cross the threshold
-        // we need to check with disabled thresholds of each cluster if not defined at cluster consider the global value
+        List<Long> result = new ArrayList();
+        List<String> tags = Arrays.asList(computeOfferingTags.split(this.SEPARATOR));
+        String subselect = getHostIdsByComputeTags(tags);
+        sql = String.format(sql, subselect);
+        
         try {
-            pstmt = txn.prepareAutoCloseStatement(sql.toString());
-            pstmt.setString(1, hostTagOnOffering);
+            pstmt = txn.prepareStatement(sql);
+            
+            for(int i = 0; i < tags.size(); i++){
+                pstmt.setString(i+1, tags.get(i));
+            }
+            //pstmt = txn.prepareAutoCloseStatement();
             ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                result.add(rs.getLong(1));
+            while (rs.next()) {     
+                result.add(rs.getLong(1));             
+            }        
+            pstmt.close();
+            if(result.isEmpty()){
+                throw new CloudRuntimeException("No suitable host found for follow compute offering tags: " + computeOfferingTags);
             }
             return result;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + sql, e);
-        } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
+    
+    private List<Long> findHostByComputeOfferings(String computeOfferingTags){
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList();
+        List<String> tags = Arrays.asList(computeOfferingTags.split(this.SEPARATOR));
+        String select = getHostIdsByComputeTags(tags);
+        try {
+            pstmt = txn.prepareStatement(select);
+            
+            for(int i = 0; i < tags.size(); i++){
+                pstmt.setString(i+1, tags.get(i));
+            }
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {     
+                result.add(rs.getLong(1));             
+            }
+            pstmt.close();
+            if(result.isEmpty()){
+                throw new CloudRuntimeException("No suitable host found for follow compute offering tags: " + computeOfferingTags);
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + select, e);
+        } 
+    }
+    
+    private String getHostIdsByComputeTags(List<String> offeringTags){
+        List<String> questionMarks = new ArrayList();
+        offeringTags.forEach((tag) -> { questionMarks.add("?"); });
+        return String.format(this.LIST_HOST_IDS_BY_COMPUTETAGS, String.join(",", questionMarks),questionMarks.size());
     }
 
     @Override
