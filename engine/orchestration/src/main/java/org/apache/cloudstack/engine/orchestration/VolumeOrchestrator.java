@@ -860,7 +860,26 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     template, vm, owner, deviceId, configurationId);
             profiles.add(diskProfile);
         }
+
+        handleRootDiskControllerTpeForDeployAsIs(templateAsIsDisks, vm);
         return profiles;
+    }
+
+    private void handleRootDiskControllerTpeForDeployAsIs(List<DatadiskTO> disksAsIs, VirtualMachine vm) {
+        if (CollectionUtils.isNotEmpty(disksAsIs)) {
+            String diskControllerSubType = disksAsIs.get(0).getDiskControllerSubType();
+            if (StringUtils.isNotBlank(diskControllerSubType)) {
+                long vmId = vm.getId();
+                UserVmDetailVO detail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.ROOT_DISK_CONTROLLER);
+                if (detail != null) {
+                    detail.setValue(diskControllerSubType);
+                    userVmDetailsDao.update(detail.getId(), detail);
+                } else {
+                    detail = new UserVmDetailVO(vmId, VmDetailConstants.ROOT_DISK_CONTROLLER, diskControllerSubType, false);
+                    userVmDetailsDao.persist(detail);
+                }
+            }
+        }
     }
 
     private ImageFormat getSupportedImageFormatForCluster(HypervisorType hyperType) {
