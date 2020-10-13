@@ -7165,11 +7165,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             VirtualMachineMO vmMo = findVmOnDatacenter(context, hyperHost, vol);
 
-            if (vmMo != null && vmMo.isTemplate()) {
+            if (vmMo != null) {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Destroy template volume " + vol.getPath());
                 }
-                vmMo.markAsVirtualMachine(hyperHost.getHyperHostOwnerResourcePool(), hyperHost.getMor());
+                if (vmMo.isTemplate()) {
+                    vmMo.markAsVirtualMachine(hyperHost.getHyperHostOwnerResourcePool(), hyperHost.getMor());
+                }
                 vmMo.destroy();
             } else {
                 if (s_logger.isInfoEnabled()) {
