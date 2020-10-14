@@ -2,14 +2,14 @@ package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.network.Network;
 import com.cloud.vm.NicProfile;
-import net.juniper.contrail.api.ApiObjectBase;
-import net.juniper.contrail.api.types.InstanceIp;
-import net.juniper.contrail.api.types.NetworkIpam;
-import net.juniper.contrail.api.types.Project;
-import net.juniper.contrail.api.types.VirtualMachine;
-import net.juniper.contrail.api.types.VirtualMachineInterface;
-import net.juniper.contrail.api.types.VirtualNetwork;
-import net.juniper.contrail.api.types.VnSubnetsType;
+import net.juniper.tungsten.api.ApiObjectBase;
+import net.juniper.tungsten.api.types.InstanceIp;
+import net.juniper.tungsten.api.types.NetworkIpam;
+import net.juniper.tungsten.api.types.Project;
+import net.juniper.tungsten.api.types.VirtualMachine;
+import net.juniper.tungsten.api.types.VirtualMachineInterface;
+import net.juniper.tungsten.api.types.VirtualNetwork;
+import net.juniper.tungsten.api.types.VnSubnetsType;
 import org.apache.cloudstack.network.tungsten.vrouter.Port;
 import org.apache.cloudstack.network.tungsten.vrouter.VRouterApiConnector;
 

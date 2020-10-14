@@ -2,7 +2,7 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import net.juniper.contrail.api.ApiObjectBase;
+import net.juniper.tungsten.api.ApiObjectBase;
 
 public class TungstenAnswer extends Answer {
 

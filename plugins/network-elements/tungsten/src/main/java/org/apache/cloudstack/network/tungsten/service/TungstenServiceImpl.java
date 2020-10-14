@@ -9,19 +9,21 @@ import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.vm.NicProfile;
-import net.juniper.contrail.api.ApiConnector;
-import net.juniper.contrail.api.ApiConnectorFactory;
-import net.juniper.contrail.api.ApiObjectBase;
-import net.juniper.contrail.api.types.Domain;
-import net.juniper.contrail.api.types.InstanceIp;
-import net.juniper.contrail.api.types.MacAddressesType;
-import net.juniper.contrail.api.types.NetworkIpam;
-import net.juniper.contrail.api.types.Project;
-import net.juniper.contrail.api.types.SubnetType;
-import net.juniper.contrail.api.types.VirtualMachine;
-import net.juniper.contrail.api.types.VirtualMachineInterface;
-import net.juniper.contrail.api.types.VirtualNetwork;
-import net.juniper.contrail.api.types.VnSubnetsType;
+import net.juniper.tungsten.api.ApiConnector;
+import net.juniper.tungsten.api.ApiConnectorFactory;
+import net.juniper.tungsten.api.ApiObjectBase;
+import net.juniper.tungsten.api.types.AllocationPoolType;
+import net.juniper.tungsten.api.types.Domain;
+import net.juniper.tungsten.api.types.InstanceIp;
+import net.juniper.tungsten.api.types.IpamSubnetType;
+import net.juniper.tungsten.api.types.MacAddressesType;
+import net.juniper.tungsten.api.types.NetworkIpam;
+import net.juniper.tungsten.api.types.Project;
+import net.juniper.tungsten.api.types.SubnetType;
+import net.juniper.tungsten.api.types.VirtualMachine;
+import net.juniper.tungsten.api.types.VirtualMachineInterface;
+import net.juniper.tungsten.api.types.VirtualNetwork;
+import net.juniper.tungsten.api.types.VnSubnetsType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
@@ -36,6 +38,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class TungstenServiceImpl implements TungstenService {
@@ -107,13 +110,13 @@ public class TungstenServiceImpl implements TungstenService {
     public VnSubnetsType getVnSubnetsType(String ipAllocPoolStart, String ipAllocPoolEnd, String subnetIpPrefix,
                                           int subnetIpPrefixLength, String defaultGateway, boolean isDhcpEnabled, List<String> dnsNameservers,
                                           boolean isIpAddrFromStart) {
-        List<VnSubnetsType.IpamSubnetType.AllocationPoolType> allocationPoolTypes = new ArrayList<>();
+        List<AllocationPoolType> allocationPoolTypes = new ArrayList<>();
         if (ipAllocPoolStart != null && ipAllocPoolEnd != null) {
-            allocationPoolTypes.add(
-                    new VnSubnetsType.IpamSubnetType.AllocationPoolType(ipAllocPoolStart, ipAllocPoolEnd));
+            allocationPoolTypes.add(new AllocationPoolType(ipAllocPoolStart, ipAllocPoolEnd));
         }
-        VnSubnetsType.IpamSubnetType ipamSubnetType = new VnSubnetsType.IpamSubnetType(
-                new SubnetType(subnetIpPrefix, subnetIpPrefixLength), defaultGateway, null, isDhcpEnabled, dnsNameservers,
+        String subnetUuid = UUID.randomUUID().toString();
+        IpamSubnetType ipamSubnetType = new IpamSubnetType(
+                new SubnetType(subnetIpPrefix, subnetIpPrefixLength), defaultGateway, null, subnetUuid, isDhcpEnabled, dnsNameservers,
                 allocationPoolTypes, isIpAddrFromStart, null, null, null);
         return new VnSubnetsType(Arrays.asList(ipamSubnetType), null);
     }
@@ -143,6 +146,7 @@ public class TungstenServiceImpl implements TungstenService {
 
     /**
      * Get the tungsten project that match the project from cloudstack
+     * @return
      */
     @Override
     public Project getTungstenNetworkProject(long accountId, long domainId) throws IOException {
@@ -314,10 +318,10 @@ public class TungstenServiceImpl implements TungstenService {
         VirtualMachineInterface virtualMachineInterface = new VirtualMachineInterface();
         try {
             virtualMachineInterface.setUuid(nicProfile.getUuid());
+            virtualMachineInterface.setParent(project);
             virtualMachineInterface.setName(TungstenUtils.getVmiName(nicProfile.getId()));
             virtualMachineInterface.setVirtualNetwork(vn);
             virtualMachineInterface.setVirtualMachine(vm);
-            virtualMachineInterface.setParent(project);
             MacAddressesType macAddressesType = new MacAddressesType();
             macAddressesType.addMacAddress(nicProfile.getMacAddress());
             virtualMachineInterface.setMacAddresses(macAddressesType);

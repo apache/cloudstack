@@ -32,12 +32,17 @@
 
     <repositories>
         <repository>
-            <id>juniper-contrail</id>
-            <url>https://github.com/Juniper/contrail-maven/raw/master/releases</url>
+            <id>juniper-tungsten-api</id>
+            <url>https://github.com/radu-todirica/tungsten-api/raw/master/releases</url>
         </repository>
     </repositories>
 
     <dependencies>
+        <dependency>
+            <groupId>net.juniper.tungsten</groupId>
+            <artifactId>juniper-tungsten-api</artifactId>
+            <version>2.0</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-api</artifactId>
@@ -113,9 +118,8 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>net.juniper.contrail</groupId>
-            <artifactId>juniper-contrail-api</artifactId>
-            <version>1.2</version>
+            <groupId>com.solidfire.code.gson</groupId>
+            <artifactId>gson</artifactId>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
