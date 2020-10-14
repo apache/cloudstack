@@ -590,7 +590,6 @@ routing_svcs() {
    then
        echo "keepalived conntrackd" >> /var/cache/cloud/enabled_svcs
        echo "dnsmasq" >> /var/cache/cloud/disabled_svcs
-       echo "dnsmasq" >> /var/cache/cloud/disabled_svcs
    else
        echo "dnsmasq" >> /var/cache/cloud/enabled_svcs
        echo "keepalived conntrackd " >> /var/cache/cloud/disabled_svcs
