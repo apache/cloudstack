@@ -919,6 +919,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object affinityGroupId = cmd.getAffinityGroupId();
         Object keyPairName = cmd.getKeyPairName();
         Object serviceOffId = cmd.getServiceOfferingId();
+        Object securityGroupId = cmd.getSecurityGroupId();
+        Object isHaEnabled = cmd.getHaEnabled();
         Object pod = null;
         Object hostId = null;
         Object storageId = null;
@@ -948,6 +950,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (display != null) {
             sb.and("display", sb.entity().isDisplayVm(), SearchCriteria.Op.EQ);
         }
+
+        if (isHaEnabled != null) {
+            sb.and("haEnabled", sb.entity().isHaEnabled(), SearchCriteria.Op.EQ);
+        }
+
+
         if (groupId != null && (Long)groupId != -1) {
             sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
         }
@@ -968,16 +976,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
         }
 
-        if (affinityGroupId != null) {
-            sb.and("affinityGroupId", sb.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
-        }
-
         if (keyPairName != null) {
             sb.and("keyPairName", sb.entity().getKeypairName(), SearchCriteria.Op.EQ);
         }
 
         if (!isRootAdmin) {
             sb.and("displayVm", sb.entity().isDisplayVm(), SearchCriteria.Op.EQ);
+        }
+
+        if (securityGroupId != null) {
+            sb.and("securityGroupId", sb.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
         }
 
         // populate the search criteria with the values passed in
@@ -1016,8 +1024,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("serviceOfferingId", serviceOffId);
         }
 
+        if (securityGroupId != null) {
+            sc.setParameters("securityGroupId", securityGroupId);
+        }
+
         if (display != null) {
             sc.setParameters("display", display);
+        }
+
+        if (isHaEnabled != null) {
+            sc.setParameters("haEnabled", isHaEnabled);
         }
 
         if (ids != null && !ids.isEmpty()) {
