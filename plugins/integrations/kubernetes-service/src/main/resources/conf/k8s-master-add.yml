@@ -227,7 +227,7 @@ write_files:
       Type=simple
       StartLimitInterval=0
       Restart=on-failure
-      ExecStartPre=/usr/bin/curl -k https://127.0.0.1:6443/version
+      ExecStartPre=/usr/bin/curl -k https://{{ k8s_master.join_ip }}:6443/version
       ExecStart=/opt/bin/deploy-kube-system
 
 runcmd:
