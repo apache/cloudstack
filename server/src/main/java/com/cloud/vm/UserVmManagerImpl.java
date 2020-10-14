@@ -261,6 +261,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -510,6 +511,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
     @Inject
     private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
+    @Inject
+    private StorageManager storageMgr;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -6153,6 +6156,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         throw new InvalidParameterValueException("There volume " + volume + " doesn't belong to " + "the virtual machine " + vm + " that has to be migrated");
                     }
                     volToPoolObjectMap.put(Long.valueOf(volume.getId()), Long.valueOf(pool.getId()));
+                }
+                HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+                if (hypervisorType.equals(HypervisorType.VMware)) {
+                    try {
+                        boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(volume), pool);
+                        if (!isStoragePoolStoragepolicyComplaince) {
+                            throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", pool.getUuid(), volume.getUuid()));
+                        }
+                    } catch (StorageUnavailableException e) {
+                        throw new CloudRuntimeException(String.format("Could not verify storage policy compliance against storage pool %s due to exception %s", pool.getUuid(), e.getMessage()));
+                    }
                 }
             }
         }
