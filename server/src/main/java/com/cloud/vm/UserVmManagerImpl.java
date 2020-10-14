@@ -1031,7 +1031,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             newServiceOffering.setDynamicFlag(true);
             validateCustomParameters(newServiceOffering, cmd.getDetails());
             newServiceOffering = _offeringDao.getComputeOffering(newServiceOffering, customParameters);
+        } else {
+            validateOfferingMaxResource(newServiceOffering);
         }
+
         ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
 
         int newCpu = newServiceOffering.getCpu();
@@ -1075,6 +1078,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return userVm;
     }
 
+    private void validateOfferingMaxResource(ServiceOfferingVO offering) {
+        Integer maxCPUCores = VirtualMachineManager.VmServiceOfferingMaxCPUCores.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxCPUCores.value();
+        if (offering.getCpu() > maxCPUCores) {
+            throw new InvalidParameterValueException("Invalid cpu cores value, please choose another service offering with cpu cores between 1 and " + maxCPUCores);
+        }
+        Integer maxRAMSize = VirtualMachineManager.VmServiceOfferingMaxRAMSize.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxRAMSize.value();
+        if (offering.getRamSize() > maxRAMSize) {
+            throw new InvalidParameterValueException("Invalid memory value, please choose another service offering with memory between 32 and " + maxRAMSize + " MB");
+        }
+    }
+
     @Override
     public void validateCustomParameters(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
         //TODO need to validate custom cpu, and memory against min/max CPU/Memory ranges from service_offering_details table
@@ -1084,8 +1098,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 int minCPU = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MIN_CPU_NUMBER), 1);
                 int maxCPU = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MAX_CPU_NUMBER), Integer.MAX_VALUE);
                 int cpuNumber = NumbersUtil.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name()), -1);
-                if (cpuNumber < minCPU || cpuNumber > maxCPU) {
-                    throw new InvalidParameterValueException(String.format("Invalid cpu cores value, specify a value between %d and %d", minCPU, maxCPU));
+                Integer maxCPUCores = VirtualMachineManager.VmServiceOfferingMaxCPUCores.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxCPUCores.value();
+                if (cpuNumber < minCPU || cpuNumber > maxCPU || cpuNumber > maxCPUCores) {
+                    throw new InvalidParameterValueException(String.format("Invalid cpu cores value, specify a value between %d and %d", minCPU, Math.min(maxCPUCores, maxCPU)));
                 }
             } else if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuNumber.name())) {
                 throw new InvalidParameterValueException("The cpu cores of this offering id:" + serviceOffering.getUuid()
@@ -1106,8 +1121,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 int minMemory = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MIN_MEMORY), 32);
                 int maxMemory = NumbersUtil.parseInt(offeringDetails.get(ApiConstants.MAX_MEMORY), Integer.MAX_VALUE);
                 int memory = NumbersUtil.parseInt(customParameters.get(UsageEventVO.DynamicParameters.memory.name()), -1);
-                if (memory < minMemory || memory > maxMemory) {
-                    throw new InvalidParameterValueException(String.format("Invalid memory value, specify a value between %d and %d", minMemory, maxMemory));
+                Integer maxRAMSize = VirtualMachineManager.VmServiceOfferingMaxRAMSize.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxRAMSize.value();
+                if (memory < minMemory || memory > maxMemory || memory > maxRAMSize) {
+                    throw new InvalidParameterValueException(String.format("Invalid memory value, specify a value between %d and %d", minMemory, Math.min(maxRAMSize, maxMemory)));
                 }
             } else if (customParameters.containsKey(UsageEventVO.DynamicParameters.memory.name())) {
                 throw new InvalidParameterValueException("The memory of this offering id:" + serviceOffering.getUuid() + " is not customizable. This is predefined in the template.");
@@ -1135,6 +1151,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             newServiceOffering.setDynamicFlag(true);
             validateCustomParameters(newServiceOffering, customParameters);
             newServiceOffering = _offeringDao.getComputeOffering(newServiceOffering, customParameters);
+        } else {
+            validateOfferingMaxResource(newServiceOffering);
         }
         ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
 
@@ -3461,6 +3479,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             offering.setDynamicFlag(true);
             validateCustomParameters(offering, customParameters);
             offering = _offeringDao.getComputeOffering(offering, customParameters);
+        } else {
+            validateOfferingMaxResource(offering);
         }
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();

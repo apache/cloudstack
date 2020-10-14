@@ -240,6 +240,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
@@ -2340,14 +2341,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 details.put(ApiConstants.MAX_CPU_NUMBER, maxCPU.toString());
             }
         } else {
-            if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > Integer.MAX_VALUE)) {
-                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + Integer.MAX_VALUE);
+            Integer maxCPUCores = VirtualMachineManager.VmServiceOfferingMaxCPUCores.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxCPUCores.value();
+            Integer maxRAMSize = VirtualMachineManager.VmServiceOfferingMaxRAMSize.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxRAMSize.value();
+            if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > maxCPUCores)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + maxCPUCores);
             }
             if (cpuSpeed == null || (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
                 throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
             }
-            if (memory != null && (memory.intValue() < 32 || memory.longValue() > Integer.MAX_VALUE)) {
-                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+            if (memory != null && (memory.intValue() < 32 || memory.longValue() > maxRAMSize)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + maxRAMSize + " MB");
             }
         }
 
