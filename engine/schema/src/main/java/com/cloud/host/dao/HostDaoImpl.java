@@ -87,7 +87,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                                                              + "GROUP BY host_id "
                                                              + "HAVING tag_count = %s ";
     private static final String SEPARATOR = ",";
-    
+
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
     protected SearchBuilder<HostVO> IdStatusSearch;
@@ -720,7 +720,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         hostSearch.and("cluster", entity.getClusterId(), SearchCriteria.Op.EQ);
         hostSearch.and("status", entity.getStatus(), SearchCriteria.Op.EQ);
         hostSearch.and("resourceState", entity.getResourceState(), SearchCriteria.Op.EQ);
-        
 
         SearchCriteria<HostVO> sc = hostSearch.create();
         sc.setParameters("type", type.toString());
@@ -1163,18 +1162,18 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         List<String> tags = Arrays.asList(computeOfferingTags.split(this.SEPARATOR));
         String subselect = getHostIdsByComputeTags(tags);
         sql = String.format(sql, subselect);
-        
+
         try {
             pstmt = txn.prepareStatement(sql);
-            
+
             for(int i = 0; i < tags.size(); i++){
                 pstmt.setString(i+1, tags.get(i));
             }
-            //pstmt = txn.prepareAutoCloseStatement();
+
             ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {     
-                result.add(rs.getLong(1));             
-            }        
+            while (rs.next()) {
+                result.add(rs.getLong(1));
+            }
             pstmt.close();
             if(result.isEmpty()){
                 throw new CloudRuntimeException("No suitable host found for follow compute offering tags: " + computeOfferingTags);
@@ -1184,7 +1183,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             throw new CloudRuntimeException("DB Exception on: " + sql, e);
         }
     }
-    
+
     private List<Long> findHostByComputeOfferings(String computeOfferingTags){
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
@@ -1193,14 +1192,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         String select = getHostIdsByComputeTags(tags);
         try {
             pstmt = txn.prepareStatement(select);
-            
+
             for(int i = 0; i < tags.size(); i++){
                 pstmt.setString(i+1, tags.get(i));
             }
-            
+
             ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {     
-                result.add(rs.getLong(1));             
+            while (rs.next()) {
+                result.add(rs.getLong(1));
             }
             pstmt.close();
             if(result.isEmpty()){
@@ -1209,9 +1208,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             return result;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + select, e);
-        } 
+        }
     }
-    
+
     private String getHostIdsByComputeTags(List<String> offeringTags){
         List<String> questionMarks = new ArrayList();
         offeringTags.forEach((tag) -> { questionMarks.add("?"); });
