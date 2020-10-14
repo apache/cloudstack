@@ -1605,11 +1605,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         IpAddress systemIp = null;
         NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
-        if (srcPortStart == 53) {
+        if (srcPortStart == 53 && ipVO.isSourceNat()) {
             List<NetworkOfferingServiceMapVO> offerinServices = _networkOfferingServiceDao.listByNetworkOfferingId(network.getNetworkOfferingId());
             for (NetworkOfferingServiceMapVO serviceMapVo: offerinServices){
-                if (serviceMapVo.getService() == Service.Dns.getName()) {
-                    throw new InvalidParameterValueException("Error adding load balancer rule, cannot add port 53 with network service offering having DNS service.");
+                if (serviceMapVo.getService().equals(Service.Dns.getName())) {
+                    throw new InvalidParameterValueException("Error adding load balancer rule, cannot add port 53 with network service offering having DNS service and Source NAT.");
                 }
             }
         }
