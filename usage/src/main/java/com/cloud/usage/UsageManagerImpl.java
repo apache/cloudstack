@@ -1952,10 +1952,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (CollectionUtils.isEmpty(usageVMSnapshots)){
             s_logger.warn(String.format("No usage entry for VM snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s] was found.",
                     vmId, accountId, domainId, zoneId));
-            if (usageVMSnapshots.size() > 1) {
-                s_logger.warn(String.format("More than one usage entry for VM snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s]; marking them all as deleted.", vmId,
-                        accountId, domainId, zoneId));
-            }
+        }
+        if (usageVMSnapshots.size() > 1) {
+            s_logger.warn(String.format("More than one usage entry for VM snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s]; marking them all as deleted.", vmId,
+                    accountId, domainId, zoneId));
         }
         for (UsageVMSnapshotVO vmSnapshots : usageVMSnapshots) {
             s_logger.debug(String.format("Deleting VM Snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s] that was created at [%s].", vmSnapshots.getVmId(),
