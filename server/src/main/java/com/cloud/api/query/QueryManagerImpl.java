@@ -976,6 +976,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
         }
 
+        if (affinityGroupId != null) {
+            sb.and("affinityGroupId", sb.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
+        }
+
         if (keyPairName != null) {
             sb.and("keyPairName", sb.entity().getKeypairName(), SearchCriteria.Op.EQ);
         }
