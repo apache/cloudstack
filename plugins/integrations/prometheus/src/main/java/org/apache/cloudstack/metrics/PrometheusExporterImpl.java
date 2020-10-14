@@ -32,7 +32,6 @@ import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.vo.DomainJoinVO;
-import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
@@ -45,7 +44,9 @@ import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageStats;
@@ -72,6 +73,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
     @Inject
     private DataCenterDao dcDao;
+    @Inject
+    private HostDao hostDao;
     @Inject
     private HostJoinDao hostJoinDao;
     @Inject
@@ -101,8 +104,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total = 0;
         int up = 0;
         int down = 0;
-        for (final HostJoinVO host : hostJoinDao.listAll()) {
-            if (host == null || host.getType() != Host.Type.Routing || host.getZoneId() != dcId) {
+        for (final HostVO host : hostDao.listAll()) {
+            if (host == null || host.getType() != Host.Type.Routing || host.getDataCenterId() != dcId) {
                 continue;
             }
             total++;
