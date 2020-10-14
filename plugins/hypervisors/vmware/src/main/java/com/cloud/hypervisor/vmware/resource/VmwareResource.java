@@ -1634,7 +1634,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // Check increment is multiple of increment size
-            long reminder = requestedMaxMemoryInMb % hotaddIncrementSizeInMb;
+            long reminder = hotaddIncrementSizeInMb > 0 ? requestedMaxMemoryInMb % hotaddIncrementSizeInMb : 0;
             if (reminder != 0) {
                 requestedMaxMemoryInMb = requestedMaxMemoryInMb + hotaddIncrementSizeInMb - reminder;
             }
