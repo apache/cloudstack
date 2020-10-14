@@ -117,9 +117,10 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 continue;
             }
             total++;
-            if (host.getStatus() == Status.Up) {
+            if (host.getStatus() == Status.Up && !host.isInMaintenanceStates()) {
                 up++;
-            } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down) {
+            } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down ||
+                        host.isInMaintenanceStates()) {
                 down++;
             }
 
