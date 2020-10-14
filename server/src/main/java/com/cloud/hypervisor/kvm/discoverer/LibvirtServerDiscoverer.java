@@ -67,6 +67,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.trilead.ssh2.Connection;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
+
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(LibvirtServerDiscoverer.class);
     private final int _waitTime = 5; /* wait for 5 minutes */
@@ -348,6 +350,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             _hostDao.saveDetails(connectedHost);
             return resources;
         } catch (DiscoveredWithErrorException e) {
+            s_logger.error("DiscoveredWithErrorException caught and rethrowing, message: "+ e.getMessage());
             throw e;
         } catch (Exception e) {
             String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
@@ -474,7 +477,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
         _resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
         try {
-            ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null);
+            ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null, !ADD_HOST_ON_SERVICE_RESTART_KVM.value());
             agentMgr.send(host.getId(), cmd);
         } catch (AgentUnavailableException e) {
             s_logger.warn("Sending ShutdownCommand failed: ", e);
