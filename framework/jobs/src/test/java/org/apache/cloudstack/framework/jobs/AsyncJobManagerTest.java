@@ -34,12 +34,20 @@ public class AsyncJobManagerTest {
     String obfuscatedInput = "\"haprovider\":\"kvmhaprovider\"},\"outofbandmanagement\":{\"powerstate\":\"On\",\"enabled\":true,\"driver\":\"redfish\",\"address\":\"oob-address.com\",\"port\":\"80\",\"username\":\"root\",\"password\":\"p***\"},\"resourcestate\":\"PrepareForMaintenance\",\"hahost\":false";
     String noPassword = "\"haprovider\":\"kvmhaprovider\"},\"outofbandmanagement\":{\"powerstate\":\"On\",\"enabled\":true,\"driver\":\"redfish\",\"address\":\"oob-address.com\",\"port\":\"80\",\"username\":\"root\"},\"resourcestate\":\"PrepareForMaintenance\",\"hahost\":false";
 
+    String inputNoBraces = "\"password\":\"password\"\",\"action\":\"OFF\"";
+    String expectedNoBraces = "\"password\":\"p*****\",\"action\":\"OFF\"";
+
     @Test
     public void obfuscatePasswordTest() {
         String result = asyncJobManager.obfuscatePassword(input, true);
         Assert.assertEquals(expected, result);
     }
 
+    @Test
+    public void obfuscatePasswordTestNoBraces() {
+        String result = asyncJobManager.obfuscatePassword(inputNoBraces, true);
+        Assert.assertEquals(expectedNoBraces, result);
+    }
 
     @Test
     public void obfuscatePasswordTestHidePasswordFalse() {
