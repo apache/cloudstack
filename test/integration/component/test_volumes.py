@@ -1466,7 +1466,7 @@ class TestMigrateVolume(cloudstackTestCase):
         return
 
     def tearDown(self):
-        super(TestMigrateVolume,self).tearDownClass()
+        super(TestMigrateVolume,self).tearDown()
 
     @attr(tags=["advanced", "sg", "advancedsg"], required_hardware='true')
     def test_01_migrateVolume(self):
