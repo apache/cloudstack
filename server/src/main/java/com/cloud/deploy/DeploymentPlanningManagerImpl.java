@@ -30,6 +30,8 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.StringUtils;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.utils.db.Filter;
@@ -173,6 +175,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     protected VMReservationDao _reservationDao;
     @Inject
     HostDetailsDao _hostDetailsDao;
+    @Inject
+    private VMTemplateDao templateDao;
 
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
     protected long _nodeId = -1;
@@ -342,7 +346,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     suitableHosts.add(host);
                     Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
                             suitableHosts, suitableVolumeStoragePools, avoids,
-                            getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts());
+                            getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts(), vm);
                     if (potentialResources != null) {
                         pod = _podDao.findById(host.getPodId());
                         cluster = _clusterDao.findById(host.getClusterId());
@@ -473,7 +477,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 suitableHosts.add(host);
                                 Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
                                         suitableHosts, suitableVolumeStoragePools, avoids,
-                                        getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts());
+                                        getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts(), vm);
                                 if (potentialResources != null) {
                                     Map<Volume, StoragePool> storageVolMap = potentialResources.second();
                                     // remove the reused vol<->pool from
@@ -555,6 +559,12 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
 
         return dest;
+    }
+
+    private boolean isDeployAsIs(VirtualMachine vm) {
+        long templateId = vm.getTemplateId();
+        VMTemplateVO template = templateDao.findById(templateId);
+        return template != null && template.isDeployAsIs();
     }
 
     /**
@@ -1120,7 +1130,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     // choose the potential host and pool for the VM
                     if (!suitableVolumeStoragePools.isEmpty()) {
                         Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools, avoid,
-                                resourceUsageRequired, readyAndReusedVolumes, plan.getPreferredHosts());
+                                resourceUsageRequired, readyAndReusedVolumes, plan.getPreferredHosts(), vmProfile.getVirtualMachine());
 
                         if (potentialResources != null) {
                             Host host = _hostDao.findById(potentialResources.first().getId());
@@ -1261,7 +1271,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts, Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
-            ExcludeList avoid, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes, List<Long> preferredHosts) {
+                                                                                    ExcludeList avoid, PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes, List<Long> preferredHosts, VirtualMachine vm) {
         s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
@@ -1283,59 +1293,117 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         });
         volumesOrderBySizeDesc.addAll(suitableVolumeStoragePools.keySet());
         boolean multipleVolume = volumesOrderBySizeDesc.size() > 1;
+        boolean deployAsIs = isDeployAsIs(vm);
         for (Host potentialHost : suitableHosts) {
             Map<StoragePool, List<Volume>> volumeAllocationMap = new HashMap<StoragePool, List<Volume>>();
-            for (Volume vol : volumesOrderBySizeDesc) {
-                haveEnoughSpace = false;
-                s_logger.debug("Checking if host: " + potentialHost.getId() + " can access any suitable storage pool for volume: " + vol.getVolumeType());
-                List<StoragePool> volumePoolList = suitableVolumeStoragePools.get(vol);
-                hostCanAccessPool = false;
-                hostAffinityCheck = checkAffinity(potentialHost, preferredHosts);
-                for (StoragePool potentialSPool : volumePoolList) {
-                    if (hostCanAccessSPool(potentialHost, potentialSPool)) {
-                        hostCanAccessPool = true;
-                        if (multipleVolume && !readyAndReusedVolumes.contains(vol)) {
-                            List<Volume> requestVolumes = null;
-                            if (volumeAllocationMap.containsKey(potentialSPool))
-                                requestVolumes = volumeAllocationMap.get(potentialSPool);
-                            else
-                                requestVolumes = new ArrayList<Volume>();
-                            requestVolumes.add(vol);
+            if (deployAsIs) {
+                storage = new HashMap<>();
+                // Find the common suitable pools
+                s_logger.debug("Trying to allocate all the VM volumes to a single storage pool");
+                Set<StoragePool> suitablePools = new HashSet<>();
+                List<StoragePool> notAllowedPools = new ArrayList<>();
+                for (List<StoragePool> pools : suitableVolumeStoragePools.values()) {
+                    if (CollectionUtils.isEmpty(suitablePools)) {
+                        // All the suitable pools of the first volume
+                        suitablePools.addAll(pools);
+                    } else {
+                        for (StoragePool pool : pools) {
+                            if (!suitablePools.contains(pool)) {
+                                s_logger.debug("Storage pool " + pool.getUuid() + " not allowed for this VM");
+                                notAllowedPools.add(pool);
+                            }
+                        }
+                    }
+                }
+                suitablePools.removeAll(notAllowedPools);
+                if (CollectionUtils.isEmpty(suitablePools)) {
+                    s_logger.debug("Could not find a storage pool to fit all the VM volumes on this host");
+                    continue;
+                }
 
-                            if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
-                                try {
-                                    boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, potentialSPool);
-                                    if (!isStoragePoolStoragepolicyComplaince) {
-                                        continue;
-                                    }
-                                } catch (StorageUnavailableException e) {
-                                    s_logger.warn(String.format("Could not verify storage policy complaince against storage pool %s due to exception %s", potentialSPool.getUuid(), e.getMessage()));
+                List<Volume> allVolumes = new ArrayList<>();
+                allVolumes.addAll(volumesOrderBySizeDesc);
+                for (StoragePool storagePool : suitablePools) {
+                    haveEnoughSpace = false;
+                    hostCanAccessPool = false;
+                    hostAffinityCheck = checkAffinity(potentialHost, preferredHosts);
+                    if (hostCanAccessSPool(potentialHost, storagePool)) {
+                        hostCanAccessPool = true;
+                        if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
+                            try {
+                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(allVolumes, storagePool);
+                                if (!isStoragePoolStoragepolicyComplaince) {
                                     continue;
                                 }
-                            }
-
-                            if (!_storageMgr.storagePoolHasEnoughIops(requestVolumes, potentialSPool) ||
-                                !_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool, potentialHost.getClusterId()))
+                            } catch (StorageUnavailableException e) {
+                                s_logger.warn(String.format("Could not verify storage policy complaince against storage pool %s due to exception %s", storagePool.getUuid(), e.getMessage()));
                                 continue;
-                            volumeAllocationMap.put(potentialSPool, requestVolumes);
+                            }
+                            haveEnoughSpace = true;
                         }
-                        storage.put(vol, potentialSPool);
-                        haveEnoughSpace = true;
+                    }
+                    if (hostCanAccessPool && haveEnoughSpace && hostAffinityCheck) {
+                        for (Volume vol : volumesOrderBySizeDesc) {
+                            s_logger.debug("Found a suitable storage pool for all the VM volumes: " + storagePool.getUuid());
+                            storage.put(vol, storagePool);
+                        }
                         break;
                     }
                 }
-                if (!hostCanAccessPool) {
-                    break;
-                }
-                if (!haveEnoughSpace) {
-                    s_logger.warn("insufficient capacity to allocate all volumes");
-                    break;
-                }
-                if (!hostAffinityCheck) {
-                    s_logger.debug("Host affinity check failed");
-                    break;
+            } else {
+                for (Volume vol : volumesOrderBySizeDesc) {
+                    haveEnoughSpace = false;
+                    s_logger.debug("Checking if host: " + potentialHost.getId() + " can access any suitable storage pool for volume: " + vol.getVolumeType());
+                    List<StoragePool> volumePoolList = suitableVolumeStoragePools.get(vol);
+                    hostCanAccessPool = false;
+                    hostAffinityCheck = checkAffinity(potentialHost, preferredHosts);
+                    for (StoragePool potentialSPool : volumePoolList) {
+                        if (hostCanAccessSPool(potentialHost, potentialSPool)) {
+                            hostCanAccessPool = true;
+                            if (multipleVolume && !readyAndReusedVolumes.contains(vol)) {
+                                List<Volume> requestVolumes = null;
+                                if (volumeAllocationMap.containsKey(potentialSPool))
+                                    requestVolumes = volumeAllocationMap.get(potentialSPool);
+                                else
+                                    requestVolumes = new ArrayList<Volume>();
+                                requestVolumes.add(vol);
+
+                                if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
+                                    try {
+                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, potentialSPool);
+                                        if (!isStoragePoolStoragepolicyComplaince) {
+                                            continue;
+                                        }
+                                    } catch (StorageUnavailableException e) {
+                                        s_logger.warn(String.format("Could not verify storage policy complaince against storage pool %s due to exception %s", potentialSPool.getUuid(), e.getMessage()));
+                                        continue;
+                                    }
+                                }
+
+                                if (!_storageMgr.storagePoolHasEnoughIops(requestVolumes, potentialSPool) ||
+                                        !_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool, potentialHost.getClusterId()))
+                                    continue;
+                                volumeAllocationMap.put(potentialSPool, requestVolumes);
+                            }
+                            storage.put(vol, potentialSPool);
+                            haveEnoughSpace = true;
+                            break;
+                        }
+                    }
+                    if (!hostCanAccessPool) {
+                        break;
+                    }
+                    if (!haveEnoughSpace) {
+                        s_logger.warn("insufficient capacity to allocate all volumes");
+                        break;
+                    }
+                    if (!hostAffinityCheck) {
+                        s_logger.debug("Host affinity check failed");
+                        break;
+                    }
                 }
             }
+
             if (hostCanAccessPool && haveEnoughSpace && hostAffinityCheck && checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
                 s_logger.debug("Found a potential host " + "id: " + potentialHost.getId() + " name: " + potentialHost.getName() +
                         " and associated storage pools for this VM");
