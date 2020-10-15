@@ -179,7 +179,7 @@ public class DataMigrationUtility {
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStore.getId());
         for (TemplateDataStoreVO template : templates) {
             VMTemplateVO templateVO = templateDao.findById(template.getTemplateId());
-            if (template.getState() == ObjectInDataStoreStateMachine.State.Ready && !templateVO.isPublicTemplate() &&
+            if (template.getState() == ObjectInDataStoreStateMachine.State.Ready && templateVO != null && !templateVO.isPublicTemplate() &&
                     templateVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator) {
                 files.add(templateFactory.getTemplate(template.getTemplateId(), srcDataStore));
             }
@@ -197,7 +197,7 @@ public class DataMigrationUtility {
         for (SnapshotDataStoreVO snapshot : snapshots) {
             SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getSnapshotId());
             if (snapshot.getState() == ObjectInDataStoreStateMachine.State.Ready &&
-                    snapshotVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator
+                    snapshotVO != null && snapshotVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator
                     && snapshot.getParentSnapshotId() == 0 ) {
                 SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), DataStoreRole.Image);
                 files.add(snap);

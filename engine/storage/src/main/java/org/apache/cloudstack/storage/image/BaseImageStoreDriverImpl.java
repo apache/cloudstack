@@ -392,11 +392,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         Answer answer = null;
         EndPoint endPoint = null;
         List<Long> epIds = ssvmWithLeastMigrateJobs();
-        Long epId = null;
-        if (!epIds.isEmpty()) {
-            epId = epIds.get(0);
-        }
-        if (epId == null) {
+
+        if (epIds.isEmpty()) {
             Collections.shuffle(eps);
             endPoint = eps.get(0);
         } else {
@@ -405,7 +402,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 Collections.shuffle(remainingEps);
                 endPoint = remainingEps.get(0);
             } else {
-                endPoint = _defaultEpSelector.getEndPointFromHostId(epId);
+                endPoint = _defaultEpSelector.getEndPointFromHostId(epIds.get(0));
             }
         }
         CommandExecLogVO execLog = new CommandExecLogVO(endPoint.getId(), _secStorageVmDao.findByInstanceName(hostDao.findById(endPoint.getId()).getName()).getId(), "DataMigrationCommand", 1);

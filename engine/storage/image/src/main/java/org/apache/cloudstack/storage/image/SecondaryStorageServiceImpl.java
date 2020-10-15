@@ -216,9 +216,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 }
                 snapshotStoreDao.update(destSnapshotStore.getId(), destSnapshotStore);
             }
-        }
-
-        if (destData instanceof VolumeInfo) {
+        } else if (destData instanceof VolumeInfo) {
             VolumeDataStoreVO srcVolume = volumeDataStoreDao.findByStoreVolume(srcData.getDataStore().getId(), srcData.getId());
             VolumeDataStoreVO destVolume = volumeDataStoreDao.findByStoreVolume(destData.getDataStore().getId(), destData.getId());
             if (srcVolume != null && destVolume != null) {
@@ -226,15 +224,15 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 destVolume.setCreated(srcVolume.getCreated());
                 volumeDataStoreDao.update(destVolume.getId(), destVolume);
             }
-        }
-
-        if (destData instanceof TemplateInfo) {
+        } else if (destData instanceof TemplateInfo) {
             TemplateDataStoreVO srcTemplate = templateStoreDao.findByStoreTemplate(srcData.getDataStore().getId(), srcData.getId());
             TemplateDataStoreVO destTemplate = templateStoreDao.findByStoreTemplate(destData.getDataStore().getId(), destData.getId());
             if (srcTemplate != null && destTemplate != null) {
                 destTemplate.setCreated(srcTemplate.getCreated());
                 templateStoreDao.update(destTemplate.getId(), destTemplate);
             }
+        } else {
+            s_logger.debug("Unsupported data object type");
         }
     }
 }

@@ -1300,16 +1300,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         try {
             File srcFile = new File(getDir(srcStore.getUrl(), _nfsVersion), srcData.getPath());
             File destFile = new File(getDir(destStore.getUrl(), _nfsVersion), destData.getPath());
-            ImageFormat format = getTemplateFormat(srcFile.getName());
 
             if (srcFile == null) {
-                return new CopyCmdAnswer("Can't find src file:" + srcFile);
+                return new CopyCmdAnswer("Can't find source file at path: "+ srcData.getPath() +"on datastore: "+ srcDataStore.getUuid() +" to initiate file transfer");
             }
+            ImageFormat format = getTemplateFormat(srcFile.getName());
             if (srcData instanceof TemplateObjectTO || srcData instanceof VolumeObjectTO) {
                 File srcDir = null;
                 if (srcFile.isFile() || srcFile.getName().contains(".")) {
                     srcDir = new File(srcFile.getParent());
-                } else if (!srcFile.isFile() && !srcFile.isDirectory()) {
+                } else if (!srcFile.isDirectory()) {
                     srcDir = new File(srcFile.getParent());
                 }
                 File destDir = null;
