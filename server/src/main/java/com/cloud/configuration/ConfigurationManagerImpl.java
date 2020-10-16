@@ -39,6 +39,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -222,7 +223,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -3109,6 +3109,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Boolean displayDiskOffering = cmd.getDisplayOffering();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        final String tags = cmd.getTags();
 
         // Check if diskOffering exists
         final DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
@@ -3190,7 +3191,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by id user: %s because it is not root-admin or domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
         }
 
-        final boolean updateNeeded = name != null || displayText != null || sortKey != null || displayDiskOffering != null;
+        final boolean updateNeeded = shouldUpdateDiskOffering(name, displayText, sortKey, displayDiskOffering, tags);
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _diskOfferingDao.findById(diskOfferingId);
@@ -3214,30 +3215,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             diskOffering.setDisplayOffering(displayDiskOffering);
         }
 
-        // Note: tag editing commented out for now;keeping the code intact,
-        // might need to re-enable in next releases
-        // if (tags != null)
-        // {
-        // if (tags.trim().isEmpty() && diskOfferingHandle.getTags() == null)
-        // {
-        // //no new tags; no existing tags
-        // diskOffering.setTagsArray(csvTagsToList(null));
-        // }
-        // else if (!tags.trim().isEmpty() && diskOfferingHandle.getTags() !=
-        // null)
-        // {
-        // //new tags + existing tags
-        // List<String> oldTags = csvTagsToList(diskOfferingHandle.getTags());
-        // List<String> newTags = csvTagsToList(tags);
-        // oldTags.addAll(newTags);
-        // diskOffering.setTagsArray(oldTags);
-        // }
-        // else if(!tags.trim().isEmpty())
-        // {
-        // //new tags; NO existing tags
-        // diskOffering.setTagsArray(csvTagsToList(tags));
-        // }
-        // }
+        updateDiskOfferingTagsIfIsNotNull(tags, diskOffering);
 
         if (updateNeeded && !_diskOfferingDao.update(diskOfferingId, diskOffering)) {
             return null;
@@ -3272,6 +3250,31 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         CallContext.current().setEventDetails("Disk offering id=" + diskOffering.getId());
         return _diskOfferingDao.findById(diskOfferingId);
+    }
+
+    /**
+     * Check the tags parameters to the diskOffering
+     * <ul>
+     *     <li>If tags is null, do nothing and return.</li>
+     *     <li>If tags is not null, set tag to the diskOffering.</li>
+     *     <li>If tags is an blank string, set null on diskOffering tag.</li>
+     * </ul>
+     */
+    protected void updateDiskOfferingTagsIfIsNotNull(String tags, DiskOfferingVO diskOffering) {
+        if (tags == null) { return; }
+        if (StringUtils.isNotBlank(tags)) {
+            diskOffering.setTags(tags);
+        } else {
+            diskOffering.setTags(null);
+        }
+    }
+
+    /**
+     * Check if it needs to update any parameter when updateDiskoffering is called
+     * Verify if name or displayText are not blank, tags is not null, sortkey and displayDiskOffering is not null
+     */
+    protected boolean shouldUpdateDiskOffering(String name, String displayText, Integer sortKey, Boolean displayDiskOffering, String tags) {
+        return StringUtils.isNotBlank(name) || StringUtils.isNotBlank(displayText) || tags != null || sortKey != null || displayDiskOffering != null;
     }
 
     @Override
