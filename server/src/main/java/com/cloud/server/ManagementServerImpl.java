@@ -1275,20 +1275,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair = null;
         List<HostVO> allHosts = null;
-        List<HostVO> hostsWithStorageMigration = null;
+        List<HostVO> hostsForMigrationWithStorage = null;
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword,
                 null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion(), srcHost.getId());
             allHosts = allHostsPair.first();
-            hostsWithStorageMigration = new ArrayList<>(allHosts);
+            hostsForMigrationWithStorage = new ArrayList<>(allHosts);
 
             for (final VolumeVO volume : volumes) {
                 StoragePool storagePool = _poolDao.findById(volume.getPoolId());
                 Long volClusterId = storagePool.getClusterId();
 
-                for (Iterator<HostVO> iterator = hostsWithStorageMigration.iterator(); iterator.hasNext();) {
+                for (Iterator<HostVO> iterator = hostsForMigrationWithStorage.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
 
                     if (volClusterId != null) {
@@ -1358,7 +1358,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         for (final HostAllocator allocator : hostAllocators) {
             if (canMigrateWithStorage) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, hostsWithStorageMigration, HostAllocator.RETURN_UPTO_ALL, false);
+                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, hostsForMigrationWithStorage, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
             }
