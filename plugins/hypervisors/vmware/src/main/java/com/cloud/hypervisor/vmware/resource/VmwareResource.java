@@ -1729,7 +1729,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String vmNameOnVcenter = names.second();
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
         String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
-        s_logger.info("ROOT DISK CONTROLLER = "+ rootDiskController);
         DiskTO rootDiskTO = null;
         String bootMode = null;
         if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
@@ -1748,7 +1747,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         // Validate the controller types
         dataDiskController = DiskControllerType.getType(dataDiskController).toString();
         rootDiskController = DiskControllerType.getType(rootDiskController).toString();
-        s_logger.info("ROOT DISK CONTROLLER 2 = "+ rootDiskController);
 
         if (DiskControllerType.getType(rootDiskController) == DiskControllerType.none) {
             throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskController);
@@ -2196,6 +2194,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
 
                         if (!StringUtils.isBlank(vmSpec.getBootArgs())) {
+                            s_logger.info("bootargs vmware = "+ vmSpec.getBootArgs());
                             String newMacSequence = generateMacSequence(nics);
                             vmSpec.setBootArgs(replaceNicsMacSequenceInBootArgs(oldMacSequence, newMacSequence, vmSpec));
                         }
@@ -2576,6 +2575,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String replaceNicsMacSequenceInBootArgs(String oldMacSequence, String newMacSequence, VirtualMachineTO vmSpec) {
         String bootArgs = vmSpec.getBootArgs();
         if (!StringUtils.isBlank(bootArgs) && !StringUtils.isBlank(oldMacSequence) && !StringUtils.isBlank(newMacSequence)) {
+            s_logger.info("bootargs replacing nic mac address = "+ oldMacSequence +" " + newMacSequence);
             return bootArgs.replace(oldMacSequence, newMacSequence);
         }
         return "";

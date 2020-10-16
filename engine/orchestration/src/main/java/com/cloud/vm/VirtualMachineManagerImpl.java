@@ -1659,10 +1659,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 guru.finalizeStop(profile, answer);
                 final UserVmVO userVm = _userVmDao.findById(vm.getId());
-                if (userVm != null) {
+//                if (userVm != null) {
                     userVm.setPowerState(PowerState.PowerOff);
                     _userVmDao.update(userVm.getId(), userVm);
-                }
+                //}
             } else {
                 s_logger.error("Invalid answer received in response to a StopCommand for " + vm.getInstanceName());
                 return false;

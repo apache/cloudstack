@@ -18,12 +18,10 @@
 
 set -x
 
-echo "Running k8s node setup script"
-
 . /opt/cloud/bin/setup/common.sh
 
 setup_k8s_node() {
-    log_it "Setting up k8s master vm"
+    log_it "Setting up k8s node"
 
     # set default ssh port and restart sshd service
     sed -i 's/3922/22/g' /etc/ssh/sshd_config
