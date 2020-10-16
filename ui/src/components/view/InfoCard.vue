@@ -136,7 +136,7 @@
                 size="small"
                 status="active"
                 :percent="parseFloat(resource.cpuused)"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.cpuusedghz')"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
               />
             </span>
             <span v-if="resource.cpuallocated">
@@ -144,7 +144,7 @@
                 class="progress-bar"
                 size="small"
                 :percent="parseFloat(resource.cpuallocated)"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.cpuallocatedghz')"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')"
               />
             </span>
           </div>
@@ -161,7 +161,7 @@
                 size="small"
                 status="active"
                 :percent="Number(parseFloat(100.0 * (resource.memorykbs - resource.memoryintfreekbs) / resource.memorykbs).toFixed(2))"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.memoryusedgb')"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
               />
             </span>
           </div>
@@ -178,7 +178,7 @@
                 size="small"
                 status="active"
                 :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryusedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.memoryusedgb')"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
               />
             </span>
             <span v-if="resource.memoryallocatedgb">
@@ -186,7 +186,7 @@
                 class="progress-bar"
                 size="small"
                 :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryallocatedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.memoryallocatedgb')"
+                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')"
               />
             </span>
           </div>
@@ -207,7 +207,7 @@
                     size="small"
                     status="active"
                     :percent="parseFloat(resource.memoryused)"
-                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.memoryused')" />
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')" />
                 </span>
                 <span
                   v-if="resource.memoryallocated">
@@ -215,7 +215,7 @@
                     class="progress-bar"
                     size="small"
                     :percent="parseFloat(resource.memoryallocated)"
-                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.memoryallocatedgb')" />
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')" />
                 </span>
               </div>
             </div>
