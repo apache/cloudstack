@@ -139,7 +139,7 @@ class TestNestedVirtualization(cloudstackTestCase):
             #5) Check for CPU flags: vmx for Intel and svm for AMD indicates nested virtualization is enabled
             self.assert_(result is not None, "Empty result for CPU flags")
             res = str(result)
-            self.assertTrue('vmx' in res or 'svm' in res or 'lm' in res)
+            self.assertTrue('vmx' in res or 'svm' in res)
         except Exception as e:
             self.debug('Error=%s' % e)
             self.rollback_nested_configurations(rollback_nv, rollback_nv_per_vm)

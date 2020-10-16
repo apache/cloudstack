@@ -28,6 +28,8 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -168,6 +170,8 @@ public class VolumeServiceImpl implements VolumeService {
     private ClusterDao clusterDao;
     @Inject
     private VolumeDetailsDao _volumeDetailsDao;
+    @Inject
+    private VMTemplateDao templateDao;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -351,9 +355,12 @@ public class VolumeServiceImpl implements VolumeService {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Marking volume that was never created as destroyed: " + vol);
                 }
-                volDao.remove(vol.getId());
-                future.complete(result);
-                return future;
+                VMTemplateVO template = templateDao.findById(vol.getTemplateId());
+                if (template != null && !template.isDeployAsIs()) {
+                    volDao.remove(vol.getId());
+                    future.complete(result);
+                    return future;
+                }
             }
         }
         VolumeObject vo = (VolumeObject)volume;
