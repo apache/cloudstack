@@ -43,6 +43,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.vm.VmDetailConstants;
 
 @APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -87,7 +88,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                type = CommandType.UUID,
                entityType = GuestOSResponse.class,
                required = true,
-               description = "the ID of the OS Type that best represents the OS of this template.")
+               description = "the ID of the OS Type that best represents the OS of this template. Not applicable with VMware, as we honour what is defined in the template")
     private Long osTypeId;
 
     @Parameter(name = ApiConstants.PASSWORD_ENABLED,
@@ -339,6 +340,20 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         if (isDirectDownload() && !getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.KVM.toString())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Parameter directdownload is only allowed for KVM templates");
+        }
+
+        if (getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString())) {
+            if (osTypeId != null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "ostypeid is not supported on VMWare");
+            }
+
+            details = getDetails();
+            if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "rootDiskController is not supported on VMWare");
+            }
+            if (details.containsKey(VmDetailConstants.NIC_ADAPTER)) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "nicAdapter is not supported on VMWare");
+            }
         }
     }
 }
