@@ -344,15 +344,15 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
         if (getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString())) {
             if (osTypeId != null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "ostypeid is not supported on VMWare");
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "ostypeid is not supported on VMWare, as we honour what is defined in the template");
             }
 
             details = getDetails();
             if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "rootDiskController is not supported on VMWare");
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "rootDiskController is not supported on VMWare, as we honour what is defined in the template");
             }
             if (details.containsKey(VmDetailConstants.NIC_ADAPTER)) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "nicAdapter is not supported on VMWare");
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "nicAdapter is not supported on VMWare, as we honour what is defined in the template");
             }
         }
     }
