@@ -997,7 +997,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (isSecurityGroupEvent(eventType)) {
             createSecurityGroupEvent(event);
         } else if (isVmSnapshotEvent(eventType)) {
-            createVMSnapshotEvent(event);
+            handleVMSnapshotEvent(event);
         } else if (isVmSnapshotOnPrimaryEvent(eventType)) {
             createVmSnapshotOnPrimaryEvent(event);
         } else if (isBackupEvent(eventType)) {
@@ -1891,27 +1891,91 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
 
-    private void createVMSnapshotEvent(UsageEventVO event) {
-        Long vmId = event.getResourceId();
-        Long volumeId = event.getTemplateId();
-        Long offeringId = event.getOfferingId();
-        Long zoneId = event.getZoneId();
-        Long accountId = event.getAccountId();
-        //Size could be null for VM snapshot delete events
-        long size = (event.getSize() == null) ? 0 : event.getSize();
-        Date created = event.getCreateDate();
+    /**
+     * Handles Vm Snapshot create and delete events:
+     * <ul>
+     *     <li>EventTypes#EVENT_VM_SNAPSHOT_CREATE</li>
+     *     <li>EventTypes#EVENT_VM_SNAPSHOT_DELETE</li>
+     * </ul>
+     * if the event received by this method is neither add nor remove, we ignore it.
+     */
+    protected void handleVMSnapshotEvent(UsageEventVO event) {
+        switch (event.getType()) {
+            case EventTypes.EVENT_VM_SNAPSHOT_CREATE:
+                createUsageVMSnapshot(event);
+                break;
+            case EventTypes.EVENT_VM_SNAPSHOT_DELETE:
+                deleteUsageVMSnapshot(event);
+                break;
+            default:
+                s_logger.debug(String.format("The event [type=%s, zoneId=%s, accountId=%s, resourceName=%s, diskOfferingId=%s, createDate=%s] is neither of type [%s] nor [%s]",
+                        event.getType(), event.getZoneId(), event.getAccountId(), event.getResourceName(), event.getOfferingId(), event.getCreateDate(), EventTypes.EVENT_VM_SNAPSHOT_CREATE, EventTypes.EVENT_VM_SNAPSHOT_DELETE));
+        }
+    }
+
+    /**
+     * Creates an entry for the Usage VM Snapshot.
+     */
+    protected void createUsageVMSnapshot(UsageEventVO event) {
+        long accountId = event.getAccountId();
         Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
-        Long domainId = acct.getDomainId();
+        long domainId = acct.getDomainId();
+        Long offeringId = event.getOfferingId();
+        long vmId = event.getResourceId();
+        long volumeId = event.getTemplateId();
+        long zoneId = event.getZoneId();
+        Date created = event.getCreateDate();
+        long size = (event.getSize() == null) ? 0 : event.getSize();
 
         UsageEventDetailsVO detailVO = _usageEventDetailsDao.findDetail(event.getId(), UsageEventVO.DynamicParameters.vmSnapshotId.name());
         Long vmSnapshotId = null;
         if (detailVO != null) {
             String snapId = detailVO.getValue();
-             vmSnapshotId = Long.valueOf(snapId);
+            vmSnapshotId = Long.valueOf(snapId);
         }
+        s_logger.debug(String.format("Creating usage VM Snapshot for VM id [%s] assigned to account [%s] domain [%s], zone [%s], and created at [%s]", vmId, accountId, domainId, zoneId,
+                event.getCreateDate()));
         UsageVMSnapshotVO vsVO = new UsageVMSnapshotVO(volumeId, zoneId, accountId, domainId, vmId, offeringId, size, created, null);
         vsVO.setVmSnapshotId(vmSnapshotId);
         _usageVMSnapshotDao.persist(vsVO);
+    }
+
+    /**
+     * Find and delete, if exists, usage VM Snapshots entries
+     */
+    protected void deleteUsageVMSnapshot(UsageEventVO event) {
+        long accountId = event.getAccountId();
+        Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        Long domainId = acct.getDomainId();
+        Long diskOfferingId = event.getOfferingId();
+        long vmId = event.getResourceId();
+        long zoneId = event.getZoneId();
+        List<UsageVMSnapshotVO> usageVMSnapshots = findUsageVMSnapshots(accountId, zoneId, domainId, vmId, diskOfferingId);
+        if (CollectionUtils.isEmpty(usageVMSnapshots)){
+            s_logger.warn(String.format("No usage entry for VM snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s] was found.",
+                    vmId, accountId, domainId, zoneId));
+        }
+        if (usageVMSnapshots.size() > 1) {
+            s_logger.warn(String.format("More than one usage entry for VM snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s]; marking them all as deleted.", vmId,
+                    accountId, domainId, zoneId));
+        }
+        for (UsageVMSnapshotVO vmSnapshots : usageVMSnapshots) {
+            s_logger.debug(String.format("Deleting VM Snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s] that was created at [%s].", vmSnapshots.getVmId(),
+                    vmSnapshots.getAccountId(), vmSnapshots.getDomainId(), vmSnapshots.getZoneId(), vmSnapshots.getCreated()));
+            vmSnapshots.setProcessed(event.getCreateDate());
+            _usageVMSnapshotDao.update(vmSnapshots);
+        }
+    }
+
+    protected List<UsageVMSnapshotVO> findUsageVMSnapshots(long accountId, long zoneId, long domainId, long vmId, Long diskOfferingId) {
+        SearchCriteria<UsageVMSnapshotVO> sc = _usageVMSnapshotDao.createSearchCriteria();
+        sc.addAnd("zoneId", SearchCriteria.Op.EQ, zoneId);
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
+        sc.addAnd("diskOfferingId", SearchCriteria.Op.EQ, diskOfferingId);
+        sc.addAnd("processed", SearchCriteria.Op.NULL);
+        return _usageVMSnapshotDao.search(sc, null);
     }
 
     private void createVmSnapshotOnPrimaryEvent(UsageEventVO event) {
