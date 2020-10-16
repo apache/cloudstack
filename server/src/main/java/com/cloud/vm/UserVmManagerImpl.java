@@ -5106,7 +5106,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         // Bootmode and boottype are not supported on VMWare
         if (template.getHypervisorType() == HypervisorType.VMware && (cmd.getBootMode() != null || cmd.getBootType() != null)) {
-            throw new InvalidParameterValueException("boot type and boot mode are not supported on VMware");
+            throw new InvalidParameterValueException("Boot type and boot mode are not supported on VMware, as we honour what is defined in the template.");
         }
 
         Long diskOfferingId = cmd.getDiskOfferingId();
