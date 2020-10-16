@@ -5104,6 +5104,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (template == null) {
             throw new InvalidParameterValueException("Unable to use template " + templateId);
         }
+        // Bootmode and boottype are not supported on VMWare
+        if (template.getHypervisorType() == HypervisorType.VMware && (cmd.getBootMode() != null || cmd.getBootType() != null)) {
+            throw new InvalidParameterValueException("boot type and boot mode are not supported on VMware");
+        }
 
         Long diskOfferingId = cmd.getDiskOfferingId();
         DiskOffering diskOffering = null;
