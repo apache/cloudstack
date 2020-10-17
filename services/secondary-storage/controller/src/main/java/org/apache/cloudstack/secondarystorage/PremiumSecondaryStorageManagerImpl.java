@@ -191,7 +191,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     private void scaleDownSSVMOnLoad(List<SecondaryStorageVmVO> alreadyRunning, List<CommandExecLogVO> activeCmds,
                                List<CommandExecLogVO> copyCmdsInPipeline)  {
         int halfLimit = Math.round((float) (alreadyRunning.size() * migrateCapPerSSVM) / 2);
-        if ((copyCmdsInPipeline.size() < halfLimit && alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() > (_standbyCapacity + 5)) && alreadyRunning.size() > 1) {
+        if (alreadyRunning.size() > 1 && ( copyCmdsInPipeline.size() < halfLimit && (activeCmds.size() < (((alreadyRunning.size() -1) * _capacityPerSSVM)/2)) )) {
             Collections.reverse(alreadyRunning);
             for(SecondaryStorageVmVO vm : alreadyRunning) {
                 long count = activeCmds.stream().filter(cmd -> cmd.getInstanceId() == vm.getId()).count();
