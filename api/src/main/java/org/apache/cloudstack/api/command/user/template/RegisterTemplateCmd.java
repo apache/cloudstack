@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
@@ -87,7 +88,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.OS_TYPE_ID,
                type = CommandType.UUID,
                entityType = GuestOSResponse.class,
-               required = true,
+               required = false,
                description = "the ID of the OS Type that best represents the OS of this template. Not applicable with VMware, as we honour what is defined in the template")
     private Long osTypeId;
 
@@ -347,13 +348,17 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "ostypeid is not supported on VMWare, as we honour what is defined in the template");
             }
 
-            details = getDetails();
-            if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "rootDiskController is not supported on VMWare, as we honour what is defined in the template");
+            Map templateDetails = getDetails();
+            if (MapUtils.isNotEmpty(templateDetails)) {
+                if (templateDetails.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "rootDiskController is not supported on VMWare, as we honour what is defined in the template");
+                }
+                if (templateDetails.containsKey(VmDetailConstants.NIC_ADAPTER)) {
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "nicAdapter is not supported on VMWare, as we honour what is defined in the template");
+                }
             }
-            if (details.containsKey(VmDetailConstants.NIC_ADAPTER)) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "nicAdapter is not supported on VMWare, as we honour what is defined in the template");
-            }
+        } else if (osTypeId == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a guest OS type");
         }
     }
 }
