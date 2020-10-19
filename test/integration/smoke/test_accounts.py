@@ -342,7 +342,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestRemoveUserFromAccount,self).tearDownClass()
+        super(TestRemoveUserFromAccount,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -493,7 +493,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestNonRootAdminsPrivileges,self).tearDownClass()
+        super(TestNonRootAdminsPrivileges,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
