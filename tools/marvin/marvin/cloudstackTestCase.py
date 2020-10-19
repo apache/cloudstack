@@ -60,8 +60,11 @@ class cloudstackTestCase(unittest.case.TestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            if hasattr(cls,'apiclient') and hasattr(cls,'_cleanup'):
-                cleanup_resources(cls.apiclient, reversed(cls._cleanup))
+            if hasattr(cls,'_cleanup'):
+                if hasattr(cls,'apiclient'):
+                    cleanup_resources(cls.apiclient, reversed(cls._cleanup))
+                elif hasattr(cls,'api_client'):
+                    cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
