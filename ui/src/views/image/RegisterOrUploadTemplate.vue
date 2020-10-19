@@ -774,9 +774,6 @@ export default {
           return
         }
         let params = {}
-        if (this.hyperVMWShow) {
-          params.ostypeid = this.defaultOsId
-        }
         for (const key in values) {
           const input = values[key]
 
