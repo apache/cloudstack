@@ -975,6 +975,21 @@ public class ConfigurationManagerTest {
     }
 
     @Test
+    public void shouldUpdateBytesRateParametersTestFalse() {
+        Assert.assertFalse(configurationMgr.shouldUpdateBytesRateParameters(null, null, null, null, null, null));
+    }
+
+    @Test
+    public void shouldUpdateBytesRateParametersTests(){
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), Mockito.anyLong(), nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), nullable(Long.class), Mockito.anyLong(), nullable(Long.class), nullable(Long.class), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.anyLong(), nullable(Long.class), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.anyLong(), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.anyLong()));
+    }
+
+    @Test
     public void updateDiskOfferingTagsIfIsNotNullTestWhenTagsIsNull(){
         Mockito.doNothing().when(configurationMgr).updateDiskOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
         this.configurationMgr.updateDiskOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
