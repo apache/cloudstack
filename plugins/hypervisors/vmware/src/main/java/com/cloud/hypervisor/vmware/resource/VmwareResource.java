@@ -48,7 +48,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DeployAsIsInfoTO;
 import com.cloud.agent.api.ValidateVcenterDetailsCommand;
-import com.cloud.storage.resource.VmwareStorageLayoutType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -1739,57 +1738,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private void restoreVirtualMachineVolumesFromTemplate(String vmInternalCSName, VirtualMachineTO vmSpec,
-                                                          VmwareHypervisorHost host, VirtualMachineMO virtualMachineMO,
-                                                          VmwareContext context, DatacenterMO dcMo) throws Exception {
-        DeployAsIsInfoTO deployAsIsInfo = vmSpec.getDeployAsIsInfo();
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Restoring VM " + vmInternalCSName + " volumes from template as-is");
-        }
-        String deployAsIsTemplate = deployAsIsInfo.getTemplatePath();
-        String destDatastore = deployAsIsInfo.getDestStoragePool();
-
-        String auxVMName = vmInternalCSName + "-aux";
-        _storageProcessor.cloneVMFromTemplate(host, deployAsIsTemplate, auxVMName, destDatastore);
-        VirtualMachineMO auxVM = host.findVmOnHyperHost(auxVMName);
-        if (auxVM == null) {
-            s_logger.info("Cloned deploy-as-is VM " + auxVMName + " is not in this host, relocating it");
-            auxVM = takeVmFromOtherHyperHost(host, auxVMName);
-        }
-        ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(host, destDatastore);
-        DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
-        List<String> vmdkFileBaseNames = auxVM.getVmdkFileBaseNames();
-        for (String vmdkFileBaseName : vmdkFileBaseNames) {
-            s_logger.info("Move volume out of volume-wrapper VM " + vmdkFileBaseName);
-            String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, auxVMName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
-            String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, auxVMName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
-            for (int i=0; i<vmwareLayoutFilePair.length; i++) {
-                dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
-            }
-        }
-        auxVM.detachAllDisks();
-        auxVM.destroy();
-        String vmNameInVcenter = virtualMachineMO.getName();
-        virtualMachineMO.tearDownDevices(new Class<?>[]{VirtualDisk.class});
-        s_logger.info("Changing VM datastore to " + dsMo);
-        virtualMachineMO.changeDatastore(morDatastore);
-        for (String vmdkFileBaseName : vmdkFileBaseNames) {
-            if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
-                String newPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, null);
-                s_logger.info("Attaching disk to restored VM at: " + newPath + " on datastore: " + destDatastore);
-                virtualMachineMO.attachDisk(new String[] {newPath}, morDatastore);
-            }
-        }
-    }
-
-    private boolean isRestoreParameterSet(VirtualMachineTO vmSpec) {
-        DeployAsIsInfoTO deployAsIsInfo = vmSpec.getDeployAsIsInfo();
-        if (deployAsIsInfo != null) {
-            return deployAsIsInfo.isReplaceVm();
-        }
-        return false;
-    }
-
     protected StartAnswer execute(StartCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource StartCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
@@ -1908,18 +1856,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
 
                     if (deployAsIs) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("Deploying OVA from template as-is");
-                        }
-                        String deployAsIsTemplate = deployAsIsInfo.getTemplatePath();
-                        String destDatastore = deployAsIsInfo.getDestStoragePool();
-                        _storageProcessor.cloneVMFromTemplate(hyperHost, deployAsIsTemplate, vmInternalCSName, destDatastore);
                         vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
                         if (vmMo == null) {
                             s_logger.info("Cloned deploy-as-is VM " + vmInternalCSName + " is not in this host, relocating it");
                             vmMo = takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
                         }
-                        mapSpecDisksToClonedDisks(vmMo, vmInternalCSName, specDisks);
                     } else {
                         DiskTO rootDisk = null;
                         for (DiskTO vol : disks) {
@@ -1970,10 +1911,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
             }
-
-            if (deployAsIs && isRestoreParameterSet(vmSpec)) {
-                restoreVirtualMachineVolumesFromTemplate(vmInternalCSName, vmSpec, hyperHost, vmMo, context, dcMo);
-                mapSpecDisksToClonedDisks(vmMo, vmInternalCSName, specDisks);
+            if (deployAsIs) {
+                s_logger.info("Mapping VM disks to spec disks and tearing down datadisks (if any)");
+                mapSpecDisksToClonedDisksAndTearDownDatadisks(vmMo, vmInternalCSName, specDisks);
             }
 
             int disksChanges = getDisksChangesNumberFromDisksSpec(disks, deployAsIs);
@@ -2569,6 +2509,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private void tearDownVMDisks(VirtualMachineMO vmMo, List<VirtualDisk> disks) throws Exception {
+        for (VirtualDisk disk : disks) {
+            vmMo.tearDownDevice(disk);
+        }
+    }
+
     private String getGuestOsIdFromVmSpec(VirtualMachineTO vmSpec, boolean deployAsIs) {
         return translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
     }
@@ -2624,21 +2570,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     /**
      * Modify the specDisks information to match the cloned VM's disks (from vmMo VM)
      */
-    private void mapSpecDisksToClonedDisks(VirtualMachineMO vmMo, String vmInternalCSName, DiskTO[] specDisks) {
+    private void mapSpecDisksToClonedDisksAndTearDownDatadisks(VirtualMachineMO vmMo, String vmInternalCSName, DiskTO[] specDisks) {
         try {
             s_logger.debug("Mapping spec disks information to cloned VM disks for VM " + vmInternalCSName);
             if (vmMo != null && ArrayUtils.isNotEmpty(specDisks)) {
                 List<VirtualDisk> vmDisks = vmMo.getVirtualDisks();
-                List<DiskTO> sortedDisks = Arrays.asList(sortVolumesByDeviceId(specDisks))
+                List<VirtualDisk> rootDisks = new ArrayList<>();
+                List<DiskTO> sortedRootDisksFromSpec = Arrays.asList(sortVolumesByDeviceId(specDisks))
                         .stream()
                         .filter(x -> x.getType() == Volume.Type.ROOT)
                         .collect(Collectors.toList());
-                if (sortedDisks.size() != vmDisks.size()) {
-                    s_logger.error("Different number of root disks spec vs cloned deploy-as-is VM disks: " + sortedDisks.size() + " - " + vmDisks.size());
-                    return;
-                }
-                for (int i = 0; i < sortedDisks.size(); i++) {
-                    DiskTO specDisk = sortedDisks.get(i);
+                for (int i = 0; i < sortedRootDisksFromSpec.size(); i++) {
+                    DiskTO specDisk = sortedRootDisksFromSpec.get(i);
                     VirtualDisk vmDisk = vmDisks.get(i);
                     DataTO dataVolume = specDisk.getData();
                     if (dataVolume instanceof VolumeObjectTO) {
@@ -2662,6 +2605,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 }
                                 volumeObjectTO.setPath(relativePath);
                                 specDisk.setPath(relativePath);
+                                rootDisks.add(vmDisk);
                             } else {
                                 s_logger.error("Empty backing filename for volume " + volumeObjectTO.getName());
                             }
@@ -2669,6 +2613,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             s_logger.error("Could not get volume backing info for volume " + volumeObjectTO.getName());
                         }
                     }
+                }
+                vmDisks.removeAll(rootDisks);
+                if (CollectionUtils.isNotEmpty(vmDisks)) {
+                    s_logger.info("Tearing down datadisks for deploy-as-is VM");
+                    tearDownVMDisks(vmMo, vmDisks);
                 }
             }
         } catch (Exception e) {

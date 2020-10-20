@@ -810,9 +810,21 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
 
             String vmdkName = volume.getName();
+            String vmName = volume.getVmName();
             String vmdkFileBaseName = null;
             if (template.isDeployAsIs() && volume.getVolumeType() == Volume.Type.ROOT) {
-                s_logger.info("ROOT Volume from deploy-as-is template, no need to create the volume at this point, will be cloned from template");
+                VirtualMachineMO existingVm = dcMo.findVm(vmName);
+                if (volume.getDeviceId().equals(0L)) {
+                    if (existingVm != null) {
+                        s_logger.info("Found existing VM " + vmName + " before cloning from template, destroying it");
+                        existingVm.detachAllDisks();
+                        existingVm.destroy();
+                    }
+                    s_logger.info("ROOT Volume from deploy-as-is template, cloning template");
+                    cloneVMFromTemplate(hyperHost, template.getPath(), vmName, primaryStore.getUuid());
+                } else {
+                    s_logger.info("ROOT Volume from deploy-as-is template, volume already created at this point");
+                }
             } else {
                 if (srcStore == null) {
                     // create a root volume for blank VM (created from ISO)
