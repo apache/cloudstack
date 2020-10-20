@@ -21,7 +21,10 @@
       <div>
         <div class="resource-details">
           <div class="resource-details__name">
-            <div class="avatar">
+            <div
+              class="avatar"
+              @click="$message.success(`${$t('label.copied.clipboard')} : ${name}`)"
+              v-clipboard:copy="name" >
               <slot name="avatar">
                 <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
                 <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :type="$route.meta.icon" />
@@ -32,9 +35,8 @@
               <div v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.name)">{{ $t(resource.name.toLowerCase()) }}</div>
               <div v-else>
                 <h4 class="name">
-                  {{ resource.displayname || resource.displaytext || resource.name || resource.username || resource.ipaddress || resource.virtualmachinename || resource.templatetype }}
+                  {{ name }}
                 </h4>
-                <console style="margin-left: 10px" :resource="resource" size="default" v-if="resource.id" />
               </div>
             </slot>
           </div>
@@ -70,6 +72,12 @@
               <a-tag v-if="resource.version">
                 {{ resource.version }}
               </a-tag>
+              <a-tooltip placement="right" >
+                <template slot="title">
+                  <span>{{ $t('label.view.console') }}</span>
+                </template>
+                <console style="margin-top: -5px;" :resource="resource" size="default" v-if="resource.id" />
+              </a-tooltip>
             </div>
           </slot>
         </div>
@@ -296,9 +304,11 @@
         <div class="resource-detail-item" v-if="resource.ipaddress">
           <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="environment" />
-            <span v-if="resource.nic && resource.nic.length > 0">{{ resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ') }}</span>
-            <span v-else>{{ resource.ipaddress }}</span>
+            <a-icon
+              type="environment"
+              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
+              v-clipboard:copy="ipaddress" />
+            <span>{{ ipaddress }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
@@ -702,6 +712,8 @@ export default {
   },
   data () {
     return {
+      name: '',
+      ipaddress: '',
       resourceType: '',
       annotationType: '',
       inputVisible: false,
@@ -722,6 +734,7 @@ export default {
       this.resourceType = this.$route.meta.resourceType
       this.annotationType = ''
       this.showKeys = false
+      this.setData()
 
       switch (this.resourceType) {
         case 'UserVm':
@@ -752,7 +765,19 @@ export default {
       }
     }
   },
+  created () {
+    this.setData()
+  },
   methods: {
+    setData () {
+      this.name = this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
+        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
+      if (this.resource.nic && this.resource.nic.length > 0) {
+        this.ipaddress = this.resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ')
+      } else {
+        this.ipaddress = this.resource.ipaddress
+      }
+    },
     toSize (kb) {
       if (!kb) {
         return '0 KB'
@@ -905,6 +930,7 @@ export default {
       margin-right: 20px;
       overflow: hidden;
       min-width: 50px;
+      cursor: pointer;
 
       img {
         height: 100%;
