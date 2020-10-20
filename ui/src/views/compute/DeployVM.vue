@@ -469,7 +469,7 @@
                 <template slot="description" v-if="zoneSelected">
                   <span>
                     {{ $t('label.isadvanced') }}
-                    <a-switch @change="val => { this.showDetails = val }" style="margin-left: 10px"/>
+                    <a-switch @change="val => { this.showDetails = val }" :checked="this.showDetails" style="margin-left: 10px"/>
                   </span>
                   <div style="margin-top: 15px" v-show="this.showDetails">
                     <div
