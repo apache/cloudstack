@@ -1771,12 +1771,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         auxVM.destroy();
         String vmNameInVcenter = virtualMachineMO.getName();
         virtualMachineMO.tearDownDevices(new Class<?>[]{VirtualDisk.class});
+        s_logger.info("Changing VM datastore to " + dsMo);
+        virtualMachineMO.changeDatastore(morDatastore);
         for (String vmdkFileBaseName : vmdkFileBaseNames) {
-            String newPath = null;
             if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
-                newPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, null);
+                String newPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName, null);
+                s_logger.info("Attaching disk to restored VM at: " + newPath + " on datastore: " + destDatastore);
+                virtualMachineMO.attachDisk(new String[] {newPath}, morDatastore);
             }
-            virtualMachineMO.attachDisk(new String[] {newPath}, morDatastore);
         }
     }
 

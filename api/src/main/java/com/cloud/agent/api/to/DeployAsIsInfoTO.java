@@ -31,7 +31,7 @@ public class DeployAsIsInfoTO {
     @LogLevel(LogLevel.Log4jLevel.Off)
     private Map<String, String> properties = new HashMap<>();
     private Map<Integer, String> nicAdapterMap = new HashMap();
-    boolean replaceVm;
+    private boolean replaceVm;
 
     public DeployAsIsInfoTO() {
     }
