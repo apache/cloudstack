@@ -93,6 +93,15 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "endpoint")
     private String endpoint;
 
+    @Column(name = "autoscaling_enabled")
+    private boolean isAutoscalingEnabled;
+
+    @Column(name = "minsize")
+    private Long minSize;
+
+    @Column(name = "maxsize")
+    private Long maxSize;
+
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
@@ -301,6 +310,30 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Override
     public Date getCreated() {
         return created;
+    }
+
+    public boolean isAutoscalingEnabled() {
+        return isAutoscalingEnabled;
+    }
+
+    public void setAutoscalingEnabled(boolean isAutoscalingEnabled) {
+        this.isAutoscalingEnabled = isAutoscalingEnabled;
+    }
+
+    public Long getMinSize() {
+        return minSize;
+    }
+
+    public void setMinSize(Long minSize) {
+        this.minSize = minSize;
+    }
+
+    public Long getMaxSize() {
+        return maxSize;
+    }
+
+    public void setMaxSize(Long maxSize) {
+        this.maxSize = maxSize;
     }
 
     public KubernetesClusterVO() {

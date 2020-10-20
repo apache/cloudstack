@@ -70,6 +70,11 @@ echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
 dashboard_conf_file="${working_dir}/dashboard.yaml"
 curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
 
+AUTOSCALER_URL="https://github.com/shapeblue/autoscaler/blob/add-acs/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
+echo "Downloading kubernetes cluster autoscaler ${AUTOSCALER_URL}"
+autoscaler_conf_file="${working_dir}/autoscaler.yaml"
+curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
+
 echo "Fetching k8s docker images..."
 docker -v
 if [ $? -ne 0 ]; then
@@ -87,6 +92,10 @@ if [ $? -ne 0 ]; then
 fi
 mkdir -p "${working_dir}/docker"
 output=`${k8s_dir}/kubeadm config images list --kubernetes-version=${RELEASE}`
+
+# Don't forget about the autoscaler image !
+autoscaler_image="davidjumani/cluster-autoscaler:latest"
+output=`printf "%s\n" ${output} ${autoscaler_image}`
 while read -r line; do
     echo "Downloading docker image $line ---"
     sudo docker pull "$line"

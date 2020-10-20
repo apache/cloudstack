@@ -823,6 +823,9 @@ public class ApiConstants {
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
+    public static final String AUTOSCALING_ENABLED = "autoscaling_enabled";
+    public static final String MIN_SIZE = "minsize";
+    public static final String MAX_SIZE = "maxsize";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";

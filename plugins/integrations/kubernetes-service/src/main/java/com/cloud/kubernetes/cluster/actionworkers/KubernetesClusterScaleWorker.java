@@ -25,6 +25,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
@@ -69,17 +70,29 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private List<Long> nodeIds;
     private KubernetesCluster.State originalState;
     private Network network;
+    private Long minSize;
+    private Long maxSize;
+    private Boolean isAutoscalingEnabled;
     private long scaleTimeoutTime;
+    private String[] keys;
 
     public KubernetesClusterScaleWorker(final KubernetesCluster kubernetesCluster,
                                         final ServiceOffering serviceOffering,
                                         final Long clusterSize,
                                         final List<Long> nodeIds,
+                                        final Boolean isAutoscalingEnabled,
+                                        final Long minSize,
+                                        final Long maxSize,
+                                        final String[] keys,
                                         final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
         this.serviceOffering = serviceOffering;
         this.nodeIds = nodeIds;
+        this.isAutoscalingEnabled = isAutoscalingEnabled;
+        this.minSize = minSize;
+        this.maxSize = maxSize;
         this.originalState = kubernetesCluster.getState();
+        this.keys = keys;
         if (this.nodeIds != null) {
             this.clusterSize = kubernetesCluster.getNodeCount() - this.nodeIds.size();
         } else {
@@ -158,31 +171,54 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
     }
 
-    private KubernetesClusterVO updateKubernetesClusterEntry(final long cores, final long memory,
-                                                             final Long size, final Long serviceOfferingId) {
+    private KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory,
+                                                             final Long size, final Long serviceOfferingId,
+                                                             final Boolean autoscale, final Long minSize, final Long maxSize) {
         return Transaction.execute((TransactionCallback<KubernetesClusterVO>) status -> {
             KubernetesClusterVO updatedCluster = kubernetesClusterDao.createForUpdate(kubernetesCluster.getId());
-            updatedCluster.setCores(cores);
-            updatedCluster.setMemory(memory);
+            if (cores != null) {
+                updatedCluster.setCores(cores);
+            }
+            if (memory != null) {
+                updatedCluster.setMemory(memory);
+            }
             if (size != null) {
                 updatedCluster.setNodeCount(size);
             }
             if (serviceOfferingId != null) {
                 updatedCluster.setServiceOfferingId(serviceOfferingId);
             }
-            kubernetesClusterDao.persist(updatedCluster);
+            LOGGER.warn("GOT : " + autoscale + " - " + minSize + " - " + maxSize);
+            if (autoscale != null) {
+                LOGGER.warn("Updating autoscale : " + autoscale);
+                updatedCluster.setAutoscalingEnabled(autoscale);
+                LOGGER.warn("Updated autoscale : " + updatedCluster.isAutoscalingEnabled());
+            }
+            updatedCluster.setMinSize(minSize);
+            updatedCluster.setMaxSize(maxSize);
+            updatedCluster = kubernetesClusterDao.persist(updatedCluster);
+            LOGGER.warn("Persisted autoscale : " + updatedCluster.isAutoscalingEnabled());
             return updatedCluster;
         });
     }
 
     private KubernetesClusterVO updateKubernetesClusterEntry(final Long newSize, final ServiceOffering newServiceOffering) throws CloudRuntimeException {
-        final ServiceOffering serviceOffering = newServiceOffering == null ?
-                serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId()) : newServiceOffering;
+        final ServiceOffering serviceOffering = newServiceOffering;
         final Long serviceOfferingId = newServiceOffering == null ? null : serviceOffering.getId();
-        final long size = newSize == null ? kubernetesCluster.getTotalNodeCount() : (newSize + kubernetesCluster.getMasterNodeCount());
-        final long cores = serviceOffering.getCpu() * size;
-        final long memory = serviceOffering.getRamSize() * size;
-        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId);
+        final Long size = newSize;
+        final Long cores = newServiceOffering == null ? null : serviceOffering.getCpu() * size;
+        final Long memory = newServiceOffering == null ? null : serviceOffering.getRamSize() * size;
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId, null, null, null);
+        if (kubernetesClusterVO == null) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to update Kubernetes cluster",
+                    kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+        }
+        return kubernetesClusterVO;
+    }
+
+    private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscale, final Long minSize, final Long maxSize) throws CloudRuntimeException {
+        LOGGER.warn("Changing cluster to : " + autoscale + " - " + minSize + " - " + maxSize);
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscale, minSize, maxSize);
         if (kubernetesClusterVO == null) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to update Kubernetes cluster",
                     kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
@@ -417,6 +453,90 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         kubernetesCluster = updateKubernetesClusterEntry(clusterSize, null);
     }
 
+    private boolean enableAutoScaleKubernetesCluster() throws CloudRuntimeException {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
+        if (CollectionUtils.isEmpty(clusterVMs)) {
+            return false;
+        }
+
+        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
+
+        String hostName = userVm.getHostName();
+        if (!Strings.isNullOrEmpty(hostName)) {
+            hostName = hostName.toLowerCase();
+        }
+
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, String.format("sudo kubectl -n kube-system create secret generic cloudstack-secret " +
+                    "--from-literal=api-url='%s' " +
+                    "--from-literal=api-key='%s' " +
+                    "--from-literal=secret-key='%s'", ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
+                    10000, 10000, 60000);
+            if (!result.first()) {
+                return false;
+            }
+            // result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+            //     pkFile, null, String.format("sudo kubectl apply -f /opt/autoscaler/autoscaler.yaml"),
+            //         10000, 10000, 60000);
+            result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d", kubernetesCluster.getUuid(), maxSize, minSize),
+                    10000, 10000, 60000);
+            if (!result.first()) {
+                return false;
+            }
+            updateKubernetesClusterEntry(true, minSize, maxSize);
+        } catch (Exception e) {
+            String msg = String.format("Failed to autoscale Kubernetes cluster: %s", kubernetesCluster.getName());
+            LOGGER.warn(msg, e);
+        }
+        return true;
+    }
+
+    private boolean disableAutoScaleKubernetesCluster() throws CloudRuntimeException {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
+        if (CollectionUtils.isEmpty(clusterVMs)) {
+            return false;
+        }
+
+        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
+
+        String hostName = userVm.getHostName();
+        if (!Strings.isNullOrEmpty(hostName)) {
+            hostName = hostName.toLowerCase();
+        }
+
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, "sudo kubectl -n kube-system delete secret cloudstack-secret",
+                    10000, 10000, 60000);
+            if (!result.first()) {
+                return false;
+            }
+            result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
+                    10000, 10000, 60000);
+            if (!result.first()) {
+                return false;
+            }
+            updateKubernetesClusterEntry(false, null, null);
+        } catch (Exception e) {
+            String msg = String.format("Failed to autoscale Kubernetes cluster: %s", kubernetesCluster.getName());
+            LOGGER.warn(msg, e);
+        }
+        return true;
+    }
+
     public boolean scaleCluster() throws CloudRuntimeException {
         init();
         if (LOGGER.isInfoEnabled()) {
@@ -427,6 +547,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
         if (existingServiceOffering == null) {
             logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster.getName()));
+        }
+
+        if (this.isAutoscalingEnabled != null) {
+            if (this.isAutoscalingEnabled) {
+                return enableAutoScaleKubernetesCluster();
+            } else {
+                return disableAutoScaleKubernetesCluster();
+            }
         }
         final boolean serviceOfferingScalingNeeded = serviceOffering != null && serviceOffering.getId() != existingServiceOffering.getId();
         final boolean clusterSizeScalingNeeded = clusterSize != null && clusterSize != originalClusterSize;
