@@ -274,6 +274,17 @@ const user = {
           reject(error)
         })
       })
+    },
+    RefreshFeatures ({ commit }) {
+      return new Promise((resolve, reject) => {
+        api('listCapabilities').then(response => {
+          const result = response.listcapabilitiesresponse.capability
+          resolve(result)
+          commit('SET_FEATURES', result)
+        }).catch(error => {
+          reject(error)
+        })
+      })
     }
   }
 }

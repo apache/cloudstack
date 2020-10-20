@@ -439,7 +439,7 @@ export default {
         value: this.editableValue
       }).then(json => {
         this.editableValueKey = null
-
+        this.$store.dispatch('RefreshFeatures')
         this.$message.success(`${this.$t('message.setting.updated')} ${record.name}`)
         if (json.updateconfigurationresponse &&
           json.updateconfigurationresponse.configuration &&

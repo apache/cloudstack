@@ -176,11 +176,11 @@
           </span>
           <a-input
             v-decorator="['masternodes', {
-              initialValue: '1',
+              initialValue: '2',
               rules: [{ required: true, message: $t('message.error.input.value') },
                       {
                         validator: (rule, value, callback) => {
-                          if (value && (isNaN(value) || value <= 0)) {
+                          if (value && (isNaN(value) || value < 2)) {
                             callback(this.$t('message.validate.number'))
                           }
                           callback()
@@ -246,7 +246,65 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-
+        <div v-if="$store.getters.features.kubernetesclusterexperimentalfeaturesenabled">
+          <a-form-item :label="$t('label.private.registry')">
+            <a-switch v-decorator="['privateregistry']" @change="checked => { this.usePrivateRegistry = checked }" />
+          </a-form-item>
+          <div v-if="usePrivateRegistry">
+            <a-form-item>
+              <span slot="label">
+                {{ $t('label.username') }}
+                <a-tooltip :title="apiParams.dockerregistryusername.description">
+                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                </a-tooltip>
+              </span>
+              <a-input
+                v-decorator="['dockerregistryusername', {
+                  rules: [{ required: true, message: $t('label.required') }]
+                }]"
+                :placeholder="apiParams.dockerregistryusername.description"/>
+            </a-form-item>
+            <a-form-item>
+              <span slot="label">
+                {{ $t('label.password') }}
+                <a-tooltip :title="apiParams.dockerregistrypassword.description">
+                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                </a-tooltip>
+              </span>
+              <a-input-password
+                v-decorator="['dockerregistrypassword', {
+                  rules: [{ required: true, message: $t('label.required') }]
+                }]"
+                :placeholder="apiParams.dockerregistrypassword.description"/>
+            </a-form-item>
+            <a-form-item>
+              <span slot="label">
+                {{ $t('label.url') }}
+                <a-tooltip :title="apiParams.dockerregistryurl.description">
+                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                </a-tooltip>
+              </span>
+              <a-input
+                v-decorator="['dockerregistryurl', {
+                  rules: [{ required: true, message: $t('label.required') }]
+                }]"
+                :placeholder="apiParams.dockerregistryurl.description"/>
+            </a-form-item>
+            <a-form-item>
+              <span slot="label">
+                {{ $t('label.email') }}
+                <a-tooltip :title="apiParams.dockerregistryemail.description">
+                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                </a-tooltip>
+              </span>
+              <a-input
+                v-decorator="['dockerregistryemail', {
+                  rules: [{ required: true, message: $t('label.required') }]
+                }]"
+                :placeholder="apiParams.dockerregistryemail.description"/>
+            </a-form-item>
+          </div>
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
           <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
@@ -277,6 +335,7 @@ export default {
       keyPairs: [],
       keyPairLoading: false,
       haEnabled: false,
+      usePrivateRegistry: false,
       loading: false
     }
   },
@@ -468,6 +527,13 @@ export default {
         if (this.isValidValueForKey(values, 'keypair') && this.arrayHasItems(this.keyPairs) && this.keyPairs[values.keypair].id != null) {
           params.keypair = this.keyPairs[values.keypair].id
         }
+        if (this.usePrivateRegistry) {
+          params.dockerregistryusername = values.dockerregistryusername
+          params.dockerregistrypassword = values.dockerregistrypassword
+          params.dockerregistryurl = values.dockerregistryurl
+          params.dockerregistryemail = values.dockerregistryemail
+        }
+
         api('createKubernetesCluster', params).then(json => {
           const jobId = json.createkubernetesclusterresponse.jobid
           this.$store.dispatch('AddAsyncJob', {
