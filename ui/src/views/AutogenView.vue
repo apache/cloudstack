@@ -47,7 +47,7 @@
                   :placeholder="$t('label.filterby')"
                   :value="$route.query.filter || (projectView && $route.name === 'vm' ||
                     ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                    ? 'all' : 'self')"
+                    ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
                   style="min-width: 100px; margin-left: 10px"
                   @change="changeFilter">
                   <a-icon slot="suffixIcon" type="filter" />
@@ -1023,6 +1023,12 @@ export default {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
         query.isofilter = filter
+      } else if (this.$route.name === 'guestnetwork') {
+        if (filter === 'all') {
+          delete query.type
+        } else {
+          query.type = filter
+        }
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {
           query.account = this.$store.getters.userInfo.account
