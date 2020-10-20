@@ -6930,9 +6930,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     }
 
-    private void recreateDeployAsIsVirtualMachine(UserVmVO vm, List<Volume> newVols) {
-    }
-
     /**
      * Perform basic checkings to make sure restore is possible. If not, #InvalidParameterValueException is thrown.
      *
