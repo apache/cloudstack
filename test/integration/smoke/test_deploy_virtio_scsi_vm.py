@@ -96,7 +96,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
-        cls.cleanup = []
+        cls._cleanup = []
         if cls.hypervisor.lower() not in ['kvm']:
             cls.hypervisorNotSupported = True
             return
@@ -108,6 +108,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             hypervisor=cls.hypervisor.lower(),
             domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
+        cls._cleanup.append(cls.template)
 
         if cls.template == FAILED:
             assert False, "get_template() failed to return template"
@@ -120,16 +121,19 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["small"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.sparse_disk_offering = DiskOffering.create(
             cls.apiclient,
             cls.services["sparse_disk_offering"]
         )
+        cls._cleanup.append(cls.sparse_disk_offering)
 
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -159,24 +163,11 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         # Start VM after password reset
         cls.virtual_machine.start(cls.apiclient)
 
-        cls.cleanup = [
-            cls.template,
-            cls.service_offering,
-            cls.sparse_disk_offering,
-            cls.account
-        ]
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestDeployVirtioSCSIVM,
-                cls
-            ).getClsTestClient().getApiClient()
             # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVirtioSCSIVM, cls).tearDown()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
