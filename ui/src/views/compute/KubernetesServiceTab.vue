@@ -108,13 +108,13 @@
           </template>
         </a-table>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.firewall')" key="firewall">
+      <a-tab-pane :tab="$t('label.firewall')" key="firewall" v-if="publicIpAddress">
         <FirewallRules :resource="this.publicIpAddress" :loading="this.networkLoading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.portforwarding')" key="portforwarding">
+      <a-tab-pane :tab="$t('label.portforwarding')" key="portforwarding" v-if="publicIpAddress">
         <PortForwarding :resource="this.publicIpAddress" :loading="this.networkLoading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing">
+      <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing" v-if="publicIpAddress">
         <LoadBalancing :resource="this.publicIpAddress" :loading="this.networkLoading" />
       </a-tab-pane>
     </a-tabs>
@@ -327,14 +327,15 @@ export default {
           this.resource.projectid !== '') {
           params.projectid = this.resource.projectid
         }
-        if (this.isValidValueForKey(this.resource, 'associatednetworkid')) {
-          params.associatednetworkid = this.resource.associatednetworkid
+        if (this.isValidValueForKey(this.resource, 'networkid')) {
+          params.associatednetworkid = this.resource.networkid
         }
       }
       api('listPublicIpAddresses', params).then(json => {
-        const ips = json.listpublicipaddressesresponse.publicipaddress
+        let ips = json.listpublicipaddressesresponse.publicipaddress
         if (this.arrayHasItems(ips)) {
-          this.publicIpAddress = ips[0]
+          ips = ips.filter(x => x.issourcenat)
+          this.publicIpAddress = ips.length > 0 ? ips[0] : null
         }
       }).catch(error => {
         this.$notifyError(error)
