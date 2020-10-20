@@ -138,6 +138,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String clusterToken = "{{ k8s_master.cluster.token }}";
         final String clusterInitArgsKey = "{{ k8s_master.cluster.initargs }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
+        final String clusterId = "{{ k8s_cluster_id }}";
         final List<String> addresses = new ArrayList<>();
         addresses.add(masterIp);
         if (!serverIp.equals(masterIp)) {
@@ -173,6 +174,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
         k8sMasterConfig = k8sMasterConfig.replace(clusterInitArgsKey, initArgs);
         k8sMasterConfig = k8sMasterConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        k8sMasterConfig = k8sMasterConfig.replace(clusterId, this.kubernetesCluster.getUuid());
         return k8sMasterConfig;
     }
 
@@ -222,6 +224,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String clusterHACertificateKey = "{{ k8s_master.cluster.ha.certificate.key }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
+        final String clusterId = "{{ k8s_cluster_id }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
@@ -235,6 +238,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sMasterConfig = k8sMasterConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sMasterConfig = k8sMasterConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         k8sMasterConfig = k8sMasterConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        k8sMasterConfig = k8sMasterConfig.replace(clusterId, this.kubernetesCluster.getUuid());
         return k8sMasterConfig;
     }
 
