@@ -2159,6 +2159,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void orchestrateStorageMigration(final String vmUuid, final StoragePool destPool) {
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+        preStorageMigrationStateCheck(destPool, vm);
         try {
             if(s_logger.isDebugEnabled()) {
                 s_logger.debug(String.format("Offline migration of %s vm %s with volumes",
@@ -2182,6 +2183,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.debug(anotherMEssage);
                 throw new CloudRuntimeException(anotherMEssage, e);
             }
+        }
+    }
+
+    private void preStorageMigrationStateCheck(StoragePool destPool, VMInstanceVO vm) {
+        if (destPool == null) {
+            throw new CloudRuntimeException("Unable to migrate vm: missing destination storage pool");
+        }
+        try {
+            stateTransitTo(vm, Event.StorageMigrationRequested, null);
+        } catch (final NoTransitionException e) {
+            String msg = String.format("Unable to migrate vm: %s", vm.getUuid());
+            s_logger.debug(msg);
+            throw new CloudRuntimeException(msg, e);
         }
     }
 
