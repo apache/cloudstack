@@ -133,6 +133,14 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "the list of virtualmachine associated with this Kubernetes cluster")
     private List<UserVmResponse> virtualMachines;
 
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "Public IP Address of the cluster")
+    private String ipAddress;
+
+    @SerializedName(ApiConstants.IP_ADDRESS_ID)
+    @Param(description = "Public IP Address ID of the cluster")
+    private String ipAddressId;
+
     public KubernetesClusterResponse() {
     }
 
@@ -323,5 +331,13 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
 
     public List<UserVmResponse> getVirtualMachines() {
         return virtualMachines;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setIpAddressId(String ipAddressId) {
+        this.ipAddressId = ipAddressId;
     }
 }
