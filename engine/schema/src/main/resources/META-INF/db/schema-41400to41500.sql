@@ -222,3 +222,6 @@ ALTER VIEW `cloud`.`image_store_view` AS
         `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
 
 ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_vm_type` varchar(255) DEFAULT "UserVM" COMMENT 'Defines the type of UserVM';
+
+-- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for XenServer
+UPDATE `cloud`.`vm_template` SET guest_os_id=293 WHERE id=1;
