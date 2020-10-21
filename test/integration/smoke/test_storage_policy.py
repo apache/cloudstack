@@ -88,7 +88,7 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
     def tearDown(self):
         try:
             self.debug("Cleaning up the resources")
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
             self.debug("Cleanup complete!")
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
