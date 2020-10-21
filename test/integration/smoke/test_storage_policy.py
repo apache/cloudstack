@@ -105,6 +105,7 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
 
     def create_volume(self, apiclient):
         cmd = create
+
     @attr(
         tags=[
             "advanced",
