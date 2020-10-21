@@ -81,7 +81,8 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
             self.testdata["account"],
             domainid=self.domain.id
         )
-        self.cleanup = [self.account]
+        self.cleanup = []
+        self.cleanup.append(self.account)
         return
 
     def tearDown(self):
