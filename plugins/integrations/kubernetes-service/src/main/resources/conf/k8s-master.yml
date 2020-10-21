@@ -116,11 +116,9 @@ write_files:
 
         mkdir -p /opt/bin
         cd /opt/bin
-        # cp -a ${BINARIES_DIR}/k8s-node-setup.sh .
         cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} .
         chmod +x {kubeadm,kubelet,kubectl}
 
-        # bash -x /opt/bin/k8s-node-setup.sh
         sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
         mkdir -p /etc/systemd/system/kubelet.service.d
         sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
@@ -230,7 +228,7 @@ write_files:
 
       if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
         echo "setup-kube-system is running!"
-        # exit 1
+        exit 1
       fi
       if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
         export PATH=$PATH:/opt/bin

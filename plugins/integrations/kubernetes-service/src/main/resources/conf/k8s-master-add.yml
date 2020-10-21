@@ -96,7 +96,6 @@ write_files:
 
         mkdir -p /opt/bin
         cd /opt/bin
-        # cp -a ${BINARIES_DIR}/k8s-node-setup.sh .
         cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} .
         chmod +x {kubeadm,kubelet,kubectl}
 
@@ -183,13 +182,13 @@ write_files:
       #!/bin/bash -e
 
       if [[ -f "/home/debian/success" ]]; then
-      echo "Already provisioned!"
-      exit 0
+        echo "Already provisioned!"
+        exit 0
       fi
 
       if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
         echo "setup-kube-system is running!"
-        # exit 1
+        exit 1
       fi
       modprobe ip_vs
       modprobe ip_vs_wrr
@@ -231,7 +230,6 @@ write_files:
       ExecStart=/opt/bin/deploy-kube-system
 
 runcmd:
-  - [ systemctl, enable, --now, --no-block, docker ]
   - [ systemctl, start, setup-kube-system ]
   - [ systemctl, start, deploy-kube-system ]
 
