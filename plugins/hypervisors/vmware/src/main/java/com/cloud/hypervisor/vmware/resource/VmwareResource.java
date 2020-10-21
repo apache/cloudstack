@@ -2331,28 +2331,27 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             if (deployAsIs) {
                 setDeployAsIsProperties(vmMo, deployAsIsInfo, vmConfigSpec);
-                configureVNC(vmSpec, extraOptions, vmConfigSpec, hyperHost, vmInternalCSName);
-            } else {
-                configNvpExtraOption(extraOptions, vmSpec, nicUuidToDvSwitchUuid);
-                configCustomExtraOption(extraOptions, vmSpec);
-
-                // config for NCC
-                VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
-                if (vmType.equals(VirtualMachine.Type.NetScalerVm)) {
-                    NicTO mgmtNic = vmSpec.getNics()[0];
-                    OptionValue option = new OptionValue();
-                    option.setKey("machine.id");
-                    option.setValue("ip=" + mgmtNic.getIp() + "&netmask=" + mgmtNic.getNetmask() + "&gateway=" + mgmtNic.getGateway());
-                    extraOptions.add(option);
-                }
-
-                configureVNC(vmSpec, extraOptions, vmConfigSpec, hyperHost, vmInternalCSName);
-
-                // config video card
-                configureVideoCard(vmMo, vmSpec, vmConfigSpec);
-
-                setBootOptions(vmSpec, bootMode, vmConfigSpec);
             }
+
+            configNvpExtraOption(extraOptions, vmSpec, nicUuidToDvSwitchUuid);
+            configCustomExtraOption(extraOptions, vmSpec);
+
+            // config for NCC
+            VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
+            if (vmType.equals(VirtualMachine.Type.NetScalerVm)) {
+                NicTO mgmtNic = vmSpec.getNics()[0];
+                OptionValue option = new OptionValue();
+                option.setKey("machine.id");
+                option.setValue("ip=" + mgmtNic.getIp() + "&netmask=" + mgmtNic.getNetmask() + "&gateway=" + mgmtNic.getGateway());
+                extraOptions.add(option);
+            }
+
+            configureVNC(vmSpec, extraOptions, vmConfigSpec, hyperHost, vmInternalCSName);
+
+            // config video card
+            configureVideoCard(vmMo, vmSpec, vmConfigSpec);
+
+            setBootOptions(vmSpec, bootMode, vmConfigSpec);
 
             if (!StringUtils.isEmpty(vmStoragePolicyId)) {
                 vmConfigSpec.getVmProfile().add(vmProfileSpec);
