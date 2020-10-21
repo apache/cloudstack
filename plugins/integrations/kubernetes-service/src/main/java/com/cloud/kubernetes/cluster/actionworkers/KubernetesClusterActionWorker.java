@@ -28,6 +28,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -70,6 +71,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.common.base.Strings;
@@ -383,5 +385,38 @@ public class KubernetesClusterActionWorker {
                 kubernetesCluster.getName(), kubernetesCluster.getState().toString(), e.toString()), nte);
             return false;
         }
+    }
+
+    protected boolean createSecret(String[] keys) {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
+        if (CollectionUtils.isEmpty(clusterVMs)) {
+            return false;
+        }
+
+        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
+
+        String hostName = userVm.getHostName();
+        if (!Strings.isNullOrEmpty(hostName)) {
+            hostName = hostName.toLowerCase();
+        }
+
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, String.format("sudo kubectl -n kube-system create secret generic cloudstack-secret " +
+                    "--from-literal=api-url='%s' " +
+                    "--from-literal=api-key='%s' " +
+                    "--from-literal=secret-key='%s'", ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
+                    10000, 10000, 60000);
+            return result.first();
+        } catch (Exception e) {
+            String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
+            LOGGER.warn(msg, e);
+        }
+        return true;
     }
 }

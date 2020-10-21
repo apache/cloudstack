@@ -26,25 +26,18 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -141,7 +134,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
-import com.cloud.user.AccountVO;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -210,8 +202,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Inject
     protected AccountDao accountDao;
     @Inject
-    protected RoleService roleService;
-    @Inject
     protected AccountService accountService;
     @Inject
     protected AccountManager accountManager;
@@ -243,45 +233,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected ResourceManager resourceManager;
     @Inject
     protected FirewallRulesDao firewallRulesDao;
-
-    private Role createKubeadminRole() {
-        Role kubeadminRole = roleService.createRole(KUBEADMIN_ACCOUNT_NAME, RoleType.Admin, "Default Kubeadmin role");
-        roleService.createRolePermission(kubeadminRole, new Rule("listKubernetesClusters"), Permission.ALLOW, "");
-        roleService.createRolePermission(kubeadminRole, new Rule("scaleKubernetesCluster"), Permission.ALLOW, "");
-        roleService.createRolePermission(kubeadminRole, new Rule("*"), Permission.DENY, "");
-        return kubeadminRole;
-    }
-
-    private void init() {
-
-        // Check and create Kubeadmin role
-        Role kubeadminRole = null;
-        List<Role> roles = roleService.findRolesByName(KUBEADMIN_ACCOUNT_NAME);
-        if (roles == null) {
-            kubeadminRole = createKubeadminRole();
-        } else {
-            roles = roles.stream().filter(x -> x.getDescription() == "Default Kubeadmin role").collect(Collectors.toList());
-            if (roles.size() != 1 ) {
-                kubeadminRole = createKubeadminRole();
-            } else {
-                kubeadminRole = roles.get(0);
-            }
-        }
-
-        // Check and create Kubeadmin account
-        if (accountManager.getActiveAccountByName(KUBEADMIN_ACCOUNT_NAME, 1L) != null) {
-            return;
-        }
-
-        AccountVO kubeadmin = new AccountVO();
-        kubeadmin.setAccountName(KUBEADMIN_ACCOUNT_NAME);
-        kubeadmin.setUuid(UUID.randomUUID().toString());
-        kubeadmin.setState(Account.State.enabled);
-        kubeadmin.setDomainId(1);
-        kubeadmin.setType(RoleType.Admin.getAccountType());
-        kubeadmin.setRoleId(kubeadminRole.getId());
-        kubeadmin = accountDao.persist(kubeadmin);
-    }
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -697,8 +648,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
         response.setVirtualMachines(vmResponses);
-        Boolean isAutoscalingEnabled = kubernetesCluster.isAutoscalingEnabled();
-        LOGGER.warn("Autoscaling enabled : " + isAutoscalingEnabled);
+        Boolean isAutoscalingEnabled = kubernetesCluster.getAutoscalingEnabled();
         if (isAutoscalingEnabled != null) {
             response.setAutoscalingEnabled(isAutoscalingEnabled);
         }
@@ -947,11 +897,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 throw new InvalidParameterValueException("autoscaling can not be passed along with nodeids or clustersize or service offering");
             }
 
-            String csUrl = ApiServiceConfiguration.ApiServletPath.value();
-            if (csUrl == null || csUrl.contains("localhost")) {
-                throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
-            }
-
             if (minSize == null || maxSize == null) {
                 throw new InvalidParameterValueException("autoscaling requires minsize and maxsize to be passed");
             }
@@ -1106,6 +1051,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
 
+        // Need this for cloudstack-kubernetes-provider && autoscaler
+        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
+        if (csUrl == null || csUrl.contains("localhost")) {
+            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
+        }
+
         validateKubernetesClusterCreateParameters(cmd);
 
         final DataCenter zone = dataCenterDao.findById(cmd.getZoneId());
@@ -1191,14 +1142,18 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (zone == null) {
             logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
-        KubernetesClusterStartWorker startWorker =
-                new KubernetesClusterStartWorker(kubernetesCluster, this);
-        startWorker = ComponentContext.inject(startWorker);
         if (onCreate) {
             // Start for Kubernetes cluster in 'Created' state
+            String[] keys = getServiceUserKeys();
+            KubernetesClusterStartWorker startWorker =
+                new KubernetesClusterStartWorker(kubernetesCluster, this, keys);
+            startWorker = ComponentContext.inject(startWorker);
             return startWorker.startKubernetesClusterOnCreate();
         } else {
             // Start for Kubernetes cluster in 'Stopped' state. Resources are already provisioned, just need to be started
+            KubernetesClusterStartWorker startWorker =
+                new KubernetesClusterStartWorker(kubernetesCluster, this);
+            startWorker = ComponentContext.inject(startWorker);
             return startWorker.startStoppedKubernetesCluster();
         }
     }
@@ -1324,8 +1279,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return response;
     }
 
-    private String[] createServiceAccount() {
-        // TODO : Maybe create a service account kubeadmin with restricted permissions and add the user to that instead
+    private String[] getServiceUserKeys() {
         Account caller = CallContext.current().getCallingAccount();
         String username = caller.getAccountName() + "-kubeadmin";
         UserAccount kubeadmin = accountService.getActiveUserAccount(username, caller.getDomainId());
@@ -1352,12 +1306,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         validateKubernetesClusterScaleParameters(cmd);
 
-        Boolean isAutoscalingEnabled = cmd.isAutoscalingEnabled();
-        String[] keys = null;
-        if (isAutoscalingEnabled != null && isAutoscalingEnabled) {
-            keys = createServiceAccount();
-        }
-
         KubernetesClusterScaleWorker scaleWorker =
             new KubernetesClusterScaleWorker(kubernetesClusterDao.findById(cmd.getId()),
                 serviceOfferingDao.findById(cmd.getServiceOfferingId()),
@@ -1366,7 +1314,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 cmd.isAutoscalingEnabled(),
                 cmd.getMinSize(),
                 cmd.getMaxSize(),
-                keys,
                 this);
         scaleWorker = ComponentContext.inject(scaleWorker);
         return scaleWorker.scaleCluster();
