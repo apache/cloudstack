@@ -1187,11 +1187,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (clusterDetailsVO != null && !Strings.isNullOrEmpty(clusterDetailsVO.getValue())) {
             configData = new String(Base64.decodeBase64(clusterDetailsVO.getValue()));
         } else {
-            if (KubernetesCluster.State.Starting.equals(kubernetesCluster.getState())) {
-                throw new CloudRuntimeException(String.format("Setup is in progress for Kubernetes cluster ID: %s, config not available at this moment", kubernetesCluster.getUuid()));
-            } else {
-                throw new CloudRuntimeException((String.format("Config not found for Kubernetes cluster ID: %s", kubernetesCluster.getUuid())));
-            }
+            String exceptionMessage = KubernetesCluster.State.Starting.equals(kubernetesCluster.getState()) ?
+                    String.format("Setup is in progress for Kubernetes cluster : %s, config not available at this moment", kubernetesCluster.getName()) :
+                    String.format("Config not found for Kubernetes cluster : %s", kubernetesCluster.getName());
+            throw new CloudRuntimeException(exceptionMessage);
         }
         response.setConfigData(configData);
         response.setObjectName("clusterconfig");

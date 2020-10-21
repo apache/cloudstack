@@ -579,22 +579,22 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         try {
             InetAddress address = InetAddress.getByName(new URL(kubernetesCluster.getEndpoint()).getHost());
         } catch (MalformedURLException | UnknownHostException ex) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Kubernetes cluster ID: %s has invalid API endpoint. Can not verify if cluster is in ready state", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Kubernetes cluster : %s has invalid API endpoint. Can not verify if cluster is in ready state", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         Pair<String, Integer> sshIpPort =  getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = sshIpPort.first();
         sshPort = sshIpPort.second();
         if (Strings.isNullOrEmpty(publicIpAddress)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster" , kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s as no public IP found for the cluster" , kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         if (!KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, CLUSTER_API_PORT, startTimeoutTime, 15000)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s in usable state", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         if (!isKubernetesClusterKubeConfigAvailable(startTimeoutTime)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         if (!isKubernetesClusterDashboardServiceRunning(false, startTimeoutTime)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         if (LOGGER.isInfoEnabled()) {
