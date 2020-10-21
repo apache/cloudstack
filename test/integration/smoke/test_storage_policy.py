@@ -60,7 +60,7 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
             cls.zone.id,
             cls.hypervisor,
         )
-        cls.cleanup = [cls.network_offering]
+        cls._cleanup.append(cls.network_offering)
         return
 
     @classmethod
