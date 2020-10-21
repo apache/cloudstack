@@ -53,6 +53,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
@@ -477,8 +478,10 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     private ScaleIOGatewayClient getScaleIOClient(final Long storagePoolId) throws Exception {
         final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.valueIn(storagePoolId);
         final String url = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_ENDPOINT).getValue();
-        final String username = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_USERNAME).getValue();
-        final String password = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_PASSWORD).getValue();
+        final String encryptedUsername = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_USERNAME).getValue();
+        final String username = DBEncryptionUtil.decrypt(encryptedUsername);
+        final String encryptedPassword = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_PASSWORD).getValue();
+        final String password = DBEncryptionUtil.decrypt(encryptedPassword);
         return ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout);
     }
 }

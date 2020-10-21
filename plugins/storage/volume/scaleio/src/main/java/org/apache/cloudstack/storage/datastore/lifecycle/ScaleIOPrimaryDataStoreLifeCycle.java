@@ -69,6 +69,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
@@ -100,7 +101,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
 
     private org.apache.cloudstack.storage.datastore.api.StoragePool findStoragePool(String url, String username, String password, String storagePoolName) {
         try {
-            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, 60);
+            final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.value();
+            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout);
             List<org.apache.cloudstack.storage.datastore.api.StoragePool> storagePools = client.listStoragePools();
             for (org.apache.cloudstack.storage.datastore.api.StoragePool pool : storagePools) {
                 if (pool.getName().equals(storagePoolName)) {
@@ -212,8 +214,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         }
 
         details.put(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT, gatewayApiURL);
-        details.put(ScaleIOGatewayClient.GATEWAY_API_USERNAME, gatewayUsername);
-        details.put(ScaleIOGatewayClient.GATEWAY_API_PASSWORD, gatewayPassword);
+        details.put(ScaleIOGatewayClient.GATEWAY_API_USERNAME, DBEncryptionUtil.encrypt(gatewayUsername));
+        details.put(ScaleIOGatewayClient.GATEWAY_API_PASSWORD, DBEncryptionUtil.encrypt(gatewayPassword));
         details.put(ScaleIOGatewayClient.STORAGE_POOL_NAME, storagePoolName);
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, scaleIOPool.getSystemId());
         parameters.setDetails(details);
@@ -231,10 +233,13 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         List<String> connectedSdcIps = null;
         try {
             Map <String, String> dataStoreDetails = primaryDataStoreDao.getDetails(dataStore.getId());
-            String url = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT);
-            String username = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_USERNAME);
-            String password = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
-            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, 60);
+            final String url = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT);
+            final String encryptedUsername = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_USERNAME);
+            final String username = DBEncryptionUtil.decrypt(encryptedUsername);
+            final String encryptedPassword = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
+            final String password = DBEncryptionUtil.decrypt(encryptedPassword);
+            final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.value();
+            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout);
             connectedSdcIps = client.listConnectedSdcIps();
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
             LOGGER.error("Failed to create storage pool", e);
@@ -293,9 +298,12 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         try {
             Map <String, String> dataStoreDetails = primaryDataStoreDao.getDetails(dataStore.getId());
             String url = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT);
-            String username = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_USERNAME);
-            String password = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
-            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, 60);
+            String encryptedUsername = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_USERNAME);
+            final String username = DBEncryptionUtil.decrypt(encryptedUsername);
+            String encryptedPassword = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
+            final String password = DBEncryptionUtil.decrypt(encryptedPassword);
+            final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.value();
+            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout);
             connectedSdcIps = client.listConnectedSdcIps();
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
             LOGGER.error("Failed to create storage pool", e);

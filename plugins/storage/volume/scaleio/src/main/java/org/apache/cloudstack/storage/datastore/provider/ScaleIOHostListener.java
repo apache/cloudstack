@@ -43,6 +43,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScaleIOHostListener implements HypervisorHostListener {
@@ -90,9 +91,11 @@ public class ScaleIOHostListener implements HypervisorHostListener {
     private boolean isHostSdcConnected(String hostIpAddress, long poolId) {
         try {
             Map<String, String> dataStoreDetails = _primaryDataStoreDao.getDetails(poolId);
-            String url = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT);
-            String username = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_USERNAME);
-            String password = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
+            final String url = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT);
+            final String encryptedUsername = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_USERNAME);
+            final String username = DBEncryptionUtil.decrypt(encryptedUsername);
+            final String encryptedPassword = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
+            final String password = DBEncryptionUtil.decrypt(encryptedPassword);
             final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.valueIn(poolId);
             ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout);
             return client.isSdcConnected(hostIpAddress);

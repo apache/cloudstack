@@ -837,6 +837,9 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (templatePoolRef == null) {
             throw new CloudRuntimeException("Failed to find template " + srcTemplateInfo.getUniqueName() + " in storage pool " + destPrimaryDataStore.getId());
+        } else if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+            // Template already exists
+            return templateOnPrimary;
         }
 
         // At this point, we have an entry in the DB that points to our cached template.
@@ -850,13 +853,6 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (templatePoolRef == null) {
             throw new CloudRuntimeException("Unable to acquire lock on VMTemplateStoragePool: " + templatePoolRefId);
-        }
-
-        // Template already exists
-        if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
-            _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
-
-            return templateOnPrimary;
         }
 
         try {
@@ -908,22 +904,20 @@ public class VolumeServiceImpl implements VolumeService {
         int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
         long templatePoolRefId = templatePoolRef.getId();
 
-        templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
-
-        if (templatePoolRef == null) {
-            throw new CloudRuntimeException("Unable to acquire lock on VMTemplateStoragePool: " + templatePoolRefId);
-        }
-
-        if (templatePoolRef.getDownloadState() == Status.DOWNLOADED) {
-            // There can be cases where we acquired the lock, but the template
-            // was already copied by a previous thread. Just return in that case.
-
-            s_logger.debug("Template already downloaded, nothing to do");
-
-            return;
-        }
-
         try {
+            templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
+
+            if (templatePoolRef == null) {
+                throw new CloudRuntimeException("Unable to acquire lock on VMTemplateStoragePool: " + templatePoolRefId);
+            }
+
+            if (templatePoolRef.getDownloadState() == Status.DOWNLOADED) {
+                // There can be cases where we acquired the lock, but the template
+                // was already copied by a previous thread. Just return in that case.
+                s_logger.debug("Template already downloaded, nothing to do");
+                return;
+            }
+
             // copy the template from sec storage to the created volume
             CreateBaseImageContext<CreateCmdResult> copyContext = new CreateBaseImageContext<>(null, null, destPrimaryDataStore, srcTemplateInfo, copyTemplateFuture, templateOnPrimary,
                     templatePoolRefId);
@@ -1236,16 +1230,7 @@ public class VolumeServiceImpl implements VolumeService {
             throw new CloudRuntimeException("Destination host should not be null.");
         }
 
-        PrimaryDataStore destPrimaryDataStore = dataStoreMgr.getPrimaryDataStore(destDataStoreId);
-
-        // Check if template exists on the storage pool. If not, downland and copy to managed storage pool
-        VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(destDataStoreId, srcTemplateId);
-        if (templatePoolRef != null && templatePoolRef.getDownloadState() == Status.DOWNLOADED) {
-            return tmplFactory.getTemplate(srcTemplateId, destPrimaryDataStore);
-        }
-
         TemplateInfo srcTemplateInfo = tmplFactory.getTemplate(srcTemplateId);
-
         if (srcTemplateInfo == null) {
             throw new CloudRuntimeException("Failed to get info of template: " + srcTemplateId);
         }
@@ -1254,8 +1239,29 @@ public class VolumeServiceImpl implements VolumeService {
             throw new CloudRuntimeException("Unsupported format: " + Storage.ImageFormat.ISO.toString() + " for managed storage template");
         }
 
+        GlobalLock lock = null;
         TemplateInfo templateOnPrimary = null;
         try {
+            String templateIdManagedPoolIdLockString = "templateId:" + srcTemplateId + "managedPoolId:" + destDataStoreId;
+            lock = GlobalLock.getInternLock(templateIdManagedPoolIdLockString);
+            if (lock == null) {
+                throw new CloudRuntimeException("Unable to create managed storage template, couldn't get global lock on " + templateIdManagedPoolIdLockString);
+            }
+
+            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            if (!lock.lock(storagePoolMaxWaitSeconds)) {
+                s_logger.debug("Unable to create managed storage template, couldn't lock on " + templateIdManagedPoolIdLockString);
+                throw new CloudRuntimeException("Unable to create managed storage template, couldn't lock on " + templateIdManagedPoolIdLockString);
+            }
+
+            PrimaryDataStore destPrimaryDataStore = dataStoreMgr.getPrimaryDataStore(destDataStoreId);
+
+            // Check if template exists on the storage pool. If not, downland and copy to managed storage pool
+            VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(destDataStoreId, srcTemplateId);
+            if (templatePoolRef != null && templatePoolRef.getDownloadState() == Status.DOWNLOADED) {
+                return tmplFactory.getTemplate(srcTemplateId, destPrimaryDataStore);
+            }
+
             templateOnPrimary = createManagedTemplateVolume(srcTemplateInfo, destPrimaryDataStore);
             if (templateOnPrimary == null) {
                 throw new CloudRuntimeException("Failed to create template " + srcTemplateInfo.getUniqueName() + " on primary storage: " + destDataStoreId);
@@ -1311,6 +1317,11 @@ public class VolumeServiceImpl implements VolumeService {
             }
 
             throw new CloudRuntimeException(e.getMessage());
+        } finally {
+            if (lock != null) {
+                lock.unlock();
+                lock.releaseRef();
+            }
         }
     }
 

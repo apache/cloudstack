@@ -80,6 +80,7 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.template.TemplateManager;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @PrepareForTest(ScaleIOGatewayClient.class)
@@ -136,13 +137,17 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
 
         Map <String, String> mockDataStoreDetails =  new HashMap<>();
         mockDataStoreDetails.put(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT, "https://192.168.1.19/api");
-        mockDataStoreDetails.put(ScaleIOGatewayClient.GATEWAY_API_USERNAME, "root");
-        mockDataStoreDetails.put(ScaleIOGatewayClient.GATEWAY_API_PASSWORD, "Password@123");
+        String encryptedUsername = DBEncryptionUtil.encrypt("root");
+        mockDataStoreDetails.put(ScaleIOGatewayClient.GATEWAY_API_USERNAME, encryptedUsername);
+        String encryptedPassword = DBEncryptionUtil.encrypt("Password@123");
+        mockDataStoreDetails.put(ScaleIOGatewayClient.GATEWAY_API_PASSWORD, encryptedPassword);
         when(primaryDataStoreDao.getDetails(1L)).thenReturn(mockDataStoreDetails);
 
         PowerMockito.mockStatic(ScaleIOGatewayClient.class);
         ScaleIOGatewayClientImpl client = mock(ScaleIOGatewayClientImpl.class);
-        when(ScaleIOGatewayClient.getClient("https://192.168.1.19/api", "root", "Password@123", false, 60)).thenReturn(client);
+        String username = DBEncryptionUtil.decrypt(encryptedUsername);
+        String password = DBEncryptionUtil.decrypt(encryptedPassword);
+        when(ScaleIOGatewayClient.getClient("https://192.168.1.19/api", username, password, false, 60)).thenReturn(client);
 
         List<String> connectedSdcIps = new ArrayList<>();
         connectedSdcIps.add("192.168.1.1");
