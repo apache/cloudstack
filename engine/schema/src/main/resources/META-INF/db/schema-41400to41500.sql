@@ -225,3 +225,7 @@ ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_vm_type` varchar(255) DEFAULT "Us
 
 -- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for XenServer
 UPDATE `cloud`.`vm_template` SET guest_os_id=293 WHERE id=1;
+
+-- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for VMware
+-- This fixes a memory allocation issue to systemvms on VMware/ESXi
+UPDATE `cloud`.`vm_template` SET guest_os_id=293 WHERE id=8;
