@@ -77,9 +77,15 @@ import com.google.common.base.Strings;
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 
     private KubernetesSupportedVersion kubernetesClusterVersion;
+    private String[] keys;
 
     public KubernetesClusterStartWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
+    }
+
+    public KubernetesClusterStartWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager, final String[]keys) {
+        super(kubernetesCluster, clusterManager);
+        this.keys = keys;
     }
 
     public KubernetesSupportedVersion getKubernetesClusterVersion() {
@@ -566,6 +572,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         if (!isKubernetesClusterDashboardServiceRunning(true, startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
+        }
+        if (!createSecret(keys)) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;

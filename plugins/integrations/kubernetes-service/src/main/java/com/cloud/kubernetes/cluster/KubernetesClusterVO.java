@@ -94,7 +94,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     private String endpoint;
 
     @Column(name = "autoscaling_enabled")
-    private boolean isAutoscalingEnabled;
+    private boolean autoscalingEnabled;
 
     @Column(name = "minsize")
     private Long minSize;
@@ -312,12 +312,12 @@ public class KubernetesClusterVO implements KubernetesCluster {
         return created;
     }
 
-    public boolean isAutoscalingEnabled() {
-        return isAutoscalingEnabled;
+    public boolean getAutoscalingEnabled() {
+        return autoscalingEnabled;
     }
 
-    public void setAutoscalingEnabled(boolean isAutoscalingEnabled) {
-        this.isAutoscalingEnabled = isAutoscalingEnabled;
+    public void setAutoscalingEnabled(boolean enabled) {
+        this.autoscalingEnabled = enabled;
     }
 
     public Long getMinSize() {

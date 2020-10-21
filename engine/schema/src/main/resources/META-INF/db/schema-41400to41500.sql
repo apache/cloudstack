@@ -835,8 +835,8 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_vers
 UPDATE `cloud`.`guest_os` SET category_id = 7 WHERE id = 275 AND display_name = 'Other PV Virtio-SCSI (64-bit)';
 
 -- TODO : Move to 416
-ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `autoscaling_enabled` tinyint(1) NOT NULL DEFAULT '0';
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `autoscaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0;
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `minsize` bigint;
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `maxsize` bigint;
 
-ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `is_master` tinyint(1) NOT NULL DEFAULT '0';
+ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `is_master` tinyint(1) unsigned NOT NULL DEFAULT 0;
