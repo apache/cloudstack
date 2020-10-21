@@ -2048,8 +2048,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     continue;
 
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
-                controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
-                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, new Pair<String, String>(rootDiskController, dataDiskController));
+
+                String diskController = getDiskController(vol, new Pair<String, String>(rootDiskController, dataDiskController));
 
                 if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
                     diskController = vmMo.getRecommendedDiskController(null);
@@ -3003,26 +3003,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return controllerKey;
     }
 
-    private String getDiskController(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, Pair<String, String> controllerInfo) throws Exception {
-        int controllerKey;
-        DiskControllerType controllerType = DiskControllerType.none;
-        if (matchingExistingDisk != null) {
-            String currentBusName = matchingExistingDisk.getDiskDeviceBusName();
-            if (currentBusName != null) {
-                s_logger.info("Chose disk controller based on existing information: " + currentBusName);
-                if (currentBusName.startsWith("ide")) {
-                    controllerType = DiskControllerType.ide;
-                } else if (currentBusName.startsWith("scsi")) {
-                    controllerType = DiskControllerType.scsi;
-                }
-            }
-            if (controllerType == DiskControllerType.scsi || controllerType == DiskControllerType.none) {
-                Ternary<Integer, Integer, DiskControllerType> vmScsiControllerInfo = vmMo.getScsiControllerInfo();
-                controllerType = vmScsiControllerInfo.third();
-            }
-            return controllerType.toString();
-        }
-
+    private String getDiskController(DiskTO vol, Pair<String, String> controllerInfo) {
         if (vol.getType() == Volume.Type.ROOT) {
             s_logger.info("Chose disk controller for vol " + vol.getType() + " -> " + controllerInfo.first()
                     + ", based on root disk controller settings at global configuration setting.");
