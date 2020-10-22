@@ -21,7 +21,9 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import random_gen, cleanup_resources, validateList, is_snapshot_on_nfs, isAlmostEqual
 from marvin.lib.base import (Account,
+                             Configurations,
                              ServiceOffering,
+                             Template,
                              VirtualMachine,
                              VmSnapshot)
 from marvin.lib.common import (get_zone,
@@ -32,9 +34,6 @@ from marvin.lib.common import (get_zone,
                                list_configurations)
 from marvin.cloudstackAPI import (listTemplates)
 import time
-from _ast import If
-from sepolicy.templates.etc_rw import if_admin_rules
-
 
 class TestVmSnapshot(cloudstackTestCase):
 
@@ -45,7 +44,7 @@ class TestVmSnapshot(cloudstackTestCase):
         cls._cleanup = []
         cls.unsupportedHypervisor = False
         cls.hypervisor = testClient.getHypervisorInfo()
-        if cls.hypervisor.lower() in ("hyperv", "lxc"):
+        if cls.hypervisor.lower() != "kvm":
             cls.unsupportedHypervisor = True
             return
 
@@ -54,19 +53,24 @@ class TestVmSnapshot(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
 
+        Configurations.update(cls.apiclient,
+            name = "kvm.vmstoragesnapshot.enabled",
+            value = "true")
         #The version of CentOS has to be supported
-        template = get_template(
-            apiclient=cls.apiclient,
-            zone_id=cls.zone.id,
-            template_filter='community',
-            domain_id=cls.domain.id,
-            hypervisor=cls.hypervisor
-        )
+        templ = {
+            "name": "CentOS8",
+            "displaytext": "CentOS 8",
+            "format": "QCOW2",
+            "url": "http://download.cloudstack.org/releases/4.14/default-tmpl-centos8.0.qcow2.bz2",
+            "ispublic": "True",
+            "isextractable": "True",
+            "hypervisor": cls.hypervisor,
+            "zoneid": cls.zone.id,
+            "ostype": "CentOS 8",
+            "directdownload": True,
+        }
 
-        import pprint
-	cls.debug(pprint.pformat(template))
-	cls.debug(pprint.pformat(cls.hypervisor))
-
+        template = Template.register(cls.apiclient, templ, zoneid=cls.zone.id, hypervisor=cls.hypervisor)
         if template == FAILED:
             assert False, "get_template() failed to return template\
                     with description %s" % cls.services["ostype"]
@@ -84,26 +88,34 @@ class TestVmSnapshot(cloudstackTestCase):
         )
         cls._cleanup.append(cls.account)
 
-        #cls.service_offering = ServiceOffering.create(
-            #cls.apiclient,
-            #cls.services["service_offerings"]["tiny"]
-        #)
-        #cls._cleanup.append(cls.service_offering)
+        service_offerings_nfs = {
+            "name": "nfs",
+                "displaytext": "nfs",
+                "cpunumber": 1,
+                "cpuspeed": 500,
+                "memory": 512,
+                "storagetype": "shared",
+                "customizediops": False,
+            }
 
-        cls.service_offering = ServiceOffering.list(cls.apiclient, id=1)[0]
-	#'dce955ce-d231-468e-9c7e-1f9ed4c68387'
-        cls.debug(pprint.pformat(cls.service_offering))
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            service_offerings_nfs,
+        )
+
+        cls._cleanup.append(cls.service_offering)
 
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
-            {},
+            cls.services,
             zoneid=cls.zone.id,
             templateid=template.id,
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,
             mode=cls.zone.networktype,
-            hypervisor=cls.hypervisor
+            hypervisor=cls.hypervisor,
+            rootdisksize=20,
         )
         cls.random_data_0 = random_gen(size=100)
         cls.test_dir = "/tmp"
@@ -113,6 +125,9 @@ class TestVmSnapshot(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            Configurations.update(cls.apiclient,
+            name = "kvm.vmstoragesnapshot.enabled",
+            value = "false")
             # Cleanup resources used
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
@@ -151,12 +166,12 @@ class TestVmSnapshot(cloudstackTestCase):
                 self.debug(result)
             
             #need to install qemu-guest-agent on the guest machine to be able to freeze/thaw the VM
-            qemu_guest_agent_result = ssh_client.execute("yum install -y qemu-guest-agent")
-            self.debug(qemu_guest_agent_result)
-            qemu_chkconfig = ssh_client.execute("chkconfig qemu-ga on")
-            self.debug(qemu_chkconfig)
-            qemu_start = ssh_client.execute("service qemu-ga start")
-            self.debug(qemu_start)
+#             qemu_guest_agent_result = ssh_client.execute("yum install -y qemu-guest-agent")
+#             self.debug(qemu_guest_agent_result)
+#             qemu_chkconfig = ssh_client.execute("chkconfig qemu-ga on")
+#             self.debug(qemu_chkconfig)
+#             qemu_start = ssh_client.execute("service qemu-ga start")
+#             self.debug(qemu_start)
             
         except Exception:
             self.fail("SSH failed for Virtual machine: %s" %
@@ -168,13 +183,8 @@ class TestVmSnapshot(cloudstackTestCase):
         )
 
         time.sleep(30)
-        #check if kvm.vmstoragesnapshot.enabled is enabled
-        memory = list_configurations(self.apiclient, name="kvm.vmstoragesnapshot.enabled")[0]
-        self.debug(memory)
-        #KVM VM Snapshot needs to set snapshot with memory
+
         MemorySnapshot = False
-        if not memory.value:
-           MemorySnapshot = True
 
         vm_snapshot = VmSnapshot.create(
             self.apiclient,
@@ -240,23 +250,13 @@ class TestVmSnapshot(cloudstackTestCase):
             "Check the snapshot of vm is ready!"
         )
 
-        memory = list_configurations(self.apiclient, name="kvm.vmstoragesnapshot.enabled")[0]
-        self.debug(memory)
-        #We don't need to stop the VM when taking a VM Snapshot on KVM
-        if self.hypervisor.lower() in (KVM.lower()) and  not memory.value:
-           pass
-        else:
-           self.virtual_machine.stop(self.apiclient)
+        self.virtual_machine.stop(self.apiclient)
 
         VmSnapshot.revertToSnapshot(
             self.apiclient,
             list_snapshot_response[0].id)
 
-        #We don't need to start the VM when taking a VM Snapshot on KVM
-        if self.hypervisor.lower() in (KVM.lower()) and  not memory.value:
-           pass
-        else:
-           self.virtual_machine.start(self.apiclient)
+        self.virtual_machine.start(self.apiclient)
 
         try:
             ssh_client = self.virtual_machine.get_ssh_client(reconnect=True)
