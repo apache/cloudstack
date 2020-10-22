@@ -749,9 +749,9 @@ class TestKubernetesCluster(cloudstackTestCase):
                         self.deleteKubernetesCluster(cluster_id)
                     else:
                         forceDeleted = True
-                        for cluster_vm_id in cluster.virtualmachineids:
+                        for cluster_vm in cluster.virtualmachines:
                             cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
-                            cmd.id = cluster_vm_id
+                            cmd.id = cluster_vm.id
                             cmd.expunge = True
                             self.apiclient.destroyVirtualMachine(cmd)
                         cmd = deleteNetwork.deleteNetworkCmd()
