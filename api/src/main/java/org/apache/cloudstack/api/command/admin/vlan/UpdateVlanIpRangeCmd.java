@@ -35,7 +35,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = UpdateVlanIpRangeCmd.APINAME, description = "Updates a VLAN IP range.", responseObject =
-        VlanIpRangeResponse.class, since = "4.13.0",
+        VlanIpRangeResponse.class, since = "4.15.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
 

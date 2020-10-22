@@ -220,8 +220,15 @@ public interface ConfigurationManager {
         String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr)
         throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
-    /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#updateVlanAndPublicIpRange(long,String,String,String,String)
+    /**
+     * Updates the IP address Range for the VLAN and the Public IP
+     * @param id
+     * @param startIp
+     * @param endIp
+     * @param gateway
+     * @param netmask
+     * @return
+     * @throws ConcurrentOperationException
      */
     Vlan updateVlanAndPublicIpRange(long id, String startIp, String endIp, String gateway, String netmask) throws ConcurrentOperationException;
 

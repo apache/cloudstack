@@ -274,18 +274,12 @@ public interface ConfigurationService {
         ResourceAllocationException;
 
     /**
-     * Updates the IP address Range for the VLAN on the database, a
-     *
+     * Updates the IP address Range for the VLAN on the database
      * @param cmd
-     * @param vlanId
-     * @param gateway
-     * @param startIP
-     * @param endIP
-     * @param netmask
-     * @throws com.cloud.exception.ConcurrentOperationException
-     * @throws com.cloud.exception.ResourceUnavailableException
-     * @throws com.cloud.exception.ResourceAllocationException
-     * @return The updated Vlan object
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     * @throws ResourceAllocationException
      */
     Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
             ResourceUnavailableException, ResourceAllocationException;
