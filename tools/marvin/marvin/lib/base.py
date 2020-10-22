@@ -1370,22 +1370,24 @@ class Template:
         elif "hypervisor" in services:
             cmd.hypervisor = services["hypervisor"]
 
-        if "ostypeid" in services:
-            cmd.ostypeid = services["ostypeid"]
-        elif "ostype" in services:
-            # Find OSTypeId from Os type
-            sub_cmd = listOsTypes.listOsTypesCmd()
-            sub_cmd.description = services["ostype"]
-            ostypes = apiclient.listOsTypes(sub_cmd)
+        if cmd.hypervisor.lower() not in ["vmware"]:
+            # Since version 4.15 VMware templates honour the guest OS defined in the template
+            if "ostypeid" in services:
+                cmd.ostypeid = services["ostypeid"]
+            elif "ostype" in services:
+                # Find OSTypeId from Os type
+                sub_cmd = listOsTypes.listOsTypesCmd()
+                sub_cmd.description = services["ostype"]
+                ostypes = apiclient.listOsTypes(sub_cmd)
 
-            if not isinstance(ostypes, list):
+                if not isinstance(ostypes, list):
+                    raise Exception(
+                        "Unable to find Ostype id with desc: %s" %
+                        services["ostype"])
+                cmd.ostypeid = ostypes[0].id
+            else:
                 raise Exception(
-                    "Unable to find Ostype id with desc: %s" %
-                    services["ostype"])
-            cmd.ostypeid = ostypes[0].id
-        else:
-            raise Exception(
-                "Unable to find Ostype is required for registering template")
+                    "Unable to find Ostype is required for registering template")
 
         cmd.url = services["url"]
 
@@ -1420,9 +1422,6 @@ class Template:
 
         if "directdownload" in services:
             cmd.directdownload = services["directdownload"]
-
-        if "deployasis" in services:
-            cmd.deployasis = services["deployasis"]
 
         # Register Template
         template = apiclient.registerTemplate(cmd)
