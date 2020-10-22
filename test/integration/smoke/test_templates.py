@@ -84,7 +84,6 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
             self.test_template.displaytext = 'test sha-1'
             self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova"
             self.test_template.format = "OVA"
-            self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
             self.md5 = "3c23ac66bac7888dc7c972783646c644"
             self.sha256 = "97aaa096d419522158c54f83eb61d9242d9f6bca9166fd4030d73683d647c7e7"
 

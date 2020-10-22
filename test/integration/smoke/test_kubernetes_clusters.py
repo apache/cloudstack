@@ -240,8 +240,8 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         if validateList(templates)[0] != PASS:
             details = None
-            if hypervisor in ["vmware"] and "details" in cks_template:
-                details = cks_template["details"]
+            if hypervisor in ["vmware"]:
+                details = [{"keyboard": "us"}]
             template = Template.register(cls.apiclient, cks_template, zoneid=cls.zone.id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
             template.download(cls.apiclient)
             return template
