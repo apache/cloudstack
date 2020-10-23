@@ -27,9 +27,11 @@ import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.storage.upload.params.IsoUploadParams;
 import com.cloud.storage.upload.params.TemplateUploadParams;
 import com.cloud.storage.upload.params.UploadParams;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -170,9 +172,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
             if (deployAsIs) {
                 GuestOS deployAsIsGuestOs = ApiDBUtils.findGuestOSByDisplayName(DeployAsIsConstants.DEFAULT_GUEST_OS_DEPLOY_AS_IS);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Setting default guest OS for deploy-as-is template while the template registration is not completed");
-                }
+                s_logger.info("Setting default guest OS for deploy-as-is template while the template registration is not completed");
                 guestOSId = deployAsIsGuestOs.getId();
             }
         }
@@ -291,9 +291,22 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
         }
 
+        Map details = cmd.getDetails();
+        if (hypervisorType == HypervisorType.VMware) {
+            if (MapUtils.isNotEmpty(details)) {
+                if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
+                    s_logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
+                    details.remove(VmDetailConstants.ROOT_DISK_CONTROLLER);
+                }
+                if (details.containsKey(VmDetailConstants.NIC_ADAPTER)) {
+                    s_logger.info("Ignoring the nicAdapter detail provided, as we honour what is defined in the template");
+                    details.remove(VmDetailConstants.NIC_ADAPTER);
+                }
+            }
+        }
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
-                cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER,
+                cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER,
                 cmd.isDirectDownload(), cmd.isDeployAsIs());
 
     }

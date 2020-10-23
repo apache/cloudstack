@@ -39,12 +39,10 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.vm.VmDetailConstants;
 
 @APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -343,21 +341,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                     "Parameter directdownload is only allowed for KVM templates");
         }
 
-        if (getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString())) {
-            if (osTypeId != null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "ostypeid is not supported on VMWare, as we honour what is defined in the template");
-            }
-
-            Map templateDetails = getDetails();
-            if (MapUtils.isNotEmpty(templateDetails)) {
-                if (templateDetails.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "rootDiskController is not supported on VMWare, as we honour what is defined in the template");
-                }
-                if (templateDetails.containsKey(VmDetailConstants.NIC_ADAPTER)) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "nicAdapter is not supported on VMWare, as we honour what is defined in the template");
-                }
-            }
-        } else if (osTypeId == null) {
+        if (!getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a guest OS type");
         }
     }
