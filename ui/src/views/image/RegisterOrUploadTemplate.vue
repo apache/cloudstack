@@ -212,6 +212,7 @@
             <a-form-item :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-decorator="['rootDiskControllerType', {
+                  initialValue: rootDisk.opts.length > 0 ? 'osdefault' : '',
                   rules: [
                     {
                       required: true,
