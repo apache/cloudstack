@@ -49,9 +49,6 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmVO;
@@ -168,35 +165,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
     }
 
-    private KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory,
-        final Long size, final Long serviceOfferingId, final Boolean autoscale, final Long minSize, final Long maxSize) {
-        return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
-                @Override
-                public KubernetesClusterVO doInTransaction(TransactionStatus status) {
-                KubernetesClusterVO updatedCluster = kubernetesClusterDao.createForUpdate();
-                if (cores != null) {
-                    updatedCluster.setCores(cores);
-                }
-                if (memory != null) {
-                    updatedCluster.setMemory(memory);
-                }
-                if (size != null) {
-                    updatedCluster.setNodeCount(size);
-                }
-                if (serviceOfferingId != null) {
-                    updatedCluster.setServiceOfferingId(serviceOfferingId);
-                }
-                if (autoscale != null) {
-                    updatedCluster.setAutoscalingEnabled(autoscale.booleanValue());
-                }
-                updatedCluster.setMinSize(minSize);
-                updatedCluster.setMaxSize(maxSize);
-                kubernetesClusterDao.update(kubernetesCluster.getId(), updatedCluster);
-                return updatedCluster;
-            }
-        });
-    }
-
     private KubernetesClusterVO updateKubernetesClusterEntry(final Long newSize, final ServiceOffering newServiceOffering) throws CloudRuntimeException {
         final ServiceOffering serviceOffering = newServiceOffering;
         final Long serviceOfferingId = newServiceOffering == null ? null : serviceOffering.getId();
@@ -204,15 +172,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final Long cores = newServiceOffering == null ? null : serviceOffering.getCpu() * size;
         final Long memory = newServiceOffering == null ? null : serviceOffering.getRamSize() * size;
         KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId, null, null, null);
-        if (kubernetesClusterVO == null) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to update Kubernetes cluster",
-                    kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-        }
-        return kubernetesClusterVO;
-    }
-
-    private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscale, final Long minSize, final Long maxSize) throws CloudRuntimeException {
-        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscale, minSize, maxSize);
         if (kubernetesClusterVO == null) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to update Kubernetes cluster",
                     kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
@@ -447,57 +406,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         kubernetesCluster = updateKubernetesClusterEntry(clusterSize, null);
     }
 
-    private boolean autoscaleCluster(boolean enable) {
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AutoscaleRequested);
-        }
-
-        File pkFile = getManagementServerSshPublicKeyFile();
-        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
-        publicIpAddress = publicIpSshPort.first();
-        sshPort = publicIpSshPort.second();
-
-        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
-        if (CollectionUtils.isEmpty(clusterVMs)) {
-            return false;
-        }
-
-        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
-
-        String hostName = userVm.getHostName();
-        if (!Strings.isNullOrEmpty(hostName)) {
-            hostName = hostName.toLowerCase();
-        }
-
-        try {
-            if (enable) {
-                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                    pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d", kubernetesCluster.getUuid(), maxSize, minSize),
-                        10000, 10000, 60000);
-                if (!result.first()) {
-                    return false;
-                }
-                updateKubernetesClusterEntry(true, minSize, maxSize);
-            } else {
-                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                    pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
-                        10000, 10000, 60000);
-                if (!result.first()) {
-                    return false;
-                }
-                updateKubernetesClusterEntry(false, null, null);
-            }
-            return true;
-        } catch (Exception e) {
-            String msg = String.format("Failed to autoscale Kubernetes cluster: %s : %s", kubernetesCluster.getName(), e.getMessage());
-            logAndThrow(Level.ERROR, msg);
-            return false;
-        } finally {
-            // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
-        }
-    }
-
     public boolean scaleCluster() throws CloudRuntimeException {
         init();
         if (LOGGER.isInfoEnabled()) {
@@ -511,7 +419,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
 
         if (this.isAutoscalingEnabled != null) {
-            return autoscaleCluster(this.isAutoscalingEnabled);
+            return autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
         }
         final boolean serviceOfferingScalingNeeded = serviceOffering != null && serviceOffering.getId() != existingServiceOffering.getId();
         final boolean clusterSizeScalingNeeded = clusterSize != null && clusterSize != originalClusterSize;

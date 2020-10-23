@@ -93,8 +93,6 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
         description = "Maximum size of the cluster")
     private Long maxSize;
 
-    // TODO : Get api keys too!
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////

@@ -17,6 +17,7 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
@@ -55,6 +57,8 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterVO;
+import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -77,11 +81,14 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
@@ -512,5 +519,125 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             prefix = prefix.substring(0, 40);
         }
         return prefix;
+    }
+
+    protected boolean createSecret(String[] keys) {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
+        if (CollectionUtils.isEmpty(clusterVMs)) {
+            return false;
+        }
+
+        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
+
+        String hostName = userVm.getHostName();
+        if (!Strings.isNullOrEmpty(hostName)) {
+            hostName = hostName.toLowerCase();
+        }
+
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
+                    ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
+                    10000, 10000, 60000);
+            return result.first();
+        } catch (Exception e) {
+            String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
+            LOGGER.warn(msg, e);
+        }
+        return true;
+    }
+
+    protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory,
+        final Long size, final Long serviceOfferingId, final Boolean autoscale, final Long minSize, final Long maxSize) {
+        return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
+                @Override
+                public KubernetesClusterVO doInTransaction(TransactionStatus status) {
+                KubernetesClusterVO updatedCluster = kubernetesClusterDao.createForUpdate();
+                if (cores != null) {
+                    updatedCluster.setCores(cores);
+                }
+                if (memory != null) {
+                    updatedCluster.setMemory(memory);
+                }
+                if (size != null) {
+                    updatedCluster.setNodeCount(size);
+                }
+                if (serviceOfferingId != null) {
+                    updatedCluster.setServiceOfferingId(serviceOfferingId);
+                }
+                if (autoscale != null) {
+                    updatedCluster.setAutoscalingEnabled(autoscale.booleanValue());
+                }
+                updatedCluster.setMinSize(minSize);
+                updatedCluster.setMaxSize(maxSize);
+                kubernetesClusterDao.update(kubernetesCluster.getId(), updatedCluster);
+                return updatedCluster;
+            }
+        });
+    }
+
+    private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscale, final Long minSize, final Long maxSize) throws CloudRuntimeException {
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscale, minSize, maxSize);
+        if (kubernetesClusterVO == null) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to update Kubernetes cluster",
+                    kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+        }
+        return kubernetesClusterVO;
+    }
+
+    protected boolean autoscaleCluster(boolean enable, Long minSize, Long maxSize) {
+        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AutoscaleRequested);
+        }
+
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
+        if (CollectionUtils.isEmpty(clusterVMs)) {
+            return false;
+        }
+
+        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
+
+        String hostName = userVm.getHostName();
+        if (!Strings.isNullOrEmpty(hostName)) {
+            hostName = hostName.toLowerCase();
+        }
+
+        try {
+            if (enable) {
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                    pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d", kubernetesCluster.getUuid(), maxSize, minSize),
+                        10000, 10000, 60000);
+                if (!result.first()) {
+                    return false;
+                }
+                updateKubernetesClusterEntry(true, minSize, maxSize);
+            } else {
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                    pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
+                        10000, 10000, 60000);
+                if (!result.first()) {
+                    return false;
+                }
+                updateKubernetesClusterEntry(false, null, null);
+            }
+            return true;
+        } catch (Exception e) {
+            String msg = String.format("Failed to autoscale Kubernetes cluster: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logAndThrow(Level.ERROR, msg);
+            return false;
+        } finally {
+            // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+        }
     }
 }
