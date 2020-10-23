@@ -816,6 +816,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         });
     }
 
+    private VMTemplateVO getKubernetesClusterTemplate(KubernetesCluster kubernetesCluster, DataCenter zone) {
+        VMTemplateVO template = templateDao.findById(kubernetesCluster.getTemplateId());
+        if (template == null) {
+            throw new InvalidParameterValueException(String.format("Invalid template associated with Kubernetes cluster ID: %s",  kubernetesCluster.getUuid()));
+        }
+        if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
+            throw new InvalidParameterValueException(String.format("Template ID: %s associated with Kubernetes cluster ID: %s is not in Ready state for datacenter ID: %s", template.getUuid(), kubernetesCluster.getUuid(), zone.getUuid()));
+        }
+        return template;
+    }
+
     private void validateKubernetesClusterScaleParameters(ScaleKubernetesClusterCmd cmd) {
         final Long kubernetesClusterId = cmd.getId();
         final Long serviceOfferingId = cmd.getServiceOfferingId();
@@ -844,8 +855,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new CloudRuntimeException(String.format("Invalid Kubernetes version associated with Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
         }
 
+        VMTemplateVO template = null;
         ServiceOffering serviceOffering = null;
         if (serviceOfferingId != null) {
+            template = getKubernetesClusterTemplate(kubernetesCluster, zone);
+            if (!Hypervisor.HypervisorType.XenServer.equals(template.getHypervisorType()) &&
+                    !Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()) &&
+                    !Hypervisor.HypervisorType.Simulator.equals(template.getHypervisorType())) {
+                String msg = "Scaling the VM dynamically is not supported for VMs running on Hypervisor " + template.getHypervisorType();
+                LOGGER.info(msg);
+                throw new InvalidParameterValueException(msg);
+            }
             serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
             if (serviceOffering == null) {
                 throw new InvalidParameterValueException("Failed to find service offering ID: " + serviceOfferingId);
@@ -888,12 +908,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled for size, %d", kubernetesCluster.getUuid(), clusterSize));
             }
             if (clusterSize > kubernetesCluster.getNodeCount()) { // Upscale
-                VMTemplateVO template = templateDao.findById(kubernetesCluster.getTemplateId());
                 if (template == null) {
-                    throw new InvalidParameterValueException(String.format("Invalid template associated with Kubernetes cluster ID: %s",  kubernetesCluster.getUuid()));
-                }
-                if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
-                    throw new InvalidParameterValueException(String.format("Template ID: %s associated with Kubernetes cluster ID: %s is not in Ready state for datacenter ID: %s", template.getUuid(), kubernetesCluster.getUuid(), zone.getUuid()));
+                    template = getKubernetesClusterTemplate(kubernetesCluster, zone);
                 }
             }
         }
