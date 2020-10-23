@@ -86,11 +86,11 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     private Boolean isAutoscalingEnabled;
 
     @Parameter(name=ApiConstants.MIN_SIZE, type = CommandType.LONG,
-        description = "Minimum size of the cluster")
+        description = "Minimum number of worker nodes in the cluster")
     private Long minSize;
 
     @Parameter(name=ApiConstants.MAX_SIZE, type = CommandType.LONG,
-        description = "Maximum size of the cluster")
+        description = "Maximum number of worker nodes in the cluster")
     private Long maxSize;
 
     /////////////////////////////////////////////////////

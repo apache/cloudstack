@@ -901,10 +901,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 throw new InvalidParameterValueException("autoscaling requires minsize and maxsize to be passed");
             }
             if (minSize < 1) {
-                throw new InvalidParameterValueException("minsize must be more than 1");
+                throw new InvalidParameterValueException("minsize must be at least than 1");
             }
             if (maxSize <= minSize) {
-                throw new InvalidParameterValueException("maxsize must be greater than minsize");
+                throw new InvalidParameterValueException("maxsize must be greater than or equal to minsize");
             }
         }
 
@@ -1285,9 +1285,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         UserAccount kubeadmin = accountService.getActiveUserAccount(username, caller.getDomainId());
         String[] keys = null;
         if (kubeadmin == null) {
-            User kube = userDao.persist(new UserVO(caller.getAccountId(), username, UUID.randomUUID().toString(), "kube", "admin", "kubeadmin",
+            User kube = userDao.persist(new UserVO(caller.getAccountId(), username, UUID.randomUUID().toString(), caller.getAccountName(), KUBEADMIN_ACCOUNT_NAME, "kubeadmin",
                 null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
-            // User kube = accountService.createUser(username, "password", "kube", "admin", "kubeadmin", null, caller.getAccountName(), caller.getDomainId(), null);
             keys = accountService.createApiKeyAndSecretKey(kube.getId());
         } else {
             String apiKey = kubeadmin.getApiKey();

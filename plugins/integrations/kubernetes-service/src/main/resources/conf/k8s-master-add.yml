@@ -128,7 +128,6 @@ write-files:
         if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
           mkdir -p /opt/autoscaler
           cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
-          sed 's/<cluster-id>/{{ k8s_cluster_id }}/g' /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler.yaml
         fi
         umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
         if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
@@ -265,7 +264,7 @@ write-files:
           esac
       done
       if [ $ENABLE == "true" ] ; then
-          if [ -e /opt/autoscaler/autoscaler.yaml ]; then
+          if [ -e /opt/autoscaler/autoscaler_tmpl.yaml ]; then
               sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
               kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
               exit 0
@@ -322,14 +321,14 @@ write-files:
                   ;;
           esac
       done
-      cat > /opt/autoscaler/cloud-config <<EOF
+      cat > /tmp/cloud-config <<EOF
       [Global]
       api-url = $API_URL
       api-key = $API_KEY
       secret-key = $SECRET_KEY
       EOF
-      kubectl -n kube-system create secret generic cloudstack-secret --from-file=/opt/autoscaler/cloud-config
-      rm /opt/autoscaler/cloud-config
+      kubectl -n kube-system create secret generic cloudstack-secret --from-file=/tmp/cloud-config
+      rm /tmp/cloud-config
 
 coreos:
   units:
