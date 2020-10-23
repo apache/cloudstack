@@ -610,24 +610,25 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setEndpoint(kubernetesCluster.getEndpoint());
         response.setNetworkId(ntwk.getUuid());
         response.setAssociatedNetworkName(ntwk.getName());
-        List<UserVmResponse> vmIds = new ArrayList<UserVmResponse>();
+        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         ResponseView respView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
         if (accountService.isRootAdmin(caller.getId())) {
             respView = ResponseView.Full;
         }
+        final String responseName = "virtualmachine";
         if (vmList != null && !vmList.isEmpty()) {
             for (KubernetesClusterVmMapVO vmMapVO : vmList) {
                 UserVmJoinVO userVM = userVmJoinDao.findById(vmMapVO.getVmId());
                 if (userVM != null) {
-                    UserVmResponse vmResponse = ApiDBUtils.newUserVmResponse(respView, "virtualmachine", userVM,
+                    UserVmResponse vmResponse = ApiDBUtils.newUserVmResponse(respView, responseName, userVM,
                         EnumSet.noneOf(VMDetails.class), caller);
-                    vmIds.add(vmResponse);
+                    vmResponses.add(vmResponse);
                 }
             }
         }
-        response.setVirtualMachineIds(vmIds);
+        response.setVirtualMachines(vmResponses);
         return response;
     }
 

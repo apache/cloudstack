@@ -317,11 +317,11 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
         this.serviceOfferingName = serviceOfferingName;
     }
 
-    public void setVirtualMachineIds(List<UserVmResponse> virtualMachines) {
+    public void setVirtualMachines(List<UserVmResponse> virtualMachines) {
         this.virtualMachines = virtualMachines;
     }
 
-    public List<UserVmResponse> getVirtualMachineIds() {
+    public List<UserVmResponse> getVirtualMachines() {
         return virtualMachines;
     }
 }
