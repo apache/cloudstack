@@ -312,6 +312,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
         return created;
     }
 
+    @Override
     public boolean getAutoscalingEnabled() {
         return autoscalingEnabled;
     }
@@ -320,6 +321,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
         this.autoscalingEnabled = enabled;
     }
 
+    @Override
     public Long getMinSize() {
         return minSize;
     }
@@ -328,6 +330,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
         this.minSize = minSize;
     }
 
+    @Override
     public Long getMaxSize() {
         return maxSize;
     }
@@ -341,8 +344,8 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
-                               long networkId, long domainId, long accountId, long masterNodeCount, long nodeCount, State state,
-                               String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint) {
+        long networkId, long domainId, long accountId, long masterNodeCount, long nodeCount, State state, String keyPair, long cores,
+        long memory, Long nodeRootDiskSize, String endpoint) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
@@ -364,6 +367,16 @@ public class KubernetesClusterVO implements KubernetesCluster {
         }
         this.endpoint = endpoint;
         this.checkForGc = false;
+    }
+
+    public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
+        long networkId, long domainId, long accountId, long masterNodeCount, long nodeCount, State state, String keyPair, long cores,
+        long memory, Long nodeRootDiskSize, String endpoint, boolean autoscalingEnabled, Long minSize, Long maxSize) {
+        this(name, description, zoneId, kubernetesVersionId, serviceOfferingId, templateId, networkId, domainId, accountId, masterNodeCount,
+            nodeCount, state, keyPair, cores, memory, nodeRootDiskSize, endpoint);
+        this.autoscalingEnabled = autoscalingEnabled;
+        this.minSize = minSize;
+        this.maxSize = maxSize;
     }
 
     @Override

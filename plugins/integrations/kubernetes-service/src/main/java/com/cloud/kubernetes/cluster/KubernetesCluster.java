@@ -133,4 +133,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     @Override
     State getState();
     Date getCreated();
+    boolean getAutoscalingEnabled();
+    Long getMinSize();
+    Long getMaxSize();
 }

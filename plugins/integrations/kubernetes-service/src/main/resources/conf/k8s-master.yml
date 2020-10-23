@@ -333,6 +333,61 @@ write-files:
           kubectl delete deployment -n kube-system cluster-autoscaler
       fi
 
+  - path: /opt/bin/deploy-cloudstack-secret
+    permissions: 0700
+    owner: root:root
+    content: |
+      #! /bin/bash
+      function usage() {
+          cat << USAGE
+      Usage: ./deploy-cloudstack-secret [OPTIONS]...
+      Enables autoscaling for the kubernetes cluster.
+      Arguments:
+        -u, --url string         ID of the cluster
+        -k, --key string         Enables autoscaling
+        -s, --secret string      Disables autoscaling
+      Other arguments:
+        -h, --help              Display this help message and exit
+      Examples:
+        ./deploy-cloudstack-secret -u http://localhost:8080 -k abcd -s efgh
+      USAGE
+          exit 0
+      }
+      API_URL=""
+      API_KEY=""
+      SECRET_KEY=""
+      while [ -n "$1" ]; do
+          case "$1" in
+              -h | --help)
+                  usage
+                  ;;
+              -u | --url)
+                  API_URL=$2
+                  shift 2
+                  ;;
+              -k | --key)
+                  API_KEY=$2
+                  shift 2
+                  ;;
+              -s | --secret)
+                  SECRET_KEY=$2
+                  shift 2
+                  ;;
+              -*|*)
+                  echo "ERROR: no such option $1. -h or --help for help"
+                  exit 1
+                  ;;
+          esac
+      done
+      cat > /opt/autoscaler/cloud-config <<EOF
+      [Global]
+      api-url = $API_URL
+      api-key = $API_KEY
+      secret-key = $SECRET_KEY
+      EOF
+      kubectl -n kube-system create secret generic cloudstack-secret --from-file=/opt/autoscaler/cloud-config
+      rm /opt/autoscaler/cloud-config
+
 coreos:
   units:
     - name: docker.service
