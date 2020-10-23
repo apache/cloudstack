@@ -166,12 +166,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     private KubernetesClusterVO updateKubernetesClusterEntry(final Long newSize, final ServiceOffering newServiceOffering) throws CloudRuntimeException {
-        final ServiceOffering serviceOffering = newServiceOffering;
+        final ServiceOffering serviceOffering = newServiceOffering == null ?
+                serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId()) : newServiceOffering;
         final Long serviceOfferingId = newServiceOffering == null ? null : serviceOffering.getId();
-        final Long size = newSize;
-        final Long cores = newServiceOffering == null ? null : serviceOffering.getCpu() * size;
-        final Long memory = newServiceOffering == null ? null : serviceOffering.getRamSize() * size;
-        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId, null, null, null);
+        final long size = newSize == null ? kubernetesCluster.getTotalNodeCount() : (newSize + kubernetesCluster.getMasterNodeCount());
+        final long cores = serviceOffering.getCpu() * size;
+        final long memory = serviceOffering.getRamSize() * size;
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId,
+            kubernetesCluster.getAutoscalingEnabled(), kubernetesCluster.getMinSize(), kubernetesCluster.getMaxSize());
         if (kubernetesClusterVO == null) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to update Kubernetes cluster",
                     kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);

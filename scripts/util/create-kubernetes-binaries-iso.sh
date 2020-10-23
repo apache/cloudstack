@@ -105,7 +105,7 @@ do
 done
 
 # Don't forget about the autoscaler image !
-autoscaler_image="davidjumani/cluster-autoscaler:latest"
+autoscaler_image=`grep "image:" ${autoscaler_conf_file} | cut -d ':' -f2- | tr -d ' '`
 output=`printf "%s\n" ${output} ${autoscaler_image}`
 while read -r line; do
     echo "Downloading docker image $line ---"
