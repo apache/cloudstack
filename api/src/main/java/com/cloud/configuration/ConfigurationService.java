@@ -276,7 +276,7 @@ public interface ConfigurationService {
     /**
      * Updates the IP address Range for the VLAN on the database
      * @param cmd
-     * @return
+     * @return The Updated Vlan Object
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      * @throws ResourceAllocationException
