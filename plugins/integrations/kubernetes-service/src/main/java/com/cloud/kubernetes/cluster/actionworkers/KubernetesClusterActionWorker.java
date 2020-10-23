@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -40,11 +41,13 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.network.IpAddress;
@@ -271,6 +274,13 @@ public class KubernetesClusterActionWorker {
         return ip;
     }
 
+    private boolean containsMasterNode(List<UserVm> clusterVMs) {
+        List<String> nodeNames = clusterVMs.stream().map(vm -> vm.getHostName()).collect(Collectors.toList());
+        boolean present = false;
+        present = nodeNames.stream().anyMatch(s -> s.contains("master"));
+        return present;
+    }
+
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm masterVm) {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
@@ -309,6 +319,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs, final KubernetesSupportedVersion kubernetesSupportedVersion) throws CloudRuntimeException {
+        final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         KubernetesSupportedVersion version = kubernetesSupportedVersion;
         if (kubernetesSupportedVersion == null) {
             version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
@@ -331,8 +342,16 @@ public class KubernetesClusterActionWorker {
         if (!iso.getState().equals(VirtualMachineTemplate.State.Active)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Binaries ISO not active.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
         }
+        Pair<String, Integer> clusterServerIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        long i = 0;
+
+        if (!containsMasterNode(clusterVMs)) {
+            i = kubernetesCluster.getTotalNodeCount();
+        }
         for (UserVm vm : clusterVMs) {
             try {
+                while (!KubernetesClusterUtil.isKubernetesClusterMasterVmRunning(kubernetesCluster, clusterServerIpSshPort.first(), (int) (CLUSTER_NODES_DEFAULT_START_SSH_PORT + i), startTimeoutTime));
+                i++;
                 templateService.attachIso(iso.getId(), vm.getId());
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info(String.format("Attached binaries ISO for VM: %s in cluster: %s", vm.getUuid(), kubernetesCluster.getName()));

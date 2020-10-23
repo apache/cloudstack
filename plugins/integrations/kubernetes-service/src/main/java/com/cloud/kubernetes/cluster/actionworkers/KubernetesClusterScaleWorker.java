@@ -357,7 +357,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster ID: %s, unable to provision node VM in the cluster", kubernetesCluster.getUuid()), e);
         }
-        attachIsoKubernetesVMs(clusterVMs);
         for (UserVm vm : clusterVMs) {
             clusterVMIds.add(vm.getId());
         }
@@ -366,6 +365,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         } catch (ManagementServerException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster ID: %s, unable to update network rules", kubernetesCluster.getUuid()), e);
         }
+        attachIsoKubernetesVMs(clusterVMs);
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesCluster.getId());
         kubernetesClusterVO.setNodeCount(clusterSize);
         boolean readyNodesCountValid = KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(kubernetesClusterVO, publicIpAddress, sshPort,

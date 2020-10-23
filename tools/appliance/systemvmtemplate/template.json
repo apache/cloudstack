@@ -29,15 +29,15 @@
       "accelerator": "kvm",
       "headless": true,
       "qemuargs": [
-        [ "-m", "2048M" ],
+        [ "-m", "500M" ],
         [ "-smp", "1" ]
       ],
       "format": "qcow2",
       "disk_size": 10000,
       "disk_interface": "virtio",
       "net_device": "virtio-net",
-      "iso_url": "https://download.cloudstack.org/systemvm/debian/debian-10.5.0-amd64-netinst.iso",
-      "iso_checksum": "0a6aee1d9aafc1ed095105c052f9fdd65ed00ea9274188c9cd0072c8e6838ab40e246d45a1e6956d74ef1b04a1fc042151762f25412e9ff0cbf49418eef7992e",
+      "iso_url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/debian-10.6.0-amd64-netinst.iso",
+      "iso_checksum": "cb74dcb7f3816da4967c727839bdaa5efb2f912cab224279f4a31f0c9e35f79621b32afe390195d5e142d66cedc03d42f48874eba76eae23d1fac22d618cb669",
       "iso_checksum_type": "sha512",
       "output_directory": "../dist",
       "http_directory": "http",

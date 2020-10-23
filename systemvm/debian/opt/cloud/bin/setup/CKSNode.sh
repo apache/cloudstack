@@ -27,7 +27,7 @@ setup_k8s_node() {
     sed -i 's/3922/22/g' /etc/ssh/sshd_config
 
     swapoff -a
-    sudo sed -ri '/\swap\s/s/^#?/#/' /etc/fstab
+    sudo sed -i '/ swap / s/^/#/' /etc/fstab
     log_it "Swap disabled"
 
     log_it "Setting up interfaces"
