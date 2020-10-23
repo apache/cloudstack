@@ -243,7 +243,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         if(onlyListAllocated) {
             sc.addAnd("takenAt", SearchCriteria.Op.NNULL);
         }
-                sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
         return listBy(sc);
     }

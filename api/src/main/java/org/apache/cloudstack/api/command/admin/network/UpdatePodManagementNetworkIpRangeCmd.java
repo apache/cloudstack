@@ -32,7 +32,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.user.Account;
 
-
 @APICommand(name = UpdatePodManagementNetworkIpRangeCmd.APINAME,
         description = "Updates a management network IP range. Only allowed when no IPs are allocated.",
         responseObject = SuccessResponse.class,
@@ -109,7 +108,6 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
         return newEndIp;
     }
 
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_MANAGEMENT_IP_RANGE_UPDATE;
@@ -119,6 +117,7 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return "Updating pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getPodId();
     }
+
     @Override
     public String getCommandName() {
         return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
@@ -135,6 +134,7 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
+
         try {
             _configService.updatePodIpRange(this);
             SuccessResponse response = new SuccessResponse(getCommandName());
