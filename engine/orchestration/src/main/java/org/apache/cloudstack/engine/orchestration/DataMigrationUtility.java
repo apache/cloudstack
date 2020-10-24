@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.ImageStoreService;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -47,6 +48,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateVO;
@@ -79,7 +81,6 @@ public class DataMigrationUtility {
     HostDao hostDao;
     @Inject
     SnapshotDao snapshotDao;
-
     /**
      *  This function verifies if the given image store contains data objects that are not in any of the following states:
      *  "Ready" "Allocated", "Destroying", "Destroyed", "Failed". If this is the case, and if the migration policy is complete,
@@ -115,7 +116,7 @@ public class DataMigrationUtility {
     protected Long getFileSize(DataObject file, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain) {
         Long size = file.getSize();
         Pair<List<SnapshotInfo>, Long> chain = snapshotChain.get(file);
-        if (file instanceof SnapshotInfo && chain.first() != null) {
+        if (file instanceof SnapshotInfo && chain.first() != null && !chain.first().isEmpty()) {
             size = chain.second();
         }
         return size;
@@ -178,7 +179,8 @@ public class DataMigrationUtility {
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStore.getId());
         for (TemplateDataStoreVO template : templates) {
             VMTemplateVO templateVO = templateDao.findById(template.getTemplateId());
-            if (template.getState() == ObjectInDataStoreStateMachine.State.Ready && !templateVO.isPublicTemplate()) {
+            if (template.getState() == ObjectInDataStoreStateMachine.State.Ready && templateVO != null && !templateVO.isPublicTemplate() &&
+                    templateVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator) {
                 files.add(templateFactory.getTemplate(template.getTemplateId(), srcDataStore));
             }
         }
@@ -194,7 +196,9 @@ public class DataMigrationUtility {
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStore.getId(), DataStoreRole.Image);
         for (SnapshotDataStoreVO snapshot : snapshots) {
             SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getSnapshotId());
-            if (snapshot.getState() == ObjectInDataStoreStateMachine.State.Ready && snapshot.getParentSnapshotId() == 0 ) {
+            if (snapshot.getState() == ObjectInDataStoreStateMachine.State.Ready &&
+                    snapshotVO != null && snapshotVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator
+                    && snapshot.getParentSnapshotId() == 0 ) {
                 SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), DataStoreRole.Image);
                 files.add(snap);
             }
@@ -230,7 +234,10 @@ public class DataMigrationUtility {
         List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStore.getId());
         for (VolumeDataStoreVO volume : volumes) {
             if (volume.getState() == ObjectInDataStoreStateMachine.State.Ready) {
-                files.add(volumeFactory.getVolume(volume.getVolumeId(), srcDataStore));
+                VolumeInfo volumeInfo = volumeFactory.getVolume(volume.getVolumeId(), srcDataStore);
+                if (volumeInfo != null && volumeInfo.getHypervisorType() != Hypervisor.HypervisorType.Simulator) {
+                    files.add(volumeInfo);
+                }
             }
         }
         return files;

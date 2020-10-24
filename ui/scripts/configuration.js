@@ -2613,7 +2613,8 @@
                                     var data = {
                                         id: args.context.diskOfferings[0].id,
                                         name: args.data.name,
-                                        displaytext: args.data.displaytext
+                                        displaytext: args.data.displaytext,
+                                        tags: args.data.tags
                                     };
                                     $.ajax({
                                         url: createURL('updateDiskOffering'),
@@ -2939,7 +2940,41 @@
                                         label: 'label.cache.mode'
                                     },
                                     tags: {
-                                        label: 'label.storage.tags'
+                                        label: 'label.storage.tags',
+                                        docID: 'helpPrimaryStorageTags',
+                                        isEditable: true,
+                                        isTokenInput: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listStorageTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.liststoragetagsresponse.storagetag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                id: tag.name,
+                                                                name: tag.name
+                                                            };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags,
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        }
                                     },
                                     domain: {
                                         label: 'label.domain'

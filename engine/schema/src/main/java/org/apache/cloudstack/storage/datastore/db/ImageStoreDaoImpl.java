@@ -117,7 +117,6 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     public Integer countAllImageStores() {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
         sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
-        sc.addAnd("removed", SearchCriteria.Op.NULL);
         return getCount(sc);
     }
 

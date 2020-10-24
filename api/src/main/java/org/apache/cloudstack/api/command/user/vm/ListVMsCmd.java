@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.log4j.Logger;
 
@@ -134,6 +135,12 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, required = false, description = "the user ID that created the VM and is under the account that owns the VM")
     private Long userId;
 
+    @Parameter(name = ApiConstants.SECURITY_GROUP_ID, type = CommandType.UUID, entityType = SecurityGroupResponse.class, description = "the security group ID", since = "4.15")
+    private Long securityGroupId;
+
+    @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "list by the High Availability offering; true if filtering VMs with HA enabled; false for VMs with HA disabled", since = "4.15")
+    private Boolean haEnabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -210,6 +217,14 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     public Long getStorageId() {
         return storageId;
+    }
+
+    public Long getSecurityGroupId() {
+        return securityGroupId;
+    }
+
+    public Boolean getHaEnabled() {
+        return haEnabled;
     }
 
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {

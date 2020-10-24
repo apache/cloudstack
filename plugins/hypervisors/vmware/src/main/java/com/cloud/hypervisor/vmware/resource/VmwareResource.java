@@ -763,7 +763,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.info("Create worker VM " + vmName);
 
                 // OfflineVmwareMigration: 2. create the worker with access to the data(store)
-                vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName);
+                vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName, null);
 
                 if (vmMo == null) {
                     // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
@@ -1634,7 +1634,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // Check increment is multiple of increment size
-            long reminder = requestedMaxMemoryInMb % hotaddIncrementSizeInMb;
+            long reminder = hotaddIncrementSizeInMb > 0 ? requestedMaxMemoryInMb % hotaddIncrementSizeInMb : 0;
             if (reminder != 0) {
                 requestedMaxMemoryInMb = requestedMaxMemoryInMb + hotaddIncrementSizeInMb - reminder;
             }
@@ -4597,7 +4597,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
             s_logger.info("Create worker VM " + vmName);
             // OfflineVmwareMigration: 2. create the worker with access to the data(store)
-            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName);
+            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName, null);
             if (vmMo == null) {
                 // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
                 throw new CloudRuntimeException("Unable to create a worker VM for volume operation");
@@ -6787,6 +6787,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Destroy template volume " + vol.getPath());
                 }
+                vmMo.markAsVirtualMachine(hyperHost.getHyperHostOwnerResourcePool(), hyperHost.getMor());
                 vmMo.destroy();
             } else {
                 if (s_logger.isInfoEnabled()) {
