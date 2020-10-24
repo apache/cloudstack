@@ -159,7 +159,6 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
-import com.cloud.server.StatsCollector;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
@@ -1852,31 +1851,21 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return true;
         }
 
-        StatsCollector sc = StatsCollector.getInstance();
         double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
-        if (sc != null) {
-            long totalSize = pool.getCapacityBytes();
-            StorageStats stats = sc.getStoragePoolStats(pool.getId());
-            if (stats == null) {
-                stats = sc.getStorageStats(pool.getId());
-            }
-            if (stats != null) {
-                double usedPercentage = ((double)stats.getByteUsed() / (double)totalSize);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + toHumanReadableSize(pool.getCapacityBytes()) + ", usedBytes: " + toHumanReadableSize(stats.getByteUsed()) + ", usedPct: " + usedPercentage
-                            + ", disable threshold: " + storageUsedThreshold);
-                }
-                if (usedPercentage >= storageUsedThreshold) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Insufficient space on pool: " + pool.getId() + " since its usage percentage: " + usedPercentage + " has crossed the pool.storage.capacity.disablethreshold: "
-                                + storageUsedThreshold);
-                    }
-                    return false;
-                }
-            }
-            return true;
+        long totalSize = pool.getCapacityBytes();
+        double usedPercentage = ((double)pool.getUsedBytes() / (double)totalSize);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + pool.getUsedBytes() +
+                    ", usedPct: " + usedPercentage + ", disable threshold: " + storageUsedThreshold);
         }
-        return false;
+        if (usedPercentage >= storageUsedThreshold) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Insufficient space on pool: " + pool.getId() + " since its usage percentage: " + usedPercentage +
+                        " has crossed the pool.storage.capacity.disablethreshold: " + storageUsedThreshold);
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override

@@ -475,14 +475,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return job;
     }
 
-    private String obfuscatePassword(String result, boolean hidePassword) {
+    public String obfuscatePassword(String result, boolean hidePassword) {
         if (hidePassword) {
             String pattern = "\"password\":";
             if (result != null) {
                 if (result.contains(pattern)) {
                     String[] resp = result.split(pattern);
                     String psswd = resp[1].toString().split(",")[0];
-                    result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "," + resp[1].split(",", 2)[1];
+                    if (psswd.endsWith("}")) {
+                        psswd = psswd.substring(0, psswd.length() - 1);
+                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "}," + resp[1].split(",", 2)[1];
+                    } else {
+                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "," + resp[1].split(",", 2)[1];
+                    }
                 }
             }
         }

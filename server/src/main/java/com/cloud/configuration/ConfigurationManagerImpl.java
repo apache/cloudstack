@@ -2548,42 +2548,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         offering.setMinIops(minIops);
         offering.setMaxIops(maxIops);
 
-        if (bytesReadRate != null && bytesReadRate > 0) {
-            offering.setBytesReadRate(bytesReadRate);
-        }
-        if (bytesReadRateMax != null && bytesReadRateMax > 0) {
-            offering.setBytesReadRateMax(bytesReadRateMax);
-        }
-        if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
-            offering.setBytesReadRateMaxLength(bytesReadRateMaxLength);
-        }
-        if (bytesWriteRate != null && bytesWriteRate > 0) {
-            offering.setBytesWriteRate(bytesWriteRate);
-        }
-        if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
-            offering.setBytesWriteRateMax(bytesWriteRateMax);
-        }
-        if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
-            offering.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
-        }
-        if (iopsReadRate != null && iopsReadRate > 0) {
-            offering.setIopsReadRate(iopsReadRate);
-        }
-        if (iopsReadRateMax != null && iopsReadRateMax > 0) {
-            offering.setIopsReadRateMax(iopsReadRateMax);
-        }
-        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
-            offering.setIopsReadRateMaxLength(iopsReadRateMaxLength);
-        }
-        if (iopsWriteRate != null && iopsWriteRate > 0) {
-            offering.setIopsWriteRate(iopsWriteRate);
-        }
-        if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
-            offering.setIopsWriteRateMax(iopsWriteRateMax);
-        }
-        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
-            offering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
-        }
+        setBytesRate(offering, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
+        setIopsRate(offering, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
+
         if(cacheMode != null) {
             offering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
         }
@@ -2650,6 +2617,48 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return offering;
         } else {
             return null;
+        }
+    }
+
+    private void setIopsRate(DiskOffering offering, Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength, Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength) {
+        if (iopsReadRate != null && iopsReadRate > 0) {
+            offering.setIopsReadRate(iopsReadRate);
+        }
+        if (iopsReadRateMax != null && iopsReadRateMax > 0) {
+            offering.setIopsReadRateMax(iopsReadRateMax);
+        }
+        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
+            offering.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+        }
+        if (iopsWriteRate != null && iopsWriteRate > 0) {
+            offering.setIopsWriteRate(iopsWriteRate);
+        }
+        if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
+            offering.setIopsWriteRateMax(iopsWriteRateMax);
+        }
+        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
+            offering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
+        }
+    }
+
+    private void setBytesRate(DiskOffering offering, Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength, Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength) {
+        if (bytesReadRate != null && bytesReadRate > 0) {
+            offering.setBytesReadRate(bytesReadRate);
+        }
+        if (bytesReadRateMax != null && bytesReadRateMax > 0) {
+            offering.setBytesReadRateMax(bytesReadRateMax);
+        }
+        if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
+            offering.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+        }
+        if (bytesWriteRate != null && bytesWriteRate > 0) {
+            offering.setBytesWriteRate(bytesWriteRate);
+        }
+        if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
+            offering.setBytesWriteRateMax(bytesWriteRateMax);
+        }
+        if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
+            offering.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
         }
     }
 
@@ -2919,42 +2928,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         newDiskOffering.setUseLocalStorage(localStorageRequired);
         newDiskOffering.setDisplayOffering(isDisplayOfferingEnabled);
 
-        if (bytesReadRate != null && bytesReadRate > 0) {
-            newDiskOffering.setBytesReadRate(bytesReadRate);
-        }
-        if (bytesReadRateMax != null && bytesReadRateMax > 0) {
-            newDiskOffering.setBytesReadRateMax(bytesReadRateMax);
-        }
-        if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
-            newDiskOffering.setBytesReadRateMaxLength(bytesReadRateMaxLength);
-        }
-        if (bytesWriteRate != null && bytesWriteRate > 0) {
-            newDiskOffering.setBytesWriteRate(bytesWriteRate);
-        }
-        if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
-            newDiskOffering.setBytesWriteRateMax(bytesWriteRateMax);
-        }
-        if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
-            newDiskOffering.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
-        }
-        if (iopsReadRate != null && iopsReadRate > 0) {
-            newDiskOffering.setIopsReadRate(iopsReadRate);
-        }
-        if (iopsReadRateMax != null && iopsReadRateMax > 0) {
-            newDiskOffering.setIopsReadRateMax(iopsReadRateMax);
-        }
-        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
-            newDiskOffering.setIopsReadRateMaxLength(iopsReadRateMaxLength);
-        }
-        if (iopsWriteRate != null && iopsWriteRate > 0) {
-            newDiskOffering.setIopsWriteRate(iopsWriteRate);
-        }
-        if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
-            newDiskOffering.setIopsWriteRateMax(iopsWriteRateMax);
-        }
-        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
-            newDiskOffering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
-        }
+        setBytesRate(newDiskOffering, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
+        setIopsRate(newDiskOffering, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
+
         if (cacheMode != null) {
             newDiskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
         }
@@ -3143,6 +3119,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<Long> zoneIds = cmd.getZoneIds();
         final String tags = cmd.getTags();
 
+        Long bytesReadRate = cmd.getBytesReadRate();
+        Long bytesReadRateMax = cmd.getBytesReadRateMax();
+        Long bytesReadRateMaxLength = cmd.getBytesReadRateMaxLength();
+        Long bytesWriteRate = cmd.getBytesWriteRate();
+        Long bytesWriteRateMax = cmd.getBytesWriteRateMax();
+        Long bytesWriteRateMaxLength = cmd.getBytesWriteRateMaxLength();
+        Long iopsReadRate = cmd.getIopsReadRate();
+        Long iopsReadRateMax = cmd.getIopsReadRateMax();
+        Long iopsReadRateMaxLength = cmd.getIopsReadRateMaxLength();
+        Long iopsWriteRate = cmd.getIopsWriteRate();
+        Long iopsWriteRateMax = cmd.getIopsWriteRateMax();
+        Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
+        String cacheMode = cmd.getCacheMode();
+
         // Check if diskOffering exists
         final DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
         if (diskOfferingHandle == null) {
@@ -3223,7 +3213,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by id user: %s because it is not root-admin or domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
         }
 
-        final boolean updateNeeded = shouldUpdateDiskOffering(name, displayText, sortKey, displayDiskOffering, tags);
+        boolean updateNeeded = shouldUpdateDiskOffering(name, displayText, sortKey, displayDiskOffering, tags, cacheMode) ||
+                shouldUpdateIopsRateParameters(iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength) ||
+                shouldUpdateBytesRateParameters(bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
+
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _diskOfferingDao.findById(diskOfferingId);
@@ -3248,6 +3241,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         updateDiskOfferingTagsIfIsNotNull(tags, diskOffering);
+
+        validateMaxRateEqualsOrGreater(iopsReadRate, iopsReadRateMax, IOPS_READ_RATE);
+        validateMaxRateEqualsOrGreater(iopsWriteRate, iopsWriteRateMax, IOPS_WRITE_RATE);
+        validateMaxRateEqualsOrGreater(bytesReadRate, bytesReadRateMax, BYTES_READ_RATE);
+        validateMaxRateEqualsOrGreater(bytesWriteRate, bytesWriteRateMax, BYTES_WRITE_RATE);
+        validateMaximumIopsAndBytesLength(iopsReadRateMaxLength, iopsWriteRateMaxLength, bytesReadRateMaxLength, bytesWriteRateMaxLength);
+
+        setBytesRate(diskOffering, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
+        setIopsRate(diskOffering, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
+
+        if (cacheMode != null) {
+            validateCacheMode(cacheMode);
+            diskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
+        }
 
         if (updateNeeded && !_diskOfferingDao.update(diskOfferingId, diskOffering)) {
             return null;
@@ -3305,8 +3312,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * Check if it needs to update any parameter when updateDiskoffering is called
      * Verify if name or displayText are not blank, tags is not null, sortkey and displayDiskOffering is not null
      */
-    protected boolean shouldUpdateDiskOffering(String name, String displayText, Integer sortKey, Boolean displayDiskOffering, String tags) {
-        return StringUtils.isNotBlank(name) || StringUtils.isNotBlank(displayText) || tags != null || sortKey != null || displayDiskOffering != null;
+    protected boolean shouldUpdateDiskOffering(String name, String displayText, Integer sortKey, Boolean displayDiskOffering, String tags, String cacheMode) {
+        return StringUtils.isNotBlank(name) || StringUtils.isNotBlank(displayText) || tags != null || sortKey != null || displayDiskOffering != null || StringUtils.isNotBlank(cacheMode);
+    }
+
+    protected boolean shouldUpdateBytesRateParameters(Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength, Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength) {
+        return bytesReadRate != null || bytesReadRateMax != null || bytesReadRateMaxLength != null || bytesWriteRate != null ||
+                bytesWriteRateMax != null || bytesWriteRateMaxLength != null;
+    }
+
+    protected boolean shouldUpdateIopsRateParameters(Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength, Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength) {
+        return iopsReadRate != null || iopsReadRateMax != null || iopsReadRateMaxLength != null || iopsWriteRate != null || iopsWriteRateMax != null || iopsWriteRateMaxLength != null;
     }
 
     @Override

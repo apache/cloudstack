@@ -451,34 +451,53 @@ class VirtualMachine:
     @classmethod
     def access_ssh_over_nat(
             cls, apiclient, services, virtual_machine, allow_egress=False,
-            networkid=None):
+            networkid=None, vpcid=None):
         """
         Program NAT and PF rules to open up ssh access to deployed guest
         @return:
         """
-        public_ip = PublicIPAddress.create(
-            apiclient=apiclient,
-            accountid=virtual_machine.account,
-            zoneid=virtual_machine.zoneid,
-            domainid=virtual_machine.domainid,
-            services=services,
-            networkid=networkid
-        )
-        FireWallRule.create(
-            apiclient=apiclient,
-            ipaddressid=public_ip.ipaddress.id,
-            protocol='TCP',
-            cidrlist=['0.0.0.0/0'],
-            startport=22,
-            endport=22
-        )
-        nat_rule = NATRule.create(
-            apiclient=apiclient,
-            virtual_machine=virtual_machine,
-            services=services,
-            ipaddressid=public_ip.ipaddress.id
-        )
-        if allow_egress:
+        # VPCs have ACLs managed differently
+        if vpcid:
+            public_ip = PublicIPAddress.create(
+                apiclient=apiclient,
+                accountid=virtual_machine.account,
+                zoneid=virtual_machine.zoneid,
+                domainid=virtual_machine.domainid,
+                services=services,
+                vpcid=vpcid
+            )
+
+            nat_rule = NATRule.create(
+                apiclient=apiclient,
+                virtual_machine=virtual_machine,
+                services=services,
+                ipaddressid=public_ip.ipaddress.id,
+                networkid=networkid)
+        else:
+            public_ip = PublicIPAddress.create(
+                apiclient=apiclient,
+                accountid=virtual_machine.account,
+                zoneid=virtual_machine.zoneid,
+                domainid=virtual_machine.domainid,
+                services=services,
+                networkid=networkid,
+            )
+
+            FireWallRule.create(
+                apiclient=apiclient,
+                ipaddressid=public_ip.ipaddress.id,
+                protocol='TCP',
+                cidrlist=['0.0.0.0/0'],
+                startport=22,
+                endport=22
+            )
+            nat_rule = NATRule.create(
+                apiclient=apiclient,
+                virtual_machine=virtual_machine,
+                services=services,
+                ipaddressid=public_ip.ipaddress.id)
+
+        if allow_egress and not vpcid:
             try:
                 EgressFireWallRule.create(
                     apiclient=apiclient,
@@ -502,7 +521,7 @@ class VirtualMachine:
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
-               rootdiskcontroller=None, macaddress=None, datadisktemplate_diskoffering_list={},
+               rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
                properties=None, nicnetworklist=None):
         """Create the instance"""
 
@@ -661,7 +680,8 @@ class VirtualMachine:
                         services,
                         virtual_machine,
                         allow_egress=allow_egress,
-                        networkid=cmd.networkids[0] if cmd.networkids else None)
+                        networkid=cmd.networkids[0] if cmd.networkids else None,
+                        vpcid=vpcid)
                 elif mode.lower() == 'basic':
                     if virtual_machine.publicip is not None:
                         # EIP/ELB (netscaler) enabled zone
@@ -1049,7 +1069,7 @@ class Volume:
 
     @classmethod
     def create_custom_disk(cls, apiclient, services, account=None,
-                           domainid=None, diskofferingid=None):
+                           domainid=None, diskofferingid=None, projectid=None):
         """Create Volume from Custom disk offering"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = services["diskname"]
@@ -1072,19 +1092,22 @@ class Volume:
 
         if account:
             cmd.account = account
-        else:
+        elif "account" in services:
             cmd.account = services["account"]
 
         if domainid:
             cmd.domainid = domainid
-        else:
+        elif "domainid" in services:
             cmd.domainid = services["domainid"]
+
+        if projectid:
+            cmd.projectid = projectid
 
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot_id, services,
-                             account=None, domainid=None):
+                             account=None, domainid=None, projectid=None):
         """Create Volume from snapshot"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
@@ -1098,12 +1121,16 @@ class Volume:
             cmd.ispublic = False
         if account:
             cmd.account = account
-        else:
+        elif "account" in services:
             cmd.account = services["account"]
         if domainid:
             cmd.domainid = domainid
-        else:
+        elif "domainid" in services:
             cmd.domainid = services["domainid"]
+
+        if projectid:
+            cmd.projectid = projectid
+
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
@@ -1454,8 +1481,8 @@ class Template:
         return Template(apiclient.createTemplate(cmd).__dict__)
 
     @classmethod
-    def create_from_snapshot(cls, apiclient, snapshot, services,
-                             random_name=True):
+    def create_from_snapshot(cls, apiclient, snapshot, services, account=None,
+                             domainid=None, projectid=None, random_name=True):
         """Create Template from snapshot"""
         # Create template from Snapshot ID
         cmd = createTemplate.createTemplateCmd()
@@ -1493,6 +1520,17 @@ class Template:
         else:
             raise Exception(
                 "Unable to find Ostype is required for creating template")
+
+        cmd.snapshotid = snapshot.id
+
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        if projectid:
+            cmd.projectid = projectid
+
+        return Template(apiclient.createTemplate(cmd).__dict__)
 
     def delete(self, apiclient, zoneid=None):
         """Delete Template"""
@@ -3930,7 +3968,7 @@ class VpnCustomerGateway:
 
     @classmethod
     def create(cls, apiclient, services, name, gateway, cidrlist,
-               account=None, domainid=None):
+               account=None, domainid=None, projectid=None):
         """Create VPN Customer Gateway"""
         cmd = createVpnCustomerGateway.createVpnCustomerGatewayCmd()
         cmd.name = name
@@ -3954,6 +3992,9 @@ class VpnCustomerGateway:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
+        if projectid:
+            cmd.projectid = projectid
+
         return VpnCustomerGateway(
             apiclient.createVpnCustomerGateway(cmd).__dict__)
 

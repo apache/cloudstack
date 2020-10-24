@@ -198,6 +198,10 @@ public class StoragePoolVO implements StoragePool {
         return updateTime;
     }
 
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
+
     @Override
     public long getDataCenterId() {
         return dataCenterId;
