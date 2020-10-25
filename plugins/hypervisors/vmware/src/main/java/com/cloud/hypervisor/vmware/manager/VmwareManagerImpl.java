@@ -25,6 +25,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
@@ -41,9 +42,11 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
@@ -51,6 +54,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.LegacyZoneVO;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
@@ -89,6 +93,8 @@ import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
@@ -116,6 +122,7 @@ import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -125,7 +132,9 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 
@@ -217,6 +226,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private TemplateManager templateManager;
     @Inject
     private VsphereStoragePolicyDao vsphereStoragePolicyDao;
+    @Inject
+    private StorageManager storageManager;
+    @Inject
+    private HypervisorGuruManager hypervisorGuruManager;
 
     private String _mountParent;
     private StorageLayer _storage;
@@ -1057,6 +1070,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(ListVmwareDcsCmd.class);
         cmdList.add(ImportVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePoliciesCmd.class);
+        cmdList.add(ListVsphereStoragePolicyCompatiblePoolsCmd.class);
         return cmdList;
     }
 
@@ -1467,6 +1481,35 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             return new ArrayList<>(storagePolicies);
         }
         return Collections.emptyList();
+    }
+
+    @Override
+    public List<StoragePool> listVsphereStoragePolicyCompatibleStoragePools(ListVsphereStoragePolicyCompatiblePoolsCmd cmd) {
+        Long policyId = cmd.getPolicyId();
+        VsphereStoragePolicyVO storagePolicy = vsphereStoragePolicyDao.findById(policyId);
+        if (storagePolicy == null) {
+            throw new CloudRuntimeException("Storage policy with ID = " + policyId + " was not found");
+        }
+        long zoneId = storagePolicy.getZoneId();
+        List<StoragePoolVO> poolsInZone = primaryStorageDao.listByStatusInZone(zoneId, StoragePoolStatus.Up);
+        List<StoragePool> compatiblePools = new ArrayList<>();
+        for (StoragePoolVO pool : poolsInZone) {
+            StorageFilerTO storageFilerTO = new StorageFilerTO(pool);
+            List<Long> hostIds = storageManager.getUpHostsInPool(pool.getId());
+            Collections.shuffle(hostIds);
+            CheckDataStoreStoragePolicyComplainceCommand command = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicy.getPolicyId(), storageFilerTO);
+            long targetHostId = hypervisorGuruManager.getGuruProcessedCommandTargetHost(hostIds.get(0), command);
+            try {
+                Answer answer = _agentMgr.send(targetHostId, command);
+                boolean result = answer != null && answer.getResult();
+                if (result) {
+                    compatiblePools.add(pool);
+                }
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                s_logger.error("Could not verify if storage policy " + storagePolicy.getName() + " is compatible with storage pool " + pool.getName());
+            }
+        }
+        return compatiblePools;
     }
 
     @Override

@@ -31,9 +31,9 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_test_template)
-from marvin.codes import PASS
-from marvin.cloudstackAPI import (importVsphereStoragePolicies)
-from marvin.cloudstackAPI import (listVsphereStoragePolicies)
+from marvin.cloudstackAPI import (importVsphereStoragePolicies,
+                                  listVsphereStoragePolicies,
+                                  listVsphereStoragePolicyCompatiblePools)
 
 
 class TestVMWareStoragePolicies(cloudstackTestCase):
@@ -103,6 +103,12 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
         cmd.zoneid = self.zone.id
         return apiclient.listVsphereStoragePolicies(cmd)
 
+    def list_storage_policy_compatible_pools(self, apiclient, policyid):
+        cmd = listVsphereStoragePolicyCompatiblePools.listVsphereStoragePolicyCompatiblePoolsCmd()
+        cmd.zoneid = self.zone.id
+        cmd.policyid = policyid
+        return apiclient.listVsphereStoragePolicyCompatiblePools(cmd)
+
     def create_volume(self, apiclient):
         cmd = create
 
@@ -155,11 +161,23 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
             "Check if the number of imported policies is identical to the number of listed policies"
         )
 
+        are_compatible_pools = False
+        selected_policy = None
+        for imported_policy in imported_policies:
+            compatible_pools = self.list_storage_policy_compatible_pools(self.apiclient, imported_policy.id)
+            if len(compatible_pools) > 0:
+                are_compatible_pools = True
+                selected_policy = imported_policy
+                break
+
+        if not are_compatible_pools:
+            self.skipTest("There are no compatible storage pools with the imported policies")
+
         # Create service offering with the first storage policy from the list
         service_offering = ServiceOffering.create(
             self.apiclient,
             self.testdata["service_offering"],
-            storagepolicy=listed_policies[0].id
+            storagepolicy=selected_policy.id
         )
         self.cleanup.append(service_offering)
 
@@ -167,7 +185,7 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
         disk_offering = DiskOffering.create(
             self.apiclient,
             self.testdata["disk_offering"],
-            storagepolicy=listed_policies[0].id
+            storagepolicy=selected_policy.id
         )
         self.cleanup.append(disk_offering)
 
