@@ -161,16 +161,14 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
             "Check if the number of imported policies is identical to the number of listed policies"
         )
 
-        are_compatible_pools = False
         selected_policy = None
         for imported_policy in imported_policies:
             compatible_pools = self.list_storage_policy_compatible_pools(self.apiclient, imported_policy.id)
-            if len(compatible_pools) > 0:
-                are_compatible_pools = True
+            if compatible_pools and len(compatible_pools) > 0:
                 selected_policy = imported_policy
                 break
 
-        if not are_compatible_pools:
+        if not selected_policy:
             self.skipTest("There are no compatible storage pools with the imported policies")
 
         # Create service offering with the first storage policy from the list
