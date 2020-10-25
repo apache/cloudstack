@@ -39,6 +39,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
@@ -51,6 +52,7 @@ import com.cloud.org.Managed.ManagedState;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.ImageStoreDetailsUtil;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -490,6 +492,16 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public VsphereStoragePolicyDao vsphereStoragePolicyDao() {
             return Mockito.mock(VsphereStoragePolicyDao.class);
+        }
+
+        @Bean
+        public StorageManager storageManager() {
+            return Mockito.mock(StorageManager.class);
+        }
+
+        @Bean
+        public HypervisorGuruManager hypervisorGuruManager() {
+            return Mockito.mock(HypervisorGuruManager.class);
         }
 
         public static class Library implements TypeFilter {
