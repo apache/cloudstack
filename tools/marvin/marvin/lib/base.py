@@ -521,7 +521,8 @@ class VirtualMachine:
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
-               rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={}):
+               rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
+               properties=None, nicnetworklist=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -649,6 +650,12 @@ class VirtualMachine:
             cmd.macaddress = macaddress
         elif macaddress in services:
             cmd.macaddress = services["macaddress"]
+
+        if properties:
+            cmd.properties = properties
+
+        if nicnetworklist:
+            cmd.nicnetworklist = nicnetworklist
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -1390,22 +1397,24 @@ class Template:
         elif "hypervisor" in services:
             cmd.hypervisor = services["hypervisor"]
 
-        if "ostypeid" in services:
-            cmd.ostypeid = services["ostypeid"]
-        elif "ostype" in services:
-            # Find OSTypeId from Os type
-            sub_cmd = listOsTypes.listOsTypesCmd()
-            sub_cmd.description = services["ostype"]
-            ostypes = apiclient.listOsTypes(sub_cmd)
+        if cmd.hypervisor.lower() not in ["vmware"]:
+            # Since version 4.15 VMware templates honour the guest OS defined in the template
+            if "ostypeid" in services:
+                cmd.ostypeid = services["ostypeid"]
+            elif "ostype" in services:
+                # Find OSTypeId from Os type
+                sub_cmd = listOsTypes.listOsTypesCmd()
+                sub_cmd.description = services["ostype"]
+                ostypes = apiclient.listOsTypes(sub_cmd)
 
-            if not isinstance(ostypes, list):
+                if not isinstance(ostypes, list):
+                    raise Exception(
+                        "Unable to find Ostype id with desc: %s" %
+                        services["ostype"])
+                cmd.ostypeid = ostypes[0].id
+            else:
                 raise Exception(
-                    "Unable to find Ostype id with desc: %s" %
-                    services["ostype"])
-            cmd.ostypeid = ostypes[0].id
-        else:
-            raise Exception(
-                "Unable to find Ostype is required for registering template")
+                    "Unable to find Ostype is required for registering template")
 
         cmd.url = services["url"]
 

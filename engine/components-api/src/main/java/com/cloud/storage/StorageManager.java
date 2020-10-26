@@ -212,6 +212,8 @@ public interface StorageManager extends StorageService {
 
     boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz);
 
+    boolean isStoragePoolComplaintWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException;
+
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
     void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
@@ -235,5 +237,7 @@ public interface StorageManager extends StorageService {
     void setDiskProfileThrottling(DiskProfile dskCh, ServiceOffering offering, DiskOffering diskOffering);
 
     DiskTO getDiskWithThrottling(DataTO volTO, Volume.Type volumeType, long deviceId, String path, long offeringId, long diskOfferingId);
+
+    boolean isStoragePoolDatastoreClusterParent(StoragePool pool);
 
 }

@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
@@ -30,13 +32,13 @@ import com.cloud.utils.db.SearchCriteria;
 
 public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
-    TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO tmpl);
+    TemplateResponse newTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO tmpl);
 
     TemplateResponse newIsoResponse(TemplateJoinVO tmpl);
 
     TemplateResponse newUpdateResponse(TemplateJoinVO tmpl);
 
-    TemplateResponse setTemplateResponse(ResponseView view, TemplateResponse tmplData, TemplateJoinVO tmpl);
+    TemplateResponse setTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateResponse tmplData, TemplateJoinVO tmpl);
 
     List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate tmpl);
 

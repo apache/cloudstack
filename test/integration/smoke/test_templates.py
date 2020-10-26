@@ -77,16 +77,15 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
         if "vmware" in self.hypervisor.lower():
             self.test_template = registerTemplate.registerTemplateCmd()
             self.test_template = registerTemplate.registerTemplateCmd()
-            self.test_template.checksum = "{SHA-1}" + "178639bd5ec089a27f6d39025be28c3de5d9393b"
+            self.test_template.checksum = "{SHA-1}" + "3c00872599c6e1e46a358aac51080db88266cf5c"
             self.test_template.hypervisor = self.hypervisor
             self.test_template.zoneid = self.zone.id
             self.test_template.name = 'test sha-2333'
             self.test_template.displaytext = 'test sha-1'
             self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova"
             self.test_template.format = "OVA"
-            self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
-            self.md5 = "3c23ac66bac7888dc7c972783646c644"
-            self.sha256 = "97aaa096d419522158c54f83eb61d9242d9f6bca9166fd4030d73683d647c7e7"
+            self.md5 = "27f3c56a8c7ec7b2f3ff2199f7078006"
+            self.sha256 = "a7b04c1eb507f3f5de844bda352df1ea5e20335b465409493ca6ae07dfd0a158"
 
         if "xen" in self.hypervisor.lower():
             self.test_template = registerTemplate.registerTemplateCmd()

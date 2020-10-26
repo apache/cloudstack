@@ -51,7 +51,7 @@ public interface ImageStoreEntity extends DataStore, ImageStore {
 
     void deleteExtractUrl(String installPath, String url, Upload.Type volume);
 
-    List<DatadiskTO> getDataDiskTemplates(DataObject obj);
+    List<DatadiskTO> getDataDiskTemplates(DataObject obj, String configurationId);
 
     Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, String diskId, long fileSize, boolean bootable, AsyncCompletionCallback<CreateCmdResult> callback);
 }

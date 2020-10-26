@@ -40,21 +40,22 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DeployAsIsInfoTO;
+import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
-import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -177,7 +178,7 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -217,7 +218,9 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
+import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
+import com.cloud.hypervisor.vmware.mo.StoragepodMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
@@ -249,7 +252,6 @@ import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -287,6 +289,7 @@ import com.vmware.vim25.HostInternetScsiHba;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
+import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PerfCounterInfo;
@@ -297,6 +300,7 @@ import com.vmware.vim25.PerfMetricIntSeries;
 import com.vmware.vim25.PerfMetricSeries;
 import com.vmware.vim25.PerfQuerySpec;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.StoragePodSummary;
 import com.vmware.vim25.ToolsUnavailableFaultMsg;
 import com.vmware.vim25.VAppOvfSectionInfo;
 import com.vmware.vim25.VAppOvfSectionSpec;
@@ -337,9 +341,12 @@ import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
 import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmConfigSpec;
-import com.vmware.vim25.VmfsDatastoreInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
@@ -568,6 +575,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((GetUnmanagedInstancesCommand) cmd);
             } else if (clz == PrepareUnmanageVMInstanceCommand.class) {
                 answer = execute((PrepareUnmanageVMInstanceCommand) cmd);
+            } else if (clz == ValidateVcenterDetailsCommand.class) {
+                answer = execute((ValidateVcenterDetailsCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -745,13 +754,30 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else if (newSize == oldSize) {
                 return new ResizeVolumeAnswer(cmd, true, "success", newSize * ResourceType.bytesToKiB);
             }
+            /*
+            // FR41 this is yet to fix
+            ManagedObjectReference morDS1 = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
+            DatastoreMO dsMo1 = new DatastoreMO(hyperHost.getContext(), morDS1);
+            vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo1, path + VMDK_EXTENSION);
+            DatastoreFile dsFile1 = new DatastoreFile(vmdkDataStorePath);
+
+            s_logger.debug("vDiskid does not exist for volume " + vmdkDataStorePath + " registering the disk now");
+            VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(getServiceContext());
+            try {
+                VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsFile1, null, dsMo1.getOwnerDatacenter().second());
+                VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
+                ID vdiskId = diskConfigInfo.getId();
+            } catch (Throwable e) {
+                if (e instanceof AlreadyExistsFaultMsg) {
+
+                }
+            }*/
 
             if (vmName.equalsIgnoreCase("none")) {
                 // OfflineVmwareMigration: we need to refactor the worker vm creation out for use in migration methods as well as here
                 // OfflineVmwareMigration: this method is 100 lines and needs refactorring anyway
                 // we need to spawn a worker VM to attach the volume to and resize the volume.
                 useWorkerVm = true;
-                vmName = getWorkerName(getServiceContext(), cmd, 0);
 
                 String poolId = cmd.getPoolUuid();
 
@@ -759,6 +785,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 // OfflineVmwareMigration: 1. find data(store)
                 ManagedObjectReference morDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolId);
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDS);
+                vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
 
                 s_logger.info("Create worker VM " + vmName);
 
@@ -1723,39 +1750,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VirtualMachineFileInfo existingVmFileInfo = null;
         VirtualMachineFileLayoutEx existingVmFileLayout = null;
         List<DatastoreMO> existingDatastores = new ArrayList<DatastoreMO>();
+        String diskStoragePolicyId = null;
+        String vmStoragePolicyId = null;
+        VirtualMachineDefinedProfileSpec diskProfileSpec = null;
+        VirtualMachineDefinedProfileSpec vmProfileSpec = null;
+
+
+        DeployAsIsInfoTO deployAsIsInfo = vmSpec.getDeployAsIsInfo();
+        boolean deployAsIs = deployAsIsInfo != null;
 
         Pair<String, String> names = composeVmNames(vmSpec);
         String vmInternalCSName = names.first();
         String vmNameOnVcenter = names.second();
-        String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
-        String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         DiskTO rootDiskTO = null;
-        String bootMode = null;
-        if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
-            bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
-        }
-        if (null == bootMode) {
-            bootMode = ApiConstants.BootType.BIOS.toString();
-        }
-
-        // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
-        // This helps avoid mix of different scsi subtype controllers in instance.
-        if (DiskControllerType.osdefault == DiskControllerType.getType(dataDiskController) && DiskControllerType.lsilogic == DiskControllerType.getType(rootDiskController)) {
-            dataDiskController = DiskControllerType.scsi.toString();
-        }
-
-        // Validate the controller types
-        dataDiskController = DiskControllerType.getType(dataDiskController).toString();
-        rootDiskController = DiskControllerType.getType(rootDiskController).toString();
-
-        if (DiskControllerType.getType(rootDiskController) == DiskControllerType.none) {
-            throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskController);
-        }
-        if (DiskControllerType.getType(dataDiskController) == DiskControllerType.none) {
-            throw new CloudRuntimeException("Invalid data disk controller detected : " + dataDiskController);
-        }
-
-        Pair<String, String> controllerInfo = new Pair<String, String>(rootDiskController, dataDiskController);
+        String bootMode = getBootModeFromVmSpec(vmSpec, deployAsIs);
+        Pair<String, String> controllerInfo = getControllerInfoFromVmSpec(vmSpec);
 
         Boolean systemVm = vmSpec.getType().isUsedBySystem();
         // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name.
@@ -1775,7 +1784,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
-            String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
+
+            DiskTO[] specDisks = vmSpec.getDisks();
+            String guestOsId = getGuestOsIdFromVmSpec(vmSpec, deployAsIs);
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
             NicTO[] nics = vmSpec.getNics();
@@ -1787,36 +1798,29 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            DatastoreMO dsRootVolumeIsOn = getDatastoreThatRootDiskIsOn(dataStoresDetails, disks);
-            if (dsRootVolumeIsOn == null) {
-                String msg = "Unable to locate datastore details of root volume";
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
-
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
+            VirtualDevice[] nicDevices = null;
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             DiskControllerType systemVmScsiControllerType = DiskControllerType.lsilogic;
             int firstScsiControllerBusNum = 0;
             int numScsiControllerForSystemVm = 1;
             boolean hasSnapshot = false;
+
+            List<Pair<Integer, ManagedObjectReference>> diskDatastores = null;
             if (vmMo != null) {
                 s_logger.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
                 if (getVmPowerState(vmMo) != PowerState.PowerOff)
                     vmMo.safePowerOff(_shutdownWaitMs);
 
                 // retrieve disk information before we tear down
+                diskDatastores = vmMo.getAllDiskDatastores();
                 diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 hasSnapshot = vmMo.hasSnapshot();
-                if (!hasSnapshot)
-                    vmMo.tearDownDevices(new Class<?>[]{VirtualDisk.class, VirtualEthernetCard.class});
-                else
-                    vmMo.tearDownDevices(new Class<?>[]{VirtualEthernetCard.class});
-                if (systemVm) {
-                    ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
-                } else {
-                    ensureDiskControllers(vmMo, controllerInfo);
-                }
+                nicDevices = vmMo.getNicDevices();
+
+                tearDownVmDevices(vmMo, hasSnapshot, deployAsIs);
+                ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, systemVmScsiControllerType,
+                        numScsiControllerForSystemVm, firstScsiControllerBusNum, deployAsIs);
             } else {
                 ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
                 assert (morDc != null);
@@ -1834,17 +1838,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     diskInfoBuilder = vmMo.getDiskInfoBuilder();
                     hasSnapshot = vmMo.hasSnapshot();
-                    if (!hasSnapshot)
-                        vmMo.tearDownDevices(new Class<?>[]{VirtualDisk.class, VirtualEthernetCard.class});
-                    else
-                        vmMo.tearDownDevices(new Class<?>[]{VirtualEthernetCard.class});
+                    diskDatastores = vmMo.getAllDiskDatastores();
 
-                    if (systemVm) {
-                        // System volumes doesn't require more than 1 SCSI controller as there is no requirement for data volumes.
-                        ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
-                    } else {
-                        ensureDiskControllers(vmMo, controllerInfo);
-                    }
+                    tearDownVmDevices(vmMo, hasSnapshot, deployAsIs);
+                    ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, systemVmScsiControllerType,
+                            numScsiControllerForSystemVm, firstScsiControllerBusNum, deployAsIs);
                 } else {
                     // If a VM with the same name is found in a different cluster in the DC, unregister the old VM and configure a new VM (cold-migration).
                     VirtualMachineMO existingVmInDc = dcMo.findVm(vmInternalCSName);
@@ -1856,45 +1854,55 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         existingDatastores = existingVmInDc.getAllDatastores();
                         existingVmInDc.unregisterVm();
                     }
-                    Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
-                    for (DiskTO vol : disks) {
-                        if (vol.getType() == Volume.Type.ROOT) {
-                            Map<String, String> details = vol.getDetails();
-                            boolean managed = false;
 
-                            if (details != null) {
-                                managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-                            }
-
-                            if (managed) {
-                                String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
-
-                                rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
-                            } else {
-                                DataStoreTO primaryStore = vol.getData().getDataStore();
-
-                                rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
-                            }
-                        }
-                    }
-
-                    assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
-
-                    boolean vmFolderExists = rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter);
-                    String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
-                    if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
-                        registerVm(vmNameOnVcenter, dsRootVolumeIsOn);
+                    if (deployAsIs) {
                         vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
-                        if (vmMo != null) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Found registered vm " + vmInternalCSName + " at host " + hyperHost.getHyperHostName());
+                        if (vmMo == null) {
+                            s_logger.info("Cloned deploy-as-is VM " + vmInternalCSName + " is not in this host, relocating it");
+                            vmMo = takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
+                        }
+                    } else {
+                        DiskTO rootDisk = null;
+                        for (DiskTO vol : disks) {
+                            if (vol.getType() == Volume.Type.ROOT) {
+                                rootDisk = vol;
                             }
                         }
-                        tearDownVm(vmMo);
-                    } else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(), getReservedCpuMHZ(vmSpec),
-                            vmSpec.getLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
-                            controllerInfo, systemVm)) {
-                        throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
+                        Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = getDatastoreThatDiskIsOn(dataStoresDetails, rootDisk);
+                        assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
+                        DatastoreMO dsRootVolumeIsOn = rootDiskDataStoreDetails.second();
+                        if (dsRootVolumeIsOn == null) {
+                                String msg = "Unable to locate datastore details of root volume";
+                                s_logger.error(msg);
+                                throw new Exception(msg);
+                            }
+                        if (rootDisk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && rootDisk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                            if (diskInfoBuilder != null) {
+                                DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, rootDisk, diskDatastores);
+                                if (diskDatastoreMofromVM != null) {
+                                    String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                                    if (!actualPoolUuid.equalsIgnoreCase(rootDisk.getData().getDataStore().getUuid())) {
+                                        dsRootVolumeIsOn = diskDatastoreMofromVM;
+                                    }
+                                }
+                            }
+                        }
+
+                        boolean vmFolderExists = dsRootVolumeIsOn.folderExists(String.format("[%s]", dsRootVolumeIsOn.getName()), vmNameOnVcenter);                        String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
+                        if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
+                            registerVm(vmNameOnVcenter, dsRootVolumeIsOn);
+                            vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+                            if (vmMo != null) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Found registered vm " + vmInternalCSName + " at host " + hyperHost.getHyperHostName());
+                                }
+                            }
+                            tearDownVm(vmMo);
+                        } else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(), getReservedCpuMHZ(vmSpec),
+                                vmSpec.getLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
+                                controllerInfo, systemVm)) {
+                            throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
+                        }
                     }
                 }
 
@@ -1903,8 +1911,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
             }
+            if (deployAsIs) {
+                s_logger.info("Mapping VM disks to spec disks and tearing down datadisks (if any)");
+                mapSpecDisksToClonedDisksAndTearDownDatadisks(vmMo, vmInternalCSName, specDisks);
+            }
 
-            int totalChangeDevices = disks.length + nics.length;
+            int disksChanges = getDisksChangesNumberFromDisksSpec(disks, deployAsIs);
+            int totalChangeDevices = disksChanges + nics.length;
+            if (deployAsIsInfo != null && deployAsIsInfo.getProperties() != null) {
+                totalChangeDevices++;
+            }
 
             DiskTO volIso = null;
             if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -1912,14 +1928,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 totalChangeDevices++;
             } else {
                 volIso = getIsoDiskTO(disks);
-                if (volIso == null)
+                if (volIso == null && !deployAsIs) {
                     totalChangeDevices++;
+                }
             }
 
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
 
+            int i = 0;
+            int ideUnitNumber = !deployAsIs ? 0 : vmMo.getNextIDEDeviceNumber();
+            int scsiUnitNumber = !deployAsIs ? 0 : vmMo.getNextScsiDiskDeviceNumber();
+            int ideControllerKey = vmMo.getIDEDeviceControllerKey();
+            int scsiControllerKey = vmMo.getScsiDeviceControllerKeyNoException();
+            VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
+            DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
+
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) (vmSpec.getMaxRam() / (1024 * 1024)),
-                    getReservedMemoryMb(vmSpec), guestOsId, vmSpec.getLimitCpuUse());
+                    getReservedMemoryMb(vmSpec), guestOsId, vmSpec.getLimitCpuUse(), deployAsIs);
 
             // Check for multi-cores per socket settings
             int numCoresPerSocket = 1;
@@ -1946,14 +1971,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
-
-            VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
-            int i = 0;
-            int ideUnitNumber = 0;
-            int scsiUnitNumber = 0;
-            int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-            int scsiControllerKey = vmMo.getScsiDeviceControllerKeyNoException();
-            int controllerKey;
 
             //
             // Setup ISO device
@@ -1992,7 +2009,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
                 }
                 i++;
-            } else {
+            } else if (!deployAsIs) {
                 // Note: we will always plug a CDROM device
                 if (volIso != null) {
                     for (DiskTO vol : disks) {
@@ -2048,18 +2065,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
+            int controllerKey;
 
             //
             // Setup ROOT/DATA disk devices
             //
-            DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
             for (DiskTO vol : sortedDisks) {
-                if (vol.getType() == Volume.Type.ISO)
+                if (vol.getType() == Volume.Type.ISO || deployAsIs && vol.getType() == Volume.Type.ROOT) {
                     continue;
+                }
 
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
                 controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
-                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, new Pair<String, String>(rootDiskController, dataDiskController));
+                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, controllerInfo);
 
                 if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
                     diskController = vmMo.getRecommendedDiskController(null);
@@ -2102,13 +2120,41 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         iScsiName = details.get(DiskTO.IQN);
                     }
 
+                    String primaryStoreUuid = primaryStore.getUuid();
                     // if the storage is managed, iScsiName should not be null
-                    String datastoreName = managed ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid();
+                    String datastoreName = managed ? VmwareResource.getDatastoreName(iScsiName) : primaryStoreUuid;
                     Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
 
                     assert (volumeDsDetails != null);
+                    if (volumeDsDetails == null) {
+                        throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
+                    }
 
-                    String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, vol, matchingExistingDisk, dataStoresDetails);
+                    if (vol.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && vol.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                        if (diskInfoBuilder != null && matchingExistingDisk != null) {
+                            String[] diskChain = matchingExistingDisk.getDiskChain();
+                            if (diskChain != null && diskChain.length > 0) {
+                                DatastoreFile file = new DatastoreFile(diskChain[0]);
+                                if (!file.getFileBaseName().equalsIgnoreCase(volumeTO.getPath())) {
+                                    if (s_logger.isInfoEnabled())
+                                        s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + file.getFileBaseName());
+                                    volumeTO.setPath(file.getFileBaseName());
+                                }
+                            }
+                            DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, vol, diskDatastores);
+                            if (diskDatastoreMofromVM != null) {
+                                String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                                if (actualPoolUuid != null && !actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
+                                    volumeDsDetails = new Pair<>(diskDatastoreMofromVM.getMor(), diskDatastoreMofromVM);
+                                    if (s_logger.isInfoEnabled())
+                                        s_logger.info("Detected datastore uuid change on volume: " + volumeTO.getId() + " " + primaryStore.getUuid() + " -> " + actualPoolUuid);
+                                    ((PrimaryDataStoreTO)primaryStore).setUuid(actualPoolUuid);
+                                }
+                            }
+                        }
+                    }
+
+                    String[] diskChain = syncDiskChain(dcMo, vmMo, vol, matchingExistingDisk, volumeDsDetails.second());
 
                     int deviceNumber = -1;
                     if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) {
@@ -2121,8 +2167,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1);
 
-                    if (vol.getType() == Volume.Type.ROOT)
+                    diskStoragePolicyId = volumeTO.getvSphereStoragePolicyId();
+                    if (!StringUtils.isEmpty(diskStoragePolicyId)) {
+                        PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(context);
+                        diskProfileSpec = profMgrMo.getProfileSpec(diskStoragePolicyId);
+                        deviceConfigSpecArray[i].getProfile().add(diskProfileSpec);
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug(String.format("Adding vSphere storage profile: %s to virtual disk [%s]", diskStoragePolicyId, _gson.toJson(device)));
+                        }
+                    }
+                    if (vol.getType() == Volume.Type.ROOT) {
                         rootDiskTO = vol;
+                        vmStoragePolicyId = diskStoragePolicyId;
+                        vmProfileSpec = diskProfileSpec;
+                    }
                     deviceConfigSpecArray[i].setDevice(device);
                     deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
@@ -2141,7 +2199,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             // Setup USB devices
             //
-            if (guestOsId.startsWith("darwin")) { //Mac OS
+            if (StringUtils.isNotBlank(guestOsId) && guestOsId.startsWith("darwin")) { //Mac OS
                 VirtualDevice[] devices = vmMo.getMatchedDevices(new Class<?>[]{VirtualUSBController.class});
                 if (devices.length == 0) {
                     s_logger.debug("No USB Controller device on VM Start. Add USB Controller device for Mac OS VM " + vmInternalCSName);
@@ -2201,9 +2259,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.valueOf(vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER));
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("VM " + vmInternalCSName + " will be started with NIC device type: " + nicDeviceType);
+            VirtualEthernetCardType nicDeviceType;
 
             NiciraNvpApiVersion.logNiciraApiVersion();
 
@@ -2211,6 +2267,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
+                String adapterTypeStr = deployAsIs ?
+                        mapAdapterType(deployAsIsInfo.getNicAdapterMap().get(nicTo.getDeviceId())) :
+                        vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER);
+                nicDeviceType = VirtualEthernetCardType.valueOf(adapterTypeStr);
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("VM " + vmInternalCSName + " will be started with NIC device type: " + nicDeviceType + " on NIC device " + nicTo.getDeviceId());
+                }
                 boolean configureVServiceInNexus = (nicTo.getType() == TrafficType.Guest) && (vmSpec.getDetails().containsKey("ConfigureVServiceInNexus"));
                 VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, configureVServiceInNexus, vmType);
@@ -2264,6 +2328,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // pass boot arguments through machine.id & perform customized options to VMX
             ArrayList<OptionValue> extraOptions = new ArrayList<OptionValue>();
             configBasicExtraOption(extraOptions, vmSpec);
+
+            if (deployAsIs) {
+                setDeployAsIsProperties(vmMo, deployAsIsInfo, vmConfigSpec);
+            }
+
             configNvpExtraOption(extraOptions, vmSpec, nicUuidToDvSwitchUuid);
             configCustomExtraOption(extraOptions, vmSpec);
 
@@ -2277,35 +2346,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 extraOptions.add(option);
             }
 
-            // config VNC
-            String keyboardLayout = null;
-            if (vmSpec.getDetails() != null)
-                keyboardLayout = vmSpec.getDetails().get(VmDetailConstants.KEYBOARD);
-            vmConfigSpec.getExtraConfig()
-                    .addAll(Arrays.asList(configureVnc(extraOptions.toArray(new OptionValue[0]), hyperHost, vmInternalCSName, vmSpec.getVncPassword(), keyboardLayout)));
+            configureVNC(vmSpec, extraOptions, vmConfigSpec, hyperHost, vmInternalCSName);
 
             // config video card
             configureVideoCard(vmMo, vmSpec, vmConfigSpec);
 
-            // Set OVF properties (if available)
-            Pair<String, List<OVFPropertyTO>> ovfPropsMap = vmSpec.getOvfProperties();
-            VmConfigInfo templateVappConfig = null;
-            List<OVFPropertyTO> ovfProperties = null;
-            if (ovfPropsMap != null) {
-                String vmTemplate = ovfPropsMap.first();
-                s_logger.info("Find VM template " + vmTemplate);
-                VirtualMachineMO vmTemplateMO = dcMo.findVm(vmTemplate);
-                templateVappConfig = vmTemplateMO.getConfigInfo().getVAppConfig();
-                ovfProperties = ovfPropsMap.second();
-                // Set OVF properties (if available)
-                if (CollectionUtils.isNotEmpty(ovfProperties)) {
-                    s_logger.info("Copying OVF properties from template and setting them to the values the user provided");
-                    copyVAppConfigsFromTemplate(templateVappConfig, ovfProperties, vmConfigSpec);
-                }
-            }
-
             setBootOptions(vmSpec, bootMode, vmConfigSpec);
 
+            if (!StringUtils.isEmpty(vmStoragePolicyId)) {
+                vmConfigSpec.getVmProfile().add(vmProfileSpec);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("Configuring the VM %s with storage policy: %s", vmInternalCSName, vmStoragePolicyId));
+                }
+            }
             //
             // Configure VM
             //
@@ -2319,7 +2372,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             // Resizing root disk only when explicit requested by user
             final Map<String, String> vmDetails = cmd.getVirtualMachine().getDetails();
-            if (rootDiskTO != null && !hasSnapshot && (vmDetails != null && vmDetails.containsKey(ApiConstants.ROOT_DISK_SIZE))) {
+            if (!deployAsIs && rootDiskTO != null && !hasSnapshot && (vmDetails != null && vmDetails.containsKey(ApiConstants.ROOT_DISK_SIZE))) {
                 resizeRootDiskOnVMStart(vmMo, rootDiskTO, hyperHost, context);
             }
 
@@ -2393,6 +2446,186 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private String mapAdapterType(String adapterStringFromOVF) {
+        if (StringUtils.isBlank(adapterStringFromOVF) || adapterStringFromOVF.equalsIgnoreCase(VirtualEthernetCardType.E1000.toString())) {
+            return VirtualEthernetCardType.E1000.toString();
+        } else if (adapterStringFromOVF.equalsIgnoreCase(VirtualEthernetCardType.PCNet32.toString())) {
+            return VirtualEthernetCardType.PCNet32.toString();
+        } else if (adapterStringFromOVF.equalsIgnoreCase(VirtualEthernetCardType.Vmxnet2.toString())) {
+            return VirtualEthernetCardType.Vmxnet2.toString();
+        } else if (adapterStringFromOVF.equalsIgnoreCase(VirtualEthernetCardType.Vmxnet3.toString())) {
+            return VirtualEthernetCardType.Vmxnet3.toString();
+        }
+        return VirtualEthernetCardType.E1000.toString();
+    }
+
+    private int getDisksChangesNumberFromDisksSpec(DiskTO[] disks, boolean deployAsIs) {
+        if (!deployAsIs) {
+            return disks.length;
+        } else {
+            int datadisksNumber = 0;
+            if (ArrayUtils.isNotEmpty(disks)) {
+                List<DiskTO> datadisks = Arrays.stream(disks).filter(x -> x.getType() == Volume.Type.DATADISK).collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(datadisks)) {
+                    datadisksNumber = datadisks.size();
+                }
+            }
+            return datadisksNumber;
+        }
+    }
+
+    /**
+     * Configure VNC
+     */
+    private void configureVNC(VirtualMachineTO vmSpec, ArrayList<OptionValue> extraOptions, VirtualMachineConfigSpec vmConfigSpec, VmwareHypervisorHost hyperHost, String vmInternalCSName) throws Exception {
+        String keyboardLayout = null;
+        if (vmSpec.getDetails() != null)
+            keyboardLayout = vmSpec.getDetails().get(VmDetailConstants.KEYBOARD);
+        vmConfigSpec.getExtraConfig()
+                .addAll(Arrays.asList(configureVnc(extraOptions.toArray(new OptionValue[0]), hyperHost, vmInternalCSName, vmSpec.getVncPassword(), keyboardLayout)));
+
+    }
+
+    private void ensureDiskControllersInternal(VirtualMachineMO vmMo, Boolean systemVm,
+                                               Pair<String, String> controllerInfo,
+                                               DiskControllerType systemVmScsiControllerType,
+                                               int numScsiControllerForSystemVm,
+                                               int firstScsiControllerBusNum, boolean deployAsIs) throws Exception {
+        if (systemVm) {
+            ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
+        } else if (!deployAsIs) {
+            ensureDiskControllers(vmMo, controllerInfo);
+        }
+    }
+
+    private void tearDownVmDevices(VirtualMachineMO vmMo, boolean hasSnapshot, boolean deployAsIs) throws Exception {
+        if (deployAsIs) {
+            vmMo.tearDownDevices(new Class<?>[]{VirtualEthernetCard.class});
+        } else if (!hasSnapshot) {
+            vmMo.tearDownDevices(new Class<?>[]{VirtualDisk.class, VirtualEthernetCard.class});
+        } else {
+            vmMo.tearDownDevices(new Class<?>[]{VirtualEthernetCard.class});
+        }
+    }
+
+    private void tearDownVMDisks(VirtualMachineMO vmMo, List<VirtualDisk> disks) throws Exception {
+        for (VirtualDisk disk : disks) {
+            vmMo.tearDownDevice(disk);
+        }
+    }
+
+    private String getGuestOsIdFromVmSpec(VirtualMachineTO vmSpec, boolean deployAsIs) {
+        return translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
+    }
+
+    private Pair<String, String> getControllerInfoFromVmSpec(VirtualMachineTO vmSpec) throws CloudRuntimeException {
+        String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
+        String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+
+        // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
+        // This helps avoid mix of different scsi subtype controllers in instance.
+        if (DiskControllerType.osdefault == DiskControllerType.getType(dataDiskController) && DiskControllerType.lsilogic == DiskControllerType.getType(rootDiskController)) {
+            dataDiskController = DiskControllerType.scsi.toString();
+        }
+
+        // Validate the controller types
+        dataDiskController = DiskControllerType.getType(dataDiskController).toString();
+        rootDiskController = DiskControllerType.getType(rootDiskController).toString();
+
+        if (DiskControllerType.getType(rootDiskController) == DiskControllerType.none) {
+            throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskController);
+        }
+        if (DiskControllerType.getType(dataDiskController) == DiskControllerType.none) {
+            throw new CloudRuntimeException("Invalid data disk controller detected : " + dataDiskController);
+        }
+
+        return new Pair<>(rootDiskController, dataDiskController);
+    }
+
+    private String getBootModeFromVmSpec(VirtualMachineTO vmSpec, boolean deployAsIs) {
+        String bootMode = null;
+        if (vmSpec.getDetails().containsKey(VmDetailConstants.BOOT_MODE)) {
+            bootMode = vmSpec.getDetails().get(VmDetailConstants.BOOT_MODE);
+        }
+        if (bootMode == null) {
+            bootMode = ApiConstants.BootType.BIOS.toString();
+        }
+        return bootMode;
+    }
+
+    /**
+     * Set OVF properties (if available)
+     */
+    private void setDeployAsIsProperties(VirtualMachineMO vmMo, DeployAsIsInfoTO deployAsIsInfo,
+                                         VirtualMachineConfigSpec vmConfigSpec) throws Exception {
+        if (deployAsIsInfo != null) {
+            Map<String, String> properties = deployAsIsInfo.getProperties();
+            VmConfigInfo vAppConfig = vmMo.getConfigInfo().getVAppConfig();
+            s_logger.info("Copying OVF properties to the values the user provided");
+            setVAppPropertiesToConfigSpec(vAppConfig, properties, vmConfigSpec);
+        }
+    }
+
+    /**
+     * Modify the specDisks information to match the cloned VM's disks (from vmMo VM)
+     */
+    private void mapSpecDisksToClonedDisksAndTearDownDatadisks(VirtualMachineMO vmMo, String vmInternalCSName, DiskTO[] specDisks) {
+        try {
+            s_logger.debug("Mapping spec disks information to cloned VM disks for VM " + vmInternalCSName);
+            if (vmMo != null && ArrayUtils.isNotEmpty(specDisks)) {
+                List<VirtualDisk> vmDisks = vmMo.getVirtualDisks();
+                List<VirtualDisk> rootDisks = new ArrayList<>();
+                List<DiskTO> sortedRootDisksFromSpec = Arrays.asList(sortVolumesByDeviceId(specDisks))
+                        .stream()
+                        .filter(x -> x.getType() == Volume.Type.ROOT)
+                        .collect(Collectors.toList());
+                for (int i = 0; i < sortedRootDisksFromSpec.size(); i++) {
+                    DiskTO specDisk = sortedRootDisksFromSpec.get(i);
+                    VirtualDisk vmDisk = vmDisks.get(i);
+                    DataTO dataVolume = specDisk.getData();
+                    if (dataVolume instanceof VolumeObjectTO) {
+                        VolumeObjectTO volumeObjectTO = (VolumeObjectTO) dataVolume;
+                        if (!volumeObjectTO.getSize().equals(vmDisk.getCapacityInBytes())) {
+                            s_logger.info("Mapped disk size is not the same as the cloned VM disk size: " +
+                                    volumeObjectTO.getSize() + " - " + vmDisk.getCapacityInBytes());
+                        }
+                        VirtualDeviceBackingInfo backingInfo = vmDisk.getBacking();
+                        if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+                            VirtualDiskFlatVer2BackingInfo backing = (VirtualDiskFlatVer2BackingInfo) backingInfo;
+                            String fileName = backing.getFileName();
+                            if (StringUtils.isNotBlank(fileName)) {
+                                String[] fileNameParts = fileName.split(" ");
+                                String datastoreUuid = fileNameParts[0].replace("[", "").replace("]", "");
+                                String relativePath = fileNameParts[1].split("/")[1].replace(".vmdk", "");
+                                String vmSpecDatastoreUuid = volumeObjectTO.getDataStore().getUuid().replaceAll("-", "");
+                                if (!datastoreUuid.equals(vmSpecDatastoreUuid)) {
+                                    s_logger.info("Mapped disk datastore UUID is not the same as the cloned VM datastore UUID: " +
+                                            datastoreUuid + " - " + vmSpecDatastoreUuid);
+                                }
+                                volumeObjectTO.setPath(relativePath);
+                                specDisk.setPath(relativePath);
+                                rootDisks.add(vmDisk);
+                            } else {
+                                s_logger.error("Empty backing filename for volume " + volumeObjectTO.getName());
+                            }
+                        } else {
+                            s_logger.error("Could not get volume backing info for volume " + volumeObjectTO.getName());
+                        }
+                    }
+                }
+                vmDisks.removeAll(rootDisks);
+                if (CollectionUtils.isNotEmpty(vmDisks)) {
+                    s_logger.info("Tearing down datadisks for deploy-as-is VM");
+                    tearDownVMDisks(vmMo, vmDisks);
+                }
+            }
+        } catch (Exception e) {
+            String msg = "Error mapping deploy-as-is VM disks from cloned VM " + vmInternalCSName;
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(e);
+        }
+    }
+
     private void setBootOptions(VirtualMachineTO vmSpec, String bootMode, VirtualMachineConfigSpec vmConfigSpec) {
         VirtualMachineBootOptions bootOptions = null;
         if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")) {
@@ -2436,26 +2669,33 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Map<String, Pair<String, Boolean>> getOVFMap(List<OVFPropertyTO> props) {
         Map<String, Pair<String, Boolean>> map = new HashMap<>();
         for (OVFPropertyTO prop : props) {
-            Pair<String, Boolean> pair = new Pair<>(prop.getValue(), prop.isPassword());
+            String value = getPropertyValue(prop);
+            Pair<String, Boolean> pair = new Pair<>(value, prop.isPassword());
             map.put(prop.getKey(), pair);
         }
         return map;
     }
 
+    private String getPropertyValue(OVFPropertyTO prop) {
+        String type = prop.getType();
+        String value = prop.getValue();
+        if ("boolean".equalsIgnoreCase(type)) {
+            value = Boolean.parseBoolean(value) ? "True" : "False";
+        }
+        return value;
+    }
+
     /**
      * Set the properties section from existing vApp configuration and values set on ovfProperties
      */
-    protected List<VAppPropertySpec> copyVAppConfigPropertySectionFromOVF(VmConfigInfo vAppConfig, List<OVFPropertyTO> ovfProperties) {
+    protected List<VAppPropertySpec> copyVAppConfigPropertySectionFromOVF(VmConfigInfo vAppConfig, Map<String, String> ovfProperties) {
         List<VAppPropertyInfo> productFromOvf = vAppConfig.getProperty();
         List<VAppPropertySpec> specs = new ArrayList<>();
-        Map<String, Pair<String, Boolean>> ovfMap = getOVFMap(ovfProperties);
         for (VAppPropertyInfo info : productFromOvf) {
             VAppPropertySpec spec = new VAppPropertySpec();
-            if (ovfMap.containsKey(info.getId())) {
-                Pair<String, Boolean> pair = ovfMap.get(info.getId());
-                String value = pair.first();
-                boolean isPassword = pair.second();
-                info.setValue(isPassword ? DBEncryptionUtil.decrypt(value) : value);
+            if (ovfProperties.containsKey(info.getId())) {
+                String value = ovfProperties.get(info.getId());
+                info.setValue(value);
             }
             spec.setInfo(info);
             spec.setOperation(ArrayUpdateOperation.ADD);
@@ -2483,9 +2723,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      * Set the vApp configuration to vmConfig spec, copying existing configuration from vAppConfig
      * and seting properties values from ovfProperties
      */
-    protected void copyVAppConfigsFromTemplate(VmConfigInfo vAppConfig,
-                                               List<OVFPropertyTO> ovfProperties,
-                                               VirtualMachineConfigSpec vmConfig) throws Exception {
+    protected void setVAppPropertiesToConfigSpec(VmConfigInfo vAppConfig,
+                                                 Map<String, String> ovfProperties,
+                                                 VirtualMachineConfigSpec vmConfig) throws Exception {
         VmConfigSpec vmConfigSpec = new VmConfigSpec();
         vmConfigSpec.getEula().addAll(vAppConfig.getEula());
         vmConfigSpec.setInstallBootStopDelay(vAppConfig.getInstallBootStopDelay());
@@ -2679,66 +2919,61 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     // return the finalized disk chain for startup, from top to bottom
-    private String[] syncDiskChain(DatacenterMO dcMo, VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO vol, VirtualMachineDiskInfo diskInfo,
-                                   HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails) throws Exception {
+    private String[] syncDiskChain(DatacenterMO dcMo, VirtualMachineMO vmMo, DiskTO vol, VirtualMachineDiskInfo diskInfo,
+                                   DatastoreMO dsMo) throws Exception {
 
         VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
-        DataStoreTO primaryStore = volumeTO.getDataStore();
         Map<String, String> details = vol.getDetails();
         boolean isManaged = false;
-        String iScsiName = null;
 
         if (details != null) {
             isManaged = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-            iScsiName = details.get(DiskTO.IQN);
         }
 
-        // if the storage is managed, iScsiName should not be null
-        String datastoreName = isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid();
-        Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
-
-        if (volumeDsDetails == null) {
-            throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
-        }
-
-        DatastoreMO dsMo = volumeDsDetails.second();
-
-        // we will honor vCenter's meta if it exists
-        if (diskInfo != null) {
-            // to deal with run-time upgrade to maintain the new datastore folder structure
-            String disks[] = diskInfo.getDiskChain();
-            for (int i = 0; i < disks.length; i++) {
-                DatastoreFile file = new DatastoreFile(disks[i]);
-                if (!isManaged && file.getDir() != null && file.getDir().isEmpty()) {
-                    s_logger.info("Perform run-time datastore folder upgrade. sync " + disks[i] + " to VM folder");
-                    disks[i] = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, file.getFileBaseName(), VmwareManager.s_vmwareSearchExcludeFolder.value());
-                }
+        String datastoreDiskPath;
+        if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+            datastoreDiskPath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
+            if (!dsMo.fileExists(datastoreDiskPath)) {
+                datastoreDiskPath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmMo.getName(), volumeTO.getPath() + ".vmdk");
             }
-            return disks;
-        }
-
-        final String datastoreDiskPath;
-
-        if (isManaged) {
-            String vmdkPath = new DatastoreFile(volumeTO.getPath()).getFileBaseName();
-
-            if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
-                if (vmdkPath == null) {
-                    vmdkPath = volumeTO.getName();
-                }
-
-                datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, vmdkPath);
-            } else {
-                if (vmdkPath == null) {
-                    vmdkPath = dsMo.getName();
-                }
-
-                datastoreDiskPath = dsMo.getDatastorePath(vmdkPath + VMDK_EXTENSION);
+            if (!dsMo.fileExists(datastoreDiskPath)) {
+                datastoreDiskPath = dsMo.searchFileInSubFolders(volumeTO.getPath() + ".vmdk", true, null);
             }
         } else {
-            datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
-        }
+            // we will honor vCenter's meta if it exists
+            if (diskInfo != null) {
+                // to deal with run-time upgrade to maintain the new datastore folder structure
+                String disks[] = diskInfo.getDiskChain();
+                for (int i = 0; i < disks.length; i++) {
+                    DatastoreFile file = new DatastoreFile(disks[i]);
+                    if (!isManaged && file.getDir() != null && file.getDir().isEmpty()) {
+                        s_logger.info("Perform run-time datastore folder upgrade. sync " + disks[i] + " to VM folder");
+                        disks[i] = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, file.getFileBaseName(), VmwareManager.s_vmwareSearchExcludeFolder.value());
+                    }
+                }
+                return disks;
+            }
 
+            if (isManaged) {
+                String vmdkPath = new DatastoreFile(volumeTO.getPath()).getFileBaseName();
+
+                if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
+                    if (vmdkPath == null) {
+                        vmdkPath = volumeTO.getName();
+                    }
+
+                    datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, vmdkPath);
+                } else {
+                    if (vmdkPath == null) {
+                        vmdkPath = dsMo.getName();
+                    }
+
+                    datastoreDiskPath = dsMo.getDatastorePath(vmdkPath + VMDK_EXTENSION);
+                }
+            } else {
+                datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
+            }
+        }
         if (!dsMo.fileExists(datastoreDiskPath)) {
             s_logger.warn("Volume " + volumeTO.getId() + " does not seem to exist on datastore, out of sync? path: " + datastoreDiskPath);
         }
@@ -3126,6 +3361,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     volInSpec.setPath(datastoreVolumePath);
                 } else {
                     volInSpec.setPath(file.getFileBaseName());
+                    if (vol.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && vol.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                        volInSpec.setUpdatedDataStoreUUID(volumeTO.getDataStore().getUuid());
+                    }
                 }
                 volInSpec.setChainInfo(_gson.toJson(diskInfo));
             }
@@ -3261,6 +3499,41 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return path.substring(0, endIndex).trim();
     }
 
+    private DatastoreMO getDataStoreWhereDiskExists(VmwareHypervisorHost hyperHost, VmwareContext context,
+                                               VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO disk, List<Pair<Integer, ManagedObjectReference>> diskDatastores) throws Exception {
+        VolumeObjectTO volume = (VolumeObjectTO) disk.getData();
+        String diskBackingFileBaseName = volume.getPath();
+        for (Pair<Integer, ManagedObjectReference> diskDatastore : diskDatastores) {
+            DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), diskDatastore.second());
+            String dsName = dsMo.getName();
+
+            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(diskBackingFileBaseName, dsName);
+            if (diskInfo != null) {
+                s_logger.info("Found existing disk info from volume path: " + volume.getPath());
+                return dsMo;
+            } else {
+                String chainInfo = volume.getChainInfo();
+                if (chainInfo != null) {
+                    VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
+                    if (infoInChain != null) {
+                        String[] disks = infoInChain.getDiskChain();
+                        if (disks.length > 0) {
+                            for (String diskPath : disks) {
+                                DatastoreFile file = new DatastoreFile(diskPath);
+                                diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
+                                if (diskInfo != null) {
+                                    s_logger.info("Found existing disk from chain info: " + diskPath);
+                                    return dsMo;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> inferDatastoreDetailsFromDiskInfo(VmwareHypervisorHost hyperHost, VmwareContext context,
                                                                                                          DiskTO[] disks, Command cmd) throws Exception {
         HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> mapIdToMors = new HashMap<>();
@@ -3333,39 +3606,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return mapIdToMors;
     }
 
-    private DatastoreMO getDatastoreThatRootDiskIsOn(HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails, DiskTO disks[]) {
+    private Pair<ManagedObjectReference, DatastoreMO> getDatastoreThatDiskIsOn(HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails, DiskTO vol) {
         Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
 
-        for (DiskTO vol : disks) {
-            if (vol.getType() == Volume.Type.ROOT) {
-                Map<String, String> details = vol.getDetails();
-                boolean managed = false;
+        Map<String, String> details = vol.getDetails();
+        boolean managed = false;
 
-                if (details != null) {
-                    managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-                }
-
-                if (managed) {
-                    String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
-
-                    rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
-
-                    break;
-                } else {
-                    DataStoreTO primaryStore = vol.getData().getDataStore();
-
-                    rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
-
-                    break;
-                }
-            }
+        if (details != null) {
+            managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
         }
 
-        if (rootDiskDataStoreDetails != null) {
-            return rootDiskDataStoreDetails.second();
+        if (managed) {
+            String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
+            rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
+        } else {
+            DataStoreTO primaryStore = vol.getData().getDataStore();
+            rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
         }
 
-        return null;
+        return rootDiskDataStoreDetails;
     }
 
     private String getPvlanInfo(NicTO nicTo) {
@@ -4384,7 +4643,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 s_logger.debug("Preparing spec for volume : " + volume.getName());
                 morDsAtTarget = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(tgtHyperHost, filerTo.getUuid());
-                morDsAtSource = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, filerTo.getUuid());
+                morDsAtSource = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, volume.getPoolUuid());
+
                 if (morDsAtTarget == null) {
                     String msg = "Unable to find the target datastore: " + filerTo.getUuid() + " on target host: " + tgtHyperHost.getHyperHostName()
                             + " to execute MigrateWithStorageCommand";
@@ -4404,7 +4664,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     // If datastore is NFS and target datastore is not already mounted on source host then mount the datastore.
                     if (filerTo.getType().equals(StoragePoolType.NetworkFilesystem)) {
                         if (morDsAtSource == null) {
-                            morDsAtSource = srcHyperHost.mountDatastore(false, tgtDsHost, tgtDsPort, tgtDsPath, tgtDsName);
+                            morDsAtSource = srcHyperHost.mountDatastore(false, tgtDsHost, tgtDsPort, tgtDsPath, tgtDsName, true);
                             if (morDsAtSource == null) {
                                 throw new Exception("Unable to mount NFS datastore " + tgtDsHost + ":/" + tgtDsPath + " on " + _hostName);
                             }
@@ -4412,9 +4672,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             s_logger.debug("Mounted datastore " + tgtDsHost + ":/" + tgtDsPath + " on " + _hostName);
                         }
                     }
-
                     // If datastore is VMFS and target datastore is not mounted or accessible to source host then fail migration.
-                    if (filerTo.getType().equals(StoragePoolType.VMFS)) {
+                    if (filerTo.getType().equals(StoragePoolType.VMFS) || filerTo.getType().equals(StoragePoolType.PreSetup)) {
                         if (morDsAtSource == null) {
                             s_logger.warn(
                                     "If host version is below 5.1, then target VMFS datastore(s) need to manually mounted on source host for a successful live storage migration.");
@@ -4433,6 +4692,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (volume.getType() == Volume.Type.ROOT) {
                     relocateSpec.setDatastore(morTgtDatastore);
                 }
+
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
                 diskLocator.setDatastore(morDsAtSource);
                 Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volume.getPath(), VMDK_EXTENSION));
@@ -4457,8 +4717,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     diskLocators.add(diskLocator);
                 }
             }
-
-            relocateSpec.getDisk().addAll(diskLocators);
+            if (srcHyperHost.getHyperHostCluster().equals(tgtHyperHost.getHyperHostCluster())) {
+                relocateSpec.getDisk().addAll(diskLocators);
+            }
 
             // Prepare network at target before migration
             NicTO[] nics = vmTo.getNics();
@@ -4576,23 +4837,33 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
         VirtualMachineMO vmMo = null;
         DatastoreMO dsMo = null;
+        DatastoreMO destinationDsMo = null;
         ManagedObjectReference morSourceDS = null;
+        ManagedObjectReference morDestintionDS = null;
         String vmdkDataStorePath = null;
+        boolean isvVolsInvolved = false;
 
         String vmName = null;
         try {
             // OfflineVmwareMigration: we need to refactor the worker vm creation out for use in migration methods as well as here
             // OfflineVmwareMigration: this method is 100 lines and needs refactorring anyway
             // we need to spawn a worker VM to attach the volume to and move it
-            vmName = getWorkerName(getServiceContext(), cmd, 0);
+            morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getSourcePool().getUuid());
+            dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
+            morDestintionDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
+            destinationDsMo = new DatastoreMO(hyperHost.getContext(), morDestintionDS);
+
+            vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
+            if (destinationDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                isvVolsInvolved = true;
+                vmName = getWorkerName(getServiceContext(), cmd, 0, destinationDsMo);
+            }
 
             // OfflineVmwareMigration: refactor for re-use
             // OfflineVmwareMigration: 1. find data(store)
             // OfflineVmwareMigration: more robust would be to find the store given the volume as it might have been moved out of band or due to error
 // example:            DatastoreMO existingVmDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
 
-            morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getSourcePool().getUuid());
-            dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
             s_logger.info("Create worker VM " + vmName);
             // OfflineVmwareMigration: 2. create the worker with access to the data(store)
             vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName, null);
@@ -4611,12 +4882,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                     vmdkDataStorePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, path, vmdkFileName);
                 }
-                if (!dsMo.fileExists(vmdkDataStorePath)) {
+                if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), path) || !dsMo.fileExists(vmdkDataStorePath)) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(String.format("path not found (%s), trying under '%s'", vmdkFileName, vmName));
                     }
                     vmdkDataStorePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, vmdkFileName);
                 }
+                if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmName) || !dsMo.fileExists(vmdkDataStorePath)) {
+                    vmdkDataStorePath = dsMo.searchFileInSubFolders(vmdkFileName, true, null);
+                }
+
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(String.format("attaching %s to %s for migration", vmdkDataStorePath, vmMo.getVmName()));
                 }
@@ -4683,21 +4958,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         }
         if (answer instanceof MigrateVolumeAnswer) {
-            String newPath = ((MigrateVolumeAnswer) answer).getVolumePath();
-            String vmdkFileName = newPath + VMDK_EXTENSION;
-            try {
-                VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, newPath, vmName);
-                vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
+            if (!isvVolsInvolved) {
+                String newPath = ((MigrateVolumeAnswer) answer).getVolumePath();
+                String vmdkFileName = newPath + VMDK_EXTENSION;
+                try {
+                    VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, newPath, vmName);
+                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
 
-                if (!dsMo.fileExists(vmdkDataStorePath)) {
-                    String msg = String.format("Migration of volume '%s' failed; file (%s) not found as path '%s'", cmd.getVolumePath(), vmdkFileName, vmdkDataStorePath);
-                    s_logger.error(msg);
+                    if (!dsMo.fileExists(vmdkDataStorePath)) {
+                        String msg = String.format("Migration of volume '%s' failed; file (%s) not found as path '%s'", cmd.getVolumePath(), vmdkFileName, vmdkDataStorePath);
+                        s_logger.error(msg);
+                        answer = new Answer(cmd, false, msg);
+                    }
+                } catch (Exception e) {
+                    String msg = String.format("Migration of volume '%s' failed due to %s", cmd.getVolumePath(), e.getLocalizedMessage());
+                    s_logger.error(msg, e);
                     answer = new Answer(cmd, false, msg);
                 }
-            } catch (Exception e) {
-                String msg = String.format("Migration of volume '%s' failed due to %s", cmd.getVolumePath(), e.getLocalizedMessage());
-                s_logger.error(msg, e);
-                answer = new Answer(cmd, false, msg);
             }
         }
         return answer;
@@ -4901,27 +5178,71 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             StorageFilerTO pool = cmd.getPool();
 
-            if (pool.getType() != StoragePoolType.NetworkFilesystem && pool.getType() != StoragePoolType.VMFS) {
+            if (pool.getType() != StoragePoolType.NetworkFilesystem && pool.getType() != StoragePoolType.VMFS && pool.getType() != StoragePoolType.PreSetup && pool.getType() != StoragePoolType.DatastoreCluster) {
                 throw new Exception("Unsupported storage pool type " + pool.getType());
             }
 
             ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
 
             if (morDatastore == null) {
-                morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
+                morDatastore = hyperHost.mountDatastore((pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup || pool.getType() == StoragePoolType.DatastoreCluster), pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""), true);
             }
 
             assert (morDatastore != null);
 
-            DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
+            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
+            HypervisorHostHelper.createBaseFolder(dsMo, hyperHost, pool.getType());
 
-            long capacity = summary.getCapacity();
-            long available = summary.getFreeSpace();
+            long capacity = 0;
+            long available = 0;
+            List<ModifyStoragePoolAnswer> childDatastoresModifyStoragePoolAnswers = new ArrayList<>();
+            if (pool.getType() == StoragePoolType.DatastoreCluster) {
+                StoragepodMO datastoreClusterMo = new StoragepodMO(getServiceContext(), morDatastore);
+                StoragePodSummary dsClusterSummary = datastoreClusterMo.getDatastoreClusterSummary();
+                capacity = dsClusterSummary.getCapacity();
+                available = dsClusterSummary.getFreeSpace();
+
+                List<ManagedObjectReference> childDatastoreMors = datastoreClusterMo.getDatastoresInDatastoreCluster();
+                for (ManagedObjectReference childDsMor : childDatastoreMors) {
+                    DatastoreMO childDsMo = new DatastoreMO(getServiceContext(), childDsMor);
+
+                    Map<String, TemplateProp> tInfo = new HashMap<>();
+                    DatastoreSummary summary = childDsMo.getDatastoreSummary();;
+                    ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, summary.getCapacity(), summary.getFreeSpace(), tInfo);
+                    StoragePoolInfo poolInfo = answer.getPoolInfo();
+                    poolInfo.setName(summary.getName());
+                    String datastoreClusterPath = pool.getPath();
+                    int pathstartPosition = datastoreClusterPath.lastIndexOf('/');
+                    String datacenterName = datastoreClusterPath.substring(0, pathstartPosition+1);
+                    String childPath = datacenterName + summary.getName();
+                    poolInfo.setHostPath(childPath);
+                    String uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
+                    poolInfo.setUuid(uuid);
+                    poolInfo.setLocalPath(cmd.LOCAL_PATH_PREFIX + File.separator + uuid);
+
+                    answer.setPoolInfo(poolInfo);
+                    answer.setPoolType(summary.getType());
+                    answer.setLocalDatastoreName(morDatastore.getValue());
+
+                    childDsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, uuid);
+                    HypervisorHostHelper.createBaseFolderInDatastore(childDsMo, hyperHost);
+
+                    childDatastoresModifyStoragePoolAnswers.add(answer);
+                }
+            } else {
+                HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost);
+
+                DatastoreSummary summary = dsMo.getDatastoreSummary();
+                capacity = summary.getCapacity();
+                available = summary.getFreeSpace();
+            }
 
             Map<String, TemplateProp> tInfo = new HashMap<>();
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
+            answer.setDatastoreClusterChildren(childDatastoresModifyStoragePoolAnswers);
 
-            if (cmd.getAdd() && pool.getType() == StoragePoolType.VMFS) {
+            if (cmd.getAdd() && (pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup) && pool.getType() != StoragePoolType.DatastoreCluster) {
+                answer.setPoolType(dsMo.getDatastoreType());
                 answer.setLocalDatastoreName(morDatastore.getValue());
             }
 
@@ -5084,7 +5405,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         URI uri = new URI(storeUrl);
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""));
+        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""), false);
 
         if (morDatastore == null)
             throw new Exception("Unable to mount secondary storage on host. storeUrl: " + storeUrl);
@@ -5096,7 +5417,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String storeName = getSecondaryDatastoreUUID(storeUrl);
         URI uri = new URI(storeUrl);
 
-        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""));
+        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""), false);
 
         if (morDatastore == null)
             throw new Exception("Unable to mount secondary storage on host. storeUrl: " + storeUrl);
@@ -5301,12 +5622,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getStorageId());
 
             if (morDs != null) {
-                DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
-                DatastoreSummary summary = datastoreMo.getSummary();
-                assert (summary != null);
+                long capacity = 0;
+                long free = 0;
+                if (cmd.getPooltype() == StoragePoolType.DatastoreCluster) {
+                    StoragepodMO datastoreClusterMo = new StoragepodMO(getServiceContext(), morDs);
+                    StoragePodSummary summary = datastoreClusterMo.getDatastoreClusterSummary();
+                    capacity = summary.getCapacity();
+                    free = summary.getFreeSpace();
+                } else {
+                    DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
+                    DatastoreSummary summary = datastoreMo.getDatastoreSummary();
+                    capacity = summary.getCapacity();
+                    free = summary.getFreeSpace();
+                }
 
-                long capacity = summary.getCapacity();
-                long free = summary.getFreeSpace();
                 long used = capacity - free;
 
                 if (s_logger.isDebugEnabled()) {
@@ -5314,7 +5643,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             + ", capacity: " + toHumanReadableSize(capacity) + ", free: " + toHumanReadableSize(free) + ", used: " + toHumanReadableSize(used));
                 }
 
-                if (summary.getCapacity() <= 0) {
+                if (capacity <= 0) {
                     s_logger.warn("Something is wrong with vSphere NFS datastore, rebooting ESX(ESXi) host should help");
                 }
 
@@ -5836,7 +6165,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         dsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, poolUuid);
                     }
 
-                    DatastoreSummary dsSummary = dsMo.getSummary();
+                    DatastoreSummary dsSummary = dsMo.getDatastoreSummary();
                     String address = hostMo.getHostName();
                     StoragePoolInfo pInfo = new StoragePoolInfo(poolUuid, address, dsMo.getMor().getValue(), "", StoragePoolType.VMFS, dsSummary.getCapacity(),
                             dsSummary.getFreeSpace());
@@ -6552,6 +6881,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(context, context.getServiceContent().getCustomFieldsManager());
             cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
+            cfmMo.ensureCustomFieldDef("StoragePod", CustomFieldConstants.CLOUD_UUID);
+
             if (_publicTrafficInfo != null && _publicTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch
                     || _guestTrafficInfo != null && _guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
                 cfmMo.ensureCustomFieldDef("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);
@@ -6729,9 +7060,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     @DB
-    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence) {
+    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence, DatastoreMO dsMo) throws Exception {
         VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         String vmName = mgr.composeWorkerName();
+        if (dsMo!= null && dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+            vmName = CustomFieldConstants.CLOUD_UUID + "-" + vmName;
+        }
 
         assert (cmd != null);
         context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
@@ -6781,11 +7115,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             VirtualMachineMO vmMo = findVmOnDatacenter(context, hyperHost, vol);
 
-            if (vmMo != null && vmMo.isTemplate()) {
+            if (vmMo != null) {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Destroy template volume " + vol.getPath());
                 }
-                vmMo.markAsVirtualMachine(hyperHost.getHyperHostOwnerResourcePool(), hyperHost.getMor());
+                if (vmMo.isTemplate()) {
+                    vmMo.markAsVirtualMachine(hyperHost.getHyperHostOwnerResourcePool(), hyperHost.getMor());
+                }
                 vmMo.destroy();
             } else {
                 if (s_logger.isInfoEnabled()) {
@@ -6922,14 +7258,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     instanceDisk.setDatastorePath(dsInfo.getNas().getRemotePath());
                                     instanceDisk.setDatastoreType(dsInfo.getNas().getType());
                                 }
-                            } else if (info instanceof VmfsDatastoreInfo) {
-                                VmfsDatastoreInfo dsInfo = (VmfsDatastoreInfo) info;
-                                instanceDisk.setDatastoreName(dsInfo.getVmfs().getName());
-                                instanceDisk.setDatastoreType(dsInfo.getVmfs().getType());
                             } else {
-                                String msg = String.format("Unmanaged instance disk: %s is on unsupported datastore %s", instanceDisk.getDiskId(), info.getClass().getSimpleName());
-                                s_logger.error(msg);
-                                throw new Exception(msg);
+                                instanceDisk.setDatastoreName(info.getName());
                             }
                         }
                         s_logger.info(vmMo.getName() + " " + disk.getDeviceInfo().getLabel() + " " + disk.getDeviceInfo().getSummary() + " " + disk.getDiskObjectId() + " " + disk.getCapacityInKB() + " " + instanceDisk.getController());
@@ -7185,5 +7515,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         return new PrepareUnmanageVMInstanceAnswer(cmd, true, "OK");
+    }
+
+    private Answer execute(ValidateVcenterDetailsCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource ValidateVcenterDetailsCommand " + _gson.toJson(cmd));
+        }
+        String vCenterServerAddress = cmd.getvCenterServerAddress();
+        VmwareContext context = getServiceContext();
+
+        if (vCenterServerAddress.equals(context.getServerAddress())) {
+            return new Answer(cmd, true, "success");
+        } else {
+            return new Answer(cmd, false, "Provided vCenter server address is invalid");
+        }
     }
 }

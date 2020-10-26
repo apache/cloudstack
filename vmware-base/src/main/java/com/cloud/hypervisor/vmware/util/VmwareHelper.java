@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -75,7 +76,9 @@ import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
 
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
+import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
+import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.LicenseAssignmentManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
@@ -212,35 +215,46 @@ public class VmwareHelper {
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
-    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, int sizeInMb, ManagedObjectReference morDs,
-            int deviceNumber, int contextNumber) throws Exception {
+    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
+                                                  ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
 
-        VirtualDisk disk = new VirtualDisk();
+        assert (vmdkDatastorePathChain != null);
+        assert (vmdkDatastorePathChain.length >= 1);
 
-        VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
-        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
-        backingInfo.setThinProvisioned(true);
-        backingInfo.setEagerlyScrub(false);
-        backingInfo.setDatastore(morDs);
-        backingInfo.setFileName(vmdkDatastorePath);
-        disk.setBacking(backingInfo);
+        VirtualDisk disk;
+        VirtualDiskFlatVer2BackingInfo backingInfo;
+        if (device != null) {
+            disk = device;
+            backingInfo = (VirtualDiskFlatVer2BackingInfo)disk.getBacking();
+        } else {
+            disk = new VirtualDisk();
+            backingInfo = new VirtualDiskFlatVer2BackingInfo();
+            backingInfo.setDatastore(morDs);
+            backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+            disk.setBacking(backingInfo);
 
-        int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-        if (controllerKey < 0)
-            controllerKey = ideControllerKey;
-        if (deviceNumber < 0) {
-            deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
+            int ideControllerKey = vmMo.getIDEDeviceControllerKey();
+            if (controllerKey < 0)
+                controllerKey = ideControllerKey;
+            if (deviceNumber < 0) {
+                deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
+            }
+
+            disk.setControllerKey(controllerKey);
+            disk.setKey(-contextNumber);
+            disk.setUnitNumber(deviceNumber);
+
+            VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+            connectInfo.setConnected(true);
+            connectInfo.setStartConnected(true);
+            disk.setConnectable(connectInfo);
         }
-        disk.setControllerKey(controllerKey);
 
-        disk.setKey(-contextNumber);
-        disk.setUnitNumber(deviceNumber);
-        disk.setCapacityInKB(sizeInMb * 1024);
-
-        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-        connectInfo.setConnected(true);
-        connectInfo.setStartConnected(true);
-        disk.setConnectable(connectInfo);
+        backingInfo.setFileName(vmdkDatastorePathChain[0]);
+        if (vmdkDatastorePathChain.length > 1) {
+            String[] parentDisks = Arrays.copyOfRange(vmdkDatastorePathChain, 1, vmdkDatastorePathChain.length);
+            setParentBackingInfo(backingInfo, morDs, parentDisks);
+        }
 
         return disk;
     }
@@ -311,96 +325,6 @@ public class VmwareHelper {
         connectInfo.setConnected(true);
         connectInfo.setStartConnected(true);
         disk.setConnectable(connectInfo);
-        return disk;
-    }
-
-    // vmdkDatastorePath: [datastore name] vmdkFilePath
-    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
-            ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
-
-        assert (vmdkDatastorePathChain != null);
-        assert (vmdkDatastorePathChain.length >= 1);
-
-        VirtualDisk disk;
-        VirtualDiskFlatVer2BackingInfo backingInfo;
-        if (device != null) {
-            disk = device;
-            backingInfo = (VirtualDiskFlatVer2BackingInfo)disk.getBacking();
-        } else {
-            disk = new VirtualDisk();
-            backingInfo = new VirtualDiskFlatVer2BackingInfo();
-            backingInfo.setDatastore(morDs);
-            backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
-            disk.setBacking(backingInfo);
-
-            int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-            if (controllerKey < 0)
-                controllerKey = ideControllerKey;
-            if (deviceNumber < 0) {
-                deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-            }
-
-            disk.setControllerKey(controllerKey);
-            disk.setKey(-contextNumber);
-            disk.setUnitNumber(deviceNumber);
-
-            VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-            connectInfo.setConnected(true);
-            connectInfo.setStartConnected(true);
-            disk.setConnectable(connectInfo);
-        }
-
-        backingInfo.setFileName(vmdkDatastorePathChain[0]);
-        if (vmdkDatastorePathChain.length > 1) {
-            String[] parentDisks = new String[vmdkDatastorePathChain.length - 1];
-            for (int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
-                parentDisks[i] = vmdkDatastorePathChain[i + 1];
-
-            setParentBackingInfo(backingInfo, morDs, parentDisks);
-        }
-
-        return disk;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain,
-            int deviceNumber, int contextNumber) throws Exception {
-
-        assert (vmdkDatastorePathChain != null);
-        assert (vmdkDatastorePathChain.length >= 1);
-
-        VirtualDisk disk = new VirtualDisk();
-
-        VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
-        backingInfo.setDatastore(vmdkDatastorePathChain[0].second());
-        backingInfo.setFileName(vmdkDatastorePathChain[0].first());
-        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
-        if (vmdkDatastorePathChain.length > 1) {
-            Pair<String, ManagedObjectReference>[] parentDisks = new Pair[vmdkDatastorePathChain.length - 1];
-            for (int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
-                parentDisks[i] = vmdkDatastorePathChain[i + 1];
-
-            setParentBackingInfo(backingInfo, parentDisks);
-        }
-
-        disk.setBacking(backingInfo);
-
-        int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-        if (controllerKey < 0)
-            controllerKey = ideControllerKey;
-        if (deviceNumber < 0) {
-            deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-        }
-
-        disk.setControllerKey(controllerKey);
-        disk.setKey(-contextNumber);
-        disk.setUnitNumber(deviceNumber);
-
-        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-        connectInfo.setConnected(true);
-        connectInfo.setStartConnected(true);
-        disk.setConnectable(connectInfo);
-
         return disk;
     }
 
@@ -610,7 +534,7 @@ public class VmwareHelper {
     }
 
     public static void setBasicVmConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz, int memoryMB, int memoryReserveMB,
-            String guestOsIdentifier, boolean limitCpuUse) {
+                                        String guestOsIdentifier, boolean limitCpuUse, boolean deployAsIs) {
 
         // VM config basics
         vmConfig.setMemoryMB((long)memoryMB);
@@ -636,7 +560,11 @@ public class VmwareHelper {
         memInfo.setReservation((long)memoryReserveMB);
         vmConfig.setMemoryAllocation(memInfo);
 
-        vmConfig.setGuestId(guestOsIdentifier);
+        if (!deployAsIs) {
+            // Deploy as-is uses the cloned VM guest OS
+            vmConfig.setGuestId(guestOsIdentifier);
+        }
+
     }
 
     public static VirtualDevice prepareUSBControllerDevice() {
@@ -770,9 +698,13 @@ public class VmwareHelper {
         return hotplugSupportedByLicense;
     }
 
-    public static String getVCenterSafeUuid() {
+    public static String getVCenterSafeUuid(DatastoreMO dsMo) throws Exception{
         // Object name that is greater than 32 is not safe in vCenter
-        return UUID.randomUUID().toString().replaceAll("-", "");
+        String uuid = UUID.randomUUID().toString().replaceAll("-", "");
+        if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+            return CustomFieldConstants.CLOUD_UUID + "-" + uuid;
+        }
+        return uuid;
     }
 
     public static String getRecommendedDiskControllerFromDescriptor(GuestOsDescriptor guestOsDescriptor) throws Exception {

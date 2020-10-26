@@ -35,6 +35,8 @@ public enum VmdkAdapterType {
     }
 
     public static VmdkAdapterType getType(String vmdkAdapterType) {
+        if (vmdkAdapterType == null)
+            return VmdkAdapterType.none;
         if (vmdkAdapterType.equalsIgnoreCase("ide")) {
             return VmdkAdapterType.ide;
         } else if (vmdkAdapterType.equalsIgnoreCase("lsilogic")) {

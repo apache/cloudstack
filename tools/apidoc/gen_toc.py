@@ -196,8 +196,10 @@ known_categories = {
     'KubernetesSupportedVersion': 'Kubernetes Service',
     'KubernetesCluster': 'Kubernetes Service',
     'UnmanagedInstance': 'Virtual Machine',
-    'Rolling': 'Rolling Maintenance'
-    }
+    'Rolling': 'Rolling Maintenance',
+    'importVsphereStoragePolicies' : 'vSphere storage policies',
+    'listVsphereStoragePolicies' : 'vSphere storage policies'
+}
 
 
 categories = {}

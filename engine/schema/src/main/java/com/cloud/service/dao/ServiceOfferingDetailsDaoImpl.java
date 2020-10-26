@@ -58,4 +58,13 @@ public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Servic
         return zoneIds;
     }
 
+    @Override
+    public String getDetail(Long serviceOfferingId, String key) {
+        String detailValue = null;
+        ServiceOfferingDetailsVO serviceOfferingDetail = findDetail(serviceOfferingId, key);
+        if (serviceOfferingDetail != null) {
+            detailValue = serviceOfferingDetail.getValue();
+        }
+        return detailValue;
+    }
 }

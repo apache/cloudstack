@@ -23,6 +23,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -39,13 +42,11 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateDataFactoryImpl implements TemplateDataFactory {
@@ -66,16 +67,29 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
     PrimaryDataStoreDao primaryDataStoreDao;
 
     @Override
+    public TemplateInfo getTemplateOnPrimaryStorage(long templateId, DataStore store, String configuration) {
+        VMTemplateVO templ = imageDataDao.findById(templateId);
+        if (store.getRole() == DataStoreRole.Primary) {
+            VMTemplateStoragePoolVO templatePoolVO = templatePoolDao.findByPoolTemplate(store.getId(), templateId, configuration);
+            if (templatePoolVO != null) {
+                String deployAsIsConfiguration = templatePoolVO.getDeploymentOption();
+                return TemplateObject.getTemplate(templ, store, deployAsIsConfiguration);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public TemplateInfo getTemplate(long templateId, DataStore store) {
         VMTemplateVO templ = imageDataDao.findById(templateId);
         if (store == null && !templ.isDirectDownload()) {
-            TemplateObject tmpl = TemplateObject.getTemplate(templ, null);
+            TemplateObject tmpl = TemplateObject.getTemplate(templ, null, null);
             return tmpl;
         }
         // verify if the given input parameters are consistent with our db data.
         boolean found = false;
         if (store.getRole() == DataStoreRole.Primary) {
-            VMTemplateStoragePoolVO templatePoolVO = templatePoolDao.findByPoolTemplate(store.getId(), templateId);
+            VMTemplateStoragePoolVO templatePoolVO = templatePoolDao.findByPoolTemplate(store.getId(), templateId, null);
             if (templatePoolVO != null) {
                 found = true;
             }
@@ -94,7 +108,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             }
         }
 
-        TemplateObject tmpl = TemplateObject.getTemplate(templ, store);
+        TemplateObject tmpl = TemplateObject.getTemplate(templ, store, null);
         return tmpl;
     }
 
@@ -130,8 +144,13 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
     }
 
     @Override
-    public TemplateInfo getTemplate(DataObject obj, DataStore store) {
-        TemplateObject tmpObj = (TemplateObject)this.getTemplate(obj.getId(), store);
+    public TemplateInfo getTemplate(DataObject obj, DataStore store, String configuration) {
+        TemplateObject tmpObj;
+        if (StringUtils.isNotBlank(configuration)) {
+            tmpObj = (TemplateObject)this.getTemplateOnPrimaryStorage(obj.getId(), store, configuration);
+        } else {
+            tmpObj = (TemplateObject)this.getTemplate(obj.getId(), store);
+        }
         // carry over url set in passed in data object, for copyTemplate case
         // where url is generated on demand and not persisted in DB.
         // need to think of a more generic way to pass these runtime information
@@ -217,7 +236,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         if (pool == null) {
             throw new CloudRuntimeException("No storage pool found where to download template: " + templateId);
         }
-        VMTemplateStoragePoolVO spoolRef = templatePoolDao.findByPoolTemplate(pool, templateId);
+        VMTemplateStoragePoolVO spoolRef = templatePoolDao.findByPoolTemplate(pool, templateId, null);
         if (spoolRef == null) {
             directDownloadManager.downloadTemplate(templateId, pool, hostId);
         }

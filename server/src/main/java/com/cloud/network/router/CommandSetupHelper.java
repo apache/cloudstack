@@ -195,7 +195,7 @@ public class CommandSetupHelper {
             final IPAddressVO staticNatIp = _ipAddressDao.findByVmIdAndNetworkId(nic.getNetworkId(), vm.getId());
 
             Host host = _hostDao.findById(vm.getHostId());
-            String destHostname = VirtualMachineManager.getHypervisorHostname(host.getName());
+            String destHostname = VirtualMachineManager.getHypervisorHostname(host != null ? host.getName() : "");
             cmds.addCommand(
                     "vmdata",
                     generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,

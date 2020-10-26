@@ -65,13 +65,13 @@ public interface VmwareHypervisorHost {
                           int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent,
                           Pair<String, String> controllerInfo, Boolean systemVm) throws Exception;
 
-    void importVmFromOVF(String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption) throws Exception;
+    void importVmFromOVF(String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, String configurationId) throws Exception;
 
     ObjectContent[] getVmPropertiesOnHyperHost(String[] propertyPaths) throws Exception;
 
     ObjectContent[] getDatastorePropertiesOnHyperHost(String[] propertyPaths) throws Exception;
 
-    ManagedObjectReference mountDatastore(boolean vmfsDatastore, String poolHostAddress, int poolHostPort, String poolPath, String poolUuid) throws Exception;
+    ManagedObjectReference mountDatastore(boolean vmfsDatastore, String poolHostAddress, int poolHostPort, String poolPath, String poolUuid, boolean createBaseFolder) throws Exception;
 
     void unmountDatastore(String poolUuid) throws Exception;
 

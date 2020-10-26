@@ -39,7 +39,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.StringUtils;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -223,6 +224,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -387,6 +389,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     IndirectAgentLB _indirectAgentLB;
     @Inject
     private VMTemplateZoneDao templateZoneDao;
+    @Inject
+    VsphereStoragePolicyDao vsphereStoragePolicyDao;
+
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -598,6 +603,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 _storagePoolDetailsDao.addDetail(resourceId, name, value, true);
+                if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                    List<StoragePoolVO> childDataStores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(resourceId);
+                    for (StoragePoolVO childDataStore: childDataStores) {
+                        _storagePoolDetailsDao.addDetail(childDataStore.getId(), name, value, true);
+                    }
+                }
 
                 break;
 
@@ -2451,6 +2462,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        final Long storagePolicyId = cmd.getStoragePolicy();
+        if (storagePolicyId != null) {
+            if (vsphereStoragePolicyDao.findById(storagePolicyId) == null) {
+                throw new InvalidParameterValueException("Please specify a valid vSphere storage policy id");
+            }
+        }
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
@@ -2458,7 +2476,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode());
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId);
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -2469,7 +2487,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode) {
+            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID) {
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -2574,6 +2592,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntryValue, true));
             }
+        }
+
+        if (storagePolicyID != null) {
+            detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
         }
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
@@ -2836,7 +2858,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                 Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                final Integer hypervisorSnapshotReserve, String cacheMode) {
+                                                final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && numGibibytes <= 0) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2931,6 +2953,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
+            if (storagePolicyID != null) {
+                detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
+            }
             if (!detailsVO.isEmpty()) {
                 diskOfferingDetailsDao.saveDetails(detailsVO);
             }
@@ -2952,6 +2977,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        final Long storagePolicyId = cmd.getStoragePolicy();
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
@@ -2991,6 +3017,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (storagePolicyId != null) {
+            if (vsphereStoragePolicyDao.findById(storagePolicyId) == null) {
+                throw new InvalidParameterValueException("Please specify a valid vSphere storage policy id");
+            }
+        }
+
         final Boolean isCustomizedIops = cmd.isCustomizedIops();
         final Long minIops = cmd.getMinIops();
         final Long maxIops = cmd.getMaxIops();
@@ -3021,7 +3053,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve, cacheMode);
+                hypervisorSnapshotReserve, cacheMode, storagePolicyId);
     }
 
     /**

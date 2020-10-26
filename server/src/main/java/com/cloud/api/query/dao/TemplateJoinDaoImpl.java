@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +25,14 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
+
+import com.cloud.deployasis.DeployAsIsConstants;
+import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ChildTemplateResponse;
@@ -35,9 +44,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -77,6 +83,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private ImageStoreDao dataStoreDao;
     @Inject
     private VMTemplateDetailsDao _templateDetailsDao;
+    @Inject
+    private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -147,7 +155,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     @Override
-    public TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO template) {
+    public TemplateResponse newTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO template) {
         List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId());
         List<Map<String, String>> downloadProgressDetails = new ArrayList();
         HashMap<String, String> downloadDetailInImageStores = null;
@@ -158,6 +166,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
             downloadProgressDetails.add(downloadDetailInImageStores);
         }
+
         TemplateResponse templateResponse = new TemplateResponse();
         templateResponse.setDownloadProgress(downloadProgressDetails);
         templateResponse.setId(template.getUuid());
@@ -230,8 +239,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         // set details map
-        Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(template.getId());
-        templateResponse.setDetails(details);
+        if (detailsView.contains(ApiConstants.DomainDetails.all)) {
+            Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(template.getId());
+            templateResponse.setDetails(details);
+
+            setDeployAsIsDetails(template, templateResponse);
+        }
 
         // update tag information
         long tag_id = template.getTagId();
@@ -240,6 +253,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         templateResponse.setDirectDownload(template.isDirectDownload());
+        templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
 
         //set template children disks
@@ -260,6 +274,19 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
         templateResponse.setObjectName("template");
         return templateResponse;
+    }
+
+    private void setDeployAsIsDetails(TemplateJoinVO template, TemplateResponse templateResponse) {
+        if (template.isDeployAsIs()) {
+            List<TemplateDeployAsIsDetailVO> deployAsIsDetails = templateDeployAsIsDetailsDao.listDetails(template.getId());
+            for (TemplateDeployAsIsDetailVO deployAsIsDetailVO : deployAsIsDetails) {
+                if (deployAsIsDetailVO.getName().startsWith(DeployAsIsConstants.HARDWARE_ITEM_PREFIX)) {
+                    //Do not list hardware items
+                    continue;
+                }
+                templateResponse.addDeployAsIsDetail(deployAsIsDetailVO.getName(), deployAsIsDetailVO.getValue());
+            }
+        }
     }
 
     //TODO: This is to keep compatibility with 4.1 API, where updateTemplateCmd and updateIsoCmd will return a simpler TemplateResponse
@@ -307,16 +334,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     @Override
-    public TemplateResponse setTemplateResponse(ResponseView view, TemplateResponse templateResponse, TemplateJoinVO template) {
-
-        // update details map
-        if (template.getDetailName() != null) {
-            Map<String, String> details = templateResponse.getDetails();
-            if (details == null) {
-                details = new HashMap<>();
+    public TemplateResponse setTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateResponse templateResponse, TemplateJoinVO template) {
+        if (detailsView.contains(ApiConstants.DomainDetails.all)) {
+            // update details map
+            String key = template.getDetailName();
+            if (key != null) {
+                templateResponse.addDetail(key, template.getDetailValue());
             }
-            details.put(template.getDetailName(), template.getDetailValue());
-            templateResponse.setDetails(details);
         }
 
         // update tag information
@@ -496,7 +520,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
         sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
-        sc.setParameters("public", Boolean.FALSE);
         return searchIncludingRemoved(sc, null, null, false);
     }
 

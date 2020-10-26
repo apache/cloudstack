@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -215,6 +216,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             description = "The minimum memroy size of the custom service offering in MB",
             since = "4.13")
     private Integer minMemory;
+
+    @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = VsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware", since = "4.15")
+    private Long storagePolicy;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -416,6 +420,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Integer getMinMemory() {
         return minMemory;
+    }
+
+    public Long getStoragePolicy() {
+        return storagePolicy;
     }
 
     /////////////////////////////////////////////////////
