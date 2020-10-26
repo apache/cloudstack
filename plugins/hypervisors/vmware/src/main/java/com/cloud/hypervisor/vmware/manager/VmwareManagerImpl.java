@@ -1496,6 +1496,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         for (StoragePoolVO pool : poolsInZone) {
             StorageFilerTO storageFilerTO = new StorageFilerTO(pool);
             List<Long> hostIds = storageManager.getUpHostsInPool(pool.getId());
+            if (CollectionUtils.isNullOrEmpty(hostIds)) {
+                s_logger.debug("Did not find a suitable host to verify compatibility of the pool " + pool.getName());
+                continue;
+            }
             Collections.shuffle(hostIds);
             CheckDataStoreStoragePolicyComplainceCommand command = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicy.getPolicyId(), storageFilerTO);
             long targetHostId = hypervisorGuruManager.getGuruProcessedCommandTargetHost(hostIds.get(0), command);
