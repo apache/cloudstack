@@ -18,15 +18,12 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import com.cloud.agent.api.to.DatadiskTO;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
-
-import java.util.List;
 
 public interface TemplateService {
 
@@ -50,7 +47,7 @@ public interface TemplateService {
 
     AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template, DataStore store);
 
-    boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate, boolean deployAsIs);
+    boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate);
 
     AsyncCallFuture<TemplateApiResult> deleteTemplateAsync(TemplateInfo template);
 
@@ -75,6 +72,4 @@ public interface TemplateService {
     void associateCrosszoneTemplatesToZone(long dcId);
 
     AsyncCallFuture<TemplateApiResult> createDatadiskTemplateAsync(TemplateInfo parentTemplate, TemplateInfo dataDiskTemplate, String path, String diskId, long fileSize, boolean bootable);
-
-    List<DatadiskTO> getTemplateDatadisksOnImageStore(TemplateInfo templateInfo, String configurationId);
 }

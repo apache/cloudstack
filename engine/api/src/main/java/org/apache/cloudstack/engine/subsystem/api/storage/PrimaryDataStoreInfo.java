@@ -58,6 +58,4 @@ public interface PrimaryDataStoreInfo extends StoragePool {
     Map<String, String> getDetails();
 
     PrimaryDataStoreLifeCycle getLifeCycle();
-
-    Long getParent();
 }

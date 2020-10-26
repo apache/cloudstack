@@ -106,6 +106,4 @@ public interface StoragePool extends Identity, InternalIdentity {
     Hypervisor.HypervisorType getHypervisor();
 
     boolean isManaged();
-
-    Long getParent();
 }

@@ -172,20 +172,10 @@
                                             .html(qualifier)
                                         propertyField.append(option);
                                     });
-                                } else if (qualifiers.includes("MinLen") || qualifiers.includes("MaxLen") ) {
-                                    var split = qualifiers.split(",");
-                                    var minLen = 0;
-                                    var maxLen = 524288; /* 524288 being the default according to w3schools */
-                                    for ( var i = 0; i < split.length; i++ ) {
-                                        if (split[i].startsWith("MaxLen")) {
-                                            maxLen = split[i].replace("MaxLen(","").replace(")","");
-                                        } else if (split[i].startsWith("MinLen")) {
-                                            minLen = split[i].replace("MinLen(","").replace(")","");
-                                        }
-                                    }
+                                } else if (qualifiers.startsWith("MaxLen")) {
+                                    var length = qualifiers.replace("MaxLen(","").slice(0,-1);
                                     propertyField = $('<input id=ovf-property-'+key+'>')
-                                        .attr({pattern : '.{' + minLen + ',' + maxLen + '}'})
-                                        .attr({type: fieldType})
+                                        .attr({maxlength : length, type: fieldType})
                                         .addClass('name').val(_s(this[fields.value]))
                                 }
                             } else {

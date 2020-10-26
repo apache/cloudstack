@@ -36,11 +36,6 @@ public class DeployDestination implements Serializable {
     Host _host;
     Map<Volume, StoragePool> _storage;
 
-    /**
-     * Display volume <-> storage pool mapping by default
-     */
-    boolean displayStorage = true;
-
     public DataCenter getDataCenter() {
         return _dc;
     }
@@ -68,10 +63,9 @@ public class DeployDestination implements Serializable {
         _host = host;
     }
 
-    public DeployDestination(DataCenter dc, Pod pod, Cluster cluster, Host host, Map<Volume, StoragePool> storage, boolean displayStorage) {
+    public DeployDestination(DataCenter dc, Pod pod, Cluster cluster, Host host, Map<Volume, StoragePool> storage) {
         this(dc, pod, cluster, host);
         _storage = storage;
-        this.displayStorage = displayStorage;
     }
 
     public DeployDestination() {
@@ -145,7 +139,7 @@ public class DeployDestination implements Serializable {
         destination.append("Cluster(").append(clusterId).append(")").append("-");
         destination.append("Host(").append(hostId).append(")").append("-");
         destination.append("Storage(");
-        if (displayStorage && _storage != null) {
+        if (_storage != null) {
             StringBuffer storageBuf = new StringBuffer();
             //String storageStr = "";
             for (Volume vol : _storage.keySet()) {
@@ -165,9 +159,5 @@ public class DeployDestination implements Serializable {
             destination.append(storageBuf.toString());
         }
         return destination.append(")]").toString();
-    }
-
-    public boolean isDisplayStorage() {
-        return displayStorage;
     }
 }

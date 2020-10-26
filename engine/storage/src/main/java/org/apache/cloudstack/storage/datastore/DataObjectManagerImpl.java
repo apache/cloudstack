@@ -76,7 +76,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
             s_logger.debug("waiting too long for template downloading, marked it as failed");
             throw new CloudRuntimeException("waiting too long for template downloading, marked it as failed");
         }
-        return objectInDataStoreMgr.get(dataObj, dataStore, null);
+        return objectInDataStoreMgr.get(dataObj, dataStore);
     }
 
     class CreateContext<T> extends AsyncRpcContext<T> {

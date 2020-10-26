@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,40 +14,60 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
-package com.cloud.agent.api.to.deployasis;
+package com.cloud.storage;
 
-import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.storage.OVFProperty;
 
-/**
- * Used to represent travel objects like:
- * <Property ovf:key="RouteDefault" ovf:type="string" ovf:qualifiers="ValueMap{&quot;Default Route&quot;,&quot;Remote HTTP and SSH Client Routes&quot;}" ovf:value="Default Route" ovf:userConfigurable="true">
- *         <Label>Select Route Type</Label>
- *         <Description>Select the route/gateway type.
- * Choose "Default Route" to route all traffic through the Management gateway. Use this option when enabling Smart Licensing registration at initial deployment.
- * Choose "Remote HTTP and SSH Client Routes" to route only traffic destined for the management client(s), when they are on remote networks.</Description>
- *       </Property>
- */
-public class OVFPropertyTO implements TemplateDeployAsIsInformationTO {
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
+@Entity
+@Table(name = "template_ovf_properties")
+public class TemplateOVFPropertyVO implements OVFProperty {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
+
+    @Column(name = "template_id")
+    private Long templateId;
+
+    @Column(name = "key")
     private String key;
-    private String type;
-    @LogLevel(LogLevel.Log4jLevel.Off)
-    private String value;
-    private String qualifiers;
-    private Boolean userConfigurable;
-    private String label;
-    private String description;
-    private Boolean password;
-    private int index;
-    private String category;
 
-    public OVFPropertyTO() {
+    @Column(name = "type")
+    private String type;
+
+    @Column(name = "value")
+    private String value;
+
+    @Column(name = "qualifiers")
+    private String qualifiers;
+
+    @Column(name = "password")
+    private Boolean password;
+
+    @Column(name = "user_configurable")
+    private Boolean userConfigurable;
+
+    @Column(name = "label")
+    private String label;
+
+    @Column(name = "description")
+    private String description;
+
+    public TemplateOVFPropertyVO() {
     }
 
-    public OVFPropertyTO(String key, String type, String value, String qualifiers, boolean userConfigurable,
-                       String label, String description, boolean password, int index, String category) {
+    public TemplateOVFPropertyVO(Long templateId, String key, String type, String value, String qualifiers,
+                                 Boolean userConfigurable, String label, String description, Boolean password) {
+        this.templateId = templateId;
         this.key = key;
         this.type = type;
         this.value = value;
@@ -57,12 +76,22 @@ public class OVFPropertyTO implements TemplateDeployAsIsInformationTO {
         this.label = label;
         this.description = description;
         this.password = password;
-        this.index = index;
-        this.category = category;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public Long getTemplateId() {
-        return null;
+        return templateId;
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
     }
 
     public String getKey() {
@@ -97,6 +126,7 @@ public class OVFPropertyTO implements TemplateDeployAsIsInformationTO {
         this.qualifiers = qualifiers;
     }
 
+    @Override
     public Boolean isUserConfigurable() {
         return userConfigurable;
     }
@@ -129,11 +159,9 @@ public class OVFPropertyTO implements TemplateDeployAsIsInformationTO {
         this.password = password;
     }
 
-    public String getCategory() {
-        return category;
-    }
-
-    public int getIndex() {
-        return index;
+    @Override
+    public String toString() {
+        return String.format("PROP - templateId=%s> key=%s value=%s type=%s qual=%s conf=%s label=%s desc=%s password=%s",
+                templateId, key, value, type, qualifiers, userConfigurable, label, description, password);
     }
 }

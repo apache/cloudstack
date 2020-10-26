@@ -709,7 +709,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             sfVolumeId = Long.parseLong(snapshotDetails.getValue());
         } else if (dataObjectType == DataObjectType.TEMPLATE) {
             // get the cached template on this storage
-            VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, dataObjectId, null);
+            VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, dataObjectId);
 
             if (templatePoolRef != null) {
                 sfVolumeId = Long.parseLong(templatePoolRef.getLocalDownloadPath());
@@ -1135,7 +1135,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         String iqn = sfVolume.getIqn();
 
-        VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, templateInfo.getId(), null);
+        VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, templateInfo.getId());
 
         templatePoolRef.setInstallPath(iqn);
         templatePoolRef.setLocalDownloadPath(Long.toString(sfVolume.getId()));

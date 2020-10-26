@@ -115,4 +115,5 @@ public class TemplateJoinDaoImplTest extends GenericDaoBaseWithTagInformationBas
         ReflectionTestUtils.setField(template, "detailName", detailName);
         ReflectionTestUtils.setField(template, "detailValue", detailValue);
     }
+
 }

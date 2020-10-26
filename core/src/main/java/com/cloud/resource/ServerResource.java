@@ -31,7 +31,6 @@ import com.cloud.utils.component.Manager;
  * ServerResource is a generic container to execute commands sent
  */
 public interface ServerResource extends Manager {
-
     /**
      * @return Host.Type type of the computing server we have.
      */

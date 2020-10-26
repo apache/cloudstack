@@ -18,9 +18,7 @@ package com.cloud.template;
 
 import java.util.List;
 
-import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -135,5 +133,4 @@ public interface TemplateManager {
     public static final String MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT = "Message.RegisterPublicTemplate.Event";
     public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";
 
-    List<DatadiskTO> getTemplateDisksOnImageStore(Long templateId, DataStoreRole role, String configurationId);
 }

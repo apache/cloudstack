@@ -52,8 +52,6 @@ public class NicProfile implements InternalIdentity, Serializable {
     Integer networkRate;
     boolean isSecurityGroupEnabled;
 
-    Integer orderIndex;
-
     // IPv4
     String iPv4Address;
     String iPv4Netmask;
@@ -383,14 +381,6 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.requestedIPv6 = requestedIPv6;
     }
 
-    public Integer getOrderIndex() {
-        return orderIndex;
-    }
-
-    public void setOrderIndex(Integer orderIndex) {
-        this.orderIndex = orderIndex;
-    }
-
     //
     // OTHER METHODS
     //
@@ -419,8 +409,6 @@ public class NicProfile implements InternalIdentity, Serializable {
         deviceId = null;
         broadcastUri = null;
         isolationUri = null;
-
-        orderIndex = null;
 
     }
 

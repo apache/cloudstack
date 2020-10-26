@@ -218,12 +218,12 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     }
 
     @Override
-    public TemplateInfo getTemplate(long templateId, String configuration) {
-        VMTemplateStoragePoolVO template = templatePoolDao.findByPoolTemplate(getId(), templateId, configuration);
+    public TemplateInfo getTemplate(long templateId) {
+        VMTemplateStoragePoolVO template = templatePoolDao.findByPoolTemplate(getId(), templateId);
         if (template == null || template.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return null;
         }
-        return imageDataFactory.getTemplateOnPrimaryStorage(templateId, this, configuration);
+        return imageDataFactory.getTemplate(templateId, this);
     }
 
     @Override
@@ -239,11 +239,6 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     @Override
     public boolean isManaged() {
         return pdsv.isManaged();
-    }
-
-    @Override
-    public Long getParent() {
-        return pdsv.getParent();
     }
 
     private boolean canCloneVolume() {
@@ -264,26 +259,18 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
      */
     @Override
     public DataObject create(DataObject dataObject) {
-        return create(dataObject, true, null);
-    }
-
-    @Override
-    public DataObject create(DataObject dataObject, String configuration) {
-        return create(dataObject, true, configuration);
+        return create(dataObject, true);
     }
 
     /**
      * Please read the comment for the create(DataObject) method if you are planning on passing in "false" for createEntryInTempSpoolRef.
-     *
-     * The parameter configuration allows storing multiple configurations of the
-     * base template appliance in primary storage (VMware supported) - null by default or no configurations
      */
     @Override
-    public DataObject create(DataObject obj, boolean createEntryInTempSpoolRef, String configuration) {
+    public DataObject create(DataObject obj, boolean createEntryInTempSpoolRef) {
         // create template on primary storage
         if (obj.getType() == DataObjectType.TEMPLATE && (!isManaged() || (createEntryInTempSpoolRef && canCloneVolume()))) {
             try {
-                String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + getId() + "conf:" + configuration;
+                String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + getId();
                 VMTemplateStoragePoolVO templateStoragePoolRef;
                 GlobalLock lock = GlobalLock.getInternLock(templateIdPoolIdString);
                 if (!lock.lock(5)) {
@@ -291,20 +278,20 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
                     return null;
                 }
                 try {
-                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId(), configuration);
+                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId());
                     if (templateStoragePoolRef == null) {
 
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Not found (" + templateIdPoolIdString + ") in template_spool_ref, persisting it");
                         }
-                        templateStoragePoolRef = new VMTemplateStoragePoolVO(getId(), obj.getId(), configuration);
+                        templateStoragePoolRef = new VMTemplateStoragePoolVO(getId(), obj.getId());
                         templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
                     }
                 } catch (Throwable t) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Failed to insert (" + templateIdPoolIdString + ") to template_spool_ref", t);
                     }
-                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId(), configuration);
+                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId());
                     if (templateStoragePoolRef == null) {
                         throw new CloudRuntimeException("Failed to create template storage pool entry");
                     } else {
@@ -329,7 +316,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
             }
         }
 
-        return objectInStoreMgr.get(obj, this, configuration);
+        return objectInStoreMgr.get(obj, this);
     }
 
     @Override

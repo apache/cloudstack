@@ -37,17 +37,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import com.vmware.vim25.ConcurrentAccessFaultMsg;
-import com.vmware.vim25.DuplicateNameFaultMsg;
-import com.vmware.vim25.FileFaultFaultMsg;
-import com.vmware.vim25.InsufficientResourcesFaultFaultMsg;
-import com.vmware.vim25.InvalidDatastoreFaultMsg;
-import com.vmware.vim25.InvalidNameFaultMsg;
-import com.vmware.vim25.InvalidStateFaultMsg;
-import com.vmware.vim25.OutOfBoundsFaultMsg;
-import com.vmware.vim25.RuntimeFaultFaultMsg;
-import com.vmware.vim25.TaskInProgressFaultMsg;
-import com.vmware.vim25.VmConfigFaultFaultMsg;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
@@ -65,7 +54,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -150,8 +138,6 @@ public class HypervisorHostHelper {
     private static final String UNTAGGED_VLAN_NAME = "untagged";
     private static final String VMDK_PACK_DIR = "ova";
     private static final String OVA_OPTION_KEY_BOOTDISK = "cloud.ova.bootdisk";
-    public static final String VSPHERE_DATASTORE_BASE_FOLDER = "fcd";
-    public static final String VSPHERE_DATASTORE_HIDDEN_FOLDER = ".hidden";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
@@ -1479,7 +1465,7 @@ public class HypervisorHostHelper {
         if (vmInternalCSName == null)
             vmInternalCSName = vmName;
 
-        VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse, false);
+        VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse);
 
         String recommendedController = host.getRecommendedDiskController(guestOsIdentifier);
         String newRootDiskController = controllerInfo.first();
@@ -1574,35 +1560,20 @@ public class HypervisorHostHelper {
      * - If the cluster hardware version is not set, check datacenter hardware version. If it is set, then it is set to vmConfig
      * - In case both cluster and datacenter hardware version are not set, hardware version is not set to vmConfig
      */
-    public static void setVMHardwareVersion(VirtualMachineConfigSpec vmConfig, ClusterMO clusterMO, DatacenterMO datacenterMO) throws Exception {
-        String version = getNewVMHardwareVersion(clusterMO, datacenterMO);
-        if (StringUtils.isNotBlank(version)) {
-            vmConfig.setVersion(version);
-        }
-    }
-
-    /**
-     * Return the VM hardware version based on the information retrieved by the cluster and datacenter:
-     * - If the cluster hardware version is set, then return this hardware version
-     * - If the cluster hardware version is not set, check datacenter hardware version. If it is set, then return it
-     * - In case both cluster and datacenter hardware version are not set, return null
-     */
-    public static String getNewVMHardwareVersion(ClusterMO clusterMO, DatacenterMO datacenterMO) throws Exception {
-        String version = null;
+    protected static void setVMHardwareVersion(VirtualMachineConfigSpec vmConfig, ClusterMO clusterMO, DatacenterMO datacenterMO) throws Exception {
         ClusterConfigInfoEx clusterConfigInfo = clusterMO != null ? clusterMO.getClusterConfigInfo() : null;
         String clusterHardwareVersion = clusterConfigInfo != null ? clusterConfigInfo.getDefaultHardwareVersionKey() : null;
         if (StringUtils.isNotBlank(clusterHardwareVersion)) {
             s_logger.debug("Cluster hardware version found: " + clusterHardwareVersion + ". Creating VM with this hardware version");
-            version = clusterHardwareVersion;
+            vmConfig.setVersion(clusterHardwareVersion);
         } else {
             DatacenterConfigInfo datacenterConfigInfo = datacenterMO != null ? datacenterMO.getDatacenterConfigInfo() : null;
             String datacenterHardwareVersion = datacenterConfigInfo != null ? datacenterConfigInfo.getDefaultHardwareVersionKey() : null;
             if (StringUtils.isNotBlank(datacenterHardwareVersion)) {
                 s_logger.debug("Datacenter hardware version found: " + datacenterHardwareVersion + ". Creating VM with this hardware version");
-                version = datacenterHardwareVersion;
+                vmConfig.setVersion(datacenterHardwareVersion);
             }
         }
-        return version;
     }
 
     private static VirtualDeviceConfigSpec getControllerSpec(String diskController, int busNum) {
@@ -1641,9 +1612,6 @@ public class HypervisorHostHelper {
         if (morCluster != null)
             hyperHost = new ClusterMO(hyperHost.getContext(), morCluster);
 
-        if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL") && !vmName.startsWith(CustomFieldConstants.CLOUD_UUID)) {
-            vmName = CustomFieldConstants.CLOUD_UUID + "-" + vmName;
-        }
         VirtualMachineMO workingVM = null;
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
         vmConfig.setName(vmName);
@@ -1743,11 +1711,6 @@ public class HypervisorHostHelper {
         return url;
     }
 
-    /**
-     * removes the NetworkSection element from the {ovfString} if it is an ovf xml file
-     * @param ovfString input string
-     * @return like the input string but if xml elements by name {NetworkSection} removed
-     */
     public static String removeOVFNetwork(final String ovfString)  {
         if (ovfString == null || ovfString.isEmpty()) {
             return ovfString;
@@ -1782,12 +1745,8 @@ public class HypervisorHostHelper {
         return ovfString;
     }
 
-    /**
-     * deploys a new VM from a ovf spec. It ignores network, defaults locale to 'US'
-     * @throws Exception shoud be a VmwareResourceException
-     */
     public static void importVmFromOVF(VmwareHypervisorHost host, String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, ManagedObjectReference morRp,
-                                       ManagedObjectReference morHost, String configurationId) throws CloudRuntimeException, IOException {
+            ManagedObjectReference morHost) throws Exception {
 
         assert (morRp != null);
 
@@ -1795,34 +1754,24 @@ public class HypervisorHostHelper {
         importSpecParams.setHostSystem(morHost);
         importSpecParams.setLocale("US");
         importSpecParams.setEntityName(vmName);
-        String deploymentOption = StringUtils.isNotBlank(configurationId) ? configurationId : "";
-        importSpecParams.setDeploymentOption(deploymentOption);
+        importSpecParams.setDeploymentOption("");
         importSpecParams.setDiskProvisioning(diskOption); // diskOption: thin, thick, etc
 
         String ovfDescriptor = removeOVFNetwork(HttpNfcLeaseMO.readOvfContent(ovfFilePath));
         VmwareContext context = host.getContext();
-        OvfCreateImportSpecResult ovfImportResult = null;
-        try {
-            ovfImportResult = context.getService().createImportSpec(context.getServiceContent().getOvfManager(), ovfDescriptor, morRp, dsMo.getMor(), importSpecParams);
-        } catch (ConcurrentAccessFaultMsg
-                | FileFaultFaultMsg
-                | InvalidDatastoreFaultMsg
-                | InvalidStateFaultMsg
-                | RuntimeFaultFaultMsg
-                | TaskInProgressFaultMsg
-                | VmConfigFaultFaultMsg error) {
-            throw new CloudRuntimeException("ImportSpec creation failed", error);
-        }
+        OvfCreateImportSpecResult ovfImportResult =
+                context.getService().createImportSpec(context.getServiceContent().getOvfManager(), ovfDescriptor, morRp, dsMo.getMor(), importSpecParams);
+
         if (ovfImportResult == null) {
             String msg = "createImportSpec() failed. ovfFilePath: " + ovfFilePath + ", vmName: " + vmName + ", diskOption: " + diskOption;
             s_logger.error(msg);
-            throw new CloudRuntimeException(msg);
+            throw new Exception(msg);
         }
         if(!ovfImportResult.getError().isEmpty()) {
             for (LocalizedMethodFault fault : ovfImportResult.getError()) {
                 s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
             }
-            throw new CloudRuntimeException("Failed to create an import spec from " + ovfFilePath + ". Check log for details.");
+            throw new CloudException("Failed to create an import spec from " + ovfFilePath + ". Check log for details.");
         }
 
         if (!ovfImportResult.getWarning().isEmpty()) {
@@ -1831,55 +1780,22 @@ public class HypervisorHostHelper {
             }
         }
 
-        DatacenterMO dcMo = null;
-        try {
-            dcMo = new DatacenterMO(context, host.getHyperHostDatacenter());
-        } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("no datacenter for host '%s' available in context", context.getServerAddress()), e);
-        }
-        ManagedObjectReference folderMO = null;
-        try {
-            folderMO = dcMo.getVmFolder();
-        } catch (Exception e) {
-            throw new CloudRuntimeException("no management handle for VmFolder", e);
-        }
-        ManagedObjectReference morLease = null;
-        try {
-            morLease = context.getService().importVApp(morRp, ovfImportResult.getImportSpec(), folderMO, morHost);
-        } catch (DuplicateNameFaultMsg
-                | FileFaultFaultMsg
-                | InsufficientResourcesFaultFaultMsg
-                | InvalidDatastoreFaultMsg
-                | InvalidNameFaultMsg
-                | OutOfBoundsFaultMsg
-                | RuntimeFaultFaultMsg
-                | VmConfigFaultFaultMsg fault) {
-            throw new CloudRuntimeException("import vApp failed",fault);
-        }
+        DatacenterMO dcMo = new DatacenterMO(context, host.getHyperHostDatacenter());
+        ManagedObjectReference morLease = context.getService().importVApp(morRp, ovfImportResult.getImportSpec(), dcMo.getVmFolder(), morHost);
         if (morLease == null) {
             String msg = "importVApp() failed. ovfFilePath: " + ovfFilePath + ", vmName: " + vmName + ", diskOption: " + diskOption;
             s_logger.error(msg);
-            throw new CloudRuntimeException(msg);
+            throw new Exception(msg);
         }
         boolean importSuccess = true;
         final HttpNfcLeaseMO leaseMo = new HttpNfcLeaseMO(context, morLease);
-        HttpNfcLeaseState state = null;
-        try {
-            state = leaseMo.waitState(new HttpNfcLeaseState[] {HttpNfcLeaseState.READY, HttpNfcLeaseState.ERROR});
-        } catch (Exception e) {
-            throw new CloudRuntimeException("exception while waiting for leaseMO", e);
-        }
+        HttpNfcLeaseState state = leaseMo.waitState(new HttpNfcLeaseState[] {HttpNfcLeaseState.READY, HttpNfcLeaseState.ERROR});
         try {
             if (state == HttpNfcLeaseState.READY) {
                 final long totalBytes = HttpNfcLeaseMO.calcTotalBytes(ovfImportResult);
                 File ovfFile = new File(ovfFilePath);
 
-                HttpNfcLeaseInfo httpNfcLeaseInfo = null;
-                try {
-                    httpNfcLeaseInfo = leaseMo.getLeaseInfo();
-                } catch (Exception e) {
-                    throw new CloudRuntimeException("error waiting for lease info", e);
-                }
+                HttpNfcLeaseInfo httpNfcLeaseInfo = leaseMo.getLeaseInfo();
                 List<HttpNfcLeaseDeviceUrl> deviceUrls = httpNfcLeaseInfo.getDeviceUrl();
                 long bytesAlreadyWritten = 0;
 
@@ -1890,7 +1806,6 @@ public class HypervisorHostHelper {
                         for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
                             if (deviceKey.equals(ovfFileItem.getDeviceId())) {
                                 String absoluteFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
-                                s_logger.info("Uploading file: " + absoluteFile);
                                 File f = new File(absoluteFile);
                                 if (f.exists()){
                                     String urlToPost = deviceUrl.getUrl();
@@ -1910,44 +1825,31 @@ public class HypervisorHostHelper {
                     String erroMsg = "File upload task failed to complete due to: " + e.getMessage();
                     s_logger.error(erroMsg);
                     importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
-                    throw new CloudRuntimeException(erroMsg, e);
+                    throw new Exception(erroMsg, e);
                 } catch (Throwable th) {
                     String errorMsg = "throwable caught during file upload task: " + th.getMessage();
                     s_logger.error(errorMsg);
                     importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
-                    throw new CloudRuntimeException(errorMsg, th);
+                    throw new Exception(errorMsg, th);
                 } finally {
                     progressReporter.close();
                 }
                 if (bytesAlreadyWritten == totalBytes) {
-                    try {
-                        leaseMo.updateLeaseProgress(100);
-                    } catch (Exception e) {
-                        throw new CloudRuntimeException("error while waiting for lease update", e);
-                    }
+                    leaseMo.updateLeaseProgress(100);
                 }
             } else if (state == HttpNfcLeaseState.ERROR) {
-                LocalizedMethodFault error = null;
-                try {
-                    error = leaseMo.getLeaseError();
-                } catch (Exception e) {
-                    throw new CloudRuntimeException("error getting lease error", e);
-                }
+                LocalizedMethodFault error = leaseMo.getLeaseError();
                 MethodFault fault = error.getFault();
                 String erroMsg = "Object creation on vCenter failed due to: Exception: " + fault.getClass().getName() + ", message: " + error.getLocalizedMessage();
                 s_logger.error(erroMsg);
-                throw new CloudRuntimeException(erroMsg);
+                throw new Exception(erroMsg);
             }
         } finally {
-            try {
-                if (!importSuccess) {
-                    s_logger.error("Aborting the lease on " + vmName + " after import operation failed.");
-                    leaseMo.abortLease();
-                } else {
-                    leaseMo.completeLease();
-                }
-            } catch (Exception e) {
-                throw new CloudRuntimeException("error completing lease", e);
+            if (!importSuccess) {
+                s_logger.error("Aborting the lease on " + vmName + " after import operation failed.");
+                leaseMo.abortLease();
+            } else {
+                leaseMo.completeLease();
             }
         }
     }
@@ -2182,29 +2084,4 @@ public class HypervisorHostHelper {
         return DiskControllerType.getType(controller) == DiskControllerType.ide;
     }
 
-    public static void createBaseFolder(DatastoreMO dsMo, VmwareHypervisorHost hyperHost, StoragePoolType poolType) throws Exception {
-        if (poolType != null && poolType == StoragePoolType.DatastoreCluster) {
-            StoragepodMO storagepodMO = new StoragepodMO(hyperHost.getContext(), dsMo.getMor());
-            List<ManagedObjectReference> datastoresInCluster = storagepodMO.getDatastoresInDatastoreCluster();
-            for (ManagedObjectReference datastore : datastoresInCluster) {
-                DatastoreMO childDsMo = new DatastoreMO(hyperHost.getContext(), datastore);
-                createBaseFolderInDatastore(childDsMo, hyperHost);
-            }
-        } else {
-            createBaseFolderInDatastore(dsMo, hyperHost);
-        }
-    }
-
-    public static void createBaseFolderInDatastore(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
-        String dsPath = String.format("[%s]", dsMo.getName());
-        String folderPath = String.format("[%s] %s", dsMo.getName(), VSPHERE_DATASTORE_BASE_FOLDER);
-        String hiddenFolderPath = String.format("%s/%s", folderPath, VSPHERE_DATASTORE_HIDDEN_FOLDER);
-
-        if (!dsMo.folderExists(dsPath, VSPHERE_DATASTORE_BASE_FOLDER)) {
-            s_logger.info(String.format("vSphere datastore base folder: %s does not exist, now creating on datastore: %s", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
-            dsMo.makeDirectory(folderPath, hyperHost.getHyperHostDatacenter());
-            // Adding another directory so vCentre doesn't remove the fcd directory when it's empty
-            dsMo.makeDirectory(hiddenFolderPath, hyperHost.getHyperHostDatacenter());
-        }
-    }
 }

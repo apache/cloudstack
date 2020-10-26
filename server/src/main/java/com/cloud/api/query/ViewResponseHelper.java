@@ -26,7 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -584,17 +583,17 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<TemplateResponse> createTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO... templates) {
+    public static List<TemplateResponse> createTemplateResponse(ResponseView view, TemplateJoinVO... templates) {
         LinkedHashMap<String, TemplateResponse> vrDataList = new LinkedHashMap<String, TemplateResponse>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if (vrData == null) {
                 // first time encountering this volume
-                vrData = ApiDBUtils.newTemplateResponse(detailsView, view, vr);
+                vrData = ApiDBUtils.newTemplateResponse(view, vr);
             }
             else{
                 // update tags
-                vrData = ApiDBUtils.fillTemplateDetails(detailsView, view, vrData, vr);
+                vrData = ApiDBUtils.fillTemplateDetails(view, vrData, vr);
             }
             vrDataList.put(vr.getTempZonePair(), vrData);
         }
@@ -610,7 +609,7 @@ public class ViewResponseHelper {
                 vrData = ApiDBUtils.newTemplateUpdateResponse(vr);
             } else {
                 // update tags
-                vrData = ApiDBUtils.fillTemplateDetails(EnumSet.of(DomainDetails.all), view, vrData, vr);
+                vrData = ApiDBUtils.fillTemplateDetails(view, vrData, vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }
@@ -626,7 +625,7 @@ public class ViewResponseHelper {
                 vrData = ApiDBUtils.newIsoResponse(vr);
             } else {
                 // update tags
-                vrData = ApiDBUtils.fillTemplateDetails(EnumSet.of(DomainDetails.all), view, vrData, vr);
+                vrData = ApiDBUtils.fillTemplateDetails(view, vrData, vr);
             }
             vrDataList.put(vr.getTempZonePair(), vrData);
         }

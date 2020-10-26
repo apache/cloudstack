@@ -37,7 +37,7 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.to.OVFInformationTO;
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.S3TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader;
@@ -62,6 +62,7 @@ import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -126,7 +127,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private long templatePhysicalSize;
         private final long id;
         private final ResourceType resourceType;
-        private OVFInformationTO ovfInformationTO;
+        private List<OVFPropertyTO> ovfProperties;
 
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
                 String installPathPrefix, ResourceType resourceType) {
@@ -222,12 +223,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             this.checksum = checksum;
         }
 
-        public OVFInformationTO getOvfInformationTO() {
-            return ovfInformationTO;
+        public List<OVFPropertyTO> getOvfProperties() {
+            return ovfProperties;
         }
 
-        public void setOvfInformationTO(OVFInformationTO ovfInformationTO) {
-            this.ovfInformationTO = ovfInformationTO;
+        public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
+            this.ovfProperties = ovfProperties;
         }
     }
 
@@ -508,7 +509,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         while (en.hasNext()) {
             Processor processor = en.next();
 
-            FormatInfo info;
+            FormatInfo info = null;
             try {
                 info = processor.process(resourcePath, null, templateName, this._processTimeout);
             } catch (InternalErrorException e) {
@@ -522,8 +523,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 }
                 dnld.setTemplatesize(info.virtualSize);
                 dnld.setTemplatePhysicalSize(info.size);
-                if (info.ovfInformationTO != null) {
-                    dnld.setOvfInformationTO(info.ovfInformationTO);
+                if (CollectionUtils.isNotEmpty(info.ovfProperties)) {
+                    dnld.setOvfProperties(info.ovfProperties);
                 }
                 break;
             }
@@ -825,8 +826,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             answer =
                     new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId),
                             getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
-            if (dj.getOvfInformationTO() != null) {
-                answer.setOvfInformationTO(dj.getOvfInformationTO());
+            if (CollectionUtils.isNotEmpty(dj.getOvfProperties())) {
+                answer.setOvfProperties(dj.getOvfProperties());
             }
             jobs.remove(jobId);
             return answer;

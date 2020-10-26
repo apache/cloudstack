@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -345,8 +344,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private NetworkDetailsDao networkDetailsDao;
     @Inject
     private SecurityGroupManager _securityGroupManager;
-    @Inject
-    private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -417,8 +414,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, final DeploymentPlan plan, final HypervisorType hyperType, final Map<String, Map<Integer, String>> extraDhcpOptions, final Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap)
                     throws InsufficientCapacityException {
 
-        s_logger.info(String.format("allocating virtual machine from template:%s with hostname:%s and %d networks", template.getUuid(), vmInstanceName, auxiliaryNetworks.size()));
-
         final VMInstanceVO vm = _vmDao.findVMByInstanceName(vmInstanceName);
         final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
 
@@ -460,7 +455,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } else if (template.getFormat() == ImageFormat.BAREMETAL) {
                     // Do nothing
                 } else {
-                    volumeMgr.allocateTemplatedVolumes(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
+                    volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
                 }
 
@@ -596,9 +591,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         guru.finalizeExpunge(vm);
         //remove the overcommit details from the uservm details
         userVmDetailsDao.removeDetails(vm.getId());
-
-        // Remove deploy as-is (if any)
-        userVmDeployAsIsDetailsDao.removeDetails(vm.getId());
 
         // send hypervisor-dependent commands before removing
         final List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
@@ -1112,9 +1104,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 if (dest != null) {
                     avoids.addHost(dest.getHost().getId());
-                    if (!template.isDeployAsIs()) {
-                        journal.record("Deployment found ", vmProfile, dest);
-                    }
+                    journal.record("Deployment found ", vmProfile, dest);
                 }
 
                 long destHostId = dest.getHost().getId();
@@ -1146,7 +1136,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 try {
                     resetVmNicsDeviceId(vm.getId());
-                    _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null, dest.getStorageForDisks(), dest.isDisplayStorage()), ctx);
+                    _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null, dest.getStorageForDisks()), ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         volumeMgr.prepare(vmProfile, dest);
                     }
@@ -1478,18 +1468,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (disk.getType() != Volume.Type.ISO) {
                 final VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
                 final VolumeVO volume = _volsDao.findById(vol.getId());
-                if (vmSpec.getDeployAsIsInfo() != null && StringUtils.isNotBlank(vol.getPath())) {
-                    volume.setPath(vol.getPath());
-                    _volsDao.update(volume.getId(), volume);
-                }
 
                 // Use getPath() from VolumeVO to get a fresh copy of what's in the DB.
                 // Before doing this, in a certain situation, getPath() from VolumeObjectTO
                 // returned null instead of an actual path (because it was out of date with the DB).
                 if(vol.getPath() != null) {
-                    volumeMgr.updateVolumeDiskChain(vol.getId(), vol.getPath(), vol.getChainInfo(), vol.getUpdatedDataStoreUUID());
+                    volumeMgr.updateVolumeDiskChain(vol.getId(), vol.getPath(), vol.getChainInfo());
                 } else {
-                    volumeMgr.updateVolumeDiskChain(vol.getId(), volume.getPath(), vol.getChainInfo(), vol.getUpdatedDataStoreUUID());
+                    volumeMgr.updateVolumeDiskChain(vol.getId(), volume.getPath(), vol.getChainInfo());
                 }
             }
         }
@@ -1672,11 +1658,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 guru.finalizeStop(profile, answer);
-                if (vm.getType() == VirtualMachine.Type.User) {
-                    final UserVmVO userVm = _userVmDao.findById(vm.getId());
-                    userVm.setPowerState(PowerState.PowerOff);
-                    _userVmDao.update(userVm.getId(), userVm);
-                }
+                final UserVmVO userVm = _userVmDao.findById(vm.getId());
+                userVm.setPowerState(PowerState.PowerOff);
+                _userVmDao.update(userVm.getId(), userVm);
             } else {
                 s_logger.error("Invalid answer received in response to a StopCommand for " + vm.getInstanceName());
                 return false;
@@ -2484,7 +2468,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Unable to find the host to migrate from: " + srcHostId);
         }
 
-        if (fromHost.getClusterId().longValue() != dest.getCluster().getId() && vm.getHypervisorType() != HypervisorType.VMware) {
+        if (fromHost.getClusterId().longValue() != dest.getCluster().getId()) {
             final List<VolumeVO> volumes = _volsDao.findCreatedByInstance(vm.getId());
             for (final VolumeVO volume : volumes) {
                 if (!_storagePoolDao.findById(volume.getPoolId()).getScope().equals(ScopeType.ZONE)) {
@@ -2971,8 +2955,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
                     boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
                     vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
-                            vm.getUuid(), defaultNic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows,
-                            VirtualMachineManager.getHypervisorHostname(destination.getHost() != null ? destination.getHost().getName() : ""));
+                            vm.getUuid(), defaultNic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, VirtualMachineManager.getHypervisorHostname(destination.getHost().getName()));
                     String vmName = vm.getInstanceName();
                     String configDriveIsoRootFolder = "/tmp";
                     String isoFile = configDriveIsoRootFolder + "/" + vmName + "/configDrive/" + vmName + ".iso";

@@ -64,19 +64,14 @@ public class VmWorkMigrate extends VmWork {
 
         Map<Volume, StoragePool> vols = null;
 
-        boolean displayStorage = true;
         if (storage != null) {
             vols = new HashMap<Volume, StoragePool>(storage.size());
             for (Map.Entry<String, String> entry : storage.entrySet()) {
-                Volume volume = s_entityMgr.findByUuid(Volume.class, entry.getKey());
-                if (displayStorage && volume.isDeployAsIs()) {
-                    displayStorage = false;
-                }
-                vols.put(volume, s_entityMgr.findByUuid(StoragePool.class, entry.getValue()));
+                vols.put(s_entityMgr.findByUuid(Volume.class, entry.getKey()), s_entityMgr.findByUuid(StoragePool.class, entry.getValue()));
             }
         }
 
-        DeployDestination dest = new DeployDestination(zone, pod, cluster, host, vols, displayStorage);
+        DeployDestination dest = new DeployDestination(zone, pod, cluster, host, vols);
         return dest;
     }
 

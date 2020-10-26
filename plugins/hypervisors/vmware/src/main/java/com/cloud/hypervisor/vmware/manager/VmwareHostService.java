@@ -17,7 +17,6 @@
 package com.cloud.hypervisor.vmware.manager;
 
 import com.cloud.agent.api.Command;
-import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
@@ -28,5 +27,5 @@ public interface VmwareHostService {
 
     VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd);
 
-    String getWorkerName(VmwareContext context, Command cmd, int workerSequence, DatastoreMO dsMo) throws Exception;
+    String getWorkerName(VmwareContext context, Command cmd, int workerSequence);
 }

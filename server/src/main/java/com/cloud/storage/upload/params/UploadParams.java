@@ -46,5 +46,4 @@ public interface UploadParams {
     boolean isDynamicallyScalable();
     boolean isRoutingType();
     boolean isDirectDownload();
-    boolean isDeployAsIs();
 }

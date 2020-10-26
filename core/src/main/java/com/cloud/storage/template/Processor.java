@@ -21,8 +21,9 @@ package com.cloud.storage.template;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
-import com.cloud.agent.api.to.OVFInformationTO;
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
@@ -47,13 +48,13 @@ public interface Processor extends Adapter {
 
     FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException;
 
-    class FormatInfo {
+    public static class FormatInfo {
         public ImageFormat format;
         public long size;
         public long virtualSize;
         public String filename;
         public boolean isCorrupted;
-        public OVFInformationTO ovfInformationTO;
+        public List<OVFPropertyTO> ovfProperties;
     }
 
     long getVirtualSize(File file) throws IOException;

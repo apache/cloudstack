@@ -95,9 +95,6 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
-    @Column(name = "deployment_option")
-    private String deploymentOption;
-
     @Override
     public String getInstallPath() {
         return installPath;
@@ -171,18 +168,17 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
         return downloadState;
     }
 
-    public VMTemplateStoragePoolVO(long poolId, long templateId, String configuration) {
+    public VMTemplateStoragePoolVO(long poolId, long templateId) {
         super();
         this.poolId = poolId;
         this.templateId = templateId;
         this.downloadState = Status.NOT_DOWNLOADED;
         this.state = ObjectInDataStoreStateMachine.State.Allocated;
         this.markedForGC = false;
-        this.deploymentOption = configuration;
     }
 
     public VMTemplateStoragePoolVO(long poolId, long templateId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath,
-            String errorString, String jobId, String installPath, long templateSize, String configuration) {
+            String errorString, String jobId, String installPath, long templateSize) {
         super();
         this.poolId = poolId;
         this.templateId = templateId;
@@ -194,7 +190,6 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
         this.jobId = jobId;
         this.installPath = installPath;
         this.templateSize = templateSize;
-        this.deploymentOption = configuration;
     }
 
     protected VMTemplateStoragePoolVO() {
@@ -305,11 +300,4 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
         return this.state;
     }
 
-    public String getDeploymentOption() {
-        return deploymentOption;
-    }
-
-    public void setDeploymentOption(String deploymentOption) {
-        this.deploymentOption = deploymentOption;
-    }
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,49 +15,58 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response;
+//
 
-import com.cloud.agent.api.storage.OVFProperty;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
+package com.cloud.agent.api.storage;
 
-@EntityReference(value = OVFProperty.class)
-public class TemplateOVFPropertyResponse extends BaseResponse {
+import com.cloud.agent.api.LogLevel;
 
-    @SerializedName(ApiConstants.KEY)
-    @Param(description = "the ovf property key")
+/**
+ * Used to represent travel objects like:
+ * <Property ovf:key="RouteDefault" ovf:type="string" ovf:qualifiers="ValueMap{&quot;Default Route&quot;,&quot;Remote HTTP and SSH Client Routes&quot;}" ovf:value="Default Route" ovf:userConfigurable="true">
+ *         <Label>Select Route Type</Label>
+ *         <Description>Select the route/gateway type.
+ * Choose "Default Route" to route all traffic through the Management gateway. Use this option when enabling Smart Licensing registration at initial deployment.
+ * Choose "Remote HTTP and SSH Client Routes" to route only traffic destined for the management client(s), when they are on remote networks.</Description>
+ *       </Property>
+ */
+public class OVFPropertyTO implements OVFProperty {
+
     private String key;
-
-    @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the ovf property type")
     private String type;
-
-    @SerializedName(ApiConstants.VALUE)
-    @Param(description = "the ovf property value")
+    @LogLevel(LogLevel.Log4jLevel.Off)
     private String value;
-
-    @SerializedName(ApiConstants.PASSWORD)
-    @Param(description = "is the ovf property a password")
+    private String qualifiers;
+    private Boolean userConfigurable;
+    private String label;
+    private String description;
     private Boolean password;
 
-    @SerializedName(ApiConstants.QUALIFIERS)
-    @Param(description = "the ovf property qualifiers")
-    private String qualifiers;
+    public OVFPropertyTO() {
+    }
 
-    @SerializedName(ApiConstants.USER_CONFIGURABLE)
-    @Param(description = "is the ovf property user configurable")
-    private Boolean userConfigurable;
+    public OVFPropertyTO(String key, String value, boolean password) {
+        this.key = key;
+        this.value = value;
+        this.password = password;
+    }
 
-    @SerializedName(ApiConstants.LABEL)
-    @Param(description = "the ovf property label")
-    private String label;
+    public OVFPropertyTO(String key, String type, String value, String qualifiers, boolean userConfigurable,
+                       String label, String description, boolean password) {
+        this.key = key;
+        this.type = type;
+        this.value = value;
+        this.qualifiers = qualifiers;
+        this.userConfigurable = userConfigurable;
+        this.label = label;
+        this.description = description;
+        this.password = password;
+    }
 
-    @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the ovf property label")
-    private String description;
+    @Override
+    public Long getTemplateId() {
+        return null;
+    }
 
     public String getKey() {
         return key;
@@ -90,7 +100,7 @@ public class TemplateOVFPropertyResponse extends BaseResponse {
         this.qualifiers = qualifiers;
     }
 
-    public Boolean getUserConfigurable() {
+    public Boolean isUserConfigurable() {
         return userConfigurable;
     }
 
@@ -114,7 +124,7 @@ public class TemplateOVFPropertyResponse extends BaseResponse {
         this.description = description;
     }
 
-    public Boolean getPassword() {
+    public Boolean isPassword() {
         return password;
     }
 

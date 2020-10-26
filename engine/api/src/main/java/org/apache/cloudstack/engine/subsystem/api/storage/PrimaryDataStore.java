@@ -23,9 +23,7 @@ import java.util.List;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 
 public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
-    DataObject create(DataObject dataObject, String configuration);
-
-    DataObject create(DataObject dataObject, boolean createEntryInTempSpoolRef, String configuration);
+    DataObject create(DataObject dataObject, boolean createEntryInTempSpoolRef);
 
     VolumeInfo getVolume(long id);
 
@@ -33,7 +31,7 @@ public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
 
     boolean exists(DataObject data);
 
-    TemplateInfo getTemplate(long templateId, String configuration);
+    TemplateInfo getTemplate(long templateId);
 
     SnapshotInfo getSnapshot(long snapshotId);
 

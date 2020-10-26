@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.engine.orchestration.service;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -85,8 +84,6 @@ public interface VolumeOrchestrationService {
 
     String getVmNameOnVolume(Volume volume);
 
-    StoragePool findChildDataStoreInDataStoreCluster(DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Long datastoreClusterId);
-
     VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot, UserVm vm) throws StorageUnavailableException;
 
     Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException;
@@ -120,11 +117,8 @@ public interface VolumeOrchestrationService {
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
-    /**
-     * Allocate a volume or multiple volumes in case of template is registered with the 'deploy-as-is' option, allowing multiple disks
-     */
-    List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                               Account owner);
+    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
+        Account owner);
 
     String getVmNameFromVolumeId(long volumeId);
 
@@ -134,7 +128,7 @@ public interface VolumeOrchestrationService {
 
     StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
 
-    void updateVolumeDiskChain(long volumeId, String path, String chainInfo, String updatedDataStoreUUID);
+    void updateVolumeDiskChain(long volumeId, String path, String chainInfo);
 
     /**
      * Imports an existing volume for a VM into database. Useful while ingesting an unmanaged VM.

@@ -14,11 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.deployasis.dao;
 
-import com.cloud.deployasis.UserVmDeployAsIsDetailVO;
+package com.cloud.storage.dao;
+
+import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-public interface UserVmDeployAsIsDetailsDao extends GenericDao<UserVmDeployAsIsDetailVO, Long>, ResourceDetailsDao<UserVmDeployAsIsDetailVO> {
+import java.util.List;
+
+public interface TemplateOVFPropertiesDao extends GenericDao<TemplateOVFPropertyVO, Long> {
+
+    boolean existsOption(long templateId, String key);
+    TemplateOVFPropertyVO findByTemplateAndKey(long templateId, String key);
+    void saveOptions(List<TemplateOVFPropertyVO> opts);
+    List<TemplateOVFPropertyVO> listByTemplateId(long templateId);
 }

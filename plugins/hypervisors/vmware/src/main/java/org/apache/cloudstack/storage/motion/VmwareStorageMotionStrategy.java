@@ -132,10 +132,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         StoragePool srcPool = storagePoolDao.findById(srcStore.getId());
         DataStore destStore = destData.getDataStore();
         StoragePool destPool = storagePoolDao.findById(destStore.getId());
-        if (srcPool.getClusterId() != null && destPool.getClusterId() != null) {
-            return srcPool.getClusterId().equals(destPool.getClusterId());
-        }
-        return false;
+        return srcPool.getClusterId().equals(destPool.getClusterId());
     }
 
     /**

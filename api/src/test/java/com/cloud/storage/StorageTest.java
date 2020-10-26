@@ -45,7 +45,6 @@ public class StorageTest {
         Assert.assertTrue(StoragePoolType.SMB.isShared());
         Assert.assertTrue(StoragePoolType.Gluster.isShared());
         Assert.assertTrue(StoragePoolType.ManagedNFS.isShared());
-        Assert.assertTrue(StoragePoolType.DatastoreCluster.isShared());
     }
 
     @Test
@@ -67,6 +66,5 @@ public class StorageTest {
         Assert.assertFalse(StoragePoolType.SMB.supportsOverProvisioning());
         Assert.assertFalse(StoragePoolType.Gluster.supportsOverProvisioning());
         Assert.assertFalse(StoragePoolType.ManagedNFS.supportsOverProvisioning());
-        Assert.assertTrue(StoragePoolType.DatastoreCluster.supportsOverProvisioning());
     }
 }

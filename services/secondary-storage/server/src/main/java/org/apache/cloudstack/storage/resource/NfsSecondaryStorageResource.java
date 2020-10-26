@@ -190,7 +190,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
     private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
-    private static final String ORIGINAL_FILE_EXTENSION = ".orig";
 
     private static final Map<String, String> updatableConfigData = Maps.newHashMap();
     static {
@@ -392,7 +391,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     public Answer execute(GetDatadisksCommand cmd) {
         DataTO srcData = cmd.getData();
-        String configurationId = cmd.getConfigurationId();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO srcStore = srcData.getDataStore();
         if (!(srcStore instanceof NfsTO)) {
@@ -437,7 +435,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             Script command = new Script("cp", _timeout, s_logger);
             command.add(ovfFilePath);
-            command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
+            command.add(ovfFilePath + ".orig");
             String result = command.execute();
             if (result != null) {
                 String msg = "Unable to rename original OVF, error msg: " + result;
@@ -447,7 +445,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.debug("Reading OVF " + ovfFilePath + " to retrive the number of disks present in OVA");
             OVFHelper ovfHelper = new OVFHelper();
 
-            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, configurationId);
+            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFilePath);
             return new GetDatadisksAnswer(disks);
         } catch (Exception e) {
             String msg = "Get Datadisk Template Count failed due to " + e.getMessage();
@@ -505,7 +503,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                         throw new Exception(msg);
                     }
                     command = new Script("cp", _timeout, s_logger);
-                    command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
+                    command.add(ovfFilePath + ".orig");
                     command.add(newTmplDirAbsolute);
                     result = command.execute();
                     if (result != null) {
@@ -519,7 +517,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // Create OVF for the disk
             String newOvfFilePath = newTmplDirAbsolute + File.separator + ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1);
             OVFHelper ovfHelper = new OVFHelper();
-            ovfHelper.rewriteOVFFileForSingleDisk(ovfFilePath + ORIGINAL_FILE_EXTENSION, newOvfFilePath, diskName);
+            ovfHelper.rewriteOVFFile(ovfFilePath + ".orig", newOvfFilePath, diskName);
 
             postCreatePrivateTemplate(newTmplDirAbsolute, templateId, templateUniqueName, physicalSize, virtualSize);
             writeMetaOvaForTemplate(newTmplDirAbsolute, ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1), diskName, templateUniqueName, physicalSize);

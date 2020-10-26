@@ -28,7 +28,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -74,7 +73,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
     protected static final String HOST_TEMPLATE_SEARCH =
         "SELECT * FROM template_spool_ref tp, storage_pool_host_ref ph, host h where tp.pool_id = ph.pool_id and ph.host_id = h.id and h.id=? "
-            + " and tp.template_id=? and tp.deployment_option ";
+            + " and tp.template_id=? ";
 
     public VMTemplatePoolDaoImpl() {
         PoolSearch = createSearchBuilder();
@@ -88,7 +87,6 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         PoolTemplateSearch = createSearchBuilder();
         PoolTemplateSearch.and("pool_id", PoolTemplateSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
         PoolTemplateSearch.and("template_id", PoolTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        PoolTemplateSearch.and("configuration", PoolTemplateSearch.entity().getDeploymentOption(), SearchCriteria.Op.EQ);
         PoolTemplateSearch.done();
 
         TemplateStatusSearch = createSearchBuilder();
@@ -140,13 +138,10 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     }
 
     @Override
-    public VMTemplateStoragePoolVO findByPoolTemplate(long poolId, long templateId, String configuration) {
+    public VMTemplateStoragePoolVO findByPoolTemplate(long poolId, long templateId) {
         SearchCriteria<VMTemplateStoragePoolVO> sc = PoolTemplateSearch.create();
         sc.setParameters("pool_id", poolId);
         sc.setParameters("template_id", templateId);
-        if (StringUtils.isNotBlank(configuration)) {
-            sc.setParameters("configuration", configuration);
-        }
         return findOneIncludingRemovedBy(sc);
     }
 
@@ -224,17 +219,13 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
     }
 
-    public List<VMTemplateStoragePoolVO> listByHostTemplate(long hostId, long templateId, String configuration) {
+    public List<VMTemplateStoragePoolVO> listByHostTemplate(long hostId, long templateId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         List<VMTemplateStoragePoolVO> result = new ArrayList<VMTemplateStoragePoolVO>();
         String sql = HOST_TEMPLATE_SEARCH;
-        sql += StringUtils.isBlank(configuration) ? "IS NULL" : "= ?";
         try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
             pstmt.setLong(1, hostId);
             pstmt.setLong(2, templateId);
-            if (StringUtils.isNotBlank(configuration)) {
-                pstmt.setString(3, configuration);
-            }
             try(ResultSet rs = pstmt.executeQuery();) {
                 while (rs.next()) {
                     // result.add(toEntityBean(rs, false)); TODO: this is buggy in
@@ -254,7 +245,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
     @Override
     public boolean templateAvailable(long templateId, long hostId) {
-        VMTemplateStorageResourceAssoc tmpltPool = findByPoolTemplate(hostId, templateId, null);
+        VMTemplateStorageResourceAssoc tmpltPool = findByPoolTemplate(hostId, templateId);
         if (tmpltPool == null)
             return false;
 
@@ -271,9 +262,9 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     }
 
     @Override
-    public VMTemplateStoragePoolVO findByHostTemplate(Long hostId, Long templateId, String configuration) {
-        List<VMTemplateStoragePoolVO> result = listByHostTemplate(hostId, templateId, configuration);
-        return (result.size() == 0) ? null : result.get(0);
+    public VMTemplateStoragePoolVO findByHostTemplate(Long hostId, Long templateId) {
+        List<VMTemplateStoragePoolVO> result = listByHostTemplate(hostId, templateId);
+        return (result.size() == 0) ? null : result.get(1);
     }
 
     @Override

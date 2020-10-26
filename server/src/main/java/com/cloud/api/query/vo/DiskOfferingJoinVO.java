@@ -159,9 +159,6 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = "state")
     DiskOffering.State state;
 
-    @Column(name = "vsphere_storage_policy")
-    String vsphereStoragePolicy;
-
     public DiskOfferingJoinVO() {
     }
 
@@ -345,9 +342,5 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public void setState(DiskOffering.State state) {
         this.state = state;
-    }
-
-    public String getVsphereStoragePolicy() {
-        return vsphereStoragePolicy;
     }
 }

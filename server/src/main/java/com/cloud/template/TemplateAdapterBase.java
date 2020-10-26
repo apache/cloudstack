@@ -23,15 +23,12 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.storage.upload.params.IsoUploadParams;
 import com.cloud.storage.upload.params.TemplateUploadParams;
 import com.cloud.storage.upload.params.UploadParams;
-import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -132,16 +129,16 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     @Override
     public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
         Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName,
-        Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
+        Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload) throws ResourceAllocationException {
         return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId,
-            hypervisorType, chksum, bootable, null, null, details, false, null, false, TemplateType.USER, directDownload, deployAsIs);
+            hypervisorType, chksum, bootable, null, null, details, false, null, false, TemplateType.USER, directDownload);
     }
 
     @Override
     public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
         Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneIdList, HypervisorType hypervisorType, String chksum,
         Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
-        TemplateType templateType, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
+        TemplateType templateType, boolean directDownload) throws ResourceAllocationException {
         //Long accountId = null;
         // parameters verification
 
@@ -169,11 +166,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
             if (requiresHVM == null) {
                 requiresHVM = true;
-            }
-            if (deployAsIs) {
-                GuestOS deployAsIsGuestOs = ApiDBUtils.findGuestOSByDisplayName(DeployAsIsConstants.DEFAULT_GUEST_OS_DEPLOY_AS_IS);
-                s_logger.info("Setting default guest OS for deploy-as-is template while the template registration is not completed");
-                guestOSId = deployAsIsGuestOs.getId();
             }
         }
 
@@ -265,7 +257,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         CallContext.current().setEventDetails("Id: " + id + " name: " + name);
         return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
             hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
-            sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload, deployAsIs);
+            sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload);
 
     }
 
@@ -291,23 +283,9 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
         }
 
-        Map details = cmd.getDetails();
-        if (hypervisorType == HypervisorType.VMware) {
-            if (MapUtils.isNotEmpty(details)) {
-                if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
-                    s_logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
-                    details.remove(VmDetailConstants.ROOT_DISK_CONTROLLER);
-                }
-                if (details.containsKey(VmDetailConstants.NIC_ADAPTER)) {
-                    s_logger.info("Ignoring the nicAdapter detail provided, as we honour what is defined in the template");
-                    details.remove(VmDetailConstants.NIC_ADAPTER);
-                }
-            }
-        }
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
-                cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER,
-                cmd.isDirectDownload(), cmd.isDeployAsIs());
+                cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER, cmd.isDirectDownload());
 
     }
 
@@ -338,7 +316,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
                 params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
-                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload(), false);
+                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload());
     }
 
     @Override
@@ -380,7 +358,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, cmd.isPasswordEnabled(), true, cmd.getUrl(), cmd.isPublic(),
             cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(), zoneList, HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null,
-            owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER, cmd.isDirectDownload(), false);
+            owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER, cmd.isDirectDownload());
     }
 
     protected VMTemplateVO persistTemplate(TemplateProfile profile, VirtualMachineTemplate.State initialState) {
@@ -389,7 +367,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.isPublic(), profile.isFeatured(), profile.isExtractable(),
                 profile.getTemplateType(), profile.getUrl(), profile.isRequiresHVM(), profile.getBits(), profile.getAccountId(), profile.getCheckSum(),
                 profile.getDisplayText(), profile.isPasswordEnabled(), profile.getGuestOsId(), profile.isBootable(), profile.getHypervisorType(),
-                profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload(), profile.isDeployAsIs());
+                profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload());
         template.setState(initialState);
 
         if (profile.isDirectDownload()) {

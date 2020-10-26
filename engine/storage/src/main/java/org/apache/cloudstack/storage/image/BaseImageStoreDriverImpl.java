@@ -32,10 +32,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.Upload;
-import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -55,6 +51,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -62,9 +60,11 @@ import com.cloud.agent.api.storage.CreateDatadiskTemplateCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.GetDatadisksAnswer;
 import com.cloud.agent.api.storage.GetDatadisksCommand;
+import com.cloud.agent.api.storage.OVFPropertyTO;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
@@ -72,25 +72,30 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.TemplateOVFPropertyVO;
+import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
-    private static final Logger LOGGER = Logger.getLogger(BaseImageStoreDriverImpl.class);
-
+    private static final Logger s_logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
     @Inject
     protected VMTemplateDao _templateDao;
     @Inject
@@ -110,13 +115,15 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     AlertManager _alertMgr;
     @Inject
+    VMTemplateDetailsDao _templateDetailsDao;
+    @Inject
     DefaultEndPointSelector _defaultEpSelector;
     @Inject
     AccountDao _accountDao;
     @Inject
     ResourceLimitService _resourceLimitMgr;
     @Inject
-    DeployAsIsHelper deployAsIsHelper;
+    TemplateOVFPropertiesDao templateOvfPropertiesDao;
     @Inject
     HostDao hostDao;
     @Inject
@@ -177,45 +184,63 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         caller.setContext(context);
         if (data.getType() == DataObjectType.TEMPLATE) {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Downloading template to data store " + dataStore.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Downloading template to data store " + dataStore.getId());
             }
             _downloadMonitor.downloadTemplateToStorage(data, caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
             caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Downloading volume to data store " + dataStore.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Downloading volume to data store " + dataStore.getId());
             }
             _downloadMonitor.downloadVolumeToStorage(data, caller);
         }
     }
 
+    /**
+     * Persist OVF properties as template details for template with id = templateId
+     */
+    private void persistOVFProperties(List<OVFPropertyTO> ovfProperties, long templateId) {
+        List<TemplateOVFPropertyVO> listToPersist = new ArrayList<>();
+        for (OVFPropertyTO property : ovfProperties) {
+            if (!templateOvfPropertiesDao.existsOption(templateId, property.getKey())) {
+                TemplateOVFPropertyVO option = new TemplateOVFPropertyVO(templateId, property.getKey(), property.getType(),
+                        property.getValue(), property.getQualifiers(), property.isUserConfigurable(),
+                        property.getLabel(), property.getDescription(), property.isPassword());
+                if (property.isPassword()) {
+                    String encryptedPassword = DBEncryptionUtil.encrypt(property.getValue());
+                    option.setValue(encryptedPassword);
+                }
+                listToPersist.add(option);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(listToPersist)) {
+            s_logger.debug("Persisting " + listToPersist.size() + " OVF properties for template " + templateId);
+            templateOvfPropertiesDao.saveOptions(listToPersist);
+        }
+    }
+
     protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
-                                               CreateContext<CreateCmdResult> context) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Performing image store createTemplate async callback");
+        CreateContext<CreateCmdResult> context) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Performing image store createTemplate async callback");
         }
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();
+        List<OVFPropertyTO> ovfProperties = answer.getOvfProperties();
 
-        VMTemplateVO template = _templateDao.findById(obj.getId());
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                if (template.isDeployAsIs()) {
-                    boolean persistDeployAsIs = deployAsIsHelper.persistTemplateDeployAsIsDetails(template.getId(), answer, tmpltStoreVO);
-                    if (!persistDeployAsIs) {
-                        LOGGER.info("Failed persisting deploy-as-is template details for template " + template.getName());
-                        return null;
-                    }
+                if (CollectionUtils.isNotEmpty(ovfProperties)) {
+                    persistOVFProperties(ovfProperties, obj.getId());
                 }
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
                 return null;
             }
-            LOGGER.info("Updating store ref entry for template " + template.getName());
             TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
             updateBuilder.setDownloadPercent(answer.getDownloadPct());
             updateBuilder.setDownloadState(answer.getDownloadStatus());
@@ -236,19 +261,22 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
 
         if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR ||
-                answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+            answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
             String msg = "Failed to register template: " + obj.getUuid() + " with error: " + answer.getErrorString();
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED, _vmTemplateZoneDao.listByTemplateId(obj.getId()).get(0).getZoneId(), null, msg, msg);
-            LOGGER.error(msg);
+            s_logger.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             if (answer.getCheckSum() != null) {
                 VMTemplateVO templateDaoBuilder = _templateDao.createForUpdate();
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
+            }
+            if (CollectionUtils.isNotEmpty(ovfProperties)) {
+                persistOVFProperties(ovfProperties, obj.getId());
             }
 
             CreateCmdResult result = new CreateCmdResult(null, null);
@@ -258,7 +286,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     protected Void
-    createVolumeAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback, CreateContext<CreateCmdResult> context) {
+        createVolumeAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback, CreateContext<CreateCmdResult> context) {
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();
@@ -266,8 +294,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         VolumeDataStoreVO volStoreVO = _volumeStoreDao.findByStoreVolume(store.getId(), obj.getId());
         if (volStoreVO != null) {
             if (volStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Volume is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Volume is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
                 return null;
             }
@@ -291,7 +319,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
 
         if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR ||
-                answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+            answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
@@ -299,7 +327,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             String msg = "Failed to upload volume: " + obj.getUuid() + " with error: " + answer.getErrorString();
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
                     (volStoreVO == null ? -1L : volStoreVO.getZoneId()), null, msg, msg);
-            LOGGER.error(msg);
+            s_logger.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
@@ -316,7 +344,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             Answer answer = null;
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                LOGGER.error(errMsg);
+                s_logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
             } else {
                 answer = ep.sendMessage(cmd);
@@ -325,7 +353,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 result.setResult(answer.getDetails());
             }
         } catch (Exception ex) {
-            LOGGER.debug("Unable to destoy " + data.getType().toString() + ": " + data.getId(), ex);
+            s_logger.debug("Unable to destoy " + data.getType().toString() + ": " + data.getId(), ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -349,7 +377,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             List<EndPoint> eps = _epSelector.findAllEndpointsForScope(srcdata.getDataStore());
             if (eps == null || eps.isEmpty()) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                LOGGER.error(errMsg);
+                s_logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
             } else {
                 // select endpoint with least number of commands running on them
@@ -386,16 +414,25 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             return answer;
         }  catch (AgentUnavailableException e) {
             errMsg = e.toString();
-            LOGGER.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
+            s_logger.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
         } catch (OperationTimedoutException e) {
             errMsg = e.toString();
-            LOGGER.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
+            s_logger.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
         }
         throw new CloudRuntimeException("Failed to send command, due to Agent:" + endPoint.getId() + ", " + errMsg);
     }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
+        DataStore srcStore = srcData.getDataStore();
+        DataStore destStore = destData.getDataStore();
+        if ((srcData.getDataStore().getTO() instanceof NfsTO && destData.getDataStore().getTO() instanceof NfsTO) &&
+                (srcStore.getRole() == DataStoreRole.Image && destStore.getRole() == DataStoreRole.Image) &&
+                ((srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE) ||
+                (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) ||
+                (srcData.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME))) {
+            return true;
+        }
         return false;
     }
 
@@ -408,18 +445,18 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     @Override
-    public List<DatadiskTO> getDataDiskTemplates(DataObject obj, String configurationId) {
+    public List<DatadiskTO> getDataDiskTemplates(DataObject obj) {
         List<DatadiskTO> dataDiskDetails = new ArrayList<DatadiskTO>();
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Get the data disks present in the OVA template");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Get the data disks present in the OVA template");
         }
         DataStore store = obj.getDataStore();
-        GetDatadisksCommand cmd = new GetDatadisksCommand(obj.getTO(), configurationId);
+        GetDatadisksCommand cmd = new GetDatadisksCommand(obj.getTO());
         EndPoint ep = _defaultEpSelector.select(store);
         Answer answer = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            LOGGER.error(errMsg);
+            s_logger.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
         } else {
             answer = ep.sendMessage(cmd);
@@ -438,14 +475,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, String diskId, boolean bootable, long fileSize, AsyncCompletionCallback<CreateCmdResult> callback) {
         Answer answer = null;
         String errMsg = null;
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Create Datadisk template: " + dataDiskTemplate.getId());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Create Datadisk template: " + dataDiskTemplate.getId());
         }
         CreateDatadiskTemplateCommand cmd = new CreateDatadiskTemplateCommand(dataDiskTemplate.getTO(), path, diskId, fileSize, bootable);
         EndPoint ep = _defaultEpSelector.select(dataDiskTemplate.getDataStore());
         if (ep == null) {
             errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            LOGGER.error(errMsg);
+            s_logger.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
         } else {
             answer = ep.sendMessage(cmd);
@@ -459,12 +496,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-    private Integer getCopyCmdsCountToSpecificSSVM(Long ssvmId) {
-        return _cmdExecLogDao.getCopyCmdCountForSSVM(ssvmId);
-    }
-
     private List<Long> ssvmWithLeastMigrateJobs() {
-        LOGGER.debug("Picking ssvm from the pool with least commands running on it");
+        s_logger.debug("Picking ssvm from the pool with least commands running on it");
         String query = "select host_id, count(*) from cmd_exec_log group by host_id order by 2;";
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
@@ -477,7 +510,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 result.add((long) rs.getInt(1));
             }
         } catch (SQLException e) {
-            LOGGER.debug("SQLException caught", e);
+            s_logger.debug("SQLException caught", e);
         }
         return result;
     }

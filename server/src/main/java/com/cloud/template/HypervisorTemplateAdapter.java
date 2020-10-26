@@ -25,12 +25,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.Config;
-import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -66,6 +60,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -94,6 +89,9 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class HypervisorTemplateAdapter extends TemplateAdapterBase {
@@ -128,10 +126,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     ResourceManager resourceManager;
     @Inject
     VMTemplateDao templateDao;
-    @Inject
-    private VMTemplateDetailsDao templateDetailsDao;
-    @Inject
-    private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     @Override
     public String getName() {
@@ -247,14 +241,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
     private void createTemplateWithinZone(Long zId, TemplateProfile profile, VMTemplateVO template) {
         // find all eligible image stores for this zone scope
-        List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zId));
+        List<DataStore> imageStores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zId));
         if (imageStores == null || imageStores.size() == 0) {
             throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
         }
 
         Set<Long> zoneSet = new HashSet<Long>();
-        Collections.shuffle(imageStores);
-        // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
         for (DataStore imageStore : imageStores) {
             // skip data stores for a disabled zone
             Long zoneId = imageStore.getScope().getScopeId();
@@ -314,7 +306,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     zoneId = profile.getZoneIdList().get(0);
 
                 // find all eligible image stores for this zone scope
-                List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+                List<DataStore> imageStores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
                 if (imageStores == null || imageStores.size() == 0) {
                     throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
                 }
@@ -597,12 +589,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // remove its related ACL permission
             Pair<Class<?>, Long> tmplt = new Pair<Class<?>, Long>(VirtualMachineTemplate.class, template.getId());
             _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
-
-            // Remove template details
-            templateDetailsDao.removeDetails(template.getId());
-
-            // Remove deploy-as-is details (if any)
-            templateDeployAsIsDetailsDao.removeDetails(template.getId());
 
         }
         return success;

@@ -196,10 +196,6 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough", since = "4.14")
     private String cacheMode;
 
-    @SerializedName("vspherestoragepolicy")
-    @Param(description = "the vsphere storage policy tagged to the service offering in case of VMware", since = "4.15")
-    private String vsphereStoragePolicy;
-
     public ServiceOfferingResponse() {
     }
 
@@ -459,13 +455,4 @@ public class ServiceOfferingResponse extends BaseResponse {
     public void setCacheMode(String cacheMode) {
         this.cacheMode = cacheMode;
     }
-
-    public String getVsphereStoragePolicy() {
-        return vsphereStoragePolicy;
-    }
-
-    public void setVsphereStoragePolicy(String vsphereStoragePolicy) {
-        this.vsphereStoragePolicy = vsphereStoragePolicy;
-    }
-
 }

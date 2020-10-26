@@ -17,11 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
-import java.util.Map;
 
-import com.cloud.dc.VsphereStoragePolicyVO;
-import com.cloud.dc.dao.VsphereStoragePolicyDao;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -34,14 +30,9 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-import javax.inject.Inject;
-
 @Component
 public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJoinVO, Long> implements ServiceOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(ServiceOfferingJoinDaoImpl.class);
-
-    @Inject
-    VsphereStoragePolicyDao _vsphereStoragePolicyDao;
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
 
@@ -108,19 +99,11 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setIopsWriteRate(offering.getIopsWriteRate());
         offeringResponse.setIopsWriteRateMax(offering.getIopsWriteRateMax());
         offeringResponse.setIopsWriteRateMaxLength(offering.getIopsWriteRateMaxLength());
-        Map<String, String> offeringDetails = ApiDBUtils.getResourceDetails(offering.getId(), ResourceObjectType.ServiceOffering);
-        offeringResponse.setDetails(offeringDetails);
+        offeringResponse.setDetails(ApiDBUtils.getResourceDetails(offering.getId(), ResourceObjectType.ServiceOffering));
         offeringResponse.setObjectName("serviceoffering");
         offeringResponse.setIscutomized(offering.isDynamic());
         offeringResponse.setCacheMode(offering.getCacheMode());
-        if (offeringDetails != null && !offeringDetails.isEmpty()) {
-            String vsphereStoragePolicyId = offeringDetails.get(ApiConstants.STORAGE_POLICY);
-            if (vsphereStoragePolicyId != null) {
-                VsphereStoragePolicyVO vsphereStoragePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(vsphereStoragePolicyId));
-                if (vsphereStoragePolicyVO != null)
-                    offeringResponse.setVsphereStoragePolicy(vsphereStoragePolicyVO.getName());
-            }
-        }
+
         return offeringResponse;
     }
 

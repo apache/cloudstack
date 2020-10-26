@@ -62,9 +62,6 @@ public class VolumeObjectTO implements DataTO {
     private Hypervisor.HypervisorType hypervisorType;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
-    private boolean deployAsIs;
-    private String updatedDataStoreUUID;
-    private String vSphereStoragePolicyId;
 
     public VolumeObjectTO() {
 
@@ -105,8 +102,6 @@ public class VolumeObjectTO implements DataTO {
         setDeviceId(volume.getDeviceId());
         this.migrationOptions = volume.getMigrationOptions();
         this.directDownload = volume.isDirectDownload();
-        this.deployAsIs = volume.isDeployAsIs();
-        this.vSphereStoragePolicyId = volume.getvSphereStoragePolicyId();
     }
 
     public String getUuid() {
@@ -317,25 +312,5 @@ public class VolumeObjectTO implements DataTO {
 
     public boolean isDirectDownload() {
         return directDownload;
-    }
-
-    public boolean isDeployAsIs() {
-        return deployAsIs;
-    }
-
-    public String getUpdatedDataStoreUUID() {
-        return updatedDataStoreUUID;
-    }
-
-    public void setUpdatedDataStoreUUID(String updatedDataStoreUUID) {
-        this.updatedDataStoreUUID = updatedDataStoreUUID;
-    }
-
-    public String getvSphereStoragePolicyId() {
-        return vSphereStoragePolicyId;
-    }
-
-    public void setvSphereStoragePolicyId(String vSphereStoragePolicyId) {
-        this.vSphereStoragePolicyId = vSphereStoragePolicyId;
     }
 }

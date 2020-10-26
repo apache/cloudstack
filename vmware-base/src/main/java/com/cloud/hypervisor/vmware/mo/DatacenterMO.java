@@ -186,20 +186,6 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public ManagedObjectReference listDatastore(String name) throws Exception {
-        assert (name != null);
-
-        List<ObjectContent> ocs = getDatastorePropertiesOnDatacenter(new String[] {"name"});
-        if (ocs != null) {
-            for (ObjectContent oc : ocs) {
-                if (oc.getPropSet().get(0).getVal().toString().equals(name)) {
-                    return oc.getObj();
-                }
-            }
-        }
-        return null;
-    }
-
     public ManagedObjectReference findHost(String name) throws Exception {
         List<ObjectContent> ocs = getHostPropertiesOnDatacenterHostFolder(new String[] {"name"});
 

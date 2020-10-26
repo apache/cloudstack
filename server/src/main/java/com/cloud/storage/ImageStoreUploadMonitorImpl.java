@@ -408,11 +408,11 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             VMTemplateVO templateUpdate = _templateDao.createForUpdate();
                             templateUpdate.setSize(answer.getVirtualSize());
                             _templateDao.update(tmpTemplate.getId(), templateUpdate);
-                            // For multi-disk OVA, check and create data disk templates or root disks as details
+                            // For multi-disk OVA, check and create data disk templates
                             if (tmpTemplate.getFormat().equals(Storage.ImageFormat.OVA)) {
                                 final DataStore store = dataStoreManager.getDataStore(templateDataStore.getDataStoreId(), templateDataStore.getDataStoreRole());
                                 final TemplateInfo templateInfo = templateFactory.getTemplate(tmpTemplate.getId(), store);
-                                if (!templateService.createOvaDataDiskTemplates(templateInfo, template.isDeployAsIs())) {
+                                if (!templateService.createOvaDataDiskTemplates(templateInfo)) {
                                     tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.ABANDONED);
                                     tmpTemplateDataStore.setState(State.Failed);
                                     stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);

@@ -263,13 +263,13 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
 
         Answer answer = sendDirectDownloadCommand(cmd, template, poolId, host);
 
-        VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId, null);
+        VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId);
         if (sPoolRef == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Not found (templateId:" + templateId + " poolId: " + poolId + ") in template_spool_ref, persisting it");
             }
             DirectDownloadAnswer ans = (DirectDownloadAnswer) answer;
-            sPoolRef = new VMTemplateStoragePoolVO(poolId, templateId, null);
+            sPoolRef = new VMTemplateStoragePoolVO(poolId, templateId);
             sPoolRef.setDownloadPercent(100);
             sPoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
             sPoolRef.setState(ObjectInDataStoreStateMachine.State.Ready);

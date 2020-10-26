@@ -72,6 +72,4 @@
     
     <bean id="imageStoreDetailsUtil" class="com.cloud.storage.ImageStoreDetailsUtil" />
 
-    <bean id="deployAsIsImageStoreHelper" class="org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelperImpl" />
-
 </beans>

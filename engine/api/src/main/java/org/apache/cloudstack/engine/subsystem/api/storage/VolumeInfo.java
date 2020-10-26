@@ -83,10 +83,4 @@ public interface VolumeInfo extends DataObject, Volume {
     boolean isDirectDownload();
 
     void setDirectDownload(boolean directDownload);
-
-    boolean isDeployAsIs();
-
-    String getDeployAsIsConfiguration();
-
-    public String getvSphereStoragePolicyId();
 }

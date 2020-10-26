@@ -19,8 +19,6 @@
 
 package com.cloud.agent.api;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import com.cloud.storage.template.TemplateProp;
@@ -29,8 +27,6 @@ public class ModifyStoragePoolAnswer extends Answer {
     private StoragePoolInfo poolInfo;
     private Map<String, TemplateProp> templateInfo;
     private String localDatastoreName;
-    private String poolType;
-    private List<ModifyStoragePoolAnswer> datastoreClusterChildren = new ArrayList<>();;
 
     public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateProp> tInfo) {
         super(cmd);
@@ -64,21 +60,5 @@ public class ModifyStoragePoolAnswer extends Answer {
 
     public String getLocalDatastoreName() {
         return localDatastoreName;
-    }
-
-    public String getPoolType() {
-        return poolType;
-    }
-
-    public void setPoolType(String poolType) {
-        this.poolType = poolType;
-    }
-
-    public List<ModifyStoragePoolAnswer> getDatastoreClusterChildren() {
-        return datastoreClusterChildren;
-    }
-
-    public void setDatastoreClusterChildren(List<ModifyStoragePoolAnswer> datastoreClusterChildren) {
-        this.datastoreClusterChildren = datastoreClusterChildren;
     }
 }

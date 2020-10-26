@@ -77,8 +77,4 @@ public class TaskMO extends BaseMO {
 
         return sb.toString();
     }
-
-    public static TaskInfo getTaskInfo(VmwareContext context, ManagedObjectReference morTask) throws Exception {
-        return (TaskInfo)context.getVimClient().getDynamicProperty(morTask, "info");
-    }
 }
