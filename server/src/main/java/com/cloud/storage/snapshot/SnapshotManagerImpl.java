@@ -553,6 +553,23 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
+    public void markFailedSnapshot(long snapshotId) {
+        Account caller = CallContext.current().getCallingAccount();
+
+        // Verify parameters
+        SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
+
+        if (snapshotCheck == null) {
+            throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
+        }
+
+        _accountMgr.checkAccess(caller, null, true, snapshotCheck);
+
+        snapshotCheck.setState(Snapshot.State.Error);
+        _snapshotDao.update(snapshotId, snapshotCheck);
+
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_DELETE, eventDescription = "deleting snapshot", async = true)
