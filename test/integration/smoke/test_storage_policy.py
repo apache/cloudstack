@@ -234,13 +234,6 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
            )
         self.cleanup.append(volume)
 
-        self.debug(
-            "Attaching volume (ID: %s) to VM (ID: %s)" % (
-                volume.id,
-                virtual_machine.id
-            ))
-        virtual_machine.attach_volume(self.apiclient, volume)
-
         list_volume_response = Volume.list(
             self.apiclient,
             id=volume.id
@@ -255,27 +248,4 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
             None,
             "Check if volume exists in ListVolumes"
         )
-        volume = list_volume_response[0]
-        self.assertNotEqual(
-            volume.virtualmachineid,
-            None,
-            "Check if volume state (attached) is reflected"
-        )
-
-        self.debug(
-                "Detaching volume (ID: %s) from VM (ID: %s)" % (
-                                                    volume.id,
-                                                    virtual_machine.id
-                                                    ))
-        virtual_machine.detach_volume(self.apiclient, volume)
-        list_volume_response = Volume.list(
-                                                self.apiclient,
-                                                id=volume.id
-                                                )
-        volume = list_volume_response[0]
-        self.assertEqual(
-                         volume.virtualmachineid,
-                         None,
-                         "Check if volume state (detached) is reflected"
-                         )
         return
