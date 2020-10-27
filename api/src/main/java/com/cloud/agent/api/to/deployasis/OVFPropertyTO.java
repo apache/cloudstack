@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,60 +15,40 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package com.cloud.storage;
+package com.cloud.agent.api.to.deployasis;
 
-import com.cloud.agent.api.storage.OVFProperty;
+import com.cloud.agent.api.LogLevel;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+/**
+ * Used to represent travel objects like:
+ * <Property ovf:key="RouteDefault" ovf:type="string" ovf:qualifiers="ValueMap{&quot;Default Route&quot;,&quot;Remote HTTP and SSH Client Routes&quot;}" ovf:value="Default Route" ovf:userConfigurable="true">
+ *         <Label>Select Route Type</Label>
+ *         <Description>Select the route/gateway type.
+ * Choose "Default Route" to route all traffic through the Management gateway. Use this option when enabling Smart Licensing registration at initial deployment.
+ * Choose "Remote HTTP and SSH Client Routes" to route only traffic destined for the management client(s), when they are on remote networks.</Description>
+ *       </Property>
+ */
+public class OVFPropertyTO implements TemplateDeployAsIsInformationTO {
 
-@Entity
-@Table(name = "template_ovf_properties")
-public class TemplateOVFPropertyVO implements OVFProperty {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private long id;
-
-    @Column(name = "template_id")
-    private Long templateId;
-
-    @Column(name = "key")
     private String key;
-
-    @Column(name = "type")
     private String type;
-
-    @Column(name = "value")
+    @LogLevel(LogLevel.Log4jLevel.Off)
     private String value;
-
-    @Column(name = "qualifiers")
     private String qualifiers;
-
-    @Column(name = "password")
-    private Boolean password;
-
-    @Column(name = "user_configurable")
     private Boolean userConfigurable;
-
-    @Column(name = "label")
     private String label;
-
-    @Column(name = "description")
     private String description;
+    private Boolean password;
+    private int index;
+    private String category;
 
-    public TemplateOVFPropertyVO() {
+    public OVFPropertyTO() {
     }
 
-    public TemplateOVFPropertyVO(Long templateId, String key, String type, String value, String qualifiers,
-                                 Boolean userConfigurable, String label, String description, Boolean password) {
-        this.templateId = templateId;
+    public OVFPropertyTO(String key, String type, String value, String qualifiers, boolean userConfigurable,
+                       String label, String description, boolean password, int index, String category) {
         this.key = key;
         this.type = type;
         this.value = value;
@@ -76,22 +57,12 @@ public class TemplateOVFPropertyVO implements OVFProperty {
         this.label = label;
         this.description = description;
         this.password = password;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
+        this.index = index;
+        this.category = category;
     }
 
     public Long getTemplateId() {
-        return templateId;
-    }
-
-    public void setTemplateId(Long templateId) {
-        this.templateId = templateId;
+        return null;
     }
 
     public String getKey() {
@@ -126,7 +97,6 @@ public class TemplateOVFPropertyVO implements OVFProperty {
         this.qualifiers = qualifiers;
     }
 
-    @Override
     public Boolean isUserConfigurable() {
         return userConfigurable;
     }
@@ -159,9 +129,11 @@ public class TemplateOVFPropertyVO implements OVFProperty {
         this.password = password;
     }
 
-    @Override
-    public String toString() {
-        return String.format("PROP - templateId=%s> key=%s value=%s type=%s qual=%s conf=%s label=%s desc=%s password=%s",
-                templateId, key, value, type, qualifiers, userConfigurable, label, description, password);
+    public String getCategory() {
+        return category;
+    }
+
+    public int getIndex() {
+        return index;
     }
 }

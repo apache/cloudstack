@@ -20,6 +20,8 @@ import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.StringUtils;
+import com.vmware.pbm.PbmPortType;
+import com.vmware.pbm.PbmServiceInstanceContent;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
@@ -146,6 +148,14 @@ public class VmwareContext {
 
     public ServiceContent getServiceContent() {
         return _vimClient.getServiceContent();
+    }
+
+    public PbmPortType getPbmService() {
+        return _vimClient.getPbmService();
+    }
+
+    public PbmServiceInstanceContent getPbmServiceContent() {
+        return _vimClient.getPbmServiceContent();
     }
 
     public ManagedObjectReference getPropertyCollector() {
@@ -311,6 +321,24 @@ public class VmwareContext {
         return dcMo.findDatastore(tokens[1]);
     }
 
+    // path in format of <datacenter name>/<datastore name>
+    public String getDatastoreNameFromPath(String inventoryPath) throws Exception {
+        assert (inventoryPath != null);
+
+        String[] tokens;
+        if (inventoryPath.startsWith("/"))
+            tokens = inventoryPath.substring(1).split("/");
+        else
+            tokens = inventoryPath.split("/");
+
+        if (tokens == null || tokens.length != 2) {
+            s_logger.error("Invalid datastore inventory path. path: " + inventoryPath);
+            return null;
+        }
+
+        return tokens[1];
+    }
+
     public void waitForTaskProgressDone(ManagedObjectReference morTask) throws Exception {
         while (true) {
             TaskInfo tinfo = (TaskInfo)_vimClient.getDynamicProperty(morTask, "info");
@@ -339,32 +367,32 @@ public class VmwareContext {
         out.close();
     }
 
-    public void uploadFile(String urlString, String localFileFullName) throws Exception {
-        uploadFile(urlString, new File(localFileFullName));
-    }
+    public void uploadFile(String httpMethod, String urlString, String localFileName) throws Exception {
+        HttpURLConnection conn = getRawHTTPConnection(urlString);
 
-    public void uploadFile(String urlString, File localFile) throws Exception {
-        HttpURLConnection conn = getHTTPConnection(urlString, "PUT");
+        conn.setDoOutput(true);
+        conn.setUseCaches(false);
+
+        conn.setChunkedStreamingMode(ChunkSize);
+        conn.setRequestMethod(httpMethod);
+        conn.setRequestProperty("Connection", "Keep-Alive");
+        String contentType = "application/octet-stream";
+        conn.setRequestProperty("Content-Type", contentType);
+        conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
+        connectWithRetry(conn);
         OutputStream out = null;
         InputStream in = null;
         BufferedReader br = null;
 
         try {
             out = conn.getOutputStream();
-            in = new FileInputStream(localFile);
+            in = new FileInputStream(localFileName);
             byte[] buf = new byte[ChunkSize];
             int len = 0;
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
             }
             out.flush();
-
-            br = new BufferedReader(new InputStreamReader(conn.getInputStream(), getCharSetFromConnection(conn)));
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (s_logger.isTraceEnabled())
-                    s_logger.trace("Upload " + urlString + " response: " + line);
-            }
         } finally {
             if (in != null)
                 in.close();
@@ -374,6 +402,7 @@ public class VmwareContext {
 
             if (br != null)
                 br.close();
+            conn.disconnect();
         }
     }
 
@@ -398,8 +427,14 @@ public class VmwareContext {
 
         conn.setChunkedStreamingMode(ChunkSize);
         conn.setRequestMethod(httpMethod);
+        if (urlString.endsWith(".iso")) {
+            conn.setRequestProperty("Overwrite", "t");
+        }
         conn.setRequestProperty("Connection", "Keep-Alive");
-        conn.setRequestProperty("Content-Type", "application/x-vnd.vmware-streamVmdk");
+        String contentType = urlString.endsWith(".iso") ?
+                "application/octet-stream" :
+                "application/x-vnd.vmware-streamVmdk";
+        conn.setRequestProperty("Content-Type", contentType);
         conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
 

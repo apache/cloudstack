@@ -32,6 +32,7 @@ import java.util.concurrent.Executors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.to.DatadiskTO;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -616,6 +617,18 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     private void prepareTemplateInOneStoragePool(final VMTemplateVO template, final StoragePoolVO pool) {
         s_logger.info("Schedule to preload template " + template.getId() + " into primary storage " + pool.getId());
+        if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+            List<StoragePoolVO> childDataStores = _poolDao.listChildStoragePoolsInDatastoreCluster(pool.getId());
+            s_logger.debug("Schedule to preload template " + template.getId() + " into child datastores of DataStore cluster: " + pool.getId());
+            for (StoragePoolVO childDataStore :  childDataStores) {
+                prepareTemplateInOneStoragePoolInternal(template, childDataStore);
+            }
+        } else {
+            prepareTemplateInOneStoragePoolInternal(template, pool);
+        }
+    }
+
+    private void prepareTemplateInOneStoragePoolInternal(final VMTemplateVO template, final StoragePoolVO pool) {
         _preloadExecutor.execute(new ManagedContextRunnable() {
             @Override
             protected void runInContext() {
@@ -657,7 +670,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateStoragePoolVO templateStoragePoolRef = null;
         TemplateDataStoreVO templateStoreRef = null;
 
-        templateStoragePoolRef = _tmpltPoolDao.findByPoolTemplate(poolId, templateId);
+        templateStoragePoolRef = _tmpltPoolDao.findByPoolTemplate(poolId, templateId, null);
         if (templateStoragePoolRef != null) {
             templateStoragePoolRef.setMarkedForGC(false);
             _tmpltPoolDao.update(templateStoragePoolRef.getId(), templateStoragePoolRef);
@@ -697,7 +710,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     return null;
                 }
 
-                return _tmpltPoolDao.findByPoolTemplate(poolId, templateId);
+                return _tmpltPoolDao.findByPoolTemplate(poolId, templateId, null);
             } catch (Exception ex) {
                 s_logger.debug("failed to copy template from image store:" + srcSecStore.getName() + " to primary storage");
             }
@@ -1009,7 +1022,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         PrimaryDataStore pool = (PrimaryDataStore)_dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
-        TemplateInfo template = _tmplFactory.getTemplate(templatePoolRef.getTemplateId(), pool);
+        TemplateInfo template = _tmplFactory.getTemplateOnPrimaryStorage(templatePoolRef.getTemplateId(), pool, templatePoolRef.getDeploymentOption());
 
         try {
             if (s_logger.isDebugEnabled()) {
@@ -1885,7 +1898,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false);
 
         if (sourceTemplateId != null) {
             if (s_logger.isDebugEnabled()) {
@@ -2211,4 +2224,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public void setTemplateAdapters(List<TemplateAdapter> adapters) {
         _adapters = adapters;
     }
+
+    @Override
+    public List<DatadiskTO> getTemplateDisksOnImageStore(Long templateId, DataStoreRole role, String configurationId) {
+        TemplateInfo templateObject = _tmplFactory.getTemplate(templateId, role);
+        if (templateObject == null) {
+            String msg = String.format("Could not find template %s downloaded on store with role %s", templateId, role.toString());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return _tmpltSvr.getTemplateDatadisksOnImageStore(templateObject, configurationId);
+    }
+
 }

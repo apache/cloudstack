@@ -27,16 +27,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -453,7 +457,6 @@ import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.ListTemplateOVFProperties;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
@@ -835,6 +838,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private KeystoreManager _ksMgr;
     @Inject
     private DpdkHelper dpdkHelper;
+    @Inject
+    private PrimaryDataStoreDao _primaryDataStoreDao;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -1172,8 +1177,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Object resourceState = cmd.getResourceState();
         final Object haHosts = cmd.getHaHost();
 
-        final Pair<List<HostVO>, Integer> result = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, resourceState, haHosts, null,
-                null);
+        final Pair<List<HostVO>, Integer> result = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod,
+            cluster, id, keyword, resourceState, haHosts, null, null);
         return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
     }
 
@@ -1275,19 +1280,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair = null;
         List<HostVO> allHosts = null;
+        List<HostVO> hostsForMigrationWithStorage = null;
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword, null, null, srcHost.getHypervisorType(),
-                    srcHost.getHypervisorVersion());
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword,
+                null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion(), srcHost.getId());
             allHosts = allHostsPair.first();
-            allHosts.remove(srcHost);
+            hostsForMigrationWithStorage = new ArrayList<>(allHosts);
 
             for (final VolumeVO volume : volumes) {
                 StoragePool storagePool = _poolDao.findById(volume.getPoolId());
                 Long volClusterId = storagePool.getClusterId();
 
-                for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
+                for (Iterator<HostVO> iterator = hostsForMigrationWithStorage.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
 
                     if (volClusterId != null) {
@@ -1326,10 +1332,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Searching for all hosts in cluster " + cluster + " for migrating VM " + vm);
             }
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, keyword, null, null, null, null);
-            // Filter out the current host.
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, keyword, null, null, null,
+                null, srcHost.getId());
             allHosts = allHostsPair.first();
-            allHosts.remove(srcHost);
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         }
 
@@ -1358,7 +1363,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         for (final HostAllocator allocator : hostAllocators) {
             if (canMigrateWithStorage) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts, HostAllocator.RETURN_UPTO_ALL, false);
+                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, hostsForMigrationWithStorage, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
             }
@@ -1482,8 +1487,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else {
             suitablePools = allPools;
         }
-
+        List<StoragePool> avoidPools = new ArrayList<>();
+        if (srcVolumePool.getParent() != 0L) {
+            StoragePool datastoreCluster = _poolDao.findById(srcVolumePool.getParent());
+            avoidPools.add(datastoreCluster);
+        }
+        abstractDataStoreClustersList((List<StoragePool>) allPools, new ArrayList<StoragePool>());
+        abstractDataStoreClustersList((List<StoragePool>) suitablePools, avoidPools);
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+    }
+
+    private void abstractDataStoreClustersList(List<StoragePool> storagePools, List<StoragePool> avoidPools) {
+        Predicate<StoragePool> childDatastorePredicate = pool -> (pool.getParent() != 0);
+        List<StoragePool> childDatastores = storagePools.stream().filter(childDatastorePredicate).collect(Collectors.toList());
+        storagePools.removeAll(avoidPools);
+        if (!childDatastores.isEmpty()) {
+            storagePools.removeAll(childDatastores);
+            Set<Long> parentStoragePoolIds = childDatastores.stream().map(mo -> mo.getParent()).collect(Collectors.toSet());
+            for (Long parentStoragePoolId : parentStoragePoolIds) {
+                StoragePool parentPool = _poolDao.findById(parentStoragePoolId);
+                if (!storagePools.contains(parentPool) && !avoidPools.contains(parentPool))
+                    storagePools.add(parentPool);
+            }
+        }
     }
 
     /**
@@ -1550,12 +1576,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return suitablePools;
     }
 
-    private Pair<List<HostVO>, Integer> searchForServers(final Long startIndex, final Long pageSize, final Object name, final Object type, final Object state, final Object zone, final Object pod,
-            final Object cluster, final Object id, final Object keyword, final Object resourceState, final Object haHosts, final Object hypervisorType, final Object hypervisorVersion) {
+    private Pair<List<HostVO>, Integer> searchForServers(final Long startIndex, final Long pageSize, final Object name, final Object type,
+        final Object state, final Object zone, final Object pod, final Object cluster, final Object id, final Object keyword,
+        final Object resourceState, final Object haHosts, final Object hypervisorType, final Object hypervisorVersion, final Object... excludes) {
         final Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         final SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("idsNotIn", sb.entity().getId(), SearchCriteria.Op.NOTIN);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
@@ -1594,6 +1622,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (id != null) {
             sc.setParameters("id", id);
+        }
+
+        if (excludes != null && excludes.length > 0) {
+            sc.setParameters("idsNotIn", excludes);
         }
 
         if (name != null) {
@@ -3158,7 +3190,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RevokeTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(ListMgmtsCmd.class);
         cmdList.add(GetUploadParamsForIsoCmd.class);
-        cmdList.add(ListTemplateOVFProperties.class);
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
         cmdList.add(StartRollingMaintenanceCmd.class);
         cmdList.add(MigrateSecondaryStorageDataCmd.class);
@@ -3304,9 +3335,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("nulltype", sb.entity().getType(), SearchCriteria.Op.IN);
 
         if (storageId != null) {
-            final SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
-            volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-            sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            StoragePoolVO storagePool = _primaryDataStoreDao.findById(storageId);
+            if (storagePool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                final SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+                volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.IN);
+                sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            } else {
+                final SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+                volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+                sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            }
         }
 
         final SearchCriteria<VMInstanceVO> sc = sb.create();
@@ -3346,7 +3384,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (storageId != null) {
-            sc.setJoinParameters("volumeSearch", "poolId", storageId);
+            StoragePoolVO storagePool = _primaryDataStoreDao.findById(storageId);
+            if (storagePool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childDataStores = _primaryDataStoreDao.listChildStoragePoolsInDatastoreCluster(storageId);
+                List<Long> childDatastoreIds = childDataStores.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+                sc.setJoinParameters("volumeSearch", "poolId", childDatastoreIds.toArray());
+            } else {
+                sc.setJoinParameters("volumeSearch", "poolId", storageId);
+            }
         }
 
         final Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);

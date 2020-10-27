@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.Pod;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -1500,8 +1501,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         UserVmVO vm = _userVmDao.findById(vmId);
         VolumeVO exstingVolumeOfVm = null;
+        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
-        if (rootVolumesOfVm.size() > 1) {
+        if (rootVolumesOfVm.size() > 1 && template != null && !template.isDeployAsIs()) {
             throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state.");
         } else {
             if (!rootVolumesOfVm.isEmpty()) {
@@ -1776,7 +1778,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (pool.getDataCenterId() != volume.getDataCenterId()) {
                 throw new InvalidParameterValueException("Invalid storageId specified; refers to the pool outside of the volume's zone");
             }
-            volume.setPoolId(pool.getId());
+            if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(storageId);
+                Collections.shuffle(childDatastores);
+                volume.setPoolId(childDatastores.get(0).getId());
+            } else {
+                volume.setPoolId(pool.getId());
+            }
         }
 
         if (customId != null) {
@@ -2018,6 +2026,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
             DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+            Map<String, String> details = new HashMap<String, String>();
+            disk.setDetails(details);
+            if (volume.getPoolId() != null) {
+                StoragePoolVO poolVO = _storagePoolDao.findById(volume.getPoolId());
+                if (poolVO.getParent() != 0L) {
+                    details.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+                }
+            }
 
             DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
 
@@ -2038,6 +2054,34 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
+
+            if (answer != null) {
+                String datastoreName = answer.getContextParam("datastoreName");
+                if (datastoreName != null) {
+                    StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(datastoreName);
+                    if (storagePoolVO != null) {
+                        VolumeVO volumeVO = _volsDao.findById(volumeId);
+                        volumeVO.setPoolId(storagePoolVO.getId());
+                        _volsDao.update(volumeVO.getId(), volumeVO);
+                    } else {
+                        s_logger.warn(String.format("Unable to find datastore %s while updating the new datastore of the volume %d", datastoreName, volumeId));
+                    }
+                }
+
+                String volumePath = answer.getContextParam("volumePath");
+                if (volumePath != null) {
+                    VolumeVO volumeVO = _volsDao.findById(volumeId);
+                    volumeVO.setPath(volumePath);
+                    _volsDao.update(volumeVO.getId(), volumeVO);
+                }
+
+                String chainInfo = answer.getContextParam("chainInfo");
+                if (chainInfo != null) {
+                    VolumeVO volumeVO = _volsDao.findById(volumeId);
+                    volumeVO.setChainInfo(chainInfo);
+                    _volsDao.update(volumeVO.getId(), volumeVO);
+                }
+            }
 
             // volume.getPoolId() should be null if the VM we are detaching the disk from has never been started before
             if (volume.getPoolId() != null) {
@@ -2192,6 +2236,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Cannot migrate volume " + vol + "to the destination storage pool " + destPool.getName() + " as the storage pool is in maintenance mode.");
         }
 
+        String poolUuid =  destPool.getUuid();
+        if (destPool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+            DataCenter dc = _entityMgr.findById(DataCenter.class, vol.getDataCenterId());
+            Pod destPoolPod = _entityMgr.findById(Pod.class, destPool.getPodId());
+
+            destPool = _volumeMgr.findChildDataStoreInDataStoreCluster(dc, destPoolPod, destPool.getClusterId(), null, null, destPool.getId());
+        }
+
         if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(vol), destPool)) {
             throw new CloudRuntimeException("Storage pool " + destPool.getName() + " does not have enough space to migrate volume " + vol.getName());
         }
@@ -2230,6 +2282,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 updateMissingRootDiskController(vm, vol.getChainInfo());
             }
         }
+
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volumeId);
+        if (hypervisorType.equals(HypervisorType.VMware)) {
+            try {
+                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(vol), destPool);
+                if (!isStoragePoolStoragepolicyComplaince) {
+                    throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", poolUuid, vol.getUuid()));
+                }
+            } catch (StorageUnavailableException e) {
+                throw new CloudRuntimeException(String.format("Could not verify storage policy compliance against storage pool %s due to exception %s", destPool.getUuid(), e.getMessage()));
+            }
+        }
+
         DiskOfferingVO newDiskOffering = retrieveAndValidateNewDiskOffering(cmd);
         validateConditionsToReplaceDiskOfferingOfVolume(vol, newDiskOffering, destPool);
         if (vm != null) {
@@ -3027,6 +3092,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     details.put(DiskTO.CHAP_TARGET_USERNAME, chapInfo.getTargetUsername());
                     details.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
                 }
+
+                if (volumeToAttach.getPoolId() != null) {
+                    StoragePoolVO poolVO = _storagePoolDao.findById(volumeToAttach.getPoolId());
+                    if (poolVO.getParent() != 0L) {
+                        details.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+                    }
+                }
+
                 _userVmDao.loadDetails(vm);
                 Map<String, String> controllerInfo = new HashMap<String, String>();
                 controllerInfo.put(VmDetailConstants.ROOT_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER));
@@ -3055,7 +3128,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     if (volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
                         volumeToAttach.setPath(answer.getDisk().getPath());
+                        _volsDao.update(volumeToAttach.getId(), volumeToAttach);
+                    }
 
+                    String chainInfo = answer.getContextParam("chainInfo");
+                    if (chainInfo != null) {
+                        volumeToAttach = _volsDao.findById(volumeToAttach.getId());
+                        volumeToAttach.setChainInfo(chainInfo);
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
                 } else {

@@ -955,7 +955,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         } else if (dataType == DataObjectType.TEMPLATE) {
             s_logger.debug("Clone volume from a template");
 
-            VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId, dataObjectId);
+            VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId, dataObjectId, null);
 
             if (templatePoolRef != null) {
                 baseAppInstanceName = templatePoolRef.getLocalDownloadPath();
@@ -1114,7 +1114,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             iqn = appInstance.getIqn();
 
             VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId,
-                    templateInfo.getId());
+                    templateInfo.getId(), null);
 
             templatePoolRef.setInstallPath(DateraUtil.generateIqnPath(iqn));
             templatePoolRef.setLocalDownloadPath(appInstance.getName());
@@ -1505,7 +1505,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             DateraUtil.deleteAppInstance(conn, appInstanceName);
 
             VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId,
-                    templateInfo.getId());
+                    templateInfo.getId(), null);
 
             tmpltPoolDao.remove(templatePoolRef.getId());
 

@@ -119,6 +119,9 @@ public class StoragePoolVO implements StoragePool {
     @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisor;
 
+    @Column(name = "parent")
+    private Long parent = 0L;
+
     @Override
     public long getId() {
         return id;
@@ -375,6 +378,14 @@ public class StoragePoolVO implements StoragePool {
     @Override
     public boolean isLocal() {
         return !isShared();
+    }
+
+    public Long getParent() {
+        return parent;
+    }
+
+    public void setParent(Long parent) {
+        this.parent = parent;
     }
 
     @Override

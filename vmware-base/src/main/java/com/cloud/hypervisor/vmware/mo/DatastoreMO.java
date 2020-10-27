@@ -16,11 +16,10 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.exception.CloudException;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.utils.Pair;
+import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.DatastoreHostMount;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.FileInfo;
@@ -35,10 +34,10 @@ import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
+import org.apache.log4j.Logger;
 
-import com.cloud.exception.CloudException;
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -64,7 +63,7 @@ public class DatastoreMO extends BaseMO {
         return _name;
     }
 
-    public DatastoreSummary getSummary() throws Exception {
+    public DatastoreSummary getDatastoreSummary() throws Exception {
         return (DatastoreSummary)_context.getVimClient().getDynamicProperty(_mor, "summary");
     }
 
@@ -137,6 +136,16 @@ public class DatastoreMO extends BaseMO {
             fullPath = String.format("[%s] %s", datastoreName, path);
 
         _context.getService().makeDirectory(morFileManager, fullPath, morDc, true);
+
+        int retry = 2;
+        for (int i = 0; i < retry; i++) {
+            DatastoreFile datastoreFile = new DatastoreFile(fullPath);
+            if (!folderExists(String.format("[%s]", datastoreName), datastoreFile.getFileName())) {
+                _context.getService().makeDirectory(morFileManager, fullPath, morDc, true);
+            } else {
+                return;
+            }
+        }
     }
 
     String getDatastoreRootPath() throws Exception {
@@ -260,6 +269,17 @@ public class DatastoreMO extends BaseMO {
         if (!DatastoreFile.isFullDatastorePath(destFullPath))
             destFullPath = String.format("[%s] %s", destDsName, destFilePath);
 
+        DatastoreMO srcDsMo = new DatastoreMO(_context, morDestDs);
+        try {
+            if (!srcDsMo.fileExists(srcFullPath)) {
+                s_logger.error(String.format("Cannot move file to destination datastore due to file %s does not exists", srcFullPath));
+                return false;
+            }
+        } catch (Exception e) {
+            s_logger.error(String.format("Cannot move file to destination datastore due to file %s due to exeception %s", srcFullPath, e.getMessage()));
+            return false;
+        }
+
         ManagedObjectReference morTask = _context.getService().moveDatastoreFileTask(morFileManager, srcFullPath, morSrcDc, destFullPath, morDestDc, forceOverwrite);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
@@ -267,50 +287,9 @@ public class DatastoreMO extends BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            s_logger.error("VMware moveDatgastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            s_logger.error("VMware moveDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
-    }
-
-    public String[] getVmdkFileChain(String rootVmdkDatastoreFullPath) throws Exception {
-        Pair<DatacenterMO, String> dcPair = getOwnerDatacenter();
-
-        List<String> files = new ArrayList<>();
-        files.add(rootVmdkDatastoreFullPath);
-
-        String currentVmdkFullPath = rootVmdkDatastoreFullPath;
-        while (true) {
-            String url = getContext().composeDatastoreBrowseUrl(dcPair.second(), currentVmdkFullPath);
-            byte[] content = getContext().getResourceContent(url);
-            if (content == null || content.length == 0)
-                break;
-
-            VmdkFileDescriptor descriptor = new VmdkFileDescriptor();
-            descriptor.parse(content);
-
-            String parentFileName = descriptor.getParentFileName();
-            if (parentFileName == null)
-                break;
-
-            if (parentFileName.startsWith("/")) {
-                // when parent file is not at the same directory as it is, assume it is at parent directory
-                // this is only valid in Apache CloudStack primary storage deployment
-                DatastoreFile dsFile = new DatastoreFile(currentVmdkFullPath);
-                String dir = dsFile.getDir();
-                if (dir != null && dir.lastIndexOf('/') > 0)
-                    dir = dir.substring(0, dir.lastIndexOf('/'));
-                else
-                    dir = "";
-
-                currentVmdkFullPath = new DatastoreFile(dsFile.getDatastoreName(), dir, parentFileName.substring(parentFileName.lastIndexOf('/') + 1)).getPath();
-                files.add(currentVmdkFullPath);
-            } else {
-                currentVmdkFullPath = DatastoreFile.getCompanionDatastorePath(currentVmdkFullPath, parentFileName);
-                files.add(currentVmdkFullPath);
-            }
-        }
-
-        return files.toArray(new String[0]);
     }
 
     @Deprecated
@@ -427,6 +406,8 @@ public class DatastoreMO extends BaseMO {
                     s_logger.info("Found file " + fileName + " in datastore at " + absoluteFileName);
                     if (parentFolderPath.endsWith("]"))
                         absoluteFileName += " ";
+                    else if (!parentFolderPath.endsWith("/"))
+                        absoluteFileName +="/";
                     absoluteFileName += fi.getPath();
                     if(isValidCloudStackFolderPath(parentFolderPath, searchExcludedFolders)) {
                         return absoluteFileName;
@@ -464,5 +445,20 @@ public class DatastoreMO extends BaseMO {
             }
         }
         return isAccessible;
+    }
+
+    public boolean isDatastoreStoragePolicyComplaint(String storagePolicyId) throws Exception {
+        PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(_context);
+        PbmProfile profile = profMgrMo.getStorageProfile(storagePolicyId);
+
+        PbmPlacementSolverMO placementSolverMo = new PbmPlacementSolverMO(_context);
+        boolean isDatastoreCompatible = placementSolverMo.isDatastoreCompatibleWithStorageProfile(_mor, profile);
+
+        return isDatastoreCompatible;
+    }
+
+    public String getDatastoreType() throws Exception {
+        DatastoreSummary summary = _context.getVimClient().getDynamicProperty(getMor(), "summary");
+        return summary.getType();
     }
 }
