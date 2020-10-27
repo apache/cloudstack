@@ -1144,7 +1144,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         if (onCreate) {
             // Start for Kubernetes cluster in 'Created' state
-            String[] keys = getServiceUserKeys();
+            Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
+            String[] keys = getServiceUserKeys(owner);
             KubernetesClusterStartWorker startWorker =
                 new KubernetesClusterStartWorker(kubernetesCluster, this, keys);
             startWorker = ComponentContext.inject(startWorker);
@@ -1279,14 +1280,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return response;
     }
 
-    private String[] getServiceUserKeys() {
-        Account caller = CallContext.current().getCallingAccount();
-        String username = caller.getAccountName() + "-" + KUBEADMIN_ACCOUNT_NAME;
-        UserAccount kubeadmin = accountService.getActiveUserAccount(username, caller.getDomainId());
+    private String[] getServiceUserKeys(Account owner) {
+        if (owner == null) {
+            owner = CallContext.current().getCallingAccount();
+        }
+        String username = owner.getAccountName() + "-" + KUBEADMIN_ACCOUNT_NAME;
+        UserAccount kubeadmin = accountService.getActiveUserAccount(username, owner.getDomainId());
         String[] keys = null;
         if (kubeadmin == null) {
-            User kube = userDao.persist(new UserVO(caller.getAccountId(), username, UUID.randomUUID().toString(), caller.getAccountName(), KUBEADMIN_ACCOUNT_NAME, "kubeadmin",
-                null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
+            User kube = userDao.persist(new UserVO(owner.getAccountId(), username, UUID.randomUUID().toString(), owner.getAccountName(),
+                KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
             keys = accountService.createApiKeyAndSecretKey(kube.getId());
         } else {
             String apiKey = kubeadmin.getApiKey();
@@ -1326,9 +1329,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
         validateKubernetesClusterUpgradeParameters(cmd);
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
+        Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
+        String[] keys = getServiceUserKeys(owner);
         KubernetesClusterUpgradeWorker upgradeWorker =
-                new KubernetesClusterUpgradeWorker(kubernetesClusterDao.findById(cmd.getId()),
-                        kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId()), this);
+            new KubernetesClusterUpgradeWorker(kubernetesClusterDao.findById(cmd.getId()),
+                kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId()), this, keys);
         upgradeWorker = ComponentContext.inject(upgradeWorker);
         return upgradeWorker.upgradeCluster();
     }

@@ -97,6 +97,12 @@ if [ -d "$BINARIES_DIR" ]; then
     done <<< "$output"
   fi
 
+  # Fetch the autoscaler if present
+  if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
+    mkdir -p /opt/autoscaler
+    cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
+  fi
+
   tar -f "${BINARIES_DIR}/cni/cni-plugins-amd64.tgz" -C /opt/cni/bin -xz
   tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-amd64.tar.gz" -C /opt/bin -xz
 

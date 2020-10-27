@@ -17,7 +17,9 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +30,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -70,6 +73,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.common.base.Strings;
@@ -127,6 +131,11 @@ public class KubernetesClusterActionWorker {
     protected String publicIpAddress;
     protected int sshPort;
 
+    protected final String autoscaleScriptFilename = "autoscale-kube-cluster";
+    protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
+    protected File autoscaleScriptFile;
+    protected File deploySecretsScriptFile;
+
     protected KubernetesClusterActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         this.kubernetesCluster = kubernetesCluster;
         this.kubernetesClusterDao = clusterManager.kubernetesClusterDao;
@@ -178,7 +187,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void logTransitStateDetachIsoAndThrow(final Level logLevel, final String message, final KubernetesCluster kubernetesCluster,
-                                                    final List<UserVm> clusterVMs, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
+        final List<UserVm> clusterVMs, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
         logMessage(logLevel, message, e);
         stateTransitTo(kubernetesCluster.getId(), event);
         detachIsoKubernetesVMs(clusterVMs);
@@ -383,5 +392,66 @@ public class KubernetesClusterActionWorker {
                 kubernetesCluster.getName(), kubernetesCluster.getState().toString(), e.toString()), nte);
             return false;
         }
+    }
+
+    protected boolean createCloudStackSecret(String[] keys) {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
+        if (CollectionUtils.isEmpty(clusterVMs)) {
+            return false;
+        }
+
+        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
+
+        String hostName = userVm.getHostName();
+        if (!Strings.isNullOrEmpty(hostName)) {
+            hostName = hostName.toLowerCase();
+        }
+
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
+                    ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
+                    10000, 10000, 60000);
+            return result.first();
+        } catch (Exception e) {
+            String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
+            LOGGER.warn(msg, e);
+        }
+        return true;
+    }
+
+    protected File retrieveScriptFile(String filename) {
+        File file = null;
+        try {
+            String data = readResourceFile("/script/" + filename);
+            file = File.createTempFile(filename, ".sh");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            writer.write(data);
+            writer.close();
+        } catch (IOException e) {
+            logAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to prepare upgrade script %s", kubernetesCluster.getUuid(), filename), e);
+        }
+        return file;
+    }
+
+    protected void copyAutoscalerScripts(final UserVm vm, final int index) throws Exception {
+        // TODO: This might be a bad way to do it. Better to fetch the pf rules and try
+        int nodeSshPort = sshPort == 22 ? sshPort : sshPort + index;
+        String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
+        SshHelper.scpTo(nodeAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                "~/", autoscaleScriptFile.getAbsolutePath(), "0755");
+        SshHelper.scpTo(nodeAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                "~/", deploySecretsScriptFile.getAbsolutePath(), "0755");
+        String cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", autoscaleScriptFile.getName(), autoscaleScriptFilename);
+        SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+            cmdStr, 10000, 10000, 10 * 60 * 1000);
+        cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", deploySecretsScriptFile.getName(), deploySecretsScriptFilename);
+        SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+            cmdStr, 10000, 10000, 10 * 60 * 1000);
     }
 }

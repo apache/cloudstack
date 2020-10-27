@@ -17,10 +17,7 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,26 +42,24 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
 
     private List<UserVm> clusterVMs = new ArrayList<>();
     private KubernetesSupportedVersion upgradeVersion;
+    private final String upgradeScriptFilename = "upgrade-kubernetes.sh";
     private File upgradeScriptFile;
     private long upgradeTimeoutTime;
+    private String[] keys;
 
     public KubernetesClusterUpgradeWorker(final KubernetesCluster kubernetesCluster,
                                           final KubernetesSupportedVersion upgradeVersion,
-                                          final KubernetesClusterManagerImpl clusterManager) {
+                                          final KubernetesClusterManagerImpl clusterManager,
+                                          final String[] keys) {
         super(kubernetesCluster, clusterManager);
         this.upgradeVersion = upgradeVersion;
+        this.keys = keys;
     }
 
-    private void retrieveUpgradeScriptFile() {
-        try {
-            String upgradeScriptData = readResourceFile("/script/upgrade-kubernetes.sh");
-            upgradeScriptFile = File.createTempFile("upgrade-kuberntes", ".sh");
-            BufferedWriter upgradeScriptFileWriter = new BufferedWriter(new FileWriter(upgradeScriptFile));
-            upgradeScriptFileWriter.write(upgradeScriptData);
-            upgradeScriptFileWriter.close();
-        } catch (IOException e) {
-            logAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to prepare upgrade script", kubernetesCluster.getName()), e);
-        }
+    private void retrieveScriptFiles() {
+        upgradeScriptFile = retrieveScriptFile(upgradeScriptFilename);
+        autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
+        deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
     }
 
     private Pair<Boolean, String> runInstallScriptOnVM(final UserVm vm, final int index) throws Exception {
@@ -110,6 +105,8 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, upgrade action timed out", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             try {
+                copyAutoscalerScripts(vm, i);
+                createCloudStackSecret(keys);
                 result = runInstallScriptOnVM(vm, i);
             } catch (Exception e) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
@@ -151,7 +148,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         if (CollectionUtils.isEmpty(clusterVMs)) {
             logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster : %s, unable to retrieve VMs for cluster", kubernetesCluster.getName()));
         }
-        retrieveUpgradeScriptFile();
+        retrieveScriptFiles();
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.UpgradeRequested);
         attachIsoKubernetesVMs(clusterVMs, upgradeVersion);
         upgradeKubernetesClusterNodes();
