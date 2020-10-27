@@ -167,11 +167,15 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
             # Cleanup resources used
-        super(TestDeployVirtioSCSIVM, cls).tearDown()
+        super(TestDeployVirtioSCSIVM, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    def tearDown(self):
+        super(TestDeployVirtioSCSIVM, self).tearDown()
 
     def verifyVirshState(self, diskcount):
         host = self.vmhost.ipaddress

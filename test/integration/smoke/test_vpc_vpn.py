@@ -236,12 +236,16 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
 
+        cls._cleanup = []
+
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
+        cls._cleanup.append(cls.compute_offering)
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
+        cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -253,7 +257,6 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     @attr(tags=["advanced"], required_hardware="true")
@@ -387,12 +390,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-
-        try:
-            cls.logger.debug("Cleaning up resources")
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
-            raise Exception("Cleanup failed with %s" % e)
+        super(TestVpcRemoteAccessVpn, cls).tearDownClass()
 
 
 class TestVpcSite2SiteVpn(cloudstackTestCase):
@@ -411,13 +409,17 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
 
+        cls._cleanup = []
+
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
+        cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
+        cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -428,8 +430,6 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
                           cls.account.id))
-
-        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     def _get_ssh_client(self, virtual_machine, services, retries):
@@ -758,10 +758,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
-            raise Exception("Cleanup failed with %s" % e)
+        super(TestVpcSite2SiteVpn, cls).tearDownClass()
 
 
 class TestRVPCSite2SiteVpn(cloudstackTestCase):
@@ -779,14 +776,17 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
+        cls._cleanup = []
 
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
+        cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
+        cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -797,8 +797,6 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
                           cls.account.id))
-
-        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     def _validate_vpc_offering(self, vpc_offering):
@@ -1130,11 +1128,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
-            raise Exception("Cleanup failed with %s" % e)
-
+        super(TestRVPCSite2SiteVpn, cls).tearDownClass()
 
 class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
 
@@ -1152,13 +1146,17 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
 
+        cls._cleanup = []
+
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
+        cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
+        cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -1169,8 +1167,6 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
                           cls.account.id))
-
-        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     def _get_ssh_client(self, virtual_machine, services, retries):
@@ -1567,10 +1563,6 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             out['esplifetime'] = c['esp_life']
         return out
 
-
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
-            raise Exception("Cleanup failed with %s" % e)
+        super(TestVPCSite2SiteVPNMultipleOptions, cls).tearDownClass()
