@@ -58,7 +58,11 @@ function configure_cacerts() {
 
 function install_cloud_scripts() {
   # ./cloud_scripts/ has been put there by ../../cloud_scripts_shar_archive.sh
+  echo "installing cloud scripts"
   rsync -av ./cloud_scripts/ /
+
+  ls -lrt
+  ls -lrt /usr/local/cloud/
 
   chmod +x /opt/cloud/bin/* /opt/cloud/bin/setup/* \
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \

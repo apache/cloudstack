@@ -18,6 +18,8 @@
 #
 # This scripts before ssh.service but after cloud-early-config
 
+set -x
+
 # Eject cdrom if any
 eject || true
 
