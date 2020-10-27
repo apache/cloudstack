@@ -129,9 +129,9 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "URL end point for the Kubernetes cluster dashboard UI")
     private String consoleEndpoint;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_IDS)
-    @Param(description = "the list of virtualmachine IDs associated with this Kubernetes cluster")
-    private List<String> virtualMachineIds;
+    @SerializedName(ApiConstants.VIRTUAL_MACHINES)
+    @Param(description = "the list of virtualmachine associated with this Kubernetes cluster")
+    private List<UserVmResponse> virtualMachines;
 
     public KubernetesClusterResponse() {
     }
@@ -317,13 +317,11 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
         this.serviceOfferingName = serviceOfferingName;
     }
 
-    public void setVirtualMachineIds(List<String> virtualMachineIds) {
-        this.virtualMachineIds = virtualMachineIds;
+    public void setVirtualMachines(List<UserVmResponse> virtualMachines) {
+        this.virtualMachines = virtualMachines;
     }
 
-    ;
-
-    public List<String> getVirtualMachineIds() {
-        return virtualMachineIds;
+    public List<UserVmResponse> getVirtualMachines() {
+        return virtualMachines;
     }
 }
