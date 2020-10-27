@@ -29,6 +29,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.DedicatedResourceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -64,6 +65,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
     private HostDao hostDao;
+    @Inject
+    private DedicatedResourceDao dedicatedResourceDao;
     private final String findOneHostOnPrimaryStorage = "select t.id from "
                             + "(select h.id, cd.value "
                             + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
@@ -128,9 +131,15 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
         }
 
+        List<Long> dedicatedHosts = dedicatedResourceDao.listAllHosts();
+
         // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
-        sbuilder.append(" ORDER by rand() limit 1");
+        sbuilder.append(" ORDER by ");
+        for (Long hostId: dedicatedHosts){ // put dedicated hosts at the end of the result set
+            sbuilder.append("field(t.id, '" + hostId +"')," );
+        }
+        sbuilder.append(" rand() limit 1");
         String sql = sbuilder.toString();
         HostVO host = null;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
