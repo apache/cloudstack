@@ -74,6 +74,7 @@ echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
 dashboard_conf_file="${working_dir}/dashboard.yaml"
 curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
 
+# TODO : Change the url once merged
 AUTOSCALER_URL="https://github.com/shapeblue/autoscaler/blob/add-acs/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
 echo "Downloading kubernetes cluster autoscaler ${AUTOSCALER_URL}"
 autoscaler_conf_file="${working_dir}/autoscaler.yaml"

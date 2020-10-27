@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
@@ -521,37 +520,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return prefix;
     }
 
-    protected boolean createSecret(String[] keys) {
-        File pkFile = getManagementServerSshPublicKeyFile();
-        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
-        publicIpAddress = publicIpSshPort.first();
-        sshPort = publicIpSshPort.second();
-
-        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
-        if (CollectionUtils.isEmpty(clusterVMs)) {
-            return false;
-        }
-
-        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
-
-        String hostName = userVm.getHostName();
-        if (!Strings.isNullOrEmpty(hostName)) {
-            hostName = hostName.toLowerCase();
-        }
-
-        try {
-            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
-                    ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
-                    10000, 10000, 60000);
-            return result.first();
-        } catch (Exception e) {
-            String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
-            LOGGER.warn(msg, e);
-        }
-        return true;
-    }
-
     protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory,
         final Long size, final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) {
         return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
@@ -613,11 +581,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
         try {
             if (enable) {
+                String data = readResourceFile("/script/try-autoscaling");
                 Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                    pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d", kubernetesCluster.getUuid(), maxSize, minSize),
+                    pkFile, null, String.format(data, kubernetesCluster.getUuid(), maxSize, minSize),
                         10000, 10000, 60000);
                 if (!result.first()) {
-                    return false;
+                    throw new CloudRuntimeException(result.second());
                 }
                 updateKubernetesClusterEntry(true, minSize, maxSize);
             } else {
@@ -625,7 +594,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
                         10000, 10000, 60000);
                 if (!result.first()) {
-                    return false;
+                    throw new CloudRuntimeException(result.second());
                 }
                 updateKubernetesClusterEntry(false, null, null);
             }

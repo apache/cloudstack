@@ -134,6 +134,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
         }
 
+        // TODO : Remove indiv rules per vm
         // Remove existing SSH firewall rules
         FirewallRule firewallRule = removeSshFirewallRule(publicIp);
         if (firewallRule == null) {
@@ -141,6 +142,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         int existingFirewallRuleSourcePortEnd = firewallRule.getSourcePortEnd();
         final int scaledTotalNodeCount = clusterSize == null ? (int)kubernetesCluster.getTotalNodeCount() : (int)(clusterSize + kubernetesCluster.getMasterNodeCount());
+        // TODO : Provision indiv rules per vm
         // Provision new SSH firewall rules
         try {
             provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + scaledTotalNodeCount - 1);
@@ -159,6 +161,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
 
         try {
+            // TODO : Provision indiv rules per vm
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, existingFirewallRuleSourcePortEnd + 1);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);

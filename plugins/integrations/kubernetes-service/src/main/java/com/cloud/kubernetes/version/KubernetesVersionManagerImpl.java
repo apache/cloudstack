@@ -214,9 +214,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
      */
     public static boolean canUpgradeKubernetesVersion(final String currentVersion, final String upgradeVersion) throws IllegalArgumentException {
         int versionDiff = compareSemanticVersions(upgradeVersion, currentVersion);
-        if (versionDiff == 0) {
-            throw new IllegalArgumentException(String.format("Kubernetes clusters can not be upgraded, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
-        } else if (versionDiff < 0) {
+        if (versionDiff < 0) {
             throw new IllegalArgumentException(String.format("Kubernetes clusters can not be downgraded, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
         }
         String[] thisParts = currentVersion.split("\\.");
