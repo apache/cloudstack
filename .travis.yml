@@ -42,6 +42,7 @@ env:
     # Keep the TESTS sorted by name and grouped by type
     - TESTS="smoke/test_certauthority_root"
 
+
     - TESTS="smoke/test_accounts
              smoke/test_affinity_groups
              smoke/test_affinity_groups_projects
