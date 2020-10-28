@@ -101,7 +101,7 @@
       <span v-else>{{ text }}</span>
     </span>
     <span slot="ipaddress" slot-scope="text, record" href="javascript:;">
-      <router-link v-if="$route.path === '/publicip'" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+      <router-link v-if="['/publicip', '/privategw'].includes($route.path)" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
       <span v-if="record.issourcenat">
         &nbsp;
