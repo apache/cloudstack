@@ -933,7 +933,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
 
                 // delete the op_host_capacity entry
-                final Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY};
+                final Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY, Capacity.CAPACITY_TYPE_CPU_CORE};
                 final SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
                 hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
                 hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
