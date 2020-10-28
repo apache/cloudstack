@@ -20,13 +20,9 @@
 from marvin.codes import PASS, FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (validateList,
-                              cleanup_resources,
-                              get_process_status,
                               wait_until)
 
-from marvin.lib.base import (Domain,
-                             Account,
-                             Configurations,
+from marvin.lib.base import (Account,
                              VPC,
                              VpcOffering,
                              ServiceOffering,
@@ -34,14 +30,8 @@ from marvin.lib.base import (Domain,
                              Network,
                              PublicIPAddress,
                              NATRule,
-                             NetworkACL,
                              NetworkACLList,
-                             LoadBalancerRule,
-                             ApplicationLoadBalancer,
                              VirtualMachine,
-                             Template,
-                             FireWallRule,
-                             StaticNATRule,
                              Vpn,
                              VpnCustomerGateway,
                              VpnUser
@@ -52,8 +42,7 @@ from marvin.sshClient import SshClient
 
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_test_template,
-                               list_network_offerings)
+                               get_test_template)
 
 from nose.plugins.attrib import attr
 
@@ -432,6 +421,11 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
                           cls.account.id))
         return
 
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
+
     def _get_ssh_client(self, virtual_machine, services, retries):
         """ Setup ssh client connection and return connection
         vm requires attributes public_ip, public_port, username, password """
@@ -759,6 +753,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestVpcSite2SiteVpn, cls).tearDownClass()
+
+    def tearDownClass(self):
+        super(TestVpcSite2SiteVpn, self).tearDown()
 
 
 class TestRVPCSite2SiteVpn(cloudstackTestCase):
@@ -1130,6 +1127,14 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
     def tearDownClass(cls):
         super(TestRVPCSite2SiteVpn, cls).tearDownClass()
 
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
+
+    def tearDown(self):
+        super(TestRVPCSite2SiteVpn, self).tearDown()
+
 class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
 
     @classmethod
@@ -1168,6 +1173,11 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
         return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
 
     def _get_ssh_client(self, virtual_machine, services, retries):
         """ Setup ssh client connection and return connection
