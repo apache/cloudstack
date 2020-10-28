@@ -922,6 +922,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (mastersToRemove >= kubernetesCluster.getMasterNodeCount()) {
                 throw new InvalidParameterValueException("Can not remove all masters from a cluster");
             }
+
+            // Ensure there's always a node
+            long nodesToRemove = nodes.stream().filter(x -> !x.isMaster()).count();
+            if (nodesToRemove >= kubernetesCluster.getNodeCount()) {
+                throw new InvalidParameterValueException("Can not remove all nodes from a cluster");
+            }
         }
 
         ServiceOffering serviceOffering = null;
