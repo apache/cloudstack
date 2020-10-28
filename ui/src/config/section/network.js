@@ -311,7 +311,7 @@ export default {
       hidden: true,
       permission: ['listPrivateGateways'],
       columns: ['ipaddress', 'state', 'gateway', 'netmask', 'account'],
-      details: ['ipaddress', 'gateway', 'netmask', 'vlan', 'sourcenatsupported', 'aclid', 'account', 'domain', 'zone'],
+      details: ['ipaddress', 'gateway', 'netmask', 'vlan', 'sourcenatsupported', 'aclname', 'account', 'domain', 'zone'],
       tabs: [{
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
