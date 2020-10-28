@@ -237,6 +237,7 @@ const user = {
         Vue.ls.remove(ASYNC_JOB_IDS)
 
         logout(state.token).then(() => {
+          message.destroy()
           if (cloudianUrl) {
             window.location.href = cloudianUrl
           } else {
