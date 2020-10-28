@@ -96,10 +96,6 @@ function install_packages() {
     stable"
     apt-get update
     ${apt_get} install docker-ce docker-ce-cli containerd.io
-    # Also tried:
-    # apt-get install --install-recommends docker-ce
-    # and the below option, removing the addition of the repo step
-    # curl -fsSL https://get.docker.com/ | sh
   fi
   apt_clean
 

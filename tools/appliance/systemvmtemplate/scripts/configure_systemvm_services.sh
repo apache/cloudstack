@@ -129,7 +129,11 @@ function configure_services() {
   systemctl disable qemu-guest-agent
 
   # Disable docker service
-  systemctl disable docker
+  systemctl disable containerd
+  systemctl disable docker.service
+  systemctl stop docker.service
+  systemctl disable docker.socket
+  systemctl stop docker.socket
 
   # Disable cloud init by default
 cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg

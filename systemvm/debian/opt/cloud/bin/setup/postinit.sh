@@ -20,8 +20,18 @@
 
 set -x
 
+log_it() {
+  echo "$(date) $@" >> /var/log/cloud.log
+  log_action_msg "$@"
+}
+
 # Eject cdrom if any
-eject || true
+CMDLINE=/var/cache/cloud/cmdline
+export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
+if [ "$TYPE" -ne "CKSNode" ]; then
+  log_it "ejecting iso!!!"
+  eject || true
+fi
 
 # Restart journald for setting changes to apply
 systemctl restart systemd-journald

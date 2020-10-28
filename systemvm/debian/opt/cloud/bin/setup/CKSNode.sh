@@ -51,7 +51,9 @@ setup_k8s_node() {
     rm -f /etc/logrotate.d/cloud
 
     log_it "Starting cloud-init services"
-    systemctl enable --now --no-block docker
+    systemctl enable --now --no-block containerd
+    systemctl enable --now --no-block docker.socket
+    systemctl enable --now --no-block docker.service
     systemctl enable --now --no-block cloud-init
     systemctl enable --now --no-block cloud-config
     systemctl enable --now --no-block cloud-final
