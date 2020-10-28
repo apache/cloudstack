@@ -1179,6 +1179,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     public void processPrepareMaintenaceEventAfter(Long hostId) {
         _capacityDao.removeBy(Capacity.CAPACITY_TYPE_MEMORY, null, null, null, hostId);
         _capacityDao.removeBy(Capacity.CAPACITY_TYPE_CPU, null, null, null, hostId);
+        _capacityDao.removeBy(Capacity.CAPACITY_TYPE_CPU_CORE, null, null, null, hostId);
     }
 
     @Override
