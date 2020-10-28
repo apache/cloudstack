@@ -25,6 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -136,8 +137,17 @@ public class DefaultEndPointSelector implements EndPointSelector {
         // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
         sbuilder.append(" ORDER by ");
-        for (Long hostId: dedicatedHosts){ // put dedicated hosts at the end of the result set
-            sbuilder.append("field(t.id, '" + hostId +"')," );
+        if (dedicatedHosts.size() > 0) {
+            Collections.shuffle(dedicatedHosts); // Randomize dedicated hosts as well.
+            sbuilder.append("field(t.id, ");
+            Iterator<Long> hostIt = dedicatedHosts.iterator();
+            while (hostIt.hasNext()) { // put dedicated hosts at the end of the result set
+                sbuilder.append("'" + hostIt.next() + "'");
+                if (hostIt.hasNext()) {
+                    sbuilder.append(",");
+                }
+            }
+            sbuilder.append(")," );
         }
         sbuilder.append(" rand() limit 1");
         String sql = sbuilder.toString();
