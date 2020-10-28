@@ -180,6 +180,9 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
+
+import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
+
 @Component
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
     private static final Logger s_logger = Logger.getLogger(ResourceManagerImpl.class);
@@ -1300,6 +1303,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         if (!ResourceState.canAttemptMaintenance(host.getResourceState())) {
             throw new CloudRuntimeException("Host is already in state " + host.getResourceState() + ". Cannot recall for maintenance until resolved.");
+        }
+
+        if (SET_HOST_DOWN_TO_MAINTENANCE.valueIn(host.getDataCenterId()) && (host.getStatus() == Status.Down)) {
+            if (host.getResourceState() == ResourceState.Enabled) {
+                _hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.AdminAskMaintenance, ResourceState.PrepareForMaintenance, host);
+                _hostDao.updateResourceState(ResourceState.PrepareForMaintenance, ResourceState.Event.InternalEnterMaintenance, ResourceState.Maintenance, host);
+                return _hostDao.findById(hostId);
+            } else if (host.getResourceState() == ResourceState.ErrorInMaintenance) {
+                _hostDao.updateResourceState(ResourceState.ErrorInMaintenance, ResourceState.Event.InternalEnterMaintenance, ResourceState.Maintenance, host);
+                return _hostDao.findById(hostId);
+            }
         }
 
         if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance) > 0) {
