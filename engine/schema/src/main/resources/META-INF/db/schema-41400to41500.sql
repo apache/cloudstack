@@ -75,7 +75,8 @@ ALTER TABLE `cloud`.`project_invitations`
     ADD CONSTRAINT `uc_project_invitations__project_id_account_id_user_id` UNIQUE (`project_id`, `account_id`,`user_id`);
 
 -- Alter project_invitation_view to incorporate user_id as a field
-ALTER VIEW `cloud`.`project_invitation_view` AS
+DROP VIEW IF EXISTS `cloud`.`project_invitation_view`;
+CREATE VIEW `cloud`.`project_invitation_view` AS
     select
         project_invitations.id,
         project_invitations.uuid,
@@ -107,7 +108,8 @@ ALTER VIEW `cloud`.`project_invitation_view` AS
         `cloud`.`user` ON project_invitations.user_id = user.id;
 
 -- Alter project_account_view to incorporate user id
-ALTER VIEW `cloud`.`project_account_view` AS
+DROP VIEW IF EXISTS `cloud`.`project_account_view`;
+CREATE VIEW `cloud`.`project_account_view` AS
     select
         project_account.id,
         account.id account_id,
@@ -140,7 +142,9 @@ ALTER VIEW `cloud`.`project_account_view` AS
             left join
         `cloud`.`user` ON (project_account.user_id = user.id);
 
-ALTER VIEW `cloud`.`project_view` AS
+-- Alter project_view to incorporate user id
+DROP VIEW IF EXISTS `cloud`.`project_view`;
+CREATE VIEW `cloud`.`project_view` AS
     select
         projects.id,
         projects.uuid,
@@ -558,7 +562,8 @@ CREATE TABLE `cloud`.`user_vm_deploy_as_is_details` (
 
 ALTER TABLE `cloud`.`image_store` ADD COLUMN `readonly` boolean DEFAULT false COMMENT 'defines status of image store';
 
-ALTER VIEW `cloud`.`image_store_view` AS
+DROP VIEW IF EXISTS `cloud`.`image_store_view`;
+CREATE VIEW `cloud`.`image_store_view` AS
     select
         image_store.id,
         image_store.uuid,
