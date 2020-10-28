@@ -1568,6 +1568,10 @@ public class ApiDBUtils {
     }
 
     public static VpcVO findVpcById(long vpcId) {
+        return s_vpcDao.findById(vpcId);
+    }
+
+    public static VpcVO findVpcByIdIncludingRemoved(long vpcId) {
         return s_vpcDao.findByIdIncludingRemoved(vpcId);
     }
 

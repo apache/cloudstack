@@ -3477,7 +3477,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     resourceType = ResourceObjectType.Network;
                     if (network.getTrafficType() == TrafficType.Public) {
                         VirtualRouter router = ApiDBUtils.findDomainRouterById(usageRecord.getUsageId());
-                        Vpc vpc = ApiDBUtils.findVpcById(router.getVpcId());
+                        Vpc vpc = ApiDBUtils.findVpcByIdIncludingRemoved(router.getVpcId());
                         usageRecResponse.setVpcId(vpc.getUuid());
                         resourceId = vpc.getId();
                     } else {
