@@ -308,7 +308,8 @@
               type="environment"
               @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
               v-clipboard:copy="ipaddress" />
-            <span>{{ ipaddress }}</span>
+            <router-link v-if="resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
+            <span v-else>{{ ipaddress }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
