@@ -505,6 +505,12 @@ export default {
         params.isofilter = 'all'
       }
       if (Object.keys(this.$route.query).length > 0) {
+        if ('page' in this.$route.query) {
+          this.page = Number(this.$route.query.page)
+        }
+        if ('pagesize' in this.$route.query) {
+          this.pagesize = Number(this.$route.query.pagesize)
+        }
         Object.assign(params, this.$route.query)
       }
       delete params.q
