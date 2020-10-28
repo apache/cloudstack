@@ -383,7 +383,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s",
                 network.getName(), kubernetesCluster.getName()));
         }
-
+        // Firewall rule fo API access for master node VMs
         try {
             provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
             if (LOGGER.isInfoEnabled()) {
@@ -394,8 +394,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
 
+        // Firewall rule fo SSH access on each node VM
         try {
-            // TODO : Create indiv fw rules for each vm
             int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMs.size() - 1;
             provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
             if (LOGGER.isInfoEnabled()) {
@@ -575,10 +575,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         for (int i = 0; i < clusterVMs.size(); ++i) {
             UserVm vm = clusterVMs.get(i);
             try {
-				copyAutoscalerScripts(vm, i);
-			} catch (Exception e) {
+                copyAutoscalerScripts(vm, i);
+            } catch (Exception e) {
                 throw new CloudRuntimeException(e);
-			}
+            }
         }
         if (!createCloudStackSecret(keys)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
