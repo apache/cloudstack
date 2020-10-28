@@ -223,11 +223,7 @@
               </a-tooltip>
             </span>
             <a-input
-              v-decorator="['account', {
-                rules: [
-                  { required: true, message: $t('label.required') }
-                ]
-              }]"
+              v-decorator="['account']"
               :placeholder="this.$t('label.account')"/>
           </a-form-item>
           <div :span="24" class="action-button">
