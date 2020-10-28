@@ -422,7 +422,7 @@ public class KubernetesClusterActionWorker {
             String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
             LOGGER.warn(msg, e);
         }
-        return true;
+        return false;
     }
 
     protected File retrieveScriptFile(String filename) {
@@ -440,7 +440,6 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void copyAutoscalerScripts(final UserVm vm, final int index) throws Exception {
-        // TODO: This might be a bad way to do it. Better to fetch the pf rules and try
         int nodeSshPort = sshPort == 22 ? sshPort : sshPort + index;
         String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
         SshHelper.scpTo(nodeAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,

@@ -140,6 +140,7 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
     @Param(description = "Public IP Address ID of the cluster")
     private String ipAddressId;
+
     @SerializedName(ApiConstants.AUTOSCALING_ENABLED)
     @Param(description = "Whether autoscaling is enabled for the cluster")
     private boolean isAutoscalingEnabled;
@@ -151,14 +152,6 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @SerializedName(ApiConstants.MAX_SIZE)
     @Param(description = "Maximum size of the cluster")
     private Long maxSize;
-
-    @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "Public IP Address of the cluster")
-    private String ipAddress;
-
-    @SerializedName(ApiConstants.IP_ADDRESS_ID)
-    @Param(description = "Public IP Address ID of the cluster")
-    private String ipAddressId;
 
     public KubernetesClusterResponse() {
     }
@@ -358,6 +351,8 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
 
     public void setIpAddressId(String ipAddressId) {
         this.ipAddressId = ipAddressId;
+    }
+
     public void setAutoscalingEnabled(boolean isAutoscalingEnabled) {
         this.isAutoscalingEnabled = isAutoscalingEnabled;
     }
@@ -368,13 +363,5 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
 
     public void setMaxSize(Long maxSize) {
         this.maxSize = maxSize;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
-    public void setIpAddressId(String ipAddressId) {
-        this.ipAddressId = ipAddressId;
     }
 }

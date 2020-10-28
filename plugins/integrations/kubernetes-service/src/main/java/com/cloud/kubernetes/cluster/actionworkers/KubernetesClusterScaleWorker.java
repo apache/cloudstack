@@ -306,7 +306,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
         for (KubernetesClusterVmMapVO vmMapVO : vmMaps) {
             UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
-            LOGGER.info(String.format("Remving vm : %s", userVM.getUuid()));
+            LOGGER.info(String.format("Removing vm : %s from cluster %s", userVM.getDisplayName(), kubernetesCluster.getName()));
             if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, failed to remove Kubernetes node: %s running on VM : %s", kubernetesCluster.getName(), userVM.getHostName(), userVM.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }

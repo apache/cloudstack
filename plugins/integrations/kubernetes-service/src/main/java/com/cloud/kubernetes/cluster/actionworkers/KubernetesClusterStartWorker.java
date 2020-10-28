@@ -83,12 +83,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         super(kubernetesCluster, clusterManager);
     }
 
-    public KubernetesClusterStartWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager,
-        final String[]keys) {
-        super(kubernetesCluster, clusterManager);
-        this.keys = keys;
-    }
-
     public KubernetesSupportedVersion getKubernetesClusterVersion() {
         if (kubernetesClusterVersion == null) {
             kubernetesClusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
@@ -667,5 +661,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested);
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
+    }
+
+    public void setKeys(String[] keys) {
+        this.keys = keys;
     }
 }

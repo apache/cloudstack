@@ -864,6 +864,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final Long minSize = cmd.getMinSize();
         final Long maxSize = cmd.getMaxSize();
 
+        if (kubernetesClusterId == null || kubernetesClusterId < 1L) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
+        }
+
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
         if (kubernetesCluster == null || kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
@@ -883,13 +887,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         final KubernetesSupportedVersion clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
         if (clusterVersion == null) {
-            throw new CloudRuntimeException(String.format("Invalid Kubernetes version associated with Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            throw new CloudRuntimeException(String.format("Invalid Kubernetes version associated with Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
 
         if (!(kubernetesCluster.getState().equals(KubernetesCluster.State.Created) ||
                 kubernetesCluster.getState().equals(KubernetesCluster.State.Running) ||
                 kubernetesCluster.getState().equals(KubernetesCluster.State.Stopped))) {
-            throw new PermissionDeniedException(String.format("Kubernetes cluster ID: %s is in %s state", kubernetesCluster.getUuid(), kubernetesCluster.getState().toString()));
+            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state and can not be scaled", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
         }
 
         if (isAutoscalingEnabled != null && isAutoscalingEnabled) {
@@ -1148,19 +1152,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (zone == null) {
             logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
+        KubernetesClusterStartWorker startWorker =
+            new KubernetesClusterStartWorker(kubernetesCluster, this);
+        startWorker = ComponentContext.inject(startWorker);
         if (onCreate) {
             // Start for Kubernetes cluster in 'Created' state
             Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
             String[] keys = getServiceUserKeys(owner);
-            KubernetesClusterStartWorker startWorker =
-                new KubernetesClusterStartWorker(kubernetesCluster, this, keys);
-            startWorker = ComponentContext.inject(startWorker);
+            startWorker.setKeys(keys);
             return startWorker.startKubernetesClusterOnCreate();
         } else {
             // Start for Kubernetes cluster in 'Stopped' state. Resources are already provisioned, just need to be started
-            KubernetesClusterStartWorker startWorker =
-                new KubernetesClusterStartWorker(kubernetesCluster, this);
-            startWorker = ComponentContext.inject(startWorker);
             return startWorker.startStoppedKubernetesCluster();
         }
     }
