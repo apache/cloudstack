@@ -2075,6 +2075,25 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
+        // update template type
+        TemplateType templateType = null;
+        if (cmd instanceof UpdateTemplateCmd) {
+            String newType = ((UpdateTemplateCmd)cmd).getTemplateType();
+            if (newType != null) {
+                if (!_accountService.isRootAdmin(account.getId())) {
+                    throw new PermissionDeniedException("Parameter templatetype can only be specified by a Root Admin, permission denied");
+                }
+                try {
+                    templateType = TemplateType.valueOf(newType.toUpperCase());
+                } catch (IllegalArgumentException ex) {
+                   throw new InvalidParameterValueException("Please specify a valid templatetype: ROUTING / SYSTEM / USER / BUILTIN / PERHOST");
+                }
+            }
+            if (templateType != null && cmd.isRoutingType() != null && (TemplateType.ROUTING.equals(templateType) != cmd.isRoutingType())) {
+                throw new InvalidParameterValueException("Please specify a valid templatetype (consistent with isrouting parameter).");
+            }
+        }
+
         // update is needed if any of the fields below got filled by the user
         boolean updateNeeded =
                 !(name == null &&
@@ -2088,6 +2107,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   sortKey == null &&
                   isDynamicallyScalable == null &&
                   isRoutingTemplate == null &&
+                  templateType == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
@@ -2165,9 +2185,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isRoutingTemplate != null) {
             if (isRoutingTemplate) {
                 template.setTemplateType(TemplateType.ROUTING);
+            } else if (templateType != null) {
+                template.setTemplateType(templateType);
             } else {
                 template.setTemplateType(TemplateType.USER);
             }
+        } else if (templateType != null) {
+            template.setTemplateType(templateType);
         }
 
         if (cleanupDetails) {
