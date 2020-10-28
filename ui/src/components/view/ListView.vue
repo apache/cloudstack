@@ -260,6 +260,7 @@
     <template slot="value" slot-scope="text, record">
       <a-input
         v-if="editableValueKey === record.key"
+        :autoFocus="true"
         :defaultValue="record.value"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
         v-model="editableValue"
