@@ -28,6 +28,8 @@ const options = {
   varFile: resolve('./src/style/vars.less'),
   themeVariables: [
     '@logo-background-color',
+    '@project-nav-background-color',
+    '@project-nav-text-color',
     '@navigation-background-color',
     '@navigation-text-color',
     '@primary-color',

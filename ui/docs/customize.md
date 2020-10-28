@@ -48,6 +48,8 @@ Customize themes like colors, border color, etc.
 ```
 
 - `@logo-background-color` changes the logo background color.
+- `@project-nav-background-color` changes the navigation menu background color of the project .
+- `@project-nav-text-color` changes the navigation menu background color of the project view.
 - `@navigation-background-color` changes the navigation menu background color.
 - `@navigation-text-color` changes the navigation text color.
 - `@primary-color` change the major background color of the page (background button, icon hover, etc).

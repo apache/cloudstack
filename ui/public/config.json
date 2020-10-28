@@ -13,6 +13,8 @@
   "theme": {
     "@logo-background-color": "#ffffff",
     "@navigation-background-color": "#ffffff",
+    "@project-nav-background-color": "#001529",
+    "@project-nav-text-color": "rgba(255, 255, 255, 0.65)",
     "@navigation-text-color": "rgba(0, 0, 0, 0.65)",
     "@primary-color": "#1890ff",
     "@link-color": "#1890ff",

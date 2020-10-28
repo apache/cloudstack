@@ -24,6 +24,8 @@
 
 @logo-background-color: #ffffff;
 @navigation-background-color: #ffffff;
+@project-nav-background-color: #001529;
+@project-nav-text-color: rgba(255, 255, 255, 0.65);
 @navigation-text-color:  rgba(0, 0, 0, 0.65);
 @primary-color: #1890ff;
 @link-color: @primary-color;
@@ -83,7 +85,6 @@ a {
   }
 }
 
-.sider .logo,
 .sider.light .logo {
   background-color: @logo-background-color;
   box-shadow: 1px 1px 0px 0px #e8e8e8;
@@ -91,22 +92,23 @@ a {
 
 .sider.light {
   background: @navigation-background-color;
+
+  .ant-menu-submenu > .ant-menu {
+    background: @navigation-background-color;
+  }
 }
 
-.ant-menu {
+.sider.light .ant-menu-light {
   background: @navigation-background-color;
 }
 
-.ant-menu-submenu-popup,
-.ant-menu-submenu > .ant-menu,
-.ant-menu-dark .ant-menu-inline.ant-menu-sub {
-  background-color: @navigation-background-color;
+.ant-menu-submenu-popup.ant-menu-light,
+.ant-menu-light > .ant-menu {
+  background: @navigation-background-color;
 }
 
-.ant-menu-item > a,
-.ant-menu-dark .ant-menu-item,
-.ant-menu-dark .ant-menu-item-group-title,
-.ant-menu-dark .ant-menu-item > a {
+.ant-menu-item > a
+{
   color: @navigation-text-color;
 }
 
@@ -144,12 +146,7 @@ a {
 .ant-menu-item-active,
 .ant-menu:not(.ant-menu-inline) .ant-menu-submenu-open,
 .ant-menu-submenu-active,
-.ant-menu-submenu-title:hover,
-.ant-menu-dark .ant-menu-item:hover > a,
-.ant-menu-dark .ant-menu-submenu-title:hover > a,
-.ant-menu-dark .ant-menu-submenu-title:hover,
-.ant-menu-dark .ant-menu-item:hover,
-.ant-menu-dark .ant-menu-submenu-title:hover
+.ant-menu-submenu-title:hover
 {
   color: @primary-color;
 
@@ -169,29 +166,77 @@ a {
   background-color: @navigation-text-color;
 }
 
-.ant-menu-dark .ant-menu-item:hover > .ant-menu-submenu-title > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-item-active > .ant-menu-submenu-title > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-submenu-active > .ant-menu-submenu-title > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-submenu-open > .ant-menu-submenu-title > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-submenu-title:hover > .ant-menu-submenu-title > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-item:hover > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-item-active > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-submenu-active > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-submenu-open > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-submenu-title:hover > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::after,
-.ant-menu-dark .ant-menu-item:hover > .ant-menu-submenu-title > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-item-active > .ant-menu-submenu-title > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-submenu-active > .ant-menu-submenu-title > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-submenu-open > .ant-menu-submenu-title > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-submenu-title:hover > .ant-menu-submenu-title > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-item:hover > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-item-active > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-submenu-active > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-submenu-open > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::before,
-.ant-menu-dark .ant-menu-submenu-title:hover > .ant-menu-submenu-title:hover > .ant-menu-submenu-arrow::before {
-  background-color: @primary-color;
+.sider.dark {
+  .ant-menu-vertical .ant-menu-item,
+  .ant-menu-vertical-left .ant-menu-item,
+  .ant-menu-vertical-right .ant-menu-item,
+  .ant-menu-inline .ant-menu-item,
+  .ant-menu-vertical .ant-menu-submenu-title,
+  .ant-menu-vertical-left .ant-menu-submenu-title,
+  .ant-menu-vertical-right .ant-menu-submenu-title,
+  .ant-menu-inline .ant-menu-submenu-title {
+    color: @project-nav-text-color;
+  }
+
+  .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-vertical-left > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-vertical-right > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-inline > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+  .ant-menu-submenu-vertical-left > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+  .ant-menu-submenu-vertical-right > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+  .ant-menu-submenu-inline > .ant-menu-submenu-title .ant-menu-submenu-arrow::after
+  {
+    background-color: @project-nav-text-color;
+  }
+
+  .ant-menu-submenu-active .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-active .ant-menu-submenu-title .ant-menu-submenu-arrow::after
+  {
+    background-color: @primary-color;
+  }
+
+  .ant-menu-dark .ant-menu-item:hover > a,
+  .ant-menu-dark .ant-menu-submenu-title:hover > a,
+  .ant-menu-dark .ant-menu-submenu-title:hover,
+  .ant-menu-dark .ant-menu-item:hover,
+  .ant-menu-dark .ant-menu-submenu-title:hover
+  {
+    color: @primary-color;
+
+    .custom-icon path {
+      color: @primary-color;
+    }
+  }
+
+  .ant-menu-submenu-selected {
+    .ant-menu-submenu-title {
+      color: @primary-color;
+    }
+  }
+}
+
+.ant-menu-dark,
+.ant-menu-dark .ant-menu-sub,
+.ant-menu-dark .ant-menu-inline.ant-menu-sub{
+  background-color: @project-nav-background-color;
+}
+
+.ant-menu-dark .ant-menu-item,
+.ant-menu-dark .ant-menu-item-group-title,
+.ant-menu-dark .ant-menu-item > a {
+  color: @project-nav-text-color;
+}
+
+.ant-menu-dark .ant-menu-item:hover > a,
+.ant-menu-dark .ant-menu-submenu-title:hover > a,
+.ant-menu-dark .ant-menu-submenu-title:hover,
+.ant-menu-dark .ant-menu-item:hover,
+.ant-menu-dark .ant-menu-submenu-title:hover
+{
+  color: @primary-color;
+
+  .custom-icon path {
+    color: @primary-color;
+  }
 }
