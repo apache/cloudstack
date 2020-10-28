@@ -2209,7 +2209,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
 
         if (StringUtils.isBlank(ip6Gateway) || StringUtils.isBlank(ip6Cidr)) {
-            throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
+            throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined for an IPv6 network work properly");
         }
 
         if (!NetUtils.isValidIp6(ip6Gateway)) {
