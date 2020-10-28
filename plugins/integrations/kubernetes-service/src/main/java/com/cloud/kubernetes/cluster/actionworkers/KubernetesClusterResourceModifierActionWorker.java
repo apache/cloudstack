@@ -491,6 +491,17 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
+    protected void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, int startPort, int endPort)
+        throws ResourceUnavailableException {
+        List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByNetwork(network.getId());
+        for (PortForwardingRuleVO pfRule : pfRules) {
+            if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
+                portForwardingRulesDao.remove(pfRule.getId());
+            }
+        }
+        rulesService.applyPortForwardingRules(publicIp.getId(), account);
+    }
+
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,
                                            final Account account, final int port) throws ResourceUnavailableException {
         List<LoadBalancerVO> rules = loadBalancerDao.listByIpAddress(publicIp.getId());
