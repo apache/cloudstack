@@ -33,9 +33,6 @@ from marvin.lib.base import (Account,
                              Host,
                              GuestOs)
 
-# utils - utility classes for common cleanup, external library wrappers etc
-from marvin.lib.utils import cleanup_resources, get_hypervisor_type, validateList
-
 # common - commonly used methods for all tests are listed here
 from marvin.lib.common import get_zone, get_domain, get_pod
 
@@ -166,7 +163,6 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-            # Cleanup resources used
         super(TestDeployVirtioSCSIVM, cls).tearDownClass()
 
     def setUp(self):
