@@ -3412,10 +3412,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final boolean ipv4 = startIP != null;
-        final boolean ipv6 = startIPv6 != null;
+        final boolean ipv6 = ip6Cidr != null;
 
         if (!ipv4 && !ipv6) {
-            throw new InvalidParameterValueException("StartIP or StartIPv6 is missing in the parameters!");
+            throw new InvalidParameterValueException("StartIP or IPv6 CIDR is missing in the parameters!");
         }
 
         if (ipv4) {
