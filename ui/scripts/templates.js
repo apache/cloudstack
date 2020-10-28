@@ -1336,9 +1336,15 @@
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid,
+                                        templatetype: args.data.templatetype,
                                         passwordenabled: (args.data.passwordenabled == "on"),
                                         isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
                                     };
+                                    if (args.data.isrouting != null) {
+                                        $.extend(data, {
+                                            isrouting: (args.data.isrouting === 'on')
+                                        });
+                                    }
                                     $.ajax({
                                         url: createURL('updateTemplate'),
                                         data: data,
@@ -1835,7 +1841,7 @@
                                     if (isAdmin()) {
                                         hiddenFields = [];
                                     } else {
-                                        hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
+                                        hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus', 'isrouting'];
                                     }
 
                                     if ('templates' in args.context && args.context.templates[0].hypervisor != 'XenServer') {
@@ -1867,6 +1873,9 @@
                                         }
                                     }
 
+                                    if (!('templates' in args.context && args.context.templates[0].domainid == g_domainid && args.context.templates[0].account == g_account) && !isAdmin()) {
+                                        hiddenFields.push('url');
+                                    }
                                     return hiddenFields;
                                 },
 
@@ -1980,6 +1989,19 @@
                                         }
                                     },
 
+                                    isrouting: {
+                                        label: 'label.routing',
+                                        isBoolean: true,
+                                        isEditable: function() {
+                                            if (isAdmin()) {
+                                                return true;
+                                            } else {
+                                                return false;
+                                            }
+                                        },
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+
                                     crossZones: {
                                         label: 'label.cross.zones',
                                         converter: cloudStack.converters.toBooleanText
@@ -2002,9 +2024,45 @@
                                         label: 'label.created',
                                         converter: cloudStack.converters.toLocalDate
                                     },
+                                    url: {
+                                        label: 'label.url'
+                                    },
 
                                     templatetype: {
-                                        label: 'label.type'
+                                        label: 'label.type',
+                                        isEditable: function() {
+                                            if (isAdmin()) {
+                                                return true;
+                                            } else {
+                                                return false;
+                                            }
+                                        },
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'ROUTING',
+                                                description: 'ROUTING'
+                                            });
+                                            items.push({
+                                                id: 'SYSTEM',
+                                                description: 'SYSTEM'
+                                            });
+                                            items.push({
+                                                id: 'BUILTIN',
+                                                description: 'BUILTIN'
+                                            });
+                                            items.push({
+                                                id: 'PERHOST',
+                                                description: 'PERHOST'
+                                            });
+                                            items.push({
+                                                id: 'USER',
+                                                description: 'USER'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
                                     },
 
                                     id: {
@@ -2033,6 +2091,11 @@
                                                     jsonObj.xenserverToolsVersion61plus = true;
                                                 else
                                                     jsonObj.xenserverToolsVersion61plus = false;
+                                            }
+                                            if (jsonObj.templatetype == 'ROUTING') {
+                                                jsonObj.isrouting = true;
+                                            } else {
+                                                jsonObj.isrouting = false;
                                             }
 
                                             args.response.success({
@@ -3175,6 +3238,7 @@
                                         //zoneid: args.context.isos[0].zoneid, //can't update template/ISO in only one zone. It always get updated in all zones.
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
+                                        bootable: (args.data.bootable == "on"),
                                         ostypeid: args.data.ostypeid
                                     };
                                     $.ajax({
@@ -3662,6 +3726,8 @@
                                     },
                                     bootable: {
                                         label: 'label.bootable',
+                                        isBoolean: true,
+                                        isEditable: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     ispublic: {
@@ -3722,6 +3788,9 @@
                                     created: {
                                         label: 'label.created',
                                         converter: cloudStack.converters.toLocalDate
+                                    },
+                                    url: {
+                                        label: 'label.url'
                                     }
                                 }],
 
@@ -4057,7 +4126,7 @@
 
         // "Edit Template", "Copy Template", "Create VM"
         if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)) //if neither root-admin, nor the same account, nor the same project
-            || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
+            || jsonObj.isready == false) {
             //do nothing
         } else {
             allowedActions.push("edit");
@@ -4067,7 +4136,7 @@
 
         // "Download Template" , "Update Template Permissions"
         if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id))) //if neither root-admin, nor the same account, nor the same project
-            || (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
+            || (jsonObj.isready == false)) {
             //do nothing
         } else {
             if (jsonObj.isextractable){

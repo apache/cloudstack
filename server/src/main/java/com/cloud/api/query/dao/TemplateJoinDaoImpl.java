@@ -211,6 +211,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             if (templateStatus != null) {
                 templateResponse.setStatus(templateStatus);
             }
+            templateResponse.setUrl(template.getUrl());
         }
 
         if (template.getDataCenterId() > 0) {
@@ -415,6 +416,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             } else {
                 isoResponse.setStatus("Successfully Installed");
             }
+            isoResponse.setUrl(iso.getUrl());
         }
 
         if (iso.getDataCenterId() > 0) {
