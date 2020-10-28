@@ -293,14 +293,8 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
-          component: () => import('@/views/compute/MigrateWizard'),
           popup: true,
-          args: ['hostid', 'virtualmachineid'],
-          mapping: {
-            virtualmachineid: {
-              value: (record) => { return record.id }
-            }
-          }
+          component: () => import('@/views/compute/MigrateWizard')
         },
         {
           api: 'migrateVirtualMachine',
