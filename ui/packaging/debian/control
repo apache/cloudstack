@@ -8,6 +8,6 @@ Homepage: https://cloudstack.apache.org/
 
 Package: cloudstack-primate
 Architecture: all
-Depends: cloudstack-management (>= 4.13.0)
+Depends: cloudstack-management (>= 4.15.0)
 Description: CloudStack Primate
  The modern CloudStack UI - Primate

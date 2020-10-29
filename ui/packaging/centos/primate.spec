@@ -34,7 +34,7 @@ Modern Apache CloudStack UI - Primate
 
 %package primate
 Summary:   Modern Apache CloudStack UI - Primate
-Requires:  cloudstack-management >= 4.13.0
+Requires:  cloudstack-management >= 4.15.0
 Group:     System Environment/Libraries
 %description primate
 Primate - modern role-base progressive UI for Apache CloudStack
