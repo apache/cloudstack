@@ -2252,7 +2252,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
 
                         if (!StringUtils.isBlank(vmSpec.getBootArgs())) {
-                            s_logger.info("bootargs vmware = "+ vmSpec.getBootArgs());
                             String newMacSequence = generateMacSequence(nics);
                             vmSpec.setBootArgs(replaceNicsMacSequenceInBootArgs(oldMacSequence, newMacSequence, vmSpec));
                         }
@@ -2815,7 +2814,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String replaceNicsMacSequenceInBootArgs(String oldMacSequence, String newMacSequence, VirtualMachineTO vmSpec) {
         String bootArgs = vmSpec.getBootArgs();
         if (!StringUtils.isBlank(bootArgs) && !StringUtils.isBlank(oldMacSequence) && !StringUtils.isBlank(newMacSequence)) {
-            s_logger.info("bootargs replacing nic mac address = "+ oldMacSequence +" " + newMacSequence);
             return bootArgs.replace(oldMacSequence, newMacSequence);
         }
         return "";

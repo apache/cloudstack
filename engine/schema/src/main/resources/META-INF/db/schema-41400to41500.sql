@@ -828,9 +828,4 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_vers
 
 ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_vm_type` varchar(255) DEFAULT "UserVM" COMMENT 'Defines the type of UserVM';
 
----- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for XenServer
---UPDATE `cloud`.`vm_template` SET guest_os_id=293 WHERE id=1;
---
----- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for VMware
----- This fixes a memory allocation issue to systemvms on VMware/ESXi
---UPDATE `cloud`.`vm_template` SET guest_os_id=293 WHERE id=8;
+UPDATE `cloud`.`vm_template` set deploy_as_is = 1 where id = 8;

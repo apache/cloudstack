@@ -16,8 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -x
-
 . /opt/cloud/bin/setup/common.sh
 
 setup_k8s_node() {

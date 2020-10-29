@@ -17,7 +17,6 @@
 # under the License.
 
 set -e
-set -x
 
 # Get the VM name and cmdline
 while getopts "n:c:h" opt; do

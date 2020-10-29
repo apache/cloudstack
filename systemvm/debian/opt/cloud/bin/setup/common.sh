@@ -16,7 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
 . /lib/lsb/init-functions

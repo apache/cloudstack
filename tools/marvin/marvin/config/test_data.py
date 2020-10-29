@@ -2045,42 +2045,6 @@ test_data = {
             "minmemory": 2048
         }
     },
-    "cks_templates": {
-        "kvm": {
-            "name": "Kubernetes-Service-Template-kvm",
-            "displaytext": "Kubernetes-Service-Template kvm",
-            "format": "qcow2",
-            "hypervisor": "kvm",
-            "ostype": "CoreOS",
-            #"url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
-            "url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/systemvmtemplate-kvm.qcow2.bz2",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "isextractable": "True"
-        },
-        "xenserver": {
-            "name": "Kubernetes-Service-Template-xen",
-            "displaytext": "Kubernetes-Service-Template xen",
-            "format": "vhd",
-            "hypervisor": "xenserver",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "isextractable": "True"
-        },
-        "vmware": {
-            "name": "Kubernetes-Service-Template-vmware",
-            "displaytext": "Kubernetes-Service-Template vmware",
-            "format": "ova",
-            "hypervisor": "vmware",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "details": [{"keyboard":"us","nicAdapter":"Vmxnet3","rootDiskController":"pvscsi"}]
-        }
-    },
     "cks_service_offering": {
         "name": "CKS-Instance",
         "displaytext": "CKS Instance",

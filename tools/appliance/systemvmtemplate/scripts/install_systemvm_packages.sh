@@ -76,7 +76,8 @@ function install_packages() {
     radvd \
     sharutils genisoimage aria2 \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
-    virt-what open-vm-tools qemu-guest-agent hyperv-daemons apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common cloud-init
+    virt-what open-vm-tools qemu-guest-agent hyperv-daemons \
+    apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common cloud-init
 
   apt_clean
   ${apt_get} install links

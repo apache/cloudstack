@@ -1555,7 +1555,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
-        s_logger.info("PASSING CMDLINE DATA: vm-name "+ vmName);
         final Script command = new Script(_patchScriptPath, 300 * 1000, s_logger);
         String result;
         command.add("-n", vmName);

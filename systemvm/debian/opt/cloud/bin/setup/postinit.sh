@@ -18,8 +18,6 @@
 #
 # This scripts before ssh.service but after cloud-early-config
 
-set -x
-
 log_it() {
   echo "$(date) $@" >> /var/log/cloud.log
   log_action_msg "$@"
@@ -28,8 +26,7 @@ log_it() {
 # Eject cdrom if any
 CMDLINE=/var/cache/cloud/cmdline
 export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
-if [ "$TYPE" -ne "CKSNode" ]; then
-  log_it "ejecting iso!!!"
+if [ "$TYPE" != "CKSNode" ]; then
   eject || true
 fi
 
