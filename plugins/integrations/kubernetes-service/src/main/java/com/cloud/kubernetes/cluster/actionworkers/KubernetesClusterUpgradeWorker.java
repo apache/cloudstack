@@ -45,7 +45,6 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
     private final String upgradeScriptFilename = "upgrade-kubernetes.sh";
     private File upgradeScriptFile;
     private long upgradeTimeoutTime;
-    private String[] keys;
 
     public KubernetesClusterUpgradeWorker(final KubernetesCluster kubernetesCluster,
                                           final KubernetesSupportedVersion upgradeVersion,
@@ -56,10 +55,9 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         this.keys = keys;
     }
 
-    private void retrieveScriptFiles() {
+    protected void retrieveScriptFiles() {
+        super.retrieveScriptFiles();
         upgradeScriptFile = retrieveScriptFile(upgradeScriptFilename);
-        autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
-        deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
     }
 
     private Pair<Boolean, String> runInstallScriptOnVM(final UserVm vm, final int index) throws Exception {
@@ -88,8 +86,8 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
             }
             result = null;
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Upgrading node on VM ID: %s in Kubernetes cluster ID: %s with Kubernetes version(%s) ID: %s",
-                        vm.getUuid(), kubernetesCluster.getUuid(), upgradeVersion.getSemanticVersion(), upgradeVersion.getUuid()));
+                LOGGER.info(String.format("Upgrading node on VM %s in Kubernetes cluster %s with Kubernetes version(%s) ID: %s",
+                        vm.getDisplayName(), kubernetesCluster.getName(), upgradeVersion.getSemanticVersion(), upgradeVersion.getUuid()));
             }
             try {
                 result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
@@ -105,8 +103,11 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, upgrade action timed out", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             try {
-                copyAutoscalerScripts(vm, i);
-                createCloudStackSecret(keys);
+                copyAutoscalerScripts(publicIpAddress, CLUSTER_NODES_DEFAULT_START_SSH_PORT + i);
+                if (!createCloudStackSecret(keys)) {
+                    logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                        kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
+                }
                 result = runInstallScriptOnVM(vm, i);
             } catch (Exception e) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
@@ -126,8 +127,8 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 }
             }
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Successfully upgraded node on VM ID: %s in Kubernetes cluster ID: %s with Kubernetes version(%s) ID: %s",
-                        vm.getUuid(), kubernetesCluster.getUuid(), upgradeVersion.getSemanticVersion(), upgradeVersion.getUuid()));
+                LOGGER.info(String.format("Successfully upgraded node on VM %s in Kubernetes cluster %s with Kubernetes version(%s) ID: %s",
+                        vm.getDisplayName(), kubernetesCluster.getName(), upgradeVersion.getSemanticVersion(), upgradeVersion.getUuid()));
             }
         }
     }

@@ -562,8 +562,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) throws CloudRuntimeException {
         KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize);
         if (kubernetesClusterVO == null) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to update Kubernetes cluster",
-                    kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to update Kubernetes cluster",
+                    kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         return kubernetesClusterVO;
     }
@@ -578,26 +578,30 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
 
-        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
-        if (CollectionUtils.isEmpty(clusterVMs)) {
-            return false;
-        }
-
-        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
-
-        String hostName = userVm.getHostName();
-        if (!Strings.isNullOrEmpty(hostName)) {
-            hostName = hostName.toLowerCase();
-        }
-
         try {
             if (enable) {
-                String data = readResourceFile("/script/try-autoscaling");
+                String command = String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
+                    kubernetesCluster.getUuid(), maxSize, minSize);
                 Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                    pkFile, null, String.format(data, kubernetesCluster.getUuid(), maxSize, minSize),
-                        10000, 10000, 60000);
+                    pkFile, null, command, 10000, 10000, 60000);
+
+                // Maybe the file isn't present. Try and copy it
                 if (!result.first()) {
-                    throw new CloudRuntimeException(result.second());
+                    logMessage(Level.INFO, "Autoscaling files missing. Adding them now", null);
+                    retrieveScriptFiles();
+                    copyAutoscalerScripts(publicIpAddress, sshPort);
+
+                    if (!createCloudStackSecret(keys)) {
+                        logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                            kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                    }
+
+                    // If at first you don't succeed ...
+                    result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                        pkFile, null, command, 10000, 10000, 60000);
+                    if (!result.first()) {
+                        throw new CloudRuntimeException(result.second());
+                    }
                 }
                 updateKubernetesClusterEntry(true, minSize, maxSize);
             } else {
