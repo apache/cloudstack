@@ -1,6 +1,0 @@
-if [ -e /opt/bin/autoscale-kube-cluster ]; then
-   sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d
-   exit 0
-fi
-echo 'Cluster does not support automated autoscaling. Please upgrade your cluster to a supported version or deploy the autoscaler manually'
-exit 1

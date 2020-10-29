@@ -648,10 +648,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
         response.setVirtualMachines(vmResponses);
-        Boolean isAutoscalingEnabled = kubernetesCluster.getAutoscalingEnabled();
-        if (isAutoscalingEnabled != null) {
-            response.setAutoscalingEnabled(isAutoscalingEnabled);
-        }
+        response.setAutoscalingEnabled(kubernetesCluster.getAutoscalingEnabled());
         response.setMinSize(kubernetesCluster.getMinSize());
         response.setMaxSize(kubernetesCluster.getMaxSize());
         return response;
@@ -879,7 +876,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         if (serviceOfferingId == null && clusterSize == null && nodeIds == null && isAutoscalingEnabled == null) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster ID: %s cannot be scaled, either a new service offering or a new cluster size or nodeids to be removed or autoscaling must be passed", kubernetesCluster.getUuid()));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster %s cannot be scaled, either service offering or cluster size or nodeids to be removed or autoscaling must be passed", kubernetesCluster.getName()));
         }
 
         Account caller = CallContext.current().getCallingAccount();
@@ -899,6 +896,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (isAutoscalingEnabled != null && isAutoscalingEnabled) {
             if (clusterSize != null || serviceOfferingId != null || nodeIds != null) {
                 throw new InvalidParameterValueException("autoscaling can not be passed along with nodeids or clustersize or service offering");
+            }
+
+            if (!KubernetesVersionManagerImpl.versionSupportsAutoscaling(clusterVersion)) {
+                throw new InvalidParameterValueException(String.format("Autoscaling requires Kubernetes Version %s or above",
+                    KubernetesVersionManagerImpl.MINIMUN_AUTOSCALER_SUPPORTED_VERSION ));
             }
 
             if (minSize == null || maxSize == null) {
@@ -926,7 +928,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (mastersToRemove >= kubernetesCluster.getMasterNodeCount()) {
                 throw new InvalidParameterValueException("Can not remove all masters from a cluster");
             }
-
             // Ensure there's always a node
             long nodesToRemove = nodes.stream().filter(x -> !x.isMaster()).count();
             if (nodesToRemove >= kubernetesCluster.getNodeCount()) {
@@ -1014,8 +1015,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         KubernetesSupportedVersionVO clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
         if (clusterVersion == null || clusterVersion.getRemoved() != null) {
-            throw new InvalidParameterValueException(String.format("Invalid Kubernetes version associated with cluster ID: %s",
-                    kubernetesCluster.getUuid()));
+            throw new InvalidParameterValueException(String.format("Invalid Kubernetes version associated with cluster : %s",
+                    kubernetesCluster.getName()));
         }
         final ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(kubernetesCluster.getServiceOfferingId());
         if (serviceOffering == null) {
@@ -1061,7 +1062,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
 
-        // Need this for cloudstack-kubernetes-provider && autoscaler
+        // Need this for the autoscaler && cloudstack-kubernetes-provider
         String csUrl = ApiServiceConfiguration.ApiServletPath.value();
         if (csUrl == null || csUrl.contains("localhost")) {
             throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
@@ -1318,6 +1319,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         validateKubernetesClusterScaleParameters(cmd);
 
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
+        Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
+        String[] keys = getServiceUserKeys(owner);
         KubernetesClusterScaleWorker scaleWorker =
             new KubernetesClusterScaleWorker(kubernetesClusterDao.findById(cmd.getId()),
                 serviceOfferingDao.findById(cmd.getServiceOfferingId()),
@@ -1327,6 +1331,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 cmd.getMinSize(),
                 cmd.getMaxSize(),
                 this);
+        scaleWorker.setKeys(keys);
         scaleWorker = ComponentContext.inject(scaleWorker);
         return scaleWorker.scaleCluster();
     }
@@ -1336,6 +1341,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
+
+        // Need this for the autoscaler && cloudstack-kubernetes-provider
+        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
+        if (csUrl == null || csUrl.contains("localhost")) {
+            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
+        }
+
         validateKubernetesClusterUpgradeParameters(cmd);
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
         Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
@@ -1546,8 +1558,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         // check cluster is running at desired capacity include master nodes as well
         if (clusterVMs.size() < kubernetesCluster.getTotalNodeCount()) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Found only %d VMs in the Kubernetes cluster ID: %s while expected %d VMs to be in state: %s",
-                        clusterVMs.size(), kubernetesCluster.getUuid(), kubernetesCluster.getTotalNodeCount(), state.toString()));
+                LOGGER.debug(String.format("Found only %d VMs in the Kubernetes cluster %s while expected %d VMs to be in state: %s",
+                        clusterVMs.size(), kubernetesCluster.getName(), kubernetesCluster.getTotalNodeCount(), state.toString()));
             }
             return false;
         }

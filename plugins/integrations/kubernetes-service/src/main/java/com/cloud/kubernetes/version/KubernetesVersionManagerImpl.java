@@ -78,6 +78,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     @Inject
     private TemplateApiService templateService;
 
+    public static final String MINIMUN_AUTOSCALER_SUPPORTED_VERSION = "1.15.0";
+
     private KubernetesSupportedVersionResponse createKubernetesSupportedVersionResponse(final KubernetesSupportedVersion kubernetesSupportedVersion) {
         KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
         response.setObjectName("kubernetessupportedversion");
@@ -200,6 +202,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                 return 1;
         }
         return 0;
+    }
+
+    public static boolean versionSupportsAutoscaling(KubernetesSupportedVersion clusterVersion) {
+        return clusterVersion.getSemanticVersion().compareTo(MINIMUN_AUTOSCALER_SUPPORTED_VERSION) >= 0;
     }
 
     /**

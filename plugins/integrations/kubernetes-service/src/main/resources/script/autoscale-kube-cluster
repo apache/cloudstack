@@ -57,9 +57,20 @@ if [ $ENABLE == "true" ] ; then
         sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
         kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
         exit 0
+    else
+        mkdir -p /opt/autoscaler
+        AUTOSCALER_URL="https://raw.githubusercontent.com/shapeblue/autoscaler/add-acs/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
+        autoscaler_conf_file="/opt/autoscaler/autoscaler_tmpl.yaml"
+        curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
+        if [ $? -ne 0 ]; then
+            echo "Unable to connect to the internet to download the autoscaler deployment and image"
+            exit 1
+        else
+            sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
+            kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
+            exit 0
+        fi
     fi
-    echo "Cluster does not support automated autoscaling. Please upgrade your cluster to a supported version or deploy the autoscaler manually"
-    exit 1
 else
     kubectl delete deployment -n kube-system cluster-autoscaler
 fi

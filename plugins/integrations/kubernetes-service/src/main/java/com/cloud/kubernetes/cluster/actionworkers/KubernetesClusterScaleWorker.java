@@ -146,8 +146,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         try {
             provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Provisioned  firewall rule to open up port %d to %d on %s in Kubernetes cluster ID: %s",
-                        CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + scaledTotalNodeCount - 1, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
+                LOGGER.debug(String.format("Provisioned  firewall rule to open up port %d to %d on %s in Kubernetes cluster %s",
+                        CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + scaledTotalNodeCount - 1, publicIp.getAddress().addr(), kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH firewall rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
@@ -176,8 +176,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId,
             kubernetesCluster.getAutoscalingEnabled(), kubernetesCluster.getMinSize(), kubernetesCluster.getMaxSize());
         if (kubernetesClusterVO == null) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to update Kubernetes cluster",
-                    kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to update Kubernetes cluster",
+                    kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         return kubernetesClusterVO;
     }
@@ -313,18 +313,16 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             try {
                 UserVm vm = userVmService.destroyVm(userVM.getId(), true);
                 if (!userVmManager.expunge(userVM, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount())) {
-                    logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to expunge VM '%s'."
-                            , kubernetesCluster.getUuid()
-                            , vm.getInstanceName()),
-                            kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                    logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to expunge VM '%s'."
+                        , kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                 }
             } catch (ResourceUnavailableException e) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster ID: %s failed, unable to remove VM ID: %s"
-                        , kubernetesCluster.getUuid() , userVM.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+                logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to remove VM ID: %s",
+                    kubernetesCluster.getName() , userVM.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
             }
             kubernetesClusterVmMapDao.expunge(vmMapVO.getId());
             if (System.currentTimeMillis() > scaleTimeoutTime) {
-                logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, scaling action timed out", kubernetesCluster.getName()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster %s failed, scaling action timed out", kubernetesCluster.getName()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
         }
 

@@ -136,6 +136,8 @@ public class KubernetesClusterActionWorker {
     protected File autoscaleScriptFile;
     protected File deploySecretsScriptFile;
 
+    protected String[] keys;
+
     protected KubernetesClusterActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         this.kubernetesCluster = kubernetesCluster;
         this.kubernetesClusterDao = clusterManager.kubernetesClusterDao;
@@ -405,13 +407,6 @@ public class KubernetesClusterActionWorker {
             return false;
         }
 
-        final UserVm userVm = userVmDao.findById(clusterVMs.get(0).getVmId());
-
-        String hostName = userVm.getHostName();
-        if (!Strings.isNullOrEmpty(hostName)) {
-            hostName = hostName.toLowerCase();
-        }
-
         try {
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
                 pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
@@ -434,23 +429,30 @@ public class KubernetesClusterActionWorker {
             writer.write(data);
             writer.close();
         } catch (IOException e) {
-            logAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to prepare upgrade script %s", kubernetesCluster.getUuid(), filename), e);
+            logAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster %s, unable to prepare upgrade script %s", kubernetesCluster.getName(), filename), e);
         }
         return file;
     }
 
-    protected void copyAutoscalerScripts(final UserVm vm, final int index) throws Exception {
-        int nodeSshPort = sshPort == 22 ? sshPort : sshPort + index;
-        String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
-        SshHelper.scpTo(nodeAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+    protected void retrieveScriptFiles() {
+        autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
+        deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
+    }
+
+    protected void copyAutoscalerScripts(String nodeAddress, final int sshPort) throws Exception {
+        SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                 "~/", autoscaleScriptFile.getAbsolutePath(), "0755");
-        SshHelper.scpTo(nodeAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+        SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                 "~/", deploySecretsScriptFile.getAbsolutePath(), "0755");
         String cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", autoscaleScriptFile.getName(), autoscaleScriptFilename);
-        SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+        SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
             cmdStr, 10000, 10000, 10 * 60 * 1000);
         cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", deploySecretsScriptFile.getName(), deploySecretsScriptFilename);
-        SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+        SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
             cmdStr, 10000, 10000, 10 * 60 * 1000);
+    }
+
+    public void setKeys(String[] keys) {
+        this.keys = keys;
     }
 }

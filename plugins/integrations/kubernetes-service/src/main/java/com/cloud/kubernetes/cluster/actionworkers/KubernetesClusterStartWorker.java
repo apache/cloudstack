@@ -77,7 +77,6 @@ import com.google.common.base.Strings;
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 
     private KubernetesSupportedVersion kubernetesClusterVersion;
-    private String[] keys;
 
     public KubernetesClusterStartWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -381,8 +380,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         try {
             provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster ID: %s",
-                        CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
+                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster %s",
+                        CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
@@ -567,23 +566,18 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         retrieveScriptFiles();
         for (int i = 0; i < clusterVMs.size(); ++i) {
-            UserVm vm = clusterVMs.get(i);
             try {
-                copyAutoscalerScripts(vm, i);
+                copyAutoscalerScripts(publicIpAddress, CLUSTER_NODES_DEFAULT_START_SSH_PORT + i);
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);
             }
         }
         if (!createCloudStackSecret(keys)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
-    }
-
-    private void retrieveScriptFiles() {
-        autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
-        deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
     }
 
     public boolean startStoppedKubernetesCluster() throws CloudRuntimeException {
@@ -661,9 +655,5 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested);
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
-    }
-
-    public void setKeys(String[] keys) {
-        this.keys = keys;
     }
 }
