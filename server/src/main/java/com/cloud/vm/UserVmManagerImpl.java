@@ -1889,26 +1889,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         HashMap<String, VolumeStatsEntry> volumeStatsByUuid = new HashMap<>();
 
         for (HostVO neighbor : neighbors) {
-            List<String> volumeLocators = getVolumesByHost(neighbor, storagePool);
 
             // - zone wide storage for specific hypervisortypes
-            if ((ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType()) || (volumeLocators == null || volumeLocators.size() == 0)) {
+            if ((ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType())) {
                 // skip this neighbour if their hypervisor type is not the same as that of the store
                 continue;
             }
 
-            GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
+            List<String> volumeLocators = getVolumesByHost(neighbor, storagePool);
+            if (!CollectionUtils.isEmpty(volumeLocators)) {
 
-            if (timeout > 0) {
-                cmd.setWait(timeout/1000);
-            }
+                GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
 
-            Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+                if (timeout > 0) {
+                    cmd.setWait(timeout/1000);
+                }
 
-            if (answer instanceof GetVolumeStatsAnswer){
-                GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
-                if (volstats.getVolumeStats() != null) {
-                    volumeStatsByUuid.putAll(volstats.getVolumeStats());
+                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+
+                if (answer instanceof GetVolumeStatsAnswer){
+                    GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
+                    if (volstats.getVolumeStats() != null) {
+                        volumeStatsByUuid.putAll(volstats.getVolumeStats());
+                    }
                 }
             }
         }
