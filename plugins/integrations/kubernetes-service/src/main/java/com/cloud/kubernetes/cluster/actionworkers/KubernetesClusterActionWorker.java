@@ -402,11 +402,6 @@ public class KubernetesClusterActionWorker {
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
 
-        List<KubernetesClusterVmMapVO> clusterVMs = getKubernetesClusterVMMaps();
-        if (CollectionUtils.isEmpty(clusterVMs)) {
-            return false;
-        }
-
         try {
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
                 pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
