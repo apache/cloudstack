@@ -18,6 +18,10 @@
 <template>
   <div class="form-layout">
     <a-spin :spinning="loading">
+      <a-alert type="warning">
+        <span slot="message" v-html="$t('message.kubernetes.cluster.upgrade')" />
+      </a-alert>
+      <br />
       <a-form
         :form="form"
         @submit="handleSubmit"

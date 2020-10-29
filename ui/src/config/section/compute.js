@@ -432,6 +432,7 @@ export default {
           api: 'startKubernetesCluster',
           icon: 'caret-right',
           label: 'label.kubernetes.cluster.start',
+          message: 'message.kubernetes.cluster.start',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#starting-a-stopped-kubernetes-cluster',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) }
@@ -440,6 +441,7 @@ export default {
           api: 'stopKubernetesCluster',
           icon: 'poweroff',
           label: 'label.kubernetes.cluster.stop',
+          message: 'message.kubernetes.cluster.stop',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#stopping-kubernetes-cluster',
           dataView: true,
           show: (record) => { return !['Stopped', 'Destroyed', 'Destroying'].includes(record.state) }
@@ -448,6 +450,7 @@ export default {
           api: 'scaleKubernetesCluster',
           icon: 'swap',
           label: 'label.kubernetes.cluster.scale',
+          message: 'message.kubernetes.cluster.scale',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#scaling-kubernetes-cluster',
           dataView: true,
           show: (record) => { return ['Created', 'Running'].includes(record.state) },
@@ -458,6 +461,7 @@ export default {
           api: 'upgradeKubernetesCluster',
           icon: 'plus-circle',
           label: 'label.kubernetes.cluster.upgrade',
+          message: 'message.kubernetes.cluster.upgrade',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#upgrading-kubernetes-cluster',
           dataView: true,
           show: (record) => { return ['Created', 'Running'].includes(record.state) },
@@ -468,6 +472,7 @@ export default {
           api: 'deleteKubernetesCluster',
           icon: 'delete',
           label: 'label.kubernetes.cluster.delete',
+          message: 'message.kubernetes.cluster.delete',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#deleting-kubernetes-cluster',
           dataView: true,
           show: (record) => { return !['Destroyed', 'Destroying'].includes(record.state) }

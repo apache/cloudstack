@@ -40,23 +40,21 @@
         <a-card :title="$t('label.using.cli')" :loading="this.versionLoading">
           <a-timeline>
             <a-timeline-item>
-              <p>
-                {{ $t('label.download.kubeconfig.cluster') }}
+              <p v-html="$t('label.download.kubeconfig.cluster')">
               </p>
             </a-timeline-item>
             <a-timeline-item>
+              <p v-html="$t('label.download.kubectl')"></p>
               <p>
-                {{ $t('label.download.kubectl') }} <br><br>
                 {{ $t('label.linux') }}: <a :href="this.kubectlLinuxLink">{{ this.kubectlLinuxLink }}</a><br>
                 {{ $t('label.macos') }}: <a :href="this.kubectlMacLink">{{ this.kubectlMacLink }}</a><br>
                 {{ $t('label.windows') }}: <a :href="this.kubectlWindowsLink">{{ this.kubectlWindowsLink }}</a>
               </p>
             </a-timeline-item>
             <a-timeline-item>
+              <p v-html="$t('label.use.kubectl.access.cluster')"></p>
               <p>
-                {{ $t('label.use.kubectl.access.cluster') }}<br><br>
                 <code><b>kubectl --kubeconfig /custom/path/kube.conf {COMMAND}</b></code><br><br>
-
                 <em>{{ $t('label.list.pods') }}</em><br>
                 <code>kubectl --kubeconfig /custom/path/kube.conf get pods --all-namespaces</code><br>
                 <em>{{ $t('label.list.nodes') }}</em><br>
@@ -105,6 +103,9 @@
           </template>
           <template slot="state" slot-scope="text">
             <status :text="text ? text : ''" displayText />
+          </template>
+          <template slot="port" slot-scope="text, record, index">
+            {{ cksSshStartingPort + index }}
           </template>
         </a-table>
       </a-tab-pane>
@@ -165,7 +166,8 @@ export default {
       networkLoading: false,
       network: {},
       publicIpAddress: {},
-      currentTab: 'details'
+      currentTab: 'details',
+      cksSshStartingPort: 2222
     }
   },
   created () {
@@ -185,8 +187,9 @@ export default {
         dataIndex: 'instancename'
       },
       {
-        title: this.$t('label.ipaddress'),
-        dataIndex: 'ipaddress'
+        title: this.$t('label.ssh.port'),
+        dataIndex: 'port',
+        scopedSlots: { customRender: 'port' }
       },
       {
         title: this.$t('label.zonename'),
@@ -286,35 +289,8 @@ export default {
     },
     fetchInstances () {
       this.instanceLoading = true
-      this.virtualmachines = []
-      if (!this.isObjectEmpty(this.resource) && this.arrayHasItems(this.resource.virtualmachineids)) {
-        var params = {}
-        if (this.isAdminOrDomainAdmin()) {
-          params.listall = true
-        }
-        if (this.isValidValueForKey(this.resource, 'projectid') &&
-          this.resource.projectid !== '') {
-          params.projectid = this.resource.projectid
-        }
-        params.ids = this.resource.virtualmachineids.join()
-        api('listVirtualMachines', params).then(json => {
-          const listVms = json.listvirtualmachinesresponse.virtualmachine
-          if (this.arrayHasItems(listVms)) {
-            for (var i = 0; i < listVms.length; ++i) {
-              var vm = listVms[i]
-              if (vm.nic && vm.nic.length > 0 && vm.nic[0].ipaddress) {
-                vm.ipaddress = vm.nic[0].ipaddress
-                listVms[i] = vm
-              }
-            }
-            this.virtualmachines = this.virtualmachines.concat(listVms)
-          }
-        }).catch(error => {
-          this.$notifyError(error)
-        }).finally(() => {
-          this.instanceLoading = false
-        })
-      }
+      this.virtualmachines = this.resource.virtualmachines
+      this.instanceLoading = false
     },
     fetchPublicIpAddress () {
       this.networkLoading = true
