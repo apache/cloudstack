@@ -113,7 +113,11 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
             }
             if (!result.first()) {
-                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                String message = String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s",
+                    kubernetesCluster.getName(), vm.getDisplayName());
+                String messageWithLogs = String.format("%s. Logs :\n%s", message, result.second());
+                logMessage(Level.ERROR, messageWithLogs, null);
+                logTransitStateDetachIsoAndThrow(Level.ERROR, message, kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             if (System.currentTimeMillis() > upgradeTimeoutTime) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, upgrade action timed out", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
