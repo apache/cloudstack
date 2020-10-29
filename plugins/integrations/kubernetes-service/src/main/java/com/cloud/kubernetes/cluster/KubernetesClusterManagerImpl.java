@@ -654,7 +654,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return response;
     }
 
+    private void validateEndpointUrl() {
+        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
+        if (csUrl == null || csUrl.contains("localhost")) {
+            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
+        }
+    }
+
     private void validateKubernetesClusterCreateParameters(final CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
+        validateEndpointUrl();
+
         final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
         final Long kubernetesVersionId = cmd.getKubernetesVersionId();
@@ -903,6 +912,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     KubernetesVersionManagerImpl.MINIMUN_AUTOSCALER_SUPPORTED_VERSION ));
             }
 
+            validateEndpointUrl();
+
             if (minSize == null || maxSize == null) {
                 throw new InvalidParameterValueException("autoscaling requires minsize and maxsize to be passed");
             }
@@ -985,6 +996,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private void validateKubernetesClusterUpgradeParameters(UpgradeKubernetesClusterCmd cmd) {
+        validateEndpointUrl();
+
         // Validate parameters
         final Long kubernetesClusterId = cmd.getId();
         final Long upgradeVersionId = cmd.getKubernetesVersionId();
@@ -1060,12 +1073,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public KubernetesCluster createKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
-        }
-
-        // Need this for the autoscaler && cloudstack-kubernetes-provider
-        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
-        if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
         }
 
         validateKubernetesClusterCreateParameters(cmd);
@@ -1340,12 +1347,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
-        }
-
-        // Need this for the autoscaler && cloudstack-kubernetes-provider
-        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
-        if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
         }
 
         validateKubernetesClusterUpgradeParameters(cmd);
