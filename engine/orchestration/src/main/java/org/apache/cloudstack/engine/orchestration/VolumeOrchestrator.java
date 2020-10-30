@@ -824,7 +824,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         int volumesNumber = 1;
         List<DatadiskTO> templateAsIsDisks = null;
         String configurationId = null;
-        if (template.isDeployAsIs()) {
+        if (template.isDeployAsIs() && vm.getType() != VirtualMachine.Type.SecondaryStorageVm) {
             UserVmDetailVO configurationDetail = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
             if (configurationDetail != null) {
                 configurationId = configurationDetail.getValue();
@@ -849,7 +849,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             String volumeName = name;
             Long volumeSize = rootDisksize;
             long deviceId = type.equals(Type.ROOT) ? 0L : 1L;
-            if (template.isDeployAsIs()) {
+            if (template.isDeployAsIs() && vm.getType() != VirtualMachine.Type.SecondaryStorageVm) {
                 int volumeNameSuffix = templateAsIsDisks.get(number).getDiskNumber();
                 volumeName = String.format("%s-%d", volumeName, volumeNameSuffix);
                 volumeSize = templateAsIsDisks.get(number).getVirtualSize();
