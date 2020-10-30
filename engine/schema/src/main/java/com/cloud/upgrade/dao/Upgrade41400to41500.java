@@ -143,9 +143,9 @@ public class Upgrade41400to41500 implements DbUpgrade {
                 //put(Hypervisor.HypervisorType.KVM, "81b3e48bb934784a13555a43c5ef5ffb");
                 //put(Hypervisor.HypervisorType.XenServer, "1b178a5dbdbe090555515340144c6017");
                 //put(Hypervisor.HypervisorType.VMware, "e6a88e518c57d6f36c096c4204c3417f");
-                put(Hypervisor.HypervisorType.KVM, "d60a5afaf9a86f69ebbae4c2bae6ff45");
-                put(Hypervisor.HypervisorType.XenServer, "01cd0dd45840e0921e23aa2bf6c9a334");
-                put(Hypervisor.HypervisorType.VMware, "43999dc771d21e85330d964d6a48d643");
+                put(Hypervisor.HypervisorType.KVM, "0d95bb3d9385097dec8b485e46eae34b");
+                put(Hypervisor.HypervisorType.XenServer, "8dd2df4eba815711e68cf204a8df7650");
+                put(Hypervisor.HypervisorType.VMware, "6d18a4e41589fa32217adb0d0be3d286");
                 put(Hypervisor.HypervisorType.Hyperv, "5c94da45337cf3e1910dcbe084d4b9ad");
                 put(Hypervisor.HypervisorType.LXC, "81b3e48bb934784a13555a43c5ef5ffb");
                 put(Hypervisor.HypervisorType.Ovm3, "875c5c65455fc06c4a012394410db375");

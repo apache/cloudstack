@@ -45,14 +45,8 @@ setup_k8s_node() {
     enable_fwding 1
     enable_irqbalance 0
     setup_ntp
+    dhclient
 
-    mkdir -p /var/lib/dhcp/
-    DHCPIP=$(cat /var/cache/cloud/cmdline | sed 's/.*dhcprange=\([0-9\.]*\).*/\1/')
-cat <<EOF >> /var/lib/dhcp/dhclient.leases
-lease {
-  option dhcp-server-identifier $DHCPIP
-}
-EOF
     rm -f /etc/logrotate.d/cloud
 
     log_it "Starting cloud-init services"

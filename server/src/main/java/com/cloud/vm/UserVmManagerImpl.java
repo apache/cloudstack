@@ -4406,7 +4406,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private void addUserVMCmdlineArgs(Long vmId, VirtualMachineProfile profile, DeployDestination dest, StringBuilder buf) {
         UserVmVO k8sVM = _vmDao.findById(vmId);
-        String dhcpRange = null;
         buf.append(" template=domP");
         buf.append(" name=").append(profile.getHostName());
         buf.append(" type=").append(k8sVM.getUserVmType());
@@ -4431,16 +4430,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 buf.append(" localgw=").append(dest.getPod().getGateway());
             }
-            if (nic.isDefaultNic()) {
-                final long guestNetworkId = nic.getNetworkId();
-                final NetworkVO guestNetwork = _networkDao.findById(guestNetworkId);
-                if (guestNetwork != null) {
-                    final String cidr = _networkModel.getValidNetworkCidr(guestNetwork);
-                    if (cidr != null) {
-                        dhcpRange = NetUtils.getDhcpRange(cidr);
-                    }
-                }
-            }
         }
         DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
         buf.append(" internaldns1=").append(dc.getInternalDns1());
@@ -4450,9 +4439,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         buf.append(" dns1=").append(dc.getDns1());
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
-        }
-        if (dhcpRange != null) {
-            buf.append(" dhcprange=" + dhcpRange);
         }
         s_logger.info("cmdline details: "+ buf.toString());
     }

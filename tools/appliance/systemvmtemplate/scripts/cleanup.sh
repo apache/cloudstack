@@ -20,7 +20,7 @@ set -e
 
 function cleanup_apt() {
   export DEBIAN_FRONTEND=noninteractive
-  apt-get -y remove --purge dictionaries-common busybox isc-dhcp-client isc-dhcp-common \
+  apt-get -y remove --purge dictionaries-common busybox \
     task-english task-ssh-server tasksel tasksel-data laptop-detect wamerican sharutils \
     nano util-linux-locales krb5-locales
 
