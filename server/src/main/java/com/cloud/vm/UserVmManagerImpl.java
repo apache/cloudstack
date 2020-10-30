@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -102,6 +103,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -1914,45 +1916,46 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, List<String> volumeLocators, int timeout) {
+    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType,  int timeout) {
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(clusterId, Status.Up);
         StoragePoolVO storagePool = _storagePoolDao.findPoolByUUID(poolUuid);
+        HashMap<String, VolumeStatsEntry> volumeStatsByUuid = new HashMap<>();
+
         for (HostVO neighbor : neighbors) {
-            // apply filters:
-            // - managed storage
-            // - local storage
-            if (storagePool.isManaged() || storagePool.isLocal()) {
-
-                volumeLocators = getVolumesByHost(neighbor, storagePool);
-
-            }
 
             // - zone wide storage for specific hypervisortypes
-            if (ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType()) {
+            if ((ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType())) {
                 // skip this neighbour if their hypervisor type is not the same as that of the store
                 continue;
             }
 
-            GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
+            List<String> volumeLocators = getVolumesByHost(neighbor, storagePool);
+            if (!CollectionUtils.isEmpty(volumeLocators)) {
 
-            if (timeout > 0) {
-                cmd.setWait(timeout/1000);
-            }
+                GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
 
-            Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+                if (timeout > 0) {
+                    cmd.setWait(timeout/1000);
+                }
 
-            if (answer instanceof GetVolumeStatsAnswer){
-                GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
-                return volstats.getVolumeStats();
+                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+
+                if (answer instanceof GetVolumeStatsAnswer){
+                    GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
+                    if (volstats.getVolumeStats() != null) {
+                        volumeStatsByUuid.putAll(volstats.getVolumeStats());
+                    }
+                }
             }
         }
-        return null;
+        return volumeStatsByUuid.size() > 0 ? volumeStatsByUuid : null;
     }
 
     private List<String> getVolumesByHost(HostVO host, StoragePool pool){
-        List<UserVmVO> vmsPerHost = _vmDao.listByHostId(host.getId());
+        List<VMInstanceVO> vmsPerHost = _vmInstanceDao.listByHostId(host.getId());
         return vmsPerHost.stream()
-                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol -> vol.getPath()))
+                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol ->
+                vol.getState() == Volume.State.Ready ? (vol.getFormat() == ImageFormat.OVA ? vol.getChainInfo() : vol.getPath()) : null).filter(Objects::nonNull))
                 .collect(Collectors.toList());
     }
 
