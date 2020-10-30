@@ -11,12 +11,13 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
 
 import javax.inject.Inject;
-import java.util.List;
+import java.util.Arrays;
 
 @APICommand(name = "listTungstenProviders", responseObject = TungstenProviderResponse.class, description = "Lists Tungsten providers",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -26,9 +27,8 @@ public class ListTungstenProvidersCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_UUID, type = CommandType.UUID, entityType = TungstenProviderResponse.class, required = false,
-            description = "the ID of a tungsten provider")
-    private Long tungstenProviderUuid;
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, required = true, entityType = PhysicalNetworkResponse.class)
+    private Long physicalNetworkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -44,8 +44,8 @@ public class ListTungstenProvidersCmd extends BaseCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 
-    public Long getTungstenProviderUuid() {
-        return tungstenProviderUuid;
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
     }
 
     /////////////////////////////////////////////////////
@@ -58,10 +58,10 @@ public class ListTungstenProvidersCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
-        List<TungstenProviderResponse> providers = tungstenProviderService.listProviders(this);
+        TungstenProviderResponse provider = tungstenProviderService.listTungstenProvider(this);
         ListResponse<TungstenProviderResponse> responseList = new ListResponse<TungstenProviderResponse>();
         responseList.setResponseName(getCommandName());
-        responseList.setResponses(providers);
+        responseList.setResponses(Arrays.asList(provider));
         setResponseObject(responseList);
     }
 

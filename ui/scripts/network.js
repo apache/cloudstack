@@ -702,25 +702,6 @@
                                             }
                                         }
                                     },
-                                    tungstenvirtualrouteruuid: {
-                                        label: 'label.tungsten',
-                                        dependsOn: 'networkOfferingId',
-                                        select: function(args) {
-                                            var networkOfferingObj;
-                                            var $form = args.$select.closest('form');
-                                            var data = {
-                                                listAll: true,
-                                                details: 'min'
-                                            };
-
-                                            $(networkOfferingObjs).each(function(key, value) {
-                                                if (value.id == args.networkOfferingId) {
-                                                    networkOfferingObj = value;
-                                                    return false; //break each loop
-                                                }
-                                            });
-                                        }
-                                    },
                                     externalId: {
                                         label: 'label.guest.externalId'
                                     },
@@ -775,12 +756,6 @@
                                 if (args.$form.find('.form-item[rel=vpcid]').css("display") != "none") {
                                     $.extend(dataObj, {
                                         vpcid: args.data.vpcid
-                                    });
-                                }
-
-                                if (args.$form.find('.form-item[rel=tungstenvirtualrouteruuid]').css("display") != "none") {
-                                    $.extend(dataObj, {
-                                        tungstenvirtualrouteruuid: args.data.tungstenvirtualrouteruuid
                                     });
                                 }
 

@@ -8,6 +8,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.TungstenUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import net.juniper.tungsten.api.ApiConnector;
 import net.juniper.tungsten.api.ApiConnectorFactory;
@@ -62,8 +63,8 @@ public class TungstenServiceImpl implements TungstenService {
     }
 
     @Override
-    public void init() {
-        TungstenProviderResponse tungstenProvider = _tungstenProviderService.getTungstenProvider();
+    public void init(long zoneId) {
+        TungstenProviderResponse tungstenProvider = _tungstenProviderService.getTungstenProvider(zoneId);
         if (tungstenProvider != null) {
             String hostname = tungstenProvider.getHostname();
             int port = Integer.parseInt(tungstenProvider.getPort());
@@ -72,7 +73,8 @@ public class TungstenServiceImpl implements TungstenService {
             _api = ApiConnectorFactory.build(hostname, port);
             _vrouterApi = VRouterApiConnectorFactory.getInstance(vrouter, vrouterPort);
         } else {
-            _tungstenProviderService.disableTungstenNsp();
+            _tungstenProviderService.disableTungstenNsp(zoneId);
+            throw new CloudRuntimeException("Unable to find a tungsten provider!");
         }
     }
 
@@ -146,60 +148,19 @@ public class TungstenServiceImpl implements TungstenService {
 
     /**
      * Get the tungsten project that match the project from cloudstack
+     *
      * @return
      */
     @Override
     public Project getTungstenNetworkProject(long accountId, long domainId) throws IOException {
         ProjectVO cloudstackProject = getProject(accountId);
         DomainVO cloudstackDomain = getDomain(domainId);
-        Domain tungstenDomain;
-        Project tungstenProject;
-        //get the tungsten domain
-        if (cloudstackDomain != null && cloudstackDomain.getId() != com.cloud.domain.Domain.ROOT_DOMAIN) {
-            tungstenDomain = (Domain) _api.findById(Domain.class, cloudstackDomain.getUuid());
-            if (tungstenDomain == null) {
-                tungstenDomain = createDomainInTungsten(cloudstackDomain.getName(), cloudstackDomain.getUuid());
-            }
-        } else {
-            tungstenDomain = getDefaultTungstenDomain();
-        }
-        //get the tungsten project
-        if (cloudstackProject != null) {
-            tungstenProject = (Project) _api.findById(Project.class, cloudstackProject.getUuid());
-            if (tungstenProject == null) {
-                tungstenProject = createProjectInTungsten(cloudstackProject.getName(), cloudstackProject.getUuid(),
-                        tungstenDomain);
-            }
-        } else {
-            tungstenProject = getDefaultTungstenProject();
-        }
-        return tungstenProject;
-    }
-
-    /**
-     * Create a project in tungsten that match the project from cloudstack
-     */
-    public Project createProjectInTungsten(String projectName, String projectUuid, Domain tungstenDomain)
-            throws IOException {
-        Project tungstenProject = new Project();
-        tungstenProject.setDisplayName(projectName);
-        tungstenProject.setName(projectName);
-        tungstenProject.setUuid(projectUuid);
-        tungstenProject.setParent(tungstenDomain);
-        _api.create(tungstenProject);
-        return tungstenProject;
-    }
-
-    /**
-     * Create a domain in tungsten that match the domain from cloudstack
-     */
-    public Domain createDomainInTungsten(String domainName, String domainUuid) throws IOException {
-        Domain tungstenDomain = new Domain();
-        tungstenDomain.setDisplayName(domainName);
-        tungstenDomain.setName(domainName);
-        tungstenDomain.setUuid(domainUuid);
-        _api.create(tungstenDomain);
-        return tungstenDomain;
+        if(cloudstackDomain.getName().equals("ROOT") && cloudstackProject == null)
+            return (Project) _api.findByFQN(Project.class, TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT);
+        else if(cloudstackProject == null)
+            return (Project) _api.findByFQN(Project.class, cloudstackDomain.getName() + ":" + TUNGSTEN_DEFAULT_PROJECT);
+        else
+            return (Project) _api.findById(Project.class, cloudstackProject.getUuid());
     }
 
     public ProjectVO getProject(long accountId) {
@@ -212,33 +173,6 @@ public class TungstenServiceImpl implements TungstenService {
 
     public DomainVO getDomain(long domainId) {
         return _domainDao.findById(domainId);
-    }
-
-    /**
-     * Create a default project in tungsten for a specific domain
-     */
-    public Project createDefaultProject(String tungstenDomain) throws IOException {
-        Domain domain = (Domain) _api.findByFQN(Domain.class, tungstenDomain);
-        Project project = new Project();
-        project.setParent(domain);
-        project.setName(tungstenDomain + "-default-project");
-        _api.create(project);
-        return (Project) _api.findByFQN(Project.class, tungstenDomain + ":" + project.getName());
-    }
-
-    /**
-     * Get the tungsten domain default project
-     */
-    public Project getDefaultTungstenProject() throws IOException {
-        return (Project) _api.findByFQN(Project.class, TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT);
-    }
-
-    /**
-     * Get the default domain from tungsten
-     */
-    public Domain getDefaultTungstenDomain() throws IOException {
-        Domain domain = (Domain) _api.findByFQN(Domain.class, TUNGSTEN_DEFAULT_DOMAIN);
-        return domain;
     }
 
     public String getFqnName(ApiObjectBase obj) {
@@ -285,9 +219,9 @@ public class TungstenServiceImpl implements TungstenService {
         try {
             VirtualNetwork virtualNetwork = new VirtualNetwork();
             virtualNetwork.setUuid(network.getUuid());
+            virtualNetwork.setParent(project);
             virtualNetwork.setName(network.getName());
             virtualNetwork.addNetworkIpam(networkIpam, subnet);
-            virtualNetwork.setParent(project);
             _api.create(virtualNetwork);
             return (VirtualNetwork) _api.findById(VirtualNetwork.class, virtualNetwork.getUuid());
         } catch (IOException e) {

@@ -6,16 +6,14 @@ import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenProvider
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenProvidersCmd;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 
-import java.util.List;
-
 public interface TungstenProviderService {
     TungstenProvider addProvider(CreateTungstenProviderCmd cmd);
 
-    TungstenProviderResponse getTungstenProvider();
+    TungstenProviderResponse getTungstenProvider(long zoneId);
+
+    TungstenProviderResponse listTungstenProvider(ListTungstenProvidersCmd cmd);
 
     void deleteTungstenProvider(DeleteTungstenProviderCmd cmd);
 
-    List<TungstenProviderResponse> listProviders(ListTungstenProvidersCmd cmd);
-
-    void disableTungstenNsp();
+    void disableTungstenNsp(long zoneId);
 }

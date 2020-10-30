@@ -80,6 +80,7 @@ public class TungstenProviderVO implements TungstenProvider {
         this.uuid = uuid;
     }
 
+    @Override
     public String getHostname() {
         return hostname;
     }
@@ -96,6 +97,7 @@ public class TungstenProviderVO implements TungstenProvider {
         this.providerName = providerName;
     }
 
+    @Override
     public String getPort() {
         return port;
     }

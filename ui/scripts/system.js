@@ -4845,12 +4845,22 @@
                                     }],
                                 dataProvider: function (args) {
                                     refreshNspData("Tungsten");
-                                    args.response.success({
-                                        data: $.extend(nspMap[ "Tungsten"], {
-                                            supportedServices: nspMap[ "Tungsten"].servicelist.join(', ')
-                                        }),
-                                        actionFilter: networkProviderActionFilter('Tungsten')
-                                    });
+                                    if(args.context.physicalNetworks[0].isolationmethods.localeCompare("TF") == 0) {
+                                        args.response.success({
+                                            data: $.extend(nspMap["Tungsten"], {
+                                                supportedServices: nspMap["Tungsten"].servicelist.join(', ')
+                                            }),
+                                            actionFilter: networkProviderActionFilter('Tungsten')
+                                        });
+                                    }
+                                    else {
+                                        args.response.success({
+                                            data: $.extend(nspMap["Tungsten"], {
+                                                supportedServices: nspMap["Tungsten"].servicelist.join(', ')
+                                            }),
+                                            actionFilter: function(args) { return [ '' ] }
+                                        });
+                                    }
                                 }
                             },
                             controllers: {
@@ -4877,7 +4887,7 @@
                                     dataProvider: function (args) {
                                         var providerObj
                                         $.ajax({
-                                            url: createURL("listTungstenProviders"),
+                                            url: createURL("listTungstenProviders&physicalnetworkid=" + args.context.physicalNetworks[0].id),
                                             async: false,
                                             success: function (json) {
                                                 providerObj = json.listTungstenProviders.tungstenProvider
@@ -4912,7 +4922,7 @@
                                                 dataProvider: function (args) {
                                                     var providerObj
                                                     $.ajax({
-                                                        url: createURL("listTungstenProviders&tungstenprovideruuid=" + args.jsonObj.uuid),
+                                                        url: createURL("listTungstenProviders&physicalnetworkid=" + args.context.physicalNetworks[0].id),
                                                         dataType: "json",
                                                         async: false,
                                                         success: function (json) {
@@ -4931,7 +4941,7 @@
                                                 label: 'label.tungsten.delete.provider',
                                                 action: function (args) {
                                                     $.ajax({
-                                                        url: createURL("deleteTungstenProvider&tungstenprovideruuid=" + args.context.tungstenProviderList[0].uuid),
+                                                        url: createURL("deleteTungstenProvider&physicalnetworkid=" + args.context.tungstenProviderList[0].uuid + "&zoneid=" + args.context.zones[0].id),
                                                         dataType: "json",
                                                         async: true,
                                                         success: function (json) {
@@ -22034,6 +22044,7 @@
                 nspid: nspMap[ "Tungsten"].id,
                 tungstenproviderhostname: args.data.hostname,
                 name: args.data.name,
+                zoneid: args.context.zones[0].id,
                 physicalnetworkid: selectedPhysicalNetworkObj.id,
                 tungstenproviderport: args.data.port,
                 tungstenprovidervrouter: args.data.vrouter,

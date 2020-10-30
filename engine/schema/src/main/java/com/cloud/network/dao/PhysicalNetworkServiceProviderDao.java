@@ -25,7 +25,7 @@ public interface PhysicalNetworkServiceProviderDao extends GenericDao<PhysicalNe
 
     PhysicalNetworkServiceProviderVO findByServiceProvider(long physicalNetworkId, String providerType);
 
-    PhysicalNetworkServiceProviderVO findByProviderName(String providerType);
+    List<PhysicalNetworkServiceProviderVO> listByProviderName(String providerType);
 
     void deleteProviders(long physicalNetworkId);
 

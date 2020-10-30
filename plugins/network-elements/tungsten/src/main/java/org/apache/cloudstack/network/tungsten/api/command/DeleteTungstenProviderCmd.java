@@ -15,6 +15,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
 
 import javax.inject.Inject;
@@ -29,11 +30,17 @@ public class DeleteTungstenProviderCmd extends BaseCmd {
 
     private static final String s_name = "deletetungstenproviderresponse";
 
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, required = true, entityType = ZoneResponse.class)
+    private Long zoneId;
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_UUID, type = CommandType.STRING, required = true, description = "The UUID of the tungsten provider")
     private String tungstenProviderUuid;
 
     public String getTungstenProviderUuid() {
         return tungstenProviderUuid;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
     }
 
     @Inject

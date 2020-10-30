@@ -17,6 +17,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
@@ -39,6 +40,9 @@ public class CreateTungstenProviderCmd extends BaseAsyncCreateCmd {
             entityType = DomainResponse.class,
             description = "An optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
     private Long domainId;
+
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class)
+    private Long zoneId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Project ID for the service instance")
     private Long projectId;
@@ -118,7 +122,7 @@ public class CreateTungstenProviderCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        TungstenProviderResponse tungstenProviderResponse = tungstenProviderService.getTungstenProvider();
+        TungstenProviderResponse tungstenProviderResponse = tungstenProviderService.getTungstenProvider(zoneId);
         if (tungstenProviderResponse == null)
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create tungsten provider");
         else {

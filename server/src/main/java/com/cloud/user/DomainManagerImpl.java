@@ -16,32 +16,6 @@
 // under the License.
 package com.cloud.user;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import com.cloud.domain.dao.DomainDetailsDao;
-import org.apache.cloudstack.annotation.AnnotationService;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
-import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
-import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.region.RegionManager;
-import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
@@ -62,6 +36,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.TungstenProvider;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
@@ -69,6 +44,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.tungsten.TungstenDomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -85,7 +61,28 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
-import org.apache.commons.lang3.StringUtils;
+import com.google.common.base.Strings;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.region.RegionManager;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Component
 public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
@@ -128,9 +125,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Inject
     private ConfigurationManager _configMgr;
     @Inject
-    private DomainDetailsDao _domainDetailsDao;
-    @Inject
-    private AnnotationDao annotationDao;
+    private TungstenDomainManager _tungstenDomainManager;
 
     @Inject
     MessageBus _messageBus;
@@ -208,43 +203,16 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     @DB
-    public Domain createDomain(final String name, final Long parentId, final Long ownerId, final String networkDomain, String domainUuid) {
-        validateDomainNameAndNetworkDomain(name, parentId, networkDomain);
-
-        DomainVO domainVO = createDomainVo(name, parentId, ownerId, networkDomain, domainUuid);
-
-        DomainVO domain = Transaction.execute(new TransactionCallback<DomainVO>() {
-            @Override
-            public DomainVO doInTransaction(TransactionStatus status) {
-                DomainVO domain = _domainDao.create(domainVO);
-                _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
-
-                CallContext.current().putContextParameter(Domain.class, domain.getUuid());
-                return domain;
+    public Domain createDomain(final String name, final Long parentId, final Long ownerId, final String networkDomain, String domainUUID) {
+        // Verify network domain
+        if (networkDomain != null) {
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
-        });
-        if (domain != null) {
-            _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
-        }
-        return domain;
-    }
-
-    protected DomainVO createDomainVo(String name, Long parentId, Long ownerId, String networkDomain, String domainUuid) {
-        if (StringUtils.isBlank(domainUuid)) {
-            domainUuid = UUID.randomUUID().toString();
-            s_logger.info(String.format("Domain UUID [%s] generated for domain name [%s].", domainUuid, name));
         }
 
-        DomainVO domainVO = new DomainVO(name, ownerId, parentId, networkDomain, domainUuid);
-        return domainVO;
-    }
-
-    protected void validateDomainNameAndNetworkDomain(String name, Long parentId, String networkDomain) {
-        validateNetworkDomain(networkDomain);
-        validateUniqueDomainName(name, parentId);
-    }
-
-    protected void validateUniqueDomainName(String name, Long parentId) {
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, name);
         sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
@@ -253,15 +221,33 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         if (!domains.isEmpty()) {
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
-    }
 
-    protected void validateNetworkDomain(String networkDomain) {
-        if (networkDomain != null && !NetUtils.verifyDomainName(networkDomain)) {
-            throw new InvalidParameterValueException(
-                    "Invalid network domain. Total length should not exceed 190 chars. Each domain label must be between 1 and 63 characters long." +
-                            " It can contain ASCII letters 'a' through 'z', the digits '0' through '9', and the hyphen ('-'); it cannot start or end with \"-\"."
-            );
+        if (domainUUID == null) {
+            domainUUID = UUID.randomUUID().toString();
         }
+
+        final String domainUUIDFinal = domainUUID;
+        DomainVO domain = Transaction.execute(new TransactionCallback<DomainVO>() {
+            @Override
+            public DomainVO doInTransaction(TransactionStatus status) {
+                DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUIDFinal));
+                _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
+                //check if tungsten provider exists and create domain in tungsten
+                List<TungstenProvider> tungstenProviders = _tungstenDomainManager.getTungstenProviders();
+                if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
+                    for (TungstenProvider tungstenProvider : tungstenProviders) {
+                        _tungstenDomainManager.createDomainInTungsten(tungstenProvider, domain.getName(), domain.getUuid());
+                    }
+                }
+                return domain;
+            }
+        });
+
+        CallContext.current().putContextParameter(Domain.class, domain.getUuid());
+
+        _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
+
+        return domain;
     }
 
     @Override
@@ -273,7 +259,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     public Domain findDomainByIdOrPath(final Long id, final String domainPath) {
         Long domainId = id;
         if (domainId == null || domainId < 1L) {
-            if (StringUtils.isBlank(domainPath)) {
+            if (Strings.isNullOrEmpty(domainPath) || domainPath.trim().isEmpty()) {
                 domainId = Domain.ROOT_DOMAIN;
             } else {
                 final Domain domainVO = findDomainByPath(domainPath.trim());
@@ -356,10 +342,15 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     s_logger.debug("Domain specific Virtual IP ranges " + " are successfully released as a part of domain id=" + domain.getId() + " cleanup.");
                 }
 
-                cleanupDomainDetails(domain.getId());
                 cleanupDomainOfferings(domain.getId());
-                annotationDao.removeByEntityType(AnnotationService.EntityType.DOMAIN.name(), domain.getUuid());
                 CallContext.current().putContextParameter(Domain.class, domain.getUuid());
+                //check if tungsten provider exists and delete the domain from tungsten
+                List<TungstenProvider> tungstenProviders = _tungstenDomainManager.getTungstenProviders();
+                if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
+                    for (TungstenProvider tungstenProvider : tungstenProviders) {
+                        _tungstenDomainManager.deleteDomainFromTungsten(tungstenProvider, domain.getUuid());
+                    }
+                }
                 return true;
             } catch (Exception ex) {
                 s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
@@ -472,10 +463,6 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         _messageBus.publish(_name, MESSAGE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domain);
     }
 
-    protected void cleanupDomainDetails(Long domainId) {
-        _domainDetailsDao.deleteDetails(domainId);
-    }
-
     protected void cleanupDomainOfferings(Long domainId) {
         if (domainId == null) {
             return;
@@ -548,7 +535,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         List<AccountVO> accounts = _accountDao.search(sc, null);
         for (AccountVO account : accounts) {
-            if (account.getType() != Account.Type.PROJECT) {
+            if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 s_logger.debug("Deleting account " + account + " as a part of domain id=" + domainId + " cleanup");
                 boolean deleteAccount = _accountMgr.deleteAccount(account, CallContext.current().getCallingUserId(), getCaller());
                 if (!deleteAccount) {

@@ -88,7 +88,6 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
             && ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Tungsten)) {
             return true;
         }
-
         return false;
     }
 
@@ -141,7 +140,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
         super.deallocate(config, nic, vm);
 
-        tungstenFabricUtilsInit();
+        tungstenFabricUtilsInit(config.getDataCenterId());
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setIPv4Address(null);
@@ -165,7 +164,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
 
         assert (network.getState() == Network.State.Implementing) : "Why are we implementing " + network;
 
-        tungstenFabricUtilsInit();
+        tungstenFabricUtilsInit(network.getDataCenterId());
 
         // get physical network id
         Long physicalNetworkId = network.getPhysicalNetworkId();
@@ -206,7 +205,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         super.reserve(nic, network, vm, dest, context);
 
-        tungstenFabricUtilsInit();
+        tungstenFabricUtilsInit(network.getDataCenterId());
 
         // create tungsten vm, vmi, instance ip
         VirtualMachine virtualMachine;
@@ -248,7 +247,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
             port.setMacAddress(nic.getMacAddress());
             port.setIpAddress(instanceIp.getAddress());
             port.setInstanceId(virtualMachine.getUuid());
-            tungstenService.addTungstenVrouterPort(port);
+//            tungstenService.addTungstenVrouterPort(port);
 
             nic.setName(nic.getName() + TungstenUtils.getBridgeName());
         } catch (IOException e) {
@@ -260,9 +259,10 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public boolean release(final NicProfile nic, final VirtualMachineProfile vm, final String reservationId) {
 
-        tungstenFabricUtilsInit();
         // delete instance ip and vmi
         Network network = _networkDao.findById(nic.getNetworkId());
+        tungstenFabricUtilsInit(network.getDataCenterId());
+
         DeleteTungstenVmInterfaceCommand cmd = new DeleteTungstenVmInterfaceCommand(nic.getUuid(), tungstenService);
         TungstenAnswer tungstenAnswer = _tunstenFabricUtils.sendTungstenCommand(cmd, network);
         if (tungstenAnswer.getResult())
@@ -273,7 +273,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
-        tungstenFabricUtilsInit();
+        tungstenFabricUtilsInit(network.getDataCenterId());
         try {
             DeleteTungstenNetworkCommand cmd = new DeleteTungstenNetworkCommand(network.getUuid(), tungstenService);
             _tunstenFabricUtils.sendTungstenCommand(cmd, network);
@@ -283,10 +283,10 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
         return super.trash(network, offering);
     }
 
-    private void tungstenFabricUtilsInit() {
+    private void tungstenFabricUtilsInit(long zoneId) {
         if (_tunstenFabricUtils == null) {
             _tunstenFabricUtils = new TungstenFabricUtils(_agentMgr, _tungstenProviderDao);
-            tungstenService.init();
+            tungstenService.init(zoneId);
         }
     }
 }

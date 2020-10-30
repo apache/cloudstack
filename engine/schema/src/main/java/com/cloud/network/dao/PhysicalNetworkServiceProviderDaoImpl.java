@@ -79,10 +79,10 @@ public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<Physic
     }
 
     @Override
-    public PhysicalNetworkServiceProviderVO findByProviderName(String providerType) {
+    public List<PhysicalNetworkServiceProviderVO> listByProviderName(String providerType) {
         SearchCriteria<PhysicalNetworkServiceProviderVO> sc = physicalNetworkServiceProviderSearch.create();
         sc.setParameters("serviceProvderType", providerType);
-        return findOneBy(sc);
+        return search(sc, null);
     }
 
     @Override

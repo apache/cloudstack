@@ -22,7 +22,7 @@ public interface TungstenService {
     public static final String TUNGSTEN_DEFAULT_PROJECT = "default-project";
     public static final String TUNGSTEN_DEFAULT_IPAM = "default-network-ipam";
 
-    void init();
+    void init(long zoneId);
 
     VRouterApiConnector get_vrouterApi();
 
