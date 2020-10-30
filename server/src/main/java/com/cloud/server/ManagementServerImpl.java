@@ -3987,6 +3987,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // get all the hosts in this cluster
         final List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(command.getClusterId());
 
+        String userNameWithoutSpaces = StringUtils.deleteWhitespace(command.getUsername());
+        if (StringUtils.isBlank(userNameWithoutSpaces)) {
+            throw new InvalidParameterValueException("Username should be non empty string");
+        }
+
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -3996,7 +4001,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     }
                     // update password for this host
                     final DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                    if (nv.getValue().equals(command.getUsername())) {
+                    if (nv == null) {
+                        final DetailVO nvu = new DetailVO(h.getId(), ApiConstants.USERNAME, userNameWithoutSpaces);
+                        _detailsDao.persist(nvu);
+                        final DetailVO nvp = new DetailVO(h.getId(), ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(command.getPassword()));
+                        _detailsDao.persist(nvp);
+                    } else if (nv.getValue().equals(userNameWithoutSpaces)) {
                         final DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
                         nvp.setValue(DBEncryptionUtil.encrypt(command.getPassword()));
                         _detailsDao.persist(nvp);
@@ -4044,6 +4054,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (!supportedHypervisors.contains(host.getHypervisorType())) {
             throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
         }
+
+        String userNameWithoutSpaces = StringUtils.deleteWhitespace(cmd.getUsername());
+        if (StringUtils.isBlank(userNameWithoutSpaces)) {
+            throw new InvalidParameterValueException("Username should be non empty string");
+        }
+
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -4052,7 +4068,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
                 // update password for this host
                 final DetailVO nv = _detailsDao.findDetail(host.getId(), ApiConstants.USERNAME);
-                if (nv.getValue().equals(cmd.getUsername())) {
+                if (nv == null) {
+                    final DetailVO nvu = new DetailVO(host.getId(), ApiConstants.USERNAME, userNameWithoutSpaces);
+                    _detailsDao.persist(nvu);
+                    final DetailVO nvp = new DetailVO(host.getId(), ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(cmd.getPassword()));
+                    _detailsDao.persist(nvp);
+                } else if (nv.getValue().equals(userNameWithoutSpaces)) {
                     final DetailVO nvp = _detailsDao.findDetail(host.getId(), ApiConstants.PASSWORD);
                     nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
                     _detailsDao.persist(nvp);
