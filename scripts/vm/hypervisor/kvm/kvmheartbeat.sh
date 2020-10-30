@@ -24,6 +24,8 @@ help() {
                     -h host  
                     -r write/read hb log 
                     -c cleanup
+                    -d destroy vms on mount point
+                    -s stop cloudstack-agent
                     -t interval between read hb log\n"
   exit 1
 }
@@ -35,8 +37,10 @@ HostIP=
 interval=
 rflag=0
 cflag=0
+dflag=0
+sflag=0
 
-while getopts 'i:p:m:h:t:rc' OPTION
+while getopts 'i:p:m:h:t:rcds' OPTION
 do
   case $OPTION in
   i)
@@ -58,7 +62,13 @@ do
      interval="$OPTARG"
      ;;
   c)
-    cflag=1
+     cflag=1
+     ;;
+  d)
+     dflag=1
+     ;;
+  s)
+     sflag=1
      ;;
   *)
      help
@@ -88,13 +98,15 @@ deleteVMs() {
 
   for pid in $vmPids
   do
+     vmname=$(ps a -q $pid |tail -n1 |awk '{print $8}')
      kill -9 $pid &> /dev/null
+     /usr/bin/logger -t heartbeat "Killed vm $vmname with pid $pid"
   done
 }
 
 #checking is there the same nfs server mounted under $MountPoint?
 mounts=$(cat /proc/mounts |grep nfs|grep $MountPoint)
-if [ $? -gt 0 ]
+if [ $? -gt 0 ] && [ "$cflag" == "0" ] && [ "$dflag" == "0" ] && [ "$sflag" == "0" ]
 then
    # remount it
    mount $NfsSvrIP:$NfsSvrPath $MountPoint -o sync,soft,proto=tcp,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0,noac,timeo=133,retrans=10 &> /dev/null
@@ -159,6 +171,20 @@ then
   sync &
   sleep 5
   echo b > /proc/sysrq-trigger
+  exit $?
+elif [ "$dflag" == "1" ]
+then
+  /usr/bin/logger -t heartbeat "kvmheartbeat.sh will destroy vms on mount point $MountPoint because it was unable to write the heartbeat to the storage."
+  sync &
+  sleep 5
+  deleteVMs $MountPoint
+  exit $?
+elif [ "$sflag" == "1" ]
+then
+  /usr/bin/logger -t heartbeat "kvmheartbeat.sh will stop cloudstack-agent because it was unable to write the heartbeat to the storage."
+  sync &
+  sleep 5
+  service cloudstack-agent stop
   exit $?
 else
   write_hbLog 

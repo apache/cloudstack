@@ -32,13 +32,34 @@ public class KVMHABase {
     private static final Logger s_logger = Logger.getLogger(KVMHABase.class);
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
-    protected long _heartBeatUpdateTimeout = 60000;
-    protected long _heartBeatUpdateFreq = 60000;
-    protected long _heartBeatUpdateMaxTries = 5;
-    protected long _heartBeatUpdateRetrySleep = 10000;
+    protected static long s_heartBeatUpdateTimeout = 60000;
+    protected static long s_heartBeatUpdateFreq = 60000;
+    protected static long s_heartBeatUpdateMaxRetries = 5;
+    protected static long s_heartBeatUpdateRetrySleep = 10000;
+    protected static HeartBeatAction s_heartBeatFailureAction = HeartBeatAction.HARDRESET;
 
     public static enum PoolType {
         PrimaryStorage, SecondaryStorage
+    }
+
+    public static enum HeartBeatAction {
+        HARDRESET("hardreset", "-c"),
+        DESTROYVMS("destroyvms", "-d"),
+        STOPAGENT("stopagent", "-s");
+
+        String _action;
+        String _flag;
+        HeartBeatAction(String action, String flag) {
+            _action = action;
+            _flag = flag;
+        }
+        @Override
+        public String toString() {
+            return _action;
+        }
+        public String getFlag() {
+            return _flag;
+        }
     }
 
     public static class NfsStoragePool {

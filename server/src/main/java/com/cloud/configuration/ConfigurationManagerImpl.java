@@ -85,7 +85,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -404,6 +403,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Set<String> weightBasedParametersForValidation;
     private Set<String> overprovisioningFactorsForValidation;
 
+    public static final String KVM_HEARTBEAT_UPDATE_MAX_RETRIES = "kvm.heartbeat.update.max.retries";
+    public static final String KVM_HEARTBEAT_UPDATE_RETRY_SLEEP = "kvm.heartbeat.update.retry.sleep";
+    public static final String KVM_HEARTBEAT_UPDATE_TIMEOUT = "kvm.heartbeat.update.timeout";
+    public static final String KVM_HEARTBEAT_FAILURE_ACTION = "kvm.heartbeat.failure.action";
+
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
 
@@ -421,6 +425,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<Boolean>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
                         "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
                         true, ConfigKey.Scope.Zone, null);
+
+    public static final ConfigKey<Long> KvmHeartBeatUpdateMaxRetries =  new ConfigKey<>("Advanced", Long.class, KVM_HEARTBEAT_UPDATE_MAX_RETRIES, "5",
+            "The maximum retries of kvm heartbeat to write to storage",
+            true, ConfigKey.Scope.Global);
+
+    public static final ConfigKey<Long> KvmHeartBeatUpdateRetrySleep =  new ConfigKey<>("Advanced", Long.class, KVM_HEARTBEAT_UPDATE_RETRY_SLEEP, "10000",
+            "The sleep time, in milliseconds, between two kvm heartbeats to write to storage",
+            true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Long> KvmHeartBeatUpdateTimeout = new ConfigKey<>("Advanced", Long.class, KVM_HEARTBEAT_UPDATE_TIMEOUT, "60000",
+            "Timeout(in milliseconds) that kvm heartbeat to write to storage",
+            true, ConfigKey.Scope.Global);
+    public static final ConfigKey<String> KvmHeartBeatFailureAction = new ConfigKey<>("Advanced", String.class, KVM_HEARTBEAT_FAILURE_ACTION, "hardreset",
+            "The action for heartbeat write failures on KVM host. The valid value are 'hardreset' (default), 'stopagent', 'destroyvms'",
+            true, ConfigKey.Scope.Global);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -473,6 +491,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("externaldhcp.vmip.max.retry");
         configValuesForValidation.add("externaldhcp.vmipFetch.threadPool.max");
         configValuesForValidation.add("remote.access.vpn.psk.length");
+        configValuesForValidation.add(KVM_HEARTBEAT_UPDATE_MAX_RETRIES);
+        configValuesForValidation.add(KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
+        configValuesForValidation.add(KVM_HEARTBEAT_UPDATE_TIMEOUT);
     }
 
     private void weightBasedParametersForValidation() {
@@ -504,21 +525,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private void initMessageBusListener() {
-        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
-            @Override
-            public void onPublishMessage(String serderAddress, String subject, Object args) {
-                String globalSettingUpdated = (String) args;
-                if (Strings.isNullOrEmpty(globalSettingUpdated)) {
-                    return;
-                }
-                if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
-                        globalSettingUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
-                    _indirectAgentLB.propagateMSListToAgents();
-                } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())) {
-                    Map<String, String> params = new HashMap<String, String>();
-                    params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-                    _agentManager.propagateChangeToAgents(params);
-                }
+        Map<String, ConfigKey> configKeyMap = new HashMap<>();
+        configKeyMap.put(KVM_HEARTBEAT_UPDATE_MAX_RETRIES, KvmHeartBeatUpdateMaxRetries);
+        configKeyMap.put(KVM_HEARTBEAT_UPDATE_RETRY_SLEEP, KvmHeartBeatUpdateRetrySleep);
+        configKeyMap.put(KVM_HEARTBEAT_UPDATE_TIMEOUT, KvmHeartBeatUpdateTimeout);
+        configKeyMap.put(KVM_HEARTBEAT_FAILURE_ACTION, KvmHeartBeatFailureAction);
+        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (serverAddress, subject, args) -> {
+            String globalSettingUpdated = (String) args;
+            if (Strings.isNullOrEmpty(globalSettingUpdated)) {
+                return;
+            }
+            if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
+                    globalSettingUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
+                _indirectAgentLB.propagateMSListToAgents();
+            } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())) {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                _agentManager.propagateChangeToAgents(params);
+            } else if (configKeyMap.keySet().contains(globalSettingUpdated)) {
+                ConfigKey configKey = configKeyMap.get(globalSettingUpdated);
+                Map<String, String> params = new HashMap<String, String>();
+                params.put(configKey.key(), configKey.value().toString());
+                _agentManager.propagateChangeToAgents(params);
             }
         });
     }
@@ -880,6 +908,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
             s_logger.error(errMsg);
             return errMsg;
+        }
+
+        if (KvmHeartBeatFailureAction.key().equalsIgnoreCase(name)) {
+            List<String> kvmHeartBeatFailureActions = Arrays.asList("hardreset", "destroyvms", "stopagent");
+            if (value == null || ! kvmHeartBeatFailureActions.contains(value.toLowerCase())) {
+                final String msg = "Possible values for " + name + " are - " + Arrays.toString(kvmHeartBeatFailureActions.toArray());
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
         }
 
         if (value == null) {
@@ -6455,6 +6492,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
-                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE};
+                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE,
+                KvmHeartBeatUpdateMaxRetries, KvmHeartBeatUpdateRetrySleep, KvmHeartBeatUpdateTimeout, KvmHeartBeatFailureAction };
     }
 }

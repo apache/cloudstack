@@ -121,6 +121,11 @@ import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
 import com.google.common.base.Strings;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_FAILURE_ACTION;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_UPDATE_MAX_RETRIES;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_UPDATE_TIMEOUT;
+
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  **/
@@ -1758,8 +1763,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (cmd instanceof StartupRoutingCommand) {
                 if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
                     Map<String, String> params = new HashMap<String, String>();
-                    params.put("router.aggregation.command.each.timeout", _configDao.getValue("router.aggregation.command.each.timeout"));
-
+                    Arrays.asList(KVM_HEARTBEAT_UPDATE_MAX_RETRIES,
+                            KVM_HEARTBEAT_UPDATE_RETRY_SLEEP,
+                            KVM_HEARTBEAT_UPDATE_TIMEOUT,
+                            KVM_HEARTBEAT_FAILURE_ACTION)
+                            .forEach(c -> params.put(c, _configDao.getValue(c)));
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);
                         Commands c = new Commands(cmds);
