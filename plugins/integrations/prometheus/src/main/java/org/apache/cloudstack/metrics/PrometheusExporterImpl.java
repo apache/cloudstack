@@ -36,7 +36,6 @@ import org.apache.log4j.Logger;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.DomainJoinDao;
-import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
@@ -54,6 +53,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageStats;
@@ -84,8 +84,6 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private DataCenterDao dcDao;
     @Inject
     private HostDao hostDao;
-    @Inject
-    private HostJoinDao hostJoinDao;
     @Inject
     private VMInstanceDao vmDao;
     @Inject
