@@ -188,6 +188,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.libvirt.VcpuInfo;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_UPDATE_MAX_RETRIES;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_UPDATE_TIMEOUT;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_FAILURE_ACTION;
+
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
  * the libvirt API
@@ -1309,6 +1314,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return true;
+    }
+
+    public void configureHeartBeatParams(final Map<String, String> params) {
+        Long heartBeatUpdateMaxRetries = null;
+        Long heartBeatUpdateRetrySleep = null;
+        Long heartBeatUpdateTimeout = null;
+        KVMHAMonitor.HeartBeatAction heartBeatFailureAction = null;
+        if (params.get(KVM_HEARTBEAT_UPDATE_MAX_RETRIES) != null) {
+            heartBeatUpdateMaxRetries = Long.parseLong(params.get(KVM_HEARTBEAT_UPDATE_MAX_RETRIES));
+        }
+        if (params.get(KVM_HEARTBEAT_UPDATE_RETRY_SLEEP) != null) {
+            heartBeatUpdateRetrySleep = Long.parseLong(params.get(KVM_HEARTBEAT_UPDATE_RETRY_SLEEP));
+        }
+        if (params.get(KVM_HEARTBEAT_UPDATE_TIMEOUT) != null) {
+            heartBeatUpdateTimeout = Long.parseLong(params.get(KVM_HEARTBEAT_UPDATE_TIMEOUT));
+        }
+        if (params.get(KVM_HEARTBEAT_FAILURE_ACTION) != null) {
+            heartBeatFailureAction = KVMHAMonitor.HeartBeatAction.valueOf(params.get(KVM_HEARTBEAT_FAILURE_ACTION).toUpperCase());
+        }
+        KVMHAMonitor.configureHeartBeatParams(heartBeatUpdateMaxRetries, heartBeatUpdateRetrySleep, heartBeatUpdateTimeout, heartBeatFailureAction);
     }
 
     private void configureAgentHooks(final Map<String, Object> params) {

@@ -38,6 +38,8 @@ public class LibvirtVMDef {
     private String _platformEmulator;
     private final Map<String, Object> components = new HashMap<String, Object>();
 
+    public static final String MANUFACTURER_APACHE = "Apache Software Foundation";
+
     public static class GuestDef {
         enum GuestType {
             KVM, XEN, EXE, LXC
@@ -170,7 +172,7 @@ public class LibvirtVMDef {
 
                 guestDef.append("<sysinfo type='smbios'>\n");
                 guestDef.append("<system>\n");
-                guestDef.append("<entry name='manufacturer'>Apache Software Foundation</entry>\n");
+                guestDef.append("<entry name='manufacturer'>" + MANUFACTURER_APACHE + "</entry>\n");
                 guestDef.append("<entry name='product'>CloudStack " + _type.toString() + " Hypervisor</entry>\n");
                 guestDef.append("<entry name='uuid'>" + _uuid + "</entry>\n");
                 guestDef.append("</system>\n");

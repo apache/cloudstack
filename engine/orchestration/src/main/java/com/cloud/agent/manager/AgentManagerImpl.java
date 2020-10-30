@@ -122,6 +122,11 @@ import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
 import org.apache.commons.lang3.StringUtils;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_FAILURE_ACTION;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_UPDATE_MAX_RETRIES;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_HEARTBEAT_UPDATE_TIMEOUT;
+
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  **/
@@ -1762,6 +1767,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
 
+                    Arrays.asList(KVM_HEARTBEAT_UPDATE_MAX_RETRIES,
+                            KVM_HEARTBEAT_UPDATE_RETRY_SLEEP,
+                            KVM_HEARTBEAT_UPDATE_TIMEOUT,
+                            KVM_HEARTBEAT_FAILURE_ACTION)
+                            .forEach(c -> params.put(c, _configDao.getValue(c)));
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);
                         Commands c = new Commands(cmds);

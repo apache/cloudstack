@@ -41,6 +41,7 @@ import java.util.Vector;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.google.common.base.Strings;
 import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -90,7 +91,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.PortableIp;
@@ -425,6 +425,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Set<String> overprovisioningFactorsForValidation;
     public static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
 
+    public static final String KVM_HEARTBEAT_UPDATE_MAX_RETRIES = "kvm.heartbeat.update.max.retries";
+    public static final String KVM_HEARTBEAT_UPDATE_RETRY_SLEEP = "kvm.heartbeat.update.retry.sleep";
+    public static final String KVM_HEARTBEAT_UPDATE_TIMEOUT = "kvm.heartbeat.update.timeout";
+    public static final String KVM_HEARTBEAT_FAILURE_ACTION = "kvm.heartbeat.failure.action";
+
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
 
@@ -458,6 +463,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
     public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<Boolean>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
             "Indicates whether the VM can be migrated to different cluster if no host is found in same cluster",true, ConfigKey.Scope.Zone, null);
+
+    public static final ConfigKey<Long> KVM_HEARTBEAT_UPDATE_MAX_RETRIES_CK =  new ConfigKey<>("Advanced", Long.class, KVM_HEARTBEAT_UPDATE_MAX_RETRIES, "5",
+            "The maximum retries of kvm heartbeat to write to storage",
+            true, ConfigKey.Scope.Global);
+
+    public static final ConfigKey<Long> KVM_HEARTBEAT_UPDATE_RETRY_SLEEP_CK =  new ConfigKey<>("Advanced", Long.class, KVM_HEARTBEAT_UPDATE_RETRY_SLEEP, "10000",
+            "The sleep time, in milliseconds, between two kvm heartbeats to write to storage",
+            true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Long> KVM_HEARTBEAT_UPDATE_TIMEOUT_CK = new ConfigKey<>("Advanced", Long.class, KVM_HEARTBEAT_UPDATE_TIMEOUT, "60000",
+            "Timeout(in milliseconds) that kvm heartbeat to write to storage",
+            true, ConfigKey.Scope.Global);
+    public static final ConfigKey<String> KVM_HEARTBEAT_FAILURE_ACTION_CK = new ConfigKey<>("Advanced", String.class, KVM_HEARTBEAT_FAILURE_ACTION, "hardreset",
+            "The action for heartbeat write failures on KVM host. The valid value are 'hardreset' (default), 'stopagent', 'destroyvms'",
+            true, ConfigKey.Scope.Global);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -514,6 +533,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
         configValuesForValidation.add(VM_USERDATA_MAX_LENGTH_STRING);
+        configValuesForValidation.add(KVM_HEARTBEAT_UPDATE_MAX_RETRIES);
+        configValuesForValidation.add(KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
+        configValuesForValidation.add(KVM_HEARTBEAT_UPDATE_TIMEOUT);
     }
 
     private void weightBasedParametersForValidation() {
@@ -546,23 +568,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private void initMessageBusListener() {
-        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
-            @Override
-            public void onPublishMessage(String serderAddress, String subject, Object args) {
-                String globalSettingUpdated = (String) args;
-                if (StringUtils.isEmpty(globalSettingUpdated)) {
-                    return;
-                }
-                if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
-                        globalSettingUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
-                    _indirectAgentLB.propagateMSListToAgents();
-                } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
-                        ||  globalSettingUpdated.equals(Config.MigrateWait.toString())) {
-                    Map<String, String> params = new HashMap<String, String>();
-                    params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-                    params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
-                    _agentManager.propagateChangeToAgents(params);
-                }
+        Map<String, ConfigKey> configKeyMap = new HashMap<>();
+        configKeyMap.put(KVM_HEARTBEAT_UPDATE_MAX_RETRIES, KVM_HEARTBEAT_UPDATE_MAX_RETRIES_CK);
+        configKeyMap.put(KVM_HEARTBEAT_UPDATE_RETRY_SLEEP, KVM_HEARTBEAT_UPDATE_RETRY_SLEEP_CK);
+        configKeyMap.put(KVM_HEARTBEAT_UPDATE_TIMEOUT, KVM_HEARTBEAT_UPDATE_TIMEOUT_CK);
+        configKeyMap.put(KVM_HEARTBEAT_FAILURE_ACTION, KVM_HEARTBEAT_FAILURE_ACTION_CK);
+        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (serverAddress, subject, args) -> {
+            String globalSettingUpdated = (String) args;
+            if (Strings.isNullOrEmpty(globalSettingUpdated)) {
+                return;
+            }
+            if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
+                    globalSettingUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
+                _indirectAgentLB.propagateMSListToAgents();
+            } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
+                    || globalSettingUpdated.equals(Config.MigrateWait.toString())) {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
+                _agentManager.propagateChangeToAgents(params);
+            } else if (configKeyMap.keySet().contains(globalSettingUpdated)) {
+                ConfigKey configKey = configKeyMap.get(globalSettingUpdated);
+                Map<String, String> params = new HashMap<String, String>();
+                params.put(configKey.key(), configKey.value().toString());
+                _agentManager.propagateChangeToAgents(params);
             }
         });
     }
@@ -926,6 +955,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
             s_logger.error(errMsg);
             return errMsg;
+        }
+
+        if (KVM_HEARTBEAT_FAILURE_ACTION.equalsIgnoreCase(name)) {
+            List<String> kvmHeartBeatFailureActions = Arrays.asList("hardreset", "destroyvms", "stopagent");
+            if (value == null || ! kvmHeartBeatFailureActions.contains(value.toLowerCase())) {
+                final String msg = "Possible values for " + name + " are - " + Arrays.toString(kvmHeartBeatFailureActions.toArray());
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
         }
 
         if (value == null) {
@@ -7047,7 +7085,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE, VM_SERVICE_OFFERING_MAX_CPU_CORES,
                 VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
-                ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN
+                ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN,
+                KVM_HEARTBEAT_UPDATE_MAX_RETRIES_CK, KVM_HEARTBEAT_UPDATE_RETRY_SLEEP_CK, KVM_HEARTBEAT_UPDATE_TIMEOUT_CK, KVM_HEARTBEAT_FAILURE_ACTION_CK
         };
     }
 }
