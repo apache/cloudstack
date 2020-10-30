@@ -153,29 +153,22 @@ export default {
     handleSubmit () {
       this.loading = true
 
-      const apiName = this.resource.state === 'Stopped' ? 'changeServiceForVirtualMachine' : 'scaleVirtualMachine'
       if ('cpuspeed' in this.selectedOffering && this.selectedOffering.iscustomized) {
         delete this.params[this.cpuSpeedKey]
       }
 
-      api(apiName, this.params).then(response => {
-        if (apiName === 'scaleVirtualMachine') {
-          const jobId = response.scalevirtualmachineresponse.jobid
-          if (jobId) {
-            this.$pollJob({
-              jobId,
-              successMethod: result => {
-                this.$notification.success({
-                  message: this.$t('message.success.change.offering')
-                })
-              },
-              loadingMessage: this.$t('message.scale.processing'),
-              catchMessage: this.$t('error.fetching.async.job.result')
-            })
-          }
-        } else {
-          this.$notification.success({
-            message: this.$t('message.success.change.offering')
+      api('scaleVirtualMachine', this.params).then(response => {
+        const jobId = response.scalevirtualmachineresponse.jobid
+        if (jobId) {
+          this.$pollJob({
+            jobId,
+            successMethod: result => {
+              this.$notification.success({
+                message: this.$t('message.success.change.offering')
+              })
+            },
+            loadingMessage: this.$t('message.scale.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result')
           })
         }
         this.$parent.$parent.close()
