@@ -340,16 +340,9 @@ public class KubernetesClusterActionWorker {
         if (!iso.getState().equals(VirtualMachineTemplate.State.Active)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster : %s. Binaries ISO not active.",  kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
-        //Pair<String, Integer> clusterServerIpSshPort = getKubernetesClusterServerIpSshPort(null);
-//        long i = 0;
-//
-//        if (!containsMasterNode(clusterVMs)) {
-//            i = kubernetesCluster.getTotalNodeCount();
-//        }
+
         for (UserVm vm : clusterVMs) {
             try {
-//                while (!KubernetesClusterUtil.isKubernetesClusterMasterVmRunning(kubernetesCluster, clusterServerIpSshPort.first(), (int) (CLUSTER_NODES_DEFAULT_START_SSH_PORT + i), startTimeoutTime));
-//                i++;
                 templateService.attachIso(iso.getId(), vm.getId());
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info(String.format("Attached binaries ISO for VM : %s in cluster: %s", vm.getDisplayName(), kubernetesCluster.getName()));

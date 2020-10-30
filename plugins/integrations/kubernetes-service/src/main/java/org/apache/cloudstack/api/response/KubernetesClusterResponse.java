@@ -141,14 +141,6 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "Public IP Address ID of the cluster")
     private String ipAddressId;
 
-    @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "Public IP Address of the cluster")
-    private String ipAddress;
-
-    @SerializedName(ApiConstants.IP_ADDRESS_ID)
-    @Param(description = "Public IP Address ID of the cluster")
-    private String ipAddressId;
-
     public KubernetesClusterResponse() {
     }
 
