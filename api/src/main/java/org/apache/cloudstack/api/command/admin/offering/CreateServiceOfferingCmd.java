@@ -127,6 +127,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
     private Map details;
 
+    @Parameter(name = ApiConstants.ROOT_DISK_SIZE, type = CommandType.LONG, since = "4.15", description = "the Root disk size in GB.")
+    private Long rootDiskSize;
+
     @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
 
@@ -322,6 +325,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             }
         }
         return detailsMap;
+    }
+
+    public Long getRootDiskSize() {
+        return rootDiskSize;
     }
 
     public Long getBytesReadRate() {

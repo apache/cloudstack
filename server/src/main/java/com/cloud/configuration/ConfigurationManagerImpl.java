@@ -432,6 +432,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private static final Set<Provider> VPC_ONLY_PROVIDERS = Sets.newHashSet(Provider.VPCVirtualRouter, Provider.JuniperContrailVpcRouter, Provider.InternalLbVm);
 
+    private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         final String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.key());
@@ -2473,7 +2475,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
-                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
+                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, cmd.getRootDiskSize(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
@@ -2484,7 +2486,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
             final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
             final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
-            final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, final Boolean isCustomizedIops, Long minIops, Long maxIops,
+            final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
@@ -2545,6 +2547,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (rootDiskSizeInGiB != null && rootDiskSizeInGiB <= 0L) {
+            throw new InvalidParameterValueException(String.format("The Root disk size is of %s GB but it must be greater than 0.", rootDiskSizeInGiB));
+        } else if (rootDiskSizeInGiB != null) {
+            long rootDiskSizeInBytes = rootDiskSizeInGiB * GiB_TO_BYTES;
+            offering.setDiskSize(rootDiskSizeInBytes);
+        }
 
         offering.setCustomizedIops(isCustomizedIops);
         offering.setMinIops(minIops);

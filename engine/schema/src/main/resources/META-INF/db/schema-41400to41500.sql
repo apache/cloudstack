@@ -406,6 +406,7 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `disk_offering`.`iops_write_rate_max` AS `iops_write_rate_max`,
         `disk_offering`.`iops_write_rate_max_length` AS `iops_write_rate_max_length`,
         `disk_offering`.`cache_mode` AS `cache_mode`,
+        `disk_offering`.`disk_size` AS `root_disk_size`,
         `service_offering`.`cpu` AS `cpu`,
         `service_offering`.`speed` AS `speed`,
         `service_offering`.`ram_size` AS `ram_size`,
@@ -820,7 +821,6 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_vers
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '6.7.1', 'solaris11_64Guest', 328, now(), 0);
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '6.7.2', 'solaris11_64Guest', 328, now(), 0);
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '6.7.3', 'solaris11_64Guest', 328, now(), 0);
-
 
 -- Add  VMware Photon (64 bit)     as support guest os
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (329, UUID(), 7, 'VMware Photon (64 bit)', now());
