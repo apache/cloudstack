@@ -3436,11 +3436,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (networkId == null) {
                     networkId = ip.getSourceNetworkId();
                 }
-                NetworkDetailVO networkDetail = networkDetailsDao.findDetail(networkId, Network.hideIpAddressUsage);
-                if (networkDetail != null && networkDetail.getValue() != null && networkDetail.getValue().equals("true")) {
-                    // Don't export network usage when admin wants it hidden
-                    return null;
-                }
                 resourceType = ResourceObjectType.PublicIpAddress;
                 resourceId = ip.getId();
                 usageRecResponse.setUsageId(ip.getUuid());
