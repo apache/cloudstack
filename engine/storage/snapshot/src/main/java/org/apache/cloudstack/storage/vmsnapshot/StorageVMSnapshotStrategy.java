@@ -168,12 +168,12 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 }
             }
             freezeCommand = new FreezeThawVMCommand(userVm.getInstanceName());
-            freezeCommand.setOption("freeze");
+            freezeCommand.setOption(FreezeThawVMCommand.FREEZE);
             freezeAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, freezeCommand);
             startFreeze = System.nanoTime();
 
             thawCmd = new FreezeThawVMCommand(userVm.getInstanceName());
-            thawCmd.setOption("thaw");
+            thawCmd.setOption(FreezeThawVMCommand.THAW);
             if (freezeAnswer != null && freezeAnswer.getResult()) {
                 s_logger.info("The virtual machine is frozen");
                 for (VolumeInfo vol : vinfos) {

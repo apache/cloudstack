@@ -51,24 +51,34 @@ public class LibvirtFreezeThawVMCommandWrapper extends CommandWrapper<FreezeThaw
             domain = serverResource.getDomain(connect, vmName);
             if (domain == null) {
                 return new FreezeThawVMAnswer(command, false, String.format("Failed to %s due to %s was not found",
-                        command.getOption().toUpperCase(), vmName));
+                        command.getOption(), vmName));
             }
             DomainState domainState = domain.getInfo().state ;
             if (domainState != DomainState.VIR_DOMAIN_RUNNING) {
                 return new FreezeThawVMAnswer(command, false,
-                        String.format("%s of VM failed due to vm %s is in %s state", command.getOption().toUpperCase(),
+                        String.format("%s of VM failed due to vm %s is in %s state", command.getOption(),
                                 vmName, domainState));
             }
 
-            String result = result(command.getOption(), domain);
-            if (result == null || (result.startsWith("error") || new JsonParser().parse(result).getAsJsonObject().get("return").getAsInt() != 2)) {
+            String result = getResultOfQemuCommand(command.getOption(), domain);
+            s_logger.debug(String.format("Result of %s command is %s", command.getOption(), result));
+            if (result == null || (result.startsWith("error"))) {
                 return new FreezeThawVMAnswer(command, false, String.format("Failed to %s vm %s due to result status is: %s",
-                        command.getOption().toUpperCase(), vmName, result));
+                        command.getOption(), vmName, result));
             }
-            return new FreezeThawVMAnswer(command, true, String.format("%s of VM - %s is successful", command.getOption().toUpperCase(), vmName));
+            String status = getResultOfQemuCommand(FreezeThawVMCommand.STATUS, domain);
+            s_logger.debug(String.format("Status of %s command is %s", command.getOption(), status));
+            if (status != null && new JsonParser().parse(status).isJsonObject()) {
+                String statusResult = new JsonParser().parse(status).getAsJsonObject().get("return").getAsString();
+                if (statusResult.equals(command.getOption())) {
+                    return new FreezeThawVMAnswer(command, true, String.format("%s of VM - %s is successful", command.getOption(), vmName));
+                }
+            }
+            return new FreezeThawVMAnswer(command, false, String.format("Failed to %s vm %s due to result status is: %s",
+                    command.getOption(), vmName, status));
         } catch (LibvirtException libvirtException) {
             return new FreezeThawVMAnswer(command, false,  String.format("Failed to %s VM - %s due to %s",
-                    command.getOption().toUpperCase(), vmName, libvirtException.getMessage()));
+                    command.getOption(), vmName, libvirtException.getMessage()));
         }finally {
             if (domain != null) {
                 try {
@@ -80,12 +90,14 @@ public class LibvirtFreezeThawVMCommandWrapper extends CommandWrapper<FreezeThaw
         }
     }
 
-    private String result(String cmd, Domain domain) throws LibvirtException {
+    private String getResultOfQemuCommand(String cmd, Domain domain) throws LibvirtException {
         String result = null;
-        if (cmd.equals("freeze")) {
+        if (cmd.equals(FreezeThawVMCommand.FREEZE)) {
             result = domain.qemuAgentCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.AGENT_FREEZE, null)).toString(), 10, 0);
-        }else if (cmd.equals("thaw")) {
+        } else if (cmd.equals(FreezeThawVMCommand.THAW)) {
             result = domain.qemuAgentCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.AGENT_THAW, null)).toString(), 10, 0);
+        } else if (cmd.equals(FreezeThawVMCommand.STATUS)) {
+            result = domain.qemuAgentCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.AGENT_FREEZE_STATUS, null)).toString(), 10, 0);
         }
         return result;
     }

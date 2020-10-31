@@ -29,6 +29,7 @@ public class QemuCommand {
     //Qemu agent commands
     public static final String AGENT_FREEZE = "guest-fsfreeze-freeze";
     public static final String AGENT_THAW = "guest-fsfreeze-thaw";
+    public static final String AGENT_FREEZE_STATUS = "guest-fsfreeze-status";
     //Qemu monitor commands
     public static final String QEMU_QUERY_BLOCK_JOBS = "query-block-jobs";
     public static final String QEMU_BLOCK = "query-block";

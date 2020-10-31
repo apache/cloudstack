@@ -20,6 +20,11 @@
 package com.cloud.agent.api;
 
 public class FreezeThawVMCommand extends Command{
+
+    public static final String FREEZE = "frozen";
+    public static final String THAW = "thawed";
+    public static final String STATUS = "status";
+
     private String vmName;
     private String option;
 
