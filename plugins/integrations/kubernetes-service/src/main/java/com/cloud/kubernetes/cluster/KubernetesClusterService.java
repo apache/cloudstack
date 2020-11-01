@@ -86,6 +86,12 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "false",
             "Indicates whether experimental feature for Kubernetes cluster such as Docker private registry are enabled or not",
             true);
+    static final ConfigKey<Integer> KubernetesMaxClusterSize = new ConfigKey<Integer>("Advanced", Integer.class,
+            "cloud.kubernetes.cluster.max.size",
+            "10",
+            "Maximum size of the kubernetes cluster.",
+            true, ConfigKey.Scope.Account);
+
 
     KubernetesCluster findById(final Long id);
 

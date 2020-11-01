@@ -673,6 +673,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String sshKeyPair = cmd.getSSHKeyPairName();
         final Long masterNodeCount = cmd.getMasterNodes();
         final Long clusterSize = cmd.getClusterSize();
+        final long totalNodeCount = masterNodeCount + clusterSize;
         final String dockerRegistryUserName = cmd.getDockerRegistryUserName();
         final String dockerRegistryPassword = cmd.getDockerRegistryPassword();
         final String dockerRegistryUrl = cmd.getDockerRegistryUrl();
@@ -684,12 +685,18 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name:" + name);
         }
 
-        if (masterNodeCount < 1 || masterNodeCount > 100) {
+        if (masterNodeCount < 1) {
             throw new InvalidParameterValueException("Invalid cluster master nodes count: " + masterNodeCount);
         }
 
-        if (clusterSize < 1 || clusterSize > 100) {
+        if (clusterSize < 1) {
             throw new InvalidParameterValueException("Invalid cluster size: " + clusterSize);
+        }
+
+        int maxClusterSize = KubernetesMaxClusterSize.valueIn(owner.getId());
+        if (totalNodeCount > maxClusterSize) {
+            throw new InvalidParameterValueException(
+                String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
         }
 
         DataCenter zone = dataCenterDao.findById(zoneId);
@@ -922,6 +929,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             if (maxSize <= minSize) {
                 throw new InvalidParameterValueException("maxsize must be greater than or equal to minsize");
+            }
+            int maxClusterSize = KubernetesMaxClusterSize.valueIn(kubernetesCluster.getAccountId());
+            if (maxSize + kubernetesCluster.getMasterNodeCount() > maxClusterSize) {
+                throw new InvalidParameterValueException(
+                    String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
             }
         }
 
@@ -1645,7 +1657,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesClusterStartTimeout,
             KubernetesClusterScaleTimeout,
             KubernetesClusterUpgradeTimeout,
-            KubernetesClusterExperimentalFeaturesEnabled
+            KubernetesClusterExperimentalFeaturesEnabled,
+            KubernetesMaxClusterSize
         };
     }
 }
