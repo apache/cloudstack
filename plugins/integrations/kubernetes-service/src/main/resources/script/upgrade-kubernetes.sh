@@ -108,17 +108,17 @@ if [ -d "$BINARIES_DIR" ]; then
 
   if [ "${IS_MAIN_MASTER}" == 'true' ]; then
     set +e
-    kubeadm upgrade apply ${UPGRADE_VERSION} -y
+    kubeadm --v=5 upgrade apply ${UPGRADE_VERSION} -y
     retval=$?
     set -e
     if [ $retval -ne 0 ]; then
-      kubeadm upgrade apply ${UPGRADE_VERSION} --ignore-preflight-errors=CoreDNSUnsupportedPlugins -y
+      kubeadm --v=5 upgrade apply ${UPGRADE_VERSION} --ignore-preflight-errors=CoreDNSUnsupportedPlugins -y
     fi
   else
     if [ "${IS_OLD_VERSION}" == 'true' ]; then
-      kubeadm upgrade node config --kubelet-version ${UPGRADE_VERSION}
+      kubeadm --v=5 upgrade node config --kubelet-version ${UPGRADE_VERSION}
     else
-      kubeadm upgrade node
+      kubeadm --v=5 upgrade node
     fi
   fi
 
