@@ -96,12 +96,9 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
         }
-        if (compareSemanticVersions(kubernetesSupportedVersion.getSemanticVersion(),
-                KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0) {
-            response.setSupportsHA(true);
-        } else {
-            response.setSupportsHA(false);
-        }
+        response.setSupportsHA(compareSemanticVersions(kubernetesSupportedVersion.getSemanticVersion(),
+            KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0);
+        response.setSupportsAutoscaling(versionSupportsAutoscaling(kubernetesSupportedVersion));
         TemplateJoinVO template = templateJoinDao.findById(kubernetesSupportedVersion.getIsoId());
         if (template != null) {
             response.setIsoId(template.getUuid());
