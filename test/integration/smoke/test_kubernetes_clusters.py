@@ -159,7 +159,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                                       "false")
                 cls.restartServer()
 
-            cleanup_resources(cls.apiclient, cls._cleanup)
+            cleanup_resources(cls.apiclient, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         if version_delete_failed == True:

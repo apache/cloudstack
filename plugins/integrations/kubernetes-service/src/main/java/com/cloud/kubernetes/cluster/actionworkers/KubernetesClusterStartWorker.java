@@ -378,27 +378,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s",
                 network.getName(), kubernetesCluster.getName()));
         }
-        // Firewall rule fo API access for master node VMs
-        try {
-            provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster %s",
-                        CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getName()));
-            }
-        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        }
 
-        // Firewall rule fo SSH access on each node VM
-        try {
-            int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMs.size() - 1;
-            provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
-            }
-        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        }
+        createFirewallRules(publicIp, clusterVMIds);
 
         // Load balancer rule fo API access for master node VMs
         try {
@@ -412,6 +393,30 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, CLUSTER_NODES_DEFAULT_START_SSH_PORT);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+    }
+
+    private void createFirewallRules(IpAddress publicIp, List<Long> clusterVMIds) throws ManagementServerException {
+        // Firewall rule fo API access for master node VMs
+        try {
+            provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster %s",
+                        CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+
+        // Firewall rule fo SSH access on each node VM
+        try {
+            int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1;
+            provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
     }
 
@@ -571,6 +576,16 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         retrieveScriptFiles();
+        copyAutoscalerScriptsToNodes(publicIpAddress, clusterVMs);
+        if (!createCloudStackSecret(keys)) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
+        }
+        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+        return true;
+    }
+
+    private void copyAutoscalerScriptsToNodes(String publicIpAddress, List<UserVm> clusterVMs) {
         for (int i = 0; i < clusterVMs.size(); ++i) {
             try {
                 copyAutoscalerScripts(publicIpAddress, CLUSTER_NODES_DEFAULT_START_SSH_PORT + i);
@@ -578,14 +593,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 throw new CloudRuntimeException(e);
             }
         }
-        if (!createCloudStackSecret(keys)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
-                kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
-        }
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
-        // remove launch permissions
-        deleteTemplateLaunchPermission();
-        return true;
     }
 
     public boolean startStoppedKubernetesCluster() throws CloudRuntimeException {

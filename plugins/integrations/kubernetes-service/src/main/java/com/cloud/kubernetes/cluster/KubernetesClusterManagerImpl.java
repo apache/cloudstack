@@ -842,9 +842,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state and can not be scaled", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
         }
 
+        int maxClusterSize = KubernetesMaxClusterSize.valueIn(kubernetesCluster.getAccountId());
         if (isAutoscalingEnabled != null && isAutoscalingEnabled) {
             if (clusterSize != null || serviceOfferingId != null || nodeIds != null) {
-                throw new InvalidParameterValueException("autoscaling can not be passed along with nodeids or clustersize or service offering");
+                throw new InvalidParameterValueException("Autoscaling can not be passed along with nodeids or clustersize or service offering");
             }
 
             if (!KubernetesVersionManagerImpl.versionSupportsAutoscaling(clusterVersion)) {
@@ -855,15 +856,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             validateEndpointUrl();
 
             if (minSize == null || maxSize == null) {
-                throw new InvalidParameterValueException("autoscaling requires minsize and maxsize to be passed");
+                throw new InvalidParameterValueException("Autoscaling requires minsize and maxsize to be passed");
             }
             if (minSize < 1) {
-                throw new InvalidParameterValueException("minsize must be at least than 1");
+                throw new InvalidParameterValueException("Minsize must be at least than 1");
             }
             if (maxSize <= minSize) {
-                throw new InvalidParameterValueException("maxsize must be greater than or equal to minsize");
+                throw new InvalidParameterValueException("Maxsize must be greater than or equal to minsize");
             }
-            int maxClusterSize = KubernetesMaxClusterSize.valueIn(kubernetesCluster.getAccountId());
             if (maxSize + kubernetesCluster.getMasterNodeCount() > maxClusterSize) {
                 throw new InvalidParameterValueException(
                     String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
@@ -927,6 +927,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             if (clusterSize < 1) {
                 throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled for size, %d", kubernetesCluster.getName(), clusterSize));
+            }
+            if (clusterSize + kubernetesCluster.getMasterNodeCount() > maxClusterSize) {
+                throw new InvalidParameterValueException(
+                    String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
             }
             if (clusterSize > kubernetesCluster.getNodeCount()) { // Upscale
                 VMTemplateVO template = templateDao.findById(kubernetesCluster.getTemplateId());
