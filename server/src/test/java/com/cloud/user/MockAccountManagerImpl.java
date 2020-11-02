@@ -426,6 +426,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public Map<String, String> getKeys(Long userId) {
+        return null;
+    }
+
+    @Override
     public void checkAccess(User user, ControlledEntity entity)
         throws PermissionDeniedException {
 

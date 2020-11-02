@@ -197,11 +197,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = kubernetesClusterNodeNamePrefix + "-master";
-        if (kubernetesCluster.getMasterNodeCount() > 1) {
-            hostName += "-1";
-        }
-        hostName = getKubernetesClusterNodeAvailableName(hostName);
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-master-%s", kubernetesClusterNodeNamePrefix, suffix);
         boolean haSupported = isKubernetesVersionSupportsHA();
         String k8sMasterConfig = null;
         try {
@@ -256,7 +253,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-master-%d", kubernetesClusterNodeNamePrefix, additionalMasterNodeInstance + 1));
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-master-%s", kubernetesClusterNodeNamePrefix, suffix);
         String k8sMasterConfig = null;
         try {
             k8sMasterConfig = getKubernetesAdditionalMasterConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
@@ -278,7 +276,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             ManagementServerException, InsufficientCapacityException, ResourceUnavailableException {
         UserVm k8sMasterVM = null;
         k8sMasterVM = createKubernetesMaster(network, publicIpAddress);
-        addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId());
+        addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId(), true);
         startKubernetesVM(k8sMasterVM);
         k8sMasterVM = userVmDao.findById(k8sMasterVM.getId());
         if (k8sMasterVM == null) {
@@ -297,7 +295,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             for (int i = 1; i < kubernetesCluster.getMasterNodeCount(); i++) {
                 UserVm vm = null;
                 vm = createKubernetesAdditionalMaster(publicIpAddress, i);
-                addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+                addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), true);
                 startKubernetesVM(vm);
                 vm = userVmDao.findById(vm.getId());
                 if (vm == null) {
@@ -380,17 +378,18 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s",
                 network.getName(), kubernetesCluster.getName()));
         }
-
+        // Firewall rule fo API access for master node VMs
         try {
             provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster ID: %s",
-                        CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
+                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster %s",
+                        CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
 
+        // Firewall rule fo SSH access on each node VM
         try {
             int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMs.size() - 1;
             provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
@@ -570,6 +569,18 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         if (!isKubernetesClusterDashboardServiceRunning(true, startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
+        }
+        retrieveScriptFiles();
+        for (int i = 0; i < clusterVMs.size(); ++i) {
+            try {
+                copyAutoscalerScripts(publicIpAddress, CLUSTER_NODES_DEFAULT_START_SSH_PORT + i);
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+        if (!createCloudStackSecret(keys)) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         // remove launch permissions

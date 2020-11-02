@@ -17,6 +17,7 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -55,6 +56,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -78,10 +80,13 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
@@ -295,8 +300,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             ResourceUnavailableException, InsufficientCapacityException {
         List<UserVm> nodes = new ArrayList<>();
         for (int i = offset + 1; i <= nodeCount; i++) {
-            UserVm vm = createKubernetesNode(publicIpAddress, i);
-            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+            UserVm vm = createKubernetesNode(publicIpAddress);
+            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false);
             startKubernetesVM(vm);
             vm = userVmDao.findById(vm.getId());
             if (vm == null) {
@@ -315,7 +320,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return provisionKubernetesClusterNodeVms(nodeCount, 0, publicIpAddress);
     }
 
-    protected UserVm createKubernetesNode(String joinIp, int nodeInstance) throws ManagementServerException,
+    protected UserVm createKubernetesNode(String joinIp) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm nodeVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
@@ -329,7 +334,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, nodeInstance));
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, suffix);
         String k8sNodeConfig = null;
         try {
             k8sNodeConfig = getKubernetesNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
@@ -484,6 +490,17 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
+    protected void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, int startPort, int endPort)
+        throws ResourceUnavailableException {
+        List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByNetwork(network.getId());
+        for (PortForwardingRuleVO pfRule : pfRules) {
+            if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
+                portForwardingRulesDao.remove(pfRule.getId());
+            }
+        }
+        rulesService.applyPortForwardingRules(publicIp.getId(), account);
+    }
+
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,
                                            final Account account, final int port) throws ResourceUnavailableException {
         List<LoadBalancerVO> rules = loadBalancerDao.listByIpAddress(publicIp.getId());
@@ -513,13 +530,96 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return prefix;
     }
 
-    protected String getKubernetesClusterNodeAvailableName(final String hostName) {
-        String name = hostName;
-        int suffix = 1;
-        while (vmInstanceDao.findVMByHostName(name) != null) {
-            name = String.format("%s-%d", hostName, suffix);
-            suffix++;
+    protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory,
+        final Long size, final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) {
+        return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
+                @Override
+                public KubernetesClusterVO doInTransaction(TransactionStatus status) {
+                KubernetesClusterVO updatedCluster = kubernetesClusterDao.createForUpdate(kubernetesCluster.getId());
+                if (cores != null) {
+                    updatedCluster.setCores(cores);
+                }
+                if (memory != null) {
+                    updatedCluster.setMemory(memory);
+                }
+                if (size != null) {
+                    updatedCluster.setNodeCount(size);
+                }
+                if (serviceOfferingId != null) {
+                    updatedCluster.setServiceOfferingId(serviceOfferingId);
+                }
+                if (autoscaleEnabled != null) {
+                    updatedCluster.setAutoscalingEnabled(autoscaleEnabled.booleanValue());
+                }
+                updatedCluster.setMinSize(minSize);
+                updatedCluster.setMaxSize(maxSize);
+                return kubernetesClusterDao.persist(updatedCluster);
+            }
+        });
+    }
+
+    private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) throws CloudRuntimeException {
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize);
+        if (kubernetesClusterVO == null) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to update Kubernetes cluster",
+                    kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
-        return name;
+        return kubernetesClusterVO;
+    }
+
+    protected boolean autoscaleCluster(boolean enable, Long minSize, Long maxSize) {
+        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AutoscaleRequested);
+        }
+
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        try {
+            if (enable) {
+                String command = String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
+                    kubernetesCluster.getUuid(), maxSize, minSize);
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                    pkFile, null, command, 10000, 10000, 60000);
+
+                // Maybe the file isn't present. Try and copy it
+                if (!result.first()) {
+                    logMessage(Level.INFO, "Autoscaling files missing. Adding them now", null);
+                    retrieveScriptFiles();
+                    copyAutoscalerScripts(publicIpAddress, sshPort);
+
+                    if (!createCloudStackSecret(keys)) {
+                        logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                            kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                    }
+
+                    // If at first you don't succeed ...
+                    result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                        pkFile, null, command, 10000, 10000, 60000);
+                    if (!result.first()) {
+                        throw new CloudRuntimeException(result.second());
+                    }
+                }
+                updateKubernetesClusterEntry(true, minSize, maxSize);
+            } else {
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                    pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
+                        10000, 10000, 60000);
+                if (!result.first()) {
+                    throw new CloudRuntimeException(result.second());
+                }
+                updateKubernetesClusterEntry(false, null, null);
+            }
+            return true;
+        } catch (Exception e) {
+            String msg = String.format("Failed to autoscale Kubernetes cluster: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logAndThrow(Level.ERROR, msg);
+            return false;
+        } finally {
+            // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+        }
     }
 }

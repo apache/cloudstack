@@ -30,6 +30,7 @@ from marvin.cloudstackAPI import (listInfrastructure,
                                   deleteKubernetesCluster,
                                   upgradeKubernetesCluster,
                                   scaleKubernetesCluster,
+                                  getKubernetesClusterConfig,
                                   destroyVirtualMachine,
                                   deleteNetwork)
 from marvin.cloudstackException import CloudstackAPIException
@@ -47,7 +48,8 @@ from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
 
-import time
+from kubernetes import client, config
+import time, io, yaml
 
 _multiprocess_shared_ = True
 
@@ -72,8 +74,13 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.kubernetes_version_ids = []
 
         if cls.hypervisorNotSupported == False:
-            cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient,
-                                                                        name="cloud.kubernetes.service.enabled")[0].value
+            cls.endpoint_url = Configurations.list(cls.apiclient, name="endpointe.url")[0].value
+            if "localhost" in cls.endpoint_url:
+                endpoint_url = "http://%s:%d/client/api " %(cls.mgtSvrDetails["mgtSvrIp"], cls.mgtSvrDetails["port"])
+                cls.debug("Setting endpointe.url to %s" %(endpoint_url))
+                Configurations.update(cls.apiclient, "endpointe.url", endpoint_url)
+
+            cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient, name="cloud.kubernetes.service.enabled")[0].value
             if cls.initial_configuration_cks_enabled not in ["true", True]:
                 cls.debug("Enabling CloudStack Kubernetes Service plugin and restarting management server")
                 Configurations.update(cls.apiclient,
@@ -300,7 +307,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         try:
             k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_1.id)
-            self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % kubernetes_version_1.id)
+            self.debug("Invalid CKS Kubernetes HA cluster deployed with ID: %s. Deleting it and failing test." % self.kubernetes_version_1.id)
             self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
             self.fail("Kubernetes cluster upgraded to a lower Kubernetes supported version. Must be an error.")
         except Exception as e:
@@ -484,6 +491,36 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         return
 
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_10_deploy_and_autoscale_kubernetes_cluster(self):
+        """Test to deploy a new Kubernetes cluster and check for failure while tying to autoscale it
+
+        # Validate the following:
+        # 1. scaleKubernetesCluster should return valid info for the cluster when it is autoscaled
+        # 2. cluster-autoscaler pod should be running
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster(1, 1, True)
+
+        self.debug("Autoscaling Kubernetes cluster with ID: %s" % k8s_cluster.id)
+
+        try:
+            k8s_cluster = self.autoscaleKubernetesCluster(k8s_cluster.id, 1, 2)
+            self.verifyKubernetesClusterAutocale(k8s_cluster, 1, 2)
+
+            up = self.waitForAutoscalerPodInRunningState(k8s_cluster.id)
+            self.assertTrue(up, "Autoscaler pod failed to run")
+            self.debug("Kubernetes cluster with ID: %s has autoscaler running" % k8s_cluster.id)
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id)
+        except Exception as e:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Failed to autoscale Kubernetes cluster due to: %s" % e)
+
+        return
+
     def listKubernetesCluster(self, cluster_id = None):
         listKubernetesClustersCmd = listKubernetesClusters.listKubernetesClustersCmd()
         if cluster_id != None:
@@ -542,12 +579,52 @@ class TestKubernetesCluster(cloudstackTestCase):
         response = self.apiclient.scaleKubernetesCluster(scaleKubernetesClusterCmd)
         return response
 
-    def getValidKubernetesCluster(self, size=1, master_nodes=1):
+    def autoscaleKubernetesCluster(self, cluster_id, minsize, maxsize):
+        scaleKubernetesClusterCmd = scaleKubernetesCluster.scaleKubernetesClusterCmd()
+        scaleKubernetesClusterCmd.id = cluster_id
+        scaleKubernetesClusterCmd.autoscalingenabled = True
+        scaleKubernetesClusterCmd.minsize = minsize
+        scaleKubernetesClusterCmd.maxsize = maxsize
+        response = self.apiclient.scaleKubernetesCluster(scaleKubernetesClusterCmd)
+        return response
+
+    def fetchKubernetesClusterConfig(self, cluster_id):
+        getKubernetesClusterConfigCmd = getKubernetesClusterConfig.getKubernetesClusterConfigCmd()
+        getKubernetesClusterConfigCmd.id = cluster_id
+        response = self.apiclient.getKubernetesClusterConfig(getKubernetesClusterConfigCmd)
+        return response
+
+    def waitForAutoscalerPodInRunningState(self, cluster_id, retries=5, interval=60):
+        k8s_config = self.fetchKubernetesClusterConfig(cluster_id)
+        cfg = io.StringIO(k8s_config.configdata)
+        cfg = yaml.load(cfg)
+        # Adding this so we don't get certificate exceptions
+        cfg['clusters'][0]['cluster']['insecure-skip-tls-verify']=True
+        config.load_kube_config_from_dict(cfg)
+        v1 = client.CoreV1Api()
+
+        while retries > 0:
+            time.sleep(interval)
+            pods = v1.list_pod_for_all_namespaces(watch=False, label_selector="app=cluster-autoscaler").items
+            if len(pods) == 0 :
+                self.debug("Autoscaler pod still not up")
+                continue
+            pod = pods[0]
+            if pod.status.phase == 'Running' :
+                self.debug("Autoscaler pod %s up and running!" % pod.metadata.name)
+                return True
+            self.debug("Autoscaler pod %s up but not running on retry %d. State is : %s" %(pod.metadata.name, retries, pod.status.phase))
+            retries = retries - 1
+        return False
+
+    def getValidKubernetesCluster(self, size=1, master_nodes=1, autoscaling=False):
         cluster = k8s_cluster
         version = self.kubernetes_version_2
         if master_nodes != 1:
             version = self.kubernetes_version_3
         valid = True
+        if autoscaling:
+            version = self.kubernetes_version_4
         if cluster == None:
             valid = False
             self.debug("No existing cluster available, k8s_cluster: %s" % cluster)
@@ -655,6 +732,21 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.verifyKubernetesClusterState(cluster_response, 'Running')
         self.verifyKubernetesClusterSize(cluster_response, size, master_nodes)
+
+    def verifyKubernetesClusterAutocale(self, cluster_response, minsize, maxsize):
+        """Check if Kubernetes cluster state and node sizes are valid after upgrade"""
+
+        self.verifyKubernetesClusterState(cluster_response, 'Running')
+        self.assertEqual(
+            cluster_response.minsize,
+            minsize,
+            "Check KubernetesCluster minsize {}, {}".format(cluster_response.minsize, minsize)
+        )
+        self.assertEqual(
+            cluster_response.maxsize,
+            maxsize,
+            "Check KubernetesCluster maxsize {}, {}".format(cluster_response.maxsize, maxsize)
+        )
 
     def stopAndVerifyKubernetesCluster(self, cluster_id):
         """Stop Kubernetes cluster and check if it is really stopped"""

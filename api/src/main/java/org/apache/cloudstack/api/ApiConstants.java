@@ -818,10 +818,14 @@ public class ApiConstants {
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
     public static final String MASTER_NODES = "masternodes";
+    public static final String NODE_IDS = "nodeids";
     public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
+    public static final String AUTOSCALING_ENABLED = "autoscalingenabled";
+    public static final String MIN_SIZE = "minsize";
+    public static final String MAX_SIZE = "maxsize";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";

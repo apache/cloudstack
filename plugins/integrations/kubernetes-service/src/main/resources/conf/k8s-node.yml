@@ -125,6 +125,10 @@ write_files:
           done <<< "$output"
           setup_complete=true
         fi
+        if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
+          mkdir -p /opt/autoscaler
+          cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
+        fi
         umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
         if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
           eject "${iso_drive_path}"
