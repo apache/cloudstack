@@ -1998,6 +1998,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
+        sb.and("forsystemvms", sb.entity().isForSystemVms(), SearchCriteria.Op.EQ);
 
         if (forLoadBalancing != null && forLoadBalancing) {
             final SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
@@ -2106,6 +2107,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("state", state);
         }
 
+        sc.setParameters( "forsystemvms", false);
         final Pair<List<IPAddressVO>, Integer> result = _publicIpAddressDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends IpAddress>, Integer>(result.first(), result.second());
     }
