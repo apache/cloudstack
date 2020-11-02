@@ -128,8 +128,8 @@ if [ -d "$BINARIES_DIR" ]; then
   systemctl restart kubelet
 
   if [ "${IS_MAIN_MASTER}" == 'true' ]; then
-    kubectl apply -f ${BINARIES_DIR}/network.yaml
-    kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
+    /opt/bin/kubectl apply -f ${BINARIES_DIR}/network.yaml
+    /opt/bin/kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
   fi
 
   umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"

@@ -72,7 +72,7 @@ done
 if [ $ENABLE == "true" ] ; then
     if [ -e /opt/autoscaler/autoscaler_tmpl.yaml ]; then
         sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
-        kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
+        /opt/bin/kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
         exit 0
     else
         mkdir -p /opt/autoscaler
@@ -84,10 +84,10 @@ if [ $ENABLE == "true" ] ; then
             exit 1
         else
             sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
-            kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
+            /opt/bin/kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
             exit 0
         fi
     fi
 else
-    kubectl delete deployment -n kube-system cluster-autoscaler
+    /opt/bin/kubectl delete deployment -n kube-system cluster-autoscaler
 fi
