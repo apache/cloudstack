@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -58,6 +59,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
@@ -75,12 +77,13 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.common.base.Strings;
 
 public class KubernetesClusterActionWorker {
 
-    public static final String CLUSTER_NODE_VM_USER = "core";
+    public static final String CLUSTER_NODE_VM_USER = "root";
     public static final int CLUSTER_API_PORT = 6443;
     public static final int CLUSTER_NODES_DEFAULT_START_SSH_PORT = 2222;
 
@@ -118,6 +121,10 @@ public class KubernetesClusterActionWorker {
     protected UserVmService userVmService;
     @Inject
     protected VlanDao vlanDao;
+    @Inject
+    protected VirtualMachineManager itMgr;
+    @Inject
+    protected LaunchPermissionDao launchPermissionDao;
 
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
@@ -199,11 +206,19 @@ public class KubernetesClusterActionWorker {
         throw new CloudRuntimeException(message, e);
     }
 
+    protected void deleteTemplateLaunchPermission() {
+        if (clusterTemplate != null && owner != null) {
+            LOGGER.info("Revoking launch permission for systemVM template");
+            launchPermissionDao.removePermissions(clusterTemplate.getId(), Collections.singletonList(owner.getId()));
+        }
+    }
+
     protected void logTransitStateAndThrow(final Level logLevel, final String message, final Long kubernetesClusterId, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
         logMessage(logLevel, message, e);
         if (kubernetesClusterId != null && event != null) {
             stateTransitTo(kubernetesClusterId, event);
         }
+        deleteTemplateLaunchPermission();
         if (e == null) {
             throw new CloudRuntimeException(message);
         }
@@ -268,6 +283,13 @@ public class KubernetesClusterActionWorker {
         return ip;
     }
 
+    private boolean containsMasterNode(List<UserVm> clusterVMs) {
+        List<String> nodeNames = clusterVMs.stream().map(vm -> vm.getHostName()).collect(Collectors.toList());
+        boolean present = false;
+        present = nodeNames.stream().anyMatch(s -> s.contains("master"));
+        return present;
+    }
+
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm masterVm) {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
@@ -306,6 +328,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs, final KubernetesSupportedVersion kubernetesSupportedVersion) throws CloudRuntimeException {
+        //final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         KubernetesSupportedVersion version = kubernetesSupportedVersion;
         if (kubernetesSupportedVersion == null) {
             version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
@@ -328,6 +351,7 @@ public class KubernetesClusterActionWorker {
         if (!iso.getState().equals(VirtualMachineTemplate.State.Active)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster : %s. Binaries ISO not active.",  kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
+
         for (UserVm vm : clusterVMs) {
             try {
                 templateService.attachIso(iso.getId(), vm.getId());

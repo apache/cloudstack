@@ -19,6 +19,10 @@
 -- Schema upgrade from 4.15.1.0 to 4.16.0.0
 --;
 
+ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_vm_type` varchar(255) DEFAULT "UserVM" COMMENT 'Defines the type of UserVM';
+
+UPDATE `cloud`.`vm_template` set deploy_as_is = 1 where id = 8;
+
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `autoscaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0;
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `minsize` bigint;
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `maxsize` bigint;

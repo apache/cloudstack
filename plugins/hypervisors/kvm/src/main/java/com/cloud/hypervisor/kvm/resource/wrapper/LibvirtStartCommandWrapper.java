@@ -88,14 +88,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
             // pass cmdline info to system vms
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
-                String controlIp = null;
-                for (final NicTO nic : vmSpec.getNics()) {
-                    if (nic.getType() == TrafficType.Control) {
-                        controlIp = nic.getIp();
-                        break;
-                    }
-                }
+            if (vmSpec.getType() != VirtualMachine.Type.User || (vmSpec.getBootArgs() != null && vmSpec.getBootArgs().contains("CKSNode"))) {
                 // try to patch and SSH into the systemvm for up to 5 minutes
                 for (int count = 0; count < 10; count++) {
                     // wait and try passCmdLine for 30 seconds at most for CLOUDSTACK-2823
@@ -104,12 +97,22 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     }
                 }
 
-                final VirtualRoutingResource virtRouterResource = libvirtComputingResource.getVirtRouterResource();
-                // check if the router is up?
-                for (int count = 0; count < 60; count++) {
-                    final boolean result = virtRouterResource.connect(controlIp, 1, 5000);
-                    if (result) {
-                        break;
+                if (vmSpec.getType() != VirtualMachine.Type.User) {
+                    String controlIp = null;
+                    for (final NicTO nic : vmSpec.getNics()) {
+                        if (nic.getType() == TrafficType.Control) {
+                            controlIp = nic.getIp();
+                            break;
+                        }
+                    }
+
+                    final VirtualRoutingResource virtRouterResource = libvirtComputingResource.getVirtRouterResource();
+                    // check if the router is up?
+                    for (int count = 0; count < 60; count++) {
+                        final boolean result = virtRouterResource.connect(controlIp, 1, 5000);
+                        if (result) {
+                            break;
+                        }
                     }
                 }
             }

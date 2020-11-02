@@ -269,60 +269,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         logTransitStateAndThrow(logLevel, message, null, null, ex);
     }
 
-    private boolean isKubernetesServiceTemplateConfigured(DataCenter zone) {
-        // Check Kubernetes VM template for zone
-        boolean isHyperVAvailable = false;
-        boolean isKVMAvailable = false;
-        boolean isVMwareAvailable = false;
-        boolean isXenserverAvailable = false;
-        List<ClusterVO> clusters = clusterDao.listByZoneId(zone.getId());
-        for (ClusterVO clusterVO : clusters) {
-            if (Hypervisor.HypervisorType.Hyperv.equals(clusterVO.getHypervisorType())) {
-                isHyperVAvailable = true;
-            }
-            if (Hypervisor.HypervisorType.KVM.equals(clusterVO.getHypervisorType())) {
-                isKVMAvailable = true;
-            }
-            if (Hypervisor.HypervisorType.VMware.equals(clusterVO.getHypervisorType())) {
-                isVMwareAvailable = true;
-            }
-            if (Hypervisor.HypervisorType.XenServer.equals(clusterVO.getHypervisorType())) {
-                isXenserverAvailable = true;
-            }
-        }
-        List<Pair<String, String>> templatePairs = new ArrayList<>();
-        if (isHyperVAvailable) {
-            templatePairs.add(new Pair<>(KubernetesClusterHyperVTemplateName.key(), KubernetesClusterHyperVTemplateName.value()));
-        }
-        if (isKVMAvailable) {
-            templatePairs.add(new Pair<>(KubernetesClusterKVMTemplateName.key(), KubernetesClusterKVMTemplateName.value()));
-        }
-        if (isVMwareAvailable) {
-            templatePairs.add(new Pair<>(KubernetesClusterVMwareTemplateName.key(), KubernetesClusterVMwareTemplateName.value()));
-        }
-        if (isXenserverAvailable) {
-            templatePairs.add(new Pair<>(KubernetesClusterXenserverTemplateName.key(), KubernetesClusterXenserverTemplateName.value()));
-        }
-        for (Pair<String, String> templatePair : templatePairs) {
-            String templateKey = templatePair.first();
-            String templateName = templatePair.second();
-            if (Strings.isNullOrEmpty(templateName)) {
-                LOGGER.warn(String.format("Global setting %s is empty. Template name need to be specified for Kubernetes service to function", templateKey));
-                return false;
-            }
-            final VMTemplateVO template = templateDao.findValidByTemplateName(templateName);
-            if (template == null) {
-                LOGGER.warn(String.format("Unable to find the template %s to be used for provisioning Kubernetes cluster nodes", templateName));
-                return false;
-            }
-            if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
-                LOGGER.warn(String.format("The template ID: %s, name: %s is not available for use in zone ID: %s provisioning Kubernetes cluster nodes", template.getUuid(), templateName, zone.getUuid()));
-                return false;
-            }
-        }
-        return true;
-    }
-
     private boolean isKubernetesServiceNetworkOfferingConfigured(DataCenter zone) {
         // Check network offering
         String networkOfferingName = KubernetesClusterNetworkOffering.value();
@@ -370,9 +316,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private boolean isKubernetesServiceConfigured(DataCenter zone) {
-        if (!isKubernetesServiceTemplateConfigured(zone)) {
-            return false;
-        }
         if (!isKubernetesServiceNetworkOfferingConfigured(zone)) {
             return false;
         }
@@ -392,23 +335,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return null;
     }
 
-    private VMTemplateVO getKubernetesServiceTemplate(Hypervisor.HypervisorType hypervisorType) {
-        String templateName = null;
-        switch (hypervisorType) {
-            case Hyperv:
-                templateName = KubernetesClusterHyperVTemplateName.value();
-                break;
-            case KVM:
-                templateName = KubernetesClusterKVMTemplateName.value();
-                break;
-            case VMware:
-                templateName = KubernetesClusterVMwareTemplateName.value();
-                break;
-            case XenServer:
-                templateName = KubernetesClusterXenserverTemplateName.value();
-                break;
+    private VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType) {
+        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
+        if (template == null) {
+            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenter.getId());
         }
-        return templateDao.findValidByTemplateName(templateName);
+        return  template;
     }
 
     private boolean validateIsolatedNetwork(Network network, int clusterTotalNodeCount) {
@@ -478,7 +410,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for creating clusters, service offering ID: %s", serviceOffering.getUuid()));
         }
         if (serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster template(CoreOS) needs minimum %d vCPUs and %d MB RAM", serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster template needs minimum %d vCPUs and %d MB RAM", serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
         }
         if (serviceOffering.getCpu() < version.getMinimumCpu()) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes version ID: %s needs minimum %d vCPUs", serviceOffering.getUuid(), version.getUuid(), version.getMinimumCpu()));
@@ -629,6 +561,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 response.setIpAddressId(ipAddresses.get(0).getUuid());
             }
         }
+
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         ResponseView respView = ResponseView.Restricted;
@@ -1108,7 +1041,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)masterNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
-        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(deployDestination.getCluster().getHypervisorType());
+        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, deployDestination.getCluster().getHypervisorType());
         final long cores = serviceOffering.getCpu() * (masterNodeCount + clusterSize);
         final long memory = serviceOffering.getRamSize() * (masterNodeCount + clusterSize);
 
@@ -1649,10 +1582,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
             KubernetesServiceEnabled,
-            KubernetesClusterHyperVTemplateName,
-            KubernetesClusterKVMTemplateName,
-            KubernetesClusterVMwareTemplateName,
-            KubernetesClusterXenserverTemplateName,
             KubernetesClusterNetworkOffering,
             KubernetesClusterStartTimeout,
             KubernetesClusterScaleTimeout,

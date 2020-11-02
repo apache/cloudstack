@@ -47,7 +47,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -72,6 +72,7 @@ import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -83,7 +84,6 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
@@ -123,6 +123,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected VMInstanceDao vmInstanceDao;
     @Inject
     protected UserVmManager userVmManager;
+    @Inject
+    protected LaunchPermissionDao launchPermissionDao;
 
     protected String kubernetesClusterNodeNamePrefix;
 
@@ -177,9 +179,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (!Strings.isNullOrEmpty(dockerUserName) && !Strings.isNullOrEmpty(dockerPassword)) {
             // do write file for  /.docker/config.json through the code instead of k8s-node.yml as we can no make a section
             // optional or conditionally applied
-            String dockerConfigString = "write-files:\n" +
+            String dockerConfigString = "write_files:\n" +
                     "  - path: /.docker/config.json\n" +
-                    "    owner: core:core\n" +
+                    "    owner: root:root\n" +
                     "    permissions: '0644'\n" +
                     "    content: |\n" +
                     "      {\n" +
@@ -190,7 +192,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     "          }\n" +
                     "         }\n" +
                     "      }";
-            k8sNodeConfig = k8sNodeConfig.replace("write-files:", dockerConfigString);
+            k8sNodeConfig = k8sNodeConfig.replace("write_files:", dockerConfigString);
             final String dockerUrlKey = "{{docker.url}}";
             final String dockerAuthKey = "{{docker.secret}}";
             final String dockerEmailKey = "{{docker.email}}";
@@ -280,12 +282,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             Field f = startVm.getClass().getDeclaredField("id");
             f.setAccessible(true);
             f.set(startVm, vm.getId());
-            userVmService.startVirtualMachine(startVm);
+            itMgr.advanceStart(vm.getUuid(), null, null);
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("Started VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
             }
-        } catch (IllegalAccessException | NoSuchFieldException | ExecutionException |
-                ResourceUnavailableException | ResourceAllocationException | InsufficientCapacityException ex) {
+        } catch (IllegalAccessException | NoSuchFieldException | OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
             throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster : %s", kubernetesCluster.getName()), ex);
         }
 
@@ -345,7 +346,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null);
+                null, addrs, null, null, null, customParameterMap, null, null, null, null,  String.valueOf(UserVmManager.UserVmType.CKSNode));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
         }
@@ -424,7 +425,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 final Ip vmIp = new Ip(vmNic.getIPv4Address());
                 final long vmIdFinal = vmId;
                 final int srcPortFinal = firewallRuleSourcePortStart + i;
-
                 PortForwardingRuleVO pfRule = Transaction.execute(new TransactionCallbackWithException<PortForwardingRuleVO, NetworkRuleConflictException>() {
                     @Override
                     public PortForwardingRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {

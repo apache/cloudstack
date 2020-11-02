@@ -41,26 +41,6 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "false",
             "Indicates whether Kubernetes Service plugin is enabled or not. Management server restart needed on change",
             false);
-    static final ConfigKey<String> KubernetesClusterHyperVTemplateName = new ConfigKey<String>("Advanced", String.class,
-            "cloud.kubernetes.cluster.template.name.hyperv",
-            "Kubernetes-Service-Template-HyperV",
-            "Name of the template to be used for creating Kubernetes cluster nodes on HyperV",
-            true);
-    static final ConfigKey<String> KubernetesClusterKVMTemplateName = new ConfigKey<String>("Advanced", String.class,
-            "cloud.kubernetes.cluster.template.name.kvm",
-            "Kubernetes-Service-Template-KVM",
-            "Name of the template to be used for creating Kubernetes cluster nodes on KVM",
-            true);
-    static final ConfigKey<String> KubernetesClusterVMwareTemplateName = new ConfigKey<String>("Advanced", String.class,
-            "cloud.kubernetes.cluster.template.name.vmware",
-            "Kubernetes-Service-Template-VMware",
-            "Name of the template to be used for creating Kubernetes cluster nodes on VMware",
-            true);
-    static final ConfigKey<String> KubernetesClusterXenserverTemplateName = new ConfigKey<String>("Advanced", String.class,
-            "cloud.kubernetes.cluster.template.name.xenserver",
-            "Kubernetes-Service-Template-Xenserver",
-            "Name of the template to be used for creating Kubernetes cluster nodes on Xenserver",
-            true);
     static final ConfigKey<String> KubernetesClusterNetworkOffering = new ConfigKey<String>("Advanced", String.class,
             "cloud.kubernetes.cluster.network.offering",
             "DefaultNetworkOfferingforKubernetesService",

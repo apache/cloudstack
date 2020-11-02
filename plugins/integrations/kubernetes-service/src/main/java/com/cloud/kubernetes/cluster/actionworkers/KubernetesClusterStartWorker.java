@@ -60,6 +60,7 @@ import com.cloud.network.Network;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -71,6 +72,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Strings;
 
@@ -208,7 +210,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null);
+                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, String.valueOf(UserVmManager.UserVmType.CKSNode));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created master VM ID: %s, %s in the Kubernetes cluster : %s", masterVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
@@ -263,7 +265,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         additionalMasterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null);
+                null, addrs, null, null, null, customParameterMap, null, null, null, null, String.valueOf(UserVmManager.UserVmType.CKSNode));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created master VM ID : %s, %s in the Kubernetes cluster : %s", additionalMasterVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
@@ -499,6 +501,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 (Network.GuestType.Isolated.equals(network.getGuestType()) || kubernetesCluster.getMasterNodeCount() > 1)) { // Shared network, single-master cluster won't have an IP yet
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s as no public IP found for the cluster" , kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
+        // Allow account creating the kubernetes cluster to access systemVM template
+        LaunchPermissionVO launchPermission =  new LaunchPermissionVO(clusterTemplate.getId(), owner.getId());
+        launchPermissionDao.persist(launchPermission);
+
         List<UserVm> clusterVMs = new ArrayList<>();
         UserVm k8sMasterVM = null;
         try {
@@ -577,6 +583,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+        // remove launch permissions
+        deleteTemplateLaunchPermission();
         return true;
     }
 

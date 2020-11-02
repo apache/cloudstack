@@ -35,6 +35,12 @@ function debconf_packages() {
   echo "libc6 libraries/restart-without-asking boolean false" | debconf-set-selections
 }
 
+function apt_clean() {
+  apt-get -y autoremove --purge
+  apt-get clean
+  apt-get autoclean
+}
+
 function install_packages() {
   export DEBIAN_FRONTEND=noninteractive
   export DEBIAN_PRIORITY=critical
@@ -70,20 +76,29 @@ function install_packages() {
     radvd \
     sharutils genisoimage aria2 \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
-    virt-what open-vm-tools qemu-guest-agent hyperv-daemons
+    virt-what open-vm-tools qemu-guest-agent hyperv-daemons \
+    apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common cloud-init
 
-  apt-get -y autoremove --purge
-  apt-get clean
-  apt-get autoclean
-
+  apt_clean
   ${apt_get} install links
+
+   curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+   apt-key fingerprint 0EBFCD88
 
   #32 bit architecture support for vhd-util: not required for 32 bit template
   if [ "${arch}" != "i386" ]; then
     dpkg --add-architecture i386
     apt-get update
     ${apt_get} install libuuid1:i386 libc6:i386
+
+    add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) \
+    stable"
+    apt-get update
+    ${apt_get} install docker-ce docker-ce-cli containerd.io
   fi
+  apt_clean
 
   install_vhd_util
   # Install xenserver guest utilities as debian repos don't have it

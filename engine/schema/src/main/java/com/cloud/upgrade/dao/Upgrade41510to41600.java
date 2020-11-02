@@ -169,6 +169,7 @@ public class Upgrade41510to41600 implements DbUpgrade {
                         LOG.error("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system': " + e.getMessage());
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
                     }
+                    updateVMwareSystemvVMTemplateField(conn, NewTemplateNameList.get(Hypervisor.HypervisorType.VMware));
                     // update template ID of system Vms
                     try (PreparedStatement update_templ_id_pstmt = conn
                             .prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ? and removed is NULL");) {
@@ -225,6 +226,7 @@ public class Upgrade41510to41600 implements DbUpgrade {
                             throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type "
                                     + hypervisorAndTemplateName.getKey().toString(), e);
                         }
+                        updateVMwareSystemvVMTemplateField(conn, NewTemplateNameList.get(Hypervisor.HypervisorType.VMware));
                     }
                 }
             } catch (final SQLException e) {
@@ -233,6 +235,16 @@ public class Upgrade41510to41600 implements DbUpgrade {
             }
         }
         LOG.debug("Updating System Vm Template IDs Complete");
+    }
+
+    private void updateVMwareSystemvVMTemplateField(final Connection conn, String templateName) {
+        try (PreparedStatement update_templ_vmware_pstmt = conn
+                .prepareStatement("UPDATE `cloud`.`vm_template` SET deploy_as_is = 1 WHERE name = '"+ templateName +"' AND removed is null order by id desc limit 1");) {
+            update_templ_vmware_pstmt.executeUpdate();
+        } catch (final SQLException e) {
+            LOG.error("updateSystemVmTemplates:Exception while updating 'deploy_as_is' for VMWare hypervisor type : " + e.getMessage());
+            throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating deploy_as_is for VMware hypervisor type ", e);
+        }
     }
 
     @Override

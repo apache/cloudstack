@@ -2018,62 +2018,28 @@ test_data = {
     "cks_kubernetes_versions": {
         "1.14.9": {
             "semanticversion": "1.14.9",
-            "url": "http://download.cloudstack.org/cks/setup-1.14.9.iso",
+            "url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/setup-v1.14.9.iso",
             "mincpunumber": 2,
             "minmemory": 2048
         },
         "1.15.0": {
             "semanticversion": "1.15.0",
-            "url": "http://download.cloudstack.org/cks/setup-1.15.0.iso",
+            "url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/setup-v1.15.0.iso",
             "mincpunumber": 2,
             "minmemory": 2048
         },
         "1.16.0": {
             "semanticversion": "1.16.0",
-            "url": "http://download.cloudstack.org/cks/setup-1.16.0.iso",
+            "url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/setup-v1.16.0.iso",
             "mincpunumber": 2,
             "minmemory": 2048
         },
         "1.16.3": {
             "semanticversion": "1.16.3",
+            #"url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/setup-v1.16.3.iso",
             "url": "http://sbjenkins-stagingrepo.jenkins.lon/cks/binaries-iso/as-1.16.3.iso",
             "mincpunumber": 2,
             "minmemory": 2048
-        }
-    },
-    "cks_templates": {
-        "kvm": {
-            "name": "Kubernetes-Service-Template-kvm",
-            "displaytext": "Kubernetes-Service-Template kvm",
-            "format": "qcow2",
-            "hypervisor": "kvm",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "isextractable": "True"
-        },
-        "xenserver": {
-            "name": "Kubernetes-Service-Template-xen",
-            "displaytext": "Kubernetes-Service-Template xen",
-            "format": "vhd",
-            "hypervisor": "xenserver",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "isextractable": "True"
-        },
-        "vmware": {
-            "name": "Kubernetes-Service-Template-vmware",
-            "displaytext": "Kubernetes-Service-Template vmware",
-            "format": "ova",
-            "hypervisor": "vmware",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "details": [{"keyboard":"us","nicAdapter":"Vmxnet3","rootDiskController":"pvscsi"}]
         }
     },
     "cks_service_offering": {
