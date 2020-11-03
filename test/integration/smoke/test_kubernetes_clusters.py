@@ -234,7 +234,6 @@ class TestKubernetesCluster(cloudstackTestCase):
     def deleteKubernetesSupportedVersion(cls, version_id):
         deleteKubernetesSupportedVersionCmd = deleteKubernetesSupportedVersion.deleteKubernetesSupportedVersionCmd()
         deleteKubernetesSupportedVersionCmd.id = version_id
-        deleteKubernetesSupportedVersionCmd.deleteiso = True
         cls.apiclient.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
 
     def setUp(self):
@@ -497,7 +496,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         if self.setup_failed == True:
             self.fail("Setup incomplete")
         global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(version=self.self.kubernetes_version_1_16_3.id)
+        k8s_cluster = self.getValidKubernetesCluster(version=self.kubernetes_version_1_16_3)
 
         self.debug("Autoscaling Kubernetes cluster with ID: %s" % k8s_cluster.id)
 

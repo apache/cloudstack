@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -283,13 +282,6 @@ public class KubernetesClusterActionWorker {
         return ip;
     }
 
-    private boolean containsMasterNode(List<UserVm> clusterVMs) {
-        List<String> nodeNames = clusterVMs.stream().map(vm -> vm.getHostName()).collect(Collectors.toList());
-        boolean present = false;
-        present = nodeNames.stream().anyMatch(s -> s.contains("master"));
-        return present;
-    }
-
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm masterVm) {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
@@ -428,7 +420,7 @@ public class KubernetesClusterActionWorker {
 
         try {
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
+                pkFile, null, String.format("/opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
                     ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
                     10000, 10000, 60000);
             return result.first();

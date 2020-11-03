@@ -2016,12 +2016,6 @@ test_data = {
         }
     },
     "cks_kubernetes_versions": {
-        "1.14.9": {
-            "semanticversion": "1.14.9",
-            "url": "http://download.cloudstack.org/cks/setup-1.14.9.iso",
-            "mincpunumber": 2,
-            "minmemory": 2048
-        },
         "1.15.0": {
             "semanticversion": "1.15.0",
             "url": "http://download.cloudstack.org/cks/setup-1.15.0.iso",
