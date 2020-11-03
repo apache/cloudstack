@@ -29,6 +29,7 @@ import java.util.Random;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -173,6 +174,8 @@ public class VolumeServiceImpl implements VolumeService {
     private VolumeDetailsDao _volumeDetailsDao;
     @Inject
     private TemplateDataFactory tmplFactory;
+    @Inject
+    private VolumeOrchestrationService _volumeMgr;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -812,9 +815,15 @@ public class VolumeServiceImpl implements VolumeService {
             }
 
             volDao.update(volume.getId(), volume);
+            vo.processEvent(Event.OperationSuccessed);
         } else {
-            vo.processEvent(Event.DestroyRequested);
             volResult.setResult(result.getResult());
+
+            try {
+                destroyAndReallocateManagedVolume((VolumeInfo) vo);
+            } catch (CloudRuntimeException ex) {
+                s_logger.warn("Couldn't destroy managed volume: " + vo.getId());
+            }
         }
 
         AsyncCallFuture<VolumeApiResult> future = context.getFuture();
@@ -1093,15 +1102,13 @@ public class VolumeServiceImpl implements VolumeService {
             // Refresh the volume info from the DB.
             volumeInfo = volFactory.getVolume(volumeInfo.getId(), destPrimaryDataStore);
 
+            volumeInfo.processEvent(Event.CreateRequested);
             CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<>(null, volumeInfo, destPrimaryDataStore, srcTemplateOnPrimary, future, null);
-
             AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
-
             caller.setCallback(caller.getTarget().createVolumeFromBaseManagedImageCallBack(null, null));
             caller.setContext(context);
 
             Map<String, String> details = new HashMap<String, String>();
-
             details.put(PrimaryDataStore.MANAGED, Boolean.TRUE.toString());
             details.put(PrimaryDataStore.STORAGE_HOST, destPrimaryDataStore.getHostAddress());
             details.put(PrimaryDataStore.STORAGE_PORT, String.valueOf(destPrimaryDataStore.getPort()));
@@ -1122,16 +1129,12 @@ public class VolumeServiceImpl implements VolumeService {
             throw e;
         } catch (Throwable e) {
             s_logger.debug("Failed to copy managed template on primary storage", e);
-            String errMsg = e.toString();
-            volumeInfo.processEvent(Event.DestroyRequested);
+            String errMsg = "Failed due to " + e.toString();
 
             try {
-                AsyncCallFuture<VolumeApiResult> expungeVolumeFuture = expungeVolumeAsync(volumeInfo);
-                VolumeApiResult expungeVolumeResult = expungeVolumeFuture.get();
-                if (expungeVolumeResult.isFailed()) {
-                    errMsg += " : Failed to expunge a volume that was created";
-                }
-            } catch (Exception ex) {
+                destroyAndReallocateManagedVolume(volumeInfo);
+            } catch (CloudRuntimeException ex) {
+                s_logger.warn("Failed to destroy managed volume: " + volumeInfo.getId());
                 errMsg += " : " + ex.getMessage();
             }
 
@@ -1145,6 +1148,44 @@ public class VolumeServiceImpl implements VolumeService {
             if (volumeDetails == null || volumeDetails.isEmpty()) {
                 revokeAccess(srcTemplateOnPrimary, destHost, destPrimaryDataStore);
             }
+        }
+    }
+
+    private void destroyAndReallocateManagedVolume(VolumeInfo volumeInfo) {
+        if (volumeInfo == null) {
+            return;
+        }
+
+        VolumeVO volume = volDao.findById(volumeInfo.getId());
+        if (volume == null) {
+            return;
+        }
+
+        if (volume.getState() == State.Allocated) { // Possible states here: Allocated, Ready & Creating
+            return;
+        }
+
+        volumeInfo.processEvent(Event.DestroyRequested);
+
+        Volume newVol = _volumeMgr.allocateDuplicateVolume(volume, null);
+        VolumeVO newVolume = (VolumeVO) newVol;
+        newVolume.set_iScsiName(null);
+        volDao.update(newVolume.getId(), newVolume);
+        s_logger.debug("Allocated new volume: " + newVolume.getId() + " for the VM: " + volume.getInstanceId());
+
+        try {
+            AsyncCallFuture<VolumeApiResult> expungeVolumeFuture = expungeVolumeAsync(volumeInfo);
+            VolumeApiResult expungeVolumeResult = expungeVolumeFuture.get();
+            if (expungeVolumeResult.isFailed()) {
+                s_logger.warn("Failed to expunge volume: " + volumeInfo.getId() + " that was created");
+                throw new CloudRuntimeException("Failed to expunge volume: " + volumeInfo.getId() + " that was created");
+            }
+        } catch (Exception ex) {
+            if (canVolumeBeRemoved(volumeInfo.getId())) {
+                volDao.remove(volumeInfo.getId());
+            }
+            s_logger.warn("Unable to expunge volume: " + volumeInfo.getId() + " due to: " + ex.getMessage());
+            throw new CloudRuntimeException("Unable to expunge volume: " + volumeInfo.getId() + " due to: " + ex.getMessage());
         }
     }
 

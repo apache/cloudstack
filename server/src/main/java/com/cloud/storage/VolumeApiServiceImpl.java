@@ -3093,6 +3093,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         volumeToAttach.setPath(volumeToAttach.get_iScsiName());
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
+
+                    if (host != null && volumeToAttachStoragePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                        // Unmap the volume on PowerFlex/ScaleIO pool for stopped VM
+                        volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+                    }
                 }
 
                 // insert record for disk I/O statistics
