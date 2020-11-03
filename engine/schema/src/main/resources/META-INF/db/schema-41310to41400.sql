@@ -53,33 +53,6 @@ ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_offering_id` bigint unsigne
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_external_id` varchar(255) DEFAULT NULL COMMENT 'ID of external backup job or container if any';
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_volumes` text DEFAULT NULL COMMENT 'details of backedup volumes';
 
-ALTER TABLE `cloud`.`image_store` ADD COLUMN `readonly` boolean DEFAULT false COMMENT 'defines status of image store';
-
-ALTER VIEW `cloud`.`image_store_view` AS
-    select
-        image_store.id,
-        image_store.uuid,
-        image_store.name,
-        image_store.image_provider_name,
-        image_store.protocol,
-        image_store.url,
-        image_store.scope,
-        image_store.role,
-        image_store.readonly,
-        image_store.removed,
-        data_center.id data_center_id,
-        data_center.uuid data_center_uuid,
-        data_center.name data_center_name,
-        image_store_details.name detail_name,
-        image_store_details.value detail_value
-    from
-        `cloud`.`image_store`
-            left join
-        `cloud`.`data_center` ON image_store.data_center_id = data_center.id
-            left join
-        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
-
-
 CREATE TABLE IF NOT EXISTS `cloud`.`backups` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(40) NOT NULL UNIQUE,

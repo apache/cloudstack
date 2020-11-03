@@ -61,7 +61,7 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     private String name;
 
     @Parameter(name = ApiConstants.SEMANTIC_VERSION, type = CommandType.STRING, required = true,
-            description = "the semantic version of the Kubernetes version")
+            description = "the semantic version of the Kubernetes version. It needs to be specified in MAJOR.MINOR.PATCH format")
     private String semanticVersion;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID,

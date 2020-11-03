@@ -103,7 +103,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
@@ -491,23 +490,22 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         final String dsPath = disk.getDatastorePath();
         final String dsType = disk.getDatastoreType();
         final String dsName = disk.getDatastoreName();
-        if (dsType.equals("VMFS")) {
-            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(cluster.getId());
-            pools.addAll(primaryDataStoreDao.listByDataCenterId(zone.getId()));
-            for (StoragePool pool : pools) {
-                if (pool.getPoolType() != Storage.StoragePoolType.VMFS) {
-                    continue;
-                }
-                if (pool.getPath().endsWith(dsName)) {
-                    storagePool = pool;
-                    break;
-                }
-            }
-        } else {
+        if (dsType != null) {
             List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
             for (StoragePool pool : pools) {
                 if (pool.getDataCenterId() == zone.getId() &&
                         (pool.getClusterId() == null || pool.getClusterId().equals(cluster.getId()))) {
+                    storagePool = pool;
+                    break;
+                }
+            }
+        }
+
+        if (storagePool == null) {
+            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(cluster.getId());
+            pools.addAll(primaryDataStoreDao.listByDataCenterId(zone.getId()));
+            for (StoragePool pool : pools) {
+                if (pool.getPath().endsWith(dsName)) {
                     storagePool = pool;
                     break;
                 }

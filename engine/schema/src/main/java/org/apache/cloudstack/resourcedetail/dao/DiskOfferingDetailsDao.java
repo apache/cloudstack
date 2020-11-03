@@ -26,4 +26,5 @@ import com.cloud.utils.db.GenericDao;
 public interface DiskOfferingDetailsDao extends GenericDao<DiskOfferingDetailVO, Long>, ResourceDetailsDao<DiskOfferingDetailVO> {
     List<Long> findDomainIds(final long resourceId);
     List<Long> findZoneIds(final long resourceId);
+    String getDetail(Long diskOfferingId, String key);
 }

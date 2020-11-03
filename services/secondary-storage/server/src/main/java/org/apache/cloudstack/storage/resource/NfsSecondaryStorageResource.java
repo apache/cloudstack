@@ -190,6 +190,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
     private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
+    private static final String ORIGINAL_FILE_EXTENSION = ".orig";
 
     private static final Map<String, String> updatableConfigData = Maps.newHashMap();
     static {
@@ -391,6 +392,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     public Answer execute(GetDatadisksCommand cmd) {
         DataTO srcData = cmd.getData();
+        String configurationId = cmd.getConfigurationId();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO srcStore = srcData.getDataStore();
         if (!(srcStore instanceof NfsTO)) {
@@ -435,7 +437,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             Script command = new Script("cp", _timeout, s_logger);
             command.add(ovfFilePath);
-            command.add(ovfFilePath + ".orig");
+            command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
             String result = command.execute();
             if (result != null) {
                 String msg = "Unable to rename original OVF, error msg: " + result;
@@ -445,7 +447,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.debug("Reading OVF " + ovfFilePath + " to retrive the number of disks present in OVA");
             OVFHelper ovfHelper = new OVFHelper();
 
-            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFilePath);
+            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, configurationId);
             return new GetDatadisksAnswer(disks);
         } catch (Exception e) {
             String msg = "Get Datadisk Template Count failed due to " + e.getMessage();
@@ -503,7 +505,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                         throw new Exception(msg);
                     }
                     command = new Script("cp", _timeout, s_logger);
-                    command.add(ovfFilePath + ".orig");
+                    command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
                     command.add(newTmplDirAbsolute);
                     result = command.execute();
                     if (result != null) {
@@ -517,7 +519,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // Create OVF for the disk
             String newOvfFilePath = newTmplDirAbsolute + File.separator + ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1);
             OVFHelper ovfHelper = new OVFHelper();
-            ovfHelper.rewriteOVFFile(ovfFilePath + ".orig", newOvfFilePath, diskName);
+            ovfHelper.rewriteOVFFileForSingleDisk(ovfFilePath + ORIGINAL_FILE_EXTENSION, newOvfFilePath, diskName);
 
             postCreatePrivateTemplate(newTmplDirAbsolute, templateId, templateUniqueName, physicalSize, virtualSize);
             writeMetaOvaForTemplate(newTmplDirAbsolute, ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1), diskName, templateUniqueName, physicalSize);
@@ -1044,13 +1046,25 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+    private boolean shouldPerformDataMigration(DataTO srcData, DataTO destData) {
+        DataStoreTO srcDataStore = srcData.getDataStore();
+        DataStoreTO destDataStore = destData.getDataStore();
+        if (DataStoreRole.Image == srcDataStore.getRole() && DataStoreRole.Image == destDataStore.getRole() &&
+                srcDataStore instanceof NfsTO && destDataStore instanceof NfsTO &&
+                ((srcData.getObjectType() == DataObjectType.TEMPLATE && destData.getObjectType() == DataObjectType.TEMPLATE) ||
+                        (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.SNAPSHOT) ||
+                        (srcData.getObjectType() == DataObjectType.VOLUME && destData.getObjectType() == DataObjectType.VOLUME))) {
+            return true;
+        }
+        return false;
+    }
+
     protected Answer execute(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
-
-        if (DataStoreRole.Image == srcDataStore.getRole()  && DataStoreRole.Image == destDataStore.getRole()) {
+        if (shouldPerformDataMigration(srcData, destData)) {
             return copyFromNfsToNfs(cmd);
         }
 
@@ -1288,14 +1302,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         try {
             File srcFile = new File(getDir(srcStore.getUrl(), _nfsVersion), srcData.getPath());
             File destFile = new File(getDir(destStore.getUrl(), _nfsVersion), destData.getPath());
-            ImageFormat format = getTemplateFormat(srcFile.getName());
 
             if (srcFile == null) {
-                return new CopyCmdAnswer("Can't find src file:" + srcFile);
+                return new CopyCmdAnswer("Can't find source file at path: "+ srcData.getPath() +" on datastore: "+ srcDataStore.getUuid() +" to initiate file transfer");
             }
+            ImageFormat format = getTemplateFormat(srcFile.getName());
             if (srcData instanceof TemplateObjectTO || srcData instanceof VolumeObjectTO) {
                 File srcDir = null;
                 if (srcFile.isFile() || srcFile.getName().contains(".")) {
+                    srcDir = new File(srcFile.getParent());
+                } else if (!srcFile.isDirectory()) {
                     srcDir = new File(srcFile.getParent());
                 }
                 File destDir = null;
@@ -1339,7 +1355,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 if (srcFile.isFile()) {
                     newVol.setPath(destData.getPath() + File.separator + srcFile.getName());
                 } else {
-                    newVol.setPath(destData.getPath());
+                    newVol.setPath(srcData.getPath());
                 }
                 newVol.setSize(getVirtualSize(srcFile, format));
                 retObj = newVol;

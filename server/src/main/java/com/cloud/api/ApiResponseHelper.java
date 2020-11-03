@@ -1564,7 +1564,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);
 
         }
-        return ViewResponseHelper.createTemplateResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        return ViewResponseHelper.createTemplateResponse(EnumSet.of(DomainDetails.all), view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
     }
 
     @Override
@@ -1581,7 +1581,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     tvo.addAll(ApiDBUtils.newTemplateView(result, zoneId, readyOnly));
             }
         }
-        return ViewResponseHelper.createTemplateResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        return ViewResponseHelper.createTemplateResponse(EnumSet.of(DomainDetails.all), view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
     }
 
     @Override
@@ -3435,11 +3435,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Long networkId = ip.getAssociatedWithNetworkId();
                 if (networkId == null) {
                     networkId = ip.getSourceNetworkId();
-                }
-                NetworkDetailVO networkDetail = networkDetailsDao.findDetail(networkId, Network.hideIpAddressUsage);
-                if (networkDetail != null && networkDetail.getValue() != null && networkDetail.getValue().equals("true")) {
-                    // Don't export network usage when admin wants it hidden
-                    return null;
                 }
                 resourceType = ResourceObjectType.PublicIpAddress;
                 resourceId = ip.getId();

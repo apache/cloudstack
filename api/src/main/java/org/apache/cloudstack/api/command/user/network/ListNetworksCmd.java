@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.Network;
 import com.cloud.utils.Pair;
+import com.google.common.base.Strings;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -53,7 +54,7 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone ID of the network")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of the network. Supported values are: isolated and shared")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of the network. Supported values are: isolated, l2, shared and all")
     private String guestIpType;
 
     @Parameter(name = ApiConstants.IS_SYSTEM, type = CommandType.BOOLEAN, description = "true if network is system, false otherwise")
@@ -105,7 +106,13 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     }
 
     public String getGuestIpType() {
-        return guestIpType;
+        if (!Strings.isNullOrEmpty(guestIpType)) {
+            if (guestIpType.equalsIgnoreCase("all")) {
+                return null;
+            }
+            return Network.GuestType.fromValue(guestIpType).toString();
+        }
+        return null;
     }
 
     public Boolean getIsSystem() {

@@ -55,7 +55,7 @@ public interface OrchestrationService {
      * @param memory memory to allocate in bytes
      * @param computeTags tags for the compute
      * @param rootDiskTags tags for the root disk
-     * @param networks networks that this VM should join
+     * @param networkNicMap map networks to nic profiles that this VM should join
      * @param rootDiskSize size the root disk in case of templates.
      * @return VirtualMachineEntity
      */
@@ -65,7 +65,7 @@ public interface OrchestrationService {
         @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor,
         @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
         @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
-        @QueryParam("network-nic-map") Map<String, NicProfile> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
+        @QueryParam("network-nic-map") Map<String, List<NicProfile>> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
         @QueryParam("root-disk-size") Long rootDiskSize, @QueryParam("extra-dhcp-option-map") Map<String, Map<Integer, String>> extraDhcpOptionMap,
         @QueryParam("datadisktemplate-diskoffering-map") Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap) throws InsufficientCapacityException;
 
@@ -74,7 +74,7 @@ public interface OrchestrationService {
         @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor,
         @QueryParam("os") String os, @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
         @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
-        @QueryParam("network-nic-map") Map<String, NicProfile> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan, @QueryParam("extra-dhcp-option-map") Map<String,  Map<Integer, String>> extraDhcpOptionMap) throws InsufficientCapacityException;
+        @QueryParam("network-nic-map") Map<String, List<NicProfile>> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan, @QueryParam("extra-dhcp-option-map") Map<String,  Map<Integer, String>> extraDhcpOptionMap) throws InsufficientCapacityException;
 
     @POST
     NetworkEntity createNetwork(String id, String name, String domainName, String cidr, String gateway);

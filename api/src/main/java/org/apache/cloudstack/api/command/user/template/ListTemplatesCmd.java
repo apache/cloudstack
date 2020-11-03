@@ -16,8 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import com.cloud.exception.InvalidParameterValueException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -82,9 +86,35 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     @Parameter(name = ApiConstants.PARENT_TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list datadisk templates by parent template id", since = "4.4")
     private Long parentTemplateId;
 
+    @Parameter(name = ApiConstants.DETAILS,
+            type = CommandType.LIST,
+            collectionType = CommandType.STRING,
+            since = "4.15",
+            description = "comma separated list of template details requested, value can be a list of [ all, min]")
+    private List<String> viewDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+
+    public EnumSet<ApiConstants.DomainDetails> getDetails() throws InvalidParameterValueException {
+        EnumSet<ApiConstants.DomainDetails> dv;
+        if (CollectionUtils.isEmpty(viewDetails)) {
+            dv = EnumSet.of(ApiConstants.DomainDetails.all);
+        } else {
+            try {
+                ArrayList<ApiConstants.DomainDetails> dc = new ArrayList<>();
+                for (String detail : viewDetails) {
+                    dc.add(ApiConstants.DomainDetails.valueOf(detail));
+                }
+                dv = EnumSet.copyOf(dc);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " +
+                        EnumSet.allOf(ApiConstants.DomainDetails.class));
+            }
+        }
+        return dv;
+    }
 
     public String getHypervisor() {
         return hypervisor;
