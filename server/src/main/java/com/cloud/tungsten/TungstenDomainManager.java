@@ -1,13 +1,14 @@
 package com.cloud.tungsten;
 
 import com.cloud.network.TungstenProvider;
+import com.cloud.network.element.TungstenProviderVO;
 import net.juniper.tungsten.api.types.Domain;
 
 import java.io.IOException;
 import java.util.List;
 
 public interface TungstenDomainManager {
-    List<TungstenProvider> getTungstenProviders();
+    List<TungstenProviderVO> getTungstenProviders();
 
     void createDomainInTungsten(TungstenProvider tungstenProvider, String domainName, String domainUuid);
 

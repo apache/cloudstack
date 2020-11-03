@@ -4,11 +4,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.TungstenProvider;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.resource.ResourceManager;
@@ -24,13 +21,12 @@ import org.apache.cloudstack.network.tungsten.resource.TungstenResource;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 @Component
 public class TungstenProviderServiceImpl implements TungstenProviderService {
@@ -40,19 +36,11 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
     @Inject
     TungstenProviderDao _tungstenProviderDao;
     @Inject
-    PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
-    @Inject
-    PhysicalNetworkDao _physicalNetworkDao;
-    @Inject
     DataCenterDao _zoneDao;
     @Inject
     ResourceManager _resourceMgr;
     @Inject
     HostDetailsDao _hostDetailsDao;
-    @Inject
-    HostDao _hostDao;
-    @Inject
-    PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
 
     @Override
     public List<Class<?>> getCommands() {
