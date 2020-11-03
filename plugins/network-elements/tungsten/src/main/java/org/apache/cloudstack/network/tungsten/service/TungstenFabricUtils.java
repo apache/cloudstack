@@ -7,22 +7,23 @@ import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenCommand;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+
+@Component
 public class TungstenFabricUtils {
 
     private static final Logger s_logger = Logger.getLogger(TungstenFabricUtils.class);
 
-    private final AgentManager agentMgr;
-    private final TungstenProviderDao tungstenProviderDao;
-
-    public TungstenFabricUtils(AgentManager agentMgr, TungstenProviderDao tungstenProviderDao) {
-        this.agentMgr = agentMgr;
-        this.tungstenProviderDao = tungstenProviderDao;
-    }
+    @Inject
+    AgentManager agentMgr;
+    @Inject
+    TungstenProviderDao tungstenProviderDao;
 
     public TungstenAnswer sendTungstenCommand(TungstenCommand cmd, Network network) throws IllegalArgumentException {
 
-        TungstenProviderVO tungstenProviderVO = tungstenProviderDao.findByPhysicalNetworkId(network.getPhysicalNetworkId());
+        TungstenProviderVO tungstenProviderVO = tungstenProviderDao.findByZoneId(network.getDataCenterId());
         if (tungstenProviderVO == null) {
             s_logger.error("No tungsten provider have been found!");
             throw new IllegalArgumentException("Failed to find a tungsten provider");

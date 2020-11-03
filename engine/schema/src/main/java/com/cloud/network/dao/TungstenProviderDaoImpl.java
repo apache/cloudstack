@@ -7,6 +7,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @DB()
 public class TungstenProviderDaoImpl extends GenericDaoBase<TungstenProviderVO, Long>
@@ -27,9 +29,7 @@ public class TungstenProviderDaoImpl extends GenericDaoBase<TungstenProviderVO, 
                 SearchCriteria.Op.EQ);
         AllFieldsSearch.and("port", AllFieldsSearch.entity().getPort(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("nsp_id", AllFieldsSearch.entity().getNspId(),
-                SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("physical_network_id", AllFieldsSearch.entity().getPhysicalNetworkId(),
+        AllFieldsSearch.and("zone_id", AllFieldsSearch.entity().getZoneId(),
                 SearchCriteria.Op.EQ);
         AllFieldsSearch.and("vrouter", AllFieldsSearch.entity().getVrouter(),
                 SearchCriteria.Op.EQ);
@@ -39,16 +39,9 @@ public class TungstenProviderDaoImpl extends GenericDaoBase<TungstenProviderVO, 
     }
 
     @Override
-    public TungstenProviderVO findByNspId(long nspId) {
+    public TungstenProviderVO findByZoneId(long nspId) {
         SearchCriteria<TungstenProviderVO> sc = AllFieldsSearch.create();
-        sc.setParameters("nsp_id", nspId);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public TungstenProviderVO findByPhysicalNetworkId(long physicalNetworkId) {
-        SearchCriteria<TungstenProviderVO> sc = AllFieldsSearch.create();
-        sc.setParameters("physical_network_id", physicalNetworkId);
+        sc.setParameters("zone_id", nspId);
         return findOneBy(sc);
     }
 
@@ -64,5 +57,10 @@ public class TungstenProviderDaoImpl extends GenericDaoBase<TungstenProviderVO, 
         SearchCriteria<TungstenProviderVO> sc = AllFieldsSearch.create();
         sc.setParameters("uuid", providerUuid);
         remove(sc);
+    }
+
+    @Override
+    public List<TungstenProviderVO> findAll() {
+        return findAll();
     }
 }

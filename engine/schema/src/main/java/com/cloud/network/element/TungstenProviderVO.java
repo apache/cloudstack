@@ -19,11 +19,8 @@ public class TungstenProviderVO implements TungstenProvider {
     @Column(name = "id")
     long id;
 
-    @Column(name = "nsp_id")
-    private long nspId;
-
-    @Column(name = "physical_network_id")
-    private long physicalNetworkId;
+    @Column(name = "zone_id")
+    private long zoneId;
 
     @Column(name = "uuid")
     private String uuid;
@@ -50,9 +47,8 @@ public class TungstenProviderVO implements TungstenProvider {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public TungstenProviderVO(long nspId, long physicalNetworkId, String providerName, long hostId, String port, String hostname, String vrouter, String vrouterPort) {
-        this.nspId = nspId;
-        this.physicalNetworkId = physicalNetworkId;
+    public TungstenProviderVO(long zoneId, String providerName, long hostId, String port, String hostname, String vrouter, String vrouterPort) {
+        this.zoneId = zoneId;
         this.uuid = UUID.randomUUID().toString();
         this.providerName = providerName;
         this.port = port;
@@ -106,20 +102,12 @@ public class TungstenProviderVO implements TungstenProvider {
         this.port = port;
     }
 
-    public long getNspId() {
-        return nspId;
+    public long getZoneId() {
+        return zoneId;
     }
 
-    public void setNspId(long nspId) {
-        this.nspId = nspId;
-    }
-
-    public long getPhysicalNetworkId() {
-        return physicalNetworkId;
-    }
-
-    public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId = physicalNetworkId;
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getVrouter() {

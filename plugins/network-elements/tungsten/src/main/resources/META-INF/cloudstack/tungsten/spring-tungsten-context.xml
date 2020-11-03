@@ -25,12 +25,6 @@
                       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd">
-    <bean id="TungstenManager"
-          class="org.apache.cloudstack.network.tungsten.service.TungstenManagerImpl"/>
-
-    <bean id="TungstenService"
-          class="org.apache.cloudstack.network.tungsten.service.TungstenServiceImpl"/>
-
     <bean id="TungstenProviderService"
           class="org.apache.cloudstack.network.tungsten.service.TungstenProviderServiceImpl"/>
 
@@ -38,9 +32,9 @@
         <property name="name" value="TungstenGuestNetworkGuru" />
     </bean>
 
+    <bean id="TungstenFabricUtils" class="org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils"/>
+
     <bean id="TungstenElement" class="org.apache.cloudstack.network.tungsten.service.TungstenElement">
         <property name="name" value="TungstenElement"/>
     </bean>
-
-
 </beans>

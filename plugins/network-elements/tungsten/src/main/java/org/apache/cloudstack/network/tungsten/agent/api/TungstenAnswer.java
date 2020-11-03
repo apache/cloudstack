@@ -12,7 +12,8 @@ public class TungstenAnswer extends Answer {
         super(command, success, details);
     }
 
-    public TungstenAnswer(final Command command, ApiObjectBase apiObjectBase, final boolean success, final String details) {
+    public TungstenAnswer(final Command command, ApiObjectBase apiObjectBase, final boolean success,
+        final String details) {
         super(command, success, details);
         setApiObjectBase(apiObjectBase);
     }

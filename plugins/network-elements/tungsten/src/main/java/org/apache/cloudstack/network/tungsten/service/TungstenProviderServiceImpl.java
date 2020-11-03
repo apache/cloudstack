@@ -2,43 +2,35 @@ package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.Network;
-import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.TungstenProvider;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
-import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.resource.ResourceManager;
-import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.collect.Lists;
+import org.apache.cloudstack.network.tungsten.api.command.ConfigTungstenPublicNetworkCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProviderCmd;
-import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenProviderCmd;
-import org.apache.cloudstack.network.tungsten.api.command.ListTungstenProvidersCmd;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 import org.apache.cloudstack.network.tungsten.resource.TungstenResource;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 @Component
 public class TungstenProviderServiceImpl implements TungstenProviderService {
@@ -47,8 +39,6 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
 
     @Inject
     TungstenProviderDao _tungstenProviderDao;
-    @Inject
-    TungstenService _tungstenService;
     @Inject
     PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
     @Inject
@@ -61,46 +51,27 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
     HostDetailsDao _hostDetailsDao;
     @Inject
     HostDao _hostDao;
+    @Inject
+    PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
+
+    @Override
+    public List<Class<?>> getCommands() {
+        return Lists.<Class<?>>newArrayList(CreateTungstenProviderCmd.class, ConfigTungstenPublicNetworkCmd.class);
+    }
 
     @Override
     public TungstenProvider addProvider(CreateTungstenProviderCmd cmd) {
-        TungstenProviderVO element = _tungstenProviderDao.findByNspId(cmd.getNspId());
-        if (element != null) {
-            s_logger.debug("There is already a tungsten provider with service network provider id " + cmd.getNspId());
-            return null;
-        }
-
         TungstenProviderVO tungstenProvider;
-        final Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        final Long zoneId = cmd.getZoneId();
         final String name = cmd.getName();
         final String hostname = cmd.getHostname();
         final String port = cmd.getPort();
         final String vrouter = cmd.getVrouter();
         final String vrouterPort = cmd.getVrouterPort();
 
-        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
-        if (physicalNetwork == null) {
-            throw new InvalidParameterValueException("Could not find physical network with ID: " + physicalNetworkId);
-        }
-        if (!physicalNetwork.getIsolationMethods().contains("TF")) {
-            throw new CloudRuntimeException("Physical network doesn't have the right isolation method for tungsten provider.");
-        }
-
-        long zoneId = physicalNetwork.getDataCenterId();
-
-        final PhysicalNetworkServiceProviderVO ntwkSvcProvider =
-                _physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(), Network.Provider.Tungsten.getName());
-        if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: " + Network.Provider.Tungsten.getName() + " is not enabled in the physical network: " +
-                    physicalNetworkId + "to add this device");
-        } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + " is in shutdown state in the physical network: " +
-                    physicalNetworkId + "to add this device");
-        }
-
         TungstenResource tungstenResource = new TungstenResource();
 
-        DataCenterVO zone = _zoneDao.findById(physicalNetwork.getDataCenterId());
+        DataCenterVO zone = _zoneDao.findById(zoneId);
         String zoneName;
         if (zone != null) {
             zoneName = zone.getName();
@@ -111,7 +82,6 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
         Map<String, String> params = new HashMap<String, String>();
         params.put("guid", UUID.randomUUID().toString());
         params.put("zoneId", zoneName);
-        params.put("physicalNetworkId", String.valueOf(physicalNetwork.getId()));
         params.put("name", "TungstenDevice - " + cmd.getName());
         params.put("hostname", cmd.getHostname());
         params.put("port", cmd.getPort());
@@ -128,12 +98,12 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
                 tungstenProvider = Transaction.execute(new TransactionCallback<TungstenProviderVO>() {
                     @Override
                     public TungstenProviderVO doInTransaction(TransactionStatus status) {
-                        TungstenProviderVO tungstenProviderVO = new TungstenProviderVO(cmd.getNspId(), physicalNetworkId, name, host.getId(),
-                                port, hostname, vrouter, vrouterPort);
+                        TungstenProviderVO tungstenProviderVO = new TungstenProviderVO(zoneId, name, host.getId(), port,
+                            hostname, vrouter, vrouterPort);
                         _tungstenProviderDao.persist(tungstenProviderVO);
-                        _tungstenService.init(zoneId);
 
-                        DetailVO detail = new DetailVO(host.getId(), "tungstendeviceid", String.valueOf(tungstenProviderVO.getId()));
+                        DetailVO detail = new DetailVO(host.getId(), "tungstendeviceid",
+                            String.valueOf(tungstenProviderVO.getId()));
                         _hostDetailsDao.persist(detail);
 
                         return tungstenProviderVO;
@@ -151,65 +121,11 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
 
     @Override
     public TungstenProviderResponse getTungstenProvider(long zoneId) {
-
-        PhysicalNetworkVO physicalNetwork = getTungstenPhysicalNetworkByZone(zoneId);
-        if(physicalNetwork == null) {
-            throw new CloudRuntimeException("Unable to find a physical network with isolation method for tungsten!");
-        }
-
-        PhysicalNetworkServiceProviderVO provider = _physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(), Network.Provider.Tungsten.getName());
-        TungstenProviderVO tungstenProvider = _tungstenProviderDao.findByNspId(provider.getId());
-
+        TungstenProviderVO tungstenProvider = _tungstenProviderDao.findByZoneId(zoneId);
         if (tungstenProvider != null)
             return createTungstenProviderResponse(tungstenProvider);
         else
             return null;
-    }
-
-    public TungstenProviderResponse listTungstenProvider(ListTungstenProvidersCmd cmd){
-        PhysicalNetworkServiceProviderVO provider = _physicalNetworkServiceProviderDao.findByServiceProvider(cmd.getPhysicalNetworkId(), Network.Provider.Tungsten.getName());
-        TungstenProviderVO tungstenProvider = _tungstenProviderDao.findByNspId(provider.getId());
-
-        if (tungstenProvider != null)
-            return createTungstenProviderResponse(tungstenProvider);
-        else
-            return null;
-    }
-
-    public PhysicalNetworkVO getTungstenPhysicalNetworkByZone(long zoneId){
-        List<PhysicalNetworkVO> physicalNetworkList = _physicalNetworkDao.listByZone(zoneId);
-        for(PhysicalNetworkVO item : physicalNetworkList) {
-            if (item.getIsolationMethods().contains("TF")){
-                return item;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_TUNGSTEN_DELETE_PROVIDER, eventDescription = "Delete tungsten provider", async = true)
-    public void deleteTungstenProvider(DeleteTungstenProviderCmd cmd) {
-        TungstenProviderVO tungstenProviderVO = _tungstenProviderDao.findByUuid(cmd.getTungstenProviderUuid());
-        if (tungstenProviderVO == null)
-            throw new InvalidParameterValueException("Tungsten provider not found with the uuid: " + cmd.getTungstenProviderUuid());
-
-        HostVO tungstenHost = _hostDao.findById(tungstenProviderVO.getHostId());
-        Long hostId = tungstenHost.getId();
-
-        tungstenHost.setResourceState(ResourceState.Maintenance);
-        _hostDao.update(hostId, tungstenHost);
-        _resourceMgr.deleteHost(hostId, false, false);
-
-        _tungstenProviderDao.deleteProviderByUuid(tungstenProviderVO.getUuid());
-        disableTungstenNsp(cmd.getZoneId());
-    }
-
-    @Override
-    public void disableTungstenNsp(long zoneId) {
-        PhysicalNetworkVO physicalNetwork = getTungstenPhysicalNetworkByZone(zoneId);
-        PhysicalNetworkServiceProviderVO provider = _physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(), Network.Provider.Tungsten.getName());
-        provider.setState(PhysicalNetworkServiceProvider.State.Disabled);
-        _physicalNetworkServiceProviderDao.update(provider.getId(), provider);
     }
 
     public TungstenProviderResponse createTungstenProviderResponse(TungstenProviderVO tungstenProviderVO) {

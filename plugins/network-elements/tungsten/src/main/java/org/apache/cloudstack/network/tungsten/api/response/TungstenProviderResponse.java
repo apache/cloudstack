@@ -27,11 +27,11 @@ public class TungstenProviderResponse extends BaseResponse {
     private String port;
 
     @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_VROUTER)
-    @Param(description = "tungsten provider port")
+    @Param(description = "tungsten provider vrouter")
     private String vrouter;
 
     @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_VROUTER_PORT)
-    @Param(description = "tungsten provider port")
+    @Param(description = "tungsten provider vrouter port")
     private String vrouterPort;
 
     public String getHostname() {

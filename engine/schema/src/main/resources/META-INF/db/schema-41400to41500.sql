@@ -87,8 +87,7 @@ CREATE VIEW `cloud`.`network_offering_view` AS
 DROP TABLE IF EXISTS `cloud`.`tungsten_providers`;
 CREATE TABLE `cloud`.`tungsten_providers` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
-  `physical_network_id` bigint unsigned NOT NULL COMMENT 'Physical Network ID',
+  `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
   `uuid` varchar(40),
   `host_id` bigint unsigned NOT NULL,
   `provider_name` varchar(40),
@@ -98,7 +97,6 @@ CREATE TABLE `cloud`.`tungsten_providers` (
   `vrouter_port` varchar(40),
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_tungsten_providers__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_tungsten_providers__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_tungsten_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_tungsten_providers__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_tungsten_providers__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

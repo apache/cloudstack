@@ -1,22 +1,19 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-import org.apache.cloudstack.network.tungsten.service.TungstenService;
-
 public class DeleteTungstenVmInterfaceCommand extends TungstenCommand {
+    private final String projectUuid;
+    private final String name;
 
-    private final String vmInterfaceUuid;
-    private transient TungstenService tungstenService;
-
-    public DeleteTungstenVmInterfaceCommand(String vmInterfaceUuid, TungstenService tungstenService) {
-        this.vmInterfaceUuid = vmInterfaceUuid;
-        this.tungstenService = tungstenService;
+    public DeleteTungstenVmInterfaceCommand(final String projectUuid, String name) {
+        this.projectUuid = projectUuid;
+        this.name = name;
     }
 
-    public String getVmInterfaceUuid() {
-        return vmInterfaceUuid;
+    public String getName() {
+        return name;
     }
 
-    public TungstenService getTungstenService() {
-        return tungstenService;
+    public String getProjectUuid() {
+        return projectUuid;
     }
 }

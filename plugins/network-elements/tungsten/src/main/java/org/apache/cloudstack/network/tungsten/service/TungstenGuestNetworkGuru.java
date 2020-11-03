@@ -1,8 +1,6 @@
 package org.apache.cloudstack.network.tungsten.service;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -13,37 +11,34 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.projects.ProjectVO;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.Nic;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
-import net.juniper.tungsten.api.types.InstanceIp;
-import net.juniper.tungsten.api.types.Project;
-import net.juniper.tungsten.api.types.VirtualMachine;
-import net.juniper.tungsten.api.types.VirtualMachineInterface;
-import net.juniper.tungsten.api.types.VirtualNetwork;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenInstanceIpCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ClearTungstenNetworkGatewayCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenVmCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenVmInterfaceCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenVirtualMachineCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVRouterPortCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmInterfaceCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.SetTungstenNetworkGatewayCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
-import org.apache.cloudstack.network.tungsten.vrouter.Port;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.io.IOException;
 
 @Component
 public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
@@ -51,23 +46,20 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(TungstenGuestNetworkGuru.class);
 
     @Inject
-    TungstenService tungstenService;
-    @Inject
     NetworkOfferingServiceMapDao ntwkOfferingSrvcDao;
-    @Inject
-    AgentManager _agentMgr;
-    @Inject
-    TungstenProviderDao _tungstenProviderDao;
     @Inject
     NetworkDao _networkDao;
     @Inject
-    DataCenterDao dcDao;
+    TungstenFabricUtils _tunstenFabricUtils;
+    @Inject
+    AccountDao _accountDao;
+    @Inject
+    ProjectDao _projectDao;
 
     private static final Networks.TrafficType[] TrafficTypes = {Networks.TrafficType.Guest};
-    private TungstenFabricUtils _tunstenFabricUtils = null;
 
     public TungstenGuestNetworkGuru() {
-        _isolationMethods = new PhysicalNetwork.IsolationMethod[]{new PhysicalNetwork.IsolationMethod("TF")};
+        _isolationMethods = new PhysicalNetwork.IsolationMethod[] {new PhysicalNetwork.IsolationMethod("TF")};
     }
 
     @Override
@@ -115,24 +107,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-
-        if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())
-            && nic != null && nic.getRequestedIPv4() != null) {
-            throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
-        }
-
-        NicProfile profile = super.allocate(config, nic, vm);
-
-        if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
-            profile.setReservationStrategy(Nic.ReservationStrategy.Start);
-            /* We won't clear IP address, because router may set gateway as it IP, and it would be updated properly
-            later */
-            //profile.setIp4Address(null);
-            profile.setIPv4Gateway(null);
-            profile.setIPv4Netmask(null);
-        }
-
-        return profile;
+        return super.allocate(config, nic, vm);
     }
 
     @Override
@@ -140,18 +115,8 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
         super.deallocate(config, nic, vm);
 
-        tungstenFabricUtilsInit(config.getDataCenterId());
-
-        if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
-            nic.setIPv4Address(null);
-            nic.setIPv4Gateway(null);
-            nic.setIPv4Netmask(null);
-            nic.setBroadcastUri(null);
-            nic.setIsolationUri(null);
-        }
-
         try {
-            DeleteTungstenVmCommand cmd = new DeleteTungstenVmCommand(vm.getUuid(), tungstenService);
+            DeleteTungstenVmCommand cmd = new DeleteTungstenVmCommand(vm.getUuid());
             _tunstenFabricUtils.sendTungstenCommand(cmd, config);
         } catch (IllegalArgumentException e) {
             throw new CloudRuntimeException("Failing to expuge the vm from tungsten with the uuid " + vm.getUuid());
@@ -164,10 +129,9 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
 
         assert (network.getState() == Network.State.Implementing) : "Why are we implementing " + network;
 
-        tungstenFabricUtilsInit(network.getDataCenterId());
-
         // get physical network id
         Long physicalNetworkId = network.getPhysicalNetworkId();
+        Long zoneId = network.getDataCenterId();
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(),
             network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Allocated,
@@ -185,12 +149,20 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
 
         // setup tungsten network
         try {
-            VirtualNetwork virtualNetwork = tungstenService.getVirtualNetworkFromTungsten(network.getUuid());
-            if (virtualNetwork == null) {
-                CreateTungstenNetworkCommand cmd = new CreateTungstenNetworkCommand(network.getId(), _networkDao,
-                        tungstenService, dcDao);
-                _tunstenFabricUtils.sendTungstenCommand(cmd, network);
-            }
+            String projectUuid = getProject(context.getAccountId());
+
+            // create tungsten network
+            Pair<String, Integer> pair = NetUtils.getCidr(network.getCidr());
+            CreateTungstenNetworkCommand createTungstenGuestNetworkCommand = new CreateTungstenNetworkCommand(
+                network.getUuid(), network.getName(), projectUuid, false, false, pair.first(), pair.second(),
+                network.getGateway(), network.getMode().equals(Networks.Mode.Dhcp), null, null, null, true);
+            _tunstenFabricUtils.sendTungstenCommand(createTungstenGuestNetworkCommand, network);
+
+            // create gateway vmi, update logical router
+            SetTungstenNetworkGatewayCommand setTungstenNetworkGatewayCommand = new SetTungstenNetworkGatewayCommand(
+                projectUuid, TungstenUtils.getLogicalRouterName(zoneId), network.getId(), network.getUuid(),
+                network.getGateway());
+            _tunstenFabricUtils.sendTungstenCommand(setTungstenNetworkGatewayCommand, network);
 
         } catch (Exception ex) {
             throw new CloudRuntimeException("unable to create tungsten network " + network.getUuid());
@@ -205,65 +177,28 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         super.reserve(nic, network, vm, dest, context);
 
-        tungstenFabricUtilsInit(network.getDataCenterId());
+        String projectUuid = getProject(context.getAccountId());
 
-        // create tungsten vm, vmi, instance ip
-        VirtualMachine virtualMachine;
-        VirtualMachineInterface virtualMachineInterface;
-        InstanceIp instanceIp;
-        VirtualNetwork virtualNetwork;
-        try {
-            // for sure tungsten network is created
-            virtualNetwork = tungstenService.getVirtualNetworkFromTungsten(network.getUuid());
-            if (virtualNetwork == null) {
-                throw new CloudRuntimeException("Tungsten network " + network.getUuid() + " is unavailable");
-            }
-
-            Project project = tungstenService.getTungstenNetworkProject(network.getAccountId(), network.getDomainId());
-
-            virtualMachine = (VirtualMachine) tungstenService.getObject(VirtualMachine.class, vm.getUuid());
-            if (virtualMachine == null) {
-                CreateTungstenVmCommand vmCmd = new CreateTungstenVmCommand(vm.getUuid(), vm.getInstanceName(), tungstenService);
-                virtualMachine = (VirtualMachine) _tunstenFabricUtils.sendTungstenCommand(vmCmd, network).getApiObjectBase();
-            }
-
-            virtualMachineInterface = (VirtualMachineInterface) tungstenService.getObject(VirtualMachineInterface.class,
-                nic.getUuid());
-            if (virtualMachineInterface == null) {
-                CreateTungstenVmInterfaceCommand vmiCmd = new CreateTungstenVmInterfaceCommand(nic, virtualNetwork.getUuid(),
-                        virtualMachine.getUuid(), project.getUuid(), tungstenService);
-                virtualMachineInterface = (VirtualMachineInterface) _tunstenFabricUtils.sendTungstenCommand(vmiCmd, network).getApiObjectBase();
-            }
-
-            CreateTungstenInstanceIpCommand instanceIpCmd = new CreateTungstenInstanceIpCommand(nic, virtualNetwork.getUuid(),
-                    virtualMachineInterface.getUuid(), tungstenService);
-            instanceIp = (InstanceIp) _tunstenFabricUtils.sendTungstenCommand(instanceIpCmd, network).getApiObjectBase();
-
-            Port port = new Port();
-            port.setId(virtualMachineInterface.getUuid());
-            port.setVnId(virtualNetwork.getUuid());
-            port.setDisplayName(virtualMachine.getName());
-            port.setVmProjectId(project.getUuid());
-            port.setMacAddress(nic.getMacAddress());
-            port.setIpAddress(instanceIp.getAddress());
-            port.setInstanceId(virtualMachine.getUuid());
-//            tungstenService.addTungstenVrouterPort(port);
-
-            nic.setName(nic.getName() + TungstenUtils.getBridgeName());
-        } catch (IOException e) {
-            throw new CloudRuntimeException(
-                "Failed to create resources in tungsten for the network with uuid: " + vm.getUuid());
-        }
+        // create tungsten vm ( vmi - ii - port )
+        CreateTungstenVirtualMachineCommand cmd = new CreateTungstenVirtualMachineCommand(projectUuid,
+            network.getUuid(), vm.getUuid(), vm.getInstanceName(), nic.getUuid(), nic.getId(), nic.getIPv4Address(),
+            nic.getMacAddress(), TungstenUtils.getUserVm(), TungstenUtils.getGuestType());
+        _tunstenFabricUtils.sendTungstenCommand(cmd, network);
+        nic.setName(nic.getName() + TungstenUtils.getBridgeName());
     }
 
     @Override
     public boolean release(final NicProfile nic, final VirtualMachineProfile vm, final String reservationId) {
+        // delete vrouter port
+        DeleteTungstenVRouterPortCommand deleteTungstenVRouterPortCommand = new DeleteTungstenVRouterPortCommand(
+            nic.getUuid());
 
         // delete instance ip and vmi
         Network network = _networkDao.findById(nic.getNetworkId());
-        tungstenFabricUtilsInit(network.getDataCenterId());
-
-        DeleteTungstenVmInterfaceCommand cmd = new DeleteTungstenVmInterfaceCommand(nic.getUuid(), tungstenService);
+        String projectUuid = getProject(vm.getOwner().getAccountId());
+        String nicName = TungstenUtils.getVmiName(TungstenUtils.getGuestType(), TungstenUtils.getUserVm(),
+            vm.getInstanceName(), nic.getId());
+        DeleteTungstenVmInterfaceCommand cmd = new DeleteTungstenVmInterfaceCommand(projectUuid, nicName);
         TungstenAnswer tungstenAnswer = _tunstenFabricUtils.sendTungstenCommand(cmd, network);
         if (tungstenAnswer.getResult())
             return super.release(nic, vm, reservationId);
@@ -273,20 +208,29 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
-        tungstenFabricUtilsInit(network.getDataCenterId());
         try {
-            DeleteTungstenNetworkCommand cmd = new DeleteTungstenNetworkCommand(network.getUuid(), tungstenService);
-            _tunstenFabricUtils.sendTungstenCommand(cmd, network);
+            String projectUuid = getProject(network.getAccountId());
+            ClearTungstenNetworkGatewayCommand clearTungstenNetworkGatewayCommand =
+                new ClearTungstenNetworkGatewayCommand(
+                projectUuid, TungstenUtils.getLogicalRouterName(network.getDataCenterId()), network.getId());
+            _tunstenFabricUtils.sendTungstenCommand(clearTungstenNetworkGatewayCommand, network);
+            DeleteTungstenNetworkCommand deleteTungstenNetworkCommand = new DeleteTungstenNetworkCommand(
+                network.getUuid());
+            _tunstenFabricUtils.sendTungstenCommand(deleteTungstenNetworkCommand, network);
         } catch (Exception e) {
             return false;
         }
         return super.trash(network, offering);
     }
 
-    private void tungstenFabricUtilsInit(long zoneId) {
-        if (_tunstenFabricUtils == null) {
-            _tunstenFabricUtils = new TungstenFabricUtils(_agentMgr, _tungstenProviderDao);
-            tungstenService.init(zoneId);
+    public String getProject(long accountId) {
+        Account account = _accountDao.findById(accountId);
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            ProjectVO projectVO = _projectDao.findByProjectAccountId(account.getId());
+            if (projectVO != null) {
+                return projectVO.getUuid();
+            }
         }
+        return null;
     }
 }

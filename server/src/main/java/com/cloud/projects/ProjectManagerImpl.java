@@ -23,7 +23,6 @@ import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -33,7 +32,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.TungstenProvider;
 import com.cloud.projects.Project.State;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
@@ -217,13 +215,13 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 Project project = _projectDao.persist(new ProjectVO(name, displayText, ownerFinal.getDomainId(), projectAccount.getId()));
 
                 //check if any tungsten provider exists and create project on tungsten providers
-                List<TungstenProvider> tungstenProviders = _tungstenProjectManager.getTungstenProviders();
-                Domain domain = _domainDao.findById(project.getDomainId());
-                if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
-                    for (TungstenProvider tungstenProvider : tungstenProviders) {
-                        _tungstenProjectManager.createProjectInTungsten(tungstenProvider, project.getUuid(), project.getName(), domain);
-                    }
-                }
+                //List<TungstenProviderVO> tungstenProviders = _tungstenProjectManager.getTungstenProviders();
+                //Domain domain = _domainDao.findById(project.getDomainId());
+                //if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
+                //    for (TungstenProvider tungstenProvider : tungstenProviders) {
+                //        _tungstenProjectManager.createProjectInTungsten(tungstenProvider, project.getUuid(), project.getName(), domain);
+                //    }
+                //}
                 //assign owner to the project
                 assignAccountToProject(project, ownerFinal.getId(), ProjectAccount.Role.Admin);
 
@@ -303,13 +301,13 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 s_logger.warn("Failed to cleanup project's id=" + project.getId() + " resources, not removing the project yet");
                 return false;
             } else {
-                //check if any tungsten provider exists and delete the project from tungsten providers
-                List<TungstenProvider> tungstenProviders = _tungstenProjectManager.getTungstenProviders();
-                if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
-                    for (TungstenProvider tungstenProvider : tungstenProviders) {
-                        _tungstenProjectManager.deleteProjectFromTungsten(tungstenProvider, project.getUuid());
-                    }
-                }
+                ////check if any tungsten provider exists and delete the project from tungsten providers
+                //List<TungstenProviderVO> tungstenProviders = _tungstenProjectManager.getTungstenProviders();
+                //if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
+                //    for (TungstenProvider tungstenProvider : tungstenProviders) {
+                //        _tungstenProjectManager.deleteProjectFromTungsten(tungstenProvider, project.getUuid());
+                //    }
+                //}
                 //remove cloudstack project
                 return _projectDao.remove(project.getId());
             }

@@ -1,36 +1,90 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.network.dao.NetworkDao;
-import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import java.util.List;
 
 public class CreateTungstenNetworkCommand extends TungstenCommand {
+    private final String uuid;
+    private final String name;
+    private final String parent;
+    private final boolean routerExternal;
+    private final boolean shared;
+    private final String ipPrefix;
+    private final int ipPrefixLen;
+    private final String gateway;
+    private final boolean dhcpEnable;
+    private final List<String> dnsServers;
+    private final String allocationStart;
+    private final String allocationEnd;
+    private final boolean ipFromStart;
 
-    private final long networkId;
-    private transient NetworkDao networkDao;
-    private transient TungstenService tungstenService;
-    private transient DataCenterDao dataCenterDao;
-
-    public CreateTungstenNetworkCommand(long networkId, NetworkDao networkDao, TungstenService tungstenService, DataCenterDao dataCenterDao) {
-        this.networkId = networkId;
-        this.networkDao = networkDao;
-        this.dataCenterDao = dataCenterDao;
-        this.tungstenService = tungstenService;
+    public CreateTungstenNetworkCommand(final String uuid, final String name, final String parent,
+        final boolean routerExternal, final boolean shared, final String ipPrefix, final int ipPrefixLen,
+        final String gateway, final boolean dhcpEnable, final List<String> dnsServers, final String allocationStart,
+        final String allocationEnd, final boolean ipFromStart) {
+        this.uuid = uuid;
+        this.name = name;
+        this.parent = parent;
+        this.routerExternal = routerExternal;
+        this.shared = shared;
+        this.ipPrefix = ipPrefix;
+        this.ipPrefixLen = ipPrefixLen;
+        this.gateway = gateway;
+        this.dhcpEnable = dhcpEnable;
+        this.dnsServers = dnsServers;
+        this.allocationStart = allocationStart;
+        this.allocationEnd = allocationEnd;
+        this.ipFromStart = ipFromStart;
     }
 
-    public long getNetworkId() {
-        return networkId;
+    public String getUuid() {
+        return uuid;
     }
 
-    public TungstenService getTungstenService() {
-        return tungstenService;
+    public String getName() {
+        return name;
     }
 
-    public NetworkDao getNetworkDao() {
-        return networkDao;
+    public String getParent() {
+        return parent;
     }
 
-    public DataCenterDao getDataCenterDao() {
-        return dataCenterDao;
+    public boolean isRouterExternal() {
+        return routerExternal;
+    }
+
+    public boolean isShared() {
+        return shared;
+    }
+
+    public String getIpPrefix() {
+        return ipPrefix;
+    }
+
+    public int getIpPrefixLen() {
+        return ipPrefixLen;
+    }
+
+    public String getGateway() {
+        return gateway;
+    }
+
+    public boolean isDhcpEnable() {
+        return dhcpEnable;
+    }
+
+    public List<String> getDnsServers() {
+        return dnsServers;
+    }
+
+    public String getAllocationStart() {
+        return allocationStart;
+    }
+
+    public String getAllocationEnd() {
+        return allocationEnd;
+    }
+
+    public boolean isIpFromStart() {
+        return ipFromStart;
     }
 }

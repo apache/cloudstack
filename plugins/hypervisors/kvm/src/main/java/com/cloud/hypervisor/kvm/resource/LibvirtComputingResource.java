@@ -307,6 +307,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _ovsPvlanVmPath;
     private String _routerProxyPath;
     private String _ovsTunnelPath;
+    private String _addTungstenVgwPath;
     private String _host;
     private String _dcId;
     private String _pod;
@@ -785,6 +786,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _networkDirectDevice;
     }
 
+    protected String getDefaultTungstenScriptsDir() {
+        return "scripts/vm/network/tungsten";
+    }
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         boolean success = super.configure(name, params);
@@ -823,6 +827,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String storageScriptsDir = (String)params.get("storage.scripts.dir");
         if (storageScriptsDir == null) {
             storageScriptsDir = getDefaultStorageScriptsDir();
+        }
+
+        String tungstenScriptsDir = (String) params.get("tungsten.scripts.dir");
+        if (tungstenScriptsDir == null) {
+            tungstenScriptsDir = getDefaultTungstenScriptsDir();
         }
 
         final String bridgeType = (String)params.get("network.bridge.type");
@@ -950,6 +959,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _ovsPvlanVmPath = Script.findScript(networkScriptsDir, "ovs-pvlan-kvm-vm.sh");
         if (_ovsPvlanVmPath == null) {
             throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
+        }
+
+        _addTungstenVgwPath = Script.findScript(tungstenScriptsDir, "add_tungsten_vgw.sh");
+        if (_addTungstenVgwPath == null) {
+            throw new ConfigurationException("Unable to find the add_tungsten_vgw.sh");
         }
 
         String value = (String)params.get("developer");
@@ -4479,6 +4493,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add("--vmmac", vmMac);
         cmd.add("--nicsecips", secIp);
         cmd.add("--action=" + action);
+
+        final String result = cmd.execute();
+        if (result != null) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean addTungstenVirtualGateway(final String inf, final String subnet, final String route,
+        final String vrf, final String netnsName, final String gateway) {
+        final Script cmd = new Script(_addTungstenVgwPath, _timeout, s_logger);
+        cmd.add(inf);
+        cmd.add(subnet);
+        cmd.add(route);
+        cmd.add(vrf);
+        cmd.add(netnsName);
+        cmd.add(gateway);
 
         final String result = cmd.execute();
         if (result != null) {
