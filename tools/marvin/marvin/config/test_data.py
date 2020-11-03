@@ -2018,25 +2018,24 @@ test_data = {
     "cks_kubernetes_versions": {
         "1.14.9": {
             "semanticversion": "1.14.9",
-            "url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/setup-v1.14.9.iso",
+            "url": "http://download.cloudstack.org/cks/setup-1.14.9.iso",
             "mincpunumber": 2,
             "minmemory": 2048
         },
         "1.15.0": {
             "semanticversion": "1.15.0",
-            "url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/setup-v1.15.0.iso",
+            "url": "http://download.cloudstack.org/cks/setup-1.15.0.iso",
             "mincpunumber": 2,
             "minmemory": 2048
         },
         "1.16.0": {
             "semanticversion": "1.16.0",
-            "url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/setup-v1.16.0.iso",
+            "url": "http://download.cloudstack.org/cks/setup-1.16.0.iso",
             "mincpunumber": 2,
             "minmemory": 2048
         },
         "1.16.3": {
             "semanticversion": "1.16.3",
-            #"url": "http://sbjenkins-stagingrepo.jenkins.lon/flatcar/setup-v1.16.3.iso",
             "url": "http://sbjenkins-stagingrepo.jenkins.lon/cks/binaries-iso/as-1.16.3.iso",
             "mincpunumber": 2,
             "minmemory": 2048

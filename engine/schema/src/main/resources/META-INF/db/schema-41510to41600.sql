@@ -23,6 +23,8 @@ ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_vm_type` varchar(255) DEFAULT "Us
 
 UPDATE `cloud`.`vm_template` set deploy_as_is = 1 where id = 8;
 
+DELETE FROM `cloud`.`configuration` WHERE name IN ("cloud.kubernetes.cluster.template.name.kvm", "cloud.kubernetes.cluster.template.name.vmware", "cloud.kubernetes.cluster.template.name.xenserver", "cloud.kubernetes.cluster.template.name.hyperv");
+
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `autoscaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0;
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `minsize` bigint;
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `maxsize` bigint;

@@ -326,19 +326,21 @@ class TestKubernetesCluster(cloudstackTestCase):
         if self.setup_failed == True:
             self.fail("Setup incomplete")
         global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster()
+        k8s_cluster = self.getValidKubernetesCluster(1, 1, self.kubernetes_version_3)
+
         time.sleep(self.services["sleep"])
 
         self.debug("Upgrading Kubernetes cluster with ID: %s" % k8s_cluster.id)
 
         try:
-            k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_3.id)
+            k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_4.id)
         except Exception as e:
             self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
             self.fail("Failed to upgrade Kubernetes cluster due to: %s" % e)
 
         self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_3.id)
-
+        self.debug("Deleting cluster : "+ k8s_cluster.id)
+        self.deleteKubernetesClusterAndVerify(k8s_cluster.id)
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
@@ -617,9 +619,12 @@ class TestKubernetesCluster(cloudstackTestCase):
             retries = retries - 1
         return False
 
-    def getValidKubernetesCluster(self, size=1, master_nodes=1, autoscaling=False):
+    def getValidKubernetesCluster(self, size=1, master_nodes=1, version={}, autoscaling=False):
         cluster = k8s_cluster
-        version = self.kubernetes_version_2
+        if not version:
+            version = self.kubernetes_version_2
+        else:
+            version = self.kubernetes_version_3
         if master_nodes != 1:
             version = self.kubernetes_version_3
         valid = True
