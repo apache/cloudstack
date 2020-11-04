@@ -21,6 +21,7 @@
 
 ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_vm_type` varchar(255) DEFAULT "UserVM" COMMENT 'Defines the type of UserVM';
 
+-- This is set, so as to ensure that the controller details from the ovf template are adhered to
 UPDATE `cloud`.`vm_template` set deploy_as_is = 1 where id = 8;
 
 DELETE FROM `cloud`.`configuration` WHERE name IN ("cloud.kubernetes.cluster.template.name.kvm", "cloud.kubernetes.cluster.template.name.vmware", "cloud.kubernetes.cluster.template.name.xenserver", "cloud.kubernetes.cluster.template.name.hyperv");
