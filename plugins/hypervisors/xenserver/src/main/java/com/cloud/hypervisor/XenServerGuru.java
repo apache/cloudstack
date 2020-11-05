@@ -98,7 +98,12 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
         if (userVmVO != null) {
             HostVO host = hostDao.findById(userVmVO.getHostId());
             if (host != null) {
-                to.setVcpuMaxLimit(MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
+                // Max cpu cannot be more than host capability
+                if (host.getCpus() < MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()))
+                    to.setVcpuMaxLimit(host.getCpus());
+                else {
+                    to.setVcpuMaxLimit(MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
+                }
             }
         }
 
