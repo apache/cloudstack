@@ -1198,7 +1198,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
-        buf.append(" internaldns1=").append(dc.getInternalDns1());
+        if (dc.getInternalDns1() != null) {
+            buf.append(" internaldns1=").append(dc.getInternalDns1());
+        }
         if (dc.getInternalDns2() != null) {
             buf.append(" internaldns2=").append(dc.getInternalDns2());
         }

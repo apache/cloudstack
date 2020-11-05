@@ -8529,9 +8529,6 @@
                                             internaldns1: {
                                                 label: 'label.internal.dns.1',
                                                 isEditable: true,
-                                                validation: {
-                                                    required: true
-                                                }
                                             },
                                             internaldns2: {
                                                 label: 'label.internal.dns.2',

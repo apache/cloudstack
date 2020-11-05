@@ -58,7 +58,7 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name = ApiConstants.GUEST_CIDR_ADDRESS, type = CommandType.STRING, description = "the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
-    @Parameter(name = ApiConstants.INTERNAL_DNS1, type = CommandType.STRING, required = true, description = "the first internal DNS for the Zone")
+    @Parameter(name = ApiConstants.INTERNAL_DNS1, type = CommandType.STRING, description = "the first internal DNS for the Zone")
     private String internalDns1;
 
     @Parameter(name = ApiConstants.INTERNAL_DNS2, type = CommandType.STRING, description = "the second internal DNS for the Zone")

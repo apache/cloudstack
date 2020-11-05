@@ -1418,7 +1418,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" bootproto=dhcp");
         }
         DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
-        buf.append(" internaldns1=").append(dc.getInternalDns1());
+        if (dc.getInternalDns1() != null) {
+            buf.append(" internaldns1=").append(dc.getInternalDns1());
+        }
         if (dc.getInternalDns2() != null) {
             buf.append(" internaldns2=").append(dc.getInternalDns2());
         }

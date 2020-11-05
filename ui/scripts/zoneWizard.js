@@ -488,7 +488,6 @@
                     internaldns1: {
                         label: 'label.internal.dns.1',
                         validation: {
-                            required: true,
                             ipv4: true
                         },
                         desc: 'message.tooltip.internal.dns.1'
