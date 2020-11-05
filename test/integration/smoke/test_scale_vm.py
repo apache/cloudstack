@@ -23,7 +23,8 @@ from marvin.cloudstackAPI import scaleVirtualMachine
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              VirtualMachine,
-                             ServiceOffering)
+                             ServiceOffering,
+                             Configurations)
 from marvin.lib.common import (get_zone,
                                get_template,
                                get_domain)
@@ -81,6 +82,12 @@ class TestScaleVm(cloudstackTestCase):
             cls.services["service_offerings"]["big"]
         )
 
+        Configurations.update(
+            cls.apiclient,
+            name="enable.dynamic.scale.vm",
+            value="true"
+        )
+
         # create a virtual machine
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -101,6 +108,13 @@ class TestScaleVm(cloudstackTestCase):
             TestScaleVm,
             cls).getClsTestClient().getApiClient()
         cleanup_resources(cls.apiclient, cls._cleanup)
+
+        Configurations.update(
+            cls.apiclient,
+            name="enable.dynamic.scale.vm",
+            value="false"
+        )
+
         return
 
     def setUp(self):
