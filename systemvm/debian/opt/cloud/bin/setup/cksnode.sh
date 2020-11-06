@@ -24,6 +24,11 @@ setup_k8s_node() {
     # set default ssh port and restart sshd service
     sed -i 's/3922/22/g' /etc/ssh/sshd_config
 
+    # Prevent root login
+    > /root/.ssh/authorized_keys
+    passwd -l root
+    #sed -i 's#root:x:0:0:root:/root:/bin/bash#root:x:0:0:root:/root:/sbin/nologin#' /etc/passwd
+
     swapoff -a
     sudo sed -i '/ swap / s/^/#/' /etc/fstab
     log_it "Swap disabled"
@@ -45,7 +50,7 @@ setup_k8s_node() {
     enable_fwding 1
     enable_irqbalance 0
     setup_ntp
-    dhclient
+    dhclient -timeout 60
 
     rm -f /etc/logrotate.d/cloud
 
@@ -53,9 +58,14 @@ setup_k8s_node() {
     systemctl enable --now --no-block containerd
     systemctl enable --now --no-block docker.socket
     systemctl enable --now --no-block docker.service
-    systemctl enable --now --no-block cloud-init
-    systemctl enable --now --no-block cloud-config
-    systemctl enable --now --no-block cloud-final
+    if [ -f /home/core/success ]; then
+      systemctl stop cloud-init cloud-config cloud-final
+      systemctl disable cloud-init cloud-config cloud-final
+    else
+      systemctl start --no-block cloud-init
+      systemctl start --no-block cloud-config
+      systemctl start --no-block cloud-final
+    fi
 }
 
 setup_k8s_node

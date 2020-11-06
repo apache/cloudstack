@@ -17,8 +17,12 @@
 # under the License.
 
 ---
-ssh_authorized_keys:
-  {{ k8s.ssh.pub.key }}
+users:
+  - name: core
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      {{ k8s.ssh.pub.key }}
 
 write_files:
   - path: /etc/conf.d/nfs
@@ -47,7 +51,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/debian/success" ]]; then
+      if [[ -f "/home/core/success" ]]; then
       echo "Already provisioned!"
       exit 0
       fi
@@ -223,7 +227,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/debian/success" ]]; then
+      if [[ -f "/home/core/success" ]]; then
       echo "Already provisioned!"
       exit 0
       fi
@@ -259,8 +263,8 @@ write_files:
       /opt/bin/kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
       /opt/bin/kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
 
-      sudo touch /home/debian/success
-      echo "true" > /home/debian/success
+      sudo touch /home/core/success
+      echo "true" > /home/core/success
 
   - path: /etc/systemd/system/setup-kube-system.service
     permissions: '0755'

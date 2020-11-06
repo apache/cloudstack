@@ -140,7 +140,6 @@ datasource:
     timeout: 50
 EOF
 
-  sed -i 's/\(disable_root: \)\(.*\)/\1false/' /etc/cloud/cloud.cfg
   touch /etc/cloud/cloud-init.disabled
   systemctl stop cloud-init
   systemctl disable cloud-init

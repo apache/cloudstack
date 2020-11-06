@@ -148,7 +148,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshkp != null) {
-                pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
+                pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
         k8sNodeConfig = k8sNodeConfig.replace(sshPubKey, pubKey);
@@ -346,7 +346,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null,  String.valueOf(UserVmManager.UserVmType.CKSNode));
+                null, addrs, null, null, null, customParameterMap, null, null, null, null,  UserVmManager.CKS_NODE);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
         }
@@ -579,7 +579,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
         try {
             if (enable) {
-                String command = String.format("/opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
+                String command = String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
                     kubernetesCluster.getUuid(), maxSize, minSize);
                 Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
                     pkFile, null, command, 10000, 10000, 60000);
@@ -605,7 +605,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 updateKubernetesClusterEntry(true, minSize, maxSize);
             } else {
                 Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                    pkFile, null, String.format("/opt/bin/autoscale-kube-cluster -d"),
+                    pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
                         10000, 10000, 60000);
                 if (!result.first()) {
                     throw new CloudRuntimeException(result.second());

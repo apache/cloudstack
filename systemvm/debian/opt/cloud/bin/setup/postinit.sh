@@ -26,7 +26,7 @@ log_it() {
 # Eject cdrom if any
 CMDLINE=/var/cache/cloud/cmdline
 export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
-if [ "$TYPE" != "CKSNode" ]; then
+if [ "$TYPE" != "cksnode" ]; then
   eject || true
 fi
 
@@ -40,10 +40,6 @@ then
   then
     /opt/cloud/bin/update_config.py cmd_line.json || true
   fi
-fi
-
-if [ "$TYPE" == "CKSNode" ]; then
-  pkill -9 dhclient
 fi
 
 [ ! -f /var/cache/cloud/enabled_svcs ] && touch /var/cache/cloud/enabled_svcs

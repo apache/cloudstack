@@ -38,8 +38,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
@@ -82,7 +84,7 @@ import com.google.common.base.Strings;
 
 public class KubernetesClusterActionWorker {
 
-    public static final String CLUSTER_NODE_VM_USER = "root";
+    public static final String CLUSTER_NODE_VM_USER = "core";
     public static final int CLUSTER_API_PORT = 6443;
     public static final int CLUSTER_NODES_DEFAULT_START_SSH_PORT = 2222;
 
@@ -141,6 +143,7 @@ public class KubernetesClusterActionWorker {
     protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
     protected File autoscaleScriptFile;
     protected File deploySecretsScriptFile;
+    protected KubernetesClusterManagerImpl manager;
 
     protected String[] keys;
 
@@ -150,11 +153,17 @@ public class KubernetesClusterActionWorker {
         this.kubernetesClusterDetailsDao = clusterManager.kubernetesClusterDetailsDao;
         this.kubernetesClusterVmMapDao = clusterManager.kubernetesClusterVmMapDao;
         this.kubernetesSupportedVersionDao = clusterManager.kubernetesSupportedVersionDao;
+        this.manager = clusterManager;
     }
 
     protected void init() {
         this.owner = accountDao.findById(kubernetesCluster.getAccountId());
-        this.clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
+        long zoneId = this.kubernetesCluster.getZoneId();
+        long templateId = this.kubernetesCluster.getTemplateId();
+        DataCenterVO dataCenterVO = dataCenterDao.findById(zoneId);
+        VMTemplateVO template = templateDao.findById(templateId);
+        Hypervisor.HypervisorType type = template.getHypervisorType();
+        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type);
         this.sshKeyFile = getManagementServerSshPublicKeyFile();
     }
 
@@ -420,7 +429,7 @@ public class KubernetesClusterActionWorker {
 
         try {
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                pkFile, null, String.format("/opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
+                pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
                     ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
                     10000, 10000, 60000);
             return result.first();

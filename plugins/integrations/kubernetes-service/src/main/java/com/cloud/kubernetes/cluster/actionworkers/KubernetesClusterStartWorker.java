@@ -159,7 +159,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshkp != null) {
-                pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
+                pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
         k8sMasterConfig = k8sMasterConfig.replace(sshPubKey, pubKey);
@@ -210,7 +210,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, String.valueOf(UserVmManager.UserVmType.CKSNode));
+                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, UserVmManager.CKS_NODE);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created master VM ID: %s, %s in the Kubernetes cluster : %s", masterVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
@@ -229,7 +229,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshkp != null) {
-                pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
+                pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
         k8sMasterConfig = k8sMasterConfig.replace(sshPubKey, pubKey);
@@ -265,7 +265,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         additionalMasterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null, String.valueOf(UserVmManager.UserVmType.CKSNode));
+                null, addrs, null, null, null, customParameterMap, null, null, null, null, UserVmManager.CKS_NODE);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created master VM ID : %s, %s in the Kubernetes cluster : %s", additionalMasterVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
