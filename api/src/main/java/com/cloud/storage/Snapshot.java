@@ -48,7 +48,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
     }
 
     public enum State {
-        Allocated, AllocatedKVM, Creating, CreatingForVM, CreatedOnPrimary, CreatedOnPrimaryForVM, BackingUp, BackingUpForVM, BackedUp, BackedUpForVM, Copying, Destroying, Destroyed,
+        Allocated, AllocatedVM, Creating, CreatingForVM, CreatedOnPrimary, CreatedOnPrimaryForVM, BackingUp, BackingUpForVM, BackedUp, BackedUpForVM, Copying, Destroying, Destroyed,
         //it's a state, user can't see the snapshot from ui, while the snapshot may still exist on the storage
         Error;
 

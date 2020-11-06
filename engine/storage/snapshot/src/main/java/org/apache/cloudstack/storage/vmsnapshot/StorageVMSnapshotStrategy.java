@@ -120,7 +120,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         List<SnapshotInfo> forRollback = new ArrayList<>();
         long startFreeze = 0;
         try {
-            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.KVMCreateRequested);
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.CreateRequested);
         } catch (NoTransitionException e) {
             throw new CloudRuntimeException(e.getMessage());
         }
@@ -461,7 +461,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         String snapshotName = vmSnapshot.getId() + "_" + vol.getUuid();
         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(), vol.getId(), vol.getDiskOfferingId(),
                               snapshotName, (short) SnapshotVO.MANUAL_POLICY_ID,  "MANUAL",  vol.getSize(), vol.getMinIops(),  vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
-        snapshot.setState(Snapshot.State.AllocatedKVM);
+        snapshot.setState(Snapshot.State.AllocatedVM);
         snapshot = snapshotDao.persist(snapshot);
         vol.addPayload(setPayload(vol, snapshot));
         SnapshotInfo snapshotInfo = snapshotDataFactory.getSnapshot(snapshot.getId(), vol.getDataStore());

@@ -313,7 +313,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 answer = new Answer(cmd, false, errMsg);
             } else {
                 boolean isKVMsnapshotsEnabled = SnapshotManager.VMsnapshotKVM.value() != null && SnapshotManager.VMsnapshotKVM.value();
-                String param = (isKVMsnapshotsEnabled && snapshot.getState() == Snapshot.State.AllocatedKVM ) ? "true" : "false";
+                String param = (isKVMsnapshotsEnabled && snapshot.getState() == Snapshot.State.AllocatedVM ) ? "true" : "false";
                 cmd.setContextParam("kvmsnapshot", param);
                 answer = ep.sendMessage(cmd);
             }

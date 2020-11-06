@@ -35,7 +35,7 @@ public class SnapshotStateMachineManagerImpl implements SnapshotStateMachineMana
 
     public SnapshotStateMachineManagerImpl() {
         stateMachine.addTransition(Snapshot.State.Allocated, Event.CreateRequested, Snapshot.State.Creating);
-        stateMachine.addTransition(Snapshot.State.AllocatedKVM,Event.CreateRequested, Snapshot.State.CreatingForVM);
+        stateMachine.addTransition(Snapshot.State.AllocatedVM,Event.CreateRequested, Snapshot.State.CreatingForVM);
         stateMachine.addTransition(Snapshot.State.Creating, Event.OperationSucceeded, Snapshot.State.CreatedOnPrimary);
         stateMachine.addTransition(Snapshot.State.Creating, Event.OperationNotPerformed, Snapshot.State.BackedUp);
         stateMachine.addTransition(Snapshot.State.Creating, Event.OperationFailed, Snapshot.State.Error);
