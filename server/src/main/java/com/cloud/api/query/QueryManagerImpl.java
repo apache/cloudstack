@@ -3525,6 +3525,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
+        return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr,
+                showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc);
+
+    }
+
+    private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
+                                                               HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr,
+                                                               boolean showRemovedTmpl, Long parentTemplateId, Boolean showUnique,
+                                                               Filter searchFilter, SearchCriteria<TemplateJoinVO> sc) {
         if (!isIso) {
             // add hypervisor criteria for template case
             if (hypers != null && !hypers.isEmpty()) {
@@ -3561,12 +3570,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
-        if (isIso) {
-            sc.addAnd("format", SearchCriteria.Op.EQ, "ISO");
-
-        } else {
-            sc.addAnd("format", SearchCriteria.Op.NEQ, "ISO");
-        }
+        SearchCriteria.Op op = isIso ? Op.EQ : Op.NEQ;
+        sc.addAnd("format", op, "ISO");
 
         if (!hyperType.equals(HypervisorType.None)) {
             sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
@@ -3634,7 +3639,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // VMTemplateDaoImpl.searchForTemplates and understand why we need to
         // specially handle ISO. The original logic is very twisted and no idea
         // about what the code was doing.
-
     }
 
     // findTemplatesByIdOrTempZonePair returns the templates with the given ids if showUnique is true, or else by the TempZonePair
