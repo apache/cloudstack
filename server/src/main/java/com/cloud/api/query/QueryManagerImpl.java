@@ -3434,11 +3434,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 domain = _domainDao.findById(Domain.ROOT_DOMAIN);
             }
 
-            // List<HypervisorType> hypers = null;
-            // if (!isIso) {
-            // hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
-            // }
-
             setIdsListToSearchCriteria(sc, ids);
 
             // add criteria for project or not
@@ -3486,17 +3481,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
             }
 
-            if (!isIso) {
-                // add hypervisor criteria for template case
-                if (hypers != null && !hypers.isEmpty()) {
-                    String[] relatedHypers = new String[hypers.size()];
-                    for (int i = 0; i < hypers.size(); i++) {
-                        relatedHypers[i] = hypers.get(i).toString();
-                    }
-                    sc.addAnd("hypervisorType", SearchCriteria.Op.IN, relatedHypers);
-                }
-            }
-
             // control different template filters
             if (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community) {
                 sc.addAnd("publicTemplate", SearchCriteria.Op.EQ, true);
@@ -3539,62 +3523,73 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
                 sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
             }
+        }
 
-            // add tags criteria
-            if (tags != null && !tags.isEmpty()) {
-                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                for (Map.Entry<String, String> entry : tags.entrySet()) {
-                    SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
-                    scTag.addAnd("tagKey", SearchCriteria.Op.EQ, entry.getKey());
-                    scTag.addAnd("tagValue", SearchCriteria.Op.EQ, entry.getValue());
-                    if (isIso) {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.ISO);
-                    } else {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.Template);
-                    }
-                    scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
+        if (!isIso) {
+            // add hypervisor criteria for template case
+            if (hypers != null && !hypers.isEmpty()) {
+                String[] relatedHypers = new String[hypers.size()];
+                for (int i = 0; i < hypers.size(); i++) {
+                    relatedHypers[i] = hypers.get(i).toString();
                 }
-                sc.addAnd("tagKey", SearchCriteria.Op.SC, scc);
+                sc.addAnd("hypervisorType", SearchCriteria.Op.IN, relatedHypers);
             }
+        }
 
-            // other criteria
-
-            if (keyword != null) {
-                sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            } else if (name != null) {
-                sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        // add tags criteria
+        if (tags != null && !tags.isEmpty()) {
+            SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+            for (Map.Entry<String, String> entry : tags.entrySet()) {
+                SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
+                scTag.addAnd("tagKey", SearchCriteria.Op.EQ, entry.getKey());
+                scTag.addAnd("tagValue", SearchCriteria.Op.EQ, entry.getValue());
+                if (isIso) {
+                    scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.ISO);
+                } else {
+                    scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.Template);
+                }
+                scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
             }
+            sc.addAnd("tagKey", SearchCriteria.Op.SC, scc);
+        }
 
-            if (isIso) {
-                sc.addAnd("format", SearchCriteria.Op.EQ, "ISO");
+        // other criteria
 
-            } else {
-                sc.addAnd("format", SearchCriteria.Op.NEQ, "ISO");
-            }
+        if (keyword != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        } else if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
 
-            if (!hyperType.equals(HypervisorType.None)) {
-                sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
-            }
+        if (isIso) {
+            sc.addAnd("format", SearchCriteria.Op.EQ, "ISO");
 
-            if (bootable != null) {
-                sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
-            }
+        } else {
+            sc.addAnd("format", SearchCriteria.Op.NEQ, "ISO");
+        }
 
-            if (onlyReady) {
-                SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
-                readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
-                readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
-                SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
-                isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
-                isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
-                readySc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
-                sc.addAnd("state", SearchCriteria.Op.SC, readySc);
-            }
+        if (!hyperType.equals(HypervisorType.None)) {
+            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
+        }
 
-            if (!showDomr) {
-                // excluding system template
-                sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
-            }
+        if (bootable != null) {
+            sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
+        }
+
+        if (onlyReady) {
+            SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
+            readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
+            readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
+            SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
+            isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
+            isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
+            readySc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
+            sc.addAnd("state", SearchCriteria.Op.SC, readySc);
+        }
+
+        if (!showDomr) {
+            // excluding system template
+            sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
         }
 
         if (zoneId != null) {
