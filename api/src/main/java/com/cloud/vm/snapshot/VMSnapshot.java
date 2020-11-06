@@ -31,7 +31,7 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
     enum State {
         Allocated("The VM snapshot is allocated but has not been created yet."), Creating("The VM snapshot is being created."), Ready(
                 "The VM snapshot is ready to be used."), Reverting("The VM snapshot is being used to revert"), Expunging("The volume is being expunging"), Removed(
-                "The volume is destroyed, and can't be recovered."), CreatingKVM("Creating KVM VM snapshot"), Error("The volume is in error state, and can't be recovered");
+                "The volume is destroyed, and can't be recovered."), Error("The volume is in error state, and can't be recovered");
 
         String _description;
 
@@ -50,9 +50,6 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
         private final static StateMachine2<State, Event, VMSnapshot> s_fsm = new StateMachine2<State, Event, VMSnapshot>();
         static {
             s_fsm.addTransition(Allocated, Event.CreateRequested, Creating);
-            s_fsm.addTransition(Allocated,Event.KVMCreateRequested, CreatingKVM);
-            s_fsm.addTransition(CreatingKVM, Event.OperationSucceeded, Ready);
-            s_fsm.addTransition(CreatingKVM,Event.OperationFailed, Error);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Creating, Event.OperationFailed, Error);
             s_fsm.addTransition(Ready, Event.RevertRequested, Reverting);
@@ -70,7 +67,7 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
     }
 
     enum Event {
-        CreateRequested, KVMCreateRequested, OperationFailed, OperationSucceeded, RevertRequested, ExpungeRequested,
+        CreateRequested, OperationFailed, OperationSucceeded, RevertRequested, ExpungeRequested,
     }
 
     @Override
