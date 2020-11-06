@@ -264,6 +264,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
 
+    private static final int DNS_PORT = 53;
     // Will return a string. For LB Stickiness this will be a json, for
     // autoscale this will be "," separated values
     @Override
@@ -1605,7 +1606,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         IpAddress systemIp = null;
         NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
-        if (srcPortStart == 53 && ipVO.isSourceNat()) {
+        if (srcPortStart == DNS_PORT && ipVO.isSourceNat()) {
             List<NetworkOfferingServiceMapVO> offeringServices = _networkOfferingServiceDao.listByNetworkOfferingId(network.getNetworkOfferingId());
             for (NetworkOfferingServiceMapVO serviceMapVo: offeringServices) {
                 if (serviceMapVo.getService().equals(Service.Dns.getName())) {
