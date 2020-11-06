@@ -30,4 +30,4 @@ ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `autoscaling_enabled` tinyin
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `minsize` bigint;
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `maxsize` bigint;
 
-ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `is_master` tinyint(1) unsigned NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `master` tinyint(1) unsigned NOT NULL DEFAULT 0;

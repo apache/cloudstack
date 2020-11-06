@@ -39,7 +39,7 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
     @Column(name = "vm_id")
     long vmId;
 
-    @Column(name = "is_master")
+    @Column(name = "master")
     boolean master;
 
     public KubernetesClusterVmMapVO() {
