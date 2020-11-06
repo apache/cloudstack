@@ -99,9 +99,16 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
             HostVO host = hostDao.findById(userVmVO.getHostId());
             if (host != null) {
                 // Max cpu cannot be more than host capability
-                if (host.getCpus() < MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()))
+                if (host.getCpus() < MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId())) {
+                    String message = String.valueOf(new StringBuilder()
+                            .append("Ignoring global max vCPUs limit (from global setting xen.vm.vcpu.max) on vm ")
+                            .append(vm.getUuid()).append(" and setting VM max vCPU to host pCPU max: ")
+                            .append(host.getCpus())
+                            .append(". Requested number of virtual CPUs exceeds number of host physical CPUs"));
+                    logger.info(message);
                     to.setVcpuMaxLimit(host.getCpus());
-                else {
+                } else {
+                    logger.info("Setting vm: " + vm.getUuid() + " max vCPU limit (from global setting xen.vm.vcpu.max) to: " + MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
                     to.setVcpuMaxLimit(MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
                 }
             }
