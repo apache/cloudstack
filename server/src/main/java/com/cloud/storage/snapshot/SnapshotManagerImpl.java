@@ -567,6 +567,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         snapshotCheck.setState(Snapshot.State.Error);
         _snapshotDao.update(snapshotId, snapshotCheck);
+        // Setting removed to prevent record from being deleted by garbage collection.
+        _snapshotDao.remove(snapshotId);
 
     }
 
