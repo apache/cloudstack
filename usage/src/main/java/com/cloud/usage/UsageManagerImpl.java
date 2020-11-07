@@ -1417,8 +1417,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             long sourceNat = event.getSize();
             boolean isSourceNat = (sourceNat == 1) ? true : false;
             boolean isSystem = (event.getTemplateId() == null || event.getTemplateId() == 0) ? false : true;
+            final UsageEventDetailsVO hiddenDetail = _usageEventDetailsDao.findDetail(event.getId(), "hidden");
+            final boolean isHidden = hiddenDetail != null && "true".equals(hiddenDetail.getValue());
             UsageIPAddressVO ipAddressVO =
-                    new UsageIPAddressVO(id, event.getAccountId(), acct.getDomainId(), zoneId, ipAddress, isSourceNat, isSystem, event.getCreateDate(), null);
+                    new UsageIPAddressVO(id, event.getAccountId(), acct.getDomainId(), zoneId, ipAddress, isSourceNat, isSystem, event.getCreateDate(), null, isHidden);
             _usageIPAddressDao.persist(ipAddressVO);
         } else if (EventTypes.EVENT_NET_IP_RELEASE.equals(event.getType())) {
             SearchCriteria<UsageIPAddressVO> sc = _usageIPAddressDao.createSearchCriteria();
