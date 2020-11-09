@@ -283,7 +283,7 @@ export default {
       params.domainid = store.getters.userInfo.domainid
       if (domain) {
         const result = this.listDomains.filter(item => item.name === domain)
-        if (result) {
+        if (result.length > 0) {
           params.domainid = result[0].id
         }
       }
