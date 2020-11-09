@@ -754,7 +754,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
     def tearDownClass(cls):
         super(TestVpcSite2SiteVpn, cls).tearDownClass()
 
-    def tearDownClass(self):
+    def tearDown(self):
         super(TestVpcSite2SiteVpn, self).tearDown()
 
 
