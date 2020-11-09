@@ -541,7 +541,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assert_(vpc1 is not None, "VPC1 creation failed")
-
+        self.cleanup.append(vpc1)
         self.logger.debug("VPC1 %s created" % vpc1.id)
 
         vpc2 = None
@@ -560,7 +560,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assert_(vpc2 is not None, "VPC2 creation failed")
-
+        self.cleanup.append(vpc2)
         self.logger.debug("VPC2 %s created" % vpc2.id)
 
         default_acl = NetworkACLList.list(
@@ -583,7 +583,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk1, "Network failed to create")
-
+        self.cleanup.append(ntwk1)
         self.logger.debug("Network %s created in VPC %s" % (ntwk1.id, vpc1.id))
 
         ntwk2 = None
@@ -603,7 +603,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk2, "Network failed to create")
-
+        self.cleanup.append(ntwk2)
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
         vm1 = None
@@ -623,7 +623,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         finally:
             self.assert_(vm1 is not None, "VM failed to deploy")
             self.assert_(vm1.state == 'Running', "VM is not running")
-
+        self.cleanup.append(vm1)
         self.logger.debug("VM %s deployed in VPC %s" % (vm1.id, vpc1.id))
 
         vm2 = None
@@ -643,7 +643,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         finally:
             self.assert_(vm2 is not None, "VM failed to deploy")
             self.assert_(vm2.state == 'Running', "VM is not running")
-
+        self.cleanup.append(vm2)
         self.debug("VM %s deployed in VPC %s" % (vm2.id, vpc2.id))
 
         # 4) Enable Site-to-Site VPN for VPC
@@ -915,7 +915,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assert_(vpc1 is not None, "VPC1 creation failed")
-
+        self.cleanup.append(vpc1)
         self.logger.debug("VPC1 %s created" % vpc1.id)
 
         # Create VPC 2
@@ -934,7 +934,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assert_(vpc2 is not None, "VPC2 creation failed")
-
+        self.cleanup.append(vpc2)
         self.logger.debug("VPC2 %s created" % vpc2.id)
 
         default_acl = NetworkACLList.list(
@@ -957,7 +957,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk1, "Network failed to create")
-
+        self.cleanup.append(ntwk1)
         self.logger.debug("Network %s created in VPC %s" % (ntwk1.id, vpc1.id))
 
         # Create network in VPC 2
@@ -977,7 +977,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk2, "Network failed to create")
-
+        self.cleanup.append(ntwk2)
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
         # Deploy a vm in network 2
@@ -997,7 +997,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         finally:
             self.assert_(vm1 is not None, "VM failed to deploy")
             self.assert_(vm1.state == 'Running', "VM is not running")
-
+        self.cleanup.append(vm1)
         self.logger.debug("VM %s deployed in VPC %s" % (vm1.id, vpc1.id))
 
         # Deploy a vm in network 2
@@ -1017,7 +1017,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         finally:
             self.assert_(vm2 is not None, "VM failed to deploy")
             self.assert_(vm2.state == 'Running', "VM is not running")
-
+        self.cleanup.append(vm2)
         self.debug("VM %s deployed in VPC %s" % (vm2.id, vpc2.id))
 
         # 4) Enable Site-to-Site VPN for VPC
