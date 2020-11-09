@@ -931,13 +931,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                 for (StoragePoolVO pool : pools) {
                     List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
-                    List<String> volumeLocators = new ArrayList<String>();
                     for (VolumeVO volume : volumes) {
-                        if (volume.getFormat() == ImageFormat.QCOW2 || volume.getFormat() == ImageFormat.VHD) {
-                            volumeLocators.add(volume.getPath());
-                        } else if (volume.getFormat() == ImageFormat.OVA) {
-                            volumeLocators.add(volume.getChainInfo());
-                        } else {
+                        if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA) {
                             s_logger.warn("Volume stats not implemented for this format type " + volume.getFormat());
                             break;
                         }
@@ -946,15 +941,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         Map<String, VolumeStatsEntry> volumeStatsByUuid;
                         if (pool.getScope() == ScopeType.ZONE) {
                             volumeStatsByUuid = new HashMap<>();
-                            for (final Cluster cluster : _clusterDao.listByZoneId(pool.getDataCenterId())) {
-                                final Map<String, VolumeStatsEntry> volumeStatsForCluster = _userVmMgr.getVolumeStatistics(cluster.getId(), pool.getUuid(), pool.getPoolType(),
-                                        volumeLocators, StatsTimeout.value());
+                            for (final Cluster cluster : _clusterDao.listClustersByDcId(pool.getDataCenterId())) {
+                                final Map<String, VolumeStatsEntry> volumeStatsForCluster = _userVmMgr.getVolumeStatistics(cluster.getId(), pool.getUuid(), pool.getPoolType(), StatsTimeout.value());
                                 if (volumeStatsForCluster != null) {
                                     volumeStatsByUuid.putAll(volumeStatsForCluster);
                                 }
                             }
                         } else {
-                            volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), volumeLocators, StatsTimeout.value());
+                            volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), StatsTimeout.value());
                         }
                         if (volumeStatsByUuid != null) {
                             for (final Map.Entry<String, VolumeStatsEntry> entry : volumeStatsByUuid.entrySet()) {

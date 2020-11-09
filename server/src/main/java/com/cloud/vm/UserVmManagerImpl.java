@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1183,23 +1184,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
-        DiskOfferingVO newROOTDiskOffering = _diskOfferingDao.findById(newServiceOffering.getId());
+        // Check if the new service offering can be applied to vm instance
+        ServiceOffering newSvcOffering = _offeringDao.findById(svcOffId);
+        _accountMgr.checkAccess(owner, newSvcOffering, _dcDao.findById(vmInstance.getDataCenterId()));
+
+        DiskOfferingVO newRootDiskOffering = _diskOfferingDao.findById(newServiceOffering.getId());
 
         List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vmInstance.getId());
 
         for (final VolumeVO rootVolumeOfVm : vols) {
-            rootVolumeOfVm.setDiskOfferingId(newROOTDiskOffering.getId());
+            DiskOfferingVO currentRootDiskOffering = _diskOfferingDao.findById(rootVolumeOfVm.getDiskOfferingId());
 
-            _volsDao.update(rootVolumeOfVm.getId(), rootVolumeOfVm);
+            ResizeVolumeCmd resizeVolumeCmd = prepareResizeVolumeCmd(rootVolumeOfVm, currentRootDiskOffering, newRootDiskOffering);
 
-            ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd(rootVolumeOfVm.getId(), newROOTDiskOffering.getMinIops(), newROOTDiskOffering.getMaxIops());
+            if (rootVolumeOfVm.getDiskOfferingId() != newRootDiskOffering.getId()) {
+                rootVolumeOfVm.setDiskOfferingId(newRootDiskOffering.getId());
+                _volsDao.update(rootVolumeOfVm.getId(), rootVolumeOfVm);
+            }
 
             _volumeService.resizeVolume(resizeVolumeCmd);
         }
-
-        // Check if the new service offering can be applied to vm instance
-        ServiceOffering newSvcOffering = _offeringDao.findById(svcOffId);
-        _accountMgr.checkAccess(owner, newSvcOffering, _dcDao.findById(vmInstance.getDataCenterId()));
 
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
@@ -1219,6 +1223,40 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         return _vmDao.findById(vmInstance.getId());
 
+    }
+
+    /**
+     * Prepares the Resize Volume Command and verifies if the disk offering from the new service offering can be resized.
+     * <br>
+     * If the Service Offering was configured with a root disk size (size > 0) then it can only resize to an offering with a larger disk
+     * or to an offering with a root size of zero, which is the default behavior.
+     */
+    protected ResizeVolumeCmd prepareResizeVolumeCmd(VolumeVO rootVolume, DiskOfferingVO currentRootDiskOffering, DiskOfferingVO newRootDiskOffering) {
+        if (rootVolume == null) {
+            throw new InvalidParameterValueException("Could not find Root volume for the VM while preparing the Resize Volume Command.");
+        }
+        if (currentRootDiskOffering == null) {
+            throw new InvalidParameterValueException("Could not find Disk Offering matching the provided current Root Offering ID.");
+        }
+        if (newRootDiskOffering == null) {
+            throw new InvalidParameterValueException("Could not find Disk Offering matching the provided Offering ID for resizing Root volume.");
+        }
+
+        ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd(rootVolume.getId(), newRootDiskOffering.getMinIops(), newRootDiskOffering.getMaxIops());
+
+        long newNewOfferingRootSizeInBytes = newRootDiskOffering.getDiskSize();
+        long newNewOfferingRootSizeInGiB = newNewOfferingRootSizeInBytes / GiB_TO_BYTES;
+        long currentRootDiskOfferingGiB = currentRootDiskOffering.getDiskSize() / GiB_TO_BYTES;
+        if (newNewOfferingRootSizeInBytes > currentRootDiskOffering.getDiskSize()) {
+            resizeVolumeCmd = new ResizeVolumeCmd(rootVolume.getId(), newRootDiskOffering.getMinIops(), newRootDiskOffering.getMaxIops(), newRootDiskOffering.getId());
+            s_logger.debug(String.format("Preparing command to resize VM Root disk from %d GB to %d GB; current offering: %s, new offering: %s.", currentRootDiskOfferingGiB,
+                    newNewOfferingRootSizeInGiB, currentRootDiskOffering.getName(), newRootDiskOffering.getName()));
+        } else if (newNewOfferingRootSizeInBytes > 0l && newNewOfferingRootSizeInBytes < currentRootDiskOffering.getDiskSize()) {
+            throw new InvalidParameterValueException(String.format(
+                    "Failed to resize Root volume. The new Service Offering [id: %d, name: %s] has a smaller disk size [%d GB] than the current disk [%d GB].",
+                    newRootDiskOffering.getId(), newRootDiskOffering.getName(), newNewOfferingRootSizeInGiB, currentRootDiskOfferingGiB));
+        }
+        return resizeVolumeCmd;
     }
 
     @Override
@@ -1954,45 +1992,46 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, List<String> volumeLocators, int timeout) {
+    public HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType,  int timeout) {
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(clusterId, Status.Up);
         StoragePoolVO storagePool = _storagePoolDao.findPoolByUUID(poolUuid);
+        HashMap<String, VolumeStatsEntry> volumeStatsByUuid = new HashMap<>();
+
         for (HostVO neighbor : neighbors) {
-            // apply filters:
-            // - managed storage
-            // - local storage
-            if (storagePool.isManaged() || storagePool.isLocal()) {
-
-                volumeLocators = getVolumesByHost(neighbor, storagePool);
-
-            }
 
             // - zone wide storage for specific hypervisortypes
-            if (ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType()) {
+            if ((ScopeType.ZONE.equals(storagePool.getScope()) && storagePool.getHypervisor() != neighbor.getHypervisorType())) {
                 // skip this neighbour if their hypervisor type is not the same as that of the store
                 continue;
             }
 
-            GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
+            List<String> volumeLocators = getVolumesByHost(neighbor, storagePool);
+            if (!CollectionUtils.isEmpty(volumeLocators)) {
 
-            if (timeout > 0) {
-                cmd.setWait(timeout/1000);
-            }
+                GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
 
-            Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+                if (timeout > 0) {
+                    cmd.setWait(timeout/1000);
+                }
 
-            if (answer instanceof GetVolumeStatsAnswer){
-                GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
-                return volstats.getVolumeStats();
+                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+
+                if (answer instanceof GetVolumeStatsAnswer){
+                    GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
+                    if (volstats.getVolumeStats() != null) {
+                        volumeStatsByUuid.putAll(volstats.getVolumeStats());
+                    }
+                }
             }
         }
-        return null;
+        return volumeStatsByUuid.size() > 0 ? volumeStatsByUuid : null;
     }
 
     private List<String> getVolumesByHost(HostVO host, StoragePool pool){
-        List<UserVmVO> vmsPerHost = _vmDao.listByHostId(host.getId());
+        List<VMInstanceVO> vmsPerHost = _vmInstanceDao.listByHostId(host.getId());
         return vmsPerHost.stream()
-                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol -> vol.getPath()))
+                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol ->
+                vol.getState() == Volume.State.Ready ? (vol.getFormat() == ImageFormat.OVA ? vol.getChainInfo() : vol.getPath()) : null).filter(Objects::nonNull))
                 .collect(Collectors.toList());
     }
 
@@ -3529,26 +3568,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
-        long size = 0;
-        // custom root disk size, resizes base template to larger size
-        if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
-            // only KVM, XenServer and VMware supports rootdisksize override
-            if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.Simulator)) {
-                throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
-            }
 
-            Long rootDiskSize = NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1);
-            if (rootDiskSize <= 0) {
-                throw new InvalidParameterValueException("Root disk size should be a positive number.");
-            }
-            size = rootDiskSize * GiB_TO_BYTES;
-        } else {
-            // For baremetal, size can be null
-            Long templateSize = _templateDao.findById(template.getId()).getSize();
-            if (templateSize != null) {
-                size = templateSize;
-            }
-        }
+        long size = configureCustomRootDiskSize(customParameters, template, hypervisorType, offering);
+
         if (diskOfferingId != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if (diskOffering != null && diskOffering.isCustomized()) {
@@ -3863,6 +3885,46 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
         return vm;
+    }
+
+    /**
+     * Configures the Root disk size via User`s custom parameters.
+     * If the Service Offering has the Root Disk size field configured then the User`s root disk custom parameter is overwritten by the service offering.
+     */
+    protected long configureCustomRootDiskSize(Map<String, String> customParameters, VMTemplateVO template, HypervisorType hypervisorType, ServiceOfferingVO serviceOffering) {
+        verifyIfHypervisorSupportsRootdiskSizeOverride(hypervisorType);
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(serviceOffering.getId());
+        long rootDiskSizeInBytes = diskOffering.getDiskSize();
+        if (rootDiskSizeInBytes > 0) { //if the size at DiskOffering is not zero then the Service Offering had it configured, it holds priority over the User custom size
+            long rootDiskSizeInGiB = rootDiskSizeInBytes / GiB_TO_BYTES;
+            customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDiskSizeInGiB));
+            return rootDiskSizeInBytes;
+        }
+
+        if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+            Long rootDiskSize = NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1);
+            if (rootDiskSize <= 0) {
+                throw new InvalidParameterValueException("Root disk size should be a positive number.");
+            }
+            return rootDiskSize * GiB_TO_BYTES;
+        } else {
+            // For baremetal, size can be 0 (zero)
+            Long templateSize = _templateDao.findById(template.getId()).getSize();
+            if (templateSize != null) {
+                return templateSize;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Only KVM, XenServer and VMware supports rootdisksize override
+     * @throws InvalidParameterValueException if the hypervisor does not support rootdisksize override
+     */
+    protected void verifyIfHypervisorSupportsRootdiskSizeOverride(HypervisorType hypervisorType) {
+        if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.Simulator)) {
+            throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
+        }
     }
 
     private void checkIfHostNameUniqueInNtwkDomain(String hostName, List<? extends Network> networkList) {

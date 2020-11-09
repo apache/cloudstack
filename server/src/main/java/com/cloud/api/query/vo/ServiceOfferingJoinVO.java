@@ -190,6 +190,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "vsphere_storage_policy")
     String vsphereStoragePolicy;
 
+    @Column(name = "root_disk_size")
+    private Long rootDiskSize;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -363,7 +366,6 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public Long getIopsWriteRateMaxLength() { return iopsWriteRateMaxLength; }
 
-
     public boolean isDynamic() {
         return cpu == null || speed == null || ramSize == null;
     }
@@ -392,4 +394,7 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
         return vsphereStoragePolicy;
     }
 
+    public Long getRootDiskSize() {
+        return rootDiskSize ;
+    }
 }

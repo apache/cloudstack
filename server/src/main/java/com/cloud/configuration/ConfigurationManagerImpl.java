@@ -434,6 +434,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private static final Set<Provider> VPC_ONLY_PROVIDERS = Sets.newHashSet(Provider.VPCVirtualRouter, Provider.JuniperContrailVpcRouter, Provider.InternalLbVm);
 
+    private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         final String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.key());
@@ -2483,7 +2485,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
-                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
+                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, cmd.getRootDiskSize(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
@@ -2494,7 +2496,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
             final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
             final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
-            final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, final Boolean isCustomizedIops, Long minIops, Long maxIops,
+            final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
@@ -2555,6 +2557,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (rootDiskSizeInGiB != null && rootDiskSizeInGiB <= 0L) {
+            throw new InvalidParameterValueException(String.format("The Root disk size is of %s GB but it must be greater than 0.", rootDiskSizeInGiB));
+        } else if (rootDiskSizeInGiB != null) {
+            long rootDiskSizeInBytes = rootDiskSizeInGiB * GiB_TO_BYTES;
+            offering.setDiskSize(rootDiskSizeInBytes);
+        }
 
         offering.setCustomizedIops(isCustomizedIops);
         offering.setMinIops(minIops);
@@ -4125,8 +4133,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     // range
                     final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlan.getId());
                     for (final IPAddressVO ip : ips) {
+                        final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
                         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(),
-                                ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                                ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
                     }
                     // increment resource count for dedicated public ip's
                     _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
@@ -4206,8 +4215,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         s_logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId + " removal");
                     } else {
                         resourceCountToBeDecrement++;
+                        final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
                         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip.getDataCenterId(), ip.getId(),
-                                ip.getAddress().toString(), ip.isSourceNat(), vlanRange.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                                ip.getAddress().toString(), ip.isSourceNat(), vlanRange.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
                     }
                 }
             } finally {
@@ -4349,8 +4359,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
            // generate usage event for dedication of every ip address in the range
             for (final IPAddressVO ip : ips) {
+                final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(),
-                        vlan.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                        vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
             }
         } else if (domain != null && !forSystemVms) {
             // Create an DomainVlanMapVO entry
@@ -4443,8 +4454,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // generate usage events to remove dedication for every ip in the range that has been disassociated
             for (final IPAddressVO ip : ips) {
                 if (!ipsInUse.contains(ip)) {
+                    final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(),
-                            ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                            ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
                 }
             }
             // decrement resource count for dedicated public ip's

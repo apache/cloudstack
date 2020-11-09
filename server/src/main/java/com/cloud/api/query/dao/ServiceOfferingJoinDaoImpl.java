@@ -113,6 +113,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setObjectName("serviceoffering");
         offeringResponse.setIscutomized(offering.isDynamic());
         offeringResponse.setCacheMode(offering.getCacheMode());
+
         if (offeringDetails != null && !offeringDetails.isEmpty()) {
             String vsphereStoragePolicyId = offeringDetails.get(ApiConstants.STORAGE_POLICY);
             if (vsphereStoragePolicyId != null) {
@@ -121,6 +122,9 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
                     offeringResponse.setVsphereStoragePolicy(vsphereStoragePolicyVO.getName());
             }
         }
+
+        offeringResponse.setRootDiskSize(offering.getRootDiskSize());
+
         return offeringResponse;
     }
 
