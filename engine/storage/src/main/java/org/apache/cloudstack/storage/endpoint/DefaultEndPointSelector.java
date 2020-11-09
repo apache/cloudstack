@@ -138,16 +138,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
         sbuilder.append(" ORDER by ");
         if (dedicatedHosts.size() > 0) {
-            Collections.shuffle(dedicatedHosts); // Randomize dedicated hosts as well.
-            sbuilder.append("field(t.id, ");
-            Iterator<Long> hostIt = dedicatedHosts.iterator();
-            while (hostIt.hasNext()) { // put dedicated hosts at the end of the result set
-                sbuilder.append("'" + hostIt.next() + "'");
-                if (hostIt.hasNext()) {
-                    sbuilder.append(",");
-                }
-            }
-            sbuilder.append(")," );
+            moveDedicatedHostsToLowerPriority(sbuilder, dedicatedHosts);
         }
         sbuilder.append(" rand() limit 1");
         String sql = sbuilder.toString();
@@ -171,6 +162,19 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
 
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
+    }
+
+    private void moveDedicatedHostsToLowerPriority(StringBuilder sbuilder, List<Long> dedicatedHosts) {
+        Collections.shuffle(dedicatedHosts); // Randomize dedicated hosts as well.
+        sbuilder.append("field(t.id, ");
+        Iterator<Long> hostIt = dedicatedHosts.iterator();
+        while (hostIt.hasNext()) { // put dedicated hosts at the end of the result set
+            sbuilder.append("'" + hostIt.next() + "'");
+            if (hostIt.hasNext()) {
+                sbuilder.append(",");
+            }
+        }
+        sbuilder.append(")," );
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
