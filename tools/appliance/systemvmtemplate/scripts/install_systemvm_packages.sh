@@ -79,8 +79,6 @@ function install_packages() {
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons cloud-guest-utils \
     apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common cloud-init
 
-  apt-get -q -y -t stretch-backports install nftables openjdk-11-jre-headless haproxy
-
   apt-get -y autoremove --purge
   apt-get clean
   apt-get autoclean

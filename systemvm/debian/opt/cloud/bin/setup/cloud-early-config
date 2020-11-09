@@ -89,9 +89,11 @@ start() {
   echo "" > /root/.ssh/known_hosts
 
   if which growpart > /dev/null; then
-    growpart /dev/vda 2
-    growpart /dev/vda 6
-    resize2fs /dev/vda6
+    ROOT_MOUNT_POINT=`df -h / | tail -n 1  | cut -d' ' -f1`
+    ROOT_DISK=`echo $ROOT_MOUNT_POINT | sed 's/[0-9]*$//g'`
+    growpart $ROOT_DISK 2
+    growpart $ROOT_DISK 6
+    resize2fs $ROOT_MOUNT_POINT
   fi
 
   patch

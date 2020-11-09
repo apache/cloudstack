@@ -50,7 +50,7 @@ setup_k8s_node() {
     enable_fwding 1
     enable_irqbalance 0
     setup_ntp
-    dhclient -timeout 60
+    dhclient -1
 
     rm -f /etc/logrotate.d/cloud
 

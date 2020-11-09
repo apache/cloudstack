@@ -42,6 +42,10 @@ then
   fi
 fi
 
+if [ "$TYPE" == "cksnode" ]; then
+  pkill -9 dhclient
+fi
+
 [ ! -f /var/cache/cloud/enabled_svcs ] && touch /var/cache/cloud/enabled_svcs
 for svc in $(cat /var/cache/cloud/enabled_svcs)
 do
