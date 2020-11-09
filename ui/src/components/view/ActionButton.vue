@@ -55,11 +55,11 @@
           )"
         :icon="action.icon"
         :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-        :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"
+        :shape="!dataView && ['plus', 'user-add'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
         :size="size"
         @click="execAction(action)">
-        <span v-if="!dataView && action.icon === 'plus'">
+        <span v-if="!dataView && ['plus', 'user-add'].includes(action.icon)">
           {{ $t(action.label) }}
         </span>
       </a-button>
