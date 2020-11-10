@@ -20,6 +20,7 @@ Tests of acquiring IPs in multiple subnets for isolated network or vpc
 """
 
 from nose.plugins.attrib import attr
+from marvin.cloudstackAPI import rebootRouter
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.lib.utils import (validateList,
                               get_host_credentials,
@@ -105,6 +106,23 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
+
+    def get_router(self, router_id):
+        routers = list_routers(
+            self.apiclient,
+            id=router_id,
+            listall=True)
+        self.assertEqual(
+            isinstance(routers, list),
+            True,
+            "Check for list routers response return valid data"
+        )
+        self.assertNotEqual(
+            len(routers),
+            0,
+            "Check list router response"
+        )
+        return routers[0]
 
     def get_routers(self, network_id):
         routers = list_routers(
@@ -671,6 +689,22 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth4", False)
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth4", False)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth4", True)
+
+        # reboot router
+        for router in routers:
+            cmd = rebootRouter.rebootRouterCmd()
+            cmd.id = router.id
+            self.apiclient.rebootRouter(cmd)
+            router = self.get_router(router.id)
+            host = self.get_router_host(router)
+            self.verify_network_interfaces_in_router(router, host, "eth0,eth1,eth2,eth3,")
+            guestIp, controlIp, sourcenatIp = self.get_router_ips(router)
+            self.verify_ip_address_in_router(router, host, guestIp, "eth0", True)
+            self.verify_ip_address_in_router(router, host, controlIp, "eth1", True)
+            self.verify_ip_address_in_router(router, host, sourcenatIp, "eth2", True)
+            self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth3", False)
+            self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth3", False)
+            self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth3", True)
 
         # 20. restart network with cleanup
         self.network1.restart(self.apiclient, cleanup=True)
