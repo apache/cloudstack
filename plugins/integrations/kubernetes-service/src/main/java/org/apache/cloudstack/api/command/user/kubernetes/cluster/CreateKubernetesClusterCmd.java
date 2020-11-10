@@ -140,7 +140,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     private String dockerRegistryEmail;
 
     @Parameter(name = ApiConstants.NODE_ROOT_DISK_SIZE, type = CommandType.LONG,
-            description = "root disk size of root disk for each node")
+            description = "root disk size in GB for each node")
     private Long nodeRootDiskSize;
 
     /////////////////////////////////////////////////////
