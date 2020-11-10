@@ -634,7 +634,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 UserVmJoinVO userVM = userVmJoinDao.findById(vmMapVO.getVmId());
                 if (userVM != null) {
                     UserVmResponse vmResponse = ApiDBUtils.newUserVmResponse(respView, responseName, userVM,
-                        EnumSet.noneOf(VMDetails.class), caller);
+                        EnumSet.of(VMDetails.nics), caller);
                     vmResponses.add(vmResponse);
                 }
             }
