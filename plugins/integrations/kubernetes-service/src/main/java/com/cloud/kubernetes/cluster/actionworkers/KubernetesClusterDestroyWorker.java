@@ -37,6 +37,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMap;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
@@ -238,7 +239,10 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 }
             } else {
                 try {
-                    deleteKubernetesClusterNetworkRules();
+                    NetworkVO kubernetesClusterNetwork = networkDao.findById(kubernetesCluster.getNetworkId());
+                    if (kubernetesClusterNetwork != null && kubernetesClusterNetwork.getGuestType() != Network.GuestType.Shared) {
+                        deleteKubernetesClusterNetworkRules();
+                    }
                 } catch (ManagementServerException e) {
                     String msg = String.format("Failed to remove network rules of Kubernetes cluster ID: %s", kubernetesCluster.getUuid());
                     LOGGER.warn(msg, e);
