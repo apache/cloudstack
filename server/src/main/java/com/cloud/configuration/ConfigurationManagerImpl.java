@@ -4158,6 +4158,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return vlanRange;
     }
+
     private VlanVO commitUpdateVlanAndIpRange(final Long id, final String newStartIP, final String newEndIP,final String currentStartIP, final String currentEndIP, final boolean ipv4) {
 
         return Transaction.execute(new TransactionCallback<VlanVO>() {
