@@ -17,7 +17,11 @@
 
 package org.apache.cloudstack.outofbandmanagement;
 
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.host.Host;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 public class PowerOperationTask implements Runnable {
@@ -43,8 +47,14 @@ public class PowerOperationTask implements Runnable {
         try {
             service.executePowerOperation(host, powerOperation, null);
         } catch (Exception e) {
-            LOG.warn(String.format("Out-of-band management background task operation=%s for host id=%d failed with: %s",
-                    powerOperation.name(), host.getId(), e.getMessage()));
+            LOG.warn(String.format("Out-of-band management background task operation=%s for host %s failed with: %s",
+                    powerOperation.name(), host.getName(), e.getMessage()));
+
+            String eventMessage = String
+                    .format("Error while issuing out-of-band management action %s for host: %s", powerOperation.name(), host.getName());
+
+            ActionEventUtils.onCreatedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventVO.LEVEL_WARN,
+                    EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION, true, eventMessage);
         }
     }
 }
