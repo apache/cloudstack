@@ -230,7 +230,7 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
         Long networkId = cmd.getNetworkId();
         Long vpcId = cmd.getVpcId();
         Long loadBalancerId = cmd.getLoadBalancerId();
-        Map configList = cmd.getConfigList();
+        Map<String, String> configList = cmd.getConfigList();
         if (configList == null) {
             throw new InvalidParameterValueException("Invalid config list");
         }
@@ -241,9 +241,8 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
             throw new InvalidParameterValueException("Invalid scope " + scopeStr);
         }
         List<LoadBalancerConfigVO> configs = new ArrayList<LoadBalancerConfigVO>();
-        for (Object obj : configList.keySet()) {
-            String name = String.valueOf(obj);
-            String value = (String) configList.get(name);
+        for (String name : configList.keySet()) {
+            String value = configList.get(name);
             LoadBalancerConfigKey configKey = validateParameters(scope, name, value);
             configs.add(new LoadBalancerConfigVO(scope, networkId, vpcId, loadBalancerId, configKey, value));
         }

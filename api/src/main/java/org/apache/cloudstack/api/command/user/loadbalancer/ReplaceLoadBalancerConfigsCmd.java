@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +30,6 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.network.lb.LoadBalancerConfig;
-import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -78,8 +76,8 @@ public class ReplaceLoadBalancerConfigsCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.CONFIG,
                type = CommandType.MAP,
-               description = "configs list, Example: config[0].name=timout&config[0].value=60000")
-    private Map configList;
+               description = "configs list, Example: config[0].global.maxconn=40960")
+    private Map<String, String> configList;
 
 
     /////////////////////////////////////////////////////
@@ -102,20 +100,13 @@ public class ReplaceLoadBalancerConfigsCmd extends BaseAsyncCmd {
         return loadBalancerId;
     }
 
-    public Map getConfigList() {
+    public Map<String, String> getConfigList() {
         if (configList == null || configList.isEmpty()) {
             return null;
         }
 
-        Map<String, String> configMap = new HashMap<>();
-        if (MapUtils.isNotEmpty(configList)) {
-            for (Map<String, String> config : (Collection<Map<String, String>>)configList.values()) {
-                String name = config.get("name");
-                String value = config.get("value");
-                configMap.put(name, value);
-            }
-        }
-        return configMap;
+        Collection<String> paramsCollection = configList.values();
+        return (Map<String, String>) (paramsCollection.toArray())[0];
     }
 
     /////////////////////////////////////////////////////
