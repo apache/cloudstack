@@ -78,7 +78,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 index == 0 ? "true" : "false",
                 KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false",
                 Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()));
-        return SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+        return SshHelper.sshExecute(nodeAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                 cmdStr,
                 10000, 10000, 10 * 60 * 1000);
     }
