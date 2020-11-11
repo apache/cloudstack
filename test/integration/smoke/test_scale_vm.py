@@ -19,7 +19,7 @@
 # Import Local Modules
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import scaleVirtualMachine
+from marvin.cloudstackAPI import scaleVirtualMachine, updateTemplate
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              VirtualMachine,
@@ -59,6 +59,10 @@ class TestScaleVm(cloudstackTestCase):
         if template == FAILED:
             assert False, "get_template() failed to return template\
                     with description %s" % cls.services["ostype"]
+        cmd = updateTemplate.updateTemplateCmd()
+        cmd.id = template.id
+        cmd.isdynamicallyscalable = True
+        cls.apiclient.updateTemplate(cmd)
 
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = zone.id
