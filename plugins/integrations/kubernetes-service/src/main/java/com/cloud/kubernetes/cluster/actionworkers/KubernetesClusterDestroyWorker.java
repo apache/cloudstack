@@ -188,6 +188,13 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
     }
 
+    private void checkForRulesToDelete() throws ManagementServerException {
+        NetworkVO kubernetesClusterNetwork = networkDao.findById(kubernetesCluster.getNetworkId());
+        if (kubernetesClusterNetwork != null && kubernetesClusterNetwork.getGuestType() != Network.GuestType.Shared) {
+            deleteKubernetesClusterNetworkRules();
+        }
+    }
+
     public boolean destroy() throws CloudRuntimeException {
         init();
         validateClusterSate();
@@ -239,10 +246,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 }
             } else {
                 try {
-                    NetworkVO kubernetesClusterNetwork = networkDao.findById(kubernetesCluster.getNetworkId());
-                    if (kubernetesClusterNetwork != null && kubernetesClusterNetwork.getGuestType() != Network.GuestType.Shared) {
-                        deleteKubernetesClusterNetworkRules();
-                    }
+                    checkForRulesToDelete();
                 } catch (ManagementServerException e) {
                     String msg = String.format("Failed to remove network rules of Kubernetes cluster ID: %s", kubernetesCluster.getUuid());
                     LOGGER.warn(msg, e);
