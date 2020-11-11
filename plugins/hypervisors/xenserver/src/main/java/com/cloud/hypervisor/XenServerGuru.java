@@ -97,20 +97,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
         UserVmVO userVmVO = userVmDao.findById(vm.getId());
         if (userVmVO != null) {
             HostVO host = hostDao.findById(userVmVO.getHostId());
-            if (host != null) {
-                if (host.getCpus() < MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId())) {
-                    String message = String.valueOf(new StringBuilder()
-                            .append("Ignoring global max vCPUs limit (from global setting xen.vm.vcpu.max) on vm ")
-                            .append(vm.getUuid()).append(" and setting VM max vCPU to host pCPU max: ")
-                            .append(host.getCpus())
-                            .append(". Requested number of virtual CPUs exceeds number of host physical CPUs"));
-                    logger.info(message);
-                    to.setVcpuMaxLimit(host.getCpus());
-                } else {
-                    logger.info("Setting vm: " + vm.getUuid() + " max vCPU limit (from global setting xen.vm.vcpu.max) to: " + MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
-                    to.setVcpuMaxLimit(MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
-                }
-            }
+            setMaxVCPUs(host, vm, to);
         }
 
         to.setBootloader(bt);
@@ -135,6 +122,23 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
         }
 
         return to;
+    }
+
+    private void setMaxVCPUs(HostVO host, VirtualMachineProfile vm, VirtualMachineTO to) {
+        if (host != null) {
+            if (host.getCpus() < MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId())) {
+                String message = String.valueOf(new StringBuilder()
+                        .append("Ignoring global max vCPUs limit (from global setting xen.vm.vcpu.max) on vm ")
+                        .append(vm.getUuid()).append(" and setting VM max vCPU to host pCPU max: ")
+                        .append(host.getCpus())
+                        .append(". Requested number of virtual CPUs exceeds number of host physical CPUs"));
+                logger.info(message);
+                to.setVcpuMaxLimit(host.getCpus());
+            } else {
+                logger.info("Setting vm: " + vm.getUuid() + " max vCPU limit (from global setting xen.vm.vcpu.max) to: " + MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
+                to.setVcpuMaxLimit(MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
+            }
+        }
     }
 
     @Override
