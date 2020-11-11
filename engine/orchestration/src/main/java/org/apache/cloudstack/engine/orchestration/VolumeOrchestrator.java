@@ -36,8 +36,10 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.StringUtils;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
@@ -216,6 +218,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     TemplateService templateService;
     @Inject
     UserVmDetailsDao userVmDetailsDao;
+    @Inject
+    private SecondaryStorageVmDao secondaryStorageVmDao;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -824,19 +828,27 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         int volumesNumber = 1;
         List<DatadiskTO> templateAsIsDisks = null;
         String configurationId = null;
-        if (template.isDeployAsIs()) {
-            UserVmDetailVO configurationDetail = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
-            if (configurationDetail != null) {
-                configurationId = configurationDetail.getValue();
+        boolean deployVmAsIs = false;
+        if (template.isDeployAsIs() && vm.getType() != VirtualMachine.Type.SecondaryStorageVm) {
+            List<SecondaryStorageVmVO> runningSSVMs = secondaryStorageVmDao.getSecStorageVmListInStates(null, vm.getDataCenterId(), State.Running);
+            if (CollectionUtils.isEmpty(runningSSVMs)) {
+                s_logger.info("Could not find a running SSVM in datacenter " + vm.getDataCenterId() + " for deploying VM as is, " +
+                        "not deploying VM " + vm.getInstanceName() + " as-is");
+            } else {
+                UserVmDetailVO configurationDetail = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
+                if (configurationDetail != null) {
+                    configurationId = configurationDetail.getValue();
+                }
+                templateAsIsDisks = _tmpltMgr.getTemplateDisksOnImageStore(template.getId(), DataStoreRole.Image, configurationId);
+                if (CollectionUtils.isNotEmpty(templateAsIsDisks)) {
+                    templateAsIsDisks = templateAsIsDisks.stream()
+                            .filter(x -> !x.isIso())
+                            .sorted(Comparator.comparing(DatadiskTO::getDiskNumber))
+                            .collect(Collectors.toList());
+                }
+                volumesNumber = templateAsIsDisks.size();
+                deployVmAsIs = true;
             }
-            templateAsIsDisks = _tmpltMgr.getTemplateDisksOnImageStore(template.getId(), DataStoreRole.Image, configurationId);
-            if (CollectionUtils.isNotEmpty(templateAsIsDisks)) {
-                templateAsIsDisks = templateAsIsDisks.stream()
-                        .filter(x -> !x.isIso())
-                        .sorted(Comparator.comparing(DatadiskTO::getDiskNumber))
-                        .collect(Collectors.toList());
-            }
-            volumesNumber = templateAsIsDisks.size();
         }
 
         if (volumesNumber < 1) {
@@ -849,7 +861,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             String volumeName = name;
             Long volumeSize = rootDisksize;
             long deviceId = type.equals(Type.ROOT) ? 0L : 1L;
-            if (template.isDeployAsIs()) {
+            if (deployVmAsIs) {
                 int volumeNameSuffix = templateAsIsDisks.get(number).getDiskNumber();
                 volumeName = String.format("%s-%d", volumeName, volumeNameSuffix);
                 volumeSize = templateAsIsDisks.get(number).getVirtualSize();
