@@ -576,7 +576,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         retrieveScriptFiles();
-        copyAutoscalerScriptsToNodes(publicIpAddress, clusterVMs);
+        copyAutoscalerScriptsToNodes(publicIpAddress, sshPort, clusterVMs);
         if (!createCloudStackSecret(keys)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
                 kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
@@ -585,10 +585,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return true;
     }
 
-    private void copyAutoscalerScriptsToNodes(String publicIpAddress, List<UserVm> clusterVMs) {
+    private void copyAutoscalerScriptsToNodes(String publicIpAddress, int sshPort, List<UserVm> clusterVMs) {
         for (int i = 0; i < clusterVMs.size(); ++i) {
             try {
-                copyAutoscalerScripts(publicIpAddress, CLUSTER_NODES_DEFAULT_START_SSH_PORT + i);
+                // Check for shared networks
+                int port = (sshPort == CLUSTER_NODES_DEFAULT_START_SSH_PORT) ? sshPort + i : sshPort;
+                copyAutoscalerScripts(publicIpAddress, port);
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);
             }

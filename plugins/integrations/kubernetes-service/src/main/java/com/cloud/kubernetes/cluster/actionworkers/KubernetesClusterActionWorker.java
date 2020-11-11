@@ -389,9 +389,6 @@ public class KubernetesClusterActionWorker {
 
     protected List<KubernetesClusterVmMapVO> getKubernetesClusterVMMaps() {
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        if (!CollectionUtils.isEmpty(clusterVMs)) {
-            clusterVMs.sort((t1, t2) -> (int)((t1.getId() - t2.getId())/Math.abs(t1.getId() - t2.getId())));
-        }
         return clusterVMs;
     }
 

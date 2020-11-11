@@ -33,7 +33,7 @@
         [ "-smp", "1" ]
       ],
       "format": "qcow2",
-      "disk_size": 4000,
+      "disk_size": 3000,
       "disk_interface": "virtio",
       "net_device": "virtio-net",
       "iso_url": "https://download.cloudstack.org/systemvm/debian/debian-10.7.0-amd64-netinst.iso",
