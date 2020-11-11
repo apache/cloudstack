@@ -1594,8 +1594,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                                 newSnapshot.setPhysicalSize(size);
                                 return new CreateObjectAnswer(newSnapshot);
                             } else {
-                                s_logger.debug("Failed to take snapshot: ");
-                                return new CreateObjectAnswer("Failed to take snapshot");
+                                s_logger.debug(String.format("Failed to take snapshot: %s", result));
+                                return new CreateObjectAnswer(String.format("Failed to take snapshot: %s", result));
                             }
                         } else {
                             return new CreateObjectAnswer("Could not find device for snapshot");
