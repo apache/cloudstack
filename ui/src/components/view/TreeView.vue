@@ -315,6 +315,11 @@ export default {
         if (listDomains[0].id === this.rootKey) {
           const rootDomain = this.generateTreeData(listDomains)
           this.treeViewData = rootDomain
+          this.defaultSelected = []
+          this.defaultSelected.push(this.treeViewData[0].key)
+          this.resource = this.treeViewData[0]
+          this.$emit('change-resource', this.resource)
+
           return
         }
 
