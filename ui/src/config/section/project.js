@@ -50,7 +50,7 @@ export default {
     },
     {
       name: 'limits',
-      show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
+      show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) || record.isCurrentUserProjectAdmin },
       component: () => import('@/components/view/ResourceLimitTab.vue')
     }
   ],
