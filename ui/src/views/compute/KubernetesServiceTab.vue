@@ -187,6 +187,10 @@ export default {
         dataIndex: 'instancename'
       },
       {
+        title: this.$t('label.ipaddress'),
+        dataIndex: 'ipaddress'
+      },
+      {
         title: this.$t('label.ssh.port'),
         dataIndex: 'port',
         scopedSlots: { customRender: 'port' }
@@ -204,9 +208,14 @@ export default {
     this.handleFetchData()
   },
   watch: {
-    loading (newData, oldData) {
-      if (!newData && this.resource.id) {
+    resource (newData, oldData) {
+      if (newData && newData !== oldData) {
         this.handleFetchData()
+        if (this.resource.ipaddress) {
+          this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'ipaddress')
+        } else {
+          this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
+        }
       }
     }
   },
@@ -265,7 +274,6 @@ export default {
     },
     fetchKubernetesVersion () {
       this.versionLoading = true
-      this.virtualmachines = []
       if (!this.isObjectEmpty(this.resource) && this.isValidValueForKey(this.resource, 'kubernetesversionid') &&
         this.resource.kubernetesversionid !== '') {
         var params = {}
@@ -289,7 +297,8 @@ export default {
     },
     fetchInstances () {
       this.instanceLoading = true
-      this.virtualmachines = this.resource.virtualmachines
+      this.virtualmachines = this.resource.virtualmachines || []
+      this.virtualmachines.map(x => { x.ipaddress = x.nic[0].ipaddress })
       this.instanceLoading = false
     },
     fetchPublicIpAddress () {
