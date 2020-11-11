@@ -142,6 +142,10 @@ export default {
           {
             text: this.$t('state.declined'),
             value: 'Declined'
+          },
+          {
+            text: this.$t('state.expired'),
+            value: 'Expired'
           }
         ],
         filterMultiple: false

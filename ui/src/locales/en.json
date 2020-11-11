@@ -3267,6 +3267,7 @@
 "state.disabled": "Disabled",
 "state.enabled": "Enabled",
 "state.error": "Error",
+"state.expired": "Expired",
 "state.expunging": "Expunging",
 "state.migrating": "Migrating",
 "state.pending": "Pending",
