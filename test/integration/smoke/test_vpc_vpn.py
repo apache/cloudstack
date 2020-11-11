@@ -303,11 +303,6 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
             self.logger.debug(
                 "Network %s created in VPC %s" % (ntwk.id, vpc.id))
 
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo()
-        self.cleanup = []
-
         try:
             # 3) Deploy a vm
             vm = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
@@ -387,6 +382,11 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestVpcRemoteAccessVpn, cls).tearDownClass()
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
 
     def tearDown(self):
         super(TestVpcRemoteAccessVpn, self).tearDown()
