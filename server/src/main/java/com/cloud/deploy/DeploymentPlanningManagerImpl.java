@@ -599,7 +599,13 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             VMInstanceVO vm = _vmInstanceDao.findById(vmProfile.getId());
             AccountVO owner = accountDao.findById(vm.getAccountId());
-            if (owner.getRoleId() == ADMIN_ACCOUNT_ROLE_ID && isAdminVmDeployableInDisabledResources()) {
+            boolean isOwnerRoleIdAdmin = false;
+
+            if (owner != null && owner.getRoleId() != null && owner.getRoleId() == ADMIN_ACCOUNT_ROLE_ID) {
+                isOwnerRoleIdAdmin = true;
+            }
+
+            if (isOwnerRoleIdAdmin && isAdminVmDeployableInDisabledResources()) {
                 return;
             }
 
