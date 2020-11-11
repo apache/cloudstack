@@ -25,7 +25,6 @@ import com.cloud.agent.api.to.NicTO;
 
 import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -88,8 +87,9 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     }
 
     public void setNetworkLbConfigs(List<? extends LoadBalancerConfig> networkLbConfigs) {
-        if (networkLbConfigs == null) {
-            networkLbConfigs = new ArrayList<LoadBalancerConfig>();
+        if (networkLbConfigs == null || networkLbConfigs.size() == 0) {
+            this.networkLbConfigs = new LoadBalancerConfigTO[0];
+            return;
         }
         this.networkLbConfigs = new LoadBalancerConfigTO[networkLbConfigs.size()];
         int i = 0;

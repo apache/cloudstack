@@ -187,8 +187,9 @@ public class LoadBalancerTO {
     }
 
     public void setLbConfigs(List<? extends LoadBalancerConfig> lbConfigs) {
-        if (lbConfigs == null) {
-            lbConfigs = new ArrayList<LoadBalancerConfig>();
+        if (lbConfigs == null || lbConfigs.size() == 0) {
+            this.lbConfigs = new LoadBalancerConfigTO[0];
+            return;
         }
         this.lbConfigs = new LoadBalancerConfigTO[lbConfigs.size()];
         int i = 0;
