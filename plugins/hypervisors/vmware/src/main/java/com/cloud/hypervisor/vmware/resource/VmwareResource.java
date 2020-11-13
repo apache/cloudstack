@@ -48,11 +48,12 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DeployAsIsInfoTO;
-import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
@@ -166,6 +167,7 @@ import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
+import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
@@ -182,12 +184,13 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DeployAsIsInfoTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
@@ -195,6 +198,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
@@ -223,8 +227,8 @@ import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
-import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.StoragepodMO;
+import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
@@ -293,7 +297,6 @@ import com.vmware.vim25.HostInternetScsiHba;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
-import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PerfCounterInfo;
@@ -328,6 +331,7 @@ import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualMachineBootOptions;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
@@ -347,10 +351,6 @@ import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmConfigSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -4636,7 +4636,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 // OfflineVmwareMigration: 3. attach the disk to the worker
                 String vmdkFileName = path + VMDK_EXTENSION;
                 vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(sourceDsMo, vmdkFileName);
-                if (!destinationDsMo.fileExists(vmdkDataStorePath)) {
+                if (!sourceDsMo.fileExists(vmdkDataStorePath)) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(String.format("path not found (%s), trying under '%s'", vmdkFileName, path));
                     }
@@ -4699,8 +4699,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             try {
                 // OfflineVmwareMigration: worker *may* have been renamed
                 vmName = vmMo.getVmName();
-                morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
-                destinationDsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
                 s_logger.info("Dettaching disks before destroying worker VM '" + vmName + "' after volume migration");
                 VirtualDisk[] disks = vmMo.getAllDiskDevice();
                 String format = "disk %d was migrated to %s";
@@ -4722,8 +4720,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 String newPath = ((MigrateVolumeAnswer) answer).getVolumePath();
                 String vmdkFileName = newPath + VMDK_EXTENSION;
                 try {
-                    VmwareStorageLayoutHelper.syncVolumeToRootFolder(sourceDsMo.getOwnerDatacenter().first(), sourceDsMo, newPath, vmName);
-                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(sourceDsMo, vmdkFileName);
+                    VmwareStorageLayoutHelper.syncVolumeToRootFolder(destinationDsMo.getOwnerDatacenter().first(), destinationDsMo, newPath, vmName);
+                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(destinationDsMo, vmdkFileName);
 
                     if (!sourceDsMo.fileExists(vmdkDataStorePath)) {
                         String msg = String.format("Migration of volume '%s' failed; file (%s) not found as path '%s'", cmd.getVolumePath(), vmdkFileName, vmdkDataStorePath);
