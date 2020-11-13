@@ -30,7 +30,11 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -119,6 +123,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
         StringBuilder sbuilder = new StringBuilder();
         sbuilder.append(sqlBase);
 
+        List<Long> dedicatedHosts = new ArrayList<Long>();
+
         if (scope != null) {
             if (scope.getScopeType() == ScopeType.HOST) {
                 sbuilder.append(" and h.id = ");
@@ -126,13 +132,29 @@ public class DefaultEndPointSelector implements EndPointSelector {
             } else if (scope.getScopeType() == ScopeType.CLUSTER) {
                 sbuilder.append(" and h.cluster_id = ");
                 sbuilder.append(scope.getScopeId());
+                DedicatedResourceVO dedicatedHost = dedicatedResourceDao.findByClusterId(scope.getScopeId());
+                if (dedicatedHost != null){
+                    List<HostVO> clusterHosts = hostDao.findByClusterId(scope.getScopeId());
+                    for (HostVO hostVO: clusterHosts){
+                        dedicatedHosts.add(hostVO.getId());
+                    }
+                }
             } else if (scope.getScopeType() == ScopeType.ZONE) {
                 sbuilder.append(" and h.data_center_id = ");
                 sbuilder.append(scope.getScopeId());
+                DedicatedResourceVO dedicatedHost = dedicatedResourceDao.findByZoneId(scope.getScopeId());
+                if (dedicatedHost != null){
+                    List<HostVO> zoneHosts = hostDao.findByClusterId(scope.getScopeId());
+                    for (HostVO hostVO: zoneHosts){
+                        dedicatedHosts.add(hostVO.getId());
+                    }
+                }
             }
         }
-
-        List<Long> dedicatedHosts = dedicatedResourceDao.listAllHosts();
+        // We didn't find any hosts specifically dedicated to a zone or cluster
+        if (dedicatedHosts.size() == 0) {
+            dedicatedHosts = dedicatedResourceDao.listAllHosts();
+        }
 
         // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
@@ -165,16 +187,38 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     private void moveDedicatedHostsToLowerPriority(StringBuilder sbuilder, List<Long> dedicatedHosts) {
-        Collections.shuffle(dedicatedHosts); // Randomize dedicated hosts as well.
-        sbuilder.append("field(t.id, ");
-        Iterator<Long> hostIt = dedicatedHosts.iterator();
-        while (hostIt.hasNext()) { // put dedicated hosts at the end of the result set
-            sbuilder.append("'" + hostIt.next() + "'");
-            if (hostIt.hasNext()) {
-                sbuilder.append(",");
+
+        // Check if we have a call context
+        final CallContext context = CallContext.current();
+        if (context != null) {
+            Account account = context.getCallingAccount();
+            if (account != null) {
+                // Remove hosts for this account. Only leave hosts dedicated to other accounts in the lower priority list.
+                Pair<List<DedicatedResourceVO>, Integer> hostIds = dedicatedResourceDao.searchDedicatedHosts(null, null, account.getId(), null, null);
+                List<DedicatedResourceVO> accountDedicatedHosts = hostIds.first();
+                for (DedicatedResourceVO accountDedicatedResource: accountDedicatedHosts){
+                    Iterator<Long> dedicatedHostsIterator = dedicatedHosts.iterator();
+                    while (dedicatedHostsIterator.hasNext()) {
+                        if (dedicatedHostsIterator.next() == accountDedicatedResource.getHostId()) {
+                            dedicatedHostsIterator.remove();
+                        }
+                    }
+                }
             }
         }
-        sbuilder.append(")," );
+
+        if (dedicatedHosts.size() > 0) {
+            Collections.shuffle(dedicatedHosts); // Randomize dedicated hosts as well.
+            sbuilder.append("field(t.id, ");
+            Iterator<Long> hostIt = dedicatedHosts.iterator();
+            while (hostIt.hasNext()) { // put dedicated hosts at the end of the result set
+                sbuilder.append("'" + hostIt.next() + "'");
+                if (hostIt.hasNext()) {
+                    sbuilder.append(",");
+                }
+            }
+            sbuilder.append(")," );
+        }
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
