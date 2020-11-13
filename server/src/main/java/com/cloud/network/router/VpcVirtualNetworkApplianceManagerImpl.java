@@ -348,7 +348,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 // add VPC router to public networks
                 final List<PublicIp> sourceNat = new ArrayList<PublicIp>(1);
                 for (final Pair<Nic, Network> nicNtwk : publicNics) {
-                    final Nic publicNic = getNicWithUpdatedDeviceId(nicNtwk.first().getId(), deviceId);
+                    final Nic publicNic = updateNicWithDeviceId(nicNtwk.first().getId(), deviceId);
                     deviceId ++;
                     final Network publicNtwk = nicNtwk.second();
                     final IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), publicNic.getIPv4Address());
@@ -387,7 +387,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
                 // add VPC router to guest networks
                 for (final Pair<Nic, Network> nicNtwk : guestNics) {
-                    final Nic guestNic = getNicWithUpdatedDeviceId(nicNtwk.first().getId(), deviceId);
+                    final Nic guestNic = updateNicWithDeviceId(nicNtwk.first().getId(), deviceId);
                     deviceId ++;
                     // plug guest nic
                     final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
@@ -838,7 +838,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return true;
     }
 
-    private Nic getNicWithUpdatedDeviceId(final long nicId, int deviceId) {
+    private Nic updateNicWithDeviceId(final long nicId, int deviceId) {
         NicVO nic = _nicDao.findById(nicId);
         nic.setDeviceId(deviceId);
         _nicDao.update(nic.getId(), nic);
