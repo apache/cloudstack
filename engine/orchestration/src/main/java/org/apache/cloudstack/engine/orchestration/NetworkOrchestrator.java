@@ -2484,7 +2484,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             throw new InvalidParameterValueException(String.format("Failed to encode VLAN/VXLAN %s into a Broadcast URI. Physical Network cannot be null.", vlanId));
         }
 
-        if(StringUtils.isNotBlank(pNtwk.getIsolationMethods().get(0))) {
+        if(!pNtwk.getIsolationMethods().isEmpty() && StringUtils.isNotBlank(pNtwk.getIsolationMethods().get(0))) {
             String isolationMethod = pNtwk.getIsolationMethods().get(0).toLowerCase();
             String vxlan = BroadcastDomainType.Vxlan.toString().toLowerCase();
             if(isolationMethod.equals(vxlan)) {
