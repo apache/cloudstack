@@ -4723,7 +4723,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     VmwareStorageLayoutHelper.syncVolumeToRootFolder(destinationDsMo.getOwnerDatacenter().first(), destinationDsMo, newPath, vmName);
                     vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(destinationDsMo, vmdkFileName);
 
-                    if (!sourceDsMo.fileExists(vmdkDataStorePath)) {
+                    if (!destinationDsMo.fileExists(vmdkDataStorePath)) {
                         String msg = String.format("Migration of volume '%s' failed; file (%s) not found as path '%s'", cmd.getVolumePath(), vmdkFileName, vmdkDataStorePath);
                         s_logger.error(msg);
                         answer = new Answer(cmd, false, msg);
