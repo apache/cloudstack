@@ -1517,15 +1517,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (accountId != null) {
-            sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+            if (userId == null) {
+                sb.and().op("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+                sb.and("userIdNull", sb.entity().getUserId(), Op.NULL);
+                sb.cp();
+            } else {
+                sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+            }
         }
 
         if (userId != null) {
             sb.and().op("userId", sb.entity().getUserId(), Op.EQ);
             sb.or("userIdNull", sb.entity().getUserId(), Op.NULL);
             sb.cp();
-        } else {
-            sb.and("userIdNull", sb.entity().getUserId(), Op.NULL);
         }
 
         SearchCriteria<ProjectJoinVO> sc = sb.create();
@@ -2585,6 +2589,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object keyword = cmd.getKeyword();
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
+        Boolean readonly = cmd.getReadonly();
 
         Filter searchFilter = new Filter(ImageStoreJoinVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
@@ -2597,6 +2602,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
         sb.and("provider", sb.entity().getProviderName(), SearchCriteria.Op.EQ);
         sb.and("role", sb.entity().getRole(), SearchCriteria.Op.EQ);
+        sb.and("readonly", sb.entity().isReadonly(), Op.EQ);
 
         SearchCriteria<ImageStoreJoinVO> sc = sb.create();
         sc.setParameters("role", DataStoreRole.Image);
@@ -2624,6 +2630,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (protocol != null) {
             sc.setParameters("protocol", protocol);
+        }
+        if (readonly != null) {
+            sc.setParameters("readonly", readonly);
         }
 
         // search Store details by ids
