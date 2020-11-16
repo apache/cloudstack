@@ -144,7 +144,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 sbuilder.append(scope.getScopeId());
                 DedicatedResourceVO dedicatedHost = dedicatedResourceDao.findByZoneId(scope.getScopeId());
                 if (dedicatedHost != null){
-                    List<HostVO> zoneHosts = hostDao.findByClusterId(scope.getScopeId());
+                    List<HostVO> zoneHosts = hostDao.findByDataCenterId(scope.getScopeId());
                     for (HostVO hostVO: zoneHosts){
                         dedicatedHosts.add(hostVO.getId());
                     }
