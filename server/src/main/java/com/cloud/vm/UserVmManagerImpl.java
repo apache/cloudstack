@@ -5903,9 +5903,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
             final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offering, null, null);
             final Host host = _hostDao.findById(srcHostId);
-            final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
             ExcludeList excludes = new ExcludeList();
             excludes.addHost(srcHostId);
+            final DataCenterDeployment plan = _itMgr.getMigrationDeployment(vm.getId(), host, null, excludes);
             try {
                 dest = _planningMgr.planDeployment(profile, plan, excludes, null);
             } catch (final AffinityConflictException e2) {

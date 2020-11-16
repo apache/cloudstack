@@ -26,15 +26,18 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.offering.DiskOffering;
@@ -262,4 +265,6 @@ public interface VirtualMachineManager extends Manager {
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
 
     boolean checkIfVmHasClusterWideVolumes(Long vmId);
+
+    DataCenterDeployment getMigrationDeployment(Long vmId, Host host, Long poolId, ExcludeList excludes);
 }
