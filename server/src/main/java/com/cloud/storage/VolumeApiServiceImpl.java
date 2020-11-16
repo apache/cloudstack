@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.Pod;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -893,7 +894,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         DiskOfferingVO newDiskOffering = null;
 
-        if (cmd.getNewDiskOfferingId() != null && volume.getDiskOfferingId() != cmd.getNewDiskOfferingId()) {
+        if (cmd.getNewDiskOfferingId() != null) {
             newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
         }
 
@@ -912,6 +913,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // if we are to use the existing disk offering
         if (newDiskOffering == null) {
+            if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0) {
+                throw new InvalidParameterValueException(
+                        "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
+                                + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
+                                + "For more details please check out the Official Resizing Volumes documentation.");
+            }
             newSize = cmd.getSize();
             newHypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve();
 
@@ -957,10 +964,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("Requested disk offering has been removed.");
             }
 
-            if (!DiskOfferingVO.Type.Disk.equals(newDiskOffering.getType())) {
-                throw new InvalidParameterValueException("Requested disk offering type is invalid.");
-            }
-
             if (diskOffering.getTags() != null) {
                 if (!StringUtils.areTagsEqual(diskOffering.getTags(), newDiskOffering.getTags())) {
                     throw new InvalidParameterValueException("The tags on the new and old disk offerings must match.");
@@ -971,7 +974,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             _configMgr.checkDiskOfferingAccess(_accountMgr.getActiveAccountById(volume.getAccountId()), newDiskOffering, _dcDao.findById(volume.getDataCenterId()));
 
-            if (newDiskOffering.isCustomized()) {
+            if (newDiskOffering.getDiskSize() > 0 && DiskOfferingVO.Type.Service.equals(newDiskOffering.getType())) {
+                newSize = newDiskOffering.getDiskSize();
+            } else if (newDiskOffering.isCustomized()) {
                 newSize = cmd.getSize();
 
                 if (newSize == null) {
@@ -988,9 +993,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newSize = newDiskOffering.getDiskSize();
             }
 
-            if (!volume.getSize().equals(newSize) && !volume.getVolumeType().equals(Volume.Type.DATADISK)) {
-                throw new InvalidParameterValueException("Only data volumes can be resized via a new disk offering.");
-            }
+            Long instanceId = volume.getInstanceId();
+            VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
+            checkIfVolumeIsRootAndVmIsRunning(newSize, volume, vmInstanceVO);
 
             if (newDiskOffering.isCustomizedIops() != null && newDiskOffering.isCustomizedIops()) {
                 newMinIops = cmd.getMinIops() != null ? cmd.getMinIops() : volume.getMinIops();
@@ -1137,6 +1142,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, newDiskOffering != null ? cmd.getNewDiskOfferingId() : null,
                 shrinkOk);
+    }
+
+    private void checkIfVolumeIsRootAndVmIsRunning(Long newSize, VolumeVO volume, VMInstanceVO vmInstanceVO) {
+        if (!volume.getSize().equals(newSize) && volume.getVolumeType().equals(Volume.Type.ROOT) && !State.Stopped.equals(vmInstanceVO.getState())) {
+            throw new InvalidParameterValueException(String.format("Cannot resize ROOT volume [%s] when VM is not on Stopped State. VM %s is in state %.", volume.getName(), vmInstanceVO
+                    .getInstanceName(), vmInstanceVO.getState()));
+        }
     }
 
     private void validateIops(Long minIops, Long maxIops) {
@@ -1500,8 +1512,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         UserVmVO vm = _userVmDao.findById(vmId);
         VolumeVO exstingVolumeOfVm = null;
+        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
-        if (rootVolumesOfVm.size() > 1) {
+        if (rootVolumesOfVm.size() > 1 && template != null && !template.isDeployAsIs()) {
             throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state.");
         } else {
             if (!rootVolumesOfVm.isEmpty()) {
@@ -1776,7 +1789,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (pool.getDataCenterId() != volume.getDataCenterId()) {
                 throw new InvalidParameterValueException("Invalid storageId specified; refers to the pool outside of the volume's zone");
             }
-            volume.setPoolId(pool.getId());
+            if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(storageId);
+                Collections.shuffle(childDatastores);
+                volume.setPoolId(childDatastores.get(0).getId());
+            } else {
+                volume.setPoolId(pool.getId());
+            }
         }
 
         if (customId != null) {
@@ -2018,6 +2037,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
             DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+            Map<String, String> details = new HashMap<String, String>();
+            disk.setDetails(details);
+            if (volume.getPoolId() != null) {
+                StoragePoolVO poolVO = _storagePoolDao.findById(volume.getPoolId());
+                if (poolVO.getParent() != 0L) {
+                    details.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+                }
+            }
 
             DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
 
@@ -2038,6 +2065,34 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
+
+            if (answer != null) {
+                String datastoreName = answer.getContextParam("datastoreName");
+                if (datastoreName != null) {
+                    StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(datastoreName);
+                    if (storagePoolVO != null) {
+                        VolumeVO volumeVO = _volsDao.findById(volumeId);
+                        volumeVO.setPoolId(storagePoolVO.getId());
+                        _volsDao.update(volumeVO.getId(), volumeVO);
+                    } else {
+                        s_logger.warn(String.format("Unable to find datastore %s while updating the new datastore of the volume %d", datastoreName, volumeId));
+                    }
+                }
+
+                String volumePath = answer.getContextParam("volumePath");
+                if (volumePath != null) {
+                    VolumeVO volumeVO = _volsDao.findById(volumeId);
+                    volumeVO.setPath(volumePath);
+                    _volsDao.update(volumeVO.getId(), volumeVO);
+                }
+
+                String chainInfo = answer.getContextParam("chainInfo");
+                if (chainInfo != null) {
+                    VolumeVO volumeVO = _volsDao.findById(volumeId);
+                    volumeVO.setChainInfo(chainInfo);
+                    _volsDao.update(volumeVO.getId(), volumeVO);
+                }
+            }
 
             // volume.getPoolId() should be null if the VM we are detaching the disk from has never been started before
             if (volume.getPoolId() != null) {
@@ -2192,6 +2247,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Cannot migrate volume " + vol + "to the destination storage pool " + destPool.getName() + " as the storage pool is in maintenance mode.");
         }
 
+        String poolUuid =  destPool.getUuid();
+        if (destPool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+            DataCenter dc = _entityMgr.findById(DataCenter.class, vol.getDataCenterId());
+            Pod destPoolPod = _entityMgr.findById(Pod.class, destPool.getPodId());
+
+            destPool = _volumeMgr.findChildDataStoreInDataStoreCluster(dc, destPoolPod, destPool.getClusterId(), null, null, destPool.getId());
+        }
+
         if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(vol), destPool)) {
             throw new CloudRuntimeException("Storage pool " + destPool.getName() + " does not have enough space to migrate volume " + vol.getName());
         }
@@ -2230,6 +2293,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 updateMissingRootDiskController(vm, vol.getChainInfo());
             }
         }
+
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volumeId);
+        if (hypervisorType.equals(HypervisorType.VMware)) {
+            try {
+                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(vol), destPool);
+                if (!isStoragePoolStoragepolicyComplaince) {
+                    throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", poolUuid, vol.getUuid()));
+                }
+            } catch (StorageUnavailableException e) {
+                throw new CloudRuntimeException(String.format("Could not verify storage policy compliance against storage pool %s due to exception %s", destPool.getUuid(), e.getMessage()));
+            }
+        }
+
         DiskOfferingVO newDiskOffering = retrieveAndValidateNewDiskOffering(cmd);
         validateConditionsToReplaceDiskOfferingOfVolume(vol, newDiskOffering, destPool);
         if (vm != null) {
@@ -2788,24 +2864,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // Copy volume from primary to secondary storage
         VolumeInfo srcVol = volFactory.getVolume(volumeId);
-        AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
-        // Check if you got a valid answer.
+        VolumeInfo destVol = volFactory.getVolume(volumeId, DataStoreRole.Image);
         VolumeApiResult cvResult = null;
-        try {
-            cvResult = cvAnswer.get();
-        } catch (InterruptedException e1) {
-            s_logger.debug("failed copy volume", e1);
-            throw new CloudRuntimeException("Failed to copy volume", e1);
-        } catch (ExecutionException e1) {
-            s_logger.debug("failed copy volume", e1);
-            throw new CloudRuntimeException("Failed to copy volume", e1);
+        if (destVol == null) {
+            AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
+            // Check if you got a valid answer.
+            try {
+                cvResult = cvAnswer.get();
+            } catch (InterruptedException e1) {
+                s_logger.debug("failed copy volume", e1);
+                throw new CloudRuntimeException("Failed to copy volume", e1);
+            } catch (ExecutionException e1) {
+                s_logger.debug("failed copy volume", e1);
+                throw new CloudRuntimeException("Failed to copy volume", e1);
+            }
+            if (cvResult == null || cvResult.isFailed()) {
+                String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
+                throw new CloudRuntimeException(errorString);
+            }
         }
-        if (cvResult == null || cvResult.isFailed()) {
-            String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
-            throw new CloudRuntimeException(errorString);
-        }
-
-        VolumeInfo vol = cvResult.getVolume();
+        VolumeInfo vol = cvResult != null ? cvResult.getVolume() : destVol;
 
         String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat(), vol);
         VolumeDataStoreVO volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
@@ -3025,6 +3103,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     details.put(DiskTO.CHAP_TARGET_USERNAME, chapInfo.getTargetUsername());
                     details.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
                 }
+
+                if (volumeToAttach.getPoolId() != null) {
+                    StoragePoolVO poolVO = _storagePoolDao.findById(volumeToAttach.getPoolId());
+                    if (poolVO.getParent() != 0L) {
+                        details.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+                    }
+                }
+
                 _userVmDao.loadDetails(vm);
                 Map<String, String> controllerInfo = new HashMap<String, String>();
                 controllerInfo.put(VmDetailConstants.ROOT_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER));
@@ -3053,7 +3139,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     if (volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
                         volumeToAttach.setPath(answer.getDisk().getPath());
+                        _volsDao.update(volumeToAttach.getId(), volumeToAttach);
+                    }
 
+                    String chainInfo = answer.getContextParam("chainInfo");
+                    if (chainInfo != null) {
+                        volumeToAttach = _volsDao.findById(volumeToAttach.getId());
+                        volumeToAttach.setChainInfo(chainInfo);
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
                 } else {

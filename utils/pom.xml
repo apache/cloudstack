@@ -178,6 +178,10 @@
             <artifactId>jackson-databind</artifactId>
             <version>${cs.jackson.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

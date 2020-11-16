@@ -33,6 +33,8 @@ public interface EndPointSelector {
 
     List<EndPoint> selectAll(DataStore store);
 
+    List<EndPoint> findAllEndpointsForScope(DataStore store);
+
     EndPoint select(Scope scope, Long storeId);
 
     EndPoint select(DataStore store, String downloadUrl);

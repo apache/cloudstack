@@ -46,6 +46,7 @@ import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -1832,5 +1833,11 @@ public class KVMStorageProcessor implements StorageProcessor {
             return false;
         }
         return availableBytes >= templateSize;
+    }
+
+    @Override
+    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+        s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not currently applicable for KVMStorageProcessor");
+        return new Answer(cmd,false,"Not currently applicable for KVMStorageProcessor");
     }
 }

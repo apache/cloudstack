@@ -381,4 +381,8 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     public void setExtractUrlCreated(Date extractUrlCreated) {
         this.extractUrlCreated = extractUrlCreated;
     }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 }

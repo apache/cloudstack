@@ -132,6 +132,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         DcLocalStorageSearch.and("path", DcLocalStorageSearch.entity().getPath(), SearchCriteria.Op.EQ);
         DcLocalStorageSearch.and("scope", DcLocalStorageSearch.entity().getScope(), SearchCriteria.Op.EQ);
         DcLocalStorageSearch.done();
+
     }
 
     @Override
@@ -551,5 +552,20 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     @Override
     public void deletePoolTags(long poolId) {
         _tagsDao.deleteTags(poolId);
+    }
+
+    @Override
+    public List<StoragePoolVO> listChildStoragePoolsInDatastoreCluster(long poolId) {
+        QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+        sc.and(sc.entity().getParent(), Op.EQ, poolId);
+        return sc.list();
+    }
+
+    @Override
+    public Integer countAll() {
+        SearchCriteria<StoragePoolVO> sc = createSearchCriteria();
+        sc.addAnd("parent", SearchCriteria.Op.EQ, 0);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
+        return getCount(sc);
     }
 }

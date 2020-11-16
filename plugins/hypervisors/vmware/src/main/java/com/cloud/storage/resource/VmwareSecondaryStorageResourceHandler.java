@@ -41,6 +41,7 @@ import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManagerImpl;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
+import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
@@ -297,7 +298,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     @Override
-    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence) {
+    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence, DatastoreMO dsMo) {
         assert (cmd.getContextParam("worker") != null);
         assert (workerSequence < 2);
 

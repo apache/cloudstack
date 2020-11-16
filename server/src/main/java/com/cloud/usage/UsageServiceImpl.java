@@ -347,6 +347,9 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             }
         }
 
+        // Filter out hidden usages
+        sc.addAnd("isHidden", SearchCriteria.Op.EQ, false);
+
         if ((adjustedStartDate != null) && (adjustedEndDate != null) && adjustedStartDate.before(adjustedEndDate)) {
             sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);
             sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);

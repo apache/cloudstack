@@ -20,7 +20,18 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.vm.VmDetailConstants;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -72,9 +83,21 @@ public class VolumeObject implements VolumeInfo {
     VMInstanceDao vmInstanceDao;
     @Inject
     DiskOfferingDao diskOfferingDao;
+    @Inject
+    VMTemplateDao templateDao;
+    @Inject
+    VolumeDetailsDao volumeDetailsDao;
+    @Inject
+    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    DiskOfferingDetailsDao diskOfferingDetailsDao;
+    @Inject
+    VsphereStoragePolicyDao vsphereStoragePolicyDao;
+
     private Object payload;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
+    private String vSphereStoragePolicyId;
 
     public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -358,7 +381,7 @@ public class VolumeObject implements VolumeInfo {
         if (dataStore == null) {
             throw new CloudRuntimeException("datastore must be set before using this object");
         }
-        DataObjectInStore obj = objectInStoreMgr.findObject(volumeVO.getId(), DataObjectType.VOLUME, dataStore.getId(), dataStore.getRole());
+        DataObjectInStore obj = objectInStoreMgr.findObject(volumeVO.getId(), DataObjectType.VOLUME, dataStore.getId(), dataStore.getRole(), null);
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&" + EncodingType.SIZE + "=" + volumeVO.getSize() + "&" +
                 EncodingType.NAME + "=" + volumeVO.getName();
@@ -433,6 +456,18 @@ public class VolumeObject implements VolumeInfo {
                 objectInStoreMgr.deleteIfNotReady(this);
             }
         }
+    }
+
+    @Override
+    public boolean isDeployAsIs() {
+        VMTemplateVO template = templateDao.findById(getTemplateId());
+        return template != null && template.isDeployAsIs();
+    }
+
+    @Override
+    public String getDeployAsIsConfiguration() {
+        VolumeDetailVO detail = volumeDetailsDao.findDetail(getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
+        return detail != null ? detail.getValue() : null;
     }
 
     @Override
@@ -757,6 +792,28 @@ public class VolumeObject implements VolumeInfo {
         }
         this.processEventOnly(event);
 
+    }
+
+    public String getvSphereStoragePolicyId() {
+        if (StringUtils.isEmpty(vSphereStoragePolicyId)) {
+            String storagePolicyVOid = null;
+            if (Volume.Type.ROOT == getVolumeType()) {
+                Long vmId = volumeVO.getInstanceId();
+                if (vmId != null) {
+                    VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
+                    storagePolicyVOid = serviceOfferingDetailsDao.getDetail(vm.getServiceOfferingId(),
+                            ApiConstants.STORAGE_POLICY);
+                }
+            } else {
+                storagePolicyVOid = diskOfferingDetailsDao.getDetail(volumeVO.getDiskOfferingId(),
+                        ApiConstants.STORAGE_POLICY);
+            }
+            if (storagePolicyVOid != null) {
+                VsphereStoragePolicyVO vsphereStoragePolicyVO = vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyVOid));
+                vSphereStoragePolicyId = vsphereStoragePolicyVO.getPolicyId();
+            }
+        }
+        return vSphereStoragePolicyId;
     }
 
     @Override

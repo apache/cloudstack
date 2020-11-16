@@ -1,3 +1,4 @@
+import KeyTable from "./keysym.js";
 import keysyms from "./keysymdef.js";
 import vkeys from "./vkeys.js";
 import fixedkeys from "./fixedkeys.js";
@@ -91,6 +92,8 @@ export function getKey(evt) {
         // Mozilla isn't fully in sync with the spec yet
         switch (evt.key) {
             case 'OS': return 'Meta';
+            case 'LaunchMyComputer': return 'LaunchApplication1';
+            case 'LaunchCalculator': return 'LaunchApplication2';
         }
 
         // iOS leaks some OS names
@@ -102,9 +105,21 @@ export function getKey(evt) {
             case 'UIKeyInputEscape': return 'Escape';
         }
 
-        // IE and Edge have broken handling of AltGraph so we cannot
-        // trust them for printable characters
-        if ((evt.key.length !== 1) || (!browser.isIE() && !browser.isEdge())) {
+        // Broken behaviour in Chrome
+        if ((evt.key === '\x00') && (evt.code === 'NumpadDecimal')) {
+            return 'Delete';
+        }
+
+        // IE and Edge need special handling, but for everyone else we
+        // can trust the value provided
+        if (!browser.isIE() && !browser.isEdge()) {
+            return evt.key;
+        }
+
+        // IE and Edge have broken handling of AltGraph so we can only
+        // trust them for non-printable characters (and unfortunately
+        // they also specify 'Unidentified' for some problem keys)
+        if ((evt.key.length !== 1) && (evt.key !== 'Unidentified')) {
             return evt.key;
         }
     }
@@ -141,8 +156,37 @@ export function getKeysym(evt) {
             location = 2;
         }
 
+        // And for Clear
+        if ((key === 'Clear') && (location === 3)) {
+            let code = getKeycode(evt);
+            if (code === 'NumLock') {
+                location = 0;
+            }
+        }
+
         if ((location === undefined) || (location > 3)) {
             location = 0;
+        }
+
+        // The original Meta key now gets confused with the Windows key
+        // https://bugs.chromium.org/p/chromium/issues/detail?id=1020141
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1232918
+        if (key === 'Meta') {
+            let code = getKeycode(evt);
+            if (code === 'AltLeft') {
+                return KeyTable.XK_Meta_L;
+            } else if (code === 'AltRight') {
+                return KeyTable.XK_Meta_R;
+            }
+        }
+
+        // macOS has Clear instead of NumLock, but the remote system is
+        // probably not macOS, so lying here is probably best...
+        if (key === 'Clear') {
+            let code = getKeycode(evt);
+            if (code === 'NumLock') {
+                return KeyTable.XK_Num_Lock;
+            }
         }
 
         return DOMKeyTable[key][location];
