@@ -37,7 +37,7 @@ public interface IndirectAgentLB {
      * @param receivedMSHosts received management server list
      * @return true if mgmtHosts is up to date, false if not
      */
-    boolean compareManagementServerList(Long hostId, Long dcId, List<String> receivedMSHosts);
+    boolean compareManagementServerList(Long hostId, Long dcId, List<String> receivedMSHosts, String lbAlgorithm);
 
     /**
      * Returns the configure LB algorithm

@@ -21,10 +21,18 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
+import javax.inject.Inject;
+import java.util.List;
 
 public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoolDetailVO> implements StoragePoolDetailsDao, ScopedConfigStorage {
+
+    @Inject
+    PrimaryDataStoreDao _storagePoolDao;
 
     public StoragePoolDetailsDaoImpl() {
     }
@@ -42,6 +50,10 @@ public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoo
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
+        List<StoragePoolVO> ChildPools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(resourceId);
+        for(StoragePoolVO childPool : ChildPools) {
+            super.addDetail(new StoragePoolDetailVO(childPool.getId(), key, value, display));
+        }
         super.addDetail(new StoragePoolDetailVO(resourceId, key, value, display));
     }
 }

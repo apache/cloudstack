@@ -151,6 +151,10 @@ public class DiskOfferingResponse extends BaseResponse {
     @Param(description = "whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
+    @SerializedName("vspherestoragepolicy")
+    @Param(description = "the vsphere storage policy tagged to the disk offering in case of VMware", since = "4.15")
+    private String vsphereStoragePolicy;
+
     public Boolean getDisplayOffering() {
         return displayOffering;
     }
@@ -350,5 +354,13 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
         this.iopsWriteRateMaxLength = iopsWriteRateMaxLength;
+    }
+
+    public String getVsphereStoragePolicy() {
+        return vsphereStoragePolicy;
+    }
+
+    public void setVsphereStoragePolicy(String vsphereStoragePolicy) {
+        this.vsphereStoragePolicy = vsphereStoragePolicy;
     }
 }

@@ -344,23 +344,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected List<T> search(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache) {
-        if (_removed != null) {
-            if (sc == null) {
-                sc = createSearchCriteria();
-            }
-            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
-        }
+        sc = checkAndSetRemovedIsNull(sc);
         return searchIncludingRemoved(sc, filter, lock, cache);
     }
 
     @DB()
     protected List<T> search(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache, final boolean enableQueryCache) {
-        if (_removed != null) {
-            if (sc == null) {
-                sc = createSearchCriteria();
-            }
-            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
-        }
+        sc = checkAndSetRemovedIsNull(sc);
         return searchIncludingRemoved(sc, filter, lock, cache, enableQueryCache);
     }
 
@@ -519,7 +509,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         if (_removed != null) {
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }
-
         return customSearchIncludingRemoved(sc, filter);
     }
 
@@ -911,26 +900,20 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @Override
     @DB()
-    public T findOneBy(final SearchCriteria<T> sc) {
-        if (_removed != null) {
-            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
-        }
+    public T findOneBy(SearchCriteria<T> sc) {
+        sc = checkAndSetRemovedIsNull(sc);
         return findOneIncludingRemovedBy(sc);
     }
 
     @DB()
-    protected List<T> listBy(final SearchCriteria<T> sc, final Filter filter) {
-        if (_removed != null) {
-            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
-        }
+    protected List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
+        sc = checkAndSetRemovedIsNull(sc);
         return listIncludingRemovedBy(sc, filter);
     }
 
     @DB()
-    protected List<T> listBy(final SearchCriteria<T> sc, final Filter filter, final boolean enableQueryCache) {
-        if (_removed != null) {
-            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
-        }
+    protected List<T> listBy(SearchCriteria<T> sc, final Filter filter, final boolean enableQueryCache) {
+        sc = checkAndSetRemovedIsNull(sc);
         return listIncludingRemovedBy(sc, filter, enableQueryCache);
     }
 
@@ -1935,7 +1918,22 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return builder.create();
     }
 
+    private SearchCriteria<T> checkAndSetRemovedIsNull(SearchCriteria<T> sc) {
+        if (_removed != null) {
+            if (sc == null) {
+                sc = createSearchCriteria();
+            }
+            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
+        }
+        return sc;
+    }
+
     public Integer getDistinctCount(SearchCriteria<T> sc) {
+        sc = checkAndSetRemovedIsNull(sc);
+        return getDistinctCountIncludingRemoved(sc);
+    }
+
+    public Integer getDistinctCountIncludingRemoved(SearchCriteria<T> sc) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;
@@ -1994,6 +1992,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     public Integer getDistinctCount(SearchCriteria<T> sc, String[] distinctColumns) {
+        sc = checkAndSetRemovedIsNull(sc);
+        return getDistinctCountIncludingRemoved(sc, distinctColumns);
+    }
+
+    public Integer getDistinctCountIncludingRemoved(SearchCriteria<T> sc, String[] distinctColumns) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (Strings.isNullOrEmpty(clause)) {
             clause = null;
@@ -2040,15 +2043,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     public Integer countAll() {
-        SearchCriteria<T> sc = null;
-        if (_removed != null) {
-            sc = createSearchCriteria();
-            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
-        }
-        return getCount(sc);
+        return getCount(null);
     }
 
     public Integer getCount(SearchCriteria<T> sc) {
+        sc = checkAndSetRemovedIsNull(sc);
+        return getCountIncludingRemoved(sc);
+    }
+
+    public Integer getCountIncludingRemoved(SearchCriteria<T> sc) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;

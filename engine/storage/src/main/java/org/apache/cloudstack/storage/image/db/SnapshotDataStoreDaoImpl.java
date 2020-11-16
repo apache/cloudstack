@@ -27,8 +27,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.SnapshotVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -39,6 +37,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -65,6 +65,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
     private SearchBuilder<SnapshotDataStoreVO> parentSnapshotSearch;
     private SearchBuilder<SnapshotVO> snapshotVOSearch;
+    private SearchBuilder<SnapshotDataStoreVO> snapshotCreatedSearch;
 
     public static ArrayList<Hypervisor.HypervisorType> hypervisorsSupportingSnapshotsChaining = new ArrayList<Hypervisor.HypervisorType>();
 
@@ -157,6 +158,11 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         snapshotVOSearch = _snapshotDao.createSearchBuilder();
         snapshotVOSearch.and("volume_id", snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         snapshotVOSearch.done();
+
+        snapshotCreatedSearch = createSearchBuilder();
+        snapshotCreatedSearch.and("store_id", snapshotCreatedSearch.entity().getDataStoreId(), Op.EQ);
+        snapshotCreatedSearch.and("created",  snapshotCreatedSearch.entity().getCreated(), Op.BETWEEN);
+        snapshotCreatedSearch.done();
 
         return true;
     }
@@ -335,6 +341,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    public SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters("store_role", role);
+        sc.setParameters("state", State.Migrating);
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<SnapshotDataStoreVO> listAllByVolumeAndDataStore(long volumeId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
         sc.setParameters("volume_id", volumeId);
@@ -462,6 +477,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    public List<SnapshotDataStoreVO> findSnapshots(Long storeId, Date start, Date end) {
+        SearchCriteria<SnapshotDataStoreVO> sc = snapshotCreatedSearch.create();
+        sc.setParameters("store_id", storeId);
+        if (start != null && end != null) {
+            sc.setParameters("created", start, end);
+        }
+        return search(sc, null);
+    }
+
     public SnapshotDataStoreVO findDestroyedReferenceBySnapshot(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
         sc.setParameters("snapshot_id", snapshotId);

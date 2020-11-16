@@ -1070,9 +1070,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (srs.size() != 1) {
                 s_logger.debug("Failed to find SR by name 'XenServer Tools', will try to find 'XCP-ng Tools' SR");
                 srs = SR.getByNameLabel(conn, "XCP-ng Tools");
-                if (srs.size() != 1) {
-                    throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools");
-                }
+            }
+            if (srs.size() != 1) {
+                s_logger.debug("Failed to find SR by name 'XenServer Tools' or 'XCP-ng Tools', will try to find 'Citrix Hypervisor' SR");
+                srs = SR.getByNameLabel(conn, "Citrix Hypervisor Tools");
+            }
+            if (srs.size() != 1) {
+                throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools or XCP-ng Tools or Citrix Hypervisor Tools");
             }
             final SR sr = srs.iterator().next();
             sr.scan(conn);

@@ -7,7 +7,7 @@
 
     This is a self-contained file which doesn't import WebUtil or external CSS.
 
-    Copyright (C) 2018 The noVNC Authors
+    Copyright (C) 2019 The noVNC Authors
     noVNC is licensed under the MPL 2.0 (see LICENSE.txt)
     This file is licensed under the 2-Clause BSD license (see LICENSE.txt).
 
@@ -17,6 +17,10 @@
     <title>noVNC</title>
 
     <meta charset="utf-8">
+
+    <!-- Always force latest IE rendering engine (even in intranet) &
+                Chrome Frame. Remove this if you use the .htaccess -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
     <style>
 
@@ -68,18 +72,7 @@
     <script src="vendor/promise.js"></script>
 
     <!-- ES2015/ES6 modules polyfill -->
-    <script type="module">
-        window._noVNC_has_module_support = true;
-    </script>
-    <script>
-        window.addEventListener("load", function() {
-            if (window._noVNC_has_module_support) return;
-            const loader = document.createElement("script");
-            loader.src = "vendor/browser-es-module-loader/dist/" +
-                "browser-es-module-loader.js";
-            document.head.appendChild(loader);
-        });
-    </script>
+    <script nomodule src="vendor/browser-es-module-loader/dist/browser-es-module-loader.js"></script>
 
     <!-- actual script modules -->
     <script type="module" crossorigin="anonymous">

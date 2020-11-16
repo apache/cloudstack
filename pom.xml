@@ -98,6 +98,7 @@
         <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
         <cs.pool.version>2.7.0</cs.pool.version>
+        <cs.commons-math3.version>3.6.1</cs.commons-math3.version>
 
         <!-- Testing versions -->
         <!-- do not forget to also upgrade hamcrest library with junit -->
@@ -134,7 +135,7 @@
         <cs.guava.version>28.2-jre</cs.guava.version>
         <cs.httpclient.version>4.5.11</cs.httpclient.version>
         <cs.httpcore.version>4.4.13</cs.httpcore.version>
-        <cs.influxdb-java.version>2.17</cs.influxdb-java.version>
+        <cs.influxdb-java.version>2.20</cs.influxdb-java.version>
         <cs.jackson.version>2.10.3</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
         <cs.java-ipv6.version>0.17</cs.java-ipv6.version>

@@ -101,6 +101,8 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -211,6 +213,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     NetworkDao _networksDao;
+    @Inject
+    NetworkDetailsDao _networkDetailsDao;
     @Inject
     NicDao _nicDao;
     @Inject
@@ -924,9 +928,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                                     VlanVO vlan = _vlanDao.findById(addr.getVlanId());
                                     String guestType = vlan.getVlanType().toString();
                                     if (!isIpDedicated(addr)) {
+                                        final boolean usageHidden = isUsageHidden(addr);
                                         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(),
-                                                addr.getAddress().toString(),
-                                                addr.isSourceNat(), guestType, addr.getSystem(), addr.getClass().getName(), addr.getUuid());
+                                                addr.getAddress().toString(), addr.isSourceNat(), guestType, addr.getSystem(), usageHidden,
+                                                addr.getClass().getName(), addr.getUuid());
                                     }
                                     if (updateIpResourceCount(addr)) {
                                         _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
@@ -1277,9 +1282,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     ipaddr.setAllocatedInDomainId(ipOwner.getDomainId());
                     ipaddr.setAllocatedToAccountId(ipOwner.getId());
                     ipaddr = _ipAddressDao.persist(ipaddr);
+                    final boolean usageHidden = isUsageHidden(ipaddr);
 
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_PORTABLE_IP_ASSIGN, ipaddr.getId(), ipaddr.getDataCenterId(), ipaddr.getId(),
-                            ipaddr.getAddress().toString(), ipaddr.isSourceNat(), null, ipaddr.getSystem(), ipaddr.getClass().getName(), ipaddr.getUuid());
+                            ipaddr.getAddress().toString(), ipaddr.isSourceNat(), null, ipaddr.getSystem(), usageHidden, ipaddr.getClass().getName(), ipaddr.getUuid());
 
                     return ipaddr;
                 }
@@ -1829,8 +1835,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         String guestType = vlan.getVlanType().toString();
                         if (!isIpDedicated(ip)) {
                             String eventType = ip.isPortable() ? EventTypes.EVENT_PORTABLE_IP_RELEASE : EventTypes.EVENT_NET_IP_RELEASE;
+                            final boolean usageHidden = isUsageHidden(ip);
                             UsageEventUtils.publishUsageEvent(eventType, ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), ip.isSourceNat(),
-                                    guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                                    guestType, ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
                         }
                     }
 
@@ -2237,5 +2244,18 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean isUsageHidden(IPAddressVO ip) {
+        Long networkId = ip.getAssociatedWithNetworkId();
+        if (networkId == null) {
+            networkId = ip.getSourceNetworkId();
+        }
+        if (networkId == null) {
+            throw new CloudRuntimeException("No network for IP " + ip.getId());
+        }
+        NetworkDetailVO networkDetail = _networkDetailsDao.findDetail(networkId, Network.hideIpAddressUsage);
+        return networkDetail != null && "true".equals(networkDetail.getValue());
     }
 }

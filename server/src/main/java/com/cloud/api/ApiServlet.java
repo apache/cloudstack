@@ -218,7 +218,7 @@ public class ApiServlet extends HttpServlet {
                     try {
                         responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                         if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
-                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
+                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
                         }
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();

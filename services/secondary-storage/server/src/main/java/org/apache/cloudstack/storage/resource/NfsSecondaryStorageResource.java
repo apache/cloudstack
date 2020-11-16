@@ -54,6 +54,7 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -67,7 +68,6 @@ import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.storage.template.UploadManager;
 import org.apache.cloudstack.storage.template.UploadManagerImpl;
@@ -190,6 +190,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
     private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
+    private static final String ORIGINAL_FILE_EXTENSION = ".orig";
 
     private static final Map<String, String> updatableConfigData = Maps.newHashMap();
     static {
@@ -391,6 +392,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     public Answer execute(GetDatadisksCommand cmd) {
         DataTO srcData = cmd.getData();
+        String configurationId = cmd.getConfigurationId();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO srcStore = srcData.getDataStore();
         if (!(srcStore instanceof NfsTO)) {
@@ -435,7 +437,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             Script command = new Script("cp", _timeout, s_logger);
             command.add(ovfFilePath);
-            command.add(ovfFilePath + ".orig");
+            command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
             String result = command.execute();
             if (result != null) {
                 String msg = "Unable to rename original OVF, error msg: " + result;
@@ -445,7 +447,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.debug("Reading OVF " + ovfFilePath + " to retrive the number of disks present in OVA");
             OVFHelper ovfHelper = new OVFHelper();
 
-            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFilePath);
+            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, configurationId);
             return new GetDatadisksAnswer(disks);
         } catch (Exception e) {
             String msg = "Get Datadisk Template Count failed due to " + e.getMessage();
@@ -503,7 +505,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                         throw new Exception(msg);
                     }
                     command = new Script("cp", _timeout, s_logger);
-                    command.add(ovfFilePath + ".orig");
+                    command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
                     command.add(newTmplDirAbsolute);
                     result = command.execute();
                     if (result != null) {
@@ -517,7 +519,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // Create OVF for the disk
             String newOvfFilePath = newTmplDirAbsolute + File.separator + ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1);
             OVFHelper ovfHelper = new OVFHelper();
-            ovfHelper.rewriteOVFFile(ovfFilePath + ".orig", newOvfFilePath, diskName);
+            ovfHelper.rewriteOVFFileForSingleDisk(ovfFilePath + ORIGINAL_FILE_EXTENSION, newOvfFilePath, diskName);
 
             postCreatePrivateTemplate(newTmplDirAbsolute, templateId, templateUniqueName, physicalSize, virtualSize);
             writeMetaOvaForTemplate(newTmplDirAbsolute, ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1), diskName, templateUniqueName, physicalSize);
@@ -1044,11 +1046,27 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+    private boolean shouldPerformDataMigration(DataTO srcData, DataTO destData) {
+        DataStoreTO srcDataStore = srcData.getDataStore();
+        DataStoreTO destDataStore = destData.getDataStore();
+        if (DataStoreRole.Image == srcDataStore.getRole() && DataStoreRole.Image == destDataStore.getRole() &&
+                srcDataStore instanceof NfsTO && destDataStore instanceof NfsTO &&
+                ((srcData.getObjectType() == DataObjectType.TEMPLATE && destData.getObjectType() == DataObjectType.TEMPLATE) ||
+                        (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.SNAPSHOT) ||
+                        (srcData.getObjectType() == DataObjectType.VOLUME && destData.getObjectType() == DataObjectType.VOLUME))) {
+            return true;
+        }
+        return false;
+    }
+
     protected Answer execute(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
+        if (shouldPerformDataMigration(srcData, destData)) {
+            return copyFromNfsToNfs(cmd);
+        }
 
         if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
             return createTemplateFromSnapshot(cmd);
@@ -1254,7 +1272,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected File findFile(String path) {
-
         File srcFile = _storage.getFile(path);
         if (!srcFile.exists()) {
             srcFile = _storage.getFile(path + ".qcow2");
@@ -1273,6 +1290,89 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         return srcFile;
+    }
+
+    protected Answer copyFromNfsToNfs(CopyCommand cmd) {
+        final DataTO srcData = cmd.getSrcTO();
+        final DataTO destData = cmd.getDestTO();
+        DataStoreTO srcDataStore = srcData.getDataStore();
+        NfsTO srcStore = (NfsTO)srcDataStore;
+        DataStoreTO destDataStore = destData.getDataStore();
+        final NfsTO destStore = (NfsTO) destDataStore;
+        try {
+            File srcFile = new File(getDir(srcStore.getUrl(), _nfsVersion), srcData.getPath());
+            File destFile = new File(getDir(destStore.getUrl(), _nfsVersion), destData.getPath());
+
+            if (srcFile == null) {
+                return new CopyCmdAnswer("Can't find source file at path: "+ srcData.getPath() +" on datastore: "+ srcDataStore.getUuid() +" to initiate file transfer");
+            }
+            ImageFormat format = getTemplateFormat(srcFile.getName());
+            if (srcData instanceof TemplateObjectTO || srcData instanceof VolumeObjectTO) {
+                File srcDir = null;
+                if (srcFile.isFile() || srcFile.getName().contains(".")) {
+                    srcDir = new File(srcFile.getParent());
+                } else if (!srcFile.isDirectory()) {
+                    srcDir = new File(srcFile.getParent());
+                }
+                File destDir = null;
+                if (destFile.isFile()) {
+                    destDir = new File(destFile.getParent());
+                }
+                try {
+                    FileUtils.copyDirectory((srcDir == null ? srcFile : srcDir), (destDir == null? destFile : destDir));
+                } catch (IOException e) {
+                    String msg = "Failed to copy file to destination";
+                    s_logger.info(msg);
+                    return new CopyCmdAnswer(msg);
+                }
+            } else {
+                destFile = new File(destFile, srcFile.getName());
+                try {
+                if (srcFile.isFile()) {
+                    FileUtils.copyFile(srcFile, destFile);
+                } else {
+                    // for vmware
+                    srcFile = new File(srcFile.getParent());
+                    FileUtils.copyDirectory(srcFile, destFile);
+                }
+                } catch (IOException e) {
+                    String msg = "Failed to copy file to destination";
+                    s_logger.info(msg);
+                    return new CopyCmdAnswer(msg);
+                }
+            }
+
+            DataTO retObj = null;
+            if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+                TemplateObjectTO newTemplate = new TemplateObjectTO();
+                newTemplate.setPath(destData.getPath() + File.separator + srcFile.getName());
+                newTemplate.setSize(getVirtualSize(srcFile, format));
+                newTemplate.setPhysicalSize(srcFile.length());
+                newTemplate.setFormat(format);
+                retObj = newTemplate;
+            } else if (destData.getObjectType() == DataObjectType.VOLUME) {
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                if (srcFile.isFile()) {
+                    newVol.setPath(destData.getPath() + File.separator + srcFile.getName());
+                } else {
+                    newVol.setPath(srcData.getPath());
+                }
+                newVol.setSize(getVirtualSize(srcFile, format));
+                retObj = newVol;
+            } else if (destData.getObjectType() == DataObjectType.SNAPSHOT) {
+                SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+                if (srcFile.isFile()) {
+                    newSnapshot.setPath(destData.getPath() + File.separator + destFile.getName());
+                } else {
+                    newSnapshot.setPath(destData.getPath() + File.separator + destFile.getName() + File.separator + destFile.getName());
+                }
+                retObj = newSnapshot;
+            }
+            return new CopyCmdAnswer(retObj);
+            } catch (Exception e) {
+                s_logger.error("failed to copy file" + srcData.getPath(), e);
+                return new CopyCmdAnswer("failed to copy file" + srcData.getPath() + e.toString());
+        }
     }
 
     protected Answer copyFromNfsToS3(CopyCommand cmd) {
@@ -2431,6 +2531,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
 
+    }
+
+    private String getDir(String secUrl, String nfsVersion) {
+        try {
+            URI uri = new URI(secUrl);
+            String dir = mountUri(uri, nfsVersion);
+            return _parent + "/" + dir;
+        } catch (Exception e) {
+            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
     }
 
     @Override

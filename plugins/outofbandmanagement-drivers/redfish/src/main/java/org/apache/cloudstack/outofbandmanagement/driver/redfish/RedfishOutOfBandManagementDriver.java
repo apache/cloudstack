@@ -51,6 +51,10 @@ public class RedfishOutOfBandManagementDriver extends AdapterBase implements Out
     public static final ConfigKey<Boolean> USE_HTTPS = new ConfigKey<Boolean>("Advanced", Boolean.class, "redfish.use.https", "true",
             "Use HTTPS/SSL for all connections.", true, ConfigKey.Scope.Global);
 
+    public static final ConfigKey<Integer> REDFISHT_REQUEST_MAX_RETRIES = new ConfigKey<Integer>("Advanced", Integer.class, "redfish.retries", "2",
+            "Number of retries allowed if a Redfish REST request experiment connection issues. If set to 0 (zero) there will be no retries.", true, ConfigKey.Scope.Global);
+
+
     private static final String HTTP_STATUS_OK = String.valueOf(HttpStatus.SC_OK);
 
     @Override
@@ -74,7 +78,7 @@ public class RedfishOutOfBandManagementDriver extends AdapterBase implements Out
         String username = outOfBandOptions.get(OutOfBandManagement.Option.USERNAME);
         String password = outOfBandOptions.get(OutOfBandManagement.Option.PASSWORD);
         String hostAddress = outOfBandOptions.get(OutOfBandManagement.Option.ADDRESS);
-        RedfishClient redfishClient = new RedfishClient(username, password, USE_HTTPS.value(), IGNORE_SSL_CERTIFICATE.value());
+        RedfishClient redfishClient = new RedfishClient(username, password, USE_HTTPS.value(), IGNORE_SSL_CERTIFICATE.value(), REDFISHT_REQUEST_MAX_RETRIES.value());
 
         RedfishClient.RedfishPowerState powerState = null;
         if (cmd.getPowerOperation() == OutOfBandManagement.PowerOperation.STATUS) {
@@ -114,7 +118,7 @@ public class RedfishOutOfBandManagementDriver extends AdapterBase implements Out
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {IGNORE_SSL_CERTIFICATE, USE_HTTPS};
+        return new ConfigKey<?>[] {IGNORE_SSL_CERTIFICATE, USE_HTTPS, REDFISHT_REQUEST_MAX_RETRIES};
     }
 
 }

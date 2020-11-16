@@ -1,21 +1,21 @@
 /*
  * noVNC: HTML5 VNC client
- * Copyright (C) 2018 The noVNC Authors
+ * Copyright (C) 2019 The noVNC Authors
  * Licensed under MPL 2.0 (see LICENSE.txt)
  *
  * See README.md for usage and integration instructions.
  */
 
-import { init_logging as main_init_logging } from '../core/util/logging.js';
+import { initLogging as mainInitLogging } from '../core/util/logging.js';
 
 // init log level reading the logging HTTP param
-export function init_logging(level) {
+export function initLogging(level) {
     "use strict";
     if (typeof level !== "undefined") {
-        main_init_logging(level);
+        mainInitLogging(level);
     } else {
         const param = document.location.href.match(/logging=([A-Za-z0-9._-]*)/);
-        main_init_logging(param || undefined);
+        mainInitLogging(param || undefined);
     }
 }
 
@@ -115,13 +115,8 @@ export function eraseCookie(name) {
 let settings = {};
 
 export function initSettings() {
-    if (!window.chrome || !window.chrome.storage) {
-        settings = {};
-        return Promise.resolve();
-    }
-
-    return new Promise(resolve => window.chrome.storage.sync.get(resolve))
-        .then((cfg) => { settings = cfg; });
+    settings = {};
+    return Promise.resolve();
 }
 
 // Update the settings cache, but do not write to permanent storage
@@ -134,22 +129,13 @@ export function writeSetting(name, value) {
     "use strict";
     if (settings[name] === value) return;
     settings[name] = value;
-    if (window.chrome && window.chrome.storage) {
-        window.chrome.storage.sync.set(settings);
-    } else {
-        localStorage.setItem(name, value);
-    }
 }
 
 export function readSetting(name, defaultValue) {
     "use strict";
     let value;
-    if ((name in settings) || (window.chrome && window.chrome.storage)) {
-        value = settings[name];
-    } else {
-        value = localStorage.getItem(name);
-        settings[name] = value;
-    }
+    value = settings[name];
+
     if (typeof value === "undefined") {
         value = null;
     }
@@ -169,11 +155,6 @@ export function eraseSetting(name) {
     // between this delete and the next read, it could lead to an unexpected
     // value change.
     delete settings[name];
-    if (window.chrome && window.chrome.storage) {
-        window.chrome.storage.sync.remove(name);
-    } else {
-        localStorage.removeItem(name);
-    }
 }
 
 export function injectParamIfMissing(path, param, value) {
@@ -184,7 +165,7 @@ export function injectParamIfMissing(path, param, value) {
     const elem = document.createElement('a');
     elem.href = path;
 
-    const param_eq = encodeURIComponent(param) + "=";
+    const paramEq = encodeURIComponent(param) + "=";
     let query;
     if (elem.search) {
         query = elem.search.slice(1).split('&');
@@ -192,8 +173,8 @@ export function injectParamIfMissing(path, param, value) {
         query = [];
     }
 
-    if (!query.some(v => v.startsWith(param_eq))) {
-        query.push(param_eq + encodeURIComponent(value));
+    if (!query.some(v => v.startsWith(paramEq))) {
+        query.push(paramEq + encodeURIComponent(value));
         elem.search = "?" + query.join("&");
     }
 

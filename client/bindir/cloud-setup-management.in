@@ -45,13 +45,14 @@ if __name__ == '__main__':
     try:
         syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
     except UnknownSystemException:
-        print(("Error: CloudStack failed to detect your "
-                "operating system. Exiting."), file=sys.stderr)
+        print("Error: CloudStack failed to detect your "
+                "operating system. Exiting.", file=sys.stderr)
         sys.exit(1)
     try:
         syscfg.registerService(cloudManagementConfig)
         syscfg.config()
         print("CloudStack Management Server setup is Done!")
+        print("Please ensure the following ports are open for the management server to function properly : 8080 8250 8443 9090")
     except (CloudRuntimeException, CloudInternalException) as e:
         print(e)
         print("Try to restore your system:")

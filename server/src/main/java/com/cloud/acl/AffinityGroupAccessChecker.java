@@ -80,8 +80,8 @@ public class AffinityGroupAccessChecker extends DomainChecker {
                   //check if the group belongs to a project
                     User user = CallContext.current().getCallingUser();
                     ProjectVO project = _projectDao.findByProjectAccountId(group.getAccountId());
-                    ProjectAccount userProjectAccount = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
                     if (project != null) {
+                        ProjectAccount userProjectAccount = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
                         if (userProjectAccount != null) {
                             if (AccessType.ModifyProject.equals(accessType) && _projectAccountDao.canUserModifyProject(project.getId(), user.getAccountId(), user.getId())) {
                                 return true;
