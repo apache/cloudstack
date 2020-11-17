@@ -1843,6 +1843,8 @@ class TestDomainForceRemove(cloudstackTestCase):
         )
         self.cleanup.append(self.account_2)
 
+        vm_1 = None
+        vm_2 = None
         try:
             self.debug("Creating a tiny service offering for VM deployment")
             self.service_offering = ServiceOffering.create(
@@ -1944,6 +1946,10 @@ class TestDomainForceRemove(cloudstackTestCase):
         try:
             domain.delete(self.apiclient, cleanup=True)
             self.cleanup.remove(domain)
+            if vm_1 != None:
+                self.cleanup.remove(vm_1)
+            if vm_2 != None:
+                self.cleanup.remove(vm_2)
         except Exception as e:
             self.debug("Waiting for account.cleanup.interval" +
                        " to cleanup any remaining resouces")
