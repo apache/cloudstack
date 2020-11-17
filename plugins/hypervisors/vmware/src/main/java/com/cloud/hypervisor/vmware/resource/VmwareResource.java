@@ -7399,7 +7399,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // Specific section for MigrateVmWithStorageCommand
-            if (vmTo != null && targetHyperHost != null) {
+            if (vmTo != null) {
                 // Prepare network at target before migration
                 NicTO[] nics = vmTo.getNics();
                 for (NicTO nic : nics) {

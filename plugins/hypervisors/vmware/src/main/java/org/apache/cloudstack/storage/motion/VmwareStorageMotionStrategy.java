@@ -193,8 +193,12 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         ScopeType targetScopeType = destData.getDataStore().getScope().getScopeType();
         Long hostId = null;
         String hostGuidInTargetCluster = null;
-        // Find Volume source cluster and select any Vmware hypervisor host to attach worker VM
         if (ScopeType.CLUSTER.equals(sourceScopeType)) {
+            // Find Volume source cluster and select any Vmware hypervisor host to attach worker VM
+            hostId = findSuitableHostIdForWorkerVmPlacement(sourcePool.getClusterId());
+            if (hostId == null) {
+                throw new CloudRuntimeException("Offline Migration failed, unable to find suitable host for worker VM placement in the cluster of storage pool: " + sourcePool.getName());
+            }
             if (ScopeType.CLUSTER.equals(targetScopeType) && !sourcePool.getClusterId().equals(targetPool.getClusterId())) {
                 // Without host vMotion might fail between non-shared storages with error similar to,
                 // https://kb.vmware.com/s/article/1003795
