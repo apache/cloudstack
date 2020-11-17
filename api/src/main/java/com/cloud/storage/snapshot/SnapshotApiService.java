@@ -43,11 +43,11 @@ public interface SnapshotApiService {
     Pair<List<? extends Snapshot>, Integer> listSnapshots(ListSnapshotsCmd cmd);
 
     /**
-     * Place a snapshot into a state of error;
+     * Set the removed flag on a snapshot;
      *
      * @param snapshotId
      */
-    void markFailedSnapshot(long snapshotId);
+    void markRemovedSnapshot(long snapshotId);
 
     /**
      * Delete specified snapshot from the specified. If no other policies are assigned it calls destroy snapshot. This

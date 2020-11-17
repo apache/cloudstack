@@ -553,7 +553,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    public void markFailedSnapshot(long snapshotId) {
+    public void markRemovedSnapshot(long snapshotId) {
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify parameters
@@ -564,9 +564,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
-
-        snapshotCheck.setState(Snapshot.State.Error);
-        _snapshotDao.update(snapshotId, snapshotCheck);
         // Setting removed to prevent record from being deleted by garbage collection.
         _snapshotDao.remove(snapshotId);
 
