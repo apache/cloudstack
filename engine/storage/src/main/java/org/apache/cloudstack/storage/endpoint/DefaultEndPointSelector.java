@@ -132,27 +132,13 @@ public class DefaultEndPointSelector implements EndPointSelector {
             } else if (scope.getScopeType() == ScopeType.CLUSTER) {
                 sbuilder.append(" and h.cluster_id = ");
                 sbuilder.append(scope.getScopeId());
-                DedicatedResourceVO dedicatedHost = dedicatedResourceDao.findByClusterId(scope.getScopeId());
-                if (dedicatedHost != null){
-                    List<HostVO> clusterHosts = hostDao.findByClusterId(scope.getScopeId());
-                    for (HostVO hostVO: clusterHosts){
-                        dedicatedHosts.add(hostVO.getId());
-                    }
-                }
+                dedicatedHosts = dedicatedResourceDao.findHostsByCluster(scope.getScopeId());
             } else if (scope.getScopeType() == ScopeType.ZONE) {
                 sbuilder.append(" and h.data_center_id = ");
                 sbuilder.append(scope.getScopeId());
-                DedicatedResourceVO dedicatedHost = dedicatedResourceDao.findByZoneId(scope.getScopeId());
-                if (dedicatedHost != null){
-                    List<HostVO> zoneHosts = hostDao.findByDataCenterId(scope.getScopeId());
-                    for (HostVO hostVO: zoneHosts){
-                        dedicatedHosts.add(hostVO.getId());
-                    }
-                }
+                dedicatedHosts = dedicatedResourceDao.findHostsByZone(scope.getScopeId());
             }
-        }
-        // We didn't find any hosts specifically dedicated to a zone or cluster
-        if (dedicatedHosts.size() == 0) {
+        } else {
             dedicatedHosts = dedicatedResourceDao.listAllHosts();
         }
 
@@ -210,10 +196,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
         if (dedicatedHosts.size() > 0) {
             Collections.shuffle(dedicatedHosts); // Randomize dedicated hosts as well.
             sbuilder.append("field(t.id, ");
-            Iterator<Long> hostIt = dedicatedHosts.iterator();
-            while (hostIt.hasNext()) { // put dedicated hosts at the end of the result set
-                sbuilder.append("'" + hostIt.next() + "'");
-                if (hostIt.hasNext()) {
+            int hostIndex = 0;
+            for (Long hostId: dedicatedHosts) { // put dedicated hosts at the end of the result set
+                sbuilder.append("'" + hostId + "'");
+                hostIndex++;
+                if (hostIndex < dedicatedHosts.size()){
                     sbuilder.append(",");
                 }
             }
