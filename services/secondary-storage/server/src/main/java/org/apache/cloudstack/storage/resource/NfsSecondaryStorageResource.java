@@ -46,6 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1313,6 +1314,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     srcDir = new File(srcFile.getParent());
                 } else if (!srcFile.isDirectory()) {
                     srcDir = new File(srcFile.getParent());
+                } else if (srcFile.isDirectory() && Arrays.stream(srcData.getPath().split(File.separator)).count() == 4) {
+                    destFile = new File(destFile.getPath(), srcFile.getName());
                 }
                 File destDir = null;
                 if (destFile.isFile()) {
