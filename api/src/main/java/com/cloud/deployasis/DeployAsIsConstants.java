@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,19 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package com.cloud.deployasis;
 
-package com.cloud.agent.api.storage;
+public interface DeployAsIsConstants {
 
-public interface OVFProperty {
+    String PROPERTY_PREFIX = "property-";
+    String NETWORK_PREFIX = "network-";
+    String CONFIGURATION_PREFIX = "configuration-";
+    String HARDWARE_ITEM_PREFIX = "hardware-item-";
+    String EULA_PREFIX = "eula-";
 
-    Long getTemplateId();
-    String getKey();
-    String getType();
-    String getValue();
-    String getQualifiers();
-    Boolean isUserConfigurable();
-    String getLabel();
-    String getDescription();
-    Boolean isPassword();
+    String DEFAULT_GUEST_OS_DEPLOY_AS_IS = "OVF Configured OS";
 }

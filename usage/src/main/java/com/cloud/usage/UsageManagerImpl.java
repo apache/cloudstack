@@ -278,7 +278,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.error("Unhandled exception configuring UsageManger", e);
             throw new ConfigurationException("Unhandled exception configuring UsageManager " + e.toString());
         }
-        _pid = Integer.parseInt(System.getProperty("pid"));
+
+        try {
+            _pid = (int) ProcessHandle.current().pid();
+        } catch (Exception e) {
+            String msg = String.format("Unable to get process Id for %s!", e.toString());
+            s_logger.debug(msg);
+            throw new ConfigurationException(msg);
+        }
         return true;
     }
 
@@ -1410,8 +1417,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             long sourceNat = event.getSize();
             boolean isSourceNat = (sourceNat == 1) ? true : false;
             boolean isSystem = (event.getTemplateId() == null || event.getTemplateId() == 0) ? false : true;
+            final UsageEventDetailsVO hiddenDetail = _usageEventDetailsDao.findDetail(event.getId(), "hidden");
+            final boolean isHidden = hiddenDetail != null && "true".equals(hiddenDetail.getValue());
             UsageIPAddressVO ipAddressVO =
-                    new UsageIPAddressVO(id, event.getAccountId(), acct.getDomainId(), zoneId, ipAddress, isSourceNat, isSystem, event.getCreateDate(), null);
+                    new UsageIPAddressVO(id, event.getAccountId(), acct.getDomainId(), zoneId, ipAddress, isSourceNat, isSystem, event.getCreateDate(), null, isHidden);
             _usageIPAddressDao.persist(ipAddressVO);
         } else if (EventTypes.EVENT_NET_IP_RELEASE.equals(event.getType())) {
             SearchCriteria<UsageIPAddressVO> sc = _usageIPAddressDao.createSearchCriteria();

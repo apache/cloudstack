@@ -245,8 +245,8 @@
                                             args.$select.change(function() {
                                                 var $form = $(this).closest('form');
                                                 if ($(this).val() == "VMware") {
-                                                    $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
-                                                    $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
@@ -1336,9 +1336,15 @@
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid,
+                                        templatetype: args.data.templatetype,
                                         passwordenabled: (args.data.passwordenabled == "on"),
                                         isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
                                     };
+                                    if (args.data.isrouting != null) {
+                                        $.extend(data, {
+                                            isrouting: (args.data.isrouting === 'on')
+                                        });
+                                    }
                                     $.ajax({
                                         url: createURL('updateTemplate'),
                                         data: data,
@@ -1823,18 +1829,7 @@
                             }
                         },
                         tabFilter: function (args) {
-                            $.ajax({
-                                url: createURL("listTemplateOvfProperties&id=" + args.context.templates[0].id),
-                                dataType: "json",
-                                async: false,
-                                success: function(json) {
-                                    ovfprops = json.listtemplateovfpropertiesresponse.ovfproperty;
-                                }
-                            });
                             var hiddenTabs = [];
-                            if (ovfprops == null || ovfprops.length === 0) {
-                                hiddenTabs.push("ovfpropertiestab");
-                            }
                             return hiddenTabs;
                         },
                         tabs: {
@@ -1846,7 +1841,7 @@
                                     if (isAdmin()) {
                                         hiddenFields = [];
                                     } else {
-                                        hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
+                                        hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus', 'isrouting'];
                                     }
 
                                     if ('templates' in args.context && args.context.templates[0].hypervisor != 'XenServer') {
@@ -1878,6 +1873,9 @@
                                         }
                                     }
 
+                                    if (!('templates' in args.context && args.context.templates[0].domainid == g_domainid && args.context.templates[0].account == g_account) && !isAdmin()) {
+                                        hiddenFields.push('url');
+                                    }
                                     return hiddenFields;
                                 },
 
@@ -1991,6 +1989,19 @@
                                         }
                                     },
 
+                                    isrouting: {
+                                        label: 'label.routing',
+                                        isBoolean: true,
+                                        isEditable: function() {
+                                            if (isAdmin()) {
+                                                return true;
+                                            } else {
+                                                return false;
+                                            }
+                                        },
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+
                                     crossZones: {
                                         label: 'label.cross.zones',
                                         converter: cloudStack.converters.toBooleanText
@@ -2013,9 +2024,45 @@
                                         label: 'label.created',
                                         converter: cloudStack.converters.toLocalDate
                                     },
+                                    url: {
+                                        label: 'label.url'
+                                    },
 
                                     templatetype: {
-                                        label: 'label.type'
+                                        label: 'label.type',
+                                        isEditable: function() {
+                                            if (isAdmin()) {
+                                                return true;
+                                            } else {
+                                                return false;
+                                            }
+                                        },
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'ROUTING',
+                                                description: 'ROUTING'
+                                            });
+                                            items.push({
+                                                id: 'SYSTEM',
+                                                description: 'SYSTEM'
+                                            });
+                                            items.push({
+                                                id: 'BUILTIN',
+                                                description: 'BUILTIN'
+                                            });
+                                            items.push({
+                                                id: 'PERHOST',
+                                                description: 'PERHOST'
+                                            });
+                                            items.push({
+                                                id: 'USER',
+                                                description: 'USER'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
                                     },
 
                                     id: {
@@ -2044,6 +2091,11 @@
                                                     jsonObj.xenserverToolsVersion61plus = true;
                                                 else
                                                     jsonObj.xenserverToolsVersion61plus = false;
+                                            }
+                                            if (jsonObj.templatetype == 'ROUTING') {
+                                                jsonObj.isrouting = true;
+                                            } else {
+                                                jsonObj.isrouting = false;
                                             }
 
                                             args.response.success({
@@ -2605,57 +2657,7 @@
 										}
 									}
 								})
-							},
-
-                            /**
-                             * OVF properties tab (only displayed when OVF properties are available)
-                             */
-                            ovfpropertiestab: {
-                                title: 'label.ovf.properties',
-                                listView: {
-                                    id: 'ovfproperties',
-                                    fields: {
-                                        label: {
-                                            label: 'label.label'
-                                        },
-                                        description: {
-                                            label: 'label.description'
-                                        },
-                                        value: {
-                                            label: 'label.value'
-                                        }
-                                    },
-                                    hideSearchBar: true,
-                                    dataProvider: function(args) {
-                                        $.ajax({
-                                            url: createURL("listTemplateOvfProperties"),
-                                            data: {
-                                                id: args.context.templates[0].id
-                                            },
-                                            success: function(json) {
-                                                var ovfprops = json.listtemplateovfpropertiesresponse.ovfproperty;
-                                                var listDetails = [];
-                                                for (index in ovfprops){
-                                                    var prop = ovfprops[index];
-                                                    var det = {};
-                                                    det['label'] = prop['label'];
-                                                    det['description'] = prop['description'];
-                                                    det['value'] = prop['value'];
-                                                    listDetails.push(det);
-                                                }
-                                                args.response.success({
-                                                    data: listDetails
-                                                });
-                                            },
-
-                                            error: function(json) {
-                                                args.response.error(parseXMLHttpResponse(json));
-                                            }
-                                        });
-
-                                    }
-                                }
-                            }
+							}
 						}
                     }
                 }
@@ -3236,6 +3238,7 @@
                                         //zoneid: args.context.isos[0].zoneid, //can't update template/ISO in only one zone. It always get updated in all zones.
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
+                                        bootable: (args.data.bootable == "on"),
                                         ostypeid: args.data.ostypeid
                                     };
                                     $.ajax({
@@ -3723,6 +3726,8 @@
                                     },
                                     bootable: {
                                         label: 'label.bootable',
+                                        isBoolean: true,
+                                        isEditable: true,
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     ispublic: {
@@ -3783,6 +3788,9 @@
                                     created: {
                                         label: 'label.created',
                                         converter: cloudStack.converters.toLocalDate
+                                    },
+                                    url: {
+                                        label: 'label.url'
                                     }
                                 }],
 
@@ -4118,7 +4126,7 @@
 
         // "Edit Template", "Copy Template", "Create VM"
         if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)) //if neither root-admin, nor the same account, nor the same project
-            || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
+            || jsonObj.isready == false) {
             //do nothing
         } else {
             allowedActions.push("edit");
@@ -4128,7 +4136,7 @@
 
         // "Download Template" , "Update Template Permissions"
         if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id))) //if neither root-admin, nor the same account, nor the same project
-            || (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
+            || (jsonObj.isready == false)) {
             //do nothing
         } else {
             if (jsonObj.isextractable){

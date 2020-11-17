@@ -27,7 +27,7 @@ public interface TemplateDataFactory {
 
     TemplateInfo getReadyTemplateOnImageStore(long templateId, Long zoneId);
 
-    TemplateInfo getTemplate(DataObject obj, DataStore store);
+    TemplateInfo getTemplate(DataObject obj, DataStore store, String configuration);
 
     TemplateInfo getTemplate(long templateId, DataStoreRole storeRole);
 
@@ -40,4 +40,6 @@ public interface TemplateDataFactory {
     TemplateInfo getReadyBypassedTemplateOnPrimaryStore(long templateId, Long poolId, Long hostId);
 
     boolean isTemplateMarkedForDirectDownload(long templateId);
+
+    TemplateInfo getTemplateOnPrimaryStorage(long templateId, DataStore store, String configuration);
 }

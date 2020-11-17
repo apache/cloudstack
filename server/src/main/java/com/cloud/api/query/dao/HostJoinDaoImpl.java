@@ -171,7 +171,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setMemoryTotal(host.getTotalMemory());
                 Float totalMemorywithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
-                hostResponse.setMemWithOverprovisioning(totalMemorywithOverprovisioning.toString());
+                hostResponse.setMemWithOverprovisioning(decimalFormat.format(totalMemorywithOverprovisioning));
                 hostResponse.setMemoryAllocated(mem);
 
                 String hostTags = host.getTag();
@@ -192,7 +192,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
                 hostResponse.setCpuAllocated(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
-                hostResponse.setCpuWithOverprovisioning(Float.toString(cpuWithOverprovisioning));
+                hostResponse.setCpuWithOverprovisioning(decimalFormat.format(cpuWithOverprovisioning));
             }
 
             if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)) {
@@ -320,7 +320,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setMemoryTotal(host.getTotalMemory());
                 Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
-                hostResponse.setMemWithOverprovisioning(memWithOverprovisioning.toString());
+                hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
                 hostResponse.setMemoryAllocated(decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%");
 
                 String hostTags = host.getTag();
@@ -341,7 +341,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
                 hostResponse.setCpuAllocated(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
-                hostResponse.setCpuWithOverprovisioning(Float.toString(cpuWithOverprovisioning));
+                hostResponse.setCpuWithOverprovisioning(decimalFormat.format(cpuWithOverprovisioning));
             }
 
             if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)) {

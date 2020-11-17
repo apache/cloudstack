@@ -240,8 +240,8 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         if validateList(templates)[0] != PASS:
             details = None
-            if hypervisor in ["vmware"] and "details" in cks_template:
-                details = cks_template["details"]
+            if hypervisor in ["vmware"]:
+                details = [{"keyboard": "us"}]
             template = Template.register(cls.apiclient, cks_template, zoneid=cls.zone.id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
             template.download(cls.apiclient)
             return template
@@ -749,9 +749,9 @@ class TestKubernetesCluster(cloudstackTestCase):
                         self.deleteKubernetesCluster(cluster_id)
                     else:
                         forceDeleted = True
-                        for cluster_vm_id in cluster.virtualmachineids:
+                        for cluster_vm in cluster.virtualmachines:
                             cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
-                            cmd.id = cluster_vm_id
+                            cmd.id = cluster_vm.id
                             cmd.expunge = True
                             self.apiclient.destroyVirtualMachine(cmd)
                         cmd = deleteNetwork.deleteNetworkCmd()

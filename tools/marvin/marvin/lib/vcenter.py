@@ -114,6 +114,12 @@ class Vcenter():
             for network in obj.network:
                 vm_details['networks'].append({'name': network.name})
         vm_details['raw'] = obj
+        vm_details['properties'] = {}
+        config = obj.config
+        if config and config.vAppConfig:
+            for prop in config.vAppConfig.property:
+                vm_details['properties'][prop.id] = prop.value
+
         return vm_details
 
     def parse_details(self, obj, vimtype):

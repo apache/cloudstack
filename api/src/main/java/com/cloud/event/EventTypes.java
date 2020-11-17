@@ -619,6 +619,9 @@ public class EventTypes {
     public static final String EVENT_POD_ROLLING_MAINTENANCE = "POD.ROLLING.MAINTENANCE";
     public static final String EVENT_ZONE_ROLLING_MAINTENANCE = "ZONE.ROLLING.MAINTENANCE";
 
+    // Storage Policies
+    public static final String EVENT_IMPORT_VCENTER_STORAGE_POLICIES = "IMPORT.VCENTER.STORAGE.POLICIES";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -1025,6 +1028,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_POD_ROLLING_MAINTENANCE, PodResponse.class);
         entityEventDetails.put(EVENT_CLUSTER_ROLLING_MAINTENANCE, ClusterResponse.class);
         entityEventDetails.put(EVENT_HOST_ROLLING_MAINTENANCE, HostResponse.class);
+
+        entityEventDetails.put(EVENT_IMPORT_VCENTER_STORAGE_POLICIES, "StoragePolicies");
 
         entityEventDetails.put(EVENT_IMAGE_STORE_DATA_MIGRATE, ImageStore.class);
     }

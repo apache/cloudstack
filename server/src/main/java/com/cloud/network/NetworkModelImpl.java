@@ -34,6 +34,7 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -115,7 +116,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -2207,15 +2207,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
-        if (!NetUtils.isValidIp6(startIPv6)) {
-            throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
-        }
-        if (!NetUtils.isValidIp6(endIPv6)) {
-            throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
-        }
 
-        if (!(ip6Gateway != null && ip6Cidr != null)) {
-            throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
+        if (StringUtils.isBlank(ip6Gateway) || StringUtils.isBlank(ip6Cidr)) {
+            throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined for an IPv6 network work properly");
         }
 
         if (!NetUtils.isValidIp6(ip6Gateway)) {
@@ -2224,14 +2218,27 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (!NetUtils.isValidIp6Cidr(ip6Cidr)) {
             throw new InvalidParameterValueException("Invalid ip6cidr");
         }
-        if (!NetUtils.isIp6InNetwork(startIPv6, ip6Cidr)) {
-            throw new InvalidParameterValueException("startIPv6 is not in ip6cidr indicated network!");
-        }
-        if (!NetUtils.isIp6InNetwork(endIPv6, ip6Cidr)) {
-            throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network!");
-        }
+
         if (!NetUtils.isIp6InNetwork(ip6Gateway, ip6Cidr)) {
             throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network!");
+        }
+
+        if (StringUtils.isNotBlank(startIPv6)) {
+            if (!NetUtils.isValidIp6(startIPv6)) {
+                throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
+            }
+            if (!NetUtils.isIp6InNetwork(startIPv6, ip6Cidr)) {
+                throw new InvalidParameterValueException("startIPv6 is not in ip6cidr indicated network!");
+            }
+        }
+
+        if (StringUtils.isNotBlank(endIPv6)) {
+            if (!NetUtils.isValidIp6(endIPv6)) {
+                throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
+            }
+            if (!NetUtils.isIp6InNetwork(endIPv6, ip6Cidr)) {
+                throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network!");
+            }
         }
 
         int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);

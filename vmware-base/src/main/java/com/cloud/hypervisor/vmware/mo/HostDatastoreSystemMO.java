@@ -16,11 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DynamicProperty;
@@ -35,12 +31,18 @@ import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
+import com.vmware.vim25.RetrieveOptions;
+import com.vmware.vim25.RetrieveResult;
+import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VmfsDatastoreCreateSpec;
 import com.vmware.vim25.VmfsDatastoreExpandSpec;
 import com.vmware.vim25.VmfsDatastoreOption;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class HostDatastoreSystemMO extends BaseMO {
 
@@ -53,12 +55,47 @@ public class HostDatastoreSystemMO extends BaseMO {
     }
 
     public ManagedObjectReference findDatastore(String name) throws Exception {
+        ManagedObjectReference morDatastore = findSpecificDatastore(name);
+        if (morDatastore == null) {
+            morDatastore = findDatastoreCluster(name);
+        }
+        return morDatastore;
+    }
+
+    public ManagedObjectReference findSpecificDatastore(String name) throws Exception {
         // added Apache CloudStack specific name convention, we will use custom field "cloud.uuid" as datastore name as well
         CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, _context.getServiceContent().getCustomFieldsManager());
         int key = cfmMo.getCustomFieldKey("Datastore", CustomFieldConstants.CLOUD_UUID);
         assert (key != 0);
 
         List<ObjectContent> ocs = getDatastorePropertiesOnHostDatastoreSystem(new String[] {"name", String.format("value[%d]", key)});
+        if (ocs != null) {
+            for (ObjectContent oc : ocs) {
+                if (oc.getPropSet().get(0).getVal().equals(name))
+                    return oc.getObj();
+
+                if (oc.getPropSet().size() > 1) {
+                    DynamicProperty prop = oc.getPropSet().get(1);
+                    if (prop != null && prop.getVal() != null) {
+                        if (prop.getVal() instanceof CustomFieldStringValue) {
+                            String val = ((CustomFieldStringValue)prop.getVal()).getValue();
+                            if (val.equalsIgnoreCase(name))
+                                return oc.getObj();
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public ManagedObjectReference findDatastoreCluster(String name) throws Exception {
+        // added Apache CloudStack specific name convention, we will use custom field "cloud.uuid" as datastore name as well
+        CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, _context.getServiceContent().getCustomFieldsManager());
+        int key = cfmMo.getCustomFieldKey("StoragePod", CustomFieldConstants.CLOUD_UUID);
+        assert (key != 0);
+
+        List<ObjectContent> ocs = getDatastoreClusterPropertiesOnHostDatastoreSystem(new String[] {"name", String.format("value[%d]", key)});
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
                 if (oc.getPropSet().get(0).getVal().equals(name))
@@ -251,4 +288,90 @@ public class HostDatastoreSystemMO extends BaseMO {
 
         return _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
     }
+
+    public List<ObjectContent> getDatastoreClusterPropertiesOnHostDatastoreSystem(String[] propertyPaths) throws Exception {
+        ManagedObjectReference retVal = null;
+        // Create Property Spec
+        PropertySpec propertySpec = new PropertySpec();
+        propertySpec.setAll(Boolean.FALSE);
+        propertySpec.setType("StoragePod");
+        propertySpec.getPathSet().addAll(Arrays.asList(propertyPaths));
+
+        // Now create Object Spec
+        ObjectSpec objectSpec = new ObjectSpec();
+        objectSpec.setObj(getContext().getRootFolder());
+        objectSpec.setSkip(Boolean.TRUE);
+        objectSpec.getSelectSet().addAll(
+                Arrays.asList(getStorageTraversalSpec()));
+
+        // Create PropertyFilterSpec using the PropertySpec and ObjectPec
+        // created above.
+        PropertyFilterSpec propertyFilterSpec = new PropertyFilterSpec();
+        propertyFilterSpec.getPropSet().add(propertySpec);
+        propertyFilterSpec.getObjectSet().add(objectSpec);
+
+        List<PropertyFilterSpec> listpfs = new ArrayList<PropertyFilterSpec>();
+        listpfs.add(propertyFilterSpec);
+        return retrievePropertiesAllObjects(listpfs);
+    }
+
+    private SelectionSpec[] getStorageTraversalSpec() {
+        // create a traversal spec that start from root folder
+
+        SelectionSpec ssFolders = new SelectionSpec();
+        ssFolders.setName("visitFolders");
+
+        TraversalSpec datacenterSpec = new TraversalSpec();
+        datacenterSpec.setName("dcTodf");
+        datacenterSpec.setType("Datacenter");
+        datacenterSpec.setPath("datastoreFolder");
+        datacenterSpec.setSkip(Boolean.FALSE);
+        datacenterSpec.getSelectSet().add(ssFolders);
+
+        TraversalSpec visitFolder = new TraversalSpec();
+        visitFolder.setType("Folder");
+        visitFolder.setName("visitFolders");
+        visitFolder.setPath("childEntity");
+        visitFolder.setSkip(Boolean.FALSE);
+
+        List<SelectionSpec> ssSpecList = new ArrayList<SelectionSpec>();
+        ssSpecList.add(datacenterSpec);
+        ssSpecList.add(ssFolders);
+
+        visitFolder.getSelectSet().addAll(ssSpecList);
+        return (new SelectionSpec[]{visitFolder});
+    }
+
+    private List<ObjectContent> retrievePropertiesAllObjects(
+            List<PropertyFilterSpec> listpfs) throws Exception {
+
+        RetrieveOptions propObjectRetrieveOpts = new RetrieveOptions();
+
+        List<ObjectContent> listobjcontent = new ArrayList<ObjectContent>();
+
+        RetrieveResult rslts =
+                getContext().getService().retrievePropertiesEx(getContext().getServiceContent().getPropertyCollector(), listpfs,
+                        propObjectRetrieveOpts);
+        if (rslts != null && rslts.getObjects() != null
+                && !rslts.getObjects().isEmpty()) {
+            listobjcontent.addAll(rslts.getObjects());
+        }
+        String token = null;
+        if (rslts != null && rslts.getToken() != null) {
+            token = rslts.getToken();
+        }
+        while (token != null && !token.isEmpty()) {
+            rslts =
+                    getContext().getService().continueRetrievePropertiesEx(getContext().getServiceContent().getPropertyCollector(), token);
+            token = null;
+            if (rslts != null) {
+                token = rslts.getToken();
+                if (rslts.getObjects() != null && !rslts.getObjects().isEmpty()) {
+                    listobjcontent.addAll(rslts.getObjects());
+                }
+            }
+        }
+        return listobjcontent;
+    }
+
 }
