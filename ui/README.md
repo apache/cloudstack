@@ -120,6 +120,20 @@ Run Primate:
 
     docker run -ti --rm -p 8080:80 -v $(pwd)/nginx:/etc/nginx/conf.d:ro cloudstack-primate:latest
 
+### Packaging
+
+The following is tested to work on any Ubuntu 18.04/20.04 base installation or
+docker container:
+
+    # Install nodejs (lts)
+    curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+    sudo apt-get install -y nodejs debhelper rpm
+    # Install build tools
+    npm install -g @vue/cli webpack eslint
+    # Clone this repository and run package.sh
+    cd <cloned-repository>/packaging
+    bash -x package.sh
+
 ## Documentation
 
 - VueJS Guide: https://vuejs.org/v2/guide/
