@@ -43,6 +43,8 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
 
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+
 public class VirtualNetworkApplianceFactory {
 
     @Inject
@@ -90,6 +92,9 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     private NicProfileHelper _nicProfileHelper;
+
+    @Inject
+    private NetworkTopologyContext _networkTopologyContext;
 
     public NetworkModel getNetworkModel() {
         return _networkModel;
@@ -173,5 +178,9 @@ public class VirtualNetworkApplianceFactory {
 
     public NicProfileHelper getNicProfileHelper() {
         return _nicProfileHelper;
+    }
+
+    public NetworkTopologyContext getNetworkTopologyContext() {
+        return _networkTopologyContext;
     }
 }
