@@ -38,6 +38,8 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
@@ -159,6 +161,8 @@ public class NicPlugInOutRules extends RuleApplier {
 
         VpcManager vpcMgr = visitor.getVirtualNetworkApplianceFactory().getVpcMgr();
         NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
+        IPAddressDao ipAddressDao = visitor.getVirtualNetworkApplianceFactory().getIpAddressDao();
+
         // find out nics to unplug
         for (PublicIpAddress ip : _ipAddresses) {
             long publicNtwkId = ip.getNetworkId();
@@ -170,10 +174,23 @@ public class NicPlugInOutRules extends RuleApplier {
             }
 
             if (ip.getState() == IpAddress.State.Releasing) {
-                Nic nic = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), ip.getAddress().addr());
+                NicVO nic = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), ip.getAddress().addr());
                 if (nic != null) {
-                    nicsToUnplug.put(ip.getVlanTag(), ip);
-                    s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
+                    final List<IPAddressVO> allIps = ipAddressDao.listByAssociatedVpc(ip.getVpcId(), null);
+                    boolean ipUpdated = false;
+                    for (IPAddressVO allIp : allIps) {
+                        if (allIp.getId() != ip.getId() && allIp.getVlanId() == ip.getVlanId() && allIp.getVmIp() != null) {
+                            s_logger.debug("Updating the nic " + nic + " with new ip address " + allIp.getAddress().addr());
+                            nic.setIPv4Address(allIp.getAddress().addr());
+                            nicDao.update(nic.getId(), nic);
+                            ipUpdated = true;
+                            break;
+                        }
+                    }
+                    if (!ipUpdated) {
+                        nicsToUnplug.put(ip.getVlanTag(), ip);
+                        s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
+                    }
                 }
             }
         }
