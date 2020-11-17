@@ -1675,12 +1675,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 final UserVmVO userVm = _userVmDao.findById(vm.getId());
                 if (vm.getType() == VirtualMachine.Type.User) {
-                    final UserVmVO userVm = _userVmDao.findById(vm.getId());
                     if (userVm != null){
                         userVm.setPowerState(PowerState.PowerOff);
                         _userVmDao.update(userVm.getId(), userVm);
                     }
-                } 
+                }
             } else {
                 s_logger.error("Invalid answer received in response to a StopCommand for " + vm.getInstanceName());
                 return false;
