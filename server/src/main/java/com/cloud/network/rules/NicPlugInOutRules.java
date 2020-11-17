@@ -29,6 +29,8 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.manager.Commands;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -52,6 +54,9 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
+
+import org.apache.cloudstack.network.topology.NetworkTopology;
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 
 public class NicPlugInOutRules extends RuleApplier {
 
@@ -77,6 +82,28 @@ public class NicPlugInOutRules extends RuleApplier {
 
         NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
         VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
+        NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
+
+        // de-associate IPs before unplugging nics
+        if (!nicsToUnplug.isEmpty()) {
+            NetworkTopologyContext networkTopologyContext = visitor.getVirtualNetworkApplianceFactory().getNetworkTopologyContext();
+            final DataCenterDao dcDao = visitor.getVirtualNetworkApplianceFactory().getDcDao();
+            final DataCenterVO dcVO = dcDao.findById(router.getDataCenterId());
+            final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            final String typeString = "vpc ip association before unplugging nics";
+            final boolean isPodLevelException = false;
+            final boolean failWhenDisconnect = false;
+            final Long podId = null;
+            final VpcIpAssociationRules ipAssociationRules = new VpcIpAssociationRules(_network, _ipAddresses);
+            final boolean result = networkTopology.applyRules(_network, router, typeString, isPodLevelException, podId, failWhenDisconnect,
+                    new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
+            if (!result) {
+                s_logger.warn("Failed to de-associate IPs before unplugging nics");
+                return false;
+            }
+        }
+
         // 1) Unplug the nics
         for (Entry<String, PublicIpAddress> entry : nicsToUnplug.entrySet()) {
             Network publicNtwk = null;
