@@ -134,4 +134,10 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         return listBy(sc);
     }
 
+    @Override
+    public List<ImageStoreVO> listStoresByZoneId(long zoneId) {
+        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
+        sc.addAnd("dcId", SearchCriteria.Op.EQ, zoneId);
+        return listBy(sc);
+    }
 }
