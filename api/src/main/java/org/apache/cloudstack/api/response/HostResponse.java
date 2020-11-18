@@ -138,7 +138,7 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
-    private long memoryAllocated;
+    private String memoryAllocated;
 
     @SerializedName("memoryused")
     @Param(description = "the amount of the host's memory currently used")
@@ -353,7 +353,7 @@ public class HostResponse extends BaseResponse {
         this.memWithOverprovisioning=memWithOverprovisioning;
     }
 
-    public void setMemoryAllocated(long memoryAllocated) {
+    public void setMemoryAllocated(String memoryAllocated) {
         this.memoryAllocated = memoryAllocated;
     }
 
