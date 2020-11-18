@@ -74,6 +74,7 @@ import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.ClusterConfigInfoEx;
+import com.vmware.vim25.ComputeResourceConfigInfo;
 import com.vmware.vim25.ConcurrentAccessFaultMsg;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortSetting;
@@ -2211,31 +2212,12 @@ public class HypervisorHostHelper {
     public static Integer getHostHardwareVersion(VmwareHypervisorHost host) {
         Integer version = null;
         HostMO hostMo = new HostMO(host.getContext(), host.getMor());
-        String hostApiVersion = "";
+        ComputeResourceConfigInfo info = null;
         try {
-            hostApiVersion = hostMo.getHostAboutInfo().getApiVersion();
+            info = hostMo.getHostConfigInfo();
         } catch (Exception ignored) {}
-        if (hostApiVersion == null) {
-            hostApiVersion = "";
-        }
-        if (hostApiVersion.equalsIgnoreCase("7.0")) {
-            version = 17;
-        } else if (hostApiVersion.equalsIgnoreCase("6.7")) {
-            version = 14;
-        } else if (hostApiVersion.equalsIgnoreCase("6.5")) {
-            version = 13;
-        } else if (hostApiVersion.equalsIgnoreCase("6.0")) {
-            version = 11;
-        } else if (hostApiVersion.equalsIgnoreCase("5.5")) {
-            version = 10;
-        } else if (hostApiVersion.equalsIgnoreCase("5.1")) {
-            version = 9;
-        } else if (hostApiVersion.equalsIgnoreCase("5.0")) {
-            version = 8;
-        } else if (hostApiVersion.startsWith("4.")) {
-            version = 7;
-        } else if (hostApiVersion.equalsIgnoreCase("3.5")) {
-            version = 4;
+        if (info != null) {
+            version = Integer.valueOf(info.getDefaultHardwareVersionKey());
         }
         return version;
     }
