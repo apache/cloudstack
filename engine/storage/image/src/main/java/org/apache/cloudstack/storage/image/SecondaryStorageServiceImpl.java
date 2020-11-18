@@ -37,7 +37,6 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -47,6 +46,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.Pair;
@@ -91,6 +91,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
             if (srcDataObject instanceof SnapshotInfo && snapshotChain != null && snapshotChain.containsKey(srcDataObject)) {
                 List<String> parentSnapshotPaths = new ArrayList<>();
                 for (SnapshotInfo snapshotInfo : snapshotChain.get(srcDataObject).first()) {
+                    destDataObject = null;
                     if (!parentSnapshotPaths.isEmpty() && parentSnapshotPaths.contains(snapshotInfo.getPath())) {
                         parentSnapshotPaths.add(snapshotInfo.getPath());
                         SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, srcDatastore.getId(), snapshotInfo.getSnapshotId());
@@ -135,6 +136,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
         } catch (Exception e) {
             s_logger.debug("Failed to copy Data", e);
             if (destDataObject != null) {
+                s_logger.info("Deleting data on destination store: " + destDataObject.getDataStore().getName());
                 destDataObject.getDataStore().delete(destDataObject);
             }
             if (!(srcDataObject instanceof VolumeInfo)) {
@@ -164,7 +166,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
         CopyCommandResult result = callback.getResult();
         AsyncCallFuture<DataObjectResult> future = context.future;
         DataObjectResult res = new DataObjectResult(srcData);
-        CopyCmdAnswer answer = (CopyCmdAnswer) result.getAnswer();
+        Answer answer = result.getAnswer();
         try {
             if (!answer.getResult()) {
                 s_logger.warn("Migration failed for "+srcData.getUuid());
