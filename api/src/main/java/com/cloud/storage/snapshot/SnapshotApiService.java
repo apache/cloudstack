@@ -47,7 +47,7 @@ public interface SnapshotApiService {
      *
      * @param snapshotId
      */
-    void markRemovedSnapshot(long snapshotId);
+    void markSnapshotAsRemoved(long snapshotId);
 
     /**
      * Delete specified snapshot from the specified. If no other policies are assigned it calls destroy snapshot. This

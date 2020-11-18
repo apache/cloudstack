@@ -590,7 +590,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
-            _snapshotService.markRemovedSnapshot(destData.getId());
+            _snapshotService.markSnapshotAsRemoved(destData.getId());
             throw new CloudRuntimeException(e.toString());
         }
 

@@ -553,9 +553,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    public void markRemovedSnapshot(long snapshotId) {
-        Account caller = CallContext.current().getCallingAccount();
-
+    public void markSnapshotAsRemoved(long snapshotId) {
         // Verify parameters
         SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
 
@@ -563,6 +561,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
 
+        Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
         // Setting removed to prevent record from being deleted by garbage collection.
         _snapshotDao.remove(snapshotId);
