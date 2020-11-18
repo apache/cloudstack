@@ -3296,15 +3296,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    private void cleanupDownloadUrls(VMInstanceVO systemVm) {
+    private void cleanupDownloadUrlsInZone(final long zoneId) {
         // clean download URLs when destroying ssvm
-        // clean only the volumes and templates of the zone
-        // to which ssvm belongs to
-        for (VolumeDataStoreVO volume :_volumeStoreDao.listVolumeDownloadUrlsByZoneId(systemVm.getDataCenterId())) {
+        // clean only the volumes and templates of the zone to which ssvm belongs to
+        for (VolumeDataStoreVO volume :_volumeStoreDao.listVolumeDownloadUrlsByZoneId(zoneId)) {
             volume.setExtractUrl(null);
             _volumeStoreDao.update(volume.getId(), volume);
         }
-        for (ImageStoreVO imageStore : _imgStoreDao.listStoresByZoneId(systemVm.getDataCenterId())) {
+        for (ImageStoreVO imageStore : _imgStoreDao.listStoresByZoneId(zoneId)) {
             for (TemplateDataStoreVO template : _vmTemplateStoreDao.listTemplateDownloadUrlsByStoreId(imageStore.getId())) {
                 template.setExtractUrl(null);
                 template.setExtractUrlCreated(null);
@@ -3330,7 +3329,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     protected SecondaryStorageVmVO destroySecondaryStorageVm(final long instanceId) {
         final SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(instanceId);
-        cleanupDownloadUrls(secStorageVm);
+        cleanupDownloadUrlsInZone(secStorageVm.getDataCenterId());
         if (_secStorageVmMgr.destroySecStorageVm(instanceId)) {
             return secStorageVm;
         }

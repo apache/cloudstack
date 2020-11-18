@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -2795,39 +2796,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // Check if the url already exists
         SearchCriteria<VolumeDataStoreVO> sc = _volumeStoreDao.createSearchCriteria();
-        sc.addAnd("state", SearchCriteria.Op.EQ, ObjectInDataStoreStateMachine.State.Ready.toString());
-        sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
-        sc.addAnd("destroyed", SearchCriteria.Op.EQ, false);
-        // the volume should not change (attached/detached, vm not updated) after created
-        if (volume.getVolumeType() == Volume.Type.ROOT) { // for ROOT disk
-            VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
-            sc.addAnd("updated", SearchCriteria.Op.GTEQ, vm.getUpdateTime());
-        } else if (volume.getVolumeType() == Volume.Type.DATADISK && volume.getInstanceId() == null) { // for not attached DATADISK
-            sc.addAnd("updated", SearchCriteria.Op.GTEQ, volume.getUpdated());
-        } else { // for attached DATA DISK
-            VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
-            sc.addAnd("updated", SearchCriteria.Op.GTEQ, vm.getUpdateTime());
-            sc.addAnd("updated", SearchCriteria.Op.GTEQ, volume.getUpdated());
-        }
-        Filter filter = new Filter(VolumeDataStoreVO.class, "created", false, 0L, 1L);
-        List<VolumeDataStoreVO> volumeStoreRefs = _volumeStoreDao.search(sc, filter);
-        VolumeDataStoreVO volumeStoreRef = null;
-        if (volumeStoreRefs != null && !volumeStoreRefs.isEmpty()) {
-            volumeStoreRef = volumeStoreRefs.get(0);
-        }
-        if (volumeStoreRef != null && volumeStoreRef.getExtractUrl() != null) {
-            return volumeStoreRef.getExtractUrl();
-        } else if (volumeStoreRef != null) {
-            s_logger.debug("volume " + volumeId + " is already installed on secondary storage, install path is " +
-                                    volumeStoreRef.getInstallPath());
-            ImageStoreEntity secStore = (ImageStoreEntity) dataStoreMgr.getDataStore(volumeStoreRef.getDataStoreId(), DataStoreRole.Image);
-            String extractUrl = secStore.createEntityExtractUrl(volumeStoreRef.getInstallPath(), volume.getFormat(), null);
-            volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
-            volumeStoreRef.setExtractUrl(extractUrl);
-            volumeStoreRef.setExtractUrlCreated(DateUtil.now());
-            _volumeStoreDao.update(volumeStoreRef.getId(), volumeStoreRef);
-            return extractUrl;
 
+        Optional<String> extractUrl = setExtractVolumeSearchCriteria(sc, volume);
+        if (extractUrl.isPresent()) {
+            return extractUrl.get();
         }
 
         VMInstanceVO vm = null;
@@ -2880,6 +2852,45 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return orchestrateExtractVolume(volume.getId(), zoneId);
+    }
+
+    private Optional<String> setExtractVolumeSearchCriteria(SearchCriteria<VolumeDataStoreVO> sc, VolumeVO volume) {
+        final long volumeId = volume.getId();
+        sc.addAnd("state", SearchCriteria.Op.EQ, ObjectInDataStoreStateMachine.State.Ready.toString());
+        sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
+        sc.addAnd("destroyed", SearchCriteria.Op.EQ, false);
+        // the volume should not change (attached/detached, vm not updated) after created
+        if (volume.getVolumeType() == Volume.Type.ROOT) { // for ROOT disk
+            VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
+            sc.addAnd("updated", SearchCriteria.Op.GTEQ, vm.getUpdateTime());
+        } else if (volume.getVolumeType() == Volume.Type.DATADISK && volume.getInstanceId() == null) { // for not attached DATADISK
+            sc.addAnd("updated", SearchCriteria.Op.GTEQ, volume.getUpdated());
+        } else { // for attached DATA DISK
+            VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
+            sc.addAnd("updated", SearchCriteria.Op.GTEQ, vm.getUpdateTime());
+            sc.addAnd("updated", SearchCriteria.Op.GTEQ, volume.getUpdated());
+        }
+        Filter filter = new Filter(VolumeDataStoreVO.class, "created", false, 0L, 1L);
+        List<VolumeDataStoreVO> volumeStoreRefs = _volumeStoreDao.search(sc, filter);
+        VolumeDataStoreVO volumeStoreRef = null;
+        if (volumeStoreRefs != null && !volumeStoreRefs.isEmpty()) {
+            volumeStoreRef = volumeStoreRefs.get(0);
+        }
+        if (volumeStoreRef != null && volumeStoreRef.getExtractUrl() != null) {
+            return Optional.ofNullable(volumeStoreRef.getExtractUrl());
+        } else if (volumeStoreRef != null) {
+            s_logger.debug("volume " + volumeId + " is already installed on secondary storage, install path is " +
+                    volumeStoreRef.getInstallPath());
+            ImageStoreEntity secStore = (ImageStoreEntity) dataStoreMgr.getDataStore(volumeStoreRef.getDataStoreId(), DataStoreRole.Image);
+            String extractUrl = secStore.createEntityExtractUrl(volumeStoreRef.getInstallPath(), volume.getFormat(), null);
+            volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
+            volumeStoreRef.setExtractUrl(extractUrl);
+            volumeStoreRef.setExtractUrlCreated(DateUtil.now());
+            _volumeStoreDao.update(volumeStoreRef.getId(), volumeStoreRef);
+            return Optional.ofNullable(extractUrl);
+        }
+
+        return Optional.empty();
     }
 
     private String orchestrateExtractVolume(long volumeId, long zoneId) {
