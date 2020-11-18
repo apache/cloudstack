@@ -4618,6 +4618,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 isvVolsInvolved = true;
                 vmName = getWorkerName(getServiceContext(), cmd, 0, destinationDsMo);
             }
+            String hardwareVersion = null;
+            if (hostInTargetCluster != null) {
+                Integer sourceHardwareVersion = HypervisorHostHelper.getHostHardwareVersion(hyperHost);
+                Integer destinationHardwareVersion = HypervisorHostHelper.getHostHardwareVersion(dsHost);
+                if (sourceHardwareVersion != null && destinationHardwareVersion != null && !sourceHardwareVersion.equals(destinationHardwareVersion)) {
+                    hardwareVersion = String.valueOf(Math.min(sourceHardwareVersion, destinationHardwareVersion));
+                }
+            }
 
             // OfflineVmwareMigration: refactor for re-use
             // OfflineVmwareMigration: 1. find data(store)
@@ -4626,11 +4634,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             s_logger.info("Create worker VM " + vmName);
             // OfflineVmwareMigration: 2. create the worker with access to the data(store)
-            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, sourceDsMo, vmName, null);
-            HostMO h = new HostMO(dsHost.getContext(), dsHost.getMor());
-            s_logger.info("Log4321 - Created worker VM " + vmMo.getVirtualHardwareVersion() +
-                    " host: " + vmMo.getRunningHost().getHostAboutInfo().getVersion() + " host API: " + vmMo.getRunningHost().getHostAboutInfo().getApiVersion() +
-                    " DShost: " + h.getHostAboutInfo().getVersion() + " DShost API: " + h.getHostAboutInfo().getApiVersion());
+            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, sourceDsMo, vmName, hardwareVersion);
             if (vmMo == null) {
                 // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
                 throw new CloudRuntimeException("Unable to create a worker VM for volume operation");
