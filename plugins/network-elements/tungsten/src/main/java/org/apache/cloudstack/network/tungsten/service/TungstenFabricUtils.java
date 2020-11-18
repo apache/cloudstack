@@ -1,7 +1,6 @@
 package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.network.Network;
 import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
@@ -21,9 +20,9 @@ public class TungstenFabricUtils {
     @Inject
     TungstenProviderDao tungstenProviderDao;
 
-    public TungstenAnswer sendTungstenCommand(TungstenCommand cmd, Network network) throws IllegalArgumentException {
+    public TungstenAnswer sendTungstenCommand(TungstenCommand cmd, long zoneId) throws IllegalArgumentException {
 
-        TungstenProviderVO tungstenProviderVO = tungstenProviderDao.findByZoneId(network.getDataCenterId());
+        TungstenProviderVO tungstenProviderVO = tungstenProviderDao.findByZoneId(zoneId);
         if (tungstenProviderVO == null) {
             s_logger.error("No tungsten provider have been found!");
             throw new IllegalArgumentException("Failed to find a tungsten provider");

@@ -91,6 +91,8 @@ known_categories = {
     'createTungstenProvider' : 'Tungsten',
     'deleteTungstenProvider' : 'Tungsten',
     'listTungstenProviders' : 'Tungsten',
+    'configTungstenService' : 'Tungsten',
+    'createTungstenPublicNetwork' : 'Tungsten',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',

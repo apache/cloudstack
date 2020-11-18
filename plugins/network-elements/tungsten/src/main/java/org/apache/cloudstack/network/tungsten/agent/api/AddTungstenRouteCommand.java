@@ -7,13 +7,15 @@ public class AddTungstenRouteCommand extends TungstenCommand {
     private final List<String> subnetList;
     private final List<String> routeList;
     private final String vrf;
+    private final String host;
 
     public AddTungstenRouteCommand(final String inf, final List<String> subnetList, final List<String> routeList,
-        final String vrf) {
+        final String vrf, final String host) {
         this.inf = inf;
         this.subnetList = subnetList;
         this.routeList = routeList;
         this.vrf = vrf;
+        this.host = host;
     }
 
     public String getInf() {
@@ -30,5 +32,9 @@ public class AddTungstenRouteCommand extends TungstenCommand {
 
     public String getVrf() {
         return vrf;
+    }
+
+    public String getHost() {
+        return host;
     }
 }

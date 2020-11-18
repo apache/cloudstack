@@ -21,9 +21,6 @@ import net.juniper.tungsten.api.types.VirtualNetwork;
 import net.juniper.tungsten.api.types.VnSubnetsType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.network.tungsten.vrouter.Gateway;
-import org.apache.cloudstack.network.tungsten.vrouter.Port;
-import org.apache.cloudstack.network.tungsten.vrouter.VRouterApiConnector;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -48,11 +45,8 @@ public class TungstenApi {
 
     private String hostname;
     private String port;
-    private String vrouter;
-    private String vrouterPort;
     private String zoneId;
     private ApiConnector apiConnector;
-    private VRouterApiConnector vRouterApiConnector;
 
     public String getHostname() {
         return hostname;
@@ -84,30 +78,6 @@ public class TungstenApi {
 
     public void setApiConnector(ApiConnector apiConnector) {
         this.apiConnector = apiConnector;
-    }
-
-    public String getVrouter() {
-        return vrouter;
-    }
-
-    public void setVrouter(String vrouter) {
-        this.vrouter = vrouter;
-    }
-
-    public String getVrouterPort() {
-        return vrouterPort;
-    }
-
-    public VRouterApiConnector getvRouterApiConnector() {
-        return vRouterApiConnector;
-    }
-
-    public void setvRouterApiConnector(final VRouterApiConnector vRouterApiConnector) {
-        this.vRouterApiConnector = vRouterApiConnector;
-    }
-
-    public void setVrouterPort(String vrouterPort) {
-        this.vrouterPort = vrouterPort;
     }
 
     public void checkTungstenProviderConnection() {
@@ -280,18 +250,6 @@ public class TungstenApi {
         }
     }
 
-    public boolean addTungstenVrouterPort(Port port) {
-        try {
-            return vRouterApiConnector.addPort(port);
-        } catch (IOException ex) {
-            return false;
-        }
-    }
-
-    public boolean deleteTungstenVrouterPort(String portId) {
-        return vRouterApiConnector.deletePort(portId);
-    }
-
     public NetworkIpam getDefaultProjectNetworkIpam(Project project) {
         try {
             List<String> names = new ArrayList<>();
@@ -368,13 +326,22 @@ public class TungstenApi {
             Project project = (Project) apiConnector.findById(Project.class, parentUuid);
             VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class,
                 pubNetworkUuid);
-            LogicalRouter logicalRouter = new LogicalRouter();
-            logicalRouter.setName(name);
-            logicalRouter.setParent(project);
-            logicalRouter.setVirtualNetwork(virtualNetwork, null);
-            Status status = apiConnector.create(logicalRouter);
-            status.ifFailure(errorHandler);
-            return apiConnector.findById(LogicalRouter.class, logicalRouter.getUuid());
+            LogicalRouter logicalRouter = (LogicalRouter) apiConnector.find(LogicalRouter.class, project, name);
+            if (logicalRouter == null) {
+                logicalRouter = new LogicalRouter();
+                logicalRouter.setName(name);
+                logicalRouter.setParent(project);
+                logicalRouter.setVirtualNetwork(virtualNetwork, null);
+                Status status = apiConnector.create(logicalRouter);
+                status.ifFailure(errorHandler);
+                if (status.isSuccess()) {
+                    return apiConnector.findById(LogicalRouter.class, logicalRouter.getUuid());
+                } else {
+                    return null;
+                }
+            } else {
+                return logicalRouter;
+            }
         } catch (IOException ex) {
             return null;
         }
@@ -434,34 +401,24 @@ public class TungstenApi {
         }
     }
 
-    public boolean addTungstenRoute(List<Gateway> gateways) {
-        try {
-            return vRouterApiConnector.addGateway(gateways);
-        } catch (IOException ex) {
-            return false;
-        }
-    }
-
-    public boolean deleteTungstenRoute(List<Gateway> gateways) {
-        try {
-            return vRouterApiConnector.deleteGateway(gateways);
-        } catch (IOException ex) {
-            return false;
-        }
-    }
-
     public ApiObjectBase createTungstenFloatingIpPool(String networkUuid, String fipName) {
         try {
             VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
-            FloatingIpPool floatingIpPool = new FloatingIpPool();
-            floatingIpPool.setName(fipName);
-            floatingIpPool.setParent(virtualNetwork);
-            Status status = apiConnector.create(floatingIpPool);
-            status.ifFailure(errorHandler);
-            if (status.isSuccess()) {
-                return apiConnector.findById(FloatingIpPool.class, floatingIpPool.getUuid());
+            FloatingIpPool floatingIpPool = (FloatingIpPool) apiConnector.find(FloatingIpPool.class, virtualNetwork,
+                fipName);
+            if (floatingIpPool == null) {
+                floatingIpPool = new FloatingIpPool();
+                floatingIpPool.setName(fipName);
+                floatingIpPool.setParent(virtualNetwork);
+                Status status = apiConnector.create(floatingIpPool);
+                status.ifFailure(errorHandler);
+                if (status.isSuccess()) {
+                    return apiConnector.findById(FloatingIpPool.class, floatingIpPool.getUuid());
+                } else {
+                    return null;
+                }
             } else {
-                return null;
+                return floatingIpPool;
             }
         } catch (IOException e) {
             return null;

@@ -1,20 +1,20 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class AddTungstenVirtualGatewayCommand extends TungstenCommand {
+import com.cloud.agent.api.Command;
+
+public class SetupTungstenVRouterCommand extends Command {
     private final String inf;
     private final String subnet;
     private final String route;
     private final String vrf;
-    private final String netnsName;
     private final String gateway;
 
-    public AddTungstenVirtualGatewayCommand(final String inf, final String subnet, final String route, final String vrf,
-        final String netnsName, final String gateway) {
+    public SetupTungstenVRouterCommand(final String inf, final String subnet, final String route, final String vrf,
+        final String gateway) {
         this.inf = inf;
         this.subnet = subnet;
         this.route = route;
         this.vrf = vrf;
-        this.netnsName = netnsName;
         this.gateway = gateway;
     }
 
@@ -34,11 +34,12 @@ public class AddTungstenVirtualGatewayCommand extends TungstenCommand {
         return vrf;
     }
 
-    public String getNetnsName() {
-        return netnsName;
-    }
-
     public String getGateway() {
         return gateway;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 }

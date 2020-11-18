@@ -11,10 +11,11 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
     private final String mac;
     private final String vmType;
     private final String trafficType;
+    private final String host;
 
     public CreateTungstenVirtualMachineCommand(final String projectUuid, final String vnUuid, final String vmUuid,
         final String vmName, final String nicUuid, final long nicId, final String ip, final String mac,
-        final String vmType, final String trafficType) {
+        final String vmType, final String trafficType, final String host) {
         this.projectUuid = projectUuid;
         this.vnUuid = vnUuid;
         this.vmUuid = vmUuid;
@@ -25,6 +26,7 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
         this.mac = mac;
         this.vmType = vmType;
         this.trafficType = trafficType;
+        this.host = host;
     }
 
     public String getProjectUuid() {
@@ -65,5 +67,9 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
 
     public String getTrafficType() {
         return trafficType;
+    }
+
+    public String getHost() {
+        return host;
     }
 }

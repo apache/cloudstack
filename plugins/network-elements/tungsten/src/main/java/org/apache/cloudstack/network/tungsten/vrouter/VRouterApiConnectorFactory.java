@@ -1,13 +1,16 @@
 package org.apache.cloudstack.network.tungsten.vrouter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class VRouterApiConnectorFactory {
-    private static VRouterApiConnector vrouterApiConnector;
+    private static String port = "9091";
+    private static Map<String, VRouterApiConnector> vrouterApiConnectors = new HashMap<>();
 
-    public static VRouterApiConnector getInstance(String host, String port) {
-        if (vrouterApiConnector == null) {
-            vrouterApiConnector = new VRouterApiConnectorImpl(host, port);
+    public static VRouterApiConnector getInstance(String host) {
+        if (vrouterApiConnectors.get(host) == null) {
+            vrouterApiConnectors.put(host, new VRouterApiConnectorImpl(host, port));
         }
-
-        return vrouterApiConnector;
+        return vrouterApiConnectors.get(host);
     }
 }

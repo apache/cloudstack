@@ -55,8 +55,8 @@ public class TungstenUtils {
         return "internalGatewayIi" + pvnId;
     }
 
-    public static String getPublicNetworkName(long pvnId) {
-        return "publicNetwork" + pvnId;
+    public static String getPublicNetworkName(long zoneId) {
+        return "publicNetwork" + zoneId;
     }
 
     public static String getManagementNetworkName(long mvnId) {

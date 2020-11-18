@@ -14,8 +14,9 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.collect.Lists;
-import org.apache.cloudstack.network.tungsten.api.command.ConfigTungstenPublicNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ConfigTungstenServiceCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProviderCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenPublicNetworkCmd;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 import org.apache.cloudstack.network.tungsten.resource.TungstenResource;
 import org.apache.log4j.Logger;
@@ -44,7 +45,8 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
 
     @Override
     public List<Class<?>> getCommands() {
-        return Lists.<Class<?>>newArrayList(CreateTungstenProviderCmd.class, ConfigTungstenPublicNetworkCmd.class);
+        return Lists.<Class<?>>newArrayList(CreateTungstenProviderCmd.class, ConfigTungstenServiceCmd.class,
+            CreateTungstenPublicNetworkCmd.class);
     }
 
     @Override

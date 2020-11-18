@@ -307,7 +307,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _ovsPvlanVmPath;
     private String _routerProxyPath;
     private String _ovsTunnelPath;
-    private String _addTungstenVgwPath;
+    private String _setupTungstenVrouterPath;
     private String _host;
     private String _dcId;
     private String _pod;
@@ -961,9 +961,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
         }
 
-        _addTungstenVgwPath = Script.findScript(tungstenScriptsDir, "add_tungsten_vgw.sh");
-        if (_addTungstenVgwPath == null) {
-            throw new ConfigurationException("Unable to find the add_tungsten_vgw.sh");
+        _setupTungstenVrouterPath = Script.findScript(tungstenScriptsDir, "setup_tungsten_vrouter.sh");
+        if (_setupTungstenVrouterPath == null) {
+            throw new ConfigurationException("Unable to find the setup_tungsten_vrouter.sh");
         }
 
         String value = (String)params.get("developer");
@@ -4501,14 +4501,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public boolean addTungstenVirtualGateway(final String inf, final String subnet, final String route,
-        final String vrf, final String netnsName, final String gateway) {
-        final Script cmd = new Script(_addTungstenVgwPath, _timeout, s_logger);
+    public boolean setupTungstenVRouter(final String inf, final String subnet, final String route, final String vrf,
+        final String gateway) {
+        final Script cmd = new Script(_setupTungstenVrouterPath, _timeout, s_logger);
         cmd.add(inf);
         cmd.add(subnet);
         cmd.add(route);
         cmd.add(vrf);
-        cmd.add(netnsName);
         cmd.add(gateway);
 
         final String result = cmd.execute();
