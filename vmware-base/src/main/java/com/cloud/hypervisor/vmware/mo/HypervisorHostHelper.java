@@ -2218,7 +2218,11 @@ public class HypervisorHostHelper {
         if (hostApiVersion == null) {
             hostApiVersion = "";
         }
-        if (hostApiVersion.equalsIgnoreCase("6.5")) {
+        if (hostApiVersion.equalsIgnoreCase("7.0")) {
+            version = 17;
+        } else if (hostApiVersion.equalsIgnoreCase("6.7")) {
+            version = 14;
+        } else if (hostApiVersion.equalsIgnoreCase("6.5")) {
             version = 13;
         } else if (hostApiVersion.equalsIgnoreCase("6.0")) {
             version = 11;
