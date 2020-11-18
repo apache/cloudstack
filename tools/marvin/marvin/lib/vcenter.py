@@ -279,7 +279,7 @@ class Vcenter():
                                             force=True)
             task = cluster.AddHost(spec=hostspec, asConnected=True)
         except Exception as e:
-            print "Error adding host :%s" % e
+            print("Error adding host :%s" % e)
         self.wait_for_task(task)
         host = self._get_obj([vim.HostSystem], hostname)
         return host
@@ -316,7 +316,7 @@ class Vcenter():
                                           username=user,
                                           password=passwd)
         except Exception as e:
-            print "Failed to create datacenter: %s" % e
+            print("Failed to create datacenter: %s" % e)
 
     def wait_for_task(self, task):
 
@@ -326,7 +326,7 @@ class Vcenter():
         if task.info.state == vim.TaskInfo.State.success:
             if task.info.result is not None:
                 out = 'Task completed successfully, result: %s' % (task.info.result,)
-                print out
+                print(out)
         elif task.info.state == vim.TaskInfo.State.error:
             out = 'Error - Task did not complete successfully: %s' % (task.info.error,)
             raise ValueError(out)
@@ -353,30 +353,30 @@ if __name__ == '__main__':
     vc_object = Vcenter("10.x.x.x", "username", "password")
 
 
-    print '###get one dc########'
-    print(vc_object.get_datacenters(name='testDC'))
+    print('###get one dc########')
+    print((vc_object.get_datacenters(name='testDC')))
 
-    print '###get multiple dcs########'
+    print('###get multiple dcs########')
     for i in vc_object.get_datacenters():
         print(i)
 
-    print '###get one dv########'
-    print vc_object.get_dvswitches(name='dvSwitch')
+    print('###get one dv########')
+    print(vc_object.get_dvswitches(name='dvSwitch'))
 
-    print '###get multiple dvs########'
+    print('###get multiple dvs########')
     for i in vc_object.get_dvswitches():
         print(i)
 
-    print '###get one dvportgroup########'
-    print(vc_object.get_dvportgroups(name='cloud.guest.207.200.1-dvSwitch'))
+    print('###get one dvportgroup########')
+    print((vc_object.get_dvportgroups(name='cloud.guest.207.200.1-dvSwitch')))
 
-    print "###get one dvportgroup and the vms associated with it########"
+    print("###get one dvportgroup and the vms associated with it########")
     for vm in vc_object.get_dvportgroups(name='cloud.guest.207.200.1-dvSwitch')[0]['dvportgroup']['vmlist']:
-        print(vm.name)
-        print(vm.network)
+        print((vm.name))
+        print((vm.network))
 
-    print '###get multiple dvportgroups########'
+    print('###get multiple dvportgroups########')
     for i in vc_object.get_dvportgroups():
         print(i)
 
-    print vc_object.get_vms(name='VM1')
+    print(vc_object.get_vms(name='VM1'))
