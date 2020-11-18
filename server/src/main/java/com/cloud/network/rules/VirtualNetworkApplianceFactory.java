@@ -26,6 +26,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -85,6 +86,8 @@ public class VirtualNetworkApplianceFactory {
     private IpAddressManager _ipAddrMgr;
     @Inject
     private NetworkACLManager _networkACLMgr;
+    @Inject
+    private FirewallRulesDao _rulesDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -182,5 +185,9 @@ public class VirtualNetworkApplianceFactory {
 
     public NetworkTopologyContext getNetworkTopologyContext() {
         return _networkTopologyContext;
+    }
+
+    public FirewallRulesDao getFirewallRulesDao() {
+        return _rulesDao;
     }
 }

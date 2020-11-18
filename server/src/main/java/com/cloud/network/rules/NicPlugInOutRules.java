@@ -40,6 +40,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.router.VirtualRouter;
@@ -189,6 +190,7 @@ public class NicPlugInOutRules extends RuleApplier {
         VpcManager vpcMgr = visitor.getVirtualNetworkApplianceFactory().getVpcMgr();
         NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
         IPAddressDao ipAddressDao = visitor.getVirtualNetworkApplianceFactory().getIpAddressDao();
+        FirewallRulesDao rulesDao = visitor.getVirtualNetworkApplianceFactory().getFirewallRulesDao();
 
         // find out nics to unplug
         for (PublicIpAddress ip : _ipAddresses) {
@@ -206,7 +208,10 @@ public class NicPlugInOutRules extends RuleApplier {
                     final List<IPAddressVO> allIps = ipAddressDao.listByAssociatedVpc(ip.getVpcId(), null);
                     boolean ipUpdated = false;
                     for (IPAddressVO allIp : allIps) {
-                        if (allIp.getId() != ip.getId() && allIp.getVlanId() == ip.getVlanId() && allIp.getVmIp() != null) {
+                        if (allIp.getId() != ip.getId() && allIp.getVlanId() == ip.getVlanId()
+                                && (allIp.isSourceNat()
+                                || rulesDao.countRulesByIpIdAndState(allIp.getId(), FirewallRule.State.Active) > 0
+                                || (allIp.isOneToOneNat() && allIp.getRuleState() == null))) {
                             s_logger.debug("Updating the nic " + nic + " with new ip address " + allIp.getAddress().addr());
                             nic.setIPv4Address(allIp.getAddress().addr());
                             nicDao.update(nic.getId(), nic);

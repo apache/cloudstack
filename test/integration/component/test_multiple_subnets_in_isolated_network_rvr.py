@@ -35,6 +35,7 @@ from marvin.lib.base import (Account,
                              NetworkOffering,
                              VPC,
                              VpcOffering,
+                             StaticNATRule,
                              NATRule,
                              PublicIPAddress,
                              PublicIpRange)
@@ -247,7 +248,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         #   verify the IPs in VR. eth0 -> guest nic IP, eth2 -> source nat IP
 
         # 6. create new public ip range 1
-        # 7. get a free ip in new ip range, assign to network, and create port forwarding rules (ssh) to the vm
+        # 7. get a free ip 4 in new ip range 2, assign to network, and enable static nat to vm
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3"
         #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth3 -> new ip 1
         # 8. get a free ip in new ip range, assign to network, and create port forwarding rules (ssh) to the vm
@@ -395,7 +396,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         )
         self.cleanup.append(self.public_ip_range1)
 
-        # 7. get a free ip in new ip range, assign to network, and create port forwarding rules (ssh) to the vm
+        # 7. get a free ip 4 in new ip range 2, assign to network, and enable static nat to vm
         ip_address_1 = self.get_free_ipaddress(self.public_ip_range1.vlan.id)
         ipaddress_1 = PublicIPAddress.create(
             self.apiclient,
@@ -404,12 +405,11 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             ipaddress=ip_address_1
         )
 
-        nat_rule = NATRule.create(
+        StaticNATRule.enable(
             self.apiclient,
-            self.virtual_machine1,
-            self.services["natrule"],
+            virtualmachineid=self.virtual_machine1.id,
             ipaddressid=ipaddress_1.ipaddress.id,
-            openfirewall=True
+            networkid=self.network1.id
         )
 
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3"
@@ -544,12 +544,11 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             ipaddress=ip_address_4
         )
 
-        nat_rule = NATRule.create(
+        StaticNATRule.enable(
             self.apiclient,
-            self.virtual_machine1,
-            self.services["natrule"],
+            virtualmachineid=self.virtual_machine1.id,
             ipaddressid=ipaddress_4.ipaddress.id,
-            openfirewall=True
+            networkid=self.network1.id
         )
 
 
