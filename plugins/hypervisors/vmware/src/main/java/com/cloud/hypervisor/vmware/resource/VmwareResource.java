@@ -4627,6 +4627,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Create worker VM " + vmName);
             // OfflineVmwareMigration: 2. create the worker with access to the data(store)
             vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, sourceDsMo, vmName, null);
+            HostMO h = new HostMO(dsHost.getContext(), dsHost.getMor());
+            s_logger.info("Log4321 - Created worker VM " + vmMo.getVirtualHardwareVersion() +
+                    " host: " + vmMo.getRunningHost().getHostAboutInfo().getVersion() + " host API: " + vmMo.getRunningHost().getHostAboutInfo().getApiVersion() +
+                    " DShost: " + h.getHostAboutInfo().getVersion() + " DShost API: " + h.getHostAboutInfo().getApiVersion());
             if (vmMo == null) {
                 // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
                 throw new CloudRuntimeException("Unable to create a worker VM for volume operation");
