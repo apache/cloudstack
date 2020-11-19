@@ -4694,7 +4694,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
-                diskLocator.setDatastore(morDsAtSource);
+                diskLocator.setDatastore(morTgtDatastore);
                 Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volume.getPath(), VMDK_EXTENSION));
                 String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
                 if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
@@ -4717,9 +4717,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     diskLocators.add(diskLocator);
                 }
             }
-            if (srcHyperHost.getHyperHostCluster().equals(tgtHyperHost.getHyperHostCluster())) {
-                relocateSpec.getDisk().addAll(diskLocators);
-            }
+            relocateSpec.getDisk().addAll(diskLocators);
 
             // Prepare network at target before migration
             NicTO[] nics = vmTo.getNics();
