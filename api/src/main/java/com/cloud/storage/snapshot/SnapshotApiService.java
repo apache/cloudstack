@@ -43,13 +43,6 @@ public interface SnapshotApiService {
     Pair<List<? extends Snapshot>, Integer> listSnapshots(ListSnapshotsCmd cmd);
 
     /**
-     * Set the removed flag on a snapshot;
-     *
-     * @param snapshotId
-     */
-    void markSnapshotAsRemoved(long snapshotId);
-
-    /**
      * Delete specified snapshot from the specified. If no other policies are assigned it calls destroy snapshot. This
      * will be
      * used for manual snapshots too.
