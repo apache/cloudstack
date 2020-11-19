@@ -2583,9 +2583,14 @@
                         },
                         action: function(args) {
                             var rootVolume = {};
+                            var data = {
+                                virtualmachineid: args.context.instances[0].id,
+                                listAll: true
+                            }
                             $.ajax({
                                 url: createURL("listVolumes&virtualmachineid=" + args.context.instances[0].id),
                                 dataType: "json",
+                                data: data,
                                 async: false,
                                 success: function(json) {
                                     var volumes = json.listvolumesresponse.volume;
@@ -2597,7 +2602,7 @@
                                     });
                                 }
                             });
-                            var data = {
+                            data = {
                                 'virtualmachineid': args.context.instances[0].id,
                                 'migrateto[0].volume': rootVolume.id,
                                 'migrateto[0].pool': args.data.storageId
