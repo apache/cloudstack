@@ -493,6 +493,15 @@ class CsIP:
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
                                 (self.dev, self.address['public_ip'])])
             if self.get_gateway() == self.get_ip_address():
+                for inf, addresses in self.config.address().dbag.iteritems():
+                    if not inf.startswith("eth"):
+                        continue
+                    for address in addresses:
+                        if "nw_type" in address and address["nw_type"] == "guest":
+                            self.fw.append(["filter", "front", "-A FORWARD -s %s -d %s -j ACL_INBOUND_%s" %
+                                            (address["network"], self.address["network"], self.dev)])
+                            self.fw.append(["filter", "front", "-A FORWARD -s %s -d %s -j ACL_INBOUND_%s" %
+                                            (self.address["network"], address["network"], address["device"])])
                 # Accept packet from private gateway if VPC VR is used as gateway
                 self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" %
                                 (self.address['network'], self.address['network'])])
