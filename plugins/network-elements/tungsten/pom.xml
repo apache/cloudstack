@@ -33,7 +33,7 @@
     <repositories>
         <repository>
             <id>juniper-tungsten-api</id>
-            <url>https://github.com/radu-todirica/tungsten-api/raw/master/releases</url>
+            <url>https://github.com/radu-todirica/tungsten-api/raw/master</url>
         </repository>
     </repositories>
 

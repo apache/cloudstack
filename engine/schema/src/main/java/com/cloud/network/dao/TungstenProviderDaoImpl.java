@@ -61,6 +61,6 @@ public class TungstenProviderDaoImpl extends GenericDaoBase<TungstenProviderVO, 
 
     @Override
     public List<TungstenProviderVO> findAll() {
-        return findAll();
+        return listAll();
     }
 }

@@ -311,7 +311,7 @@
             addPublicNetwork: function(args) {
                 var isShown;
                 var $publicTrafficDesc = $('.zone-wizard:visible').find('#add_zone_public_traffic_desc');
-                if (args.data['network-model'] == 'Basic') {
+                if (args.data['network-model'] == 'Basic' || args.groupedData.physicalNetworks[0].isolationMethod == "TF") {
                     if (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) {
                         isShown = true;
                     } else {
@@ -332,6 +332,26 @@
                 return isShown;
             },
 
+            addTungstenProvider: function(args) {
+                var isShown;
+                var $tungstenProviderDesc = $('.zone-wizard:visible').find('#add_zone_tungsten_provider_desc');
+                if (args.groupedData.physicalNetworks[0].isolationMethod == "TF") {
+                    isShown = true;
+
+                    $('.subnav li.public-network').hide();
+                    $('.subnav li.guest-traffic').hide();
+                    $tungstenProviderDesc.find('#for_advanced_zone').css('display', 'inline');
+                    $tungstenProviderDesc.find('#for_basic_zone').hide();
+                } else {
+                    isShown = false;
+
+                    $('.subnav li.guest-traffic').show();
+                    $tungstenProviderDesc.find('#for_basic_zone').css('display', 'inline');
+                    $tungstenProviderDesc.find('#for_advanced_zone').hide();
+                }
+                return isShown;
+            },
+
             setupPhysicalNetwork: function(args) {
                 if (args.data['network-model'] == 'Basic' && !(selectedNetworkOfferingHavingELB && selectedNetworkOfferingHavingEIP)) {
                     $('.setup-physical-network .info-desc.conditional.basic').show();
@@ -346,7 +366,9 @@
             },
 
             configureGuestTraffic: function(args) {
-                if ((args.data['network-model'] == 'Basic') || (args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] == "on")) {
+                if(args.groupedData.physicalNetworks[0].isolationMethod == "TF") {
+                    return false;
+                } else if ((args.data['network-model'] == 'Basic') || (args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] == "on")) {
                     $('.setup-guest-traffic').addClass('basic');
                     $('.setup-guest-traffic').removeClass('advanced');
                     skipGuestTrafficStep = false; //set value
@@ -768,6 +790,46 @@
                             required: false,
                             ipv4: true
                         }
+                    }
+                }
+            },
+
+            tungstenProvider: {
+                fields: {
+                    name: {
+                        label: 'Tungsten provider name',
+                        validation: {
+                            required: true
+                        },
+                        desc: 'Tungsten provider name'
+                    },
+                    tungstenproviderhostname: {
+                        label: 'Tungsten provider hostname',
+                        validation: {
+                            required: true
+                        },
+                        desc: 'Tungsten provider hostname'
+                    },
+                    tungstenproviderport: {
+                        label: 'Tungsten provider port',
+                        validation: {
+                            required: true
+                        },
+                        desc: 'Tungsten provider port'
+                    },
+                    tungstenprovidervrouter: {
+                        label: 'Tungsten provider vrouter',
+                        validation: {
+                            required: true
+                        },
+                        desc: 'Tungsten provider vrouter'
+                    },
+                    tungstenprovidervrouterport: {
+                        label: 'Tungsten provider vrouter port',
+                        validation: {
+                            required: true
+                        },
+                        desc: 'Tungsten provider vrouter port'
                     }
                 }
             },
@@ -4107,12 +4169,12 @@
                     $.ajax({
                         url: createURL('createTungstenProvider'),
                         data: {
-                            tungstenproviderhostname: '192.168.5.202',
-                            name: 'tungsten',
-                            id: args.data.returnedZone.id,
-                            tungstenproviderport: '8082',
-                            tungstenprovidervrouter: '192.168.2.90',
-                            tungstenprovidervrouterport: '9091'
+                            tungstenproviderhostname: args.data.tungstenProvider.tungstenproviderhostname,
+                            name: args.data.tungstenProvider.name,
+                            zoneid: args.data.returnedZone.id,
+                            tungstenproviderport: args.data.tungstenProvider.tungstenproviderport,
+                            tungstenprovidervrouter: args.data.tungstenProvider.tungstenprovidervrouter,
+                            tungstenprovidervrouterport: args.data.tungstenProvider.tungstenprovidervrouterport
                         },
                         type: "POST",
                         async: false,

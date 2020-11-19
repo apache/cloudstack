@@ -25,7 +25,7 @@ public class CreateTungstenProviderCmd extends BaseCmd {
 
     private static final String s_name = "createtungstenproviderresponse";
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true,
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true,
         description = "the ID of zone")
     private Long zoneId;
 
