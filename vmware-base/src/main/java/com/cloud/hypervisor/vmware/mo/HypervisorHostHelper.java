@@ -2218,6 +2218,33 @@ public class HypervisorHostHelper {
         } catch (Exception ignored) {}
         if (info != null) {
             version = Integer.valueOf(info.getDefaultHardwareVersionKey());
+        } else {
+            String hostApiVersion = "";
+            try {
+                hostApiVersion = hostMo.getHostAboutInfo().getApiVersion();
+            } catch (Exception ignored) {}
+            if (hostApiVersion == null) {
+                hostApiVersion = "";
+            }
+            if (hostApiVersion.equalsIgnoreCase("7.0")) {
+                version = 17;
+            } else if (hostApiVersion.equalsIgnoreCase("6.7")) {
+                version = 14;
+            } else if (hostApiVersion.equalsIgnoreCase("6.5")) {
+                version = 13;
+            } else if (hostApiVersion.equalsIgnoreCase("6.0")) {
+                version = 11;
+            } else if (hostApiVersion.equalsIgnoreCase("5.5")) {
+                version = 10;
+            } else if (hostApiVersion.equalsIgnoreCase("5.1")) {
+                version = 9;
+            } else if (hostApiVersion.equalsIgnoreCase("5.0")) {
+                version = 8;
+            } else if (hostApiVersion.startsWith("4.")) {
+                version = 7;
+            } else if (hostApiVersion.equalsIgnoreCase("3.5")) {
+                version = 4;
+            }
         }
         return version;
     }
