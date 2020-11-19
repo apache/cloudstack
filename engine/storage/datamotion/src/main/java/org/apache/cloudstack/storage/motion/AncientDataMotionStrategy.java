@@ -23,7 +23,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.snapshot.SnapshotApiService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -86,8 +85,6 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     DataStoreManager dataStoreMgr;
     @Inject
     StorageCacheManager cacheMgr;
-    @Inject
-    public SnapshotApiService _snapshotService;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
