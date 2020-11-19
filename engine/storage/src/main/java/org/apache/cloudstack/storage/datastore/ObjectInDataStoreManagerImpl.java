@@ -264,7 +264,6 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             } else if (dataObj.getType() == DataObjectType.SNAPSHOT) {
                 SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(), dataStore.getId(), objId);
                 if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                    snapshotDao.remove(objId);
                     snapshotDataStoreDao.remove(destSnapshotStore.getId());
                 }
                 return true;
@@ -277,7 +276,6 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 case SNAPSHOT:
                     SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(), dataStore.getId(), objId);
                     if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                        snapshotDao.remove(objId);
                         return snapshotDataStoreDao.remove(destSnapshotStore.getId());
                     } else {
                         s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
