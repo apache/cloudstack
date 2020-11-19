@@ -197,6 +197,11 @@ class CsInterface:
             return True
         return False
 
+    def is_private_gateway(self):
+        if "is_private_gateway" in self.address:
+            return self.address['is_private_gateway']
+        return False
+
     def is_added(self):
         return self.get_attr("add")
 
@@ -476,6 +481,13 @@ class CsIP:
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" %
                             ("eth1", "eth1", guestNetworkCidr)])
 
+        if self.is_private_gateway():
+            self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+                            (self.address['network'], self.dev, self.dev)])
+            self.fw.append(["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
+            self.fw.append(["mangle", "",
+                            "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
+                            (self.dev, self.address['network'], self.address['gateway'], self.dev)])
             if self.address["source_nat"]:
                 self.fw.append(["nat", "front",
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
@@ -623,6 +635,11 @@ class CsIP:
     def is_public(self):
         if "nw_type" in self.address and self.address['nw_type'] in ['public']:
             return True
+        return False
+
+    def is_private_gateway(self):
+        if "is_private_gateway" in self.address:
+            return self.address['is_private_gateway']
         return False
 
     def ip(self):
