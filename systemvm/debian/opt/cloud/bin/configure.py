@@ -817,6 +817,13 @@ class CsForwardingRules(CsDataBag):
                 return interface.get_gateway()
         return None
 
+    def getPrivateGatewayNetworks(self):
+        interfaces = []
+        for interface in self.config.address().get_interfaces():
+            if interface.is_private_gateway():
+                interfaces.append(interface)
+        return interfaces
+
     def portsToString(self, ports, delimiter):
         ports_parts = ports.split(":", 2)
         if ports_parts[0] == ports_parts[1]:
@@ -948,12 +955,21 @@ class CsForwardingRules(CsDataBag):
         if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
 
+        chain_name = "PREROUTING-%s-def" % device
         self.fw.append(["mangle", "front",
-                        "-A PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
-                        rule["internal_ip"]])
-        self.fw.append(["mangle", "front",
-                        "-A PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
-                        (rule["internal_ip"], hex(100 + int(device[len("eth"):])))])
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j %s" %
+                        (rule["internal_ip"], chain_name)])
+        self.fw.append(["mangle", "",
+                        "-A %s -j MARK --set-xmark %s/0xffffffff" %
+                        (chain_name, hex(100 + int(device[len("eth"):])))])
+        self.fw.append(["mangle", "",
+                        "-A %s -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
+                        chain_name])
+        private_gateways = self.getPrivateGatewayNetworks()
+        for private_gw in private_gateways:
+            self.fw.append(["mangle", "front", "-A %s -d %s -j RETURN" %
+                            (chain_name, private_gw.get_network())])
+
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",

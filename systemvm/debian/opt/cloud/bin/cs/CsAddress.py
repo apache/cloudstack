@@ -488,6 +488,9 @@ class CsIP:
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
                             (self.dev, self.address['network'], self.address['gateway'], self.dev)])
+            self.fw.append(["mangle", "front",
+                            "-A PREROUTING -s %s -d %s -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
+                            (self.cl.get_vpccidr(), self.address['network'], hex(100 + int(self.dev[3:])))])
             if self.address["source_nat"]:
                 self.fw.append(["nat", "front",
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
