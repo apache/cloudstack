@@ -492,6 +492,10 @@ class CsIP:
                 self.fw.append(["nat", "front",
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
                                 (self.dev, self.address['public_ip'])])
+            if self.get_gateway() == self.get_ip_address():
+                # Accept packet from private gateway if VPC VR is used as gateway
+                self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" %
+                                (self.address['network'], self.address['network'])])
 
         if self.get_type() in ["public"]:
             self.fw.append(
