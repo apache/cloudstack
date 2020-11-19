@@ -2588,7 +2588,7 @@
                                 listAll: true
                             }
                             $.ajax({
-                                url: createURL("listVolumes&virtualmachineid=" + args.context.instances[0].id),
+                                url: createURL("listVolumes"),
                                 dataType: "json",
                                 data: data,
                                 async: false,
