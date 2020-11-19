@@ -2262,6 +2262,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             Vpc vpc = ApiDBUtils.findVpcById(network.getVpcId());
             if (vpc != null) {
                 response.setVpcId(vpc.getUuid());
+                response.setVpcName(vpc.getName());
             }
         }
         response.setCanUseForDeploy(ApiDBUtils.canUseForDeploy(network));
