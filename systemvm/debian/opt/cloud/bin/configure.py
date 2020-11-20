@@ -1019,10 +1019,6 @@ def main(argv):
     # The "GLOBAL" Configuration object
     config = CsConfig()
 
-    logging.basicConfig(filename=config.get_logger(),
-                        level=config.get_level(),
-                        format=config.get_format())
-
     # Load stored ip addresses from disk to CsConfig()
     config.set_address()
 
