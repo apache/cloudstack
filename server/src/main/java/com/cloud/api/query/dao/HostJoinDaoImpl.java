@@ -170,9 +170,12 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
 
                 hostResponse.setMemoryTotal(host.getTotalMemory());
-                Float totalMemorywithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
-                hostResponse.setMemWithOverprovisioning(decimalFormat.format(totalMemorywithOverprovisioning));
+                Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
+                hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
                 hostResponse.setMemoryAllocated(mem);
+                hostResponse.setMemoryAllocatedBytes(mem);
+                String memoryAllocatedPercentage = decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%";
+                hostResponse.setMemoryAllocatedPercentage(memoryAllocatedPercentage);
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(host.getTag());
@@ -321,7 +324,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setMemoryTotal(host.getTotalMemory());
                 Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
                 hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
-                hostResponse.setMemoryAllocated(decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%");
+                String memoryAllocatedPercentage = decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%";
+                hostResponse.setMemoryAllocated(memoryAllocatedPercentage);
+                hostResponse.setMemoryAllocatedPercentage(memoryAllocatedPercentage);
+                hostResponse.setMemoryAllocatedBytes(mem);
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(host.getTag());
