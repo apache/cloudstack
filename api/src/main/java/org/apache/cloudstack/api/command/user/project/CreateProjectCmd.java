@@ -116,7 +116,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
             throw new InvalidParameterValueException("Account name and domain id must be specified together");
         }
 
-        if (userId != null && (accountId == null && domainId == null)) {
+        if (userId != null && (accountId == null || domainId == null)) {
             throw new InvalidParameterValueException("Account ID and Domain ID must be specified with userID");
         }
         if (accountName != null) {

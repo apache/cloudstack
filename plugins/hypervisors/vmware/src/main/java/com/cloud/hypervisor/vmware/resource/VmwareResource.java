@@ -4564,7 +4564,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(MigrateWithStorageCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource MigrateWithStorageCommand: " + _gson.toJson(cmd));
+            s_logger.info("Executing resource MigrateWithStorageCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
         }
 
         final VirtualMachineTO vmTo = cmd.getVirtualMachine();
