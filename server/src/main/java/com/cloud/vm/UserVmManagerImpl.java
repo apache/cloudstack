@@ -5666,9 +5666,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw ex;
         }
 
-        if (vm.getType() != VirtualMachine.Type.User) {
-            // OffLineVmwareMigration: *WHY* ?
-            throw new InvalidParameterValueException("can only do storage migration on user vm");
+        if (vm.getType() != VirtualMachine.Type.User && !HypervisorType.VMware.equals(vm.getHypervisorType())) {
+            throw new InvalidParameterValueException("can only do storage migration on user vm for hypervisor: " + vm.getHypervisorType().toString());
         }
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
@@ -5689,17 +5688,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
+    private VirtualMachine findMigratedVm(long vmId, VirtualMachine.Type vmType) {
+        if (VirtualMachine.Type.User.equals(vmType)) {
+            return _vmDao.findById(vmId);
+        }
+        return _vmInstanceDao.findById(vmId);
+    }
+
     @Override
     public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
         VMInstanceVO vm = preVmStorageMigrationCheck(vmId);
         Map<Long, Long> volumeToPoolIds = new HashMap<>();
         checkDestinationHypervisorType(destPool, vm);
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+        StoragePoolVO destinationPoolVo = _storagePoolDao.findById(destPool.getId());
+        Long destPoolPodId = ScopeType.CLUSTER.equals(destinationPoolVo.getScope()) || ScopeType.HOST.equals(destinationPoolVo.getScope()) ?
+                destinationPoolVo.getPodId() : null;
         for (VolumeVO volume : volumes) {
+            if (!VirtualMachine.Type.User.equals(vm.getType())) {
+                // Migrate within same pod as source storage and same cluster for all disks only. Hypervisor check already done
+                StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+                if (destPoolPodId != null &&
+                        (ScopeType.CLUSTER.equals(pool.getScope()) || ScopeType.HOST.equals(pool.getScope())) &&
+                        !destPoolPodId.equals(pool.getPodId())) {
+                    throw new InvalidParameterValueException("Storage migration of non-user VMs cannot be done between storage pools of different pods");
+                }
+            }
             volumeToPoolIds.put(volume.getId(), destPool.getId());
         }
         _itMgr.storageMigration(vm.getUuid(), volumeToPoolIds);
-        return _vmDao.findById(vm.getId());
+        return findMigratedVm(vm.getId(), vm.getType());
     }
 
     @Override
@@ -5722,7 +5740,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             volumeToPoolIds.put(volume.getId(), pool.getId());
         }
         _itMgr.storageMigration(vm.getUuid(), volumeToPoolIds);
-        return _vmDao.findById(vm.getId());
+        return findMigratedVm(vm.getId(), vm.getType());
     }
 
     private void checkDestinationHypervisorType(StoragePool destPool, VMInstanceVO vm) {
@@ -5866,12 +5884,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             collectVmNetworkStatistics(uservm);
         }
         _itMgr.migrate(vm.getUuid(), srcHostId, dest);
-        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
-        if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
-            return _vmDao.findById(vmId);
-        } else {
-            return vmInstance;
-        }
+        return findMigratedVm(vm.getId(), vm.getType());
     }
 
     private boolean isOnSupportedHypevisorForMigration(VMInstanceVO vm) {
@@ -6171,6 +6184,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     destinationHost.getHypervisorType().toString() + " " + destHostVersion);
         }
 
+        if (!VirtualMachine.Type.User.equals(vm.getType())) {
+            // for System VMs check that the destination host is within the same pod
+            if (srcHost.getPodId() != null && !srcHost.getPodId().equals(destinationHost.getPodId())) {
+                throw new InvalidParameterValueException("Cannot migrate the VM, destination host is not in the same pod as current host of the VM");
+            }
+        }
+
         if (HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
             if (srcHostVersion == null) {
                 srcHostVersion = "";
@@ -6204,16 +6224,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
         Map<Long, Long> volToPoolObjectMap = new HashMap<Long, Long>();
-        if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId().equals(srcHost.getClusterId())) {
-            if (volumeToPool.isEmpty()) {
-                // If the destination host is in the same cluster and volumes do not have to be migrated across pools
-                // then fail the call. migrateVirtualMachine api should have been used.
-                throw new InvalidParameterValueException("Migration of the vm " + vm + "from host " + srcHost + " to destination host " + destinationHost
-                        + " doesn't involve migrating the volumes.");
+        if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId().equals(srcHost.getClusterId())
+                && MapUtils.isEmpty(volumeToPool)) {
+            // If the destination host is in the same cluster and volumes do not have to be migrated across pools
+            // then call migrateVirtualMachine for non-user VMs and exception for user VMs
+            if (!VirtualMachine.Type.User.equals(vm.getType())) {
+                return migrateVirtualMachine(vmId, destinationHost);
             }
+            throw new InvalidParameterValueException("Migration of the vm " + vm + "from host " + srcHost + " to destination host " + destinationHost
+                    + " doesn't involve migrating the volumes.");
         }
 
-        if (!volumeToPool.isEmpty()) {
+        if (MapUtils.isNotEmpty(volumeToPool)) {
             // Check if all the volumes and pools passed as parameters are valid.
             for (Map.Entry<String, String> entry : volumeToPool.entrySet()) {
                 VolumeVO volume = _volsDao.findByUuid(entry.getKey());
@@ -6263,7 +6285,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         checkHostsDedication(vm, srcHostId, destinationHost.getId());
 
         _itMgr.migrateWithStorage(vm.getUuid(), srcHostId, destinationHost.getId(), volToPoolObjectMap);
-        return _vmDao.findById(vm.getId());
+        return findMigratedVm(vm.getId(), vm.getType());
     }
 
     @DB

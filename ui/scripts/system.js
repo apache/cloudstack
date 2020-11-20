@@ -2710,10 +2710,17 @@
                                                                         var hostObjs = json.findhostsformigrationresponse.host;
                                                                         var items =[];
                                                                         $(hostObjs).each(function () {
-                                                                            items.push({
-                                                                                id: this.id,
-                                                                                description: (this.name + " (" + (this.suitableformigration ? "Suitable": "Not Suitable") + ")")
-                                                                            });
+                                                                            if (this.requiresStorageMotion == true) {
+                                                                                items.push({
+                                                                                    id: this.id,
+                                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable, " : "Not Suitable, ") + "Storage migration required)")
+                                                                                });
+                                                                            } else {
+                                                                                items.push({
+                                                                                    id: this.id,
+                                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")")
+                                                                                });
+                                                                            }
                                                                         });
                                                                         args.response.success({
                                                                             data: items
@@ -2758,6 +2765,89 @@
                                                                         });
                                                                     },
                                                                     getActionFilter: function () {
+                                                                        return routerActionfilter;
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
+                                            migrateToAnotherStorage: {
+                                                label: 'label.action.migrate.router.to.ps',
+                                                compactLabel: 'label.migrate.to.storage',
+                                                messages: {
+                                                    confirm: function(args) {
+                                                        return 'message.migrate.router.to.ps';
+                                                    },
+                                                    notification: function(args) {
+                                                        return 'label.action.migrate.router.to.ps';
+                                                    }
+                                                },
+                                                createForm: {
+                                                    title: 'label.action.migrate.router.to.ps',
+                                                    desc: '',
+                                                    fields: {
+                                                        storageId: {
+                                                            label: 'label.primary.storage',
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            select: function(args) {
+                                                                $.ajax({
+                                                                    url: createURL("listStoragePools&zoneid=" + args.context.routers[0].zoneid),
+                                                                    dataType: "json",
+                                                                    async: true,
+                                                                    success: function(json) {
+                                                                        var pools = json.liststoragepoolsresponse.storagepool;
+                                                                        var items = [];
+                                                                        $(pools).each(function() {
+                                                                            items.push({
+                                                                                id: this.id,
+                                                                                description: this.name
+                                                                            });
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                });
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    var data = {
+                                                        'virtualmachineid': args.context.routers[0].id,
+                                                        'storageid': args.data.storageId
+                                                    }
+                                                    $.ajax({
+                                                        url: createURL("migrateSystemVm"),
+                                                        data: data,
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.migratesystemvmresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function (json) {
+                                                                        $.ajax({
+                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
+                                                                            dataType: "json",
+                                                                            async: false,
+                                                                            success: function (json) {
+                                                                                var items = json.listroutersresponse.router;
+                                                                                if (items != null && items.length > 0) {
+                                                                                    return items[0];
+                                                                                }
+                                                                            }
+                                                                        });
+                                                                    },
+                                                                    getActionFilter: function() {
                                                                         return routerActionfilter;
                                                                     }
                                                                 }
@@ -3254,10 +3344,17 @@
                                                                         var hostObjs = json.findhostsformigrationresponse.host;
                                                                         var items =[];
                                                                         $(hostObjs).each(function () {
-                                                                            items.push({
-                                                                                id: this.id,
-                                                                                description: (this.name + " (" + (this.suitableformigration ? "Suitable": "Not Suitable") + ")")
-                                                                            });
+                                                                            if (this.requiresStorageMotion == true) {
+                                                                                items.push({
+                                                                                    id: this.id,
+                                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable, " : "Not Suitable, ") + "Storage migration required)")
+                                                                                });
+                                                                            } else {
+                                                                                items.push({
+                                                                                    id: this.id,
+                                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")")
+                                                                                });
+                                                                            }
                                                                         });
                                                                         args.response.success({
                                                                             data: items
@@ -3302,6 +3399,89 @@
                                                                         });
                                                                     },
                                                                     getActionFilter: function () {
+                                                                        return internallbinstanceActionfilter;
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
+                                            migrateToAnotherStorage: {
+                                                label: 'label.migrate.lb.vm.to.ps',
+                                                compactLabel: 'label.migrate.to.storage',
+                                                messages: {
+                                                    confirm: function(args) {
+                                                        return 'message.migrate.lb.vm.to.ps';
+                                                    },
+                                                    notification: function(args) {
+                                                        return 'label.migrate.lb.vm.to.ps';
+                                                    }
+                                                },
+                                                createForm: {
+                                                    title: 'label.migrate.lb.vm.to.ps',
+                                                    desc: '',
+                                                    fields: {
+                                                        storageId: {
+                                                            label: 'label.primary.storage',
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            select: function(args) {
+                                                                $.ajax({
+                                                                    url: createURL("listStoragePools&zoneid=" + args.context.internallbinstances[0].zoneid),
+                                                                    dataType: "json",
+                                                                    async: true,
+                                                                    success: function(json) {
+                                                                        var pools = json.liststoragepoolsresponse.storagepool;
+                                                                        var items = [];
+                                                                        $(pools).each(function() {
+                                                                            items.push({
+                                                                                id: this.id,
+                                                                                description: this.name
+                                                                            });
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                });
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    var data = {
+                                                        'virtualmachineid': args.context.internallbinstances[0].id,
+                                                        'storageid': args.data.storageId
+                                                    }
+                                                    $.ajax({
+                                                        url: createURL("migrateSystemVm"),
+                                                        data: data,
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.migratesystemvmresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function (json) {
+                                                                        $.ajax({
+                                                                            url: createURL("listInternalLoadBalancerVMs&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
+                                                                            dataType: "json",
+                                                                            async: false,
+                                                                            success: function (json) {
+                                                                                var items = json.listinternallbvmssresponse.internalloadbalancervm;
+                                                                                if (items != null && items.length > 0) {
+                                                                                    return items[0];
+                                                                                }
+                                                                            }
+                                                                        });
+                                                                    },
+                                                                    getActionFilter: function() {
                                                                         return internallbinstanceActionfilter;
                                                                     }
                                                                 }
@@ -3882,10 +4062,17 @@
                                                                         var hostObjs = json.findhostsformigrationresponse.host;
                                                                         var items =[];
                                                                         $(hostObjs).each(function () {
-                                                                            items.push({
-                                                                                id: this.id,
-                                                                                description: (this.name + " (" + (this.suitableformigration ? "Suitable": "Not Suitable") + ")")
-                                                                            });
+                                                                            if (this.requiresStorageMotion == true) {
+                                                                                items.push({
+                                                                                    id: this.id,
+                                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable, " : "Not Suitable, ") + "Storage migration required)")
+                                                                                });
+                                                                            } else {
+                                                                                items.push({
+                                                                                    id: this.id,
+                                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")")
+                                                                                });
+                                                                            }
                                                                         });
                                                                         args.response.success({
                                                                             data: items
@@ -3930,6 +4117,89 @@
                                                                         });
                                                                     },
                                                                     getActionFilter: function () {
+                                                                        return routerActionfilter;
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
+                                            migrateToAnotherStorage: {
+                                                label: 'label.action.migrate.router.to.ps',
+                                                compactLabel: 'label.migrate.to.storage',
+                                                messages: {
+                                                    confirm: function(args) {
+                                                        return 'message.migrate.router.to.ps';
+                                                    },
+                                                    notification: function(args) {
+                                                        return 'label.action.migrate.router.to.ps';
+                                                    }
+                                                },
+                                                createForm: {
+                                                    title: 'label.action.migrate.router.to.ps',
+                                                    desc: '',
+                                                    fields: {
+                                                        storageId: {
+                                                            label: 'label.primary.storage',
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            select: function(args) {
+                                                                $.ajax({
+                                                                    url: createURL("listStoragePools&zoneid=" + args.context.routers[0].zoneid),
+                                                                    dataType: "json",
+                                                                    async: true,
+                                                                    success: function(json) {
+                                                                        var pools = json.liststoragepoolsresponse.storagepool;
+                                                                        var items = [];
+                                                                        $(pools).each(function() {
+                                                                            items.push({
+                                                                                id: this.id,
+                                                                                description: this.name
+                                                                            });
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                });
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    var data = {
+                                                        'virtualmachineid': args.context.routers[0].id,
+                                                        'storageid': args.data.storageId
+                                                    }
+                                                    $.ajax({
+                                                        url: createURL("migrateSystemVm"),
+                                                        data: data,
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.migratesystemvmresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function (json) {
+                                                                        $.ajax({
+                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
+                                                                            dataType: "json",
+                                                                            async: false,
+                                                                            success: function (json) {
+                                                                                var items = json.listroutersresponse.router;
+                                                                                if (items != null && items.length > 0) {
+                                                                                    return items[0];
+                                                                                }
+                                                                            }
+                                                                        });
+                                                                    },
+                                                                    getActionFilter: function() {
                                                                         return routerActionfilter;
                                                                     }
                                                                 }
@@ -6823,10 +7093,17 @@
                                                                         var hostObjs = json.findhostsformigrationresponse.host;
                                                                         var items =[];
                                                                         $(hostObjs).each(function () {
-                                                                            items.push({
-                                                                                id: this.id,
-                                                                                description: (this.name + " (" + (this.suitableformigration ? "Suitable": "Not Suitable") + ")")
-                                                                            });
+                                                                            if (this.requiresStorageMotion == true) {
+                                                                                items.push({
+                                                                                    id: this.id,
+                                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable, " : "Not Suitable, ") + "Storage migration required)")
+                                                                                });
+                                                                            } else {
+                                                                                items.push({
+                                                                                    id: this.id,
+                                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")")
+                                                                                });
+                                                                            }
                                                                         });
                                                                         args.response.success({
                                                                             data: items
@@ -6871,6 +7148,89 @@
                                                                         });
                                                                     },
                                                                     getActionFilter: function () {
+                                                                        return routerActionfilter;
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
+                                            migrateToAnotherStorage: {
+                                                label: 'label.action.migrate.router.to.ps',
+                                                compactLabel: 'label.migrate.to.storage',
+                                                messages: {
+                                                    confirm: function(args) {
+                                                        return 'message.migrate.router.to.ps';
+                                                    },
+                                                    notification: function(args) {
+                                                        return 'label.action.migrate.router.to.ps';
+                                                    }
+                                                },
+                                                createForm: {
+                                                    title: 'label.action.migrate.router.to.ps',
+                                                    desc: '',
+                                                    fields: {
+                                                        storageId: {
+                                                            label: 'label.primary.storage',
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            select: function(args) {
+                                                                $.ajax({
+                                                                    url: createURL("listStoragePools&zoneid=" + args.context.routers[0].zoneid),
+                                                                    dataType: "json",
+                                                                    async: true,
+                                                                    success: function(json) {
+                                                                        var pools = json.liststoragepoolsresponse.storagepool;
+                                                                        var items = [];
+                                                                        $(pools).each(function() {
+                                                                            items.push({
+                                                                                id: this.id,
+                                                                                description: this.name
+                                                                            });
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                });
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    var data = {
+                                                        'virtualmachineid': args.context.routers[0].id,
+                                                        'storageid': args.data.storageId
+                                                    }
+                                                    $.ajax({
+                                                        url: createURL("migrateSystemVm"),
+                                                        data: data,
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.migratesystemvmresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function (json) {
+                                                                        $.ajax({
+                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
+                                                                            dataType: "json",
+                                                                            async: false,
+                                                                            success: function (json) {
+                                                                                var items = json.listroutersresponse.router;
+                                                                                if (items != null && items.length > 0) {
+                                                                                    return items[0];
+                                                                                }
+                                                                            }
+                                                                        });
+                                                                    },
+                                                                    getActionFilter: function() {
                                                                         return routerActionfilter;
                                                                     }
                                                                 }
@@ -8903,10 +9263,15 @@
                                                                                 var hostObjs = json.findhostsformigrationresponse.host;
                                                                                 var items =[];
                                                                                 $(hostObjs).each(function () {
-                                                                                    if (this.requiresStorageMotion == false) {
+                                                                                    if (this.requiresStorageMotion == true) {
                                                                                         items.push({
                                                                                             id: this.id,
-                                                                                            description: (this.name + " (" + (this.suitableformigration ? "Suitable": "Not Suitable") + ")")
+                                                                                            description: (this.name + " (" + (this.suitableformigration ? "Suitable, " : "Not Suitable, ") + "Storage migration required)")
+                                                                                        });
+                                                                                    } else {
+                                                                                        items.push({
+                                                                                            id: this.id,
+                                                                                            description: (this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")")
                                                                                         });
                                                                                     }
                                                                                 });
@@ -8948,6 +9313,89 @@
                                                                                 });
                                                                             },
                                                                             getActionFilter: function () {
+                                                                                return systemvmActionfilter;
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                }
+                                                            });
+                                                        },
+                                                        notification: {
+                                                            poll: pollAsyncJobResult
+                                                        }
+                                                    },
+
+                                                    migrateToAnotherStorage: {
+                                                        label: 'label.action.migrate.system.vm.to.ps',
+                                                        compactLabel: 'label.migrate.to.storage',
+                                                        messages: {
+                                                            confirm: function(args) {
+                                                                return 'message.migrate.system.vm.to.ps';
+                                                            },
+                                                            notification: function(args) {
+                                                                return 'label.action.migrate.system.vm.to.ps';
+                                                            }
+                                                        },
+                                                        createForm: {
+                                                            title: 'label.action.migrate.system.vm.to.ps',
+                                                            desc: '',
+                                                            fields: {
+                                                                storageId: {
+                                                                    label: 'label.primary.storage',
+                                                                    validation: {
+                                                                        required: true
+                                                                    },
+                                                                    select: function(args) {
+                                                                        $.ajax({
+                                                                            url: createURL("listStoragePools&zoneid=" + args.context.systemVMs[0].zoneid),
+                                                                            dataType: "json",
+                                                                            async: true,
+                                                                            success: function(json) {
+                                                                                var pools = json.liststoragepoolsresponse.storagepool;
+                                                                                var items = [];
+                                                                                $(pools).each(function() {
+                                                                                    items.push({
+                                                                                        id: this.id,
+                                                                                        description: this.name
+                                                                                    });
+                                                                                });
+                                                                                args.response.success({
+                                                                                    data: items
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        action: function(args) {
+                                                            var data = {
+                                                                'virtualmachineid': args.context.systemVMs[0].id,
+                                                                'storageid': args.data.storageId
+                                                            }
+                                                            $.ajax({
+                                                                url: createURL("migrateSystemVm"),
+                                                                data: data,
+                                                                async: true,
+                                                                success: function(json) {
+                                                                    var jid = json.migratesystemvmresponse.jobid;
+                                                                    args.response.success({
+                                                                        _custom: {
+                                                                            jobId: jid,
+                                                                            getUpdatedItem: function (json) {
+                                                                                $.ajax({
+                                                                                    url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
+                                                                                    dataType: "json",
+                                                                                    async: false,
+                                                                                    success: function (json) {
+                                                                                        var items = json.listsystemvmsresponse.systemvm;
+                                                                                        if (items != null && items.length > 0) {
+                                                                                            return items[0];
+                                                                                        }
+                                                                                    }
+                                                                                });
+                                                                            },
+                                                                            getActionFilter: function() {
                                                                                 return systemvmActionfilter;
                                                                             }
                                                                         }
@@ -10394,10 +10842,17 @@
                                                                 var hostObjs = json.findhostsformigrationresponse.host;
                                                                 var items =[];
                                                                 $(hostObjs).each(function () {
-                                                                    items.push({
-                                                                        id: this.id,
-                                                                        description: (this.name + " (" + (this.suitableformigration ? "Suitable": "Not Suitable") + ")")
-                                                                    });
+                                                                    if (this.requiresStorageMotion == true) {
+                                                                        items.push({
+                                                                            id: this.id,
+                                                                            description: (this.name + " (" + (this.suitableformigration ? "Suitable, " : "Not Suitable, ") + "Storage migration required)")
+                                                                        });
+                                                                    } else {
+                                                                        items.push({
+                                                                            id: this.id,
+                                                                            description: (this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")")
+                                                                        });
+                                                                    }
                                                                 });
                                                                 args.response.success({
                                                                     data: items
@@ -10442,6 +10897,89 @@
                                                                 });
                                                             },
                                                             getActionFilter: function () {
+                                                                return routerActionfilter;
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                    },
+
+                                    migrateToAnotherStorage: {
+                                        label: 'label.action.migrate.router.to.ps',
+                                        compactLabel: 'label.migrate.to.storage',
+                                        messages: {
+                                            confirm: function(args) {
+                                                return 'message.migrate.router.to.ps';
+                                            },
+                                            notification: function(args) {
+                                                return 'label.action.migrate.router.to.ps';
+                                            }
+                                        },
+                                        createForm: {
+                                            title: 'label.action.migrate.router.to.ps',
+                                            desc: '',
+                                            fields: {
+                                                storageId: {
+                                                    label: 'label.primary.storage',
+                                                    validation: {
+                                                        required: true
+                                                    },
+                                                    select: function(args) {
+                                                        $.ajax({
+                                                            url: createURL("listStoragePools&zoneid=" + args.context.routers[0].zoneid),
+                                                            dataType: "json",
+                                                            async: true,
+                                                            success: function(json) {
+                                                                var pools = json.liststoragepoolsresponse.storagepool;
+                                                                var items = [];
+                                                                $(pools).each(function() {
+                                                                    items.push({
+                                                                        id: this.id,
+                                                                        description: this.name
+                                                                    });
+                                                                });
+                                                                args.response.success({
+                                                                    data: items
+                                                                });
+                                                            }
+                                                        });
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        action: function(args) {
+                                            var data = {
+                                                'virtualmachineid': args.context.routers[0].id,
+                                                'storageid': args.data.storageId
+                                            }
+                                            $.ajax({
+                                                url: createURL("migrateSystemVm"),
+                                                data: data,
+                                                async: true,
+                                                success: function(json) {
+                                                    var jid = json.migratesystemvmresponse.jobid;
+                                                    args.response.success({
+                                                        _custom: {
+                                                            jobId: jid,
+                                                            getUpdatedItem: function (json) {
+                                                                $.ajax({
+                                                                    url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var items = json.listroutersresponse.router;
+                                                                        if (items != null && items.length > 0) {
+                                                                            return items[0];
+                                                                        }
+                                                                    }
+                                                                });
+                                                            },
+                                                            getActionFilter: function() {
                                                                 return routerActionfilter;
                                                             }
                                                         }
@@ -11920,10 +12458,15 @@
                                                         var hostObjs = json.findhostsformigrationresponse.host;
                                                         var items =[];
                                                         $(hostObjs).each(function () {
-                                                            if (this.requiresStorageMotion == false) {
+                                                            if (this.requiresStorageMotion == true) {
                                                                 items.push({
                                                                     id: this.id,
-                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable": "Not Suitable") + ")")
+                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable, " : "Not Suitable, ") + "Storage migration required)")
+                                                                });
+                                                            } else {
+                                                                items.push({
+                                                                    id: this.id,
+                                                                    description: (this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")")
                                                                 });
                                                             }
                                                         });
@@ -11965,6 +12508,89 @@
                                                         });
                                                     },
                                                     getActionFilter: function () {
+                                                        return systemvmActionfilter;
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            migrateToAnotherStorage: {
+                                label: 'label.action.migrate.system.vm.to.ps',
+                                compactLabel: 'label.migrate.to.storage',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.migrate.system.vm.to.ps';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.action.migrate.system.vm.to.ps';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.action.migrate.system.vm.to.ps',
+                                    desc: '',
+                                    fields: {
+                                        storageId: {
+                                            label: 'label.primary.storage',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listStoragePools&zoneid=" + args.context.systemVMs[0].zoneid),
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var pools = json.liststoragepoolsresponse.storagepool;
+                                                        var items = [];
+                                                        $(pools).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        'virtualmachineid': args.context.systemVMs[0].id,
+                                        'storageid': args.data.storageId
+                                    }
+                                    $.ajax({
+                                        url: createURL("migrateSystemVm"),
+                                        data: data,
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.migratesystemvmresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $.ajax({
+                                                            url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listsystemvmsresponse.systemvm;
+                                                                if (items != null && items.length > 0) {
+                                                                    return items[0];
+                                                                }
+                                                            }
+                                                        });
+                                                    },
+                                                    getActionFilter: function() {
                                                         return systemvmActionfilter;
                                                     }
                                                 }
@@ -22729,6 +23355,9 @@
             //when router is Stopped, all hypervisors support scaleUp(change service offering)
             allowedActions.push("scaleUp");
 
+            if (isAdmin() && jsonObj.hypervisor == "VMware") {
+                allowedActions.push("migrateToAnotherStorage");
+            }
             allowedActions.push("remove");
         }
         if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
@@ -22748,6 +23377,10 @@
             allowedActions.push("migrate");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
+
+            if (isAdmin() && jsonObj.hypervisor == "VMware") {
+                allowedActions.push("migrateToAnotherStorage");
+            }
         }
         if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
             allowedActions.push("viewConsole");
@@ -22781,6 +23414,9 @@
             //when systemvm is Stopped, all hypervisors support scaleUp(change service offering)
             allowedActions.push("scaleUp");
 
+            if (isAdmin() && jsonObj.hypervisor == "VMware") {
+                allowedActions.push("migrateToAnotherStorage");
+            }
             allowedActions.push("remove");
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("remove");

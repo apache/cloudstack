@@ -311,6 +311,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
@@ -1732,7 +1733,17 @@ public class ApiDBUtils {
     ///////////////////////////////////////////////////////////////////////
 
     public static DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO vr, Account caller) {
-        return s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
+        DomainRouterResponse response = s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
+        if (StringUtils.isBlank(response.getHypervisor())) {
+            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(vr.getId());
+            if (vm.getLastHostId() != null) {
+                HostVO host = ApiDBUtils.findHostById(vm.getLastHostId());
+                if (host != null) {
+                    response.setHypervisor(host.getHypervisorType().toString());
+                }
+            }
+        }
+        return  response;
     }
 
     public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr) {

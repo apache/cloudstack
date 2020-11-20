@@ -40,7 +40,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -653,6 +652,7 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -1257,7 +1257,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // Check if the vm can be migrated with storage.
         boolean canMigrateWithStorage = false;
 
-        if (vm.getType() == VirtualMachine.Type.User) {
+        if (VirtualMachine.Type.User.equals(vm.getType()) || HypervisorType.VMware.equals(vm.getHypervisorType())) {
             canMigrateWithStorage = Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion));
         }
 
@@ -1285,7 +1285,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword,
+            Long podId = !VirtualMachine.Type.User.equals(vm.getType()) ? srcHost.getPodId() : null;
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), podId, null, null, keyword,
                 null, null, srcHost.getHypervisorType(), null, srcHost.getId());
             allHosts = allHostsPair.first();
             hostsForMigrationWithStorage = new ArrayList<>(allHosts);
@@ -1336,7 +1337,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
             }
 
-            plan = new DataCenterDeployment(srcHost.getDataCenterId(), null, null, null, null, null);
+            plan = new DataCenterDeployment(srcHost.getDataCenterId(), podId, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
             if (s_logger.isDebugEnabled()) {
