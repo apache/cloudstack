@@ -28,14 +28,10 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.utils.Pair;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ComputeResourceConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreSummary;
@@ -70,6 +66,9 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.utils.Pair;
 
 public class HostMO extends BaseMO implements VmwareHypervisorHost {
     private static final Logger s_logger = Logger.getLogger(HostMO.class);
@@ -277,10 +276,6 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
     public AboutInfo getHostAboutInfo() throws Exception {
         return (AboutInfo)_context.getVimClient().getDynamicProperty(_mor, "config.product");
-    }
-
-    public ComputeResourceConfigInfo getHostConfigInfo() throws Exception {
-        return (ComputeResourceConfigInfo)_context.getVimClient().getDynamicProperty(_mor, "configurationEx");
     }
 
     public VmwareHostType getHostType() throws Exception {
