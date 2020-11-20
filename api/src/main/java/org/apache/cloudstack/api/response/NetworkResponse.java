@@ -191,7 +191,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)
-    @Param(description = "VPC name of the network", since = "4.15")
+    @Param(description = "Name of the VPC to which this network belongs", since = "4.15")
     private String vpcName;
 
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
