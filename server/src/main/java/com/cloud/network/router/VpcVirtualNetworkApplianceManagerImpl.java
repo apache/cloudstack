@@ -339,6 +339,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     vlanMacAddress.put(vlanTag, routerNic.getMacAddress());
                 }
             }
+            int deviceId = 1; //Public and Guest networks start from device_id = 1
 
             final List<Command> usageCmds = new ArrayList<Command>();
 
@@ -347,7 +348,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 // add VPC router to public networks
                 final List<PublicIp> sourceNat = new ArrayList<PublicIp>(1);
                 for (final Pair<Nic, Network> nicNtwk : publicNics) {
-                    final Nic publicNic = nicNtwk.first();
+                    final Nic publicNic = updateNicWithDeviceId(nicNtwk.first().getId(), deviceId);
+                    deviceId ++;
                     final Network publicNtwk = nicNtwk.second();
                     final IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), publicNic.getIPv4Address());
 
@@ -385,7 +387,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
                 // add VPC router to guest networks
                 for (final Pair<Nic, Network> nicNtwk : guestNics) {
-                    final Nic guestNic = nicNtwk.first();
+                    final Nic guestNic = updateNicWithDeviceId(nicNtwk.first().getId(), deviceId);
+                    deviceId ++;
                     // plug guest nic
                     final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
@@ -833,5 +836,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         // Without this VirtualNetworkApplianceManagerImpl.postStateTransitionEvent() gets called twice as part of listeners -
         // once from VpcVirtualNetworkApplianceManagerImpl and once from VirtualNetworkApplianceManagerImpl itself
         return true;
+    }
+
+    private Nic updateNicWithDeviceId(final long nicId, int deviceId) {
+        NicVO nic = _nicDao.findById(nicId);
+        nic.setDeviceId(deviceId);
+        _nicDao.update(nic.getId(), nic);
+        return nic;
     }
 }
