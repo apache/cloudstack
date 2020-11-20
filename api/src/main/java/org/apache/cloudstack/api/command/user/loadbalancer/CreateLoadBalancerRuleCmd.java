@@ -47,7 +47,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
-import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createLoadBalancerRule", description = "Creates a load balancer rule", responseObject = LoadBalancerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -255,7 +254,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     }
 
     public String getLbProtocol() {
-        return lbProtocol;
+        return lbProtocol.trim().toLowerCase();
     }
 
     /////////////////////////////////////////////////////
@@ -337,7 +336,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     }
 
     public String getProtocol() {
-        return NetUtils.TCP_PROTO;
+        return getLbProtocol();
     }
 
     public long getAccountId() {
