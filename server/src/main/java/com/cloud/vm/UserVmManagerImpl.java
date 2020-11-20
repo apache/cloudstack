@@ -1055,6 +1055,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO userVm = _vmDao.findById(vmId);
         generateUsageEvent( userVm, userVm.isDisplayVm(), EventTypes.EVENT_VM_UPGRADE);
 
+        resizeVolumeWithNewOfferings(vmInstance, newServiceOffering);
+
         return userVm;
     }
 
@@ -1139,19 +1141,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
-        DiskOfferingVO newROOTDiskOffering = _diskOfferingDao.findById(newServiceOffering.getId());
-
-        List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vmInstance.getId());
-
-        for (final VolumeVO rootVolumeOfVm : vols) {
-            rootVolumeOfVm.setDiskOfferingId(newROOTDiskOffering.getId());
-
-            _volsDao.update(rootVolumeOfVm.getId(), rootVolumeOfVm);
-
-            ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd(rootVolumeOfVm.getId(), newROOTDiskOffering.getMinIops(), newROOTDiskOffering.getMaxIops());
-
-            _volumeService.resizeVolume(resizeVolumeCmd);
-        }
+        resizeVolumeWithNewOfferings(vmInstance, newServiceOffering);
 
         // Check if the new service offering can be applied to vm instance
         ServiceOffering newSvcOffering = _offeringDao.findById(svcOffId);
@@ -1175,6 +1165,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         return _vmDao.findById(vmInstance.getId());
 
+    }
+
+    private void resizeVolumeWithNewOfferings(VMInstanceVO vmInstance, ServiceOfferingVO newServiceOffering)
+            throws ResourceAllocationException {
+        DiskOfferingVO newROOTDiskOffering = _diskOfferingDao.findById(newServiceOffering.getId());
+
+        List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vmInstance.getId());
+
+        for (final VolumeVO rootVolumeOfVm : vols) {
+            rootVolumeOfVm.setDiskOfferingId(newROOTDiskOffering.getId());
+
+            _volsDao.update(rootVolumeOfVm.getId(), rootVolumeOfVm);
+
+            ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd(rootVolumeOfVm.getId(), newROOTDiskOffering.getMinIops(), newROOTDiskOffering.getMaxIops());
+
+            _volumeService.resizeVolume(resizeVolumeCmd);
+        }
     }
 
     @Override
