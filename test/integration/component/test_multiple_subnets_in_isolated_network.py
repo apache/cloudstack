@@ -192,6 +192,35 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
                 sourcenatIp = nic.ipaddress
         return guestIp, controlIp, sourcenatIp
 
+    def verify_router_publicnic_state(self, router, host, publicNics):
+        command = '/opt/cloud/bin/checkrouter.sh | cut -d ":" -f2 |tr -d " "'
+        self.logger.debug("Executing command '%s'" % command)
+        result = get_process_status(
+            host.ipaddress,
+            host.port,
+            host.user,
+            host.password,
+            router.linklocalip,
+            command)
+        self.assertTrue(len(result) > 0, "Cannot get router %s redundant state" % router.name)
+        redundant_state = result[0]
+        self.logger.debug("router %s redudnant state is %s" % (router.name, redundant_state))
+        if redundant_state == "FAULT":
+            self.logger.debug("Skip as redundant_state is %s" % redundant_state)
+            return
+        elif redundant_state == "MASTER":
+            command = 'ip link show |grep BROADCAST | egrep "%s" |grep "state DOWN" |wc -l' % publicNics
+        elif redundant_state == "BACKUP":
+            command = 'ip link show |grep BROADCAST | egrep "%s" |grep "state UP" |wc -l' % publicNics
+        result = get_process_status(
+            host.ipaddress,
+            host.port,
+            host.user,
+            host.password,
+            router.linklocalip,
+            command)
+        self.assertTrue(len(result) > 0 and result[0] == "0", "Expected result is 0 but actual result is %s" % result[0])
+
     def verify_network_interfaces_in_router(self, router, host, expectedNics):
         command = 'ip link show |grep BROADCAST | cut -d ":" -f2 |tr -d " "|tr "\n" ","'
         self.logger.debug("Executing command '%s'" % command)
@@ -338,6 +367,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, guestIp, "eth0", True)
             self.verify_ip_address_in_router(router, host, controlIp, "eth1", True)
             self.verify_ip_address_in_router(router, host, sourcenatIp, "eth2", True)
+            self.verify_router_publicnic_state(router, host, "eth2")
 
         # 4. get a free public ip, assign to network, and create port forwarding rules (ssh) to the vm
         ipaddress = PublicIPAddress.create(
@@ -363,6 +393,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, controlIp, "eth1", True)
             self.verify_ip_address_in_router(router, host, sourcenatIp, "eth2", True)
             self.verify_ip_address_in_router(router, host, ipaddress.ipaddress.ipaddress, "eth2", True)
+            self.verify_router_publicnic_state(router, host, "eth2")
 
         # 5. release the new ip
         ipaddress.delete(self.apiclient)
@@ -378,6 +409,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, controlIp, "eth1", True)
             self.verify_ip_address_in_router(router, host, sourcenatIp, "eth2", True)
             self.verify_ip_address_in_router(router, host, ipaddress.ipaddress.ipaddress, "eth2", False)
+            self.verify_router_publicnic_state(router, host, "eth2")
 
         # 6. create new public ip range 1
         self.services["publiciprange"]["zoneid"] = self.zone.id
@@ -423,6 +455,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, controlIp, "eth1", True)
             self.verify_ip_address_in_router(router, host, sourcenatIp, "eth2", True)
             self.verify_ip_address_in_router(router, host, ipaddress_1.ipaddress.ipaddress, "eth3", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3")
 
         # 8. get a free ip in new ip range, assign to network, and create port forwarding rules (ssh) to the vm
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3"
@@ -452,6 +485,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, sourcenatIp, "eth2", True)
             self.verify_ip_address_in_router(router, host, ipaddress_1.ipaddress.ipaddress, "eth3", True)
             self.verify_ip_address_in_router(router, host, ipaddress_2.ipaddress.ipaddress, "eth3", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3")
 
         # 9. get a free ip in new ip range, assign to network, and create port forwarding rules (ssh) to the vm
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3"
@@ -482,6 +516,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_1.ipaddress.ipaddress, "eth3", True)
             self.verify_ip_address_in_router(router, host, ipaddress_2.ipaddress.ipaddress, "eth3", True)
             self.verify_ip_address_in_router(router, host, ipaddress_3.ipaddress.ipaddress, "eth3", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3")
 
         # 10. release new ip 2
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3"
@@ -499,6 +534,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_1.ipaddress.ipaddress, "eth3", True)
             self.verify_ip_address_in_router(router, host, ipaddress_2.ipaddress.ipaddress, "eth3", False)
             self.verify_ip_address_in_router(router, host, ipaddress_3.ipaddress.ipaddress, "eth3", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3")
 
         # 11. release new ip 1
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3"
@@ -515,6 +551,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_1.ipaddress.ipaddress, "eth3", False)
             self.verify_ip_address_in_router(router, host, ipaddress_2.ipaddress.ipaddress, "eth3", False)
             self.verify_ip_address_in_router(router, host, ipaddress_3.ipaddress.ipaddress, "eth3", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3")
 
         # 12. create new public ip range 2
         self.services["publiciprange"]["zoneid"] = self.zone.id
@@ -562,6 +599,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, sourcenatIp, "eth2", True)
             self.verify_ip_address_in_router(router, host, ipaddress_3.ipaddress.ipaddress, "eth3", True)
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth4", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3|eth4")
 
         # 14. get a free ip 5 in new ip range 2, assign to network, and create port forwarding rules (ssh) to the vm
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,"
@@ -592,6 +630,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_3.ipaddress.ipaddress, "eth3", True)
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth4", True)
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth4", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3|eth4")
 
         # 15. get a free ip 6 in new ip range 2, assign to network, and create port forwarding rules (ssh) to the vm
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,"
@@ -623,6 +662,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth4", True)
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth4", True)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth4", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3|eth4")
 
         # 16. release new ip 5
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,"
@@ -641,6 +681,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth4", True)
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth4", False)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth4", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3|eth4")
 
         # 17. release new ip 4
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,"
@@ -658,6 +699,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth4", False)
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth4", False)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth4", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3|eth4")
 
         # 18. release new ip 3
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth4,"
@@ -674,6 +716,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth4", False)
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth4", False)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth4", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth4")
 
         # 19. restart network
         self.network1.restart(self.apiclient)
@@ -688,6 +731,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth4", False)
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth4", False)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth4", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth4")
 
         # reboot router
         for router in routers:
@@ -704,6 +748,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth3", False)
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth3", False)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth3", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3")
 
         # 20. restart network with cleanup
         self.network1.restart(self.apiclient, cleanup=True)
@@ -732,3 +777,4 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_4.ipaddress.ipaddress, "eth3", False)
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth3", False)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth3", True)
+            self.verify_router_publicnic_state(router, host, "eth2|eth3")
