@@ -15,6 +15,7 @@
 
         <div class="item__content">
           <a-input
+            :autoFocus="editableValueKey === index"
             v-if="editableValueKey === index"
             class="editable-value value"
             :defaultValue="item.value"
