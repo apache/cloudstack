@@ -43,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -144,6 +143,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
@@ -3081,7 +3081,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
 
-            if (defaultNic != null) {
+            if (defaultNic != null && VirtualMachine.Type.User.equals(vm.getType())) {
                 UserVmVO userVm = _userVmDao.findById(vm.getId());
                 Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
                 userVm.setDetails(details);
