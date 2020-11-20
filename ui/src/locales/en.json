@@ -1819,7 +1819,7 @@
 "label.rule.number": "Rule Number",
 "label.rules": "Rules",
 "label.rules.file": "Rules File",
-"label.rules.file.import.description": "Click or drag rule defintions CVS file to import",
+"label.rules.file.import.description": "Click or drag rule defintions CSV file to import",
 "label.run.proxy.locally": "Run proxy locally",
 "label.running": "Running VMs",
 "label.s3.access.key": "Access Key",
