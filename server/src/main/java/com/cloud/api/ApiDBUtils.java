@@ -1737,9 +1737,9 @@ public class ApiDBUtils {
         if (StringUtils.isBlank(response.getHypervisor())) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(vr.getId());
             if (vm.getLastHostId() != null) {
-                HostVO host = ApiDBUtils.findHostById(vm.getLastHostId());
-                if (host != null) {
-                    response.setHypervisor(host.getHypervisorType().toString());
+                HostVO lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
+                if (lastHost != null) {
+                    response.setHypervisor(lastHost.getHypervisorType().toString());
                 }
             }
         }

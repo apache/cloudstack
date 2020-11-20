@@ -5667,7 +5667,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (vm.getType() != VirtualMachine.Type.User && !HypervisorType.VMware.equals(vm.getHypervisorType())) {
-            throw new InvalidParameterValueException("can only do storage migration on user vm for hypervisor: " + vm.getHypervisorType().toString());
+            throw new InvalidParameterValueException("cannot do storage migration on non-user vm for hypervisor: " + vm.getHypervisorType().toString() + ", only supported for VMware");
         }
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
