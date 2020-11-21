@@ -244,7 +244,7 @@ class CodeGenerator(object):
             body += self.space + self.space + 'return response\n'
             body += self.newline
 
-            imports += 'from %s import %sResponse\n' % (cmdName, cmdName)
+            imports += 'from .%s import %sResponse\n' % (cmdName, cmdName)
             initCmdsList += '"%s",' % cmdName
 
         fp = open(self.outputFolder + '/cloudstackAPI/cloudstackAPIClient.py',

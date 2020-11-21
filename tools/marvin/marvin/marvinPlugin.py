@@ -14,7 +14,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import marvin
 from sys import stdout, exit
 import time
 import os
@@ -34,9 +33,12 @@ class MarvinPlugin(Plugin):
     Custom plugin for the cloudstackTestCases to be run using nose
     """
 
+    commandLineSwitch = (None, 'with-marvin', 'Say hello!')
+    configSection = 'marvin'
     name = "marvin"
 
     def __init__(self):
+        self.options()
         self.__identifier = None
         self.__testClient = None
         self.__logFolderPath = None
@@ -52,7 +54,7 @@ class MarvinPlugin(Plugin):
         '''
         Signifies the flag whether to deploy the New DC or Not
         '''
-        self.__deployDcFlag = None
+        self.__deployDcFlag = False
         self.conf = None
         self.__resultStream = stdout
         self.__testRunner = None
@@ -89,39 +91,49 @@ class MarvinPlugin(Plugin):
             print("\nStarting Marvin Failed, exiting. Please Check")
             exit(1)
 
-    def options(self, parser, env):
+    def options(self):
         """
         Register command line options
         """
-        parser.add_option("--marvin-config", action="store",
-                          default=env.get('MARVIN_CONFIG',
-                                          './datacenter.cfg'),
-                          dest="configFile",
-                          help="Marvin's configuration file is required."
-                               "The config file containing the datacenter and "
-                               "other management server "
-                               "information is specified")
-        parser.add_option("--deploy", action="store_true",
-                          default=False,
-                          dest="deployDc",
-                          help="Deploys the DC with Given Configuration."
-                               "Requires only when DC needs to be deployed")
-        parser.add_option("--zone", action="store",
-                          default=None,
-                          dest="zone",
-                          help="Runs all tests against this specified zone")
-        parser.add_option("--hypervisor", action="store",
-                          default=None,
-                          dest="hypervisor_type",
-                          help="Runs all tests against the specified "
-                               "zone and hypervisor Type")
-        parser.add_option("--log-folder-path", action="store",
-                          default=None,
-                          dest="logFolder",
-                          help="Collects all logs under the user specified"
-                               "folder"
-                          )
-        Plugin.options(self, parser, env)
+        """
+        TODO missing is the default=env.get('MARVIN_CONFIG',
+                                            './datacenter.cfg'),
+        """
+        addArgument(self.setConfigFile, short_opt="C", long_opt="marvin-config",
+                    help_text="Marvin's configuration file is required."
+                              "The config file containing the datacenter and "
+                              "other management server "
+                              "information is specified")
+        addFlag(self.enableDeploy, short_opt="D", long_opt="deploy",
+                help_text="Deploys the DC with Given Configuration."
+                          "Requires only when DC needs to be deployed")
+        addArgument(self.setZone, short_opt="Z", long_opt="zone",
+                    help_text="Runs all tests against this specified zone")
+        addArgument(self.setHypervisor, short_opt="H", long_opt="hypervisor",
+                    help_text="Runs all tests against the specified "
+                              "zone and hypervisor Type")
+        addArgument(self.setLogFolder, short_opt="L", long_opt="log-folder-path",
+                    help_text="Collects all logs under the user specified"
+                              "folder")
+
+    def setConfigFile(self, filePath):
+        if filePath != None:
+            self.__configFile = filePath
+
+    def setZone(self, zone):
+        if zone != None:
+            self.__zoneForTests = zone
+
+    def setHypervisor(self, hypervisor):
+        if hypervisor != None:
+            self.__hypervisorType = hypervisor
+
+    def setLogFolder(self,folder):
+        if folder != None:
+            self.__logFolderPath = folder
+
+    def enableDeploy(self):
+        self.__deployDcFlag = True
 
     def wantClass(self, cls):
         if cls.__name__ == 'cloudstackTestCase':
@@ -159,9 +171,9 @@ class MarvinPlugin(Plugin):
         return self.__checkImport(filename)
 
     def loadTestsFromTestCase(self, cls):
-        if cls.__name__ != 'cloudstackTestCase':
+        if cls.testCase.__name__ != 'cloudstackTestCase':
             self.__identifier = cls.__name__
-            self._injectClients(cls)
+            self._injectClients(cls.testCase)
 
     def beforeTest(self, test):
         self.__testModName = test.__str__()

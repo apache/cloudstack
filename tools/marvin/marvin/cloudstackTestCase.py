@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import unittest
+import unittest2
 from marvin.lib.utils import verifyElementInList, cleanup_resources
 from marvin.codes import PASS
 
@@ -34,7 +34,7 @@ def user(Name, DomainName, AcctType):
     return wrapper
 
 
-class cloudstackTestCase(unittest.case.TestCase):
+class cloudstackTestCase(unittest2.TestCase):
     clstestclient = None
 
     def assertElementInList(self, inp, toverify, responsevar=None, pos=0,
