@@ -308,6 +308,21 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         # 17. release new ip 4
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,"
         #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth3 -> new ip 3, eth4 -> new ip 6
+        # 18. release new ip 3
+        #   verify the available nics in VR should be "eth0,eth1,eth2,eth4,"
+        #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth4 -> new ip 6
+        # 19. restart network
+        #   verify the available nics in VR should be "eth0,eth1,eth2,eth4,"
+        #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth4 -> new ip 6
+        # 20. reboot router
+        #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,"
+        #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth3 -> new ip 6
+        # 21. restart network with cleanup
+        #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,"
+        #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth3 -> new ip 6
+        # 22. restart network with cleanup, makeredundant=true
+        #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,"
+        #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth3 -> new ip 6
         """
 
         # Create new domain1
@@ -719,6 +734,8 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_router_publicnic_state(router, host, "eth2|eth4")
 
         # 19. restart network
+        #   verify the available nics in VR should be "eth0,eth1,eth2,eth4,"
+        #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth4 -> new ip 6
         self.network1.restart(self.apiclient)
         routers = self.get_routers(self.network1.id)
         for router in routers:
@@ -733,7 +750,9 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth4", True)
             self.verify_router_publicnic_state(router, host, "eth2|eth4")
 
-        # reboot router
+        # 20. reboot router
+        #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,"
+        #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth3 -> new ip 6
         for router in routers:
             cmd = rebootRouter.rebootRouterCmd()
             cmd.id = router.id
@@ -750,7 +769,9 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth3", True)
             self.verify_router_publicnic_state(router, host, "eth2|eth3")
 
-        # 20. restart network with cleanup
+        # 21. restart network with cleanup
+        #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,"
+        #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth3 -> new ip 6
         self.network1.restart(self.apiclient, cleanup=True)
         routers = self.get_routers(self.network1.id)
         for router in routers:
@@ -764,7 +785,9 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, ipaddress_5.ipaddress.ipaddress, "eth3", False)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth3", True)
 
-        # 21. restart network with cleanup, makeredundant=true
+        # 22. restart network with cleanup, makeredundant=true
+        #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,"
+        #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth3 -> new ip 6
         self.network1.restart(self.apiclient, cleanup=True, makeredundant=True)
         routers = self.get_routers(self.network1.id)
         for router in routers:
