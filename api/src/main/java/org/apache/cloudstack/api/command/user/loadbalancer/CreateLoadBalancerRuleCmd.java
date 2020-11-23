@@ -255,7 +255,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     }
 
     public String getLbProtocol() {
-        return lbProtocol;
+        return lbProtocol != null ? lbProtocol.toLowerCase().trim() : null;
     }
 
     /////////////////////////////////////////////////////
