@@ -28,28 +28,44 @@
           style="width: 100%"
           icon="plus"
           :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
-          @click="showAddDetail = true">
+          @click="onShowAddDetail">
           {{ $t('label.add.setting') }}
         </a-button>
       </div>
       <div v-show="showAddDetail">
-        <a-auto-complete
-          style="width: 100%"
-          :filterOption="filterOption"
-          :value="newKey"
-          :dataSource="Object.keys(detailOptions)"
-          :placeholder="$t('label.name')"
-          @change="e => onAddInputChange(e, 'newKey')" />
-        <a-auto-complete
-          style="width: 100%"
-          :filterOption="filterOption"
-          :value="newValue"
-          :dataSource="detailOptions[newKey]"
-          :placeholder="$t('label.value')"
-          @change="e => onAddInputChange(e, 'newValue')" />
+        <a-input-group
+          type="text"
+          compact>
+          <a-auto-complete
+            class="detail-input"
+            ref="keyElm"
+            :filterOption="filterOption"
+            :value="newKey"
+            :dataSource="Object.keys(detailOptions)"
+            :placeholder="$t('label.name')"
+            @change="e => onAddInputChange(e, 'newKey')" />
+          <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+          <a-auto-complete
+            class="detail-input"
+            :filterOption="filterOption"
+            :value="newValue"
+            :dataSource="detailOptions[newKey]"
+            :placeholder="$t('label.value')"
+            @change="e => onAddInputChange(e, 'newValue')" />
+          <a-tooltip arrowPointAtCenter placement="topRight">
+            <template slot="title">
+              {{ $t('label.add.setting') }}
+            </template>
+            <a-button icon="check" @click="addDetail" class="detail-button"></a-button>
+          </a-tooltip>
+          <a-tooltip arrowPointAtCenter placement="topRight">
+            <template slot="title">
+              {{ $t('label.cancel') }}
+            </template>
+            <a-button icon="close" @click="closeDetail" class="detail-button"></a-button>
+          </a-tooltip>
+        </a-input-group>
         <p v-if="error" style="color: red"> {{ $t(error) }} </p>
-        <a-button type="primary" style="width: 25%" icon="plus" @click="addDetail">{{ $t('label.add.setting') }}</a-button>
-        <a-button type="dashed" style="width: 25%" icon="close" @click="showAddDetail = false">{{ $t('label.cancel') }}</a-button>
       </div>
     </div>
     <a-list size="large">
@@ -169,6 +185,7 @@ export default {
       this.$set(this.details, index, this.details[index])
     },
     onAddInputChange (val, obj) {
+      this.error = false
       this[obj] = val
     },
     isAdminOrOwner () {
@@ -234,7 +251,29 @@ export default {
     deleteDetail (index) {
       this.details.splice(index, 1)
       this.runApi()
+    },
+    onShowAddDetail () {
+      this.showAddDetail = true
+      setTimeout(() => {
+        this.$refs.keyElm.focus()
+      })
+    },
+    closeDetail () {
+      this.newKey = ''
+      this.newValue = ''
+      this.error = false
+      this.showAddDetail = false
     }
   }
 }
 </script>
+
+<style scoped lang="less">
+.detail-input {
+  width: calc(calc(100% / 2) - 45px);
+}
+
+.detail-button {
+  width: 30px;
+}
+</style>
