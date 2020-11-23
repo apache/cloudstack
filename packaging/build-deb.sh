@@ -163,6 +163,7 @@ dpkg-buildpackage -uc -us -b
 if [ -n "$OUTPUT_DIR" ];then
     mkdir -p "$OUTPUT_DIR"
     mv ../*${VERSION}* "$OUTPUT_DIR"
+    echo "====== CloudStack packages have been moved to $OUTPUT_DIR ======"
 fi
 
 if [ "$USE_TIMESTAMP" == "true" ]; then
