@@ -269,7 +269,8 @@
               </a-step>
               <a-step
                 :title="this.$t('label.networks')"
-                :status="zoneSelected ? 'process' : 'wait'">
+                :status="zoneSelected ? 'process' : 'wait'"
+                v-if="zone && zone.networktype !== 'Basic'">
                 <template slot="description">
                   <div v-if="zoneSelected">
                     <div v-if="vm.templateid && templateNics && templateNics.length > 0">
@@ -955,7 +956,7 @@ export default {
       return this.$route.query.networkid || null
     },
     showSecurityGroupSection () {
-      return this.networks.length > 0 && this.zone.securitygroupsenabled
+      return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
     }
   },
   watch: {
@@ -1455,52 +1456,54 @@ export default {
         // step 5: select an affinity group
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
         // step 6: select network
-        if ('networkMap' in values) {
-          const keys = Object.keys(values.networkMap)
-          for (var j = 0; j < keys.length; ++j) {
-            if (values.networkMap[keys[j]] && values.networkMap[keys[j]].length > 0) {
-              deployVmData['nicnetworklist[' + j + '].nic'] = keys[j].replace('nic-', '')
-              deployVmData['nicnetworklist[' + j + '].network'] = values.networkMap[keys[j]]
-            }
-          }
-        } else {
-          const arrNetwork = []
-          networkIds = values.networkids
-          if (networkIds.length > 0) {
-            for (let i = 0; i < networkIds.length; i++) {
-              if (networkIds[i] === this.defaultNetwork) {
-                const ipToNetwork = {
-                  networkid: this.defaultNetwork
-                }
-                arrNetwork.unshift(ipToNetwork)
-              } else {
-                const ipToNetwork = {
-                  networkid: networkIds[i]
-                }
-                arrNetwork.push(ipToNetwork)
+        if (this.zone.networktype !== 'Basic') {
+          if ('networkMap' in values) {
+            const keys = Object.keys(values.networkMap)
+            for (var j = 0; j < keys.length; ++j) {
+              if (values.networkMap[keys[j]] && values.networkMap[keys[j]].length > 0) {
+                deployVmData['nicnetworklist[' + j + '].nic'] = keys[j].replace('nic-', '')
+                deployVmData['nicnetworklist[' + j + '].network'] = values.networkMap[keys[j]]
               }
             }
           } else {
-            this.$notification.error({
-              message: this.$t('message.request.failed'),
-              description: this.$t('message.step.4.continue')
-            })
-            this.loading.deploy = false
-            return
-          }
-          for (let j = 0; j < arrNetwork.length; j++) {
-            deployVmData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
-            if (this.networkConfig.length > 0) {
-              const networkConfig = this.networkConfig.filter((item) => item.key === arrNetwork[j].networkid)
-              if (networkConfig && networkConfig.length > 0) {
-                deployVmData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
-                deployVmData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
+            const arrNetwork = []
+            networkIds = values.networkids
+            if (networkIds.length > 0) {
+              for (let i = 0; i < networkIds.length; i++) {
+                if (networkIds[i] === this.defaultNetwork) {
+                  const ipToNetwork = {
+                    networkid: this.defaultNetwork
+                  }
+                  arrNetwork.unshift(ipToNetwork)
+                } else {
+                  const ipToNetwork = {
+                    networkid: networkIds[i]
+                  }
+                  arrNetwork.push(ipToNetwork)
+                }
+              }
+            } else {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: this.$t('message.step.4.continue')
+              })
+              this.loading.deploy = false
+              return
+            }
+            for (let j = 0; j < arrNetwork.length; j++) {
+              deployVmData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
+              if (this.networkConfig.length > 0) {
+                const networkConfig = this.networkConfig.filter((item) => item.key === arrNetwork[j].networkid)
+                if (networkConfig && networkConfig.length > 0) {
+                  deployVmData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
+                  deployVmData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
+                }
               }
             }
           }
-        }
-        if (this.securitygroupids.length > 0) {
-          deployVmData.securitygroupids = this.securitygroupids.join(',')
+          if (this.securitygroupids.length > 0) {
+            deployVmData.securitygroupids = this.securitygroupids.join(',')
+          }
         }
         // step 7: select ssh key pair
         deployVmData.keypair = values.keypair
