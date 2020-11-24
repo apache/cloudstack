@@ -902,7 +902,8 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,eth5,"
         #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> tier 1, eth4 -> private gateway, eth5 -> tier 2
         routers = self.get_vpc_routers(self.vpc1.id)
-        for router in routers:
+        if len(routers) > 0:
+            router = routers[0]
             cmd = rebootRouter.rebootRouterCmd()
             cmd.id = router.id
             self.apiclient.rebootRouter(cmd)
