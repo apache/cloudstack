@@ -99,6 +99,10 @@ public class HostForMigrationResponse extends BaseResponse {
     @Param(description = "the amount of the host's CPU currently allocated")
     private String cpuAllocated;
 
+    @SerializedName("cpuallocatedwithoverprovisioning")
+    @Param(description = "the amount of the host's CPU currently allocated after applying the cpu.overprovisioning.factor")
+    private String cpuAllocatedWithOverprovisioning;
+
     @SerializedName("cpuused")
     @Param(description = "the amount of the host's CPU currently used")
     private String cpuUsed;
@@ -301,6 +305,10 @@ public class HostForMigrationResponse extends BaseResponse {
 
     public void setCpuAllocated(String cpuAllocated) {
         this.cpuAllocated = cpuAllocated;
+    }
+
+    public void setCpuAllocatedWithOverprovisioning(String cpuAllocatedWithOverprovisioning) {
+        this.cpuAllocatedWithOverprovisioning = cpuAllocatedWithOverprovisioning;
     }
 
     public void setCpuUsed(String cpuUsed) {

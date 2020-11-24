@@ -107,12 +107,16 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the amount of the host's CPU currently allocated")
     private String cpuAllocated;
 
+    @SerializedName("cpuallocatedwithoverprovisioning")
+    @Param(description = "the amount of the host's CPU currently allocated after applying the cpu.overprovisioning.factor")
+    private String cpuAllocatedWithOverprovisioning;
+
     @SerializedName("cpuused")
     @Param(description = "the amount of the host's CPU currently used")
     private String cpuUsed;
 
     @SerializedName("cpuwithoverprovisioning")
-    @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor ")
+    @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor")
     private String cpuWithOverprovisioning;
 
     @SerializedName(ApiConstants.CPU_LOAD_AVERAGE)
@@ -340,6 +344,10 @@ public class HostResponse extends BaseResponse {
 
     public void setCpuAllocated(String cpuAllocated) {
         this.cpuAllocated = cpuAllocated;
+    }
+
+    public void setCpuAllocatedWithOverprovisioning(String cpuAllocatedWithOverprovisioning) {
+        this.cpuAllocatedWithOverprovisioning = cpuAllocatedWithOverprovisioning;
     }
 
     public void setCpuUsed(String cpuUsed) {
