@@ -3446,10 +3446,6 @@
                                                             name: 'tcp',
                                                             description: _l('label.lb.protocol.tcp')
                                                         }, {
-                                                            id: 'udp',
-                                                            name: 'udp',
-                                                            description: _l('label.lb.protocol.udp')
-                                                        }, {
                                                             id: 'tcp-proxy',
                                                             name: 'tcp-proxy',
                                                             description: _l('label.lb.protocol.tcp.proxy')
