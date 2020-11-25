@@ -4862,69 +4862,80 @@
                                         });
                                     }
                                 }
-                            }
-                        },
-                        actions: {
-                            enable: {
-                                label: 'label.enable.provider',
-                                action: function (args) {
-                                    $.ajax({
-                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "Tungsten"].id + "&state=Enabled"),
-                                        dataType: "json",
-                                        success: function (json) {
-                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid,
-                                                    getUpdatedItem: function (json) {
-                                                        $(window).trigger('cloudStack.fullRefresh');
-                                                    }
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
-                                messages: {
-                                    confirm: function (args) {
-                                        return 'message.confirm.enable.provider';
-                                    },
-                                    notification: function () {
-                                        return 'label.enable.provider';
-                                    }
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
                             },
-                            disable: {
-                                label: 'label.disable.provider',
-                                action: function (args) {
-                                    $.ajax({
-                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "Tungsten"].id + "&state=Disabled"),
-                                        dataType: "json",
-                                        success: function (json) {
-                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid,
-                                                    getUpdatedItem: function (json) {
-                                                        $(window).trigger('cloudStack.fullRefresh');
-                                                    }
-                                                }
-                                            });
+                            controllers: {
+                                title: 'label.tungsten.providers',
+                                listView: {
+                                    id: 'tungstenProviderList',
+                                    fields: {
+                                        name: {
+                                            label: 'label.name'
+                                        },
+                                        tungstenproviderhostname: {
+                                            label: 'label.tungsten.provider.hostname'
+                                        },
+                                        tungstenproviderport: {
+                                            label: 'label.tungsten.provider.port'
+                                        },
+                                        tungstenprovidervrouter: {
+                                            label: 'label.tungsten.provider.vrouter'
+                                        },
+                                        tungstenprovidervrouterport: {
+                                            label: 'label.tungsten.provider.vrouterport'
                                         }
-                                    });
-                                },
-                                messages: {
-                                    confirm: function (args) {
-                                        return 'message.confirm.disable.provider';
                                     },
-                                    notification: function () {
-                                        return 'label.disable.provider';
+                                    dataProvider: function (args) {
+                                        var providerObj
+                                        $.ajax({
+                                            url: createURL("listTungstenProviders&zoneid=" + args.context.zones[0].id),
+                                            async: false,
+                                            success: function (json) {
+                                                providerObj = json.listTungstenProviders.tungstenProvider
+                                            }
+                                        });
+                                        args.response.success({
+                                            data: providerObj
+                                        });
+                                    },
+                                    detailView: {
+                                        name: "Tungsten Provider",
+                                        tabs: {
+                                            details: {
+                                                title: 'label.tungsten.providerdetail',
+                                                fields: [{
+                                                    name: {
+                                                        label: 'label.name'
+                                                    },
+                                                    tungstenproviderhostname: {
+                                                        label: 'label.tungsten.provider.hostname', header: true
+                                                    },
+                                                    tungstenproviderport: {
+                                                        label: 'label.tungsten.provider.port'
+                                                    },
+                                                    tungstenprovidervrouter: {
+                                                        label: 'label.tungsten.provider.vrouter'
+                                                    },
+                                                    tungstenprovidervrouterport: {
+                                                        label: 'label.tungsten.provider.vrouterport'
+                                                    }
+                                                }],
+                                                dataProvider: function (args) {
+                                                    var providerObj
+                                                    $.ajax({
+                                                        url: createURL("listTungstenProviders&zoneid=" + args.context.zones[0].id),
+                                                        dataType: "json",
+                                                        async: false,
+                                                        success: function (json) {
+                                                            providerObj = json.listTungstenProviders.tungstenProvider
+                                                        }
+                                                    });
+                                                    args.response.success({
+                                                        data: providerObj[0]
+                                                    });
+                                                }
+                                            }
+                                        }
                                     }
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
                                 }
                             }
                         }

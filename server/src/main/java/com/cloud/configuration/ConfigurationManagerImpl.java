@@ -69,6 +69,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
@@ -82,7 +83,6 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.TungstenProvider;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -93,6 +93,7 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.TungstenProviderDao;
+import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -110,6 +111,8 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -386,6 +389,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     IndirectAgentLB _indirectAgentLB;
     @Inject
     private VMTemplateZoneDao templateZoneDao;
+    @Inject
+    ResourceManager _resourceMgr;
     @Inject
     TungstenProviderDao tungstenProviderDao;
 
@@ -1857,10 +1862,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _vlanDao.remove(vlan.getId());
                 }
 
-                //Check if zone is tungsten zone and remove tungsten provider
-                TungstenProvider tungstenProvider = tungstenProviderDao.findByZoneId(zoneId);
-                if(tungstenProvider != null)
+                //Check if zone is tungsten zone and remove tungsten provider and delete tungsten host
+                TungstenProviderVO tungstenProvider = tungstenProviderDao.findByZoneId(zoneId);
+                if(tungstenProvider != null) {
+                    HostVO tungstenHost = _hostDao.findById(tungstenProvider.getHostId());
+                    Long hostId = tungstenHost.getId();
+
+                    tungstenHost.setResourceState(ResourceState.Maintenance);
+                    _hostDao.update(hostId, tungstenHost);
+                    _resourceMgr.deleteHost(hostId, false, false);
                     tungstenProviderDao.deleteProviderByUuid(tungstenProvider.getUuid());
+                }
 
                 final boolean success = _zoneDao.remove(zoneId);
 

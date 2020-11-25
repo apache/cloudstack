@@ -20,8 +20,11 @@ public class TungstenDomainManagerImpl extends TungstenResourceManager implement
 
     public void createDomainInTungsten(TungstenProvider tungstenProvider, String domainName, String domainUuid){
         try {
-            // create tungsten domain
             ApiConnector _api = getApiConnector(tungstenProvider);
+            //check if the domain exists in tungsten
+            if(_api.findById(Domain.class, domainUuid) != null)
+                return;
+            //create tungsten domain
             Domain tungstenDomain = new Domain();
             tungstenDomain.setDisplayName(domainName);
             tungstenDomain.setName(domainName);

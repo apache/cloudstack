@@ -21,13 +21,18 @@ public class TungstenProjectManagerImpl extends TungstenResourceManager implemen
 
     @Override
     public void createProjectInTungsten(TungstenProvider tungstenProvider, String projectUuid, String projectName, Domain domain) {
-        ApiConnector _api = getApiConnector(tungstenProvider);
-        Project tungstenProject = new Project();
-        tungstenProject.setDisplayName(projectName);
-        tungstenProject.setName(projectName);
-        tungstenProject.setUuid(projectUuid);
-        net.juniper.tungsten.api.types.Domain tungstenDomain;
         try {
+            ApiConnector _api = getApiConnector(tungstenProvider);
+            //check if the project already exists in tungsten
+            if(_api.findById(Project.class, projectUuid) != null)
+                return;
+            //Create tungsten project
+            Project tungstenProject = new Project();
+            tungstenProject.setDisplayName(projectName);
+            tungstenProject.setName(projectName);
+            tungstenProject.setUuid(projectUuid);
+            net.juniper.tungsten.api.types.Domain tungstenDomain;
+
             if (domain == null)
                 tungstenDomain = tungstenDomainManager.getDefaultTungstenDomain(tungstenProvider);
             else {

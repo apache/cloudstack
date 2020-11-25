@@ -517,7 +517,7 @@
              * @param args
              */
             addTungstenProvider: elems.step({
-                title: _l('label.add.pod'),
+                title: _l('label.add.tungsten.provider'),
                 id: 'add-tungsten',
                 stateID: 'tungstenProvider',
                 tooltipID: 'addTungstenProvider',

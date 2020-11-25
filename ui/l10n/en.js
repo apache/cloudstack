@@ -385,6 +385,7 @@ var dictionary = {
     "label.add.nfs.secondary.staging.store":"Add NFS Secondary Staging Store",
     "label.add.physical.network":"Add physical network",
     "label.add.pod":"Add Pod",
+    "label.add.tungsten.provider":"Add Tungsten Provider",
     "label.add.port.forwarding.rule":"Add port forwarding rule",
     "label.add.portable.ip.range":"Add Portable IP Range",
     "label.add.primary.storage":"Add Primary Storage",

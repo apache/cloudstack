@@ -311,7 +311,7 @@
             addPublicNetwork: function(args) {
                 var isShown;
                 var $publicTrafficDesc = $('.zone-wizard:visible').find('#add_zone_public_traffic_desc');
-                if (args.data['network-model'] == 'Basic' || args.groupedData.physicalNetworks[0].isolationMethod == "TF") {
+                if (args.data['network-model'] == 'Basic') {
                     if (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) {
                         isShown = true;
                     } else {
@@ -326,6 +326,14 @@
                     else
                         isShown = false;
 
+                    if(args.groupedData.physicalNetworks[0].isolationMethod == "TF") {
+                        $('.subnav li.guest-traffic').hide();
+                        $('.subnav li.tungsten-provider').show();
+                    } else {
+                        $('.subnav li.guest-traffic').show();
+                        $('.subnav li.tungsten-provider').hide();
+                    }
+
                     $publicTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
                     $publicTrafficDesc.find('#for_basic_zone').hide();
                 }
@@ -338,7 +346,6 @@
                 if (args.groupedData.physicalNetworks[0].isolationMethod == "TF") {
                     isShown = true;
 
-                    $('.subnav li.public-network').hide();
                     $('.subnav li.guest-traffic').hide();
                     $tungstenProviderDesc.find('#for_advanced_zone').css('display', 'inline');
                     $tungstenProviderDesc.find('#for_basic_zone').hide();

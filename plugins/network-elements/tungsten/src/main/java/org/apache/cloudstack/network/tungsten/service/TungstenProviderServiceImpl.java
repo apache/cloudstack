@@ -2,13 +2,19 @@ package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.TungstenProvider;
 import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.element.TungstenProviderVO;
+import com.cloud.projects.ProjectVO;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.tungsten.TungstenDomainManager;
+import com.cloud.tungsten.TungstenProjectManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
@@ -17,6 +23,7 @@ import com.google.common.collect.Lists;
 import org.apache.cloudstack.network.tungsten.api.command.ConfigTungstenServiceCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProviderCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenPublicNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenProvidersCmd;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 import org.apache.cloudstack.network.tungsten.resource.TungstenResource;
 import org.apache.log4j.Logger;
@@ -42,11 +49,19 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
     ResourceManager _resourceMgr;
     @Inject
     HostDetailsDao _hostDetailsDao;
+    @Inject
+    TungstenDomainManager _tungstenDomainManager;
+    @Inject
+    TungstenProjectManager _tungstenProjectManager;
+    @Inject
+    DomainDao _domainDao;
+    @Inject
+    ProjectDao _projectDao;
 
     @Override
     public List<Class<?>> getCommands() {
         return Lists.<Class<?>>newArrayList(CreateTungstenProviderCmd.class, ConfigTungstenServiceCmd.class,
-            CreateTungstenPublicNetworkCmd.class);
+            CreateTungstenPublicNetworkCmd.class, ListTungstenProvidersCmd.class);
     }
 
     @Override
@@ -90,7 +105,8 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
                     public TungstenProviderVO doInTransaction(TransactionStatus status) {
                         TungstenProviderVO tungstenProviderVO = new TungstenProviderVO(zoneId, name, host.getId(), port,
                             hostname, vrouter, vrouterPort);
-                        _tungstenProviderDao.persist(tungstenProviderVO);
+                        TungstenProviderVO persistedTungstenProvider = _tungstenProviderDao.persist(tungstenProviderVO);
+                        syncTungstenDbWithCloudstackProjectsAndDomains(persistedTungstenProvider);
 
                         DetailVO detail = new DetailVO(host.getId(), "tungstendeviceid",
                             String.valueOf(tungstenProviderVO.getId()));
@@ -128,5 +144,27 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
         tungstenProviderResponse.setVrouterPort(tungstenProviderVO.getVrouterPort());
         tungstenProviderResponse.setObjectName("tungstenProvider");
         return tungstenProviderResponse;
+    }
+
+    private void syncTungstenDbWithCloudstackProjectsAndDomains(TungstenProvider tungstenProvider){
+        List<DomainVO> cloudstackDomains = _domainDao.listAll();
+        List<ProjectVO> cloudstackProjects = _projectDao.listAll();
+
+        if(cloudstackDomains != null && !cloudstackDomains.isEmpty()){
+            for(DomainVO domain : cloudstackDomains){
+                _tungstenDomainManager.createDomainInTungsten(tungstenProvider, domain.getName(), domain.getUuid());
+                if(cloudstackProjects != null){
+                    for(ProjectVO project : cloudstackProjects){
+                        _tungstenProjectManager.createProjectInTungsten(tungstenProvider, project.getUuid(), project.getName(), domain);
+                    }
+                }
+            }
+        } else {
+            if(cloudstackProjects != null){
+                for(ProjectVO project : cloudstackProjects){
+                    _tungstenProjectManager.createProjectInTungsten(tungstenProvider, project.getUuid(), project.getName(), null);
+                }
+            }
+        }
     }
 }
