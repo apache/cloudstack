@@ -40,7 +40,7 @@ class MarvinLog:
 
     def __new__(cls, logger_name):
         if not cls._instance:
-            cls._instance = super(MarvinLog, cls).__new__(cls, logger_name)
+            cls._instance = super(MarvinLog, cls).__new__(cls)
             return cls._instance
 
     def __init__(self, logger_name):

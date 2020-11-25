@@ -19,7 +19,7 @@ import time
 import os
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.marvinInit import MarvinInit
-from nose2.events import Plugin
+from nose2 import events, runner
 from marvin.codes import (SUCCESS,
                           FAILED,
                           EXCEPTION)
@@ -27,13 +27,18 @@ from marvin.lib.utils import random_gen
 from marvin.cloudstackException import GetDetailExceptionInfo
 
 
-class MarvinPlugin(Plugin):
+class MarvinPlugin(events.Plugin):
 
     """
     Custom plugin for the cloudstackTestCases to be run using nose
     """
 
     enableOpt = 'with-marvin'
+    deployOpt = 'deploy'
+    zoneOpt = 'zone'
+    hypervisorOpt = 'hypervisor'
+    configOpt = 'marvin_config'
+    logFolderOpt = 'log_folder_path'
     commandLineSwitch = (None, enableOpt, 'marvin test plugin')
     configSection = 'marvin'
     name = "marvin"
@@ -72,37 +77,39 @@ class MarvinPlugin(Plugin):
         Plugin.__init__(self)
 
     def handleArgs(self, event):
-        """Get our options in order command line, config file, hard coded."""
+        """Get our options in order command line, config file, hard coded.
+        enable the marvin plugin when the --with-marvin directive is given
+        to nose. The enableOpt value is set from the command line directive and
+        self.enabled (True|False) determines whether marvin's tests will run.
+        By default non-default plugins like marvin will be disabled
+        """
         self.enabled = True
         if hasattr(event.args, self.enableOpt):
             if not getattr(event.args, self.enableOpt):
                 self.enabled = False
                 return
-        self.__configFile = event.args.configFile
-        self.__deployDcFlag = event.args.deployDc
-        self.__zoneForTests = event.args.zone
-        self.__hypervisorType = event.args.hypervisor_type
-        self.__userLogPath = event.args.logFolder
+        if hasattr(event.args, self.configOpt):
+            if getattr(event.args, self.configOpt):
+                self.__configFile = event.args.marvin_config[0]
+        if hasattr(event.args, self.deployOpt):
+            if getattr(event.args, self.deployOpt):
+                self.__deployDcFlag = True
+        if hasattr(event.args, self.zoneOpt):
+            if getattr(event.args, self.zoneOpt):
+                self.__zoneForTests = event.args.zone
+        if hasattr(event.args, self.hypervisorOpt):
+            if getattr(event.args, self.hypervisorOpt):
+                self.setHypervisor(event.args.hypervisor)
+        if hasattr(event.args, self.logFolderOpt):
+            if getattr(event.args, self.logFolderOpt):
+                self.setHypervisor(event.args.logFolder)
         # TODO handle config file config   linkAccount     self.conf = conf
-        if self.startMarvin() == FAILED:
-            print("\nStarting Marvin Failed, exiting. Please Check")
-            exit(1)
-
-    def configure(self, options, conf):
-        """enable the marvin plugin when the --with-marvin directive is given
-        to nose. The enableOpt value is set from the command line directive and
-        self.enabled (True|False) determines whether marvin's tests will run.
-        By default non-default plugins like marvin will be disabled
-        """
-        self.__configFile = options.configFile
-        self.__deployDcFlag = options.deployDc
-        self.__zoneForTests = options.zone
-        self.__hypervisorType = options.hypervisor_type
-        self.__userLogPath = options.logFolder
-        self.conf = conf
-        if self.startMarvin() == FAILED:
-            print("\nStarting Marvin Failed, exiting. Please Check")
-            exit(1)
+        if self.__configFile:
+            if self.startMarvin() == FAILED:
+                print("\nStarting Marvin Failed, exiting. Please Check")
+                exit(1)
+        else:
+            print("\nNo marvin config yet, postponing start")
 
     def options(self):
         """
@@ -112,22 +119,19 @@ class MarvinPlugin(Plugin):
         TODO missing is the default=env.get('MARVIN_CONFIG',
                                             './datacenter.cfg'),
         """
-        addArgument(self.setConfigFile, short_opt="C", long_opt="marvin-config",
+        self.addArgument(self.setConfigFile, short_opt="M", long_opt=self.configOpt.replace("_","-"),
                     help_text="Marvin's configuration file is required."
                               "The config file containing the datacenter and "
-                              "other management server "
-                              "information is specified")
-        addFlag(self.enableDeploy, short_opt="D", long_opt="deploy",
-                help_text="Deploys the DC with Given Configuration."
-                          "Requires only when DC needs to be deployed")
-        addArgument(self.setZone, short_opt="Z", long_opt="zone",
+                              "other management server information is specified")
+        self.addFlag(self.enableDeploy, short_opt="R", long_opt=self.deployOpt,
+                help_text="Deploys the DC (Region) with Given Configuration."
+                          "Required only when DC needs to be deployed")
+        self.addArgument(self.setZone, short_opt="Z", long_opt=self.zoneOpt,
                     help_text="Runs all tests against this specified zone")
-        addArgument(self.setHypervisor, short_opt="H", long_opt="hypervisor",
-                    help_text="Runs all tests against the specified "
-                              "zone and hypervisor Type")
-        addArgument(self.setLogFolder, short_opt="L", long_opt="log-folder-path",
-                    help_text="Collects all logs under the user specified"
-                              "folder")
+        self.addArgument(self.setHypervisor, short_opt="H", long_opt=self.hypervisorOpt,
+                    help_text="Runs all tests against the specified  zone and hypervisor Type")
+        self.addArgument(self.setLogFolder, short_opt="L", long_opt=self.logFolderOpt.replace("_","-"),
+                    help_text="Collects all logs under the user specified folder")
 
     def setConfigFile(self, filePath):
         if filePath != None:
@@ -265,11 +269,10 @@ class MarvinPlugin(Plugin):
                 self.__parsedConfig = obj_marvininit.getParsedConfig()
                 self.__resultStream = obj_marvininit.getResultFile()
                 self.__logFolderPath = obj_marvininit.getLogFolderPath()
-                self.__testRunner = nose.core.\
-                    TextTestRunner(stream=self.__resultStream,
-                                   descriptions=True,
-                                   verbosity=2,
-                                   config=self.conf)
+                # self.__testRunner = runner.PluggableTestRunner(stream=self.__resultStream,
+                #                    descriptions=True,
+                #                    verbosity=2,
+                #                    config=self.conf)
                 return SUCCESS
             return FAILED
         except Exception as e:
