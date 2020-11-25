@@ -77,7 +77,6 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
@@ -276,15 +275,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 buf.append(" dns1=").append(defaultDns1);
                 if (defaultDns2 != null) {
                     buf.append(" dns2=").append(defaultDns2);
-                }
-
-                VpcGatewayVO privateGatewayForVpc = _vpcGatewayDao.getPrivateGatewayForVpc(domainRouterVO.getVpcId());
-                if (privateGatewayForVpc != null) {
-                    String ip4Address = privateGatewayForVpc.getIp4Address();
-                    buf.append(" privategateway=").append(ip4Address);
-                    s_logger.debug("Set privategateway field in cmd_line.json to " + ip4Address);
-                } else {
-                    buf.append(" privategateway=None");
                 }
             }
         }
