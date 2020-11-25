@@ -429,7 +429,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         # 6. create new public ip range 1
         self.services["publiciprange"]["zoneid"] = self.zone.id
         self.services["publiciprange"]["forvirtualnetwork"] = "true"
-        random_subnet_number = random.randrange(10,20)
+        random_subnet_number = random.randrange(10,50)
         self.services["publiciprange"]["vlan"] = get_free_vlan(
             self.apiclient,
             self.zone.id)[1]
