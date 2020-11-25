@@ -3158,6 +3158,18 @@ class Network:
             cmd.isolatedpvlan = services["isolatedpvlan"]
         if "isolatedpvlantype" in services:
             cmd.isolatedpvlantype = services["isolatedpvlantype"]
+        if "routerip" in services:
+            cmd.routerip = services["routerip"]
+        if "ip6gateway" in services:
+            cmd.ip6gateway = services["ip6gateway"]
+        if "ip6cidr" in services:
+            cmd.ip6cidr = services["ip6cidr"]
+        if "startipv6" in services:
+            cmd.startipv6 = services["startipv6"]
+        if "endipv6" in services:
+            cmd.endipv6 = services["endipv6"]
+        if "routeripv6" in services:
+            cmd.routeripv6 = services["routeripv6"]
 
         if accountid:
             cmd.account = accountid

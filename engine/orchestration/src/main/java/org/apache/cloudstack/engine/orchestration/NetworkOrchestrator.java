@@ -640,6 +640,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         setStateMachine();
     }
 
+    private void updateNetworkDetails(NetworkVO networkPersisted, Network network) {
+        NetworkDetailVO networkDetailVO = null;
+        if (isNotBlank(network.getRouterIp())) {
+            networkDetailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ROUTER_IP, network.getRouterIp().toString(), true);
+        }
+        if (isNotBlank(network.getRouterIpv6())) {
+            networkDetailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ROUTER_IPV6, network.getRouterIpv6().toString(), true);
+        }
+        if (networkDetailVO != null) {
+            networkDetailsDao.persist(networkDetailVO);
+        }
+    }
+
     @Override
     public List<? extends Network> setupNetwork(final Account owner, final NetworkOffering offering, final DeploymentPlan plan, final String name, final String displayText, final boolean isDefault)
             throws ConcurrentOperationException {
@@ -718,9 +731,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         networks.add(networkPersisted);
 
                         if (network.getPvlanType() != null) {
-                            NetworkDetailVO detailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ISOLATED_PVLAN_TYPE, network.getPvlanType().toString(), true);
+                                NetworkDetailVO detailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ISOLATED_PVLAN_TYPE, network.getPvlanType().toString(), true);
                             networkDetailsDao.persist(detailVO);
                         }
+
+                        updateNetworkDetails(networkPersisted, network);
 
                         if (predefined instanceof NetworkVO && guru instanceof NetworkGuruAdditionalFunctions){
                             final NetworkGuruAdditionalFunctions functions = (NetworkGuruAdditionalFunctions) guru;
@@ -2314,7 +2329,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // create network for private gateway
         return createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId,
                 bypassVlanOverlapCheck, null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null,
-                vpcId, null, null, true, null, null, null, true);
+                vpcId, null, null, true, null, null, null, true, null, null);
     }
 
     @Override
@@ -2322,18 +2337,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public Network createGuestNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, String vlanId,
                                       boolean bypassVlanOverlapCheck, String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk,
                                       final long zoneId, final ACLType aclType, Boolean subdomainAccess, final Long vpcId, final String ip6Gateway, final String ip6Cidr,
-                                      final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+                                      final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         // create Isolated/Shared/L2 network
         return createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck,
                 networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr,
-                isDisplayNetworkEnabled, isolatedPvlan, isolatedPvlanType, externalId, false);
+                isDisplayNetworkEnabled, isolatedPvlan, isolatedPvlanType, externalId, false, routerIp, routerIpv6);
     }
 
     @DB
     private Network createGuestNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, String vlanId,
                                        boolean bypassVlanOverlapCheck, String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk,
                                        final long zoneId, final ACLType aclType, Boolean subdomainAccess, final Long vpcId, final String ip6Gateway, final String ip6Cidr,
-                                       final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, final Boolean isPrivateNetwork) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+                                       final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, final Boolean isPrivateNetwork, String routerIp, String routerIpv6) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         final NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         final DataCenterVO zone = _dcDao.findById(zoneId);
@@ -2594,6 +2609,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     userNetwork.setExternalId(externalId);
                 }
 
+                if (isNotBlank(routerIp)) {
+                    userNetwork.setRouterIp(routerIp);
+                }
+
+                if (isNotBlank(routerIpv6)) {
+                    userNetwork.setRouterIpv6(routerIpv6);
+                }
+
                 if (vlanIdFinal != null) {
                     if (isolatedPvlan == null) {
                         URI uri = null;
@@ -2633,7 +2656,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 final List<? extends Network> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId, aclType, subdomainAccessFinal, vpcId,
                         isDisplayNetworkEnabled);
-
                 Network network = null;
                 if (networks == null || networks.isEmpty()) {
                     throw new CloudRuntimeException("Fail to create a network");

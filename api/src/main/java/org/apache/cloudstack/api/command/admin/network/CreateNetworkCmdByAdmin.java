@@ -42,6 +42,12 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCm
     @Parameter(name=ApiConstants.HIDE_IP_ADDRESS_USAGE, type=CommandType.BOOLEAN, description="when true ip address usage for the network will not be exported by the listUsageRecords API")
     private Boolean hideIpAddressUsage;
 
+    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to a router in a shared network", since = "4.16")
+    private String routerIp;
+
+    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to a router in a shared network", since = "4.16")
+    private String routerIpv6;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -62,5 +68,13 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCm
             return hideIpAddressUsage;
         }
         return false;
+    }
+
+    public String getRouterIp() {
+        return routerIp;
+    }
+
+    public String getRouterIpv6() {
+        return routerIpv6;
     }
 }
