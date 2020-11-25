@@ -33,7 +33,8 @@ class MarvinPlugin(Plugin):
     Custom plugin for the cloudstackTestCases to be run using nose
     """
 
-    commandLineSwitch = (None, 'with-marvin', 'Say hello!')
+    enableOpt = 'with-marvin'
+    commandLineSwitch = (None, enableOpt, 'marvin test plugin')
     configSection = 'marvin'
     name = "marvin"
 
@@ -70,17 +71,29 @@ class MarvinPlugin(Plugin):
         self.__userLogPath = None
         Plugin.__init__(self)
 
+    def handleArgs(self, event):
+        """Get our options in order command line, config file, hard coded."""
+        self.enabled = True
+        if hasattr(event.args, self.enableOpt):
+            if not getattr(event.args, self.enableOpt):
+                self.enabled = False
+                return
+        self.__configFile = event.args.configFile
+        self.__deployDcFlag = event.args.deployDc
+        self.__zoneForTests = event.args.zone
+        self.__hypervisorType = event.args.hypervisor_type
+        self.__userLogPath = event.args.logFolder
+        # TODO handle config file config   linkAccount     self.conf = conf
+        if self.startMarvin() == FAILED:
+            print("\nStarting Marvin Failed, exiting. Please Check")
+            exit(1)
+
     def configure(self, options, conf):
         """enable the marvin plugin when the --with-marvin directive is given
         to nose. The enableOpt value is set from the command line directive and
         self.enabled (True|False) determines whether marvin's tests will run.
         By default non-default plugins like marvin will be disabled
         """
-        self.enabled = True
-        if hasattr(options, self.enableOpt):
-            if not getattr(options, self.enableOpt):
-                self.enabled = False
-                return
         self.__configFile = options.configFile
         self.__deployDcFlag = options.deployDc
         self.__zoneForTests = options.zone
@@ -171,8 +184,8 @@ class MarvinPlugin(Plugin):
         return self.__checkImport(filename)
 
     def loadTestsFromTestCase(self, cls):
-        if cls.testCase.__name__ != 'cloudstackTestCase':
-            self.__identifier = cls.__name__
+        if cls.testCase and cls.testCase.__name__ != 'cloudstackTestCase':
+            self.__identifier = cls.testCase.__name__
             self._injectClients(cls.testCase)
 
     def beforeTest(self, test):
