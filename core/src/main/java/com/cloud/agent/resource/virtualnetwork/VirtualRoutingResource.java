@@ -87,7 +87,6 @@ public class VirtualRoutingResource {
     private int _retry;
     private int _port;
     private Duration _eachTimeout;
-    private Map<String, Object> _params;
 
     private String _cfgVersion = "1.0";
 
@@ -410,7 +409,6 @@ public class VirtualRoutingResource {
 
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        _params = params;
 
         String value = (String)params.get("ssh.sleep");
         _sleep = NumbersUtil.parseInt(value, 10) * 1000;
