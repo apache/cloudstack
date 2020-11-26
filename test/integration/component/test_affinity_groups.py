@@ -187,8 +187,8 @@ class TestCreateAffinityGroup(cloudstackTestCase):
             acc=self.account.name, domainid=self.account.domainid)
         self.debug("Created Affinity Group: %s" % aff_grp.name)
         list_aff_grps = AffinityGroup.list(self.api_client, id=aff_grp.id)
-        self.assert_(isinstance(list_aff_grps, list) and len(list_aff_grps) > 0)
-        self.assert_(list_aff_grps[0].id == aff_grp.id)
+        self.assertTrue(isinstance(list_aff_grps, list) and len(list_aff_grps) > 0)
+        self.assertTrue(list_aff_grps[0].id == aff_grp.id)
         self.cleanup.append(aff_grp)
 
     @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
@@ -455,7 +455,7 @@ class TestListAffinityGroups(cloudstackTestCase):
         """
 
         self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
-        print self.aff_grp[0].__dict__
+        print(self.aff_grp[0].__dict__)
         list_aff_grps = AffinityGroup.list(self.api_client)
         list_aff_grps = AffinityGroup.list(self.api_client, id=list_aff_grps[0].id)
         self.assertEqual(list_aff_grps[0].name, self.aff_grp[0].name,
@@ -646,7 +646,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
 
     def delete_aff_group(self, apiclient, **kwargs):
         cmd = deleteAffinityGroup.deleteAffinityGroupCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.deleteAffinityGroup(cmd)
 
     @attr(tags=["simulator", "basic", "advanced", "multihost"], required_hardware="false")
@@ -658,7 +658,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         aff_0 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
         AffinityGroup.list(self.api_client, name=aff_0.name)
         self.delete_aff_group(self.api_client, name=aff_0.name)
-        self.assert_(AffinityGroup.list(self.api_client, name=aff_0.name) is None)
+        self.assertTrue(AffinityGroup.list(self.api_client, name=aff_0.name) is None)
 
     @attr(tags=["simulator", "basic", "advanced", "multihost"], required_hardware="false")
     def test_02_delete_aff_grp_for_acc(self):
@@ -688,7 +688,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         vm, hostid = self.create_vm_in_aff_grps([aff_0.name, aff_1.name], account_name=self.account.name, domain_id=self.domain.id)
         aff_0.delete(self.api_client)
         vm_list = list_virtual_machines(self.apiclient, id=vm.id)
-        self.assert_(vm_list is not None)
+        self.assertTrue(vm_list is not None)
         vm.delete(self.api_client)
         #Wait for expunge interval to cleanup VM
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])

@@ -179,7 +179,7 @@ class TestSnapshotLimit(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id
                                     )
             cls._cleanup.append(cls.virtual_machine)
-        except Exception, e:
+        except Exception as e:
             cls.tearDownClass()
             unittest.SkipTest("setupClass fails for %s" % cls.__name__)
             raise e

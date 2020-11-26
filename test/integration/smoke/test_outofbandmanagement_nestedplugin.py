@@ -23,11 +23,11 @@ from marvin.lib.base import *
 from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
-from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
+from http.server import BaseHTTPRequestHandler,HTTPServer
 
 import socket
 import sys
-import thread
+import _thread
 import time
 
 
@@ -169,7 +169,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
                 server.serve_forever()
             except Exception: pass
         server = HTTPServer(('0.0.0.0', self.getServerPort()), MockedCloudStackServer)
-        thread.start_new_thread(startMgmtServer, ("mocked-mgmt-server", server,))
+        _thread.start_new_thread(startMgmtServer, ("mocked-mgmt-server", server,))
         self.server = server
 
 

@@ -1058,7 +1058,7 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
             networkids=[self.isolated_network.id, self.ntwk2.id, self.ntwk3.id]
         )
         self.assertIsNotNone(self.test_vm, "Failed to create vm with 3 nics")
-        map(lambda x: self.cleanup.append(x), [self.test_vm, self.ntwk2, self.ntwk3])
+        list(map(lambda x: self.cleanup.append(x), [self.test_vm, self.ntwk2, self.ntwk3]))
         vm_res = VirtualMachine.list(
             self.apiclient,
             id=self.test_vm.id

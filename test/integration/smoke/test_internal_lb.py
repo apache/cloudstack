@@ -370,7 +370,7 @@ class TestInternalLb(cloudstackTestCase):
                                        )
             self.assertIsNotNone(
                 vm, "Failed to deploy vm in network: %s" % networkid)
-            self.assert_(vm.state == 'Running', "VM is not running")
+            self.assertTrue(vm.state == 'Running', "VM is not running")
             self.logger.debug("Deployed VM id: %s in VPC %s" % (vm.id, vpc.id))
 
             self.cleanup.insert(0, vm)
@@ -510,7 +510,7 @@ class TestInternalLb(cloudstackTestCase):
         """ Calculates and outputs a mean, variance and standard deviation from an input list of values """
         num_val = len(data)
         mean = sum(data) / num_val
-        sqrt = map(lambda x: math.pow(abs(x - mean), 2), data)
+        sqrt = [math.pow(abs(x - mean), 2) for x in data]
         variance = (sum(sqrt) / num_val - 1)
         stddev = math.sqrt(variance)
         return (mean, variance, stddev)

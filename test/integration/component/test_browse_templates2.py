@@ -32,7 +32,7 @@ import random
 import string
 import telnetlib
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import time
 import tempfile
 _multiprocess_shared_ = True
