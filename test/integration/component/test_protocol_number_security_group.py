@@ -21,7 +21,8 @@ Tests protocol number support for security groups
 
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import authorizeSecurityGroupIngress, revokeSecurityGroupIngress, authorizeSecurityGroupEgress, revokeSecurityGroupEgress
 from marvin.sshClient import SshClient
 from marvin.lib.utils import (validateList,

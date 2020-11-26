@@ -17,7 +17,8 @@
 
 """ P1 tests for networks in advanced zone with security groups
 """
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from ddt import ddt, data
 from marvin.lib.base import (Zone,
                                          ServiceOffering,
