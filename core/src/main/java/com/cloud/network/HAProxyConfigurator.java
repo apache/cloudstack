@@ -507,7 +507,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             .append(":")
             .append(dest.getDestPort())
             .append(" check");
-            if(lbTO.getLbProtocol() != null && lbTO.getLbProtocol().equals(NetUtils.TCP_PROXY_PROTO)) {
+            if(lbTO.getLbProtocol() != null && lbTO.getLbProtocol().equals("tcp-proxy")) {
                 sb.append(" send-proxy");
             }
             dstSubRule.add(sb.toString());

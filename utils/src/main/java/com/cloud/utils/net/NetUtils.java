@@ -72,7 +72,6 @@ public class NetUtils {
 
     public final static String UDP_PROTO = "udp";
     public final static String TCP_PROTO = "tcp";
-    public final static String TCP_PROXY_PROTO = "tcp-proxy";
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
     public final static String ALL_PROTO = "all";
