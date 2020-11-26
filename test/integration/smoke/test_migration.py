@@ -18,7 +18,8 @@
 """ Network migration test
 """
 # Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.base import (
     Account,
     ServiceOffering,

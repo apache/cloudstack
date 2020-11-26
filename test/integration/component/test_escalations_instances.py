@@ -16,7 +16,8 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Account,
                              ServiceOffering,
