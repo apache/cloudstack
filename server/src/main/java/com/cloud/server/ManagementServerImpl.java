@@ -554,6 +554,10 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -840,6 +844,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private DpdkHelper dpdkHelper;
     @Inject
     private PrimaryDataStoreDao _primaryDataStoreDao;
+    @Inject
+    private VolumeDataStoreDao _volumeStoreDao;
+    @Inject
+    private TemplateDataStoreDao _vmTemplateStoreDao;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -3288,13 +3296,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
+    private void cleanupDownloadUrlsInZone(final long zoneId) {
+        // clean download URLs when destroying ssvm
+        // clean only the volumes and templates of the zone to which ssvm belongs to
+        for (VolumeDataStoreVO volume :_volumeStoreDao.listVolumeDownloadUrlsByZoneId(zoneId)) {
+            volume.setExtractUrl(null);
+            _volumeStoreDao.update(volume.getId(), volume);
+        }
+        for (ImageStoreVO imageStore : _imgStoreDao.listStoresByZoneId(zoneId)) {
+            for (TemplateDataStoreVO template : _vmTemplateStoreDao.listTemplateDownloadUrlsByStoreId(imageStore.getId())) {
+                template.setExtractUrl(null);
+                template.setExtractUrlCreated(null);
+                _vmTemplateStoreDao.update(template.getId(), template);
+            }
+        }
+    }
+
     private SecondaryStorageVmVO startSecondaryStorageVm(final long instanceId) {
         return _secStorageVmMgr.startSecStorageVm(instanceId);
     }
 
     private SecondaryStorageVmVO stopSecondaryStorageVm(final VMInstanceVO systemVm, final boolean isForced)
             throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-
         _itMgr.advanceStop(systemVm.getUuid(), isForced);
         return _secStorageVmDao.findById(systemVm.getId());
     }
@@ -3306,6 +3329,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     protected SecondaryStorageVmVO destroySecondaryStorageVm(final long instanceId) {
         final SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(instanceId);
+        cleanupDownloadUrlsInZone(secStorageVm.getDataCenterId());
         if (_secStorageVmMgr.destroySecStorageVm(instanceId)) {
             return secStorageVm;
         }

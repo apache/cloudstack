@@ -1824,8 +1824,7 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
     Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
     It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
     */
-        secret = secret.replace("+", "-");
-        secret = secret.replace("/", "_");
+        secret = secret.replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, '');
 
         if (id != null && secret != null) {
             monitor = id + ":" + secret + "@" + monitor;

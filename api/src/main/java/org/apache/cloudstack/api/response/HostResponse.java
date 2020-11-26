@@ -136,9 +136,18 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the amount of the host's memory after applying the mem.overprovisioning.factor")
     private String memWithOverprovisioning;
 
+    @Deprecated
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
     private long memoryAllocated;
+
+    @SerializedName("memoryallocatedpercentage")
+    @Param(description = "the amount of the host's memory currently allocated in percentage")
+    private String memoryAllocatedPercentage;
+
+    @SerializedName("memoryallocatedbytes")
+    @Param(description = "the amount of the host's memory currently allocated in bytes")
+    private Long memoryAllocatedBytes;
 
     @SerializedName("memoryused")
     @Param(description = "the amount of the host's memory currently used")
@@ -606,6 +615,14 @@ public class HostResponse extends BaseResponse {
 
     public long getMemoryAllocated() {
         return memoryAllocated;
+    }
+
+    public void setMemoryAllocatedPercentage(String memoryAllocatedPercentage) {
+        this.memoryAllocatedPercentage = memoryAllocatedPercentage;
+    }
+
+    public void setMemoryAllocatedBytes(Long memoryAllocatedBytes) {
+        this.memoryAllocatedBytes = memoryAllocatedBytes;
     }
 
     public Long getMemoryUsed() {

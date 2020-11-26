@@ -16,9 +16,14 @@
 // under the License.
 package com.cloud.dc.dao;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.utils.db.Filter;
 import org.springframework.stereotype.Component;
 
@@ -32,10 +37,17 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.JoinBuilder;
+
+import javax.inject.Inject;
 
 @Component
 @DB
 public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO, Long> implements DedicatedResourceDao {
+
+    @Inject
+    protected HostDao hostDao;
+
     protected final SearchBuilder<DedicatedResourceVO> ZoneSearch;
     protected final SearchBuilder<DedicatedResourceVO> PodSearch;
     protected final SearchBuilder<DedicatedResourceVO> ClusterSearch;
@@ -64,6 +76,8 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
     protected GenericSearchBuilder<DedicatedResourceVO, Long> ListPodsSearch;
     protected GenericSearchBuilder<DedicatedResourceVO, Long> ListClustersSearch;
     protected GenericSearchBuilder<DedicatedResourceVO, Long> ListHostsSearch;
+    protected SearchBuilder<DedicatedResourceVO> ListHostsByCluster;
+    protected SearchBuilder<DedicatedResourceVO> ListHostsByZone;
 
     protected DedicatedResourceDaoImpl() {
         PodSearch = createSearchBuilder();
@@ -368,5 +382,50 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
         SearchCriteria<DedicatedResourceVO> sc = ListByAffinityGroupId.create();
         sc.setParameters("affinityGroupId", affinityGroupId);
         return listBy(sc);
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) {
+        ListHostsByCluster = createSearchBuilder();
+        SearchBuilder<HostVO> clusterHostsSB = hostDao.createSearchBuilder();
+        clusterHostsSB.and("cluster_id", clusterHostsSB.entity().getClusterId(), Op.EQ);
+        clusterHostsSB.and("type", clusterHostsSB.entity().getType(), Op.EQ);
+        ListHostsByCluster.join("clusterHostsSB", clusterHostsSB, clusterHostsSB.entity().getId(), ListHostsByCluster.entity().getHostId(), JoinBuilder.JoinType.INNER);
+        ListHostsByCluster.done();
+
+        ListHostsByZone = createSearchBuilder();
+        SearchBuilder<HostVO> zoneHostsSB = hostDao.createSearchBuilder();
+        zoneHostsSB = hostDao.createSearchBuilder();
+        zoneHostsSB.and("zone_id", zoneHostsSB.entity().getDataCenterId(), Op.EQ);
+        zoneHostsSB.and("type", zoneHostsSB.entity().getType(), Op.EQ);
+        ListHostsByZone.join("zoneHostsSB", zoneHostsSB, zoneHostsSB.entity().getId(), ListHostsByZone.entity().getHostId(), JoinBuilder.JoinType.INNER);
+        ListHostsByZone.done();
+        return true;
+    }
+
+    @Override
+    public List<Long> findHostsByCluster(Long clusterId) {
+        List<Long> hosts = new ArrayList<>();
+        SearchCriteria<DedicatedResourceVO> sc = ListHostsByCluster.create();
+        sc.setJoinParameters("clusterHostsSB", "type", Host.Type.Routing);
+        sc.setJoinParameters("clusterHostsSB","cluster_id", clusterId);
+        List<DedicatedResourceVO> results = customSearch(sc, null);
+        for (DedicatedResourceVO dedicatedResourceVO: results){
+            hosts.add(dedicatedResourceVO.getHostId());
+        }
+        return hosts;
+    }
+
+    @Override
+    public List<Long> findHostsByZone(Long zoneId) {
+        List<Long> hosts = new ArrayList<>();
+        SearchCriteria<DedicatedResourceVO> sc = ListHostsByZone.create();
+        sc.setJoinParameters("zoneHostsSB", "type", Host.Type.Routing);
+        sc.setJoinParameters("zoneHostsSB","zone_id", zoneId);
+        List<DedicatedResourceVO> results = customSearch(sc, null);
+        for (DedicatedResourceVO dedicatedResourceVO: results){
+            hosts.add(dedicatedResourceVO.getHostId());
+        }
+        return hosts;
     }
 }

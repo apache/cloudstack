@@ -214,7 +214,11 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         final boolean result = applyRules(network, router, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
 
         if (result) {
-            _advancedVisitor.visit(nicPlugInOutRules);
+            if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending NicPlugInOutRules command to the backend");
+            } else {
+                _advancedVisitor.visit(nicPlugInOutRules);
+            }
         }
 
         return result;

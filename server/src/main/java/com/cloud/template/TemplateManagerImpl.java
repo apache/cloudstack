@@ -545,6 +545,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 if (tmpltStoreRef != null) {
                     if (tmpltStoreRef.getDownloadState() == com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                         tmpltStore = (ImageStoreEntity)store;
+                        if (tmpltStoreRef.getExtractUrl() != null) {
+                            return tmpltStoreRef.getExtractUrl();
+                        }
                         break;
                     }
                 }
