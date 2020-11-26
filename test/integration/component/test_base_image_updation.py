@@ -28,7 +28,8 @@
 from marvin.codes import (PASS,
                           RECURRING)
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 
 from marvin.lib.base import (ServiceOffering,
                                          Account,

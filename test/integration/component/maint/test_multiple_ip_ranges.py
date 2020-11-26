@@ -16,7 +16,8 @@
 # under the License.
 """ Tests for Multiple IP Ranges feature
 """
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import cleanup_resources, get_process_status
 from marvin.lib.base import (Account,
                              DiskOffering,

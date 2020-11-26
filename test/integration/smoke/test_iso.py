@@ -18,7 +18,8 @@
 """
 # Import Local Modules
 from marvin.cloudstackException import GetDetailExceptionInfo
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import listZones, updateIso, extractIso, updateIsoPermissions, copyIso, deleteIso,\
     registerIso,listOsTypes
 from marvin.lib.utils import cleanup_resources, random_gen, get_hypervisor_type,validateList

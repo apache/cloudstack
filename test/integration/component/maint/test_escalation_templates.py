@@ -15,7 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.base import (Account,
                              Domain, Template, Configurations,VirtualMachine,Snapshot,ServiceOffering
                              )

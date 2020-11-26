@@ -16,7 +16,8 @@
 # under the License.
 """ Tests for DHCP DNS offload feature
 """
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import (random_gen, validateList, cleanup_resources, get_hypervisor_type)
 from marvin.lib.base import (Account,
                              NIC,

@@ -17,7 +17,8 @@
 """ BVT tests for Volumes
 """
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 #from marvin.cloudstackException import *
 from marvin.cloudstackAPI import (deleteVolume,
                                   extractVolume,
