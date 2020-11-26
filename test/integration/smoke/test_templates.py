@@ -20,7 +20,8 @@
 from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
 from marvin.codes import FAILED
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import listZones
 from marvin.lib.utils import random_gen, cleanup_resources
 from marvin.lib.base import (Account,
