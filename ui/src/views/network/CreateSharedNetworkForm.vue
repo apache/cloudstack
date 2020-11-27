@@ -519,7 +519,7 @@ export default {
         }
       } else {
         const params = {}
-        if (this.resource.zoneid) {
+        if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
           params.id = this.resource.zoneid
         }
         params.listAll = true
