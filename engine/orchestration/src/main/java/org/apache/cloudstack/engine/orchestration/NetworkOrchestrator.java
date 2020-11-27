@@ -640,13 +640,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         setStateMachine();
     }
 
-    private void updateNetworkDetails(NetworkVO networkPersisted, Network network) {
+    private void updateRouterIpInNetworkDetails(Long networkId, String routerIp, String routerIpv6) {
         NetworkDetailVO networkDetailVO = null;
-        if (isNotBlank(network.getRouterIp())) {
-            networkDetailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ROUTER_IP, network.getRouterIp().toString(), true);
+        if (isNotBlank(routerIp)) {
+            networkDetailVO = new NetworkDetailVO(networkId, ApiConstants.ROUTER_IP, routerIp, true);
         }
-        if (isNotBlank(network.getRouterIpv6())) {
-            networkDetailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ROUTER_IPV6, network.getRouterIpv6().toString(), true);
+        if (isNotBlank(routerIpv6)) {
+            networkDetailVO = new NetworkDetailVO(networkId, ApiConstants.ROUTER_IPV6, routerIpv6, true);
         }
         if (networkDetailVO != null) {
             networkDetailsDao.persist(networkDetailVO);
@@ -731,11 +731,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         networks.add(networkPersisted);
 
                         if (network.getPvlanType() != null) {
-                                NetworkDetailVO detailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ISOLATED_PVLAN_TYPE, network.getPvlanType().toString(), true);
+                            NetworkDetailVO detailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ISOLATED_PVLAN_TYPE, network.getPvlanType().toString(), true);
                             networkDetailsDao.persist(detailVO);
                         }
 
-                        updateNetworkDetails(networkPersisted, network);
+                        updateRouterIpInNetworkDetails(networkPersisted.getId(), network.getRouterIp(), network.getRouterIpv6());
 
                         if (predefined instanceof NetworkVO && guru instanceof NetworkGuruAdditionalFunctions){
                             final NetworkGuruAdditionalFunctions functions = (NetworkGuruAdditionalFunctions) guru;
