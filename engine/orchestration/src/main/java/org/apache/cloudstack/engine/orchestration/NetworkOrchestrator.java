@@ -641,15 +641,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private void updateRouterIpInNetworkDetails(Long networkId, String routerIp, String routerIpv6) {
-        NetworkDetailVO networkDetailVO = null;
         if (isNotBlank(routerIp)) {
-            networkDetailVO = new NetworkDetailVO(networkId, ApiConstants.ROUTER_IP, routerIp, true);
+            networkDetailsDao.addDetail(networkId, ApiConstants.ROUTER_IP, routerIp, true);
         }
         if (isNotBlank(routerIpv6)) {
-            networkDetailVO = new NetworkDetailVO(networkId, ApiConstants.ROUTER_IPV6, routerIpv6, true);
-        }
-        if (networkDetailVO != null) {
-            networkDetailsDao.persist(networkDetailVO);
+            networkDetailsDao.addDetail(networkId, ApiConstants.ROUTER_IPV6, routerIpv6, true);
         }
     }
 
