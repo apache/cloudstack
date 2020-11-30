@@ -24,6 +24,8 @@ from marvin.sshClient import SshClient
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
+
+from nose2.tools.such import helper
 from nose.plugins.attrib import attr
 import telnetlib
 
@@ -38,10 +40,14 @@ class TestPVLAN(cloudstackTestCase):
     vlan = 2468
     isolatedpvlan = 864
 
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestPVLAN, cls).getClsTestClient()
+
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
 
-    @attr(tags = ["advanced"], required_hardware="false")
+    @attr(tags = ["advanced", "nose2"], required_hardware="false")
     def test_create_pvlan_network(self):
         self.debug("Test create pvlan network")
         createNetworkCmd = createNetwork.createNetworkCmd()
@@ -78,5 +84,6 @@ class TestPVLAN(cloudstackTestCase):
         createNetworkCmd.startipv6="fc00:1234::10"
         createNetworkCmd.endipv6="fc00:1234::20"
         err = 0
-        with self.assertRaises(Exception):
+        with helper.assertRaises(Exception):
             self.apiClient.createNetwork(createNetworkCmd)
+
