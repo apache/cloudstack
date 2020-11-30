@@ -46,6 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -2674,36 +2675,40 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.debug("addRouteToInternalIp: destIp is null");
             return;
         }
-        if (!NetUtils.isValidIp4(destIpOrCidr) && !NetUtils.isValidIp4Cidr(destIpOrCidr)) {
-            s_logger.warn(" destIp is not a valid ip address or cidr destIp=" + destIpOrCidr);
-            return;
-        }
-        boolean inSameSubnet = false;
-        if (NetUtils.isValidIp4(destIpOrCidr)) {
-            if (eth1ip != null && eth1mask != null) {
-                inSameSubnet = NetUtils.sameSubnet(eth1ip, destIpOrCidr, eth1mask);
-            } else {
-                s_logger.warn("addRouteToInternalIp: unable to determine same subnet: _eth1ip=" + eth1ip + ", dest ip=" + destIpOrCidr + ", _eth1mask=" + eth1mask);
+        List<String> ips = new ArrayList<>();
+        ips.addAll(Arrays.asList(destIpOrCidr.split(",")));
+        for (String ip : ips) {
+            if (!NetUtils.isValidIp4(ip) && !NetUtils.isValidIp4Cidr(ip)) {
+                s_logger.warn(" destIp is not a valid ip address or cidr destIp=" + ip);
+                return;
             }
-        } else {
-            inSameSubnet = NetUtils.isNetworkAWithinNetworkB(destIpOrCidr, NetUtils.ipAndNetMaskToCidr(eth1ip, eth1mask));
-        }
-        if (inSameSubnet) {
-            s_logger.debug("addRouteToInternalIp: dest ip " + destIpOrCidr + " is in the same subnet as eth1 ip " + eth1ip);
-            return;
-        }
-        Script command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("ip route delete " + destIpOrCidr);
-        command.execute();
-        command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("ip route add " + destIpOrCidr + " via " + localgw);
-        String result = command.execute();
-        if (result != null) {
-            s_logger.warn("Error in configuring route to internal ip err=" + result);
-        } else {
-            s_logger.debug("addRouteToInternalIp: added route to internal ip=" + destIpOrCidr + " via " + localgw);
+            boolean inSameSubnet = false;
+            if (NetUtils.isValidIp4(ip)) {
+                if (eth1ip != null && eth1mask != null) {
+                    inSameSubnet = NetUtils.sameSubnet(eth1ip, ip, eth1mask);
+                } else {
+                    s_logger.warn("addRouteToInternalIp: unable to determine same subnet: _eth1ip=" + eth1ip + ", dest ip=" + ip + ", _eth1mask=" + eth1mask);
+                }
+            } else {
+                inSameSubnet = NetUtils.isNetworkAWithinNetworkB(ip, NetUtils.ipAndNetMaskToCidr(eth1ip, eth1mask));
+            }
+            if (inSameSubnet) {
+                s_logger.info("addRouteToInternalIp: dest ip " + ip + " is in the same subnet as eth1 ip " + eth1ip);
+                return;
+            }
+            Script command = new Script("/bin/bash", s_logger);
+            command.add("-c");
+            command.add("ip route delete " + ip);
+            command.execute();
+            command = new Script("/bin/bash", s_logger);
+            command.add("-c");
+            command.add("ip route add " + ip + " via " + localgw);
+            String result = command.execute();
+            if (result != null) {
+                s_logger.warn("Error in configuring route to internal ip err=" + result);
+            } else {
+                s_logger.info("addRouteToInternalIp: added route to internal ip=" + ip + " via " + localgw);
+            }
         }
     }
 
