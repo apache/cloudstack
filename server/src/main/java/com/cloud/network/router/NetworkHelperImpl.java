@@ -798,8 +798,8 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
             return false;
         }
-        String lbProtocol = rule.getLbProtocol().toLowerCase();
-        if (lbProtocol.equals(NetUtils.UDP_PROTO)) {
+        String lbProtocol = rule.getLbProtocol();
+        if (lbProtocol != null && lbProtocol.toLowerCase().equals(NetUtils.UDP_PROTO)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Can't create LB rule as haproxy does not support udp");
             }
