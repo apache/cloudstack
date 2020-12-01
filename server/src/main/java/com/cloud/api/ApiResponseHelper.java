@@ -2545,6 +2545,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         DataCenter zone = ApiDBUtils.findZoneById(result.getDataCenterId());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
         }
         response.setNetworkSpeed(result.getSpeed());
         response.setVlan(result.getVnetString());
