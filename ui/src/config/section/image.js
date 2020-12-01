@@ -43,7 +43,15 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled', 'directdownload', 'deployasis', 'isextractable', 'isdynamicallyscalable', 'ispublic', 'isfeatured', 'crosszones', 'type', 'account', 'domain', 'created', 'url'],
+      details: () => {
+        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled',
+          'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
+          'account', 'domain', 'created']
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('templatetype', 'url')
+        }
+        return fields
+      },
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',
@@ -94,9 +102,14 @@ export default {
           args: (record, store) => {
             var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
             if (['Admin'].includes(store.userInfo.roletype)) {
-              fields.push('isrouting')
+              fields.push('isrouting', 'templatetype')
             }
             return fields
+          },
+          mapping: {
+            templatetype: {
+              options: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING']
+            }
           }
         },
         {
