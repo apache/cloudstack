@@ -1935,10 +1935,14 @@ class TestSharedNetwork(cloudstackTestCase):
             True,
             "Check for list hosts response return valid data")
         host = hosts[0]
-        if host.hypervisor.lower() not in "kvm":
-            return
-        host.user, host.password = get_host_credentials(self.config, host.ipaddress)
-        host.port = 22
+        if host.hypervisor.lower() in ("vmware", "hyperv"):
+            host.ipaddress = self.apiclient.connection.mgtSvr
+            host.user = self.apiclient.connection.user
+            host.password = self.apiclient.connection.passwd
+            host.port = 22
+        else:
+            host.user, host.password = get_host_credentials(self.config, host.ipaddress)
+            host.port = 22
         return host
 
     def verify_ip_address_in_router(self, router, host, ipaddress, device, isExist=True):
@@ -1950,7 +1954,8 @@ class TestSharedNetwork(cloudstackTestCase):
             host.user,
             host.password,
             router.linklocalip,
-            command)
+            command,
+            host.hypervisor.lower())
         self.assertEqual(len(result) > 0 and result[0] == ipaddress, isExist, "ip %s verification failed" % ipaddress)
 
     @attr(tags=["advanced", "shared"])
