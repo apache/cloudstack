@@ -138,6 +138,7 @@ export default {
       this.componentLoading = true
       api('listNetworks', {
         zoneid: this.resource.zoneid,
+        physicalnetworkid: this.resource.id,
         page: this.page,
         pagesize: this.pageSize
       }).then(response => {
