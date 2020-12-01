@@ -1044,7 +1044,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new CloudRuntimeException("Router IPv6 IP provided is of incorrect format");
             }
             if (!NetUtils.isIp6InRange(routerIpv6, ipv6Range)) {
-                throw new CloudRuntimeException("Router IPv4 IP provided is not within the specified range: " + startIpv6 + " - " + endIpv6);
+                throw new CloudRuntimeException("Router IPv6 IP provided is not within the specified range: " + startIpv6 + " - " + endIpv6);
             }
         }
     }
