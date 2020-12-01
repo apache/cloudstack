@@ -725,15 +725,17 @@ public class NetworkHelperImpl implements NetworkHelper {
                     } else {
                         NetworkDetailVO routerIpDetail = networkDetailsDao.findDetail(guestNetwork.getId(), ApiConstants.ROUTER_IP);
                         String routerIp = routerIpDetail != null ? routerIpDetail.getValue() : null;
-                        final String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
                         if (routerIp != null) {
                             defaultNetworkStartIp = routerIp;
-                        } else if (startIp != null
-                                && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
-                            defaultNetworkStartIp = startIp;
-                        } else if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId()
-                                    + " is already allocated, can't use it for domain router; will get random ip address from the range");
+                        } else {
+                            final String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
+                            if (startIp != null
+                                    && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+                                defaultNetworkStartIp = startIp;
+                            } else if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId()
+                                        + " is already allocated, can't use it for domain router; will get random ip address from the range");
+                            }
                         }
                     }
                 }
@@ -746,14 +748,16 @@ public class NetworkHelperImpl implements NetworkHelper {
                     } else {
                         NetworkDetailVO routerIpDetail = networkDetailsDao.findDetail(guestNetwork.getId(), ApiConstants.ROUTER_IPV6);
                         String routerIpv6 = routerIpDetail != null ? routerIpDetail.getValue() : null;
-                        final String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
                         if (routerIpv6 != null) {
                             defaultNetworkStartIpv6 = routerIpv6;
-                        } else if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
-                            defaultNetworkStartIpv6 = startIpv6;
-                        } else if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId()
-                                    + " is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+                        } else {
+                            final String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
+                            if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
+                                defaultNetworkStartIpv6 = startIpv6;
+                            } else if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId()
+                                        + " is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+                            }
                         }
                     }
                 }
