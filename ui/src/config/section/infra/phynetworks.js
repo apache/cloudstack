@@ -22,8 +22,8 @@ export default {
   icon: 'api',
   hidden: true,
   permission: ['listPhysicalNetworks'],
-  columns: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zoneid'],
-  details: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zoneid'],
+  columns: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zonename', 'tags'],
+  details: ['name', 'state', 'isolationmethods', 'vlan', 'broadcastdomainrange', 'zonename', 'tags'],
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
