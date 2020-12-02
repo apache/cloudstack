@@ -16,8 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.log4j.Logger;
-
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,15 +42,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.network.Network;
-import com.cloud.network.Network.GuestType;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.utils.net.NetUtils;
+import org.apache.log4j.Logger;
 
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -150,9 +148,6 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
-    @Parameter(name = ApiConstants.IS_TUNGSTEN_NETWORK, type = CommandType.UUID, description = "tungsten network belongs to")
-    private Long tungstenNetwork;
-
     @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "Network ACL ID associated for the network")
     private Long aclId;
 
@@ -229,10 +224,6 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getIsolatedPvlanType() {
         return isolatedPvlanType;
-    }
-
-    public Long isTungstenNetwork() {
-        return tungstenNetwork;
     }
 
     public String getTungstenVirtualRouterUuid() {
