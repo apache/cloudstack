@@ -1029,22 +1029,42 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateRouterIps(String routerIp, String routerIpv6, String startIp, String endIp, String startIpv6, String endIpv6) {
+    private void validateRouterIps(String routerIp, String routerIpv6, String startIp, String endIp, String gateway,
+                                   String netmask, String startIpv6, String endIpv6, String ip6Cidr) {
         if (isNotBlank(routerIp)) {
+            if (startIp != null && endIp == null) {
+                endIp = startIp;
+            }
             if (!NetUtils.isValidIp4(routerIp)) {
                 throw new CloudRuntimeException("Router IPv4 IP provided is of incorrect format");
             }
-            if (!NetUtils.isIpInRange(routerIp, startIp, endIp)) {
-                throw new CloudRuntimeException("Router IPv4 IP provided is not within the specified range: " + startIp + " - " + endIp);
+            if (isNotBlank(startIp) && isNotBlank(endIp)) {
+                if (!NetUtils.isIpInRange(routerIp, startIp, endIp)) {
+                    throw new CloudRuntimeException("Router IPv4 IP provided is not within the specified range: " + startIp + " - " + endIp);
+                }
+            } else {
+                String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+                if (!NetUtils.isIpWithInCidrRange(routerIp, cidr)) {
+                    throw new CloudRuntimeException("Router IP provided in not within the network range");
+                }
             }
         }
         if (isNotBlank(routerIpv6)) {
-            String ipv6Range = startIpv6 + "-" + endIpv6;
-            if (!NetUtils.isValidIp6(routerIpv6)) {
-                throw new CloudRuntimeException("Router IPv6 IP provided is of incorrect format");
+            if (startIpv6 != null && endIpv6 == null) {
+                endIpv6 = startIpv6;
             }
-            if (!NetUtils.isIp6InRange(routerIpv6, ipv6Range)) {
-                throw new CloudRuntimeException("Router IPv6 IP provided is not within the specified range: " + startIpv6 + " - " + endIpv6);
+            if (!NetUtils.isValidIp6(routerIpv6)) {
+                throw new CloudRuntimeException("Router IPv6 address provided is of incorrect format");
+            }
+            if (isNotBlank(startIpv6) && isNotBlank(endIpv6)) {
+                String ipv6Range = startIpv6 + "-" + endIpv6;
+                if (!NetUtils.isIp6InRange(routerIpv6, ipv6Range)) {
+                    throw new CloudRuntimeException("Router IPv6 address provided is not within the specified range: " + startIpv6 + " - " + endIpv6);
+                }
+            } else {
+                if (!NetUtils.isIp6InNetwork(routerIpv6, ip6Cidr)) {
+                    throw new CloudRuntimeException("Router IPv6 address provided is not with the network range");
+                }
             }
         }
     }
@@ -1183,7 +1203,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Virtual Router is not a supported provider for the Shared network, hence router ip should not be provided");
         }
 
-        validateRouterIps(routerIp, routerIpv6, startIP, endIP, startIPv6, endIPv6);
         // Check if the network is domain specific
         if (aclType == ACLType.Domain) {
             // only Admin can create domain with aclType=Domain
@@ -1312,6 +1331,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new InvalidParameterValueException("Can only create IPv6 network if the zone has IPv6 DNS! Please configure the zone IPv6 DNS1 and/or IPv6 DNS2.");
             }
         }
+
+        validateRouterIps(routerIp, routerIpv6, startIP, endIP, gateway, netmask, startIPv6, endIPv6, ip6Cidr);
 
         if (isNotBlank(isolatedPvlan) && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated)) {
             throw new InvalidParameterValueException("Can only support create Private VLAN network with advanced shared or L2 network!");
