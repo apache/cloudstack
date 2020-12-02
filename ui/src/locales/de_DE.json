@@ -2127,7 +2127,7 @@
 "label.vcenter.username": "vCenter-Benutzername",
 "label.vcenterdatacenter": "vCenter-Rechenzentrum",
 "label.vcenterdatastore": "vCenter-Datenspeicher",
-"label.vcenterhost": "ESX / ESXi-Host",
+"label.esx.host": "ESX / ESXi-Host",
 "label.vcenterpassword": "vCenter-Passwort",
 "label.vcenterusername": "vCenter-Benutzername",
 "label.vcipaddress": "vCenter-IP-Adresse",

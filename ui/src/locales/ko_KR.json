@@ -1744,7 +1744,7 @@
 "label.vcenter.username": "vCenter \uc0ac\uc6a9\uc790\uba85",
 "label.vcenterdatacenter": "vCenter \ub370\uc774\ud130 \uc13c\ud130",
 "label.vcenterdatastore": "vCenter \ub370\uc774\ud130 \uc2a4\ud1a0\uc5b4",
-"label.vcenterhost": "ESX/ESXi \ud638\uc2a4\ud2b8",
+"label.esx.host": "ESX/ESXi \ud638\uc2a4\ud2b8",
 "label.vcenterpassword": "vCenter \uc554\ud638",
 "label.vcenterusername": "vCenter \uc0ac\uc6a9\uc790\uba85",
 "label.vcipaddress": "vCenter IP \uc8fc\uc18c",

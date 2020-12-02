@@ -1744,7 +1744,7 @@
 "label.vcenter.username": "\u0418\u043c\u044f \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f vCenter",
 "label.vcenterdatacenter": "\u0426\u041e\u0414 vCenter",
 "label.vcenterdatastore": "\u0425\u0440\u0430\u043d\u0438\u043b\u0438\u0449\u0435 vCenter",
-"label.vcenterhost": "\u0423\u0437\u0435\u043b ESX/ESXi",
+"label.esx.host": "\u0423\u0437\u0435\u043b ESX/ESXi",
 "label.vcenterpassword": "\u041f\u0430\u0440\u043e\u043b\u044c vCenter",
 "label.vcenterusername": "\u0418\u043c\u044f \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f vCenter",
 "label.vcipaddress": "vCenter IP \u0410\u0434\u0440\u0435\u0441\u0441",

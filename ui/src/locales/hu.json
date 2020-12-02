@@ -1744,7 +1744,7 @@
 "label.vcenter.username": "vCenter felhaszn\u00e1l\u00f3n\u00e9v",
 "label.vcenterdatacenter": "vCenter adatk\u00f6zpont",
 "label.vcenterdatastore": "vCenter t\u00e1r",
-"label.vcenterhost": "ESX/ESXi kiszolg\u00e1l\u00f3",
+"label.esx.host": "ESX/ESXi kiszolg\u00e1l\u00f3",
 "label.vcenterpassword": "vCenter jelsz\u00f3",
 "label.vcenterusername": "vCenter felhaszn\u00e1l\u00f3n\u00e9v",
 "label.vcipaddress": "vCenter IP c\u00edm",

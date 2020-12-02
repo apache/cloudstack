@@ -1747,7 +1747,7 @@
 "label.vcenter.username": "Identifiant vCenter",
 "label.vcenterdatacenter": "Datacenter vCenter",
 "label.vcenterdatastore": "Datastore vCenter",
-"label.vcenterhost": "H\u00f4te ESX/ESXi",
+"label.esx.host": "H\u00f4te ESX/ESXi",
 "label.vcenterpassword": "Mot de passe vCenter",
 "label.vcenterusername": "Identifiant vCenter",
 "label.vcipaddress": "Adresse IP vCenter",

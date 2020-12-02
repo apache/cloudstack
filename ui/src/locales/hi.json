@@ -467,7 +467,7 @@
 "label.uuid": "ID",
 "label.vcdcname": "vCenter DC नाम",
 "label.vcenter": "VMware डाटासेंटर vCenter",
-"label.vcenterhost": "ESX / ESXi होस्ट",
+"label.esx.host": "ESX / ESXi होस्ट",
 "label.vcenterpassword": "vCenter पासवर्ड",
 "label.vcipaddress": "vCenter IP पता",
 "label.version": "संस्करण",

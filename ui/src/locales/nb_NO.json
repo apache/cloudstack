@@ -1745,7 +1745,7 @@
 "label.vcenter.username": "vCenter brukernavn",
 "label.vcenterdatacenter": "vCenter Datacenter",
 "label.vcenterdatastore": "vCenter Datastore",
-"label.vcenterhost": "ESX/ESXi vert",
+"label.esx.host": "ESX/ESXi vert",
 "label.vcenterpassword": "vCenter passord",
 "label.vcenterusername": "vCenter brukernavn",
 "label.vcipaddress": "vCenter IP-adresse",

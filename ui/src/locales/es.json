@@ -1774,7 +1774,7 @@
 "label.vcenter.username": "Nombre de usuario vCenter",
 "label.vcenterdatacenter": "Centros de datos vCenter ",
 "label.vcenterdatastore": "Almac\u00e9n de datos vCenter",
-"label.vcenterhost": "ESX / ESXi anfitri\u00f3n",
+"label.esx.host": "ESX / ESXi anfitri\u00f3n",
 "label.vcenterpassword": "Contrase\u00f1a vCenter",
 "label.vcenterusername": "Nombre de usuario vCenter",
 "label.vcipaddress": "Direcci\u00f3n IP de vCenter",

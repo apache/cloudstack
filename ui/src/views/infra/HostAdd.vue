@@ -56,7 +56,7 @@
       </div>
 
       <div class="form__item required-field">
-        <div class="form__label"><span class="required">* </span>{{ selectedClusterHyperVisorType === 'VMware' ? $t('label.vcenterhost') : $t('label.hostnamelabel') }}</div>
+        <div class="form__label"><span class="required">* </span>{{ selectedClusterHyperVisorType === 'VMware' ? $t('label.esx.host') : $t('label.hostnamelabel') }}</div>
         <span class="required required-label">{{ $t('label.required') }}</span>
         <a-input v-model="hostname"></a-input>
       </div>

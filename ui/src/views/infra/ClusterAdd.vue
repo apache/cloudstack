@@ -62,7 +62,7 @@
 
       <template v-if="hypervisor === 'VMware'">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.vcenterhost') }}</div>
+          <div class="form__label">{{ $t('label.vcenter.host') }}</div>
           <a-input v-model="host"></a-input>
         </div>
 
