@@ -328,13 +328,13 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> tier 1, eth4 -> tier 2, eth5 -> new ip 6, eth3-> private gateway
         # 24. reboot router
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,eth5,"
-        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> tier 1, eth4 -> private gateway, eth5 -> tier 2
+        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> private gateway, eth4 -> tier 1, eth5 -> tier 2
         # 25. restart VPC with cleanup
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,eth5,"
-        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> tier 1, eth4 -> private gateway, eth5 -> tier 2
+        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> private gateway, eth4 -> tier 1, eth5 -> tier 2
         # 26. restart VPC with cleanup, makeredundant=true
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,eth5,"
-        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> tier 1, eth4 -> private gateway, eth5 -> tier 2
+        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> private gateway, eth4 -> tier 1, eth5 -> tier 2
         """
 
         # Create new domain1
@@ -479,7 +479,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         # 6. create new public ip range 1
         self.services["publiciprange"]["zoneid"] = self.zone.id
         self.services["publiciprange"]["forvirtualnetwork"] = "true"
-        random_subnet_number = random.randrange(10,20)
+        random_subnet_number = random.randrange(10,50)
         self.services["publiciprange"]["vlan"] = get_free_vlan(
             self.apiclient,
             self.zone.id)[1]
@@ -900,9 +900,10 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
 
         # 24. reboot router
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,eth5,"
-        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> tier 1, eth4 -> private gateway, eth5 -> tier 2
+        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> private gateway, eth4 -> tier 1, eth5 -> tier 2
         routers = self.get_vpc_routers(self.vpc1.id)
-        for router in routers:
+        if len(routers) > 0:
+            router = routers[0]
             cmd = rebootRouter.rebootRouterCmd()
             cmd.id = router.id
             self.apiclient.rebootRouter(cmd)
@@ -913,14 +914,14 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, controlIp, "eth0", True)
             self.verify_ip_address_in_router(router, host, sourcenatIp, "eth1", True)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth2", True)
-            self.verify_ip_address_in_router(router, host, tier1_Ip, "eth3", True)
-            self.verify_ip_address_in_router(router, host, private_gateway_ip, "eth4", True)
+            self.verify_ip_address_in_router(router, host, private_gateway_ip, "eth3", True)
+            self.verify_ip_address_in_router(router, host, tier1_Ip, "eth4", True)
             self.verify_ip_address_in_router(router, host, tier2_Ip, "eth5", True)
-            self.verify_router_publicnic_state(router, host, "eth1|eth2|eth4")
+            self.verify_router_publicnic_state(router, host, "eth1|eth2|eth3")
 
         # 25. restart VPC with cleanup
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,eth5,"
-        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> tier 1, eth4 -> private gateway, eth5 -> tier 2
+        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> private gateway, eth4 -> tier 1, eth5 -> tier 2
         self.vpc1.restart(self.apiclient, cleanup=True)
         routers = self.get_vpc_routers(self.vpc1.id)
         for router in routers:
@@ -930,14 +931,14 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, controlIp, "eth0", True)
             self.verify_ip_address_in_router(router, host, sourcenatIp, "eth1", True)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth2", True)
-            self.verify_ip_address_in_router(router, host, tier1_Ip, "eth3", True)
-            self.verify_ip_address_in_router(router, host, private_gateway_ip, "eth4", True)
+            self.verify_ip_address_in_router(router, host, private_gateway_ip, "eth3", True)
+            self.verify_ip_address_in_router(router, host, tier1_Ip, "eth4", True)
             self.verify_ip_address_in_router(router, host, tier2_Ip, "eth5", True)
-            self.verify_router_publicnic_state(router, host, "eth1|eth2|eth4")
+            self.verify_router_publicnic_state(router, host, "eth1|eth2|eth3")
 
         # 26. restart VPC with cleanup, makeredundant=true
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,eth4,eth5,"
-        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> tier 1, eth4 -> private gateway, eth5 -> tier 2
+        #   verify the IPs in VR. eth1 -> source nat IP, eth2 -> new ip 6, eth3 -> private gateway, eth4 -> tier 1, eth5 -> tier 2
         self.vpc1.restart(self.apiclient, cleanup=True, makeredundant=True)
         routers = self.get_vpc_routers(self.vpc1.id)
         for router in routers:
@@ -947,7 +948,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.verify_ip_address_in_router(router, host, controlIp, "eth0", True)
             self.verify_ip_address_in_router(router, host, sourcenatIp, "eth1", True)
             self.verify_ip_address_in_router(router, host, ipaddress_6.ipaddress.ipaddress, "eth2", True)
-            self.verify_ip_address_in_router(router, host, tier1_Ip, "eth3", True)
-            self.verify_ip_address_in_router(router, host, private_gateway_ip, "eth4", True)
+            self.verify_ip_address_in_router(router, host, private_gateway_ip, "eth3", True)
+            self.verify_ip_address_in_router(router, host, tier1_Ip, "eth4", True)
             self.verify_ip_address_in_router(router, host, tier2_Ip, "eth5", True)
-            self.verify_router_publicnic_state(router, host, "eth1|eth2|eth4")
+            self.verify_router_publicnic_state(router, host, "eth1|eth2|eth3")

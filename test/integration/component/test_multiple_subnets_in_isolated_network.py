@@ -429,7 +429,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         # 6. create new public ip range 1
         self.services["publiciprange"]["zoneid"] = self.zone.id
         self.services["publiciprange"]["forvirtualnetwork"] = "true"
-        random_subnet_number = random.randrange(10,20)
+        random_subnet_number = random.randrange(10,50)
         self.services["publiciprange"]["vlan"] = get_free_vlan(
             self.apiclient,
             self.zone.id)[1]
@@ -753,7 +753,8 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         # 20. reboot router
         #   verify the available nics in VR should be "eth0,eth1,eth2,eth3,"
         #   verify the IPs in VR. eth0 -> guest nic, eth2 -> source nat IP, eth3 -> new ip 6
-        for router in routers:
+        if len(routers) > 0:
+            router = routers[0]
             cmd = rebootRouter.rebootRouterCmd()
             cmd.id = router.id
             self.apiclient.rebootRouter(cmd)
