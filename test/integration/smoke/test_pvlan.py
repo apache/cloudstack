@@ -17,20 +17,16 @@
 """ test for private vlan isolation
 """
 #Import Local Modules
-import marvin
 from marvin.cloudstackTestCase import *
+from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 
 from nose2.tools.such import helper
 from nose.plugins.attrib import attr
-import telnetlib
 
-#Import System modules
-import time
 _multiprocess_shared_ = True
 
 class TestPVLAN(cloudstackTestCase):
@@ -84,6 +80,6 @@ class TestPVLAN(cloudstackTestCase):
         createNetworkCmd.startipv6="fc00:1234::10"
         createNetworkCmd.endipv6="fc00:1234::20"
         err = 0
-        with helper.assertRaises(Exception):
+        with helper.assertRaises(CloudstackAPIException):
             self.apiClient.createNetwork(createNetworkCmd)
 
