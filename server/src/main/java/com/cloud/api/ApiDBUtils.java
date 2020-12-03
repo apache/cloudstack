@@ -1142,6 +1142,10 @@ public class ApiDBUtils {
         return s_userDao.findById(userId);
     }
 
+    public static UserAccountJoinVO findUserAccountById(Long id) {
+        return s_userAccountJoinDao.findById(id);
+    }
+
     public static UserVm findUserVmById(Long vmId) {
         return s_userVmDao.findById(vmId);
     }
@@ -1567,6 +1571,10 @@ public class ApiDBUtils {
         return s_vpcDao.findById(vpcId);
     }
 
+    public static VpcVO findVpcByIdIncludingRemoved(long vpcId) {
+        return s_vpcDao.findByIdIncludingRemoved(vpcId);
+    }
+
     public static SnapshotPolicy findSnapshotPolicyById(long policyId) {
         return s_snapshotPolicyDao.findById(policyId);
     }
@@ -1833,6 +1841,7 @@ public class ApiDBUtils {
     }
 
     public static List<ProjectJoinVO> newProjectView(Project proj) {
+
         return s_projectJoinDao.newProjectView(proj);
     }
 
@@ -1999,16 +2008,16 @@ public class ApiDBUtils {
         return s_templateJoinDao.newUpdateResponse(vr);
     }
 
-    public static TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO vr) {
-        return s_templateJoinDao.newTemplateResponse(view, vr);
+    public static TemplateResponse newTemplateResponse(EnumSet<DomainDetails> detailsView, ResponseView view, TemplateJoinVO vr) {
+        return s_templateJoinDao.newTemplateResponse(detailsView, view, vr);
     }
 
     public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
         return s_templateJoinDao.newIsoResponse(vr);
     }
 
-    public static TemplateResponse fillTemplateDetails(ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {
-        return s_templateJoinDao.setTemplateResponse(view, vrData, vr);
+    public static TemplateResponse fillTemplateDetails(EnumSet<DomainDetails> detailsView, ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {
+        return s_templateJoinDao.setTemplateResponse(detailsView, view, vrData, vr);
     }
 
     public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr) {

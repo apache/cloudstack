@@ -15,8 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 import os
-from utilities import bash
-from cloudException import CloudRuntimeException
+from .utilities import bash
+from .cloudException import CloudRuntimeException
 import mysql.connector
 
 class Database(object):

@@ -44,7 +44,7 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         cls.services = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
-        cls.kubernetes_version_iso_url = 'http://staging.yadav.xyz/cks/binaries-iso/setup-1.16.3.iso'
+        cls.kubernetes_version_iso_url = 'http://download.cloudstack.org/cks/setup-1.16.3.iso'
 
         cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient,
                                                                     name="cloud.kubernetes.service.enabled")[0].value
@@ -130,12 +130,12 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         # 2. The Cloud Database contains the valid information when listKubernetesSupportedVersions is called
         """
 
-        version = '1.16.3'
-        name = 'v' + version + '-' + random_gen()
+        version = self.services["cks_kubernetes_versions"]["1.16.3"]
+        name = 'v' + version["semanticversion"] + '-' + random_gen()
 
         self.debug("Adding Kubernetes supported version with name: %s" % name)
 
-        version_response = self.addKubernetesSupportedVersion(version, name, self.zone.id, self.kubernetes_version_iso_url)
+        version_response = self.addKubernetesSupportedVersion(version["semanticversion"], name, self.zone.id, version["url"], version["mincpunumber"], version["minmemory"])
 
         list_versions_response = self.listKubernetesSupportedVersion(version_response.id)
 
@@ -147,8 +147,8 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
 
         self.assertEqual(
             list_versions_response.semanticversion,
-            version,
-            "Check KubernetesSupportedVersion version {}, {}".format(list_versions_response.semanticversion, version)
+            version["semanticversion"],
+            "Check KubernetesSupportedVersion version {}, {}".format(list_versions_response.semanticversion, version["semanticversion"])
         )
         self.assertEqual(
             list_versions_response.zoneid,
@@ -228,14 +228,14 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
             self.debug("Unsupported version error check successful, API failure: %s" % e)
         return
 
-    def addKubernetesSupportedVersion(self, version, name, zoneId, isoUrl):
+    def addKubernetesSupportedVersion(self, version, name, zoneId, isoUrl, mincpunumber=2, minmemory=2048):
         addKubernetesSupportedVersionCmd = addKubernetesSupportedVersion.addKubernetesSupportedVersionCmd()
         addKubernetesSupportedVersionCmd.semanticversion = version
         addKubernetesSupportedVersionCmd.name = name
         addKubernetesSupportedVersionCmd.zoneid = zoneId
         addKubernetesSupportedVersionCmd.url = isoUrl
-        addKubernetesSupportedVersionCmd.mincpunumber = 2
-        addKubernetesSupportedVersionCmd.minmemory = 2048
+        addKubernetesSupportedVersionCmd.mincpunumber = mincpunumber
+        addKubernetesSupportedVersionCmd.minmemory = minmemory
         versionResponse = self.apiclient.addKubernetesSupportedVersion(addKubernetesSupportedVersionCmd)
         if not versionResponse:
             self.cleanup.append(versionResponse)
@@ -258,21 +258,18 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         response = self.apiclient.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
         return response
 
-    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=20, interval=30):
+    def waitForKubernetesSupportedVersionIsoReadyState(self, version_id, retries=30, interval=60):
         """Check if Kubernetes supported version ISO is in Ready state"""
 
-        while retries > -1:
+        while retries > 0:
             time.sleep(interval)
             list_versions_response = self.listKubernetesSupportedVersion(version_id)
             if not hasattr(list_versions_response, 'isostate') or not list_versions_response or not list_versions_response.isostate:
                 retries = retries - 1
                 continue
-            if 'Creating' == list_versions_response.isostate:
-                retries = retries - 1
-            elif 'Ready' == list_versions_response.isostate:
+            if 'Ready' == list_versions_response.isostate:
                 return
-            else:
-                raise Exception(
-                    "Failed to download Kubernetes supported version ISO: status - %s" %
-                    list_versions_response.isostate)
+            elif 'Failed' == list_versions_response.isostate:
+                raise Exception( "Failed to download template: status - %s" % template.status)
+            retries = retries - 1
         raise Exception("Kubernetes supported version Ready state timed out")

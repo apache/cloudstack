@@ -270,6 +270,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual
  * network appliances available in the Cloud Stack.
@@ -278,6 +280,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
     private static final String CONNECTIVITY_TEST = "connectivity.test";
+    private static final String BACKUP_ROUTER_EXCLUDED_TESTS = "gateways_check.py";
 
     @Inject private EntityManager _entityMgr;
     @Inject private DataCenterDao _dcDao;
@@ -792,7 +795,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                                     if (s_logger.isDebugEnabled()) {
                                                         s_logger.debug("Received # of bytes that's less than the last one.  "
                                                                 + "Assuming something went wrong and persisting it. Router: " + answerFinal.getRouterName() + " Reported: "
-                                                                + answerFinal.getBytesReceived() + " Stored: " + stats.getCurrentBytesReceived());
+                                                                + toHumanReadableSize(answerFinal.getBytesReceived()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesReceived()));
                                                     }
                                                     stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
                                                 }
@@ -801,7 +804,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                                     if (s_logger.isDebugEnabled()) {
                                                         s_logger.debug("Received # of bytes that's less than the last one.  "
                                                                 + "Assuming something went wrong and persisting it. Router: " + answerFinal.getRouterName() + " Reported: "
-                                                                + answerFinal.getBytesSent() + " Stored: " + stats.getCurrentBytesSent());
+                                                                + toHumanReadableSize(answerFinal.getBytesSent()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesSent()));
                                                     }
                                                     stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                                                 }
@@ -816,8 +819,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                         });
 
                                     } catch (final Exception e) {
-                                        s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + answer.getBytesReceived() + "; Tx: "
-                                                + answer.getBytesSent());
+                                        s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + toHumanReadableSize(answer.getBytesReceived()) + "; Tx: "
+                                                + toHumanReadableSize(answer.getBytesSent()));
                                     }
                                 }
                             }
@@ -1632,7 +1635,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
-        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, RouterHealthChecksToExclude.valueIn(router.getDataCenterId()));
+        String excludedTests = RouterHealthChecksToExclude.valueIn(router.getDataCenterId());
+        if (router.getIsRedundantRouter() && RedundantState.BACKUP.equals(router.getRedundantState())) {
+            excludedTests = excludedTests.isEmpty() ? BACKUP_ROUTER_EXCLUDED_TESTS : excludedTests + "," + BACKUP_ROUTER_EXCLUDED_TESTS;
+        }
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, excludedTests);
         command.setHealthChecksConfig(getRouterHealthChecksConfig(router));
         command.setReconfigureAfterUpdate(reconfigure);
         command.setDeleteFromProcessedCache(deleteFromProcessedCache); // As part of updating
@@ -2037,7 +2044,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                     if (dc.getNetworkType() == NetworkType.Basic) {
                         // ask domR to setup SSH on guest network
-                        buf.append(" sshonguest=true");
+                        if (profile.getHypervisorType() == HypervisorType.VMware) {
+                            buf.append(" sshonguest=false");
+                        } else {
+                            buf.append(" sshonguest=true");
+                        }
                     }
 
                 }
@@ -2119,6 +2130,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (useExtDns) {
                 buf.append(" useextdns=true");
             }
+        }
+
+        if (Boolean.TRUE.equals(ExposeDnsAndBootpServer.valueIn(dc.getId()))) {
+            buf.append(" exposedns=true");
         }
 
         if (Boolean.valueOf(_configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()))) {
@@ -2395,19 +2410,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final DomainRouterVO router = _routerDao.findById(profile.getId());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         NicProfile controlNic = null;
-        if (profile.getHypervisorType() == HypervisorType.VMware && dcVo.getNetworkType() == NetworkType.Basic) {
-            // TODO this is a ugly to test hypervisor type here
-            // for basic network mode, we will use the guest NIC for control NIC
-            for (final NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Guest && nic.getIPv4Address() != null) {
-                    controlNic = nic;
-                }
-            }
-        } else {
-            for (final NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Control && nic.getIPv4Address() != null) {
-                    controlNic = nic;
-                }
+        for (final NicProfile nic : profile.getNics()) {
+            if (nic.getTrafficType() == TrafficType.Control && nic.getIPv4Address() != null) {
+                controlNic = nic;
             }
         }
         return controlNic;
@@ -3114,7 +3119,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                     if (stats.getCurrentBytesReceived() > answerFinal.getBytesReceived()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Router: "
-                                                    + answerFinal.getRouterName() + " Reported: " + answerFinal.getBytesReceived() + " Stored: " + stats.getCurrentBytesReceived());
+                                                    + answerFinal.getRouterName() + " Reported: " + toHumanReadableSize(answerFinal.getBytesReceived()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesReceived()));
                                         }
                                         stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
                                     }
@@ -3122,7 +3127,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                     if (stats.getCurrentBytesSent() > answerFinal.getBytesSent()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Router: "
-                                                    + answerFinal.getRouterName() + " Reported: " + answerFinal.getBytesSent() + " Stored: " + stats.getCurrentBytesSent());
+                                                    + answerFinal.getRouterName() + " Reported: " + toHumanReadableSize(answerFinal.getBytesSent()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesSent()));
                                         }
                                         stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                                     }
@@ -3136,13 +3141,17 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                 }
                             });
                         } catch (final Exception e) {
-                            s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + answer.getBytesReceived() + "; Tx: "
-                                    + answer.getBytesSent());
+                            s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + toHumanReadableSize(answer.getBytesReceived()) + "; Tx: "
+                                    + toHumanReadableSize(answer.getBytesSent()));
                         }
                     }
                 }
             }
         }
+    }
+
+    @Override
+    public void finalizeUnmanage(VirtualMachine vm) {
     }
 
     @Override
@@ -3247,6 +3256,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 UseExternalDnsServers,
                 RouterVersionCheckEnabled,
                 SetServiceMonitor,
+                VirtualRouterServiceOffering,
                 RouterAlertsCheckInterval,
                 RouterHealthChecksEnabled,
                 RouterHealthChecksBasicInterval,
@@ -3257,7 +3267,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksToExclude,
                 RouterHealthChecksFreeDiskSpaceThreshold,
                 RouterHealthChecksMaxCpuUsageThreshold,
-                RouterHealthChecksMaxMemoryUsageThreshold
+                RouterHealthChecksMaxMemoryUsageThreshold,
+                ExposeDnsAndBootpServer
         };
     }
 

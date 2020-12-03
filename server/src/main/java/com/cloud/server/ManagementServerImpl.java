@@ -27,16 +27,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -195,8 +199,10 @@ import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStore
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
+import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateCloudToUseObjectStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
@@ -288,7 +294,9 @@ import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
+import org.apache.cloudstack.api.command.user.account.AddUserToProjectCmd;
 import org.apache.cloudstack.api.command.user.account.DeleteAccountFromProjectCmd;
+import org.apache.cloudstack.api.command.user.account.DeleteUserFromProjectCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
@@ -449,7 +457,6 @@ import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.ListTemplateOVFProperties;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
@@ -547,6 +554,10 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -696,6 +707,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -708,15 +720,16 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
+    static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
+
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -829,6 +842,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private KeystoreManager _ksMgr;
     @Inject
     private DpdkHelper dpdkHelper;
+    @Inject
+    private PrimaryDataStoreDao _primaryDataStoreDao;
+    @Inject
+    private VolumeDataStoreDao _volumeStoreDao;
+    @Inject
+    private TemplateDataStoreDao _vmTemplateStoreDao;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -933,6 +952,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
+        // Set human readable sizes
+        NumbersUtil.enableHumanReadableSizes = _configDao.findByName("display.human.readable.sizes").getValue().equals("true");
 
         if (_lockMasterListener == null) {
             _lockMasterListener = new LockMasterListener(ManagementServerNode.getManagementServerId());
@@ -1164,8 +1185,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Object resourceState = cmd.getResourceState();
         final Object haHosts = cmd.getHaHost();
 
-        final Pair<List<HostVO>, Integer> result = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, resourceState, haHosts, null,
-                null);
+        final Pair<List<HostVO>, Integer> result = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod,
+            cluster, id, keyword, resourceState, haHosts, null, null);
         return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
     }
 
@@ -1267,19 +1288,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair = null;
         List<HostVO> allHosts = null;
+        List<HostVO> hostsForMigrationWithStorage = null;
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword, null, null, srcHost.getHypervisorType(),
-                    srcHost.getHypervisorVersion());
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword,
+                null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion(), srcHost.getId());
             allHosts = allHostsPair.first();
-            allHosts.remove(srcHost);
+            hostsForMigrationWithStorage = new ArrayList<>(allHosts);
 
             for (final VolumeVO volume : volumes) {
                 StoragePool storagePool = _poolDao.findById(volume.getPoolId());
                 Long volClusterId = storagePool.getClusterId();
 
-                for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
+                for (Iterator<HostVO> iterator = hostsForMigrationWithStorage.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
 
                     if (volClusterId != null) {
@@ -1318,10 +1340,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Searching for all hosts in cluster " + cluster + " for migrating VM " + vm);
             }
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, keyword, null, null, null, null);
-            // Filter out the current host.
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, keyword, null, null, null,
+                null, srcHost.getId());
             allHosts = allHostsPair.first();
-            allHosts.remove(srcHost);
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         }
 
@@ -1343,9 +1364,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
+        if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
+            final DataCenterVO dc = _dcDao.findById(srcHost.getDataCenterId());
+            _dpMgr.checkForNonDedicatedResources(vmProfile, dc, excludes);
+        }
+
         for (final HostAllocator allocator : hostAllocators) {
             if (canMigrateWithStorage) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts, HostAllocator.RETURN_UPTO_ALL, false);
+                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, hostsForMigrationWithStorage, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
             }
@@ -1469,8 +1495,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else {
             suitablePools = allPools;
         }
-
+        List<StoragePool> avoidPools = new ArrayList<>();
+        if (srcVolumePool.getParent() != 0L) {
+            StoragePool datastoreCluster = _poolDao.findById(srcVolumePool.getParent());
+            avoidPools.add(datastoreCluster);
+        }
+        abstractDataStoreClustersList((List<StoragePool>) allPools, new ArrayList<StoragePool>());
+        abstractDataStoreClustersList((List<StoragePool>) suitablePools, avoidPools);
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+    }
+
+    private void abstractDataStoreClustersList(List<StoragePool> storagePools, List<StoragePool> avoidPools) {
+        Predicate<StoragePool> childDatastorePredicate = pool -> (pool.getParent() != 0);
+        List<StoragePool> childDatastores = storagePools.stream().filter(childDatastorePredicate).collect(Collectors.toList());
+        storagePools.removeAll(avoidPools);
+        if (!childDatastores.isEmpty()) {
+            storagePools.removeAll(childDatastores);
+            Set<Long> parentStoragePoolIds = childDatastores.stream().map(mo -> mo.getParent()).collect(Collectors.toSet());
+            for (Long parentStoragePoolId : parentStoragePoolIds) {
+                StoragePool parentPool = _poolDao.findById(parentStoragePoolId);
+                if (!storagePools.contains(parentPool) && !avoidPools.contains(parentPool))
+                    storagePools.add(parentPool);
+            }
+        }
     }
 
     /**
@@ -1537,12 +1584,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return suitablePools;
     }
 
-    private Pair<List<HostVO>, Integer> searchForServers(final Long startIndex, final Long pageSize, final Object name, final Object type, final Object state, final Object zone, final Object pod,
-            final Object cluster, final Object id, final Object keyword, final Object resourceState, final Object haHosts, final Object hypervisorType, final Object hypervisorVersion) {
+    private Pair<List<HostVO>, Integer> searchForServers(final Long startIndex, final Long pageSize, final Object name, final Object type,
+        final Object state, final Object zone, final Object pod, final Object cluster, final Object id, final Object keyword,
+        final Object resourceState, final Object haHosts, final Object hypervisorType, final Object hypervisorVersion, final Object... excludes) {
         final Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         final SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("idsNotIn", sb.entity().getId(), SearchCriteria.Op.NOTIN);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
@@ -1581,6 +1630,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (id != null) {
             sc.setParameters("id", id);
+        }
+
+        if (excludes != null && excludes.length > 0) {
+            sc.setParameters("idsNotIn", excludes);
         }
 
         if (name != null) {
@@ -1953,6 +2006,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
+        sb.and("forsystemvms", sb.entity().isForSystemVms(), SearchCriteria.Op.EQ);
 
         if (forLoadBalancing != null && forLoadBalancing) {
             final SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
@@ -1978,6 +2032,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
+        vlanSearch.and("removed", vlanSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 
         if (isAllocated != null && isAllocated == true) {
@@ -2060,6 +2115,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("state", state);
         }
 
+        sc.setParameters( "forsystemvms", false);
         final Pair<List<IPAddressVO>, Integer> result = _publicIpAddressDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends IpAddress>, Integer>(result.first(), result.second());
     }
@@ -2753,6 +2809,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(FindStoragePoolsForMigrationCmd.class);
         cmdList.add(PreparePrimaryStorageForMaintenanceCmd.class);
         cmdList.add(UpdateStoragePoolCmd.class);
+        cmdList.add(UpdateImageStoreCmd.class);
         cmdList.add(DestroySystemVmCmd.class);
         cmdList.add(ListSystemVMsCmd.class);
         cmdList.add(MigrateSystemVMCmd.class);
@@ -2802,7 +2859,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(MarkDefaultZoneForAccountCmd.class);
         cmdList.add(UpdateZoneCmd.class);
         cmdList.add(AddAccountToProjectCmd.class);
+        cmdList.add(AddUserToProjectCmd.class);
         cmdList.add(DeleteAccountFromProjectCmd.class);
+        cmdList.add(DeleteUserFromProjectCmd.class);
         cmdList.add(ListAccountsCmd.class);
         cmdList.add(ListProjectAccountsCmd.class);
         cmdList.add(AssociateIPAddrCmd.class);
@@ -3141,9 +3200,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RevokeTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(ListMgmtsCmd.class);
         cmdList.add(GetUploadParamsForIsoCmd.class);
-        cmdList.add(ListTemplateOVFProperties.class);
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
         cmdList.add(StartRollingMaintenanceCmd.class);
+        cmdList.add(MigrateSecondaryStorageDataCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3166,7 +3225,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -3237,13 +3296,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
+    private void cleanupDownloadUrlsInZone(final long zoneId) {
+        // clean download URLs when destroying ssvm
+        // clean only the volumes and templates of the zone to which ssvm belongs to
+        for (VolumeDataStoreVO volume :_volumeStoreDao.listVolumeDownloadUrlsByZoneId(zoneId)) {
+            volume.setExtractUrl(null);
+            _volumeStoreDao.update(volume.getId(), volume);
+        }
+        for (ImageStoreVO imageStore : _imgStoreDao.listStoresByZoneId(zoneId)) {
+            for (TemplateDataStoreVO template : _vmTemplateStoreDao.listTemplateDownloadUrlsByStoreId(imageStore.getId())) {
+                template.setExtractUrl(null);
+                template.setExtractUrlCreated(null);
+                _vmTemplateStoreDao.update(template.getId(), template);
+            }
+        }
+    }
+
     private SecondaryStorageVmVO startSecondaryStorageVm(final long instanceId) {
         return _secStorageVmMgr.startSecStorageVm(instanceId);
     }
 
     private SecondaryStorageVmVO stopSecondaryStorageVm(final VMInstanceVO systemVm, final boolean isForced)
             throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-
         _itMgr.advanceStop(systemVm.getUuid(), isForced);
         return _secStorageVmDao.findById(systemVm.getId());
     }
@@ -3255,6 +3329,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     protected SecondaryStorageVmVO destroySecondaryStorageVm(final long instanceId) {
         final SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(instanceId);
+        cleanupDownloadUrlsInZone(secStorageVm.getDataCenterId());
         if (_secStorageVmMgr.destroySecStorageVm(instanceId)) {
             return secStorageVm;
         }
@@ -3286,9 +3361,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("nulltype", sb.entity().getType(), SearchCriteria.Op.IN);
 
         if (storageId != null) {
-            final SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
-            volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-            sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            StoragePoolVO storagePool = _primaryDataStoreDao.findById(storageId);
+            if (storagePool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                final SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+                volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.IN);
+                sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            } else {
+                final SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+                volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+                sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            }
         }
 
         final SearchCriteria<VMInstanceVO> sc = sb.create();
@@ -3328,7 +3410,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (storageId != null) {
-            sc.setJoinParameters("volumeSearch", "poolId", storageId);
+            StoragePoolVO storagePool = _primaryDataStoreDao.findById(storageId);
+            if (storagePool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childDataStores = _primaryDataStoreDao.listChildStoragePoolsInDatastoreCluster(storageId);
+                List<Long> childDatastoreIds = childDataStores.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+                sc.setJoinParameters("volumeSearch", "poolId", childDatastoreIds.toArray());
+            } else {
+                sc.setJoinParameters("volumeSearch", "poolId", storageId);
+            }
         }
 
         final Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
@@ -3701,6 +3790,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long domainId = cmd.getDomainId();
         final Long projectId = cmd.getProjectId();
 
+        final String name = cmd.getName();
+
+        if (StringUtils.isBlank(name)) {
+            throw new InvalidParameterValueException("Please specify a valid name for the key pair. The key name can't be empty");
+        }
+
         final Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
         final SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
@@ -3709,8 +3804,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final SSHKeysHelper keys = new SSHKeysHelper(sshKeyLength.value());
-
-        final String name = cmd.getName();
         final String publicKey = keys.getPublicKey();
         final String fingerprint = keys.getPublicKeyFingerPrint();
         final String privateKey = keys.getPrivateKey();
@@ -3920,6 +4013,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // get all the hosts in this cluster
         final List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(command.getClusterId());
 
+        String userNameWithoutSpaces = StringUtils.deleteWhitespace(command.getUsername());
+        if (StringUtils.isBlank(userNameWithoutSpaces)) {
+            throw new InvalidParameterValueException("Username should be non empty string");
+        }
+
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -3929,7 +4027,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     }
                     // update password for this host
                     final DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                    if (nv.getValue().equals(command.getUsername())) {
+                    if (nv == null) {
+                        final DetailVO nvu = new DetailVO(h.getId(), ApiConstants.USERNAME, userNameWithoutSpaces);
+                        _detailsDao.persist(nvu);
+                        final DetailVO nvp = new DetailVO(h.getId(), ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(command.getPassword()));
+                        _detailsDao.persist(nvp);
+                    } else if (nv.getValue().equals(userNameWithoutSpaces)) {
                         final DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
                         nvp.setValue(DBEncryptionUtil.encrypt(command.getPassword()));
                         _detailsDao.persist(nvp);
@@ -3977,6 +4080,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (!supportedHypervisors.contains(host.getHypervisorType())) {
             throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
         }
+
+        String userNameWithoutSpaces = StringUtils.deleteWhitespace(cmd.getUsername());
+        if (StringUtils.isBlank(userNameWithoutSpaces)) {
+            throw new InvalidParameterValueException("Username should be non empty string");
+        }
+
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -3985,7 +4094,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
                 // update password for this host
                 final DetailVO nv = _detailsDao.findDetail(host.getId(), ApiConstants.USERNAME);
-                if (nv.getValue().equals(cmd.getUsername())) {
+                if (nv == null) {
+                    final DetailVO nvu = new DetailVO(host.getId(), ApiConstants.USERNAME, userNameWithoutSpaces);
+                    _detailsDao.persist(nvu);
+                    final DetailVO nvp = new DetailVO(host.getId(), ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(cmd.getPassword()));
+                    _detailsDao.persist(nvp);
+                } else if (nv.getValue().equals(userNameWithoutSpaces)) {
                     final DetailVO nvp = _detailsDao.findDetail(host.getId(), ApiConstants.PASSWORD);
                     nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
                     _detailsDao.persist(nvp);
@@ -4122,15 +4236,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         _itMgr.checkIfCanUpgrade(systemVm, newServiceOffering);
 
-        final boolean result = _itMgr.upgradeVmDb(systemVmId, serviceOfferingId);
-
-        if (newServiceOffering.isDynamic()) {
-            //save the custom values to the database.
-            _userVmMgr.saveCustomOfferingDetails(systemVmId, newServiceOffering);
-        }
-        if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
-            _userVmMgr.removeCustomOfferingDetails(systemVmId);
-        }
+        final boolean result = _itMgr.upgradeVmDb(systemVmId, newServiceOffering, currentServiceOffering);
 
         if (result) {
             return _vmInstanceDao.findById(systemVmId);

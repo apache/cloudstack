@@ -47,6 +47,7 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.storage.GuestOS;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -68,7 +69,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     public static final Logger s_logger = Logger.getLogger(UserVmJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao  _configDao;
+    private ConfigurationDao _configDao;
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -205,6 +206,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         userVmResponse.setPublicIp(userVm.getPublicIpAddress());
         userVmResponse.setKeyPairName(userVm.getKeypairName());
         userVmResponse.setOsTypeId(userVm.getGuestOsUuid());
+        GuestOS guestOS = ApiDBUtils.findGuestOSById(userVm.getGuestOsId());
+        if (guestOS != null) {
+            userVmResponse.setOsDisplayName(guestOS.getDisplayName());
+        }
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.stats)) {
             // stats calculation
@@ -317,8 +322,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
-                if (!userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES) ||
-                        (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES))) {
+                if (!userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES) ||
+                        (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES))) {
                     resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
                 }
                 if ((ApiConstants.BootType.UEFI.toString()).equalsIgnoreCase(userVmDetailVO.getName())) {

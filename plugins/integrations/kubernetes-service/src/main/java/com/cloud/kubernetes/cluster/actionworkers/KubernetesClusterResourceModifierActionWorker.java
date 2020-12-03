@@ -50,6 +50,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
@@ -69,7 +70,6 @@ import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -88,6 +88,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class KubernetesClusterResourceModifierActionWorker extends KubernetesClusterActionWorker {
 
     @Inject
@@ -96,6 +98,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected ClusterDao clusterDao;
     @Inject
     protected ClusterDetailsDao clusterDetailsDao;
+    @Inject
+    protected HostDao hostDao;
     @Inject
     protected FirewallRulesDao firewallRulesDao;
     @Inject
@@ -203,11 +207,18 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             hosts_with_resevered_capacity.put(h.getUuid(), new Pair<HostVO, Integer>(h, 0));
         }
         boolean suitable_host_found = false;
-        for (int i = 1; i <= nodesCount + 1; i++) {
+        for (int i = 1; i <= nodesCount; i++) {
             suitable_host_found = false;
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
                 HostVO h = hp.first();
+                if (!h.getHypervisorType().equals(clusterTemplate.getHypervisorType())) {
+                    continue;
+                }
+                hostDao.loadHostTags(h);
+                if (!Strings.isNullOrEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
+                    continue;
+                }
                 int reserved = hp.second();
                 reserved++;
                 ClusterVO cluster = clusterDao.findById(h.getClusterId());
@@ -216,11 +227,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
                 Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(String.format("Checking host ID: %s for capacity already reserved %d", h.getUuid(), reserved));
+                    LOGGER.debug(String.format("Checking host : %s for capacity already reserved %d", h.getName(), reserved));
                 }
                 if (capacityManager.checkIfHostHasCapacity(h.getId(), cpu_requested * reserved, ram_requested * reserved, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(String.format("Found host ID: %s for with enough capacity, CPU=%d RAM=%d", h.getUuid(), cpu_requested * reserved, ram_requested * reserved));
+                        LOGGER.debug(String.format("Found host : %s for with enough capacity, CPU=%d RAM=%s", h.getName(), cpu_requested * reserved, toHumanReadableSize(ram_requested * reserved)));
                     }
                     hostEntry.setValue(new Pair<HostVO, Integer>(h, reserved));
                     suitable_host_found = true;
@@ -229,19 +240,21 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             if (!suitable_host_found) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Suitable hosts not found in datacenter ID: %s for node %d", zone.getUuid(), i));
+                    LOGGER.info(String.format("Suitable hosts not found in datacenter : %s for node %d, with offering : %s and hypervisor: %s",
+                        zone.getName(), i, offering.getName(), clusterTemplate.getHypervisorType().toString()));
                 }
                 break;
             }
         }
         if (suitable_host_found) {
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Suitable hosts found in datacenter ID: %s, creating deployment destination", zone.getUuid()));
+                LOGGER.info(String.format("Suitable hosts found in datacenter : %s, creating deployment destination", zone.getName()));
             }
             return new DeployDestination(zone, null, null, null);
         }
-        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%1$s memory=%2$s)",
-                cpu_requested * nodesCount, ram_requested * nodesCount);
+        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering : %s and hypervisor: %s",
+                cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString());
+
         LOGGER.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }
@@ -250,7 +263,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         ServiceOffering offering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Checking deployment destination for Kubernetes cluster ID: %s in zone ID: %s", kubernetesCluster.getUuid(), zone.getUuid()));
+            LOGGER.debug(String.format("Checking deployment destination for Kubernetes cluster : %s in zone : %s", kubernetesCluster.getName(), zone.getName()));
         }
         return plan(kubernetesCluster.getTotalNodeCount(), zone, offering);
     }
@@ -264,16 +277,16 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             f.set(startVm, vm.getId());
             userVmService.startVirtualMachine(startVm);
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Started VM ID: %s in the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
+                LOGGER.info(String.format("Started VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
             }
         } catch (IllegalAccessException | NoSuchFieldException | ExecutionException |
                 ResourceUnavailableException | ResourceAllocationException | InsufficientCapacityException ex) {
-            throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), ex);
+            throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster : %s", kubernetesCluster.getName()), ex);
         }
 
         UserVm startVm = userVmDao.findById(vm.getId());
         if (!startVm.getState().equals(VirtualMachine.State.Running)) {
-            throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
     }
 
@@ -286,11 +299,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             startKubernetesVM(vm);
             vm = userVmDao.findById(vm.getId());
             if (vm == null) {
-                throw new ManagementServerException(String.format("Failed to provision worker VM for Kubernetes cluster ID: %s" , kubernetesCluster.getUuid()));
+                throw new ManagementServerException(String.format("Failed to provision worker VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
             }
             nodes.add(vm);
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned node VM ID: %s in to the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
+                LOGGER.info(String.format("Provisioned node VM : %s in to the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
             }
         }
         return nodes;
@@ -306,7 +319,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         UserVm nodeVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-        VirtualMachineTemplate template = templateDao.findById(kubernetesCluster.getTemplateId());
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Account owner = accountDao.findById(kubernetesCluster.getAccountId());
@@ -319,17 +331,17 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, nodeInstance));
         String k8sNodeConfig = null;
         try {
-            k8sNodeConfig = getKubernetesNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()));
+            k8sNodeConfig = getKubernetesNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes node configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(StringUtils.getPreferredCharset()));
-        nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
+        nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
-                null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
+                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
                 null, addrs, null, null, null, customParameterMap, null, null, null, null);
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Created node VM ID: %s, %s in the Kubernetes cluster ID: %s", nodeVm.getUuid(), hostName, kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
         }
         return nodeVm;
     }
@@ -424,7 +436,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 });
                 rulesService.applyPortForwardingRules(publicIp.getId(), account);
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Provisioned SSH port forwarding rule from port %d to 22 on %s to the VM IP : %s in Kubernetes cluster ID: %s", srcPortFinal, publicIp.getAddress().addr(), vmIp.toString(), kubernetesCluster.getUuid()));
+                    LOGGER.info(String.format("Provisioned SSH port forwarding rule from port %d to 22 on %s to the VM IP : %s in Kubernetes cluster : %s", srcPortFinal, publicIp.getAddress().addr(), vmIp.toString(), kubernetesCluster.getName()));
                 }
             }
         }

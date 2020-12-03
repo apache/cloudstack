@@ -406,6 +406,9 @@
 
                         args.$form.find('[rel=ip6dns1]').hide();
                         args.$form.find('[rel=ip6dns2]').hide();
+
+                        args.$form.find('[rel=ip6cidr]').hide();
+                        args.$form.find('[rel=ip6gateway]').hide();
                     } else { //Advanced zone
                         if (args.data["zone-advanced-sg-enabled"] != "on") { //Advanced SG-disabled zone
                             args.$form.find('[rel=networkOfferingId]').hide();
@@ -413,12 +416,18 @@
 
                             args.$form.find('[rel=ip6dns1]').show();
                             args.$form.find('[rel=ip6dns2]').show();
+
+                            args.$form.find('[rel=ip6cidr]').hide();
+                            args.$form.find('[rel=ip6gateway]').hide();
                         } else { //Advanced SG-enabled zone
                             args.$form.find('[rel=networkOfferingId]').show(); //will be used to create a guest network during zone creation
                             args.$form.find('[rel=guestcidraddress]').hide();
 
-                            args.$form.find('[rel=ip6dns1]').hide();
-                            args.$form.find('[rel=ip6dns2]').hide();
+                            args.$form.find('[rel=ip6dns1]').show();
+                            args.$form.find('[rel=ip6dns2]').show();
+
+                            args.$form.find('[rel=ip6cidr]').show();
+                            args.$form.find('[rel=ip6gateway]').show();
                         }
                     }
                 },
@@ -460,6 +469,21 @@
                             ipv6: true
                         }
                    },
+
+                    ip6cidr: {
+                        label: 'label.ipv6.CIDR',
+                        validation: {
+                            required: false,
+                            ipv6cidr: true
+                        }
+                    },
+                    ip6gateway: {
+                        label: 'label.ipv6.gateway',
+                        validation: {
+                            required: false,
+                            ipv6: true
+                        }
+                    },
 
                     internaldns1: {
                         label: 'label.internal.dns.1',
@@ -1410,8 +1434,8 @@
                                     description: "nfs"
                                 });
                                 items.push({
-                                    id: "vmfs",
-                                    description: "vmfs"
+                                    id: "presetup",
+                                    description: "presetup"
                                 });
                                 args.response.success({
                                     data: items
@@ -1552,7 +1576,7 @@
                                     $form.find('[rel=rbdsecret]').hide();
 
                                     $form.find('[rel=glustervolume]').hide();
-                                } else if (protocol == "PreSetup") {
+                                } else if (protocol == "PreSetup" && selectedClusterObj.hypervisortype != "VMware") {
                                     $form.find('[rel=server]').hide();
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
 
@@ -1625,7 +1649,7 @@
                                     $form.find('[rel=rbdsecret]').hide();
 
                                     $form.find('[rel=glustervolume]').hide();
-                                } else if (protocol == "vmfs") {
+                                } else if (protocol == "presetup" && selectedClusterObj.hypervisortype == "VMware") {
                                     $form.find('[rel=server]').css('display', 'block');
                                     $form.find('[rel=server]').find(".value").find("input").val("");
 
@@ -3878,6 +3902,16 @@
                                 endip: args.data.guestTraffic.guestEndIp
                             });
                         }
+                        if (args.data.zone.ip6cidr != null && args.data.zone.ip6cidr.length > 0) {
+                            $.extend(data, {
+                                ip6cidr: args.data.zone.ip6cidr
+                            });
+                        }
+                        if (args.data.zone.ip6gateway != null && args.data.zone.ip6gateway.length > 0) {
+                            $.extend(data, {
+                                ip6gateway: args.data.zone.ip6gateway
+                            });
+                        }
                     }
 
                     $.ajax({
@@ -4173,7 +4207,7 @@
                     } else if (args.data.returnedZone.networktype == "Advanced") { //update VLAN in physical network(s) in advanced zone
                         var physicalNetworksHavingGuestIncludingVlan = [];
                         $(args.data.physicalNetworks).each(function() {
-                            if (this.guestConfiguration != null && this.guestConfiguration.vlanRangeStart != null && this.guestConfiguration.vlanRangeStart.length > 0) {
+                            if (args.data.guestTraffic != null && args.data.guestTraffic.vlanRangeStart != null && args.data.guestTraffic.vlanRangeStart.length > 0) {
                                 physicalNetworksHavingGuestIncludingVlan.push(this);
                             }
                         });
@@ -4186,10 +4220,10 @@
                             var updatedCount = 0;
                             $(physicalNetworksHavingGuestIncludingVlan).each(function() {
                                 var vlan;
-                                if (this.guestConfiguration.vlanRangeEnd == null || this.guestConfiguration.vlanRangeEnd.length == 0)
-                                    vlan = this.guestConfiguration.vlanRangeStart;
+                                if (args.data.guestTraffic.vlanRangeEnd == null || args.data.guestTraffic.vlanRangeEnd.length == 0)
+                                    vlan = args.data.guestTraffic.vlanRangeStart;
                                 else
-                                    vlan = this.guestConfiguration.vlanRangeStart + "-" + this.guestConfiguration.vlanRangeEnd;
+                                    vlan = args.data.guestTraffic.vlanRangeStart + "-" + args.data.guestTraffic.vlanRangeEnd;
 
                                 var originalId = this.id;
                                 var returnedId;
@@ -4495,7 +4529,7 @@
                         array1.push("&details[0].user=" + args.data.primaryStorage.smbUsername);
                         array1.push("&details[1].password=" + encodeURIComponent(args.data.primaryStorage.smbPassword));
                         array1.push("&details[2].domain=" + args.data.primaryStorage.smbDomain);
-                    } else if (args.data.primaryStorage.protocol == "PreSetup") {
+                    } else if (args.data.primaryStorage.protocol == "PreSetup" && selectedClusterObj.hypervisortype != "VMware") {
                         var path = args.data.primaryStorage.path;
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
@@ -4521,12 +4555,12 @@
                         var rbdid = args.data.primaryStorage.rbdid;
                         var rbdsecret = args.data.primaryStorage.rbdsecret;
                         url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
-                    } else if (args.data.primaryStorage.protocol == "vmfs") {
+                    } else if (args.data.primaryStorage.protocol == "presetup" && selectedClusterObj.hypervisortype == "VMware") {
                         var path = args.data.primaryStorage.vCenterDataCenter;
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
                         path += "/" + args.data.primaryStorage.vCenterDataStore;
-                        url = vmfsURL("dummy", path);
+                        url = presetupURL("dummy", path);
                     } else {
                         var iqn = args.data.primaryStorage.iqn;
                         if (iqn.substring(0, 1) != "/")

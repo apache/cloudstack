@@ -965,30 +965,12 @@
                     }
                 });
 
-                $.ajax({
-                    url: createURL("listTemplateOvfProperties&id=" + selectedTemplateObj.id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                        ovfProps = json.listtemplateovfpropertiesresponse.ovfproperty;
-                    }
-                });
-
                 var $step = $('.step.sshkeyPairs:visible');
                 if (ovfProps == null || ovfProps.length === 0) {
                     $step.addClass('next-skip-ovf-properties');
                 } else {
                     $step.removeClass('next-skip-ovf-properties');
                 }
-            },
-
-            // Step PRE-8: Configure OVF Properties (if available) for the template
-            function(args) {
-                args.response.success({
-                    data: {
-                        ovfProperties: ovfProps
-                    }
-                });
             },
 
             // Step 8: Review
@@ -1052,8 +1034,8 @@
                     }
                 });
                 for (var k = 0; k < deployOvfProperties.length; k++) {
-                    deployVmData["ovfproperties[" + k + "].key"] = deployOvfProperties[k].key;
-                    deployVmData["ovfproperties[" + k + "].value"] = deployOvfProperties[k].value;
+                    deployVmData["properties[" + k + "].key"] = deployOvfProperties[k].key;
+                    deployVmData["properties[" + k + "].value"] = deployOvfProperties[k].value;
                 }
             }
 
@@ -1409,6 +1391,12 @@
             if (bootmode != null && bootmode.length > 0) {
                 $.extend(deployVmData, {
                     bootmode : bootmode
+                });
+            }
+            var bootintosetup = (args.data.bootintosetup == "on");
+            if (bootintosetup) {
+                $.extend(deployVmData, {
+                    bootintosetup : bootintosetup
                 });
             }
 

@@ -97,6 +97,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
         templateSearch = createSearchBuilder();
         templateSearch.and("template_id", templateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        templateSearch.and("download_state", templateSearch.entity().getDownloadState(), SearchCriteria.Op.NEQ);
         templateSearch.and("destroyed", templateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         templateSearch.done();
 
@@ -143,6 +144,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         downloadTemplateSearch.and("download_url", downloadTemplateSearch.entity().getExtractUrl(), Op.NNULL);
         downloadTemplateSearch.and("download_url_created", downloadTemplateSearch.entity().getExtractUrlCreated(), Op.NNULL);
         downloadTemplateSearch.and("destroyed", downloadTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        downloadTemplateSearch.and("store_id", downloadTemplateSearch.entity().getDataStoreId(), Op.EQ);
         downloadTemplateSearch.done();
 
         directDownloadTemplateSeach = createSearchBuilder();
@@ -419,6 +421,15 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
+    public List<TemplateDataStoreVO> listByTemplateNotBypassed(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("download_state", Status.BYPASSED);
+        sc.setParameters("destroyed", false);
+        return search(sc, null);
+    }
+
+    @Override
     public TemplateDataStoreVO findByTemplateZone(long templateId, Long zoneId, DataStoreRole role) {
         // get all elgible image stores
         List<DataStore> imgStores = null;
@@ -530,6 +541,14 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     public List<TemplateDataStoreVO> listTemplateDownloadUrls() {
         SearchCriteria<TemplateDataStoreVO> sc = downloadTemplateSearch.create();
         sc.setParameters("destroyed", false);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<TemplateDataStoreVO> listTemplateDownloadUrlsByStoreId(long storeId) {
+        SearchCriteria<TemplateDataStoreVO> sc = downloadTemplateSearch.create();
+        sc.setParameters("destroyed", false);
+        sc.setParameters("store_id", storeId);
         return listBy(sc);
     }
 

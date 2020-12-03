@@ -44,6 +44,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final String RouterTemplateOvm3CK = "router.template.ovm3";
     static final String SetServiceMonitorCK = "network.router.EnableServiceMonitoring";
     static final String RouterAlertsCheckIntervalCK = "router.alerts.check.interval";
+    static final String VirtualRouterServiceOfferingCK = "router.service.offering";
 
     static final String RouterHealthChecksConfigRefreshIntervalCK = "router.health.checks.config.refresh.interval";
     static final String RouterHealthChecksResultFetchIntervalCK = "router.health.checks.results.fetch.interval";
@@ -71,6 +72,11 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             "If true, router minimum required version is checked before sending command", false);
     static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
             "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<Boolean> ExposeDnsAndBootpServer = new ConfigKey<Boolean>(Boolean.class, "expose.dns.externally", "Advanced", "true",
+            "open dns, dhcp and bootp on the public interface", true, ConfigKey.Scope.Zone, null);
+
+    static final ConfigKey<String> VirtualRouterServiceOffering = new ConfigKey<String>(String.class, VirtualRouterServiceOfferingCK, "Advanced", "",
+            "Uuid of the service offering used by virtual routers; if NULL - system offering will be used", true, ConfigKey.Scope.Account, null);
 
     // Health checks
     static final ConfigKey<Boolean> RouterHealthChecksEnabled = new ConfigKey<Boolean>(Boolean.class, "router.health.checks.enabled", "Advanced", "true",

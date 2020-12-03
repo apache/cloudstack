@@ -148,7 +148,7 @@ def split_ips_by_family(ips):
 def destroy_network_rules_for_nic(vm_name, vm_ip, vm_mac, vif, sec_ips):
     try:
         rules = execute("""iptables-save -t filter | awk '/ %s / { sub(/-A/, "-D", $1) ; print }'""" % vif ).split("\n")
-        for rule in filter(None, rules):
+        for rule in [_f for _f in rules if _f]:
             try:
                 execute("iptables " + rule)
             except:
@@ -158,7 +158,7 @@ def destroy_network_rules_for_nic(vm_name, vm_ip, vm_mac, vif, sec_ips):
 
     try:
         dnats = execute("""iptables-save -t nat | awk '/ %s / { sub(/-A/, "-D", $1) ; print }'""" % vif ).split("\n")
-        for dnat in filter(None, dnats):
+        for dnat in [_f for _f in dnats if _f]:
             try:
                 execute("iptables -t nat " + dnat)
             except:
@@ -185,7 +185,7 @@ def destroy_network_rules_for_nic(vm_name, vm_ip, vm_mac, vif, sec_ips):
         logging.debug("Ignoring failure to delete ebtable rules for vm: " + vm_name)
 
 def get_bridge_physdev(brname):
-    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1" % brname)
+    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1 | cut -d ':' -f1" % brname)
     return physdev.strip()
 
 
@@ -205,14 +205,14 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     destroy_ebtables_rules(vm_name, vif)
 
     chains = [vmchain_default, vmchain, vmchain_egress]
-    for chain in filter(None, chains):
+    for chain in [_f for _f in chains if _f]:
         try:
             execute("iptables -F " + chain)
             execute('ip6tables -F ' + chain)
         except:
             logging.debug("Ignoring failure to flush chain: " + chain)
 
-    for chain in filter(None, chains):
+    for chain in [_f for _f in chains if _f]:
         try:
             execute("iptables -X " + chain)
             execute('ip6tables -X ' + chain)
@@ -229,7 +229,7 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     if vif:
         try:
             dnats = execute("""iptables -t nat -S | awk '/%s/ { sub(/-A/, "-D", $1) ; print }'""" % vif ).split("\n")
-            for dnat in filter(None, dnats):
+            for dnat in [_f for _f in dnats if _f]:
                 try:
                     execute("iptables -t nat " + dnat)
                 except:
@@ -247,14 +247,14 @@ def destroy_ebtables_rules(vm_name, vif):
     delcmd = "ebtables -t nat -L PREROUTING | grep " + eb_vm_chain
     delcmds = []
     try:
-        delcmds = filter(None, execute(delcmd).split('\n'))
+        delcmds = [_f for _f in execute(delcmd).split('\n') if _f]
         delcmds = ["-D PREROUTING " + x for x in delcmds ]
     except:
         pass
     postcmds = []
     try:
         postcmd = "ebtables -t nat -L POSTROUTING | grep " + eb_vm_chain
-        postcmds = filter(None, execute(postcmd).split('\n'))
+        postcmds = [_f for _f in execute(postcmd).split('\n') if _f]
         postcmds = ["-D POSTROUTING " + x for x in postcmds]
     except:
         pass
@@ -493,7 +493,7 @@ def ebtables_rules_vmip (vmname, vmmac, ips, action):
     if action and action.strip() == "-A":
         action = "-I"
 
-    for ip in filter(None, ips):
+    for ip in [_f for _f in ips if _f]:
         logging.debug("ip = " + ip)
         if ip == 0 or ip == "0":
             continue
@@ -510,7 +510,7 @@ def check_default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brna
         rules = execute("iptables-save |grep -w %s |grep -w %s |grep -w %s" % (brfw, vif, vmchain_default))
     except:
         rules = None
-    if rules is None or rules is "":
+    if not rules:
         logging.debug("iptables rules do not exist, programming default rules for %s %s" % (vm_name,vif))
         default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips, is_first_nic)
     else:
@@ -519,7 +519,7 @@ def check_default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brna
             rules = execute("ebtables -t nat -L PREROUTING | grep %s |grep -w %s" % (vmchain_in, vif))
         except:
             rules = None
-        if rules is None or rules is "":
+        if not rules:
             logging.debug("ebtables rules do not exist, programming default ebtables rules for %s %s" % (vm_name,vif))
             default_ebtables_rules(vm_name, vm_ip, vm_mac, vif, is_first_nic)
             ips = sec_ips.split(';')
@@ -736,7 +736,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vmchain = iptables_chain_name(vm_name)
 
     delcmd = """iptables-save | awk '/BF(.*)physdev-is-bridged(.*)%s/ { sub(/-A/, "-D", $1) ; print }'""" % vmchain
-    delcmds = filter(None, execute(delcmd).split('\n'))
+    delcmds = [_f for _f in execute(delcmd).split('\n') if _f]
     for cmd in delcmds:
         try:
             execute("iptables " + cmd)
@@ -744,7 +744,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
               logging.exception("Ignoring failure to delete rules for vm " + vmName)
 
     delcmd = """ip6tables-save | awk '/BF(.*)physdev-is-bridged(.*)%s/ { sub(/-A/, "-D", $1) ; print }'""" % vmchain
-    delcmds = filter(None, execute(delcmd).split('\n'))
+    delcmds = [_f for _f in execute(delcmd).split('\n') if _f]
     for cmd in delcmds:
         try:
             execute('ip6tables ' + cmd)
@@ -820,7 +820,7 @@ def network_rules_for_rebooted_vm(vmName):
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
     brName = execute("iptables-save | awk -F '-j ' '/FORWARD -o(.*)physdev-is-bridged(.*)BF/ {print $2}'").strip()
-    if brName is None or brName is "":
+    if not brName:
         brName = "cloudbr0"
     else:
         brName = execute("iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' |awk '{print $4}' | head -1").strip()
@@ -847,7 +847,7 @@ def network_rules_for_rebooted_vm(vmName):
         ipts = []
         for cmd in [delcmd, inscmd]:
             logging.debug(cmd)
-            cmds = filter(None, execute(cmd).split('\n'))
+            cmds = [_f for _f in execute(cmd).split('\n') if _f]
             for c in cmds:
                     ipt = "iptables " + c
                     ipts.append(ipt)
@@ -897,7 +897,7 @@ def cleanup_bridge(bridge):
 
     # Delete iptables/bridge rules
     rules = execute("""iptables-save | grep %s | grep '^-A' | sed 's/-A/-D/' """ % bridge_name).split("\n")
-    for rule in filter(None, rules):
+    for rule in [_f for _f in rules if _f]:
         try:
             command = "iptables " + rule
             execute(command)
@@ -945,13 +945,13 @@ def cleanup_rules():
                     cleanup.append(vm_name)
 
         bridge_tables = execute("""grep -E '^ebtable_' /proc/modules | cut -f1 -d' ' | sed s/ebtable_//""").split('\n')
-        for table in filter(None, bridge_tables):
+        for table in [_f for _f in bridge_tables if _f]:
             chainscmd = """ebtables -t %s -L | awk '/chain:/ { gsub(/(^.*chain: |-(in|out|ips).*)/, ""); print $1}' | sort | uniq""" % table
             chains = execute(chainscmd).split('\n')
 
         logging.debug(" ebtables chains in the host: %s ", chains)
 
-        for chain in filter(None, chains):
+        for chain in [_f for _f in chains if _f]:
             if 1 in [chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-']]:
                 vm_name = chain
                 vmpresent = False
@@ -1368,13 +1368,13 @@ def verify_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec
 
     if brname is None:
         brname = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f3" % (vm_name, vm_mac)).strip()
-    if brname is None or brname == "":
+    if not brname:
         print("Cannot find bridge")
         sys.exit(1)
 
     if vif is None:
         vif = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f1" % (vm_name, vm_mac)).strip()
-    if vif is None or vif == "":
+    if not vif:
         print("Cannot find vif")
         sys.exit(1)
 
@@ -1451,7 +1451,7 @@ def verify_iptables_rules_for_bridge(brname):
     expected_rules.append("-A %s -m state --state RELATED,ESTABLISHED -j ACCEPT" % (brfw))
     expected_rules.append("-A %s -m physdev --physdev-is-in --physdev-is-bridged -j %s" % (brfw, brfwin))
     expected_rules.append("-A %s -m physdev --physdev-is-out --physdev-is-bridged -j %s" % (brfw, brfwout))
-    phydev = execute("brctl show | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
+    phydev = execute("ip link show type bridge | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
     expected_rules.append("-A %s -m physdev --physdev-out %s --physdev-is-bridged -j ACCEPT" % (brfw, phydev))
 
     rules = execute("iptables-save |grep -w %s |grep -v \"^:\"" % brfw).split('\n')

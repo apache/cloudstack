@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -31,34 +31,34 @@ from cloudutils.serviceConfig import configureLibvirtConfig
 from optparse import OptionParser
 
 def getUserInputs():
-    print "Welcome to the CloudStack Agent Setup:"
+    print("Welcome to the CloudStack Agent Setup:")
 
     cfo = configFileOps("@AGENTSYSCONFDIR@/agent.properties")
     oldMgt = cfo.getEntry("host")
 
-    mgtSvr = raw_input("Please input the Management Server Hostname/IP-Address:[%s]"%oldMgt)
+    mgtSvr = input("Please input the Management Server Hostname/IP-Address:[%s]"%oldMgt)
     if mgtSvr == "":
         mgtSvr = oldMgt
     try:
         socket.getaddrinfo(mgtSvr, 443)
     except:
-        print "Failed to resolve %s. Please input a valid hostname or IP-Address."%mgtSvr
+        print("Failed to resolve %s. Please input a valid hostname or IP-Address."%mgtSvr)
         exit(1)
 
     oldToken = cfo.getEntry("zone")
-    zoneToken = raw_input("Please input the Zone Id:[%s]"%oldToken)
+    zoneToken = input("Please input the Zone Id:[%s]"%oldToken)
 
     if zoneToken == "":
         zoneToken = oldToken
 
     oldPod = cfo.getEntry("pod")
-    podId = raw_input("Please input the Pod Id:[%s]"%oldPod)
+    podId = input("Please input the Pod Id:[%s]"%oldPod)
 
     if podId == "":
        podId  = oldToken
 
     oldCluster = cfo.getEntry("cluster")
-    clusterId = raw_input("Please input the Cluster Id:[%s]"%oldCluster)
+    clusterId = input("Please input the Cluster Id:[%s]"%oldCluster)
     if clusterId == "":
         clusterId = oldCluster
 
@@ -66,21 +66,21 @@ def getUserInputs():
     if oldHypervisor == "":
         oldHypervisor = "kvm"
 
-    hypervisor = raw_input("Please input the Hypervisor type kvm/lxc:[%s]"%oldHypervisor)
+    hypervisor = input("Please input the Hypervisor type kvm/lxc:[%s]"%oldHypervisor)
     if hypervisor == "":
         hypervisor = oldHypervisor
 
     try:
         defaultNic = networkConfig.getDefaultNetwork()
     except:
-        print "Failed to get default route. Please configure your network to have a default route"
+        print("Failed to get default route. Please configure your network to have a default route")
         exit(1)
 
     defNic = defaultNic.name
-    network = raw_input("Please choose which network used to create VM:[%s]"%defNic)
+    network = input("Please choose which network used to create VM:[%s]"%defNic)
     if network == "":
         if defNic == "":
-            print "You need to specifiy one of Nic or bridge on your system"
+            print("You need to specifiy one of Nic or bridge on your system")
             exit(1)
         elif network == "":
             network = defNic
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     if not options.auto and options.secure:
         configureLibvirtConfig(True)
-        print "Libvirtd with TLS configured"
+        print("Libvirtd with TLS configured")
         sys.exit(0)
 
     if options.auto is None:
@@ -131,10 +131,10 @@ if __name__ == '__main__':
         if glbEnv.uuid == "":
             glbEnv.uuid = bash("uuidgen").getStdout()
     else:
-        for para, value in options.__dict__.items():
+        for para, value in list(options.__dict__.items()):
             if value is None:
-                print "Missing operand:%s"%para
-                print "Try %s --help for more information"%sys.argv[0]
+                print("Missing operand:%s"%para)
+                print("Try %s --help for more information"%sys.argv[0])
                 sys.exit(1)
 
         glbEnv.uuid = options.guid
@@ -149,14 +149,14 @@ if __name__ == '__main__':
 
     glbEnv.secure = options.secure
 
-    print "Starting to configure your system:"
+    print("Starting to configure your system:")
     syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
     try:
         syscfg.config()
-        print "CloudStack Agent setup is done!"
-    except (CloudRuntimeException,CloudInternalException), e:
-        print e
-        print "Try to restore your system:"
+        print("CloudStack Agent setup is done!")
+    except (CloudRuntimeException,CloudInternalException) as e:
+        print(e)
+        print("Try to restore your system:")
         try:
             syscfg.restore()
         except:

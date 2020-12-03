@@ -437,6 +437,14 @@
                                         isBoolean: true,
                                         isChecked: false
                                     },
+                                    rootDiskSize: {
+                                        label: 'label.root.disk.size',
+                                        docID: 'helpRootDiskSizeGb',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
                                     storageTags: {
                                         label: 'label.storage.tags',
                                         docID: 'helpComputeOfferingStorageType',
@@ -872,6 +880,12 @@
                                 $.extend(data, {
                                     offerha: (args.data.offerHA == "on")
                                 });
+
+                                if (args.data.rootDiskSize != null && args.data.rootDiskSize > 0) {
+                                    $.extend(data, {
+                                        rootDiskSize: args.data.rootDiskSize
+                                    });
+                                }
 
                                 if (args.data.storageTags != null && args.data.storageTags.length > 0) {
                                     $.extend(data, {
@@ -2613,7 +2627,8 @@
                                     var data = {
                                         id: args.context.diskOfferings[0].id,
                                         name: args.data.name,
-                                        displaytext: args.data.displaytext
+                                        displaytext: args.data.displaytext,
+                                        tags: args.data.tags
                                     };
                                     $.ajax({
                                         url: createURL('updateDiskOffering'),
@@ -2939,7 +2954,41 @@
                                         label: 'label.cache.mode'
                                     },
                                     tags: {
-                                        label: 'label.storage.tags'
+                                        label: 'label.storage.tags',
+                                        docID: 'helpPrimaryStorageTags',
+                                        isEditable: true,
+                                        isTokenInput: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listStorageTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.liststoragetagsresponse.storagetag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                id: tag.name,
+                                                                name: tag.name
+                                                            };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags,
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        }
                                     },
                                     domain: {
                                         label: 'label.domain'
@@ -4517,6 +4566,10 @@
 
                     detailView: {
                         name: 'label.network.offering.details',
+                        viewAll: {
+                            label: 'label.networks',
+                            path: 'network'
+                        },
                         actions: {
                             edit: {
                                 label: 'label.edit',

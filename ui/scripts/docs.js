@@ -711,7 +711,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPrimaryStorageProtocol: {
-        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint, RDB, CLVM or Gluster. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS. For Hyper-V, choose SMB/CIFS. For LXC, choose NFS or SharedMountPoint. For OVM, choose NFS or ocfs2.',
+        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint, RDB, CLVM or Gluster. For vSphere, choose PreSetup (VMFS or iSCSI or FiberChannel or vSAN or vVols) or NFS. For Hyper-V, choose SMB/CIFS. For LXC, choose NFS or SharedMountPoint. For OVM, choose NFS or ocfs2.',
         externalLink: ''
     },
     helpPrimaryStorageServer: {
@@ -1064,6 +1064,10 @@ cloudStack.docs = {
     },
     helpVolumeSizeGb: {
         desc: 'Volume size in GB (1GB = 1,073,741,824 bytes)',
+        externalLink: ''
+    },
+    helpRootDiskSizeGb: {
+        desc: 'Root disk size in GB',
         externalLink: ''
     },
     // Add VPC

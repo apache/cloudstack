@@ -33,15 +33,17 @@ public class ReadyCommand extends Command {
     private List<String> msHostList;
     private String lbAlgorithm;
     private Long lbCheckInterval;
+    private Boolean enableHumanReadableSizes;
 
     public ReadyCommand(Long dcId) {
         super();
         this.dcId = dcId;
     }
 
-    public ReadyCommand(final Long dcId, final Long hostId) {
+    public ReadyCommand(final Long dcId, final Long hostId, boolean enableHumanReadableSizes) {
         this(dcId);
         this.hostId = hostId;
+        this.enableHumanReadableSizes = enableHumanReadableSizes;
     }
 
     public void setDetails(String details) {
@@ -87,5 +89,9 @@ public class ReadyCommand extends Command {
 
     public void setLbCheckInterval(Long lbCheckInterval) {
         this.lbCheckInterval = lbCheckInterval;
+    }
+
+    public Boolean getEnableHumanReadableSizes() {
+        return enableHumanReadableSizes;
     }
 }

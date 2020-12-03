@@ -166,6 +166,9 @@ public class VolumeVO implements Volume {
     @Column(name = "hv_ss_reserve")
     private Integer hypervisorSnapshotReserve;
 
+    @Transient
+    private boolean deployAsIs;
+
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId,
             long accountId, long diskOfferingId, Storage.ProvisioningType provisioningType, long size,
@@ -261,6 +264,7 @@ public class VolumeVO implements Volume {
         format = that.getFormat();
         provisioningType = that.getProvisioningType();
         uuid = UUID.randomUUID().toString();
+        deployAsIs = that.isDeployAsIs();
     }
 
     @Override
@@ -570,6 +574,11 @@ public class VolumeVO implements Volume {
     @Override
     public  boolean isDisplay(){
         return displayVolume;
+    }
+
+    @Override
+    public boolean isDeployAsIs() {
+        return deployAsIs;
     }
 
     public void setDisplay(boolean display){

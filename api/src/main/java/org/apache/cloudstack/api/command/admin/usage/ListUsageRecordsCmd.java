@@ -181,7 +181,7 @@ public class ListUsageRecordsCmd extends BaseListCmd {
                 }
             }
 
-            response.setResponses(usageResponses, usageResponses.size());
+            response.setResponses(usageResponses, usageRecords.second());
         }
 
         response.setResponseName(getCommandName());

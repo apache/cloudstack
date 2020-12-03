@@ -27,4 +27,8 @@ public interface TemplateInfo extends DataObject, VirtualMachineTemplate {
     String getInstallPath();
 
     boolean isDirectDownload();
+
+    boolean isDeployAsIs();
+
+    String getDeployAsIsConfiguration();
 }

@@ -36,6 +36,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -141,6 +142,8 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
@@ -739,15 +742,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                                     if (isCurrentVmDiskStatsDifferentFromPrevious(previousVmDiskStats, vmDiskStat_lock)) {
                                         s_logger.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " + "Ignoring current answer. Host: " + host.getName()
-                                                + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + vmDiskStat.getBytesRead() + " write(Bytes): " + vmDiskStat.getBytesWrite()
-                                                + " Read(IO): " + vmDiskStat.getIORead() + " write(IO): " + vmDiskStat.getIOWrite());
+                                                + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " write(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesWrite())
+                                                + " Read(IO): " + toHumanReadableSize(vmDiskStat.getIORead()) + " write(IO): " + toHumanReadableSize(vmDiskStat.getIOWrite()));
                                         continue;
                                     }
 
                                     if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStat.getBytesRead()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Read # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getBytesRead() + " Stored: "
+                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " Stored: "
                                                     + vmDiskStat_lock.getCurrentBytesRead());
                                         }
                                         vmDiskStat_lock.setNetBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
@@ -756,8 +759,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (vmDiskStat_lock.getCurrentBytesWrite() > vmDiskStat.getBytesWrite()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Write # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getBytesWrite() + " Stored: "
-                                                    + vmDiskStat_lock.getCurrentBytesWrite());
+                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesWrite()) + " Stored: "
+                                                    + toHumanReadableSize(vmDiskStat_lock.getCurrentBytesWrite()));
                                         }
                                         vmDiskStat_lock.setNetBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
                                     }
@@ -885,8 +888,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (vmNetworkStat_lock.getCurrentBytesSent() > vmNetworkStat.getBytesSent()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Sent # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + vmNetworkStat.getBytesSent() + " Stored: "
-                                                    + vmNetworkStat_lock.getCurrentBytesSent());
+                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesSent()) + " Stored: "
+                                                    + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesSent()));
                                         }
                                         vmNetworkStat_lock.setNetBytesSent(vmNetworkStat_lock.getNetBytesSent() + vmNetworkStat_lock.getCurrentBytesSent());
                                     }
@@ -895,8 +898,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (vmNetworkStat_lock.getCurrentBytesReceived() > vmNetworkStat.getBytesReceived()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + vmNetworkStat.getBytesReceived() + " Stored: "
-                                                    + vmNetworkStat_lock.getCurrentBytesReceived());
+                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesReceived()) + " Stored: "
+                                                    + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesReceived()));
                                         }
                                         vmNetworkStat_lock.setNetBytesReceived(vmNetworkStat_lock.getNetBytesReceived() + vmNetworkStat_lock.getCurrentBytesReceived());
                                     }
@@ -928,13 +931,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                 for (StoragePoolVO pool : pools) {
                     List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
-                    List<String> volumeLocators = new ArrayList<String>();
                     for (VolumeVO volume : volumes) {
-                        if (volume.getFormat() == ImageFormat.QCOW2 || volume.getFormat() == ImageFormat.VHD) {
-                            volumeLocators.add(volume.getPath());
-                        } else if (volume.getFormat() == ImageFormat.OVA) {
-                            volumeLocators.add(volume.getChainInfo());
-                        } else {
+                        if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA) {
                             s_logger.warn("Volume stats not implemented for this format type " + volume.getFormat());
                             break;
                         }
@@ -943,15 +941,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         Map<String, VolumeStatsEntry> volumeStatsByUuid;
                         if (pool.getScope() == ScopeType.ZONE) {
                             volumeStatsByUuid = new HashMap<>();
-                            for (final Cluster cluster : _clusterDao.listByZoneId(pool.getDataCenterId())) {
-                                final Map<String, VolumeStatsEntry> volumeStatsForCluster = _userVmMgr.getVolumeStatistics(cluster.getId(), pool.getUuid(), pool.getPoolType(),
-                                        volumeLocators, StatsTimeout.value());
+                            for (final Cluster cluster : _clusterDao.listClustersByDcId(pool.getDataCenterId())) {
+                                final Map<String, VolumeStatsEntry> volumeStatsForCluster = _userVmMgr.getVolumeStatistics(cluster.getId(), pool.getUuid(), pool.getPoolType(), StatsTimeout.value());
                                 if (volumeStatsForCluster != null) {
                                     volumeStatsByUuid.putAll(volumeStatsForCluster);
                                 }
                             }
                         } else {
-                            volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), volumeLocators, StatsTimeout.value());
+                            volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), StatsTimeout.value());
                         }
                         if (volumeStatsByUuid != null) {
                             for (final Map.Entry<String, VolumeStatsEntry> entry : volumeStatsByUuid.entrySet()) {
@@ -994,7 +991,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         continue;
                     }
 
-                    Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
+                    String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
                     GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), nfsVersion);
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {
@@ -1005,7 +1002,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     Answer answer = ssAhost.sendMessage(command);
                     if (answer != null && answer.getResult()) {
                         storageStats.put(storeId, (StorageStats)answer);
-                        s_logger.trace("HostId: " + storeId + " Used: " + ((StorageStats)answer).getByteUsed() + " Total Available: " + ((StorageStats)answer).getCapacityBytes());
+                        s_logger.trace("HostId: " + storeId + " Used: " + toHumanReadableSize(((StorageStats)answer).getByteUsed()) + " Total Available: " + toHumanReadableSize(((StorageStats)answer).getCapacityBytes()));
                     }
                 }
                 _storageStats = storageStats;
@@ -1025,8 +1022,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                             storagePoolStats.put(pool.getId(), (StorageStats)answer);
 
                             // Seems like we have dynamically updated the pool size since the prev. size and the current do not match
-                            if (_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()) {
+                            if (pool.getCapacityBytes() != ((StorageStats)answer).getCapacityBytes() ||
+                                    pool.getUsedBytes() != ((StorageStats)answer).getByteUsed()) {
                                 pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
+                                if (pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY)) {
+                                    pool.setUsedBytes(((StorageStats) answer).getByteUsed());
+                                    pool.setUpdateTime(new Date());
+                                }
                                 _storagePoolDao.update(pool.getId(), pool);
                             }
                         }
@@ -1334,21 +1336,25 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         protected void sendMetricsToInfluxdb(Map<Object, Object> metrics) {
             InfluxDB influxDbConnection = createInfluxDbConnection();
 
-            Pong response = influxDbConnection.ping();
-            if (response.getVersion().equalsIgnoreCase("unknown")) {
-                throw new CloudRuntimeException(String.format("Cannot ping influxdb host %s:%s.", externalStatsHost, externalStatsPort));
+            try {
+                Pong response = influxDbConnection.ping();
+                if (response.getVersion().equalsIgnoreCase("unknown")) {
+                    throw new CloudRuntimeException(String.format("Cannot ping influxdb host %s:%s.", externalStatsHost, externalStatsPort));
+                }
+
+                Collection<Object> metricsObjects = metrics.values();
+                List<Point> points = new ArrayList<>();
+
+                s_logger.debug(String.format("Sending stats to %s host %s:%s", externalStatsType, externalStatsHost, externalStatsPort));
+
+                for (Object metricsObject : metricsObjects) {
+                    Point vmPoint = creteInfluxDbPoint(metricsObject);
+                    points.add(vmPoint);
+                }
+                writeBatches(influxDbConnection, databaseName, points);
+            } finally {
+                influxDbConnection.close();
             }
-
-            Collection<Object> metricsObjects = metrics.values();
-            List<Point> points = new ArrayList<>();
-
-            s_logger.debug(String.format("Sending stats to %s host %s:%s", externalStatsType, externalStatsHost, externalStatsPort));
-
-            for (Object metricsObject : metricsObjects) {
-                Point vmPoint = creteInfluxDbPoint(metricsObject);
-                points.add(vmPoint);
-            }
-            writeBatches(influxDbConnection, databaseName, points);
         }
 
         /**
@@ -1521,7 +1527,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      */
     protected void writeBatches(InfluxDB influxDbConnection, String dbName, List<Point> points) {
         BatchPoints batchPoints = BatchPoints.database(dbName).build();
-        influxDbConnection.enableBatch(BatchOptions.DEFAULTS);
+        if(!influxDbConnection.isBatchEnabled()){
+            influxDbConnection.enableBatch(BatchOptions.DEFAULTS);
+        }
 
         for (Point point : points) {
             batchPoints.point(point);

@@ -1755,6 +1755,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return true;
             }
 
+            restartVPCNetworks(vpcId, callerAccount, user, cleanUp);
+
             s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process without cleanup");
             if (!startVpc(vpcId, false)) {
                 s_logger.warn("Failed to start vpc as a part of VPC " + vpc + " restart process");
@@ -1768,6 +1770,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             final VpcVO vo = _vpcDao.findById(vpcId);
             vo.setRestartRequired(restartRequired);
             _vpcDao.update(vpc.getId(), vo);
+        }
+    }
+
+    private void restartVPCNetworks(long vpcId, Account callerAccount, User callerUser, boolean cleanUp) throws InsufficientCapacityException, ResourceUnavailableException {
+        List<? extends Network> networks = _ntwkModel.listNetworksByVpc(vpcId);
+        for (Network network: networks) {
+            if (network.isRestartRequired()) {
+                _ntwkMgr.restartNetwork(network.getId(), callerAccount, callerUser, cleanUp);
+            }
         }
     }
 
@@ -2024,13 +2035,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            // 2) Delete private gateway from the DB
+            // 2) Clean up any remaining routes
+            cleanUpRoutesByGatewayId(gatewayId);
+
+            // 3) Delete private gateway from the DB
             return deletePrivateGatewayFromTheDB(gateway);
 
         } finally {
             if (gatewayVO != null) {
                 _vpcGatewayDao.releaseFromLockTable(gatewayId);
             }
+        }
+    }
+
+    private void cleanUpRoutesByGatewayId(long gatewayId){
+        List<StaticRouteVO> routes = _staticRouteDao.listByGatewayId(gatewayId);
+        for (StaticRouteVO route: routes){
+            _staticRouteDao.remove(route.getId());
         }
     }
 
@@ -2326,6 +2347,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<Long> permittedAccounts = new ArrayList<Long>();
         final Map<String, String> tags = cmd.getTags();
         final Long projectId = cmd.getProjectId();
+        final String state = cmd.getState();
 
         final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive,
                 null);
@@ -2341,6 +2363,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("vpcGatewayId", sb.entity().getVpcGatewayId(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             final SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -2366,6 +2389,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         if (gatewayId != null) {
             sc.addAnd("vpcGatewayId", Op.EQ, gatewayId);
+        }
+
+        if (state != null) {
+            sc.addAnd("state", Op.EQ, state);
         }
 
         if (tags != null && !tags.isEmpty()) {

@@ -17023,6 +17023,8 @@
                                     if (args.data.annotation != null && args.data.annotation.length > 0)
                                         array1.push("&annotation=" + args.data.annotation);
 
+                                    if (args.data.name != null && args.data.name.length > 0)
+                                        array1.push("&name=" + args.data.name);
                                     $.ajax({
                                         url: createURL("updateHost&id=" + args.context.hosts[0].id + array1.join("")),
                                         dataType: "json",
@@ -17662,6 +17664,10 @@
                                                     id: 'nestedcloudstack',
                                                     description: 'nested-cloudstack - controls host that is a VM in a parent cloudstack (testing purposes only)'
                                                 });
+                                                items.push({
+                                                    id: 'redfish',
+                                                    description: 'redfish - controls host using a redfish java client'
+                                                });
                                                 args.response.success({
                                                     data: items
                                                 });
@@ -17957,7 +17963,8 @@
 
                                 fields:[ {
                                     name: {
-                                        label: 'label.name'
+                                        label: 'label.name',
+                                        isEditable: true
                                     }
                                 },
                                 {
@@ -18728,8 +18735,8 @@
                                                     description: "nfs"
                                                 });
                                                 items.push({
-                                                    id: "vmfs",
-                                                    description: "vmfs"
+                                                    id: "presetup",
+                                                    description: "presetup"
                                                 });
                                                 items.push({
                                                     id: "custom",
@@ -18878,7 +18885,7 @@
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
 
                                                     $form.find('.form-item[rel=glustervolume]').hide();
-                                                } else if (protocol == "PreSetup") {
+                                                } else if (protocol == "PreSetup" && selectedClusterObj.hypervisortype != "VMware") {
                                                     $form.find('.form-item[rel=server]').hide();
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
 
@@ -18976,7 +18983,7 @@
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
 
                                                     $form.find('.form-item[rel=glustervolume]').hide();
-                                                } else if (protocol == "vmfs") {
+                                                } else if (protocol == "presetup" && selectedClusterObj.hypervisortype == "VMware") {
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
 
@@ -19401,7 +19408,7 @@
                                         array1.push("&details[0].user=" + args.data.smbUsername);
                                         array1.push("&details[1].password=" + encodeURIComponent(args.data.smbPassword));
                                         array1.push("&details[2].domain=" + args.data.smbDomain);
-                                    } else if (args.data.protocol == "PreSetup") {
+                                    } else if (args.data.protocol == "PreSetup" && selectedClusterObj.hypervisortype != "VMware") {
                                         var path = args.data.path;
                                         if (path.substring(0, 1) != "/")
                                             path = "/" + path;
@@ -19427,12 +19434,12 @@
                                         var rbdid = args.data.rbdid;
                                         var rbdsecret = args.data.rbdsecret;
                                         url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
-                                    } else if (args.data.protocol == "vmfs") {
+                                    } else if (args.data.protocol == "presetup" && selectedClusterObj.hypervisortype == "VMware") {
                                         var path = args.data.vCenterDataCenter;
                                         if (path.substring(0, 1) != "/")
                                             path = "/" + path;
                                         path += "/" + args.data.vCenterDataStore;
-                                        url = vmfsURL("dummy", path);
+                                        url = presetupURL("dummy", path);
                                     } else if (args.data.protocol == "gluster") {
                                         var glustervolume = args.data.glustervolume;
 
@@ -19551,6 +19558,9 @@
 
                                         array1.push("&capacityiops=" + capacityIops);
                                     }
+
+                                    if (args.data.name != null && args.data.name.length > 0)
+                                        array1.push("&name=" + args.data.name);
 
                                     $.ajax({
                                         url: createURL("updateStoragePool&id=" + args.context.primarystorages[0].id + array1.join("")),
@@ -19684,7 +19694,8 @@
                                 title: 'label.details',
                                 fields:[ {
                                     name: {
-                                        label: 'label.name'
+                                        label: 'label.name',
+                                        isEditable: true
                                     }
                                 },
                                 {

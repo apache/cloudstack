@@ -49,6 +49,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -114,12 +115,15 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         return true;
     }
 
-    private void updateCluster(long clusterId, String state) {
+    private void updateCluster(long clusterId, String allocationState) {
         Cluster cluster = resourceManager.getCluster(clusterId);
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + clusterId);
         }
-        resourceManager.updateCluster(cluster, "", "", state, "");
+        UpdateClusterCmd updateClusterCmd = new UpdateClusterCmd();
+        updateClusterCmd.setId(clusterId);
+        updateClusterCmd.setAllocationState(allocationState);
+        resourceManager.updateCluster(updateClusterCmd);
     }
 
     private void generateReportAndFinishingEvent(StartRollingMaintenanceCmd cmd, boolean success, String details,

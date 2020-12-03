@@ -57,7 +57,7 @@ public interface SnapshotManager extends Configurable {
             "Time in seconds between retries in backing up snapshot to secondary", false, ConfigKey.Scope.Global, null);
 
     public static final ConfigKey<Boolean> BackupSnapshotAfterTakingSnapshot = new ConfigKey<Boolean>(Boolean.class, "snapshot.backup.to.secondary",  "Snapshots", "true",
-            "Indicates whether to always backup primary storage snapshot to secondary storage", false, ConfigKey.Scope.Global, null);
+            "Indicates whether to always backup primary storage snapshot to secondary storage. Keeping snapshots only on Primary storage is applicable for KVM + Ceph only.", false, ConfigKey.Scope.Global, null);
 
     void deletePoliciesForVolume(Long volumeId);
 
