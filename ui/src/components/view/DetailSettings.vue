@@ -86,7 +86,10 @@
             <span v-else>{{ item.value }}</span>
           </span>
         </a-list-item-meta>
-        <div slot="actions" v-if="!disableSettings && 'updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner()">
+        <div
+          slot="actions"
+          v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
+            'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
           <a-button shape="circle" size="default" @click="updateDetail(index)" v-if="item.edit">
             <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
           </a-button>
@@ -99,7 +102,10 @@
             v-if="!item.edit"
             @click="showEditDetail(index)" />
         </div>
-        <div slot="actions" v-if="!disableSettings && 'updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner()">
+        <div
+          slot="actions"
+          v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
+            'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
           <a-popconfirm
             :title="`${$t('label.delete.setting')}?`"
             @confirm="deleteDetail(index)"
@@ -169,6 +175,14 @@ export default {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
+    },
+    allowEditOfDetail (name) {
+      if (this.resource.readonlyuidetails) {
+        if (this.resource.readonlyuidetails.split(',').map(item => item.trim()).includes(name)) {
+          return false
+        }
+      }
+      return true
     },
     showEditDetail (index) {
       this.details[index].edit = true
