@@ -184,6 +184,8 @@ export default {
           this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
+          this.actionLoading = false
         })
       })
     },

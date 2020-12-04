@@ -1438,6 +1438,7 @@
 "label.networkrate": "Network Rate (Mb/s)",
 "label.networkread": "Network Read",
 "label.networks": "Networks",
+"label.networkspeed": "Network Speed",
 "label.networktype": "Network Type",
 "label.networkwrite": "Network Write",
 "label.new": "New",
