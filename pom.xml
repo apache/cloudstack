@@ -1005,33 +1005,33 @@
                             <exclude>tools/ngui/static/bootstrap/*</exclude>
                             <exclude>tools/ngui/static/js/lib/*</exclude>
                             <exclude>tools/transifex/.tx/config</exclude>
-                            <exclude>ui/css/src/scss/components/token-input-facebook.scss</exclude>
+                            <exclude>ui/legacy/css/src/scss/components/token-input-facebook.scss</exclude>
                             <exclude>ui/l10n/*</exclude>
-                            <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.image.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.navigate.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.pie.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.resize.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.selection.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.stack.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.symbol.js</exclude>
-                            <exclude>ui/lib/flot/jquery.flot.threshold.js</exclude>
-                            <exclude>ui/lib/jquery-ui/css/jquery-ui.css</exclude>
-                            <exclude>ui/lib/jquery-ui/index.html</exclude>
-                            <exclude>ui/lib/jquery-ui/js/jquery-ui.js</exclude>
-                            <exclude>ui/lib/jquery.cookies.js</exclude>
-                            <exclude>ui/lib/jquery.easing.js</exclude>
-                            <exclude>ui/lib/jquery.js</exclude>
-                            <exclude>ui/lib/jquery.md5.js</exclude>
-                            <exclude>ui/lib/jquery.validate.js</exclude>
-                            <exclude>ui/lib/jquery.tokeninput.js</exclude>
-                            <exclude>ui/lib/qunit/qunit.css</exclude>
-                            <exclude>ui/lib/qunit/qunit.js</exclude>
-                            <exclude>ui/lib/reset.css</exclude>
-                            <exclude>ui/lib/require.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.colorhelpers.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.crosshair.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.fillbetween.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.image.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.navigate.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.pie.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.resize.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.selection.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.stack.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.symbol.js</exclude>
+                            <exclude>ui/legacy/lib/flot/jquery.flot.threshold.js</exclude>
+                            <exclude>ui/legacy/lib/jquery-ui/css/jquery-ui.css</exclude>
+                            <exclude>ui/legacy/lib/jquery-ui/index.html</exclude>
+                            <exclude>ui/legacy/lib/jquery-ui/js/jquery-ui.js</exclude>
+                            <exclude>ui/legacy/lib/jquery.cookies.js</exclude>
+                            <exclude>ui/legacy/lib/jquery.easing.js</exclude>
+                            <exclude>ui/legacy/lib/jquery.js</exclude>
+                            <exclude>ui/legacy/lib/jquery.md5.js</exclude>
+                            <exclude>ui/legacy/lib/jquery.validate.js</exclude>
+                            <exclude>ui/legacy/lib/jquery.tokeninput.js</exclude>
+                            <exclude>ui/legacy/lib/qunit/qunit.css</exclude>
+                            <exclude>ui/legacy/lib/qunit/qunit.js</exclude>
+                            <exclude>ui/legacy/lib/reset.css</exclude>
+                            <exclude>ui/legacy/lib/require.js</exclude>
                             <exclude>utils/testsmallfileinactive</exclude>
                         </excludes>
                     </configuration>
