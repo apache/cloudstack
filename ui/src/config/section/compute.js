@@ -98,24 +98,10 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           groupAction: true,
+          popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
           show: (record) => { return ['Stopped'].includes(record.state) },
-          args: (record, store, group) => {
-            var fields = []
-            if (group) {
-              return fields
-            }
-            if (store.userInfo.roletype === 'Admin') {
-              fields = ['podid', 'clusterid', 'hostid']
-            }
-            if (record.hypervisor === 'VMware') {
-              if (store.apis.startVirtualMachine.params.filter(x => x.name === 'bootintosetup').length > 0) {
-                fields.push('bootintosetup')
-              }
-            }
-            return fields
-          },
-          response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
+          component: () => import('@/views/compute/StartVirtualMachine.vue')
         },
         {
           api: 'stopVirtualMachine',
