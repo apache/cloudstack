@@ -153,6 +153,48 @@ public class HypervisorHostHelper {
     public static final String VSPHERE_DATASTORE_BASE_FOLDER = "fcd";
     public static final String VSPHERE_DATASTORE_HIDDEN_FOLDER = ".hidden";
 
+    protected final static Map<String, Integer> apiVersionHardwareVersionMap;
+
+    static {
+        apiVersionHardwareVersionMap = new HashMap<String, Integer>();
+        apiVersionHardwareVersionMap.put("3.5", 4);
+        apiVersionHardwareVersionMap.put("3.6", 4);
+        apiVersionHardwareVersionMap.put("3.7", 4);
+        apiVersionHardwareVersionMap.put("3.8", 4);
+        apiVersionHardwareVersionMap.put("3.9", 4);
+        apiVersionHardwareVersionMap.put("4.0", 7);
+        apiVersionHardwareVersionMap.put("4.1", 7);
+        apiVersionHardwareVersionMap.put("4.2", 7);
+        apiVersionHardwareVersionMap.put("4.3", 7);
+        apiVersionHardwareVersionMap.put("4.4", 7);
+        apiVersionHardwareVersionMap.put("4.5", 7);
+        apiVersionHardwareVersionMap.put("4.6", 7);
+        apiVersionHardwareVersionMap.put("4.7", 7);
+        apiVersionHardwareVersionMap.put("4.8", 7);
+        apiVersionHardwareVersionMap.put("4.9", 7);
+        apiVersionHardwareVersionMap.put("5.0", 8);
+        apiVersionHardwareVersionMap.put("5.1", 9);
+        apiVersionHardwareVersionMap.put("5.2", 9);
+        apiVersionHardwareVersionMap.put("5.3", 9);
+        apiVersionHardwareVersionMap.put("5.4", 9);
+        apiVersionHardwareVersionMap.put("5.5", 10);
+        apiVersionHardwareVersionMap.put("5.6", 10);
+        apiVersionHardwareVersionMap.put("5.7", 10);
+        apiVersionHardwareVersionMap.put("5.8", 10);
+        apiVersionHardwareVersionMap.put("5.9", 10);
+        apiVersionHardwareVersionMap.put("6.0", 11);
+        apiVersionHardwareVersionMap.put("6.1", 11);
+        apiVersionHardwareVersionMap.put("6.2", 11);
+        apiVersionHardwareVersionMap.put("6.3", 11);
+        apiVersionHardwareVersionMap.put("6.4", 11);
+        apiVersionHardwareVersionMap.put("6.5", 13);
+        apiVersionHardwareVersionMap.put("6.6", 13);
+        apiVersionHardwareVersionMap.put("6.7", 14);
+        apiVersionHardwareVersionMap.put("6.8", 14);
+        apiVersionHardwareVersionMap.put("6.9", 14);
+        apiVersionHardwareVersionMap.put("7.0", 17);
+    }
+
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
         if (ocs != null && ocs.length > 0) {
@@ -2218,25 +2260,7 @@ public class HypervisorHostHelper {
         if (hostApiVersion == null) {
             hostApiVersion = "";
         }
-        if (hostApiVersion.equalsIgnoreCase("7.0")) {
-            version = 17;
-        } else if (hostApiVersion.equalsIgnoreCase("6.7")) {
-            version = 14;
-        } else if (hostApiVersion.equalsIgnoreCase("6.5")) {
-            version = 13;
-        } else if (hostApiVersion.equalsIgnoreCase("6.0")) {
-            version = 11;
-        } else if (hostApiVersion.equalsIgnoreCase("5.5")) {
-            version = 10;
-        } else if (hostApiVersion.equalsIgnoreCase("5.1")) {
-            version = 9;
-        } else if (hostApiVersion.equalsIgnoreCase("5.0")) {
-            version = 8;
-        } else if (hostApiVersion.startsWith("4.")) {
-            version = 7;
-        } else if (hostApiVersion.equalsIgnoreCase("3.5")) {
-            version = 4;
-        }
+        version = apiVersionHardwareVersionMap.get(hostApiVersion);
         return version;
     }
 }
