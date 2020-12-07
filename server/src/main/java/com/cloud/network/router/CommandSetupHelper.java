@@ -106,9 +106,7 @@ import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -173,8 +171,6 @@ public class CommandSetupHelper {
     private Site2SiteVpnGatewayDao _s2sVpnGatewayDao;
     @Inject
     private VpcDao _vpcDao;
-    @Inject
-    private VpcGatewayDao _vpcGatewayDao;
     @Inject
     private VlanDao _vlanDao;
     @Inject
@@ -734,8 +730,7 @@ public class CommandSetupHelper {
                 final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, sourceNat, BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
                         ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
 
-                ip.setTrafficType(getNetworkTrafficType(network));
-                ip.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
+                setIpAddressNetworkParams(ip, network, router);
                 ipsToSend[i++] = ip;
                 if (ipAddr.isSourceNat()) {
                     sourceNatIpAdd = new Pair<IpAddressTO, Long>(ip, ipAddr.getNetworkId());
@@ -859,8 +854,7 @@ public class CommandSetupHelper {
                 final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask,
                         vifMacAddress, networkRate, ipAddr.isOneToOneNat());
 
-                ip.setTrafficType(getNetworkTrafficType(network));
-                ip.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
+                setIpAddressNetworkParams(ip, network, router);
                 ipsToSend[i++] = ip;
                 /*
                  * send the firstIP = true for the first Add, this is to create
@@ -987,8 +981,7 @@ public class CommandSetupHelper {
                 final IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false, ipAddr.getSourceNat(), ipAddr.getBroadcastUri(),
                         ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(), null, false);
 
-                ip.setTrafficType(getNetworkTrafficType(network));
-                ip.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
+                setIpAddressNetworkParams(ip, network, router);
                 ipsToSend[i++] = ip;
 
             }
@@ -1145,13 +1138,16 @@ public class CommandSetupHelper {
         return dhcpRange;
     }
 
-    private TrafficType getNetworkTrafficType(Network network) {
-        final VpcGatewayVO gateway = _vpcGatewayDao.getVpcGatewayByNetworkId(network.getId());
-        if (gateway != null) {
+    private void setIpAddressNetworkParams(IpAddressTO ipAddress, final Network network, final VirtualRouter router) {
+        if (_networkModel.isPrivateGateway(network.getId())) {
             s_logger.debug("network " + network.getId() + " (name: " + network.getName() + " ) is a vpc private gateway, set traffic type to Public");
-            return TrafficType.Public;
+            ipAddress.setTrafficType(TrafficType.Public);
+            ipAddress.setPrivateGateway(true);
         } else {
-            return network.getTrafficType();
+            ipAddress.setTrafficType(network.getTrafficType());
+            ipAddress.setPrivateGateway(false);
         }
+        ipAddress.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
     }
+
 }
