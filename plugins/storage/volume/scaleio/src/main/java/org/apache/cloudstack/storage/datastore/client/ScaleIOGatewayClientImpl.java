@@ -44,6 +44,8 @@ import org.apache.cloudstack.storage.datastore.api.SnapshotDefs;
 import org.apache.cloudstack.storage.datastore.api.SnapshotGroup;
 import org.apache.cloudstack.storage.datastore.api.StoragePool;
 import org.apache.cloudstack.storage.datastore.api.StoragePoolStatistics;
+import org.apache.cloudstack.storage.datastore.api.VTree;
+import org.apache.cloudstack.storage.datastore.api.VTreeMigrationInfo;
 import org.apache.cloudstack.storage.datastore.api.Volume;
 import org.apache.cloudstack.storage.datastore.api.VolumeStatistics;
 import org.apache.cloudstack.utils.security.SSLUtils;
@@ -744,9 +746,10 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     @Override
-    public boolean migrateVolume(final String srcVolumeId, final String destPoolId) {
+    public boolean migrateVolume(final String srcVolumeId, final String destPoolId, final int timeoutInSecs) {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(srcVolumeId), "src volume id cannot be null");
         Preconditions.checkArgument(!Strings.isNullOrEmpty(destPoolId), "dest pool id cannot be null");
+        Preconditions.checkArgument(timeoutInSecs > 0, "timeout must be greater than 0");
 
         HttpResponse response = null;
         try {
@@ -754,7 +757,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                     "/instances/Volume::" + srcVolumeId + "/action/migrateVTree",
                     String.format("{\"destSPId\":\"%s\"}", destPoolId));
             checkResponseOK(response);
-            return true;
+            return waitForVolumeMigrationToComplete(srcVolumeId, timeoutInSecs);
         } catch (final IOException e) {
             LOG.error("Failed to migrate PowerFlex volume due to:", e);
             checkResponseTimeOut(e);
@@ -764,6 +767,56 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
         }
         return false;
+    }
+
+    private boolean waitForVolumeMigrationToComplete(final String volumeId, int waitTimeInSec) {
+        LOG.debug("Waiting for the migration to complete for the volume " + volumeId);
+        Volume volume = getVolume(volumeId);
+        if (volume == null || Strings.isNullOrEmpty(volume.getVtreeId())) {
+            LOG.warn("Failed to get volume details, unable to check the migration status for the volume " + volumeId);
+            return false;
+        }
+
+        String volumeTreeId = volume.getVtreeId();
+        while (waitTimeInSec > 0) {
+            VTreeMigrationInfo.MigrationStatus migrationStatus = getVolumeTreeMigrationStatus(volumeTreeId);
+            if (migrationStatus != null && migrationStatus == VTreeMigrationInfo.MigrationStatus.NotInMigration) {
+                LOG.debug("Migration completed for the volume " + volumeId);
+                return true;
+            }
+
+            waitTimeInSec--;
+
+            try {
+                Thread.sleep(1000); // Try every sec and return after migration is complete
+            } catch (Exception ex) {
+                // don't do anything
+            }
+        }
+
+        LOG.debug("Unable to complete the migration for the volume " + volumeId);
+        return false;
+    }
+
+    private VTreeMigrationInfo.MigrationStatus getVolumeTreeMigrationStatus(final String volumeTreeId) {
+        HttpResponse response = null;
+        try {
+            response = get("/instances/VTree::" + volumeTreeId);
+            checkResponseOK(response);
+            ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            VTree volumeTree = mapper.readValue(response.getEntity().getContent(), VTree.class);
+            if (volumeTree != null && volumeTree.getVTreeMigrationInfo() != null) {
+                return volumeTree.getVTreeMigrationInfo().getMigrationStatus();
+            }
+        } catch (final IOException e) {
+            LOG.error("Failed to migrate PowerFlex volume due to:", e);
+            checkResponseTimeOut(e);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
+        }
+        return null;
     }
 
     ///////////////////////////////////////////////////////

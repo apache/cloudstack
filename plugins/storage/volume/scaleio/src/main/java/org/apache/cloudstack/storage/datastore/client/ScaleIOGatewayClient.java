@@ -55,7 +55,7 @@ public interface ScaleIOGatewayClient {
     Volume resizeVolume(final String volumeId, final Integer sizeInGb);
     Volume cloneVolume(final String sourceVolumeId, final String destVolumeName);
     boolean deleteVolume(final String volumeId);
-    boolean migrateVolume(final String srcVolumeId, final String destPoolId);
+    boolean migrateVolume(final String srcVolumeId, final String destPoolId, final int timeoutInSecs);
 
     boolean mapVolumeToSdc(final String volumeId, final String sdcId);
     boolean mapVolumeToSdcWithLimits(final String volumeId, final String sdcId, final Long iopsLimit, final Long bandwidthLimitInKbps);

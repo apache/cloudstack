@@ -1398,25 +1398,47 @@ public class VolumeServiceImpl implements VolumeService {
         if (storageCanCloneVolume && computeSupportsVolumeClone) {
             s_logger.debug("Storage " + destDataStoreId + " can support cloning using a cached template and compute side is OK with volume cloning.");
 
-            TemplateInfo templateOnPrimary = destPrimaryDataStore.getTemplate(srcTemplateInfo.getId(), null);
+            GlobalLock lock = null;
+            TemplateInfo templateOnPrimary = null;
 
-            if (templateOnPrimary == null) {
-                templateOnPrimary = createManagedTemplateVolume(srcTemplateInfo, destPrimaryDataStore);
+            try {
+                String tmplIdManagedPoolIdLockString = "tmplId:" + srcTemplateInfo.getId() + "managedPoolId:" + destDataStoreId;
+                lock = GlobalLock.getInternLock(tmplIdManagedPoolIdLockString);
+                if (lock == null) {
+                    throw new CloudRuntimeException("Unable to create managed storage template/volume, couldn't get global lock on " + tmplIdManagedPoolIdLockString);
+                }
+
+                int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+                if (!lock.lock(storagePoolMaxWaitSeconds)) {
+                    s_logger.debug("Unable to create managed storage template/volume, couldn't lock on " + tmplIdManagedPoolIdLockString);
+                    throw new CloudRuntimeException("Unable to create managed storage template/volume, couldn't lock on " + tmplIdManagedPoolIdLockString);
+                }
+
+                templateOnPrimary = destPrimaryDataStore.getTemplate(srcTemplateInfo.getId(), null);
 
                 if (templateOnPrimary == null) {
-                    throw new CloudRuntimeException("Failed to create template " + srcTemplateInfo.getUniqueName() + " on primary storage: " + destDataStoreId);
+                    templateOnPrimary = createManagedTemplateVolume(srcTemplateInfo, destPrimaryDataStore);
+
+                    if (templateOnPrimary == null) {
+                        throw new CloudRuntimeException("Failed to create template " + srcTemplateInfo.getUniqueName() + " on primary storage: " + destDataStoreId);
+                    }
                 }
-            }
 
-            // Copy the template to the template volume.
-            VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(destPrimaryDataStore.getId(), templateOnPrimary.getId(), null);
+                // Copy the template to the template volume.
+                VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(destPrimaryDataStore.getId(), templateOnPrimary.getId(), null);
 
-            if (templatePoolRef == null) {
-                throw new CloudRuntimeException("Failed to find template " + srcTemplateInfo.getUniqueName() + " in storage pool " + destPrimaryDataStore.getId());
-            }
+                if (templatePoolRef == null) {
+                    throw new CloudRuntimeException("Failed to find template " + srcTemplateInfo.getUniqueName() + " in storage pool " + destPrimaryDataStore.getId());
+                }
 
-            if (templatePoolRef.getDownloadState() == Status.NOT_DOWNLOADED) {
-                copyTemplateToManagedTemplateVolume(srcTemplateInfo, templateOnPrimary, templatePoolRef, destPrimaryDataStore, destHost);
+                if (templatePoolRef.getDownloadState() == Status.NOT_DOWNLOADED) {
+                    copyTemplateToManagedTemplateVolume(srcTemplateInfo, templateOnPrimary, templatePoolRef, destPrimaryDataStore, destHost);
+                }
+            } finally {
+                if (lock != null) {
+                    lock.unlock();
+                    lock.releaseRef();
+                }
             }
 
             if (destPrimaryDataStore.getPoolType() != StoragePoolType.PowerFlex) {

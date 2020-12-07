@@ -669,7 +669,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final String srcVolumeId = ((VolumeInfo) srcData).getPath();
             final StoragePoolVO destStoragePool = storagePoolDao.findById(destPoolId);
             final String destStoragePoolId = destStoragePool.getPath();
-            boolean migrateStatus = client.migrateVolume(srcVolumeId, destStoragePoolId);
+            int migrationTimeout = StorageManager.KvmStorageOfflineMigrationWait.value();
+            boolean migrateStatus = client.migrateVolume(srcVolumeId, destStoragePoolId, migrationTimeout);
             if (migrateStatus) {
                 if (srcData.getId() != destData.getId()) {
                     VolumeVO destVolume = volumeDao.findById(destData.getId());

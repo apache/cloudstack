@@ -140,7 +140,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             long prev_chain_size = 0;
             long virtual_size=0;
             for (VolumeObjectTO volume : volumeTOs) {
-                String volumeSnapshotName = String.format("%s-%s-%s-%s", ScaleIOUtil.VMSNAPSHOT_PREFIX, vmSnapshotVO.getId(),
+                String volumeSnapshotName = String.format("%s-%s-%s-%s-%s", ScaleIOUtil.VMSNAPSHOT_PREFIX, vmSnapshotVO.getId(), volume.getId(),
                         storagePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
                 srcVolumeDestSnapshotMap.put(volume.getPath(), volumeSnapshotName);
 
