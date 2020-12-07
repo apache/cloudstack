@@ -252,8 +252,12 @@
             <a-form-item :label="$t('label.ostypeid')">
               <a-select
                 showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }"
                 v-decorator="['ostypeid', {
-                  initialValue: defaultOsType,
+                  initialValue: defaultOsId,
                   rules: [
                     {
                       required: true,
@@ -263,7 +267,7 @@
                 }]"
                 :loading="osTypes.loading"
                 :placeholder="apiParams.ostypeid.description">
-                <a-select-option v-for="opt in osTypes.opts" :key="opt.name || opt.description">
+                <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -792,12 +796,9 @@ export default {
             }
             params[key] = input.join()
           } else if (key === 'zoneid') {
-            params[key] = values[key]
+            params[key] = input
           } else if (key === 'ostypeid') {
-            const osTypeSelected = this.osTypes.opts.filter(item => item.description === input)
-            if (osTypeSelected && osTypeSelected[0]) {
-              params[key] = osTypeSelected[0].id
-            }
+            params[key] = input
           } else if (key === 'hypervisor') {
             params[key] = this.hyperVisor.opts[input].name
           } else if (key === 'groupenabled') {

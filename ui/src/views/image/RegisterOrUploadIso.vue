@@ -118,7 +118,7 @@
             }"
             :loading="osTypeLoading"
             :placeholder="apiParams.ostypeid.description">
-            <a-select-option :value="opt.description" v-for="(opt, optIndex) in osTypes" :key="optIndex">
+            <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -244,7 +244,7 @@ export default {
         this.osTypes = this.osTypes.concat(listOsTypes)
       }).finally(() => {
         this.osTypeLoading = false
-        this.defaultOsType = this.osTypes[0].description
+        this.defaultOsType = this.osTypes[0].id
       })
     },
     handleRemove (file) {
@@ -320,8 +320,7 @@ export default {
               params[key] = zone[0].id
               break
             case 'ostypeid':
-              var os = this.osTypes.filter(osType => osType.description === input)
-              params[key] = os[0].id
+              params[key] = input
               break
             default:
               params[key] = input
