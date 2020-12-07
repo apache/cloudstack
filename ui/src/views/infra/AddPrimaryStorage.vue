@@ -601,6 +601,7 @@ export default {
             params['details[' + index.toString() + '].' + key] = smbParams[key]
           })
         } else if (values.protocol === 'PreSetup' && this.hypervisorType !== 'VMware') {
+          server = 'localhost'
           url = this.presetupURL(server, path)
         } else if (values.protocol === 'PreSetup' && this.hypervisorType === 'VMware') {
           path = values.vCenterDataCenter
@@ -619,6 +620,7 @@ export default {
         } else if (values.protocol === 'ocfs2') {
           url = this.ocfs2URL(server, path)
         } else if (values.protocol === 'SharedMountPoint') {
+          server = 'localhost'
           url = this.SharedMountPointURL(server, path)
         } else if (values.protocol === 'CLVM') {
           var vg = (values.volumegroup.substring(0, 1) !== '/') ? ('/' + values.volumegroup) : values.volumegroup
