@@ -102,7 +102,7 @@ export default {
           args: (record, store) => {
             var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
             if (['Admin'].includes(store.userInfo.roletype)) {
-              fields.push('isrouting', 'templatetype')
+              fields.push('templatetype')
             }
             return fields
           },
