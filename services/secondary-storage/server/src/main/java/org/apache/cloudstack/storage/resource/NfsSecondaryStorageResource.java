@@ -2587,8 +2587,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (_inSystemVM) {
             _localgw = (String)params.get("localgw");
             if (_localgw != null) { // can only happen inside service vm
-                String mgmtHost = (String)params.get("host");
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                String mgmtHosts = (String)params.get("host");
+                for (final String mgmtHost : mgmtHosts.split(",")) {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                }
 
                 String internalDns1 = (String)params.get("internaldns1");
                 if (internalDns1 == null) {
