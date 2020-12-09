@@ -52,6 +52,7 @@ import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
@@ -70,6 +71,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Strings;
 import java.util.Arrays;
 
 @DB
@@ -478,6 +480,25 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("resourceState", ResourceState.Enabled);
 
         return listBy(sc);
+    }
+
+    @Override
+    public boolean checkHostServiceOfferingTags(HostVO host, ServiceOffering serviceOffering){
+        if (host == null) {
+            return false;
+        }
+        if (serviceOffering == null) {
+            return false;
+        }
+        if (Strings.isNullOrEmpty(serviceOffering.getHostTag())) {
+            return true;
+        }
+
+        List<String> serviceOfferingTags = Arrays.asList(serviceOffering.getHostTag().split(","));
+        if(host.getHostTags() != null && host.getHostTags().containsAll(serviceOfferingTags)){
+            return true;
+        }
+        return false;
     }
 
     @Override

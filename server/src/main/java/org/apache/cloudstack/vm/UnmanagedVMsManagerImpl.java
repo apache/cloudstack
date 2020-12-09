@@ -138,7 +138,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
-import java.util.Arrays;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
@@ -378,25 +377,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private boolean hostSupportsServiceOffering(HostVO host, ServiceOffering serviceOffering) {
-        if (host == null) {
-            return false;
-        }
-        if (serviceOffering == null) {
-            return false;
-        }
-        if (Strings.isNullOrEmpty(serviceOffering.getHostTag())) {
-            return true;
-        }
         hostDao.loadHostTags(host);
-        return checkHostServiceOfferingTags(host, serviceOffering);
-    }
-
-    private boolean checkHostServiceOfferingTags(HostVO host, ServiceOffering serviceOffering){
-        if(serviceOffering.getHostTag() != null && !serviceOffering.getHostTag().isEmpty()){
-            List<String> serviceOfferingTags = Arrays.asList(serviceOffering.getHostTag().split(","));
-            return host.getHostTags() != null && host.getHostTags().containsAll(serviceOfferingTags);
-        }
-        return true;
+        return hostDao.checkHostServiceOfferingTags(host, serviceOffering);
     }
 
     private boolean storagePoolSupportsDiskOffering(StoragePool pool, DiskOffering diskOffering) {
