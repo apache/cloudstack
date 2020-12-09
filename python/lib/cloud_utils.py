@@ -301,7 +301,7 @@ def check_kvm():
 		except CalledProcessError:
 			raise CheckFailed("KVM is not correctly installed on this system, or support for it is not enabled in the BIOS")
 		except OSError as e:
-			if e.errno is errno.ENOENT: raise CheckFailed("KVM is not correctly installed on this system, or support for it is not enabled in the BIOS")
+			if e.errno == errno.ENOENT: raise CheckFailed("KVM is not correctly installed on this system, or support for it is not enabled in the BIOS")
 			raise
 		return True
 	raise AssertionError("check_kvm() should have never reached this part")
@@ -431,7 +431,7 @@ class SetupNetworking(ConfigTask):
 					alreadysetup = augtool.match("/files/etc/network/interfaces/iface",self.brname).stdout.strip()
 			return alreadysetup
 		except OSError as e:
-			if e.errno is 2: raise TaskFailed("augtool has not been properly installed on this system")
+			if e.errno == 2: raise TaskFailed("augtool has not been properly installed on this system")
 			raise
 
 	def restore_state(self):
@@ -646,7 +646,7 @@ class SetupCgConfig(ConfigTask):
 		try:
 			return "group virt" in open("/etc/cgconfig.conf","r").read(-1)
 		except IOError as e:
-			if e.errno is 2: raise TaskFailed("cgconfig has not been properly installed on this system")
+			if e.errno == 2: raise TaskFailed("cgconfig has not been properly installed on this system")
 			raise
 		
 	def execute(self):
@@ -672,7 +672,7 @@ class SetupCgRules(ConfigTask):
 		try:
 			return self.cfgline in open("/etc/cgrules.conf","r").read(-1)
 		except IOError as e:
-			if e.errno is 2: raise TaskFailed("cgrulesd has not been properly installed on this system")
+			if e.errno == 2: raise TaskFailed("cgrulesd has not been properly installed on this system")
 			raise
 	
 	def execute(self):
@@ -693,7 +693,7 @@ class SetupSecurityDriver(ConfigTask):
 		try:
 			return self.cfgline in open(self.filename,"r").read(-1)
 		except IOError as e:
-			if e.errno is 2: raise TaskFailed("qemu has not been properly installed on this system")
+			if e.errno == 2: raise TaskFailed("qemu has not been properly installed on this system")
 			raise
 	
 	def execute(self):
@@ -712,7 +712,7 @@ class SetupLibvirt(ConfigTask):
 			else: raise AssertionError("We should not reach this")
 			return self.cfgline in open(libvirtfile,"r").read(-1)
 		except IOError as e:
-			if e.errno is 2: raise TaskFailed("libvirt has not been properly installed on this system")
+			if e.errno == 2: raise TaskFailed("libvirt has not been properly installed on this system")
 			raise
 	
 	def execute(self):
@@ -742,7 +742,7 @@ class SetupLiveMigration(ConfigTask):
 			lines = [ s.strip() for s in open("/etc/libvirt/libvirtd.conf").readlines() ]
 			if all( [ stanza in lines for stanza in self.stanzas ] ): return True
 		except IOError as e:
-			if e.errno is 2: raise TaskFailed("libvirt has not been properly installed on this system")
+			if e.errno == 2: raise TaskFailed("libvirt has not been properly installed on this system")
 			raise
 	
 	def execute(self):
