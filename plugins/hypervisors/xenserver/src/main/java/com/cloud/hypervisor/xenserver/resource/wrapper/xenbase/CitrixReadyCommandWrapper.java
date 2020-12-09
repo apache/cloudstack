@@ -55,7 +55,7 @@ public final class CitrixReadyCommandWrapper extends CommandWrapper<ReadyCommand
             final Host host = Host.getByUuid(conn, citrixResourceBase.getHost().getUuid());
             final Set<VM> vms = host.getResidentVMs(conn);
             for (final VM vm : vms) {
-                citrixResourceBase.destroyPatchVbd(conn, vm.getNameLabel(conn));
+                citrixResourceBase.destroyPatchVbd(conn, vm);
             }
         } catch (final Exception e) {
         }

@@ -1489,27 +1489,31 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return result;
     }
 
-    public void destroyPatchVbd(final Connection conn, final String vmName) throws XmlRpcException, XenAPIException {
+    public void ejectPatchVbd(final Connection conn, final Host host) {
+        try {
+            final Set<VM> vms = host.getResidentVMs(conn);
+            for (final VM vm : vms) {
+                destroyPatchVbd(conn, vm);
+            }
+        } catch (XenAPIException | XmlRpcException ignored) {}
+    }
+
+    public void destroyPatchVbd(final Connection conn, final VM vm) throws XmlRpcException, XenAPIException {
+        final String vmName = vm.getNameLabel(conn);
         try {
             if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
                 return;
             }
-            final Set<VM> vms = VM.getByNameLabel(conn, vmName);
-            for (final VM vm : vms) {
-                final Set<VBD> vbds = vm.getVBDs(conn);
-                for (final VBD vbd : vbds) {
-                    if (vbd.getType(conn) == Types.VbdType.CD) {
-                        if (!vbd.getEmpty(conn)) {
-                            vbd.eject(conn);
-                        }
-                        vbd.unplug(conn);
-                        vbd.destroy(conn);
-                        break;
-                    }
+            final Set<VBD> vbds = vm.getVBDs(conn);
+            for (final VBD vbd : vbds) {
+                if (Types.VbdType.CD.equals(vbd.getType(conn))) {
+                    vbd.eject(conn);
+                    vbd.destroy(conn);
+                    break;
                 }
             }
         } catch (final Exception e) {
-            s_logger.debug("Cannot destory CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
+            s_logger.debug("Cannot destroy CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
         }
     }
 
@@ -4844,6 +4848,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
                 }
             }
+
+            // Remove old systemvm.iso from any systemvms
+            ejectPatchVbd(conn, host);
 
             final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(hr.address, 22);
             try {
