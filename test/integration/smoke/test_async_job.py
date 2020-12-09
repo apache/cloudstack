@@ -71,7 +71,6 @@ class TestAsyncJob(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.hypervisor = self.testClient.getHypervisorInfo()
         self.testdata["virtual_machine"]["zoneid"] = self.zone.id
         self.testdata["virtual_machine"]["template"] = self.template.id
         self.testdata["iso"]["zoneid"] = self.zone.id
