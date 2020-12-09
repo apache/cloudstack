@@ -1082,6 +1082,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     public VDI findPatchIsoVDI(final Connection conn, final SR sr) throws XmlRpcException, XenAPIException {
+        if (sr == null) {
+            return null;
+        }
         final SR.Record srr = sr.getRecord(conn);
         for (final VDI vdi : srr.VDIs) {
             final VDI.Record vdir = vdi.getRecord(conn);
@@ -1515,8 +1518,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                             vbd.eject(conn);
                         }
                         // Workaround for any file descriptor caching issue
-                        vbd.insert(conn, patchVDI);
-                        vbd.eject(conn);
+                        if (patchVDI != null) {
+                            vbd.insert(conn, patchVDI);
+                            vbd.eject(conn);
+                        }
                         vbd.destroy(conn);
                         break;
                     }
