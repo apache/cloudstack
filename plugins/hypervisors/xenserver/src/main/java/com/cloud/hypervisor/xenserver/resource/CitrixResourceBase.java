@@ -1502,6 +1502,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         if (!vbd.getEmpty(conn)) {
                             vbd.eject(conn);
                         }
+                        vbd.unplug(conn);
                         vbd.destroy(conn);
                         break;
                     }
