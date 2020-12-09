@@ -2478,6 +2478,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (ovfPropertyVO != null && ovfPropertyVO.isPassword()) {
                             details.put(detailName, DBEncryptionUtil.encrypt(details.get(detailName)));
                         }
+                    } else if (VmDetailConstants.CPU_CORE_PER_SOCKET.equals(detailName)) {
+                        try {
+                            final int val = Integer.parseInt(details.get(detailName));
+                            if (val <= 0) {
+                                throw new InvalidParameterValueException("Please enter a positive integer value for the vm setting: " + detailName);
+                            }
+                        } catch (final NumberFormatException e) {
+                            throw new InvalidParameterValueException("Please enter an integer value for vm setting: " + detailName);
+                        }
                     }
                 }
                 vmInstance.setDetails(details);
