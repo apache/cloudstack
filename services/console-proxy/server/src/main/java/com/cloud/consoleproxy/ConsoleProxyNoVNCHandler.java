@@ -38,7 +38,7 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 @WebSocket
 public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
-    private ConsoleProxyNoVncClient viewer;
+    private ConsoleProxyNoVncClient viewer = null;
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyNoVNCHandler.class);
 
     public ConsoleProxyNoVNCHandler() {
@@ -130,12 +130,18 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         } catch (Exception e) {
             s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);
             return;
+        } finally {
+            if (viewer == null) {
+                session.disconnect();
+            }
         }
     }
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) throws IOException, InterruptedException {
-        ConsoleProxy.removeViewer(viewer);
+        if (viewer != null) {
+            ConsoleProxy.removeViewer(viewer);
+        }
     }
 
     @OnWebSocketFrame

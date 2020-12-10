@@ -552,9 +552,13 @@ public class ConsoleProxy {
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
 
                 if (!viewer.isFrontEndAlive()) {
+                    s_logger.info("Initializing new novnc client as novnc view object is not alive: " + viewer);
                     authenticationExternally(param);
                     viewer.initClient(param);
                     reportLoadChange = true;
+                } else {
+                    s_logger.info("Rejecting new novnc client as novnc viewer object is still alive: " + viewer);
+                    return null;
                 }
             }
 
