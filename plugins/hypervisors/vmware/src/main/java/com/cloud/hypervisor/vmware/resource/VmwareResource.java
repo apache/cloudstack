@@ -316,8 +316,8 @@ import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
-import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineBootOptions;
+import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
@@ -3766,7 +3766,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     VolumeStatsEntry vse = statEntry.get(chainInfo);
                                     if (vse != null) {
                                         vse.setPhysicalSize(vse.getPhysicalSize() + physicalsize);
-                                        vse.setVirtualSize(vse.getVirtualSize() + virtualsize);
                                     }
                                 } else {
                                     VolumeStatsEntry vse = new VolumeStatsEntry(chainInfo, physicalsize, virtualsize);
@@ -7070,7 +7069,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
 
             String vmName = cmd.getInstanceName();
-            List<VirtualMachineMO> vmMos = hyperHost.listVmsOnHyperHost(vmName);
+            List<VirtualMachineMO> vmMos = hyperHost.listVmsOnHyperHostWithHypervisorName(vmName);
 
             for (VirtualMachineMO vmMo : vmMos) {
                 if (vmMo == null) {

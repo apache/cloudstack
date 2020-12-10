@@ -2311,7 +2311,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         if (vlanSpecified) {
-            URI uri = BroadcastDomainType.fromString(vlanId);
+            URI uri = encodeVlanIdIntoBroadcastUri(vlanId, pNtwk);
             // Aux: generate secondary URI for secondary VLAN ID (if provided) for performing checks
             URI secondaryUri = isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
             //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
@@ -2465,7 +2465,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             //Logical router's UUID provided as VLAN_ID
                             userNetwork.setVlanIdAsUUID(vlanIdFinal); //Set transient field
                         } else {
-                            uri = BroadcastDomainType.fromString(vlanIdFinal);
+                            uri = encodeVlanIdIntoBroadcastUri(vlanIdFinal, pNtwk);
                         }
                         userNetwork.setBroadcastUri(uri);
                         if (!vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
@@ -2523,13 +2523,32 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return network;
     }
 
+    /**
+     * Encodes VLAN/VXLAN ID into a Broadcast URI according to the isolation method from the Physical Network.
+     * @return Broadcast URI, e.g. 'vlan://vlan_ID' or 'vxlan://vlxan_ID'
+     */
+    protected URI encodeVlanIdIntoBroadcastUri(String vlanId, PhysicalNetwork pNtwk) {
+        if (pNtwk == null) {
+            throw new InvalidParameterValueException(String.format("Failed to encode VLAN/VXLAN %s into a Broadcast URI. Physical Network cannot be null.", vlanId));
+        }
+
+        if(!pNtwk.getIsolationMethods().isEmpty() && StringUtils.isNotBlank(pNtwk.getIsolationMethods().get(0))) {
+            String isolationMethod = pNtwk.getIsolationMethods().get(0).toLowerCase();
+            String vxlan = BroadcastDomainType.Vxlan.toString().toLowerCase();
+            if(isolationMethod.equals(vxlan)) {
+                return BroadcastDomainType.encodeStringIntoBroadcastUri(vlanId, BroadcastDomainType.Vxlan);
+            }
+        }
+        return BroadcastDomainType.fromString(vlanId);
+    }
+
   /**
    * Checks bypass VLAN id/range overlap check during network creation for guest networks
    * @param bypassVlanOverlapCheck bypass VLAN id/range overlap check
    * @param ntwkOff network offering
    */
   private boolean hasGuestBypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff, final boolean isPrivateNetwork) {
-    return bypassVlanOverlapCheck && (ntwkOff.getGuestType() == GuestType.Shared || isPrivateNetwork);
+    return bypassVlanOverlapCheck && (ntwkOff.getGuestType() != GuestType.Isolated || isPrivateNetwork);
   }
 
   /**

@@ -29,6 +29,8 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
@@ -82,6 +84,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     ResourceTagDao _tagsDao;
     @Inject
     NetworkDao networkDao;
+    @Inject
+    NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
 
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT =
             "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
@@ -313,7 +317,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
             nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-            if (!Network.GuestType.L2.equals(network.getGuestType())) {
+
+            List<String> networkServices = networkOfferingServiceMapDao.listServicesForNetworkOffering(network.getNetworkOfferingId());
+
+            if (!Network.GuestType.L2.equals(network.getGuestType()) && CollectionUtils.isNotEmpty(networkServices)) {
                 nicSearch.and().op("ip4Address", nicSearch.entity().getIPv4Address(), SearchCriteria.Op.NNULL);
                 nicSearch.or("ip6Address", nicSearch.entity().getIPv6Address(), SearchCriteria.Op.NNULL);
                 nicSearch.cp();

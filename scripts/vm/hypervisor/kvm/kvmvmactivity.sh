@@ -99,7 +99,7 @@ fi
 
 # Second check: disk activity check
 cd $MountPoint
-latestUpdateTime=$(stat -c %Y $(echo $UUIDList | sed 's/,/ /g') | sort -nr | head -1)
+latestUpdateTime=$(stat -c %Y $(echo $UUIDList | sed 's/,/ /g') 2> /dev/null | sort -nr | head -1)
 
 if [ ! -f $acFile ]; then
     echo "$SuspectTime:$latestUpdateTime:$MSTime" > $acFile

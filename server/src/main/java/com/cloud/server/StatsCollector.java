@@ -928,13 +928,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                 for (StoragePoolVO pool : pools) {
                     List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
-                    List<String> volumeLocators = new ArrayList<String>();
                     for (VolumeVO volume : volumes) {
-                        if (volume.getFormat() == ImageFormat.QCOW2 || volume.getFormat() == ImageFormat.VHD) {
-                            volumeLocators.add(volume.getPath());
-                        } else if (volume.getFormat() == ImageFormat.OVA) {
-                            volumeLocators.add(volume.getChainInfo());
-                        } else {
+                        if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA) {
                             s_logger.warn("Volume stats not implemented for this format type " + volume.getFormat());
                             break;
                         }
@@ -943,15 +938,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         Map<String, VolumeStatsEntry> volumeStatsByUuid;
                         if (pool.getScope() == ScopeType.ZONE) {
                             volumeStatsByUuid = new HashMap<>();
-                            for (final Cluster cluster : _clusterDao.listByZoneId(pool.getDataCenterId())) {
-                                final Map<String, VolumeStatsEntry> volumeStatsForCluster = _userVmMgr.getVolumeStatistics(cluster.getId(), pool.getUuid(), pool.getPoolType(),
-                                        volumeLocators, StatsTimeout.value());
+                            for (final Cluster cluster : _clusterDao.listClustersByDcId(pool.getDataCenterId())) {
+                                final Map<String, VolumeStatsEntry> volumeStatsForCluster = _userVmMgr.getVolumeStatistics(cluster.getId(), pool.getUuid(), pool.getPoolType(), StatsTimeout.value());
                                 if (volumeStatsForCluster != null) {
                                     volumeStatsByUuid.putAll(volumeStatsForCluster);
                                 }
                             }
                         } else {
-                            volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), volumeLocators, StatsTimeout.value());
+                            volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), StatsTimeout.value());
                         }
                         if (volumeStatsByUuid != null) {
                             for (final Map.Entry<String, VolumeStatsEntry> entry : volumeStatsByUuid.entrySet()) {
@@ -1334,21 +1328,25 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         protected void sendMetricsToInfluxdb(Map<Object, Object> metrics) {
             InfluxDB influxDbConnection = createInfluxDbConnection();
 
-            Pong response = influxDbConnection.ping();
-            if (response.getVersion().equalsIgnoreCase("unknown")) {
-                throw new CloudRuntimeException(String.format("Cannot ping influxdb host %s:%s.", externalStatsHost, externalStatsPort));
+            try {
+                Pong response = influxDbConnection.ping();
+                if (response.getVersion().equalsIgnoreCase("unknown")) {
+                    throw new CloudRuntimeException(String.format("Cannot ping influxdb host %s:%s.", externalStatsHost, externalStatsPort));
+                }
+
+                Collection<Object> metricsObjects = metrics.values();
+                List<Point> points = new ArrayList<>();
+
+                s_logger.debug(String.format("Sending stats to %s host %s:%s", externalStatsType, externalStatsHost, externalStatsPort));
+
+                for (Object metricsObject : metricsObjects) {
+                    Point vmPoint = creteInfluxDbPoint(metricsObject);
+                    points.add(vmPoint);
+                }
+                writeBatches(influxDbConnection, databaseName, points);
+            } finally {
+                influxDbConnection.close();
             }
-
-            Collection<Object> metricsObjects = metrics.values();
-            List<Point> points = new ArrayList<>();
-
-            s_logger.debug(String.format("Sending stats to %s host %s:%s", externalStatsType, externalStatsHost, externalStatsPort));
-
-            for (Object metricsObject : metricsObjects) {
-                Point vmPoint = creteInfluxDbPoint(metricsObject);
-                points.add(vmPoint);
-            }
-            writeBatches(influxDbConnection, databaseName, points);
         }
 
         /**
@@ -1521,7 +1519,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      */
     protected void writeBatches(InfluxDB influxDbConnection, String dbName, List<Point> points) {
         BatchPoints batchPoints = BatchPoints.database(dbName).build();
-        influxDbConnection.enableBatch(BatchOptions.DEFAULTS);
+        if(!influxDbConnection.isBatchEnabled()){
+            influxDbConnection.enableBatch(BatchOptions.DEFAULTS);
+        }
 
         for (Point point : points) {
             batchPoints.point(point);

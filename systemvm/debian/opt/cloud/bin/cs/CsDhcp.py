@@ -158,7 +158,7 @@ class CsDhcp(CsDataBag):
         self.add_host("::1", "localhost ip6-localhost ip6-loopback")
         self.add_host("ff02::1", "ip6-allnodes")
         self.add_host("ff02::2", "ip6-allrouters")
-        if self.config.is_router():
+        if self.config.is_router() or self.config.is_dhcp():
             self.add_host(self.config.address().get_guest_ip(), "%s data-server" % CsHelper.get_hostname())
 
     def write_hosts(self):
@@ -189,10 +189,10 @@ class CsDhcp(CsDataBag):
         else:
             tag = entry['ipv4_address'].replace(".", "_")
             self.cloud.add("%s,set:%s,%s,%s,%s" % (entry['mac_address'],
-                                                    tag,
-                                                    entry['ipv4_address'],
-                                                    entry['host_name'],
-                                                    lease))
+                                                   tag,
+                                                   entry['ipv4_address'],
+                                                   entry['host_name'],
+                                                   lease))
             self.dhcp_opts.add("%s,%s" % (tag, 3))
             self.dhcp_opts.add("%s,%s" % (tag, 6))
             self.dhcp_opts.add("%s,%s" % (tag, 15))

@@ -268,7 +268,7 @@ public class ViewResponseHelper {
 
     public static List<VolumeResponse> createVolumeResponse(ResponseView view, VolumeJoinVO... volumes) {
         Hashtable<Long, VolumeResponse> vrDataList = new Hashtable<Long, VolumeResponse>();
-        DecimalFormat df = new DecimalFormat("0.00");
+        DecimalFormat df = new DecimalFormat("0.0%");
         for (VolumeJoinVO vr : volumes) {
             VolumeResponse vrData = vrDataList.get(vr.getId());
             if (vrData == null) {
@@ -282,13 +282,10 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getId(), vrData);
 
             VolumeStats vs = null;
-            if (vr.getFormat() == ImageFormat.QCOW2) {
-                vs = ApiDBUtils.getVolumeStatistics(vrData.getId());
-            }
-            else if (vr.getFormat() == ImageFormat.VHD){
+            if (vr.getFormat() == ImageFormat.VHD || vr.getFormat() == ImageFormat.QCOW2) {
                 vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
             }
-            else if (vr.getFormat() == ImageFormat.OVA){
+            else if (vr.getFormat() == ImageFormat.OVA) {
                 if (vrData.getChainInfo() != null) {
                     vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
                 }

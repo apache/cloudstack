@@ -52,6 +52,9 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
 
@@ -178,10 +181,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             throw new IllegalArgumentException(String.format("Invalid version comparision with versions %s, %s", v1, v2));
         }
         if(!isSemanticVersion(v1)) {
-            throw new IllegalArgumentException(String.format("Invalid version format, %s", v1));
+            throw new IllegalArgumentException(String.format("Invalid version format, %s. Semantic version should be specified in MAJOR.MINOR.PATCH format", v1));
         }
         if(!isSemanticVersion(v2)) {
-            throw new IllegalArgumentException(String.format("Invalid version format, %s", v2));
+            throw new IllegalArgumentException(String.format("Invalid version format, %s. Semantic version should be specified in MAJOR.MINOR.PATCH format", v2));
         }
         String[] thisParts = v1.split("\\.");
         String[] thatParts = v2.split("\\.");
@@ -246,19 +249,25 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             }
             minimumSemanticVersion = minVersion.getSemanticVersion();
         }
-        List <KubernetesSupportedVersionVO> versions = new ArrayList<>();
+        Filter searchFilter = new Filter(KubernetesSupportedVersionVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<KubernetesSupportedVersionVO> sb = kubernetesSupportedVersionDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        SearchCriteria<KubernetesSupportedVersionVO> sc = sb.create();
+        String keyword = cmd.getKeyword();
         if (versionId != null) {
-            KubernetesSupportedVersionVO version = kubernetesSupportedVersionDao.findById(versionId);
-            if (version != null && (zoneId == null || version.getZoneId() == null || version.getZoneId().equals(zoneId))) {
-                versions.add(version);
-            }
-        } else {
-            if (zoneId == null) {
-                versions = kubernetesSupportedVersionDao.listAll();
-            } else {
-                versions = kubernetesSupportedVersionDao.listAllInZone(zoneId);
-            }
+            sc.setParameters("id", versionId);
         }
+        if (zoneId != null) {
+            SearchCriteria<KubernetesSupportedVersionVO> scc = kubernetesSupportedVersionDao.createSearchCriteria();
+            scc.addOr("zoneId", SearchCriteria.Op.EQ, zoneId);
+            scc.addOr("zoneId", SearchCriteria.Op.NULL);
+            sc.addAnd("zoneId", SearchCriteria.Op.SC, scc);
+        }
+        if(keyword != null){
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
+        List <KubernetesSupportedVersionVO> versions = kubernetesSupportedVersionDao.search(sc, searchFilter);
         versions = filterKubernetesSupportedVersions(versions, minimumSemanticVersion);
 
         return createKubernetesSupportedVersionListResponse(versions);
@@ -278,10 +287,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         final Integer minimumCpu = cmd.getMinimumCpu();
         final Integer minimumRamSize = cmd.getMinimumRamSize();
         if (minimumCpu == null || minimumCpu < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU) {
-            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter", ApiConstants.MIN_CPU_NUMBER));
+            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %d vCPUs required.", ApiConstants.MIN_CPU_NUMBER, KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU));
         }
         if (minimumRamSize == null || minimumRamSize < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter", ApiConstants.MIN_MEMORY));
+            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %dMB memory required", ApiConstants.MIN_MEMORY, KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
         }
         if (compareSemanticVersions(semanticVersion, MIN_KUBERNETES_VERSION) < 0) {
             throw new InvalidParameterValueException(String.format("New supported Kubernetes version cannot be added as %s is minimum version supported by Kubernetes Service", MIN_KUBERNETES_VERSION));

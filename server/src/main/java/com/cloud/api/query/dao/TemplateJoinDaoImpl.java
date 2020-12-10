@@ -48,6 +48,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -68,10 +69,14 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private AccountService _accountService;
     @Inject
     private VMTemplateDao _vmTemplateDao;
+    @Inject
+    private VMTemplateDetailsDao _templateDetailsDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdSearch;
+
+    private final SearchBuilder<TemplateJoinVO> tmpltIdsSearch;
 
     private final SearchBuilder<TemplateJoinVO> tmpltZoneSearch;
 
@@ -87,6 +92,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         tmpltIdSearch = createSearchBuilder();
         tmpltIdSearch.and("id", tmpltIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         tmpltIdSearch.done();
+
+        tmpltIdsSearch = createSearchBuilder();
+        tmpltIdsSearch.and("idsIN", tmpltIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        tmpltIdsSearch.groupBy(tmpltIdsSearch.entity().getId());
+        tmpltIdsSearch.done();
 
         tmpltZoneSearch = createSearchBuilder();
         tmpltZoneSearch.and("id", tmpltZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -174,6 +184,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             if (templateStatus != null) {
                 templateResponse.setStatus(templateStatus);
             }
+            templateResponse.setUrl(template.getUrl());
         }
 
         if (template.getDataCenterId() > 0) {
@@ -202,11 +213,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         // set details map
-        if (template.getDetailName() != null) {
-            Map<String, String> details = new HashMap<>();
-            details.put(template.getDetailName(), template.getDetailValue());
-            templateResponse.setDetails(details);
-        }
+        Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(template.getId());
+        templateResponse.setDetails(details);
 
         // update tag information
         long tag_id = template.getTagId();
@@ -366,6 +374,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             } else {
                 isoResponse.setStatus("Successfully Installed");
             }
+            isoResponse.setUrl(iso.getUrl());
         }
 
         if (iso.getDataCenterId() > 0) {
@@ -479,6 +488,16 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         List<TemplateJoinVO> objects = searchIncludingRemoved(sc, filter, null, false);
         Integer count = getCount(sc);
         return new Pair<List<TemplateJoinVO>, Integer>(objects, count);
+    }
+
+    @Override
+    public List<TemplateJoinVO> findByDistinctIds(Long... ids) {
+        if (ids == null || ids.length == 0) {
+            return new ArrayList<TemplateJoinVO>();
+        }
+        SearchCriteria<TemplateJoinVO> sc = tmpltIdsSearch.create();
+        sc.setParameters("idsIN", ids);
+        return searchIncludingRemoved(sc, null, null, false);
     }
 
 }

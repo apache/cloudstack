@@ -89,10 +89,12 @@ import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.GPU;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
@@ -102,6 +104,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -165,6 +168,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private long _hostReservationReleasePeriod = 60L * 60L * 1000L; // one hour by default
     @Inject
     protected VMReservationDao _reservationDao;
+    @Inject
+    HostDetailsDao _hostDetailsDao;
 
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
     protected long _nodeId = -1;
@@ -362,9 +367,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             }
         }
 
-        if (vm.getType() == VirtualMachine.Type.User) {
-            checkForNonDedicatedResources(vmProfile, dc, avoids);
-        }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
         }
@@ -414,14 +416,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 }
             } else {
                 if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
-                    boolean hostTagsMatch = true;
-                    if(offering.getHostTag() != null){
-                        _hostDao.loadHostTags(host);
-                        if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
-                            hostTagsMatch = false;
-                        }
-                    }
-                    if (hostTagsMatch) {
+                    if (checkVmProfileAndHost(vmProfile, host)) {
                         long cluster_id = host.getClusterId();
                         ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id,
                                 "cpuOvercommitRatio");
@@ -492,8 +487,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         } else {
                             s_logger.debug("The last host of this VM does not have enough capacity");
                         }
-                    } else {
-                        s_logger.debug("Service Offering host tag does not match the last host of this VM");
                     }
                 } else {
                     s_logger.debug("The last host of this VM is not UP or is not enabled, host status is: " + host.getStatus().name() + ", host resource state is: " +
@@ -572,7 +565,33 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         return null;
     }
 
-    private void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
+    private boolean checkVmProfileAndHost(final VirtualMachineProfile vmProfile, final HostVO host) {
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        if (offering.getHostTag() != null) {
+            _hostDao.loadHostTags(host);
+            if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
+                s_logger.debug("Service Offering host tag does not match the last host of this VM");
+                return false;
+            }
+        }
+        long guestOSId = vmProfile.getTemplate().getGuestOSId();
+        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+        if (guestOS != null) {
+            long guestOSCategoryId = guestOS.getCategoryId();
+            DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), "guest.os.category.id");
+            if (hostDetail != null) {
+                String guestOSCategoryIdString = hostDetail.getValue();
+                if (String.valueOf(guestOSCategoryId) != guestOSCategoryIdString) {
+                    s_logger.debug("The last host has different guest.os.category.id than guest os category of VM, skipping");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
         boolean isExplicit = false;
         VirtualMachine vm = vmProfile.getVirtualMachine();
 

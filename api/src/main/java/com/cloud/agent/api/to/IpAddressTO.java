@@ -35,6 +35,7 @@ public class IpAddressTO {
     private String networkName;
     private Integer nicDevId;
     private boolean newNic;
+    private boolean isPrivateGateway;
 
     public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String broadcastUri, String vlanGateway, String vlanNetmask,
             String vifMacAddress, Integer networkRate, boolean isOneToOneNat) {
@@ -132,5 +133,13 @@ public class IpAddressTO {
 
     public void setNewNic(boolean newNic) {
         this.newNic = newNic;
+    }
+
+    public boolean isPrivateGateway() {
+        return isPrivateGateway;
+    }
+
+    public void setPrivateGateway(boolean isPrivateGateway) {
+        this.isPrivateGateway = isPrivateGateway;
     }
 }

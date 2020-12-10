@@ -17,23 +17,38 @@
 package com.cloud.vm;
 
 
+import java.util.Map;
+
 public class VmWorkReconfigure extends VmWork {
     private static final long serialVersionUID = -4517030323758086615L;
 
+    Long oldServiceOfferingId;
     Long newServiceOfferingId;
+
+    Map<String, String> customParameters;
     boolean sameHost;
 
-    public VmWorkReconfigure(long userId, long accountId, long vmId, String handlerName,
-            Long newServiceOfferingId, boolean sameHost) {
+    public VmWorkReconfigure(long userId, long accountId, long vmId, String handlerName, Long oldServiceOfferingId,
+            Long newServiceOfferingId, Map<String, String> customParameters, boolean sameHost) {
 
         super(userId, accountId, vmId, handlerName);
 
+        this.oldServiceOfferingId = oldServiceOfferingId;
         this.newServiceOfferingId = newServiceOfferingId;
+        this.customParameters = customParameters;
         this.sameHost = sameHost;
+    }
+
+    public Long getOldServiceOfferingId() {
+        return oldServiceOfferingId;
     }
 
     public Long getNewServiceOfferingId() {
         return newServiceOfferingId;
+    }
+
+    public Map<String, String> getCustomParameters() {
+        return customParameters;
     }
 
     public boolean isSameHost() {

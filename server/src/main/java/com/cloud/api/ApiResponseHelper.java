@@ -620,6 +620,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
+            vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
                 vmSnapshotResponse.setZoneId(datacenter.getUuid());
@@ -875,6 +876,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             Vpc vpc = ApiDBUtils.findVpcById(ipAddr.getVpcId());
             if (vpc != null) {
                 ipResponse.setVpcId(vpc.getUuid());
+                ipResponse.setVpcName(vpc.getName());
             }
         }
 
@@ -1377,11 +1379,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 HostPodVO pod = ApiDBUtils.findPodById(vm.getPodIdToDeployIn());
                 if (pod != null) {
                     vmResponse.setPodId(pod.getUuid());
+                    vmResponse.setPodName(pod.getName());
                 }
             }
             VMTemplateVO template = ApiDBUtils.findTemplateById(vm.getTemplateId());
             if (template != null) {
                 vmResponse.setTemplateId(template.getUuid());
+                vmResponse.setTemplateName(template.getName());
             }
             vmResponse.setCreated(vm.getCreated());
 
@@ -2900,6 +2904,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         VpcOffering voff = ApiDBUtils.findVpcOfferingById(vpc.getVpcOfferingId());
         if (voff != null) {
             response.setVpcOfferingId(voff.getUuid());
+            response.setVpcOfferingName(voff.getName());
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
@@ -2972,6 +2977,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (result.getVpcId() != null) {
             Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
 
         DataCenter zone = ApiDBUtils.findZoneById(result.getZoneId());
@@ -3162,6 +3168,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
         if (vpc != null) {
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
         response.setRemoved(result.getRemoved());
         response.setForDisplay(result.isDisplay());
@@ -3421,11 +3428,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Long networkId = ip.getAssociatedWithNetworkId();
                 if (networkId == null) {
                     networkId = ip.getSourceNetworkId();
-                }
-                NetworkDetailVO networkDetail = networkDetailsDao.findDetail(networkId, Network.hideIpAddressUsage);
-                if (networkDetail != null && networkDetail.getValue() != null && networkDetail.getValue().equals("true")) {
-                    // Don't export network usage when admin wants it hidden
-                    return null;
                 }
                 resourceType = ResourceObjectType.PublicIpAddress;
                 resourceId = ip.getId();

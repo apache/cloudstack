@@ -14,22 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.vm;
 
-package org.apache.cloudstack.acl.dao;
+public class VmWorkRestore extends VmWork {
+    private static final long serialVersionUID = 195901782359759635L;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.RoleVO;
+    private Long templateId;
 
-import java.util.List;
+    public VmWorkRestore(long userId, long accountId, long vmId, String handlerName, Long templateId) {
+        super(userId, accountId, vmId, handlerName);
 
-public interface RoleDao extends GenericDao<RoleVO, Long> {
-    List<RoleVO> findAllByName(String roleName);
+        this.templateId = templateId;
+    }
 
-    Pair<List<RoleVO>, Integer> findAllByName(final String roleName, Long offset, Long limit);
-
-    List<RoleVO> findAllByRoleType(RoleType type);
-
-    Pair<List<RoleVO>, Integer> findAllByRoleType(RoleType type, Long offset, Long limit);
+    public Long getTemplateId() {
+        return templateId;
+    }
 }

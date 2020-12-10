@@ -197,6 +197,11 @@ class CsInterface:
             return True
         return False
 
+    def is_private_gateway(self):
+        if "is_private_gateway" in self.address:
+            return self.address['is_private_gateway']
+        return False
+
     def is_added(self):
         return self.get_attr("add")
 
@@ -476,10 +481,33 @@ class CsIP:
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" %
                             ("eth1", "eth1", guestNetworkCidr)])
 
+        if self.is_private_gateway():
+            self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+                            (self.address['network'], self.dev, self.dev)])
+            self.fw.append(["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
+            self.fw.append(["mangle", "",
+                            "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
+                            (self.dev, self.address['network'], self.address['gateway'], self.dev)])
+            self.fw.append(["mangle", "front",
+                            "-A PREROUTING -s %s -d %s -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
+                            (self.cl.get_vpccidr(), self.address['network'], hex(100 + int(self.dev[3:])))])
             if self.address["source_nat"]:
                 self.fw.append(["nat", "front",
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
                                 (self.dev, self.address['public_ip'])])
+            if self.get_gateway() == self.get_ip_address():
+                for inf, addresses in self.config.address().dbag.iteritems():
+                    if not inf.startswith("eth"):
+                        continue
+                    for address in addresses:
+                        if "nw_type" in address and address["nw_type"] == "guest":
+                            self.fw.append(["filter", "front", "-A FORWARD -s %s -d %s -j ACL_INBOUND_%s" %
+                                            (address["network"], self.address["network"], self.dev)])
+                            self.fw.append(["filter", "front", "-A FORWARD -s %s -d %s -j ACL_INBOUND_%s" %
+                                            (self.address["network"], address["network"], address["device"])])
+                # Accept packet from private gateway if VPC VR is used as gateway
+                self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" %
+                                (self.address['network'], self.address['network'])])
 
         if self.get_type() in ["public"]:
             self.fw.append(
@@ -623,6 +651,11 @@ class CsIP:
     def is_public(self):
         if "nw_type" in self.address and self.address['nw_type'] in ['public']:
             return True
+        return False
+
+    def is_private_gateway(self):
+        if "is_private_gateway" in self.address:
+            return self.address['is_private_gateway']
         return False
 
     def ip(self):
