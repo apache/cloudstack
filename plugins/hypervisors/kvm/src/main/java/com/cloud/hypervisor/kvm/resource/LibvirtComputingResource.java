@@ -46,9 +46,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
-import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
-import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -88,6 +85,7 @@ import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -110,7 +108,6 @@ import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -133,7 +130,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
@@ -143,6 +139,9 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.IscsiStorageCleanupMonitor;
@@ -3183,33 +3182,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String msg = null;
         try {
             dm = conn.domainLookupByName(vmName);
-            // Get XML Dump including the secure information such as VNC password
-            // By passing 1, or VIR_DOMAIN_XML_SECURE flag
-            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainXMLFlags
-            String vmDef = dm.getXMLDesc(1);
-            final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-            parser.parseDomainXML(vmDef);
-            for (final InterfaceDef nic : parser.getInterfaces()) {
-                if (nic.getNetType() == GuestNetType.BRIDGE && nic.getBrName().startsWith("cloudVirBr")) {
-                    try {
-                        final int vnetId = Integer.parseInt(nic.getBrName().replaceFirst("cloudVirBr", ""));
-                        final String pifName = getPif(_guestBridgeName);
-                        final String newBrName = "br" + pifName + "-" + vnetId;
-                        vmDef = vmDef.replace("'" + nic.getBrName() + "'", "'" + newBrName + "'");
-                        s_logger.debug("VM bridge name is changed from " + nic.getBrName() + " to " + newBrName);
-                    } catch (final NumberFormatException e) {
-                        continue;
-                    }
-                }
-            }
-            s_logger.debug(vmDef);
-            msg = stopVM(conn, vmName, false);
-            msg = startVM(conn, vmName, vmDef);
+            // Perform ACPI and signal based reboot
+            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainReboot
+            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainRebootFlagValues
+            dm.reboot(0x1 | 0x8);
             return null;
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to create vm", e);
-            msg = e.getMessage();
-        } catch (final InternalErrorException e) {
             s_logger.warn("Failed to create vm", e);
             msg = e.getMessage();
         } finally {
