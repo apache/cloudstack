@@ -4239,10 +4239,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 numCoresPerSocket = 6;
             } else if (vcpus % 4 == 0) {
                 numCoresPerSocket = 4;
-            } else {
-                numCoresPerSocket = 1;
             }
         }
-        cmd.setTopology(numCoresPerSocket, vcpus / numCoresPerSocket);
+        if (numCoresPerSocket > 0) {
+            cmd.setTopology(numCoresPerSocket, vcpus / numCoresPerSocket);
+        }
     }
 }
