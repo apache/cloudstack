@@ -3068,6 +3068,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
 
+        if (keyword != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        }
+
         Pair<List<PhysicalNetworkVO>, Integer> result = _physicalNetworkDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends PhysicalNetwork>, Integer>(result.first(), result.second());
     }
