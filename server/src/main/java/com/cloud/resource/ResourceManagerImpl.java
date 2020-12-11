@@ -1266,7 +1266,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
             if (hosts == null || hosts.isEmpty()) {
                 s_logger.warn("Unable to find a host for vm migration in cluster: " + host.getClusterId());
-                if (MIGRATE_VM_ACROSS_CLUSTERS.value()) {
+                if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(host.getDataCenterId())) {
                     s_logger.info("Looking for hosts across different clusters in zone: " + host.getDataCenterId());
                     hosts = listAllUpAndEnabledHosts(Host.Type.Routing, null, null, host.getDataCenterId());
                     if (hosts == null || hosts.isEmpty()) {
