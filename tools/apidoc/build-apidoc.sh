@@ -63,9 +63,6 @@ case "$(uname)" in
   Darwin*) sedi='-i ""'
 esac
 
-# Expand the parameters in the actual call to "sed"
-sed  -e 's/foo/bar/' target.file
-
 set -e
 (cd "$DISTDIR/xmldoc"
  cp "$thisdir"/*.java .
