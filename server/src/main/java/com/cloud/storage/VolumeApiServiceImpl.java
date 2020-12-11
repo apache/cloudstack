@@ -2881,8 +2881,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else if (volumeStoreRef != null) {
             s_logger.debug("volume " + volumeId + " is already installed on secondary storage, install path is " +
                     volumeStoreRef.getInstallPath());
+            VolumeInfo destVol = volFactory.getVolume(volumeId, DataStoreRole.Image);
+            if (destVol == null) {
+                throw new CloudRuntimeException("Failed to find the volume on a secondary store");
+            }
             ImageStoreEntity secStore = (ImageStoreEntity) dataStoreMgr.getDataStore(volumeStoreRef.getDataStoreId(), DataStoreRole.Image);
-            String extractUrl = secStore.createEntityExtractUrl(volumeStoreRef.getInstallPath(), volume.getFormat(), null);
+            String extractUrl = secStore.createEntityExtractUrl(volumeStoreRef.getInstallPath(), volume.getFormat(), destVol);
             volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
             volumeStoreRef.setExtractUrl(extractUrl);
             volumeStoreRef.setExtractUrlCreated(DateUtil.now());
