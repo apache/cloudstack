@@ -337,7 +337,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             uuid = (String)existingUuid;
         } else if (scheme.equalsIgnoreCase("sharedmountpoint") || scheme.equalsIgnoreCase("clvm")) {
             uuid = UUID.randomUUID().toString();
-        } else if (scheme.equalsIgnoreCase("PreSetup") && !hypervisorType.equals(HypervisorType.VMware)) {
+        } else if ("PreSetup".equalsIgnoreCase(scheme) && !HypervisorType.VMware.equals(hypervisorType)) {
             uuid = hostPath.replace("/", "");
         } else {
             uuid = UUID.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
