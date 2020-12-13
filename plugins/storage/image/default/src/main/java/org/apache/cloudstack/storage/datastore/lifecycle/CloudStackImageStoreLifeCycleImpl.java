@@ -114,7 +114,7 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
                 }
             }
         } catch (URISyntaxException e) {
-            throw new InvalidParameterValueException(logString + " is not a valid uri. Note that the URL has been sanitized");
+            throw new InvalidParameterValueException(logString + " is not a valid uri. Note that the URL in this message has been sanitized");
         }
 
         if (dcId == null) {
