@@ -249,7 +249,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setPath(hostPath.replaceFirst("/", ""));
             parameters.setUserInfo(userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
-            if (hypervisorType.equals(HypervisorType.VMware)) {
+            if (HypervisorType.VMware.equals(hypervisorType)) {
                 validateVcenterDetails(zoneId, podId, clusterId,storageHost);
             }
             parameters.setType(StoragePoolType.PreSetup);
