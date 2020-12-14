@@ -20,7 +20,7 @@
     -Virtual machine, Volume, Snapshot etc
 """
 
-from utils import is_server_ssh_ready, random_gen
+from .utils import is_server_ssh_ready, random_gen
 from marvin.cloudstackAPI import *
 #Import System modules
 import time
@@ -70,7 +70,7 @@ class Domain:
     def list(cls, apiclient, **kwargs):
         """Lists domains"""
         cmd = listDomains.listDomainsCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listDomains(cmd))
 
 
@@ -115,7 +115,7 @@ class Account:
         listed accounts"""
 
         cmd = listAccounts.listAccountsCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listAccounts(cmd))
 
 
@@ -156,7 +156,7 @@ class User:
         listed users"""
 
         cmd = listUsers.listUsersCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listUsers(cmd))
 
 
@@ -282,7 +282,7 @@ class VirtualMachine:
         """List all VMs matching criteria"""
 
         cmd = listVirtualMachines.listVirtualMachinesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listVirtualMachines(cmd))
 
 
@@ -372,7 +372,7 @@ class Volume:
         """List all volumes matching criteria"""
 
         cmd = listVolumes.listVolumesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listVolumes(cmd))
 
 
@@ -404,7 +404,7 @@ class Snapshot:
         """List all snapshots matching criteria"""
 
         cmd = listSnapshots.listSnapshotsCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listSnapshots(cmd))
 
 
@@ -536,7 +536,7 @@ class Template:
         """List all templates matching criteria"""
 
         cmd = listTemplates.listTemplatesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listTemplates(cmd))
 
 
@@ -618,7 +618,7 @@ class Iso:
         """Lists all available ISO files."""
 
         cmd = listIsos.listIsosCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listIsos(cmd))
 
 
@@ -654,7 +654,7 @@ class PublicIPAddress:
         """List all Public IPs matching criteria"""
 
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listPublicIpAddresses(cmd))
 
 class NATRule:
@@ -692,7 +692,7 @@ class NATRule:
         """List all NAT rules matching criteria"""
 
         cmd = listPortForwardingRules.listPortForwardingRulesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listPortForwardingRules(cmd))
     
 
@@ -735,7 +735,7 @@ class StaticNATRule:
         """List all IP forwarding rules matching criteria"""
 
         cmd = listIpForwardingRules.listIpForwardingRulesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listIpForwardingRules(cmd))
     
     @classmethod
@@ -792,7 +792,7 @@ class FireWallRule:
         """List all Firewall Rules matching criteria"""
 
         cmd = listFirewallRules.listFirewallRulesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listFirewallRules(cmd))
 
 
@@ -830,7 +830,7 @@ class ServiceOffering:
         """Lists all available service offerings."""
 
         cmd = listServiceOfferings.listServiceOfferingsCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listServiceOfferings(cmd))
 
 class DiskOffering:
@@ -863,7 +863,7 @@ class DiskOffering:
         """Lists all available disk offerings."""
 
         cmd = listDiskOfferings.listDiskOfferingsCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listDiskOfferings(cmd))
 
 
@@ -896,7 +896,7 @@ class SnapshotPolicy:
         """Lists snapshot policies."""
 
         cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listSnapshotPolicies(cmd))
 
 
@@ -947,7 +947,7 @@ class LoadBalancerRule:
         """List all Load balancing rules matching criteria"""
 
         cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listLoadBalancerRules(cmd))
 
 
@@ -997,7 +997,7 @@ class Cluster:
         """List all Clusters matching criteria"""
 
         cmd = listClusters.listClustersCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listClusters(cmd))
 
 
@@ -1064,7 +1064,7 @@ class Host:
         """List all Hosts matching criteria"""
 
         cmd = listHosts.listHostsCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listHosts(cmd))
 
 
@@ -1124,7 +1124,7 @@ class StoragePool:
         """List all storage pools matching criteria"""
 
         cmd = listStoragePools.listStoragePoolsCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listStoragePools(cmd))
 
 
@@ -1161,7 +1161,7 @@ class Network:
         """List all Networks matching criteria"""
 
         cmd = listNetworks.listNetworksCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listNetworks(cmd))
 
 
@@ -1257,7 +1257,7 @@ class Zone:
         
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.id
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.updateZone(cmd)
         
         
@@ -1266,7 +1266,7 @@ class Zone:
         """List all Zones matching criteria"""
 
         cmd = listZones.listZonesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listZones(cmd))
 
 
@@ -1301,7 +1301,7 @@ class Pod:
         "Returns a default pod for specified zone"
 
         cmd = listPods.listPodsCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.listPods(cmd)
 
 
@@ -1339,7 +1339,7 @@ class PublicIpRange:
         """Lists all VLAN IP ranges."""
 
         cmd = listVlanIpRanges.listVlanIpRangesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listVlanIpRanges(cmd))
 
 
@@ -1432,5 +1432,5 @@ class SecurityGroup:
         """Lists all security groups."""
 
         cmd = listSecurityGroups.listSecurityGroupsCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listSecurityGroups(cmd))

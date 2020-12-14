@@ -27,7 +27,7 @@ import random
 import imaplib
 import email
 import socket
-import urlparse
+import urllib.parse
 import datetime
 from marvin.cloudstackAPI import cloudstackAPIClient, listHosts, listRouters
 from platform import system
@@ -181,7 +181,7 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=20, retryin
             retries=retries,
             delay=retryinterv,
             timeout=timeout)
-    except Exception, e:
+    except Exception as e:
         raise Exception("SSH connection has Failed. Waited %ss. Error is %s" % (retries * retryinterv, str(e)))
     else:
         return ssh
@@ -220,13 +220,13 @@ def get_host_credentials(config, hostip):
             for cluster in pod.clusters:
                 for host in cluster.hosts:
                     if str(host.url).startswith('http'):
-                        hostname = urlparse.urlsplit(str(host.url)).netloc
+                        hostname = urllib.parse.urlsplit(str(host.url)).netloc
                     else:
                         hostname = str(host.url)
                     try:
                         if socket.getfqdn(hostip) == socket.getfqdn(hostname):
                             return host.username, host.password
-                    except socket.error, e:
+                    except socket.error as e:
                         raise Exception("Unresolvable host %s error is %s" % (hostip, e))
     raise KeyError("Please provide the marvin configuration file with credentials to your hosts")
 
@@ -322,7 +322,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
         #Snapshot does not exist
         return False
 
-    from base import ImageStore
+    from .base import ImageStore
     #pass store_id to get the exact storage pool where snapshot is stored
     secondaryStores = ImageStore.list(apiclient, zoneid=zoneid, id=int(qresultset[0][1]))
 
@@ -341,7 +341,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
 
     nfsurl = secondaryStore.url
     from urllib2 import urlparse
-    parse_url = urlparse.urlsplit(nfsurl, scheme='nfs')
+    parse_url = urllib.parse.urlsplit(nfsurl, scheme='nfs')
     host, path = str(parse_url.netloc), str(parse_url.path)
 
     if not config.mgtSvr:
@@ -502,9 +502,9 @@ def checkVolumeSize(ssh_handle=None,
                     if m and str(m.group(1)) == str(size_to_verify):
                         return [SUCCESS,str(m.group(1))]
             return [FAILED,"Volume Not Found"]
-    except Exception, e:
-        print "\n Exception Occurred under getDiskUsage: " \
-              "%s" %GetDetailExceptionInfo(e)
+    except Exception as e:
+        print("\n Exception Occurred under getDiskUsage: " \
+              "%s" %GetDetailExceptionInfo(e))
         return [FAILED,GetDetailExceptionInfo(e)]
 
         

@@ -18,7 +18,7 @@
 import json
 import os
 from optparse import OptionParser
-import jsonHelper
+from . import jsonHelper
 from marvin.codes import *
 from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.config.test_data import test_data
@@ -96,12 +96,12 @@ class trafficType(object):
     def __init__(self, typ, labeldict=None):
         self.typ = typ  # Guest/Management/Public
         if labeldict:
-            self.xen = labeldict['xen'] if 'xen' in labeldict.keys() else None
-            self.kvm = labeldict['kvm'] if 'kvm' in labeldict.keys() else None
+            self.xen = labeldict['xen'] if 'xen' in list(labeldict.keys()) else None
+            self.kvm = labeldict['kvm'] if 'kvm' in list(labeldict.keys()) else None
             self.vmware = labeldict['vmware']\
-                if 'vmware' in labeldict.keys() else None
+                if 'vmware' in list(labeldict.keys()) else None
             self.simulator = labeldict['simulator']\
-                if 'simulator' in labeldict.keys() else None
+                if 'simulator' in list(labeldict.keys()) else None
 
 
 class pod(object):
@@ -266,7 +266,7 @@ class netscaler(object):
         return repr(self)
 
     def __repr__(self):
-        req = zip(self.__dict__.keys(), self.__dict__.values())
+        req = list(zip(list(self.__dict__.keys()), list(self.__dict__.values())))
         return self.hostname + "?" + "&".join(["=".join([r[0], r[1]])
                                                for r in req])
 
@@ -290,7 +290,7 @@ class srx(object):
         return repr(self)
 
     def __repr__(self):
-        req = zip(self.__dict__.keys(), self.__dict__.values())
+        req = list(zip(list(self.__dict__.keys()), list(self.__dict__.values())))
         return self.hostname + "?" + "&".join(["=".join([r[0], r[1]])
                                                for r in req])
 
@@ -312,7 +312,7 @@ class bigip(object):
         return repr(self)
 
     def __repr__(self):
-        req = zip(self.__dict__.keys(), self.__dict__.values())
+        req = list(zip(list(self.__dict__.keys()), list(self.__dict__.values())))
         return self.hostname + "?" + "&".join(["=".join([r[0], r[1]])
                                                for r in req])
 
@@ -389,8 +389,8 @@ class ConfigManager(object):
                 config_dict = config
         except Exception as e:
             # Will replace with log once we have logging done
-            print "\n Exception occurred under ConfigManager:__parseConfig" \
-                  " :%s", GetDetailExceptionInfo(e)
+            print("\n Exception occurred under ConfigManager:__parseConfig" \
+                  " :%s", GetDetailExceptionInfo(e))
         finally:
             return config_dict
 
@@ -417,7 +417,7 @@ class ConfigManager(object):
         @Output:Section matching inside the parsed data
         '''
         if self.__parsedCfgDict is None or section is None:
-            print "\nEither Parsed Dictionary is None or Section is None"
+            print("\nEither Parsed Dictionary is None or Section is None")
             return INVALID_INPUT
         if section is not None:
             return self.__parsedCfgDict.get(section)
@@ -435,7 +435,7 @@ class ConfigManager(object):
 
 
 def getDeviceUrl(obj):
-    req = zip(obj.__dict__.keys(), obj.__dict__.values())
+    req = list(zip(list(obj.__dict__.keys()), list(obj.__dict__.values())))
     if obj.hostname:
         return "http://" + obj.hostname + "?" + "&".join(["=".join([r[0],
                                                                     r[1]])
@@ -543,7 +543,7 @@ def descSetupInBasicMode():
                        'expunge.interval': '60',
                        'expunge.workers': '3',
                        }
-    for k, v in global_settings.iteritems():
+    for k, v in global_settings.items():
         cfg = configuration()
         cfg.name = k
         cfg.value = v
@@ -667,7 +667,7 @@ def descSetupInEipMode():
                        'expunge.interval': '60',
                        'expunge.workers': '3',
                        }
-    for k, v in global_settings.iteritems():
+    for k, v in global_settings.items():
         cfg = configuration()
         cfg.name = k
         cfg.value = v
@@ -788,7 +788,7 @@ def descSetupInAdvancedMode():
                        'expunge.interval': '60',
                        'expunge.workers': '3',
                        }
-    for k, v in global_settings.iteritems():
+    for k, v in global_settings.items():
         cfg = configuration()
         cfg.name = k
         cfg.value = v
@@ -900,7 +900,7 @@ def descSetupInAdvancedsgMode():
                        'expunge.interval': '60',
                        'expunge.workers': '3',
                        }
-    for k, v in global_settings.iteritems():
+    for k, v in global_settings.items():
         cfg = configuration()
         cfg.name = k
         cfg.value = v
@@ -931,8 +931,8 @@ def getSetupConfig(file):
         config = json.loads("\n".join(configLines))
         return jsonHelper.jsonLoader(config)
     except Exception as e:
-        print "\nException Occurred under getSetupConfig %s" % \
-              GetDetailExceptionInfo(e)
+        print("\nException Occurred under getSetupConfig %s" % \
+              GetDetailExceptionInfo(e))
 
 if __name__ == "__main__":
     parser = OptionParser()

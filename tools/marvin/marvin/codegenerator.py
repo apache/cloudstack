@@ -21,7 +21,7 @@ from optparse import OptionParser
 from textwrap import dedent
 import os
 import sys
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 
 class cmdParameterProperty(object):
@@ -436,7 +436,7 @@ class CodeGenerator(object):
         @return: The classes in cloudstackAPI/ formed from api discovery json
         """
         if endpointUrl.find('response=json') >= 0:
-            apiStream = urllib2.urlopen(endpointUrl)
+            apiStream = urllib.request.urlopen(endpointUrl)
             cmds = self.loadCmdFromJSON(apiStream)
             for cmd in cmds:
                 self.generate(cmd)
@@ -468,17 +468,17 @@ if __name__ == "__main__":
         try:
             os.mkdir(apiModule)
         except:
-            print "Failed to create folder %s, due to %s" % (apiModule,
-                                                             sys.exc_info())
-            print parser.print_help()
+            print("Failed to create folder %s, due to %s" % (apiModule,
+                                                             sys.exc_info()))
+            print(parser.print_help())
             exit(2)
 
     apiSpecFile = "/etc/cloud/cli/commands.xml"
     if options.spec is not None:
         apiSpecFile = options.spec
         if not os.path.exists(apiSpecFile):
-            print "the spec file %s does not exists" % apiSpecFile
-            print parser.print_help()
+            print("the spec file %s does not exists" % apiSpecFile)
+            print(parser.print_help())
             exit(1)
 
     cg = CodeGenerator(folder)

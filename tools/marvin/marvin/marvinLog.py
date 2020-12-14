@@ -92,8 +92,8 @@ class MarvinLog:
             self.__logger.addHandler(stream)
             return SUCCESS
         except Exception as e:
-            print "\nException Occurred Under " \
-                  "__setLogHandler %s" % GetDetailExceptionInfo(e)
+            print("\nException Occurred Under " \
+                  "__setLogHandler %s" % GetDetailExceptionInfo(e))
             return FAILED
 
     def __cleanPreviousLogs(self, logfolder_to_remove):
@@ -107,8 +107,8 @@ class MarvinLog:
             if os.path.isdir(logfolder_to_remove):
                 os.rmdir(logfolder_to_remove)
         except Exception as e:
-            print "\n Exception Occurred Under __cleanPreviousLogs :%s" % \
-                  GetDetailExceptionInfo(e)
+            print("\n Exception Occurred Under __cleanPreviousLogs :%s" % \
+                  GetDetailExceptionInfo(e))
             return FAILED
 
     def getLogger(self):
@@ -155,7 +155,7 @@ class MarvinLog:
             if user_provided_logpath:
                 temp_dir = os.path.join(user_provided_logpath, "MarvinLogs")
             elif ((log_cfg is not None) and
-                    ('LogFolderPath' in log_cfg.__dict__.keys()) and
+                    ('LogFolderPath' in list(log_cfg.__dict__.keys())) and
                     (log_cfg.__dict__.get('LogFolderPath') is not None)):
                 temp_dir = os.path.join(log_cfg.__dict__.get('LogFolderPath'), "MarvinLogs")
 
@@ -167,7 +167,7 @@ class MarvinLog:
                 else:
                     self.__logFolderDir = os.path.join(temp_dir, str(test_module_name))
 
-            print "\n==== Log Folder Path: %s. All logs will be available here ====" % str(self.__logFolderDir)
+            print("\n==== Log Folder Path: %s. All logs will be available here ====" % str(self.__logFolderDir))
             os.makedirs(self.__logFolderDir)
 
             '''
@@ -187,6 +187,6 @@ class MarvinLog:
                 return SUCCESS
             return FAILED
         except Exception as e:
-            print "\n Exception Occurred Under createLogs :%s" % \
-                  GetDetailExceptionInfo(e)
+            print("\n Exception Occurred Under createLogs :%s" % \
+                  GetDetailExceptionInfo(e))
             return FAILED

@@ -88,7 +88,7 @@ class MarvinPlugin(Plugin):
         self.__userLogPath = options.logFolder
         self.conf = conf
         if self.startMarvin() == FAILED:
-            print "\nStarting Marvin Failed, exiting. Please Check"
+            print("\nStarting Marvin Failed, exiting. Please Check")
             exit(1)
 
     def options(self, parser, env):
@@ -150,8 +150,8 @@ class MarvinPlugin(Plugin):
                     return True
             return False
         except ImportError as e:
-            print "FileName :%s : Error : %s" % \
-                  (filename, GetDetailExceptionInfo(e))
+            print("FileName :%s : Error : %s" % \
+                  (filename, GetDetailExceptionInfo(e)))
             return False
 
     def wantFile(self, filename):
@@ -193,7 +193,7 @@ class MarvinPlugin(Plugin):
                                       GetDetailExceptionInfo(err)))
         write_str = "=== TestName: %s | Status : %s ===\n" % (tname, status)
         self.__resultStream.write(write_str)
-        print write_str
+        print(write_str)
 
     def addSuccess(self, test, capt):
         '''
@@ -250,8 +250,8 @@ class MarvinPlugin(Plugin):
                 return SUCCESS
             return FAILED
         except Exception as e:
-            print "Exception Occurred under startMarvin: %s" % \
-                  GetDetailExceptionInfo(e)
+            print("Exception Occurred under startMarvin: %s" % \
+                  GetDetailExceptionInfo(e))
             return FAILED
 
     def stopTest(self, test):
@@ -306,7 +306,7 @@ class MarvinPlugin(Plugin):
                 dst = tmp + "/" + mod_name + "_" + random_gen()
             cmd = "mv " + src + " " + dst
             os.system(cmd)
-            print "===final results are now copied to: %s===" % str(dst)
+            print("===final results are now copied to: %s===" % str(dst))
         except Exception as e:
-            print "=== Exception occurred under finalize :%s ===" % \
-                  str(GetDetailExceptionInfo(e))
+            print("=== Exception occurred under finalize :%s ===" % \
+                  str(GetDetailExceptionInfo(e)))
