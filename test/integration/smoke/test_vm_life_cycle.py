@@ -745,7 +745,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                       (self.virtual_machine.ipaddress, e))
         mount_dir = "/mnt/tmp"
         cmds = "mkdir -p %s" % mount_dir
-        self.assert_(ssh_client.execute(cmds) == [], "mkdir failed within guest")
+        self.assertTrue(ssh_client.execute(cmds) == [], "mkdir failed within guest")
 
         iso_unsupported = False
         for diskdevice in self.services["diskdevice"]:
@@ -756,7 +756,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             if str(res).find("mount: unknown filesystem type 'iso9660'") != -1:
                 iso_unsupported = True
                 self.debug("Test template does not supports iso9660 filesystem. Proceeding with test without mounting.")
-                print "Test template does not supports iso9660 filesystem. Proceeding with test without mounting."
+                print("Test template does not supports iso9660 filesystem. Proceeding with test without mounting.")
                 break
         else:
             self.fail("No mount points matched. Mount was unsuccessful")
@@ -964,7 +964,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     def waitUntilHostInState(self, hostId, state="Up", interval=5, retries=20):
         while retries > -1:
-            print("Waiting for host: %s to be %s. %s retries left." % (hostId, state, retries))
+            print(("Waiting for host: %s to be %s. %s retries left." % (hostId, state, retries)))
             time.sleep(interval)
             host = Host.list(
                 self.apiclient,
@@ -976,7 +976,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                     retries = retries - 1
                     continue
             else:
-                print("Host %s now showing as %s" % (hostId, state))
+                print(("Host %s now showing as %s" % (hostId, state)))
                 return
 
     def unsecure_host(self, host):
@@ -988,7 +988,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                       service libvirtd restart && \
                       sleep 30 && \
                       service cloudstack-agent restart")
-        print("Unsecuring Host: %s" % (host.name))
+        print(("Unsecuring Host: %s" % (host.name)))
         self.waitUntilHostInState(hostId=host.id, state="Up")
         self.check_connection(host=host, secured='false')
         return host
@@ -1001,7 +1001,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             self.apiclient.provisionCertificate(cmd)
 
         for host in self.hosts:
-            print("Securing Host %s" % host.name)
+            print(("Securing Host %s" % host.name))
             self.waitUntilHostInState(hostId=host.id, state="Up")
             self.check_connection(secured='true', host=host)
 

@@ -1231,7 +1231,7 @@ class TestVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             account=domuser.name,
             domainid=dom.id,
-            diskofferingid=filter(lambda x: not x.iscustomized, diskoffering)[0].id
+            diskofferingid=[x for x in diskoffering if not x.iscustomized][0].id
         )
         self.assertTrue(
             vol is not None, "volume creation fails in domain %s as user %s" %

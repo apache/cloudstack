@@ -30,7 +30,7 @@ from ipmisim.ipmisim import IpmiServerContext, IpmiServer, ThreadedIpmiServer
 import random
 import socket
 import sys
-import thread
+import _thread
 import time
 
 
@@ -187,7 +187,7 @@ class TestHAKVM(cloudstackTestCase):
     def waitUntilHostInState(self, state="Available", interval=3):
         def checkForState(expectedState):
             response = self.getHost(self.host.id)
-            print("checkForState:: expected=%s, actual=%s" % (state, response.hostha))
+            print(("checkForState:: expected=%s, actual=%s" % (state, response.hostha)))
             return response.hostha.hastate == expectedState, None
 
         res, _ = wait_until(interval, 200, checkForState, state)
@@ -511,7 +511,7 @@ class TestHAKVM(cloudstackTestCase):
         IpmiServerContext('reset')
         ThreadedIpmiServer.allow_reuse_address = False
         server = ThreadedIpmiServer(('0.0.0.0', self.getIpmiServerPort()), IpmiServer)
-        thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
+        _thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
         self.server = server
 
     def stopIpmiServer(self):

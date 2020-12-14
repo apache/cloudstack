@@ -197,7 +197,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             for child in disk:
                 if child.tag.lower() == "target":
                     dev = child.get("dev")
-                    self.assert_(dev is not None and dev.startswith("sd"), "disk dev is invalid")
+                    self.assertTrue(dev is not None and dev.startswith("sd"), "disk dev is invalid")
                 elif child.tag.lower() == "address":
                     con = child.get("controller")
                     self.assertEqual(con, scsiindex, "disk controller not equal to SCSI " \

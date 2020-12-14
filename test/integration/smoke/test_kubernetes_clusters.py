@@ -225,7 +225,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         hypervisor = cls.hypervisor.lower()
 
-        if hypervisor not in cks_templates.keys():
+        if hypervisor not in list(cks_templates.keys()):
             cls.debug("Provided hypervisor has no CKS template")
             return FAILED
 

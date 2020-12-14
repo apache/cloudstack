@@ -366,7 +366,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         templatesize = (self.template.size / (1024 ** 3))
 
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -454,7 +454,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         templatesize = (self.template.size / (1024 ** 3))
 
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -562,7 +562,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 result[1])
         users = result[2]
 
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -724,7 +724,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
         self.assertEqual(result[0], PASS, result[1])
         users = result[2]
 
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
             try:

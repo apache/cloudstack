@@ -29,7 +29,7 @@ from marvin.lib.common import (get_domain,
                                list_os_types)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS
-import urllib
+import urllib.request, urllib.parse, urllib.error
 # Import System modules
 import time
 
@@ -260,7 +260,7 @@ class TestISO(cloudstackTestCase):
             isready="true"
         )
         status = validateList(list_default_iso_response)
-        self.assertEquals(
+        self.assertEqual(
                 PASS,
                 status[0],
                 "Check if ISO exists in ListIsos")
@@ -404,8 +404,8 @@ class TestISO(cloudstackTestCase):
 
         try:
             # Format URL to ASCII to retrieve response code
-            formatted_url = urllib.unquote_plus(list_extract_response.url)
-            url_response = urllib.urlopen(formatted_url)
+            formatted_url = urllib.parse.unquote_plus(list_extract_response.url)
+            url_response = urllib.request.urlopen(formatted_url)
             response_code = url_response.getcode()
         except Exception:
             self.fail(
@@ -515,9 +515,7 @@ class TestISO(cloudstackTestCase):
             self.skipTest(
                 "Not enough zones available to perform copy template")
 
-        self.services["destzoneid"] = filter(
-            lambda z: z.id != self.zone.id,
-            self.zones)[0].id
+        self.services["destzoneid"] = [z for z in self.zones if z.id != self.zone.id][0].id
 
         self.debug("Copy ISO from %s to %s" % (
             self.zone.id,
@@ -688,8 +686,8 @@ class TestCreateISOWithChecksum(cloudstackTestCase):
         try:
             self.download(self.apiclient, iso.id)
         except Exception as e:
-            print "Negative Test Passed - Exception Occurred Under iso download " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("Negative Test Passed - Exception Occurred Under iso download " \
+                  "%s" % GetDetailExceptionInfo(e))
         else:
             self.fail("Negative Test Failed - Exception DID NOT Occurred Under iso download ")
 
@@ -701,8 +699,8 @@ class TestCreateISOWithChecksum(cloudstackTestCase):
         try:
             self.download(self.apiclient, iso.id)
         except Exception as e:
-            print "Negative Test Passed - Exception Occurred Under iso download " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("Negative Test Passed - Exception Occurred Under iso download " \
+                  "%s" % GetDetailExceptionInfo(e))
         else:
             self.fail("Negative Test Failed - Exception DID NOT Occurred Under iso download ")
 
@@ -714,8 +712,8 @@ class TestCreateISOWithChecksum(cloudstackTestCase):
         try:
             self.download(self.apiclient, iso.id)
         except Exception as e:
-            print "Negative Test Passed - Exception Occurred Under iso download " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("Negative Test Passed - Exception Occurred Under iso download " \
+                  "%s" % GetDetailExceptionInfo(e))
         else:
             self.fail("Negative Test Failed - Exception DID NOT Occurred Under iso download ")
 

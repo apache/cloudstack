@@ -218,9 +218,9 @@ class TestCreateAffinityGroup(cloudstackTestCase):
        aff_grp = self.create_aff_grp()
        self.debug("Created Affinity Group: %s" % aff_grp.name)
        list_aff_grps = AffinityGroup.list(self.api_client, id=aff_grp.id)
-       self.assert_(isinstance(list_aff_grps, list) and len(list_aff_grps) > 0)
-       self.assert_(list_aff_grps[0].id == aff_grp.id)
-       self.assert_(list_aff_grps[0].projectid == self.project.id)
+       self.assertTrue(isinstance(list_aff_grps, list) and len(list_aff_grps) > 0)
+       self.assertTrue(list_aff_grps[0].id == aff_grp.id)
+       self.assertTrue(list_aff_grps[0].projectid == self.project.id)
        self.cleanup.append(aff_grp)
  
     @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
@@ -231,9 +231,9 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         """
         aff_grp = self.create_aff_grp(api_client=self.domain_api_client)
         list_aff_grps = AffinityGroup.list(self.domain_api_client, id=aff_grp.id)
-        self.assert_(isinstance(list_aff_grps, list) and len(list_aff_grps) > 0)
-        self.assert_(list_aff_grps[0].id == aff_grp.id)
-        self.assert_(list_aff_grps[0].projectid == self.project.id)
+        self.assertTrue(isinstance(list_aff_grps, list) and len(list_aff_grps) > 0)
+        self.assertTrue(list_aff_grps[0].id == aff_grp.id)
+        self.assertTrue(list_aff_grps[0].projectid == self.project.id)
         self.cleanup.append(aff_grp)
  
     @attr(tags=["vogxn", "simulator", "basic", "advanced"], required_hardware="false")
@@ -244,9 +244,9 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         """
         aff_grp = self.create_aff_grp(api_client=self.account_api_client)
         list_aff_grps = AffinityGroup.list(self.api_client, id=aff_grp.id)
-        self.assert_(isinstance(list_aff_grps, list) and len(list_aff_grps) > 0)
-        self.assert_(list_aff_grps[0].id == aff_grp.id)
-        self.assert_(list_aff_grps[0].projectid == self.project.id)
+        self.assertTrue(isinstance(list_aff_grps, list) and len(list_aff_grps) > 0)
+        self.assertTrue(list_aff_grps[0].id == aff_grp.id)
+        self.assertTrue(list_aff_grps[0].projectid == self.project.id)
         self.cleanup.append(aff_grp)
   
     @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
@@ -670,7 +670,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
 
     def delete_aff_group(self, apiclient, **kwargs):
         cmd = deleteAffinityGroup.deleteAffinityGroupCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.deleteAffinityGroup(cmd)
 
 
