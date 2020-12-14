@@ -45,8 +45,8 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import com.google.common.base.Strings;
 import java.util.Arrays;
+import org.apache.commons.lang.StringUtils;
 
 @Entity
 @Table(name = "host")
@@ -747,7 +747,7 @@ public class HostVO implements Host {
         if (serviceOffering == null) {
             return false;
         }
-        if (Strings.isNullOrEmpty(serviceOffering.getHostTag())) {
+        if (StringUtils.isEmpty(serviceOffering.getHostTag())) {
             return true;
         }
 
