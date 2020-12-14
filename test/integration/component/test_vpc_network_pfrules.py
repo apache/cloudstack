@@ -329,14 +329,14 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                     self.debug("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
 
     def check_wget_from_vm(self, vm, public_ip, network=None, testnegative=False, isVmAccessible=True):
-        import urllib
+        import urllib.request, urllib.parse, urllib.error
         self.debug("Checking if we can wget from a VM=%s http server on public_ip=%s"  % (vm.name, public_ip.ipaddress.ipaddress))
         try:
                 if not isVmAccessible:
                     self.create_natrule(vm, public_ip, network)
 		self.setup_webserver(vm)
 
-                urllib.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
+                urllib.request.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
                 if not testnegative:
                     self.debug("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
                 else:
@@ -465,7 +465,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 )
                 self.debug("Created network with ID: %s" % obj_network.id)
                 return obj_network
-        except Exception, e:
+        except Exception as e:
                 self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
     def deployvm_in_network(self, network, host_id=None):

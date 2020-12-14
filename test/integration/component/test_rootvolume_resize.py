@@ -641,7 +641,7 @@ class TestResizeVolume(cloudstackTestCase):
                         list(self.apiclient,
                              vmsnapshotid=virtualmachine_snapshot.id)
                     status = validateList(virtulmachine_snapshot_list)
-                    self.assertEquals(
+                    self.assertEqual(
                         PASS,
                         status[0],
                         "Listing of configuration failed")
@@ -1030,7 +1030,7 @@ class TestResizeVolume(cloudstackTestCase):
                     self.assertNotEqual(res[2], INVALID_INPUT, "Check DB Query result set")
                     qresult = int(qresultsize[0][0])
                     self.debug("Query result: %s" % qresult)
-                    self.assertEquals(
+                    self.assertEqual(
                         qresult,
                         (newsize * 1024 * 1024 * 1024),
                         "Usage event not logged properly with right volume"

@@ -133,7 +133,7 @@ class TestCARootProvider(cloudstackTestCase):
         for domain in cmd.domain.split(','):
             self.assertTrue(domain in altNames.value.get_values_for_type(x509.DNSName))
         for address in cmd.ipaddress.split(','):
-            self.assertTrue(address in map(lambda x: str(x), altNames.value.get_values_for_type(x509.IPAddress)))
+            self.assertTrue(address in [str(x) for x in altNames.value.get_values_for_type(x509.IPAddress)])
 
         # Validate certificate against CA public key
         global PUBKEY_VERIFY

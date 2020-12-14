@@ -161,7 +161,7 @@ class TestlistTemplates(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid)
         status = validateList(listfirst500template)
-        self.assertEquals(
+        self.assertEqual(
                 PASS,
                 status[0],
                 "First 500 template list is empty")
@@ -173,7 +173,7 @@ class TestlistTemplates(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid)
         status = validateList(listremainingtemplate)
-        self.assertEquals(
+        self.assertEqual(
                 PASS,
                 status[0],
                 "Next 500 template list is empty")
@@ -185,7 +185,7 @@ class TestlistTemplates(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid)
         status = validateList(listalltemplate)
-        self.assertEquals(
+        self.assertEqual(
                 PASS,
                 status[0],
                 "entire template list is empty")
@@ -253,7 +253,7 @@ class TestlistTemplates(cloudstackTestCase):
             )
             self.updateConfigurAndRestart("allow.public.user.templates", "true")
             self.fail("Template creation passed for user")
-        except CloudstackAPIException  as e:
+        except CloudstackAPIException as e:
             self.assertRaises("Exception Raised : %s" % e)
         # Register new public template as domain admin
         # Exception should be raised for registering public template
@@ -268,7 +268,7 @@ class TestlistTemplates(cloudstackTestCase):
             )
             self.updateConfigurAndRestart("allow.public.user.templates", "true")
             self.fail("Template creation passed for domain admin")
-        except CloudstackAPIException  as e:
+        except CloudstackAPIException as e:
             self.assertRaises("Exception Raised : %s" % e)
 
         if self.hypervisor.lower() in ['hyperv', 'lxc']:
@@ -314,7 +314,7 @@ class TestlistTemplates(cloudstackTestCase):
                 )
                 self.updateConfigurAndRestart("allow.public.user.templates", "true")
                 self.fail("Template creation passed from snapshot for domain user")
-            except CloudstackAPIException  as e:
+            except CloudstackAPIException as e:
                 self.assertRaises("Exception Raised : %s" % e)
 
             VirtualMachine.stop(user_vm_created, self.user_api_client)
@@ -324,7 +324,7 @@ class TestlistTemplates(cloudstackTestCase):
                 domainid=user_account.domainid,
                 state="Stopped")
             status = validateList(list_stopped_vms_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Stopped VM is not in Stopped state"
@@ -336,7 +336,7 @@ class TestlistTemplates(cloudstackTestCase):
                 )
                 self.updateConfigurAndRestart("allow.public.user.templates", "true")
                 self.fail("Template creation passed from volume for domain user")
-            except CloudstackAPIException  as e:
+            except CloudstackAPIException as e:
                 self.assertRaises("Exception Raised : %s" % e)
 
             admin_vm_created = VirtualMachine.create(
@@ -378,7 +378,7 @@ class TestlistTemplates(cloudstackTestCase):
                 )
                 self.updateConfigurAndRestart("allow.public.user.templates", "true")
                 self.fail("Template creation passed from snapshot for domain admin")
-            except CloudstackAPIException  as e:
+            except CloudstackAPIException as e:
                 self.assertRaises("Exception Raised : %s" % e)
 
             VirtualMachine.stop(admin_vm_created, self.admin_api_client)
@@ -388,7 +388,7 @@ class TestlistTemplates(cloudstackTestCase):
                 domainid=self.account.domainid,
                 state="Stopped")
             status = validateList(list_stopped_vms_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Stopped VM is not in Stopped state"
@@ -400,7 +400,7 @@ class TestlistTemplates(cloudstackTestCase):
                 )
                 self.updateConfigurAndRestart("allow.public.user.templates", "true")
                 self.fail("Template creation passed from volume for domain admin")
-            except CloudstackAPIException  as e:
+            except CloudstackAPIException as e:
                 self.assertRaises("Exception Raised : %s" % e)
 
             self.updateConfigurAndRestart("allow.public.user.templates", "true")

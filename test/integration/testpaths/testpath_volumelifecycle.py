@@ -41,7 +41,7 @@ from marvin.lib.common import (get_zone,
                                find_storage_pool_type)
 from nose.plugins.attrib import attr
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import tempfile
 
 
@@ -514,11 +514,11 @@ class TestPathVolume(cloudstackTestCase):
         self.debug("extracted url is%s  :" % self.extract_volume.url)
         try:
 
-            formatted_url = urllib.unquote_plus(self.extract_volume.url)
+            formatted_url = urllib.parse.unquote_plus(self.extract_volume.url)
             self.debug(
                 "Attempting to download volume at url %s" %
                 formatted_url)
-            response = urllib.urlopen(formatted_url)
+            response = urllib.request.urlopen(formatted_url)
             self.debug("response from volume url %s" % response.getcode())
             fd, path = tempfile.mkstemp()
             self.debug(
@@ -930,11 +930,11 @@ class TestPathVolume(cloudstackTestCase):
         self.debug("extracted url is%s  :" % self.extract_volume.url)
         try:
 
-            formatted_url = urllib.unquote_plus(self.extract_volume.url)
+            formatted_url = urllib.parse.unquote_plus(self.extract_volume.url)
             self.debug(
                 "Attempting to download volume at url %s" %
                 formatted_url)
-            response = urllib.urlopen(formatted_url)
+            response = urllib.request.urlopen(formatted_url)
             self.debug("response from volume url %s" % response.getcode())
             fd, path = tempfile.mkstemp()
             self.debug(

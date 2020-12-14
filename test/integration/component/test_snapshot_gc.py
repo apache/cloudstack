@@ -190,7 +190,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
             # Create a snapshot from the ROOTDISK
             cls.snapshot = Snapshot.create(cls.api_client, volume.id)
-        except Exception, e:
+        except Exception as e:
             cls.tearDownClass()
             unittest.SkipTest("setupClass fails for %s" % cls.__name__)
             raise e

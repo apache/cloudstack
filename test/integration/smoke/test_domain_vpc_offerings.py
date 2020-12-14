@@ -151,7 +151,7 @@ class TestCreateDomainsVpcOffering(cloudstackTestCase):
         cmd.supportedServices = offering_data["supportedservices"]
         cmd.domainid = offering_data_domainid
         if "serviceProviderList" in offering_data:
-            for service, provider in offering_data["serviceProviderList"].items():
+            for service, provider in list(offering_data["serviceProviderList"].items()):
                 providers = provider
                 if isinstance(provider, str):
                     providers = [provider]

@@ -321,7 +321,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.assertEqual(validateList(qresultset)[0], PASS, "sql query returned invalid response")
         self.assertEqual(
             metadata["vm-id.txt"][0],
-            unicode(qresultset[0][0]),
+            str(qresultset[0][0]),
             "vm id in metadata does not match with the vm id from cloud db"
         )
         return

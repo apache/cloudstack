@@ -576,7 +576,7 @@ class EntityManager(object):
                 vpcid=vpc_id)
 
             self.logger.debug("Created network with ID: %s" % obj_network.id)
-        except Exception, e:
+        except Exception as e:
             raise Exception('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
         o = networkO(obj_network)

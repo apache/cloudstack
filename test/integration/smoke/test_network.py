@@ -1738,7 +1738,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         return len(response) == 3
 
     def enable_l2_nic(self, vm):
-        vm_ip = list(filter(lambda x: x['networkid'] == self.isolated_network.id, vm.nic))[0]['ipaddress']
+        vm_ip = list([x for x in vm.nic if x['networkid'] == self.isolated_network.id])[0]['ipaddress']
         ssh_client = vm.get_ssh_client()
         eth_device = "eth0"
         if len(ssh_client.execute("/sbin/ifconfig %s | grep %s" % (eth_device, vm_ip))) > 0:
