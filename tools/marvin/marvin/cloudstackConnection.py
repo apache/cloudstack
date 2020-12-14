@@ -147,8 +147,10 @@ class CSConnection(object):
                 ).replace("+", "%20")]
             ) for r in params]
         )
-        signature = base64.encodestring(hmac.new(
-            self.securityKey, hash_str, hashlib.sha1).digest()).strip()
+        signature = base64.encodestring(
+            hmac.new(self.securityKey.encode('utf-8'),
+                     hash_str.encode('utf-8'),
+                     hashlib.sha1).digest()).strip()
         return signature
 
     def __sendPostReqToCS(self, url, payload):
