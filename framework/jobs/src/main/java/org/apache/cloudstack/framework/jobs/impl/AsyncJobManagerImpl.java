@@ -612,7 +612,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         } else {
                             // TODO, job wakeup is not in use yet
                             if (s_logger.isTraceEnabled())
-                                s_logger.trace("Unable to find a wakeup dispatcher from the joined job " + job.getId());
+                                s_logger.trace("Unable to find a wakeup dispatcher from the joined job:" + StringUtils.cleanString(job.toString()));
                         }
                     } else {
                         AsyncJobDispatcher jobDispatcher = getDispatcher(job.getDispatcher());
