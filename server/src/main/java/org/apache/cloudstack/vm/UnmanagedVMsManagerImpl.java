@@ -378,7 +378,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private boolean hostSupportsServiceOffering(HostVO host, ServiceOffering serviceOffering) {
         hostDao.loadHostTags(host);
-        return hostDao.checkHostServiceOfferingTags(host, serviceOffering);
+        return host.checkHostServiceOfferingTags(serviceOffering);
     }
 
     private boolean storagePoolSupportsDiskOffering(StoragePool pool, DiskOffering diskOffering) {

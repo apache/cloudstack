@@ -26,7 +26,6 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
@@ -126,6 +125,4 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType);
 
     HostVO findByName(String name);
-
-    boolean checkHostServiceOfferingTags(HostVO host, ServiceOffering offerings);
 }
