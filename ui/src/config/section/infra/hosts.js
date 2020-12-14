@@ -192,6 +192,9 @@ export default {
       mapping: {
         hostid: {
           value: (record) => { return record.id }
+        },
+        action: {
+          options: ['ON', 'OFF', 'CYCLE', 'RESET', 'SOFT', 'STATUS']
         }
       }
     },
