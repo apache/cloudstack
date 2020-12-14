@@ -53,7 +53,7 @@ public class HostVOTest {
     }
 
     @Test
-    public void wrongRightTag() {
+    public void testWrongTag() {
         host.setHostTags(Arrays.asList("tag1","tag2"));
         offering.setHostTag("tag2,tag4");
         assertFalse(host.checkHostServiceOfferingTags(offering));
