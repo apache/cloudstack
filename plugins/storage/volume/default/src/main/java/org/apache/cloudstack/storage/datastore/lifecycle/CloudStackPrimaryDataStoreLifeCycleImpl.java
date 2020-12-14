@@ -64,7 +64,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -132,7 +131,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         Long zoneId = (Long)dsInfos.get("zoneId");
         String url = (String)dsInfos.get("url");
         String providerName = (String)dsInfos.get("providerName");
-        String hypervisorType = (String)dsInfos.get("hypervisorType");
+        HypervisorType hypervisorType = (HypervisorType)dsInfos.get("hypervisorType");
         if (clusterId != null && podId == null) {
             throw new InvalidParameterValueException("Cluster id requires pod id");
         }
@@ -250,7 +249,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setPath(hostPath.replaceFirst("/", ""));
             parameters.setUserInfo(userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
-            if (StringUtils.isNotBlank(hypervisorType) && HypervisorType.getType(hypervisorType).equals(HypervisorType.VMware)) {
+            if (HypervisorType.VMware.equals(hypervisorType)) {
                 validateVcenterDetails(zoneId, podId, clusterId,storageHost);
             }
             parameters.setType(StoragePoolType.PreSetup);
@@ -258,7 +257,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setPort(0);
             parameters.setPath(hostPath);
         } else if (scheme.equalsIgnoreCase("DatastoreCluster")) {
-            if (StringUtils.isNotBlank(hypervisorType) && HypervisorType.getType(hypervisorType).equals(HypervisorType.VMware)) {
+            if (HypervisorType.VMware.equals(hypervisorType)) {
                 validateVcenterDetails(zoneId, podId, clusterId,storageHost);
             }
             parameters.setType(StoragePoolType.DatastoreCluster);
@@ -338,7 +337,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             uuid = (String)existingUuid;
         } else if (scheme.equalsIgnoreCase("sharedmountpoint") || scheme.equalsIgnoreCase("clvm")) {
             uuid = UUID.randomUUID().toString();
-        } else if (scheme.equalsIgnoreCase("PreSetup") && !(StringUtils.isNotBlank(hypervisorType) && HypervisorType.getType(hypervisorType).equals(HypervisorType.VMware))) {
+        } else if ("PreSetup".equalsIgnoreCase(scheme) && !HypervisorType.VMware.equals(hypervisorType)) {
             uuid = hostPath.replace("/", "");
         } else {
             uuid = UUID.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
