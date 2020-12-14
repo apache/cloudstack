@@ -2162,7 +2162,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
             name=self.services["test_34_DeployVM_in_SecondSGNetwork"]["zone"]
         )
         status = validateList(zone_list)
-        self.assertEquals(status[0], PASS, "Failed to list the zones")
+        self.assertEqual(status[0], PASS, "Failed to list the zones")
         count = 0
         """
         In simulator environment default guest os template should be in ready state immediately after the ssvm is up.
@@ -2260,7 +2260,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
             )
             #construct ip list using start and end ips in the network
             for i in range(0,nwIPs):
-                ips_in_new_network.append(str(ip_gen.next()))
+                ips_in_new_network.append(str(next(ip_gen)))
             if vm_ip not in ips_in_new_network:
                 self.fail("vm did not get the ip from new SG enabled shared network")
             self.cleanup_vms.append(vm_2)

@@ -527,7 +527,7 @@ class TestStorageTags(cloudstackTestCase):
             self.debug("Expected exception %s: " % e)
 
         self.debug("Asssert that vm2 was not deployed, so it couldn't be appended to cleanup")
-        self.assertEquals(cleanup_size, len(self.cleanup))
+        self.assertEqual(cleanup_size, len(self.cleanup))
 
         # Create V-1 using DO-1
         self.volume_1 = Volume.create(
@@ -567,7 +567,7 @@ class TestStorageTags(cloudstackTestCase):
             listall=True
         )
         self.debug("VM-1 Volumes: %s" % vm_1_volumes)
-        self.assertEquals(None, vm_1_volumes, "Check that volume V-2 has not been attached to VM-1")
+        self.assertEqual(None, vm_1_volumes, "Check that volume V-2 has not been attached to VM-1")
 
         # Attach V_1 to VM_1
         self.virtual_machine_1.attach_volume(self.apiclient, self.volume_1)
@@ -578,7 +578,7 @@ class TestStorageTags(cloudstackTestCase):
             listall=True
         )
         self.debug("VM-1 Volumes: %s" % vm_1_volumes)
-        self.assertEquals(vm_1_volumes[0].id, self.volume_1.id, "Check that volume V-1 has been attached to VM-1")
+        self.assertEqual(vm_1_volumes[0].id, self.volume_1.id, "Check that volume V-1 has been attached to VM-1")
         self.virtual_machine_1.detach_volume(self.apiclient, self.volume_1)
 
         return
@@ -586,9 +586,9 @@ class TestStorageTags(cloudstackTestCase):
     def check_storage_pool_tag(self, poolid, tag):
         cmd = listStorageTags.listStorageTagsCmd()
         storage_tags_response = self.apiclient.listStorageTags(cmd)
-        pool_tags = filter(lambda x: x.poolid == poolid, storage_tags_response)
-        self.assertEquals(1, len(pool_tags), "Check storage tags size")
-        self.assertEquals(tag, pool_tags[0].name, "Check storage tag on storage pool")
+        pool_tags = [x for x in storage_tags_response if x.poolid == poolid]
+        self.assertEqual(1, len(pool_tags), "Check storage tags size")
+        self.assertEqual(tag, pool_tags[0].name, "Check storage tag on storage pool")
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     @skipTestIf("hypervisorNotSupported")
@@ -600,7 +600,7 @@ class TestStorageTags(cloudstackTestCase):
             "select id from storage_pool where uuid = '%s';"
             % str(self.storage_pool_1.id)
         )
-        self.assertEquals(1, len(qresultset), "Check DB Query result set")
+        self.assertEqual(1, len(qresultset), "Check DB Query result set")
         qresult = qresultset[0]
         storage_pool_db_id = qresult[0]
 
@@ -673,11 +673,11 @@ class TestStorageTags(cloudstackTestCase):
             self.apiclient,
             id=vol.id
         )
-        pools_suitable = filter(lambda p: p.suitableformigration, pools_response)
+        pools_suitable = [p for p in pools_response if p.suitableformigration]
 
         self.debug("Suitable storage pools found: %s" % len(pools_suitable))
-        self.assertEquals(1, len(pools_suitable), "Check that there is only one item on the list")
-        self.assertEquals(pools_suitable[0].id, storage_pool_2.id, "Check that PS-2 is the migration option for volume")
+        self.assertEqual(1, len(pools_suitable), "Check that there is only one item on the list")
+        self.assertEqual(pools_suitable[0].id, storage_pool_2.id, "Check that PS-2 is the migration option for volume")
 
         # Update PS-2 Storage Tags
         StoragePool.update(
@@ -691,9 +691,9 @@ class TestStorageTags(cloudstackTestCase):
             self.apiclient,
             id=vol.id
         )
-        pools_suitable = filter(lambda p: p.suitableformigration, pools_response)
+        pools_suitable = [p for p in pools_response if p.suitableformigration]
 
         self.debug("Suitable storage pools found: %s" % len(pools_suitable))
-        self.assertEquals(0, len(pools_suitable), "Check that there is no migration option for volume")
+        self.assertEqual(0, len(pools_suitable), "Check that there is no migration option for volume")
 
         return

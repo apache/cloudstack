@@ -149,7 +149,7 @@ class TestVolumes(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -266,7 +266,7 @@ class TestVolumes(cloudstackTestCase):
         # Verifying that the volume on page 2 is not present in page1
         for i in range(0, len(list_volumes_page1)):
             volume_page1 = list_volumes_page1[i]
-            self.assertNotEquals(
+            self.assertNotEqual(
                 volume_page2.id,
                 volume_page1.id,
                 "Volume listed in page 2 is also listed in page 1"
@@ -482,7 +482,7 @@ class TestVolumes(cloudstackTestCase):
         list_volumes_after = Volume.list(
             self.userapiclient,
             listall=self.services["listall"])
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "Data volume creation failed"
@@ -505,7 +505,7 @@ class TestVolumes(cloudstackTestCase):
             attached_volume.vmname,
             "VM is not attached to Volume"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.virtual_machine.name,
             attached_volume.vmname,
             "VM Name is not matching with attached vm"
@@ -563,7 +563,7 @@ class TestVolumes(cloudstackTestCase):
         )
         self.assertIsNotNone(resized_volume, "Resize Volume failed")
         # Verifying data volume size is increased
-        self.assertEquals(
+        self.assertEqual(
             new_size,
             (resized_volume.size / (1024 * 1024 * 1024)),
             "volume not resized to expected value"
@@ -637,7 +637,7 @@ class TestVolumes(cloudstackTestCase):
 
         # Verifyign that volume list is increased by 1 after creation of
         # custion volume
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "Custom volume did not get created"
@@ -659,7 +659,7 @@ class TestVolumes(cloudstackTestCase):
             attached_volume.vmname,
             "VM is not attached to Volume"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.virtual_machine.name,
             attached_volume.vmname,
             "VM Name is not matching with attached vm"
@@ -691,7 +691,7 @@ class TestVolumes(cloudstackTestCase):
             size=new_size)
         self.assertIsNotNone(resized_volume, "Resize Volume failed")
         # Verifying that custom disk size is increased
-        self.assertEquals(
+        self.assertEqual(
             new_size,
             (resized_volume.size / (1024 * 1024 * 1024)),
             "volume not resized to expected value"
@@ -731,7 +731,7 @@ class TestVolumes(cloudstackTestCase):
             self.userapiclient,
             listall=self.services["listall"])
 
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "Volume not created"
@@ -753,7 +753,7 @@ class TestVolumes(cloudstackTestCase):
             attached_volume.vmname,
             "VM is not attached to Volume"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.virtual_machine.name,
             attached_volume.vmname,
             "VM Name is not matching with attached vm"
@@ -911,7 +911,7 @@ class TestVolumes(cloudstackTestCase):
             self.userapiclient,
             templatefilter='self')
 
-        self.assertEquals(
+        self.assertEqual(
             templates_before_size + 1,
             len(list_templates_after),
             "Template creation failed from snapshot"
@@ -955,7 +955,7 @@ class TestVolumes(cloudstackTestCase):
             self.userapiclient,
             listall=self.services["listall"])
 
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "Volume not created"
@@ -978,7 +978,7 @@ class TestVolumes(cloudstackTestCase):
             attached_volume.vmname,
             "VM is not attached to Volume"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.virtual_machine.name,
             attached_volume.vmname,
             "VM Name is not matching with attached vm"
@@ -1049,7 +1049,7 @@ class TestVolumes(cloudstackTestCase):
             list_snapshot_policy_after,
             "Hourly Snapshot policy creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             snapshot_policy_before_size + 1,
             len(list_snapshot_policy_after),
             "Hourly Snapshot policy creation failed"
@@ -1093,7 +1093,7 @@ class TestVolumes(cloudstackTestCase):
             self.userapiclient,
             listall=self.services["listall"])
 
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "Volume not created"
@@ -1115,7 +1115,7 @@ class TestVolumes(cloudstackTestCase):
             attached_volume.vmname,
             "VM is not attached to Volume"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.virtual_machine.name,
             attached_volume.vmname,
             "VM Name is not matching with attached vm"
@@ -1186,7 +1186,7 @@ class TestVolumes(cloudstackTestCase):
             list_snapshot_policy_after,
             "Daily Snapshot policy creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             snapshot_policy_before_size + 1,
             len(list_snapshot_policy_after),
             "Daily Snapshot policy creation failed"
@@ -1230,7 +1230,7 @@ class TestVolumes(cloudstackTestCase):
             self.userapiclient,
             listall=self.services["listall"])
 
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "Volume not created"
@@ -1252,7 +1252,7 @@ class TestVolumes(cloudstackTestCase):
             attached_volume.vmname,
             "VM is not attached to Volume"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.virtual_machine.name,
             attached_volume.vmname,
             "VM Name is not matching with attached vm"
@@ -1323,7 +1323,7 @@ class TestVolumes(cloudstackTestCase):
             list_snapshot_policy_after,
             "Weekly Snapshot policy creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             snapshot_policy_before_size + 1,
             len(list_snapshot_policy_after),
             "Weekly Snapshot policy creation failed"
@@ -1369,7 +1369,7 @@ class TestVolumes(cloudstackTestCase):
             self.userapiclient,
             listall=self.services["listall"])
 
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "Volume not created"
@@ -1390,7 +1390,7 @@ class TestVolumes(cloudstackTestCase):
             attached_volume.vmname,
             "VM is not attached to Volume"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.virtual_machine.name,
             attached_volume.vmname,
             "VM Name is not matching with attached vm"
@@ -1459,7 +1459,7 @@ class TestVolumes(cloudstackTestCase):
             list_snapshot_policy_after,
             "Monthly Snapshot policy creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             snapshot_policy_before_size + 1,
             len(list_snapshot_policy_after),
             "Monthly Snapshot policy creation failed"
@@ -1518,7 +1518,7 @@ class TestVolumes(cloudstackTestCase):
             self.userapiclient,
             listall=self.services["listall"])
 
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "Volume not created"
@@ -1539,7 +1539,7 @@ class TestVolumes(cloudstackTestCase):
             attached_volume.vmname,
             "VM is not attached to Volume"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.virtual_machine.name,
             attached_volume.vmname,
             "VM Name is not matching with attached vm"
@@ -1579,7 +1579,7 @@ class TestVolumes(cloudstackTestCase):
             )
             self.assertIsNotNone(snapshot_created, "Snapshot not created")
 
-            self.assertEquals(
+            self.assertEqual(
                 volume_created.id,
                 snapshot_created.volumeid,
                 "Snapshot not created for given volume"
@@ -1630,7 +1630,7 @@ class TestVolumes(cloudstackTestCase):
         # Verifying that the snapshot on page 2 is not present in page1
         for i in range(0, len(list_snapshots_page1)):
             snapshot_page1 = list_snapshots_page1[i]
-            self.assertNotEquals(
+            self.assertNotEqual(
                 snapshot_page2.id,
                 snapshot_page1.id,
                 "Snapshot listed in page 2 is also listed in page 1"
@@ -1705,7 +1705,7 @@ class TestVolumes(cloudstackTestCase):
             list_volumes_after,
             "volume creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "Volume not created"
@@ -1726,7 +1726,7 @@ class TestVolumes(cloudstackTestCase):
             attached_volume.vmname,
             "VM is not attached to Volume"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.virtual_machine.name,
             attached_volume.vmname,
             "VM Name is not matching with attached vm"
@@ -1758,7 +1758,7 @@ class TestVolumes(cloudstackTestCase):
             extract_volume_response,
             "Extract/Download volume failed")
 
-        self.assertEquals(
+        self.assertEqual(
             "DOWNLOAD_URL_CREATED",
             extract_volume_response.state,
             "Failed to create Download URL"
@@ -1771,7 +1771,7 @@ class TestVolumes(cloudstackTestCase):
             (extract_volume_response.url.find("http") != -1),
             "Extract/Download volume URL doesnot contain http"
         )
-        self.assertEquals(
+        self.assertEqual(
             volume_created.id,
             extract_volume_response.id,
             "Extracted/Downloaded volume is not matching with original volume"
@@ -1815,7 +1815,7 @@ class TestVolumes(cloudstackTestCase):
             "volume not created for the vm launched at class level"
         )
         # Asserting that the list volume length after upload is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             len(list_volumes_before) + 1,
             len(list_volumes_after),
             "upload volume failed"

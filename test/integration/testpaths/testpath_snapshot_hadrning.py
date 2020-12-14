@@ -1438,7 +1438,7 @@ class TestHardening(cloudstackTestCase):
             # Check each clusterid has two Storage Pool Tags
             # which indicate two Storage Pools exist.
             assert (len(clusterid_tag_mapping)) >= 2 and\
-                (len(tags) for tags in clusterid_tag_mapping.itervalues(
+                (len(tags) for tags in clusterid_tag_mapping.values(
                 )) >= 2, "There must be atleast two Clusters and\
                 each must have atleast two cluster wide storage pools in\
                 Up state in the setup"

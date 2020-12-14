@@ -343,7 +343,7 @@ class TestVMDeployVPC(cloudstackTestCase):
             id=vm.id,
             )
         status = validateList(vm_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "vm list api returned invalid response after vm {} deployment".format(vm)

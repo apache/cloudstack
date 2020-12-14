@@ -787,7 +787,7 @@ class TestResourceTags(cloudstackTestCase):
             )
 
         except Exception as e:
-            print e
+            print(e)
 
         vpns = Vpn.list(
             self.apiclient,

@@ -16,7 +16,7 @@
 # under the License.
 """ BVT tests for remote diagnostics of system VMs
 """
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from marvin.cloudstackAPI import (runDiagnostics, getDiagnosticsData)
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -566,14 +566,14 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         )
 
     def check_url(self, url):
-        import urllib2
+        import urllib.request, urllib.error, urllib.parse
         try:
-            r = urllib.urlopen(url)
+            r = urllib.request.urlopen(url)
             if r.code == 200:
                 return True
-        except urllib2.HTTPError:
+        except urllib.error.HTTPError:
             return False
-        except urllib2.URLError:
+        except urllib.error.URLError:
             return False
         return True
 

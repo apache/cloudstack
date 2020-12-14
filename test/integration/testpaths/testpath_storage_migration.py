@@ -3539,7 +3539,7 @@ def check_files(self, vm, destinationHost):
         self.apiclient,
         virtualmachineid=vm.id,
         listall=True)
-    print vm_volumes
+    print(vm_volumes)
     for vol in vm_volumes:
         spool = list_storage_pools(self.apiclient, id=vol.storageid)
         split_path = spool[0].path.split("/")

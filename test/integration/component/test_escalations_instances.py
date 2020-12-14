@@ -152,7 +152,7 @@ class TestListInstances(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -222,7 +222,7 @@ class TestListInstances(cloudstackTestCase):
             self.userapiclient,
             listall=self.services["listall"])
         status = validateList(list_instances_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of instances after creation failed"
@@ -243,7 +243,7 @@ class TestListInstances(cloudstackTestCase):
             domainid=self.account.domainid
         )
         status = validateList(list_instances_page1)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of instances in page1 failed"
@@ -264,7 +264,7 @@ class TestListInstances(cloudstackTestCase):
             domainid=self.account.domainid
         )
         status = validateList(list_instances_page2)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of instances in page2 failed"
@@ -281,7 +281,7 @@ class TestListInstances(cloudstackTestCase):
         # Verifying that the VM on page 2 is not present in page1
         for i in range(0, len(list_instances_page1)):
             instance_page1 = list_instances_page1[i]
-            self.assertNotEquals(
+            self.assertNotEqual(
                 instance_page2.id,
                 instance_page1.id,
                 "VM listed in page 2 is also listed in page 1"
@@ -354,13 +354,13 @@ class TestListInstances(cloudstackTestCase):
             state="Running"
         )
         status = validateList(list_running_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Newly created VM is not in Running state"
         )
         # Verifying list size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_running_vms_after),
             "Running VM list count is not matching"
@@ -448,13 +448,13 @@ class TestListInstances(cloudstackTestCase):
             state="Stopped"
         )
         status = validateList(list_stopped_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Stopped VM is not in Stopped state"
         )
         # Verifying list size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_stopped_vms_after),
             "Stopped VM list count is not matching"
@@ -557,13 +557,13 @@ class TestListInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_destroyed_vms_admin)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Destroyed VM is not in Destroyed state"
         )
         # Verifying that the length of the destroyed VMs list should be 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_destroyed_vms_admin),
             "Destroyed VM list count is not matching"
@@ -648,12 +648,12 @@ class TestListInstances(cloudstackTestCase):
             account=self.account.name
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM after creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -665,7 +665,7 @@ class TestListInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_vm_byid)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM by Id failed"
@@ -756,12 +756,12 @@ class TestListInstances(cloudstackTestCase):
             domainid=self.account.domainid,
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM's creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             2,
             len(list_vms_after),
             "VM's list count is not matching"
@@ -776,13 +776,13 @@ class TestListInstances(cloudstackTestCase):
             name=vms[0].name
         )
         status = validateList(list_vm_byfullname)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list VM by Name"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vm_byfullname),
             "VM list by full name count is not matching"
@@ -825,13 +825,13 @@ class TestListInstances(cloudstackTestCase):
             name=vms[0].name[:1]
         )
         status = validateList(list_vm_bypartialname)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list VM by Name"
         )
         # Verifying that the size of the list is 2
-        self.assertEquals(
+        self.assertEqual(
             2,
             len(list_vm_bypartialname),
             "VM list by full name count is not matching"
@@ -893,12 +893,12 @@ class TestListInstances(cloudstackTestCase):
             domainid=self.account.domainid,
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM's creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM's list count is not matching"
@@ -914,13 +914,13 @@ class TestListInstances(cloudstackTestCase):
             state="Running"
         )
         status = validateList(list_running_vm)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "List VM by name and state failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_running_vm),
             "Count of VM list by name and state is not matching"
@@ -1008,7 +1008,7 @@ class TestListInstances(cloudstackTestCase):
         # Listing all the zones available
         zones_list = Zone.list(self.apiClient)
         status = validateList(zones_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "zones not available in the given setup"
@@ -1066,13 +1066,13 @@ class TestListInstances(cloudstackTestCase):
                 zoneid=zones_list[0].id
             )
             status = validateList(list_vms_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "VM creation failed"
             )
             # Verifying that the size of the list is 1
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_vms_after),
                 "VM list count is not matching"
@@ -1155,7 +1155,7 @@ class TestListInstances(cloudstackTestCase):
         # Listing all the zones available
         zones_list = Zone.list(self.apiClient)
         status = validateList(zones_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "zones not available in the given setup"
@@ -1215,13 +1215,13 @@ class TestListInstances(cloudstackTestCase):
                 account=self.account.name
             )
             status = validateList(list_vms_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "VM creation failed"
             )
             # Verifying that the size of the list is 1
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_vms_after),
                 "VM list count is not matching"
@@ -1238,13 +1238,13 @@ class TestListInstances(cloudstackTestCase):
                 name=vm_created.name
             )
             status = validateList(list_vms)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Listing VM's by name and zone failed"
             )
             # Verifying Verifying that the size of the list is 1
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_vms),
                 "Count of listed VM's by name and zone is not as expected"
@@ -1374,13 +1374,13 @@ class TestListInstances(cloudstackTestCase):
             account=self.account.name
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -1398,13 +1398,13 @@ class TestListInstances(cloudstackTestCase):
             state="Running"
         )
         status = validateList(list_vms)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing VM's by name and zone failed"
         )
         # Verifying Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms),
             "Count of listed VM's by name, zone and state is not as expected"
@@ -1468,13 +1468,13 @@ class TestListInstances(cloudstackTestCase):
             account=self.account.name
         )
         status = validateList(list_vms)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing VM's by name, account and zone failed"
         )
         # Verifying Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms),
             "Count of listed VM's by name, zone and account is not as expected"
@@ -1553,13 +1553,13 @@ class TestListInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -1586,7 +1586,7 @@ class TestListInstances(cloudstackTestCase):
             new_keypair,
             "New Key pair generation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             "keypair1",
             new_keypair.name,
             "Key Pair not created with given name"
@@ -1596,13 +1596,13 @@ class TestListInstances(cloudstackTestCase):
             self.userapiclient
         )
         status = validateList(list_keypairs_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of Key pairs failed"
         )
         # Verifying that list size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             list_keypairs_before_size + 1,
             len(list_keypairs_after),
             "List count is not matching"
@@ -1618,18 +1618,18 @@ class TestListInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_vm)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vm),
             "VMs list is not as expected"
         )
         # Verifying that VM's SSH keypair is set to newly created keypair
-        self.assertEquals(
+        self.assertEqual(
             new_keypair.name,
             list_vm[0].keypair,
             "VM is not set to newly created SSH Key pair"
@@ -1677,7 +1677,7 @@ class TestListInstances(cloudstackTestCase):
             id=vm_created.serviceofferingid
         )
         status = validateList(vm_so_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM Service offering failed"
@@ -1689,13 +1689,13 @@ class TestListInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -1737,18 +1737,18 @@ class TestListInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VMs list is not as expected"
         )
         # Verifying that VM's service offerings is not changed
-        self.assertEquals(
+        self.assertEqual(
             current_so.id,
             list_vms_after[0].serviceofferingid,
             "VM is not containing old Service Offering"
@@ -1818,13 +1818,13 @@ class TestListInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -1839,13 +1839,13 @@ class TestListInstances(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_network_before)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default Network not created when deploying a VM"
         )
         # Verifying that only 1 network is created while deploying a VM
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_network_before),
             "More than 1 default network exists"
@@ -1886,13 +1886,13 @@ class TestListInstances(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_network_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "List of Networks failed"
         )
         # Verifying that list size is 2
-        self.assertEquals(
+        self.assertEqual(
             2,
             len(list_network_after),
             "More than 1 default network exists"
@@ -1903,13 +1903,13 @@ class TestListInstances(cloudstackTestCase):
             vm_nics_before,
             "Nic not found for the VM deployed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(vm_nics_before),
             "VM Nic count is not matching"
         )
         # Verifying that the nic is same as the default network listed above
-        self.assertEquals(
+        self.assertEqual(
             network1.id,
             vm_nics_before[0].networkid,
             "Default NIC for VM is not as expected"
@@ -1926,7 +1926,7 @@ class TestListInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM failed"
@@ -1938,7 +1938,7 @@ class TestListInstances(cloudstackTestCase):
             vm_nics_after,
             "Nic not found for the deployed VM"
         )
-        self.assertEquals(
+        self.assertEqual(
             2,
             len(vm_nics_after),
             "VM NIC's count is not matching"
@@ -1951,14 +1951,14 @@ class TestListInstances(cloudstackTestCase):
                 default_nic = vm_nics_after[i]
             else:
                 non_default_nic = vm_nics_after[i]
-        self.assertEquals(
+        self.assertEqual(
             1,
             default_count,
             "Default NIC count is not matching"
         )
         # Verifying that default NIC is same the network created when VM is
         # deployed
-        self.assertEquals(
+        self.assertEqual(
             network1.id,
             default_nic.networkid,
             "Default NIC is not matching for VM"
@@ -1974,7 +1974,7 @@ class TestListInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM failed"
@@ -1986,7 +1986,7 @@ class TestListInstances(cloudstackTestCase):
             vm_nics_after,
             "Nic not found for the deployed VM"
         )
-        self.assertEquals(
+        self.assertEqual(
             2,
             len(vm_nics_after),
             "VM NIC's count is not matching"
@@ -2000,14 +2000,14 @@ class TestListInstances(cloudstackTestCase):
             else:
                 non_default_nic = vm_nics_after[i]
 
-        self.assertEquals(
+        self.assertEqual(
             1,
             default_count,
             "Default NIC count is not matching"
         )
         # Verifying that default NIC is same the newly updated network (network
         # 2)
-        self.assertEquals(
+        self.assertEqual(
             network2.id,
             default_nic.networkid,
             "Default NIC is not matching for VM"
@@ -2044,7 +2044,7 @@ class TestListInstances(cloudstackTestCase):
                 id=vm_created.id
             )
             status = validateList(list_vms_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Listing of VM failed"
@@ -2056,13 +2056,13 @@ class TestListInstances(cloudstackTestCase):
                 vm_nics_after,
                 "Nic not found for the deployed VM"
             )
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(vm_nics_after),
                 "VM NIC's count is not matching"
             )
             # Verifying the nic network is same as the default nic network
-            self.assertEquals(
+            self.assertEqual(
                 network2.id,
                 vm_nics_after[0].networkid,
                 "VM NIC is not same as expected"
@@ -2092,7 +2092,7 @@ class TestListInstances(cloudstackTestCase):
             new_keypair1,
             "New Key pair generation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             "keypair1",
             new_keypair1.name,
             "Key Pair not created with given name"
@@ -2102,13 +2102,13 @@ class TestListInstances(cloudstackTestCase):
             self.userapiclient
         )
         status = validateList(list_keypairs_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of Key pairs failed"
         )
         # Verifying that list size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             list_keypairs_before_size + 1,
             len(list_keypairs_after),
             "List count is not matching"
@@ -2133,7 +2133,7 @@ class TestListInstances(cloudstackTestCase):
             listall=True,
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
@@ -2153,7 +2153,7 @@ class TestListInstances(cloudstackTestCase):
                 name="keypair2",
                 publickey="ssh-rsa: e6:9a:1e:b5:98:75:88:5d:56:bc:92:7b:43:48:05:b2")
             self.fail("SSH Key creation passed using same public key ")
-        except CloudstackAPIException  as e:
+        except CloudstackAPIException as e:
             self.assertRaises("Exception Raised : %s" % e)
 
         return
@@ -2269,7 +2269,7 @@ class TestInstances(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -2332,7 +2332,7 @@ class TestInstances(cloudstackTestCase):
                 timeout -= 1
             # Verify template response to check whether template added successfully
             status = validateList(list_template_response)
-            self.assertEquals(PASS, status[0], "Template download failed")
+            self.assertEqual(PASS, status[0], "Template download failed")
 
             self.assertNotEqual(
                 len(list_template_response),
@@ -2682,13 +2682,13 @@ class TestInstances(cloudstackTestCase):
             account=self.account.name
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -2728,18 +2728,18 @@ class TestInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_vm)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM listing by Id failed"
         )
         # Verifying that attached ISO details are present in VM
-        self.assertEquals(
+        self.assertEqual(
             iso_toattach.name,
             list_vm[0].isoname,
             "Attached ISO name is not matching"
         )
-        self.assertEquals(
+        self.assertEqual(
             iso_toattach.displaytext,
             list_vm[0].isodisplaytext,
             "Attached ISO display is not matching"
@@ -2754,7 +2754,7 @@ class TestInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_vm)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM listing by Id failed"
@@ -2816,13 +2816,13 @@ class TestInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -2856,12 +2856,12 @@ class TestInstances(cloudstackTestCase):
             virtualmachineid=vm_created.id
         )
         status = validateList(list_snapshots_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM Snapshots creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             self.services["pagesize"] + 1,
             len(list_snapshots_after),
             "Count of VM Snapshots is not matching"
@@ -2875,13 +2875,13 @@ class TestInstances(cloudstackTestCase):
             pagesize=self.services["pagesize"],
         )
         status = validateList(list_snapshots_page1)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM Snapshots failed in page 1"
         )
         # Verifying the list size is equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
             self.services["pagesize"],
             len(list_snapshots_page1),
             "List VM Snapshot count is not matching in page 1"
@@ -2895,13 +2895,13 @@ class TestInstances(cloudstackTestCase):
             pagesize=self.services["pagesize"],
         )
         status = validateList(list_snapshots_page2)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM Snapshots failed in page 2"
         )
         # Verifying the list size is equal to 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_snapshots_page2),
             "List VM Snapshot count is not matching in page 2"
@@ -2978,13 +2978,13 @@ class TestInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -3026,12 +3026,12 @@ class TestInstances(cloudstackTestCase):
             virtualmachineid=vm_created.id
         )
         status = validateList(list_snapshots_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM Snapshots creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             2,
             len(list_snapshots_after),
             "Count of VM Snapshots is not matching"
@@ -3044,12 +3044,12 @@ class TestInstances(cloudstackTestCase):
                 current_count = current_count + 1
                 current_snapshot = list_snapshots_after[i]
 
-        self.assertEquals(
+        self.assertEqual(
             1,
             current_count,
             "count of VM Snapshot with current flag as true is not matching"
         )
-        self.assertEquals(
+        self.assertEqual(
             snapshot2.id,
             current_snapshot.id,
             "Latest snapshot taken is not marked as current"
@@ -3067,12 +3067,12 @@ class TestInstances(cloudstackTestCase):
             virtualmachineid=vm_created.id
         )
         status = validateList(list_snapshots_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM Snapshots creation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             2,
             len(list_snapshots_after),
             "Count of VM Snapshots is not matching"
@@ -3084,12 +3084,12 @@ class TestInstances(cloudstackTestCase):
             if (list_snapshots_after[i].current is True):
                 current_count = current_count + 1
                 current_snapshot = list_snapshots_after[i]
-        self.assertEquals(
+        self.assertEqual(
             1,
             current_count,
             "count of VM Snapshot with current flag as true is not matching"
         )
-        self.assertEquals(
+        self.assertEqual(
             snapshot1.id,
             current_snapshot.id,
             "Current flag was set properly after reverting the VM to snapshot"
@@ -3148,13 +3148,13 @@ class TestInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -3166,13 +3166,13 @@ class TestInstances(cloudstackTestCase):
             virtualmachineid=vm_created.id
         )
         status = validateList(list_volumes_before)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Root volume is not created for VM deployed"
         )
         # Verifying the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_volumes_before),
             "Volumes count is not matching"
@@ -3202,13 +3202,13 @@ class TestInstances(cloudstackTestCase):
             virtualmachineid=vm_created.id
         )
         status = validateList(list_volumes_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Volumes are not listed"
         )
         # Verifying that size of the list is equal to page size + 1
-        self.assertEquals(
+        self.assertEqual(
             self.services["pagesize"] + 1,
             len(list_volumes_after),
             "VM's volume count is not matching"
@@ -3222,13 +3222,13 @@ class TestInstances(cloudstackTestCase):
             pagesize=self.services["pagesize"]
         )
         status = validateList(list_volumes_page1)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Volumes not listed in page1"
         )
         # Verifying that list size is equal to page size
-        self.assertEquals(
+        self.assertEqual(
             self.services["pagesize"],
             len(list_volumes_page1),
             "VM's volume count is not matching in page 1"
@@ -3242,13 +3242,13 @@ class TestInstances(cloudstackTestCase):
             pagesize=self.services["pagesize"]
         )
         status = validateList(list_volumes_page2)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Volumes not listed in page2"
         )
         # Verifying that list size is equal to 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_volumes_page2),
             "VM's volume count is not matching in page 1"
@@ -3280,13 +3280,13 @@ class TestInstances(cloudstackTestCase):
             pagesize=self.services["pagesize"]
         )
         status = validateList(list_volumes_page1)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Volumes not listed in page1"
         )
         # Verifying that list size is equal to page size
-        self.assertEquals(
+        self.assertEqual(
             self.services["pagesize"],
             len(list_volumes_page1),
             "VM's volume count is not matching in page 1"
@@ -3350,7 +3350,7 @@ class TestInstances(cloudstackTestCase):
             name="enable.dynamic.scale.vm"
         )
         status = validateList(list_config)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of configuration failed"
@@ -3390,7 +3390,7 @@ class TestInstances(cloudstackTestCase):
                 id=vm_created.serviceofferingid
             )
             status = validateList(vm_so_list)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Listing of VM Service offering failed"
@@ -3402,13 +3402,13 @@ class TestInstances(cloudstackTestCase):
                 listall=self.services["listall"],
             )
             status = validateList(list_vms_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "VM creation failed"
             )
             # Verifying that the size of the list is 1
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_vms_after),
                 "VM list count is not matching"
@@ -3460,18 +3460,18 @@ class TestInstances(cloudstackTestCase):
                 id=vm_created.id
             )
             status = validateList(list_vms_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Listing of VM failed"
             )
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_vms_after),
                 "VMs list is not as expected"
             )
             # Verifying that VM's service offerings is changed
-            self.assertEquals(
+            self.assertEqual(
                 new_so.id,
                 list_vms_after[0].serviceofferingid,
                 "VM is not containing New Service Offering"
@@ -3520,7 +3520,7 @@ class TestInstances(cloudstackTestCase):
             id=vm_created.serviceofferingid
         )
         status = validateList(vm_so_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM Service offering failed"
@@ -3532,13 +3532,13 @@ class TestInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -3584,18 +3584,18 @@ class TestInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_vm)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vm),
             "VMs list is not as expected"
         )
         # Verifying that VM's service offerings is changed
-        self.assertEquals(
+        self.assertEqual(
             new_so.id,
             list_vm[0].serviceofferingid,
             "VM is not containing New Service Offering"
@@ -3643,13 +3643,13 @@ class TestInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -3678,7 +3678,7 @@ class TestInstances(cloudstackTestCase):
             new_keypair,
             "New Key pair generation failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             "keypair1",
             new_keypair.name,
             "Key Pair not created with given name"
@@ -3688,13 +3688,13 @@ class TestInstances(cloudstackTestCase):
             self.userapiclient
         )
         status = validateList(list_keypairs_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of Key pairs failed"
         )
         # Verifying that list size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             list_keypairs_before_size + 1,
             len(list_keypairs_after),
             "List count is not matching"
@@ -3710,18 +3710,18 @@ class TestInstances(cloudstackTestCase):
             id=vm_created.id
         )
         status = validateList(list_vm)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vm),
             "VMs list is not as expected"
         )
         # Verifying that VM's SSH keypair is set to newly created keypair
-        self.assertEquals(
+        self.assertEqual(
             new_keypair.name,
             list_vm[0].keypair,
             "VM is not set to newly created SSH Key pair"
@@ -3765,12 +3765,12 @@ class TestInstances(cloudstackTestCase):
             "VM creation failed"
         )
         # Verifying the displayname and group details for deployed VM
-        self.assertEquals(
+        self.assertEqual(
             self.services["virtual_machine"]["displayname"],
             vm_created.displayname,
             "Display name of VM is not as expected"
         )
-        self.assertEquals(
+        self.assertEqual(
             "groupName",
             vm_created.group,
             "Group of VM is not as expected"
@@ -3781,13 +3781,13 @@ class TestInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -3805,23 +3805,23 @@ class TestInstances(cloudstackTestCase):
             id=vm_created.id,
         )
         status = validateList(list_vm)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VM by Id failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vm),
             "Count of List VM by Id is not matching"
         )
         # Verifying that displayname and group details are updated
-        self.assertEquals(
+        self.assertEqual(
             "DisplayName",
             list_vm[0].displayname,
             "Displayname of VM is not updated"
         )
-        self.assertEquals(
+        self.assertEqual(
             "Group",
             list_vm[0].group,
             "Group of VM is not updated"
@@ -3868,13 +3868,13 @@ class TestInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -3950,7 +3950,7 @@ class TestInstances(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat enabled are not found"
@@ -3978,7 +3978,7 @@ class TestInstances(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing networks failed"
@@ -4014,13 +4014,13 @@ class TestInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -4028,7 +4028,7 @@ class TestInstances(cloudstackTestCase):
         # Verifying that the NIC's in VM created are same as provided
         vm_nics = vm_created.nic
         # Verifying that the size of nics is 2
-        self.assertEquals(
+        self.assertEqual(
             2,
             len(vm_nics),
             "NIC's count in VM created is not matching"
@@ -4036,13 +4036,13 @@ class TestInstances(cloudstackTestCase):
         # Verifying that NIC network ID's are as expected
         for i in range(0, len(vm_nics)):
             if vm_nics[i].isdefault is True:
-                self.assertEquals(
+                self.assertEqual(
                     networks_list_after[0].id,
                     vm_nics[i].networkid,
                     "Default NIC is not as expected"
                 )
             else:
-                self.assertEquals(
+                self.assertEqual(
                     networks_list_after[1].id,
                     vm_nics[i].networkid,
                     "Non Default NIC is not as expected"
@@ -4095,7 +4095,7 @@ class TestInstances(cloudstackTestCase):
             domainid=self.domain.id
         )
         status = validateList(security_groups_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing Security Groups failed"
@@ -4132,13 +4132,13 @@ class TestInstances(cloudstackTestCase):
             listall=self.services["listall"],
         )
         status = validateList(list_vms_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM creation failed"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vms_after),
             "VM list count is not matching"
@@ -4147,7 +4147,7 @@ class TestInstances(cloudstackTestCase):
         # provided
         vm_securitygroups = vm_created.securitygroup
         # Verifying that the size of security groups is 2
-        self.assertEquals(
+        self.assertEqual(
             2,
             len(vm_securitygroups),
             "Security Groups count in VM created is not matching"
@@ -4160,7 +4160,7 @@ class TestInstances(cloudstackTestCase):
                 vm_securitygroups_flag = False
                 break
 
-        self.assertEquals(
+        self.assertEqual(
             True,
             vm_securitygroups_flag,
             "Security Groups in VM are not same as created"
@@ -4187,7 +4187,7 @@ class TestInstances(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat enabled are not found"
@@ -4235,13 +4235,13 @@ class TestInstances(cloudstackTestCase):
             id=vm_created.id,
         )
         status = validateList(vm_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "vm list returned invalid response"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(vm_response),
             "VM list count is not matching"
@@ -4249,13 +4249,13 @@ class TestInstances(cloudstackTestCase):
         # Verifying that the NIC's in VM created are same as provided
         vm_nics = vm_created.nic
         status = validateList(vm_nics)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "vm list returned invalid response for vm nics"
         )
         # Verifying that the size of nics is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(vm_nics),
             "VM is created with more than one nic which is not expected"
@@ -4263,7 +4263,7 @@ class TestInstances(cloudstackTestCase):
         """
         Verifying that NIC IP address is as expected
         """
-        self.assertEquals(
+        self.assertEqual(
             str(vm_nics[0].ipaddress),
             vm_ip,
             "VM is not created with static ip address used in vm deployment"
@@ -4305,7 +4305,7 @@ class TestInstances(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat enabled are not found"
@@ -4357,13 +4357,13 @@ class TestInstances(cloudstackTestCase):
             id=vm1.id,
         )
         status = validateList(vm_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "vm list api returned invalid response for vm1"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(vm_response),
             "VM list count is not matching"
@@ -4391,13 +4391,13 @@ class TestInstances(cloudstackTestCase):
             id=vm2.id,
         )
         status = validateList(vm_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "vm list api returned invalid response for vm2"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(vm_response),
             "VM list count is not matching after vm2 deployment"
@@ -4434,13 +4434,13 @@ class TestInstances(cloudstackTestCase):
             id=vm3.id,
         )
         status = validateList(vm_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "vm list api returned invalid response for vm3"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(vm_response),
             "VM list count is not matching after vm2 deployment"
@@ -4472,13 +4472,13 @@ class TestInstances(cloudstackTestCase):
             id=vm4.id,
         )
         status = validateList(vm_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "vm list api returned invalid response for vm4"
         )
         # Verifying that the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(vm_response),
             "VM list count is not matching after vm2 deployment"

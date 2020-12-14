@@ -210,7 +210,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
-            print("Warning: Exception during cleanup : %s" % e)
+            print(("Warning: Exception during cleanup : %s" % e))
             #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
@@ -330,10 +330,10 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                     self.debug("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
 
     def check_wget_from_vm(self, vm, public_ip, testnegative=False):
-        import urllib
+        import urllib.request, urllib.parse, urllib.error
         self.debug("Checking if we can wget from a VM=%s http server on public_ip=%s"  % (vm.name, public_ip.ipaddress.ipaddress))
         try:
-                urllib.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
+                urllib.request.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
                 if not testnegative:
                     self.debug("Successful to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
                 else:

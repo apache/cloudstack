@@ -253,7 +253,7 @@ class TestPrivateGwACL(cloudstackTestCase):
                          )
 
         # Find all the vlans that are for dynamic vlan allocation
-        dc_vlans = sorted(map(lambda x: x[0], qresultset))
+        dc_vlans = sorted([x[0] for x in qresultset])
 
         # Use VLAN id that is not in physical network vlan range for dynamic vlan allocation
         vlan_1 = int(physical_network.vlan.split('-')[-1]) + 1
@@ -343,7 +343,7 @@ class TestPrivateGwACL(cloudstackTestCase):
                          )
 
         # Find all the vlans that are for dynamic vlan allocation
-        dc_vlans = sorted(map(lambda x: x[0], qresultset))
+        dc_vlans = sorted([x[0] for x in qresultset])
 
         # Use VLAN id that is not in physical network vlan range for dynamic vlan allocation
         vlan_1 = int(physical_network.vlan.split('-')[-1]) + 1
@@ -401,7 +401,7 @@ class TestPrivateGwACL(cloudstackTestCase):
                          )
 
         # Find all the vlans that are for dynamic vlan allocation
-        dc_vlans = sorted(map(lambda x: x[0], qresultset))
+        dc_vlans = sorted([x[0] for x in qresultset])
 
         # Use VLAN id that is not in physical network vlan range for dynamic vlan allocation
         vlan_1 = int(physical_network.vlan.split('-')[-1]) + 1
@@ -522,7 +522,7 @@ class TestPrivateGwACL(cloudstackTestCase):
                 domainid=self.account.domainid)
 
             self.logger.debug("Created VPC with ID: %s" % vpc.id)
-        except Exception, e:
+        except Exception as e:
             self.fail('Unable to create VPC due to %s ' % e)
 
         return vpc
@@ -539,7 +539,7 @@ class TestPrivateGwACL(cloudstackTestCase):
                 networkids=[str(network.id)]
             )
             self.logger.debug("Created VM with ID: %s" % vm.id)
-        except Exception, e:
+        except Exception as e:
             self.fail('Unable to create virtual machine due to %s ' % e)
 
         return vm
@@ -554,7 +554,7 @@ class TestPrivateGwACL(cloudstackTestCase):
             self.assertIsNotNone(staticRoute.id, "Failed to create static route.")
 
             self.logger.debug("Created staticRoute with ID: %s" % staticRoute.id)
-        except Exception, e:
+        except Exception as e:
             self.fail('Unable to create static route due to %s ' % e)
 
         return staticRoute
@@ -569,7 +569,7 @@ class TestPrivateGwACL(cloudstackTestCase):
             self.assertIsNotNone(acl.id, "Failed to create ACL.")
 
             self.logger.debug("Created ACL with ID: %s" % acl.id)
-        except Exception, e:
+        except Exception as e:
             self.fail('Unable to create ACL due to %s ' % e)
 
         return acl
@@ -586,7 +586,7 @@ class TestPrivateGwACL(cloudstackTestCase):
             self.assertIsNotNone(aclItem.id, "Failed to create ACL item.")
 
             self.logger.debug("Created ACL Item ID: %s" % aclItem.id)
-        except Exception, e:
+        except Exception as e:
             self.fail('Unable to create ACL Item due to %s ' % e)
 
     def createNetwork(self, vpc, net_offering = "network_offering", gateway = '10.1.1.1'):
@@ -618,7 +618,7 @@ class TestPrivateGwACL(cloudstackTestCase):
             )
 
             self.logger.debug("Created network with ID: %s" % obj_network.id)
-        except Exception, e:
+        except Exception as e:
             self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
         self.cleanup.insert(0, nw_off)
