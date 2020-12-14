@@ -47,7 +47,7 @@ class cloudstackTestCase(unittest.case.TestCase):
         when failed
         '''
         out = verifyElementInList(inp, toverify, responsevar, pos)
-        unittest.TestCase.assertEquals(out[0], PASS, "msg:%s" % out[1])
+        unittest.TestCase.assertEqual(out[0], PASS, "msg:%s" % out[1])
 
     @classmethod
     def getClsTestClient(cls):

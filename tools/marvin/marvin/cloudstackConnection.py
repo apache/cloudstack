@@ -16,13 +16,13 @@
 # under the License.
 
 import requests
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import base64
 import hmac
 import hashlib
 import time
-from cloudstackAPI import queryAsyncJobResult
-import jsonHelper
+from .cloudstackAPI import queryAsyncJobResult
+from . import jsonHelper
 from marvin.codes import (
     FAILED,
     JOB_FAILED,
@@ -137,13 +137,13 @@ class CSConnection(object):
         @Input: payload: dictionary of params be signed
         @Output: the signature of the payload
         """
-        params = zip(payload.keys(), payload.values())
+        params = list(zip(list(payload.keys()), list(payload.values())))
         params.sort(key=lambda k: str.lower(k[0]))
         hash_str = "&".join(
             ["=".join(
                 [str.lower(r[0]),
                  str.lower(
-                     urllib.quote_plus(str(r[1]), safe="*")
+                     urllib.parse.quote_plus(str(r[1]), safe="*")
                 ).replace("+", "%20")]
             ) for r in params]
         )
@@ -264,7 +264,7 @@ class CSConnection(object):
                     self.__lastError = InvalidParameterException(
                         "Invalid Parameters")
                     return FAILED
-            for param, value in payload.items():
+            for param, value in list(payload.items()):
                 if value is None:
                     payload.pop(param)
                 elif param == 'typeInfo':
@@ -279,7 +279,7 @@ class CSConnection(object):
                             payload.pop(param)
                             i = 0
                             for val in value:
-                                for k, v in val.iteritems():
+                                for k, v in val.items():
                                     payload["%s[%d].%s" % (param, i, k)] = v
                                 i += 1
             return cmd_name.strip(), isAsync, payload
