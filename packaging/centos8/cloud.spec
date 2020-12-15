@@ -40,13 +40,14 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
 BuildRequires: java-11-openjdk-devel
-#BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
 BuildRequires: /usr/bin/mkisofs
 BuildRequires: maven => 3.0.0
-BuildRequires: python3-setuptools
+# In CentOS-8, must set python softlink to python2
+BuildRequires: python2
+BuildRequires: python3
 BuildRequires: wget
 
 %description
@@ -77,8 +78,6 @@ Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
-Requires: python3-pip
-Requires: python3-setuptools
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -96,6 +95,7 @@ The Apache CloudStack files shared between agent and management server
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
 Requires: java-11-openjdk
+Requires: python3
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: ebtables
@@ -105,7 +105,6 @@ Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
-Requires: python3-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
@@ -141,8 +140,8 @@ Apache CloudStack command line interface
 
 %package marvin
 Summary: Apache CloudStack Marvin library
-Requires: python3-pip
-Requires: python2-pip
+Requires: python3
+Requires: python2
 Requires: gcc
 Requires: python3-devel
 Requires: python2-devel
@@ -277,12 +276,6 @@ install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 
-# Package mysql-connector-python
-wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/ee/ff/48bde5c0f013094d729fe4b0316ba2a24774b3ff1c52d924a8a4cb04078a/six-1.15.0-py2.py3-none-any.whl
-wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/e9/93/4860cebd5ad3ff2664ad3c966490ccb46e3b88458b2095145bca11727ca4/setuptools-47.3.1-py3-none-any.whl
-wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/28/05/9867ef8eafd12265267bee138fa2c46ebf34a276ea4cbe184cba4c606e8b/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl
-wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/d1/53/4cf90d2fe81b9cdb55dc180951bcec44ea8685665f1bdb1412501dc362dd/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
-
 chmod 440 ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/mnt
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/management
@@ -364,7 +357,7 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 %preun management
 /usr/bin/systemctl stop cloudstack-management || true
-/usr/bin/systemctl off cloudstack-management || true
+/usr/bin/systemctl disable cloudstack-management || true
 
 %pre management
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
@@ -391,9 +384,10 @@ fi
 
 %post management
 # Install mysql-connector-python
-pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/setuptools-47.3.1-py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
+source ~/.bash_profile
+pip3 install --upgrade six setuptools protobuf mysql_connector_python
 
-/usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
+/usr/bin/systemctl enable cloudstack-management > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
@@ -440,6 +434,10 @@ mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /sbin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
 /sbin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
 
+#Let 
+source ~/.bash_profile
+pip3 install --upgrade libvirt-python
+
 # if saved configs from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/%{name}/agent/agent.properties  %{_sysconfdir}/%{name}/agent/agent.properties.rpmnew
@@ -479,8 +477,9 @@ if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
 fi
 
 %post marvin
-pip install --upgrade https://files.pythonhosted.org/packages/ca/ea/1e2553b088bad2f9fa8120c2624f797b2d7450d3b61bb492d29c72e3d3c2/mysql_connector_python-8.0.20-cp27-cp27mu-manylinux1_x86_64.whl
-pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+source ~/.bash_profile
+pip3 install --upgrade mysql_connector_python
+pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 #No default permission as the permission setup is complex
 %files management
@@ -521,8 +520,6 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
-#%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
-%{_datadir}/%{name}-management/setup/wheel/*.whl
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
