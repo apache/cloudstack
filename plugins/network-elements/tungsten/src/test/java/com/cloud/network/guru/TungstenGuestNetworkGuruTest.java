@@ -63,12 +63,12 @@ public class TungstenGuestNetworkGuruTest {
     @Mock
     PhysicalNetworkVO physicalNetwork;
     @Mock
-    protected NetworkModel networkModel;
+    NetworkModel networkModel;
 
     TungstenGuestNetworkGuru guru;
 
     @Before
-    public void setup() {
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         guru = new TungstenGuestNetworkGuru();
         guru._ntwkOfferingSrvcDao = ntwkOfferingSrvcDao;

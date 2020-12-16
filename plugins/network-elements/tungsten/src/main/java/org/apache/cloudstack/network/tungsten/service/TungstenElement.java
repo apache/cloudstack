@@ -122,7 +122,7 @@ public class TungstenElement extends AdapterBase
     @Inject
     TungstenProviderDao _tungstenProviderDao;
     @Inject
-    TungstenFabricUtils _tunstenFabricUtils;
+    TungstenFabricUtils _tungstenFabricUtils;
     @Inject
     PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
 
@@ -158,7 +158,7 @@ public class TungstenElement extends AdapterBase
                 TungstenUtils.getFloatingIpPoolName(config.getDataCenterId()),
                 TungstenUtils.getFloatingIpName(nic.getId()), ipAddressVO.getAddress().addr(),
                 staticNat.getDestIpAddress());
-            TungstenAnswer createFloatingIpAnswer = _tunstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer createFloatingIpAnswer = _tungstenFabricUtils.sendTungstenCommand(
                 createTungstenFloatingIpPoolCommand, config.getDataCenterId());
             if (!createFloatingIpAnswer.getResult()) {
                 return false;
@@ -167,7 +167,7 @@ public class TungstenElement extends AdapterBase
             DeleteTungstenFloatingIpCommand deleteTungstenFloatingIpCommand = new DeleteTungstenFloatingIpCommand(
                 projectUuid, publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(config.getDataCenterId()),
                 TungstenUtils.getFloatingIpName(nic.getId()));
-            TungstenAnswer deleteFloatingIpAnswer = _tunstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer deleteFloatingIpAnswer = _tungstenFabricUtils.sendTungstenCommand(
                 deleteTungstenFloatingIpCommand, config.getDataCenterId());
             if (!deleteFloatingIpAnswer.getResult()) {
                 return false;
@@ -235,7 +235,7 @@ public class TungstenElement extends AdapterBase
             CreateTungstenVirtualMachineCommand cmd = new CreateTungstenVirtualMachineCommand(projectUuid,
                 network.getUuid(), vm.getUuid(), vm.getInstanceName(), nic.getUuid(), nic.getId(), nic.getIPv4Address(),
                 nic.getMacAddress(), vmType, TungstenUtils.getPublicType(), host.getPublicIpAddress());
-            TungstenAnswer createVirtualMachineAnswer = _tunstenFabricUtils.sendTungstenCommand(cmd,
+            TungstenAnswer createVirtualMachineAnswer = _tungstenFabricUtils.sendTungstenCommand(cmd,
                 network.getDataCenterId());
             if (!createVirtualMachineAnswer.getResult()) {
                 throw new CloudRuntimeException("can not create tungsten vm");
@@ -258,7 +258,7 @@ public class TungstenElement extends AdapterBase
                 DeleteTungstenVRouterPortCommand deleteTungstenVRouterPortCommand =
                     new DeleteTungstenVRouterPortCommand(
                     host.getPublicIpAddress(), nic.getUuid());
-                _tunstenFabricUtils.sendTungstenCommand(deleteTungstenVRouterPortCommand, network.getDataCenterId());
+                _tungstenFabricUtils.sendTungstenCommand(deleteTungstenVRouterPortCommand, network.getDataCenterId());
 
                 String vmType = vm.getType() == VirtualMachine.Type.ConsoleProxy ? TungstenUtils.getProxyVm() :
                     TungstenUtils.getSecstoreVm();
@@ -267,10 +267,10 @@ public class TungstenElement extends AdapterBase
                 String projectUuid = getProject(vm.getOwner().getAccountId());
                 DeleteTungstenVmInterfaceCommand deleteVmiCmd = new DeleteTungstenVmInterfaceCommand(projectUuid,
                     nicName);
-                _tunstenFabricUtils.sendTungstenCommand(deleteVmiCmd, network.getDataCenterId());
+                _tungstenFabricUtils.sendTungstenCommand(deleteVmiCmd, network.getDataCenterId());
 
                 DeleteTungstenVmCommand deleteVmCmd = new DeleteTungstenVmCommand(vm.getUuid());
-                _tunstenFabricUtils.sendTungstenCommand(deleteVmCmd, network.getDataCenterId());
+                _tungstenFabricUtils.sendTungstenCommand(deleteVmCmd, network.getDataCenterId());
             } catch (IllegalArgumentException e) {
                 throw new CloudRuntimeException("Failing to expuge the vm from tungsten with the uuid " + vm.getUuid());
             }
@@ -426,7 +426,7 @@ public class TungstenElement extends AdapterBase
             String publicSubnet = NetUtils.getCidrFromGatewayAndNetmask(vlan.getVlanGateway(), vlan.getVlanNetmask());
             GetTungstenPublicNetworkCommand getTungstenPublicNetworkCommand = new GetTungstenPublicNetworkCommand(null,
                 TungstenUtils.getPublicNetworkName(zoneId));
-            TungstenAnswer answer = _tunstenFabricUtils.sendTungstenCommand(getTungstenPublicNetworkCommand, zoneId);
+            TungstenAnswer answer = _tungstenFabricUtils.sendTungstenCommand(getTungstenPublicNetworkCommand, zoneId);
             VirtualNetwork publicVirtualNetwork = (VirtualNetwork) answer.getApiObjectBase();
             SetupTungstenVRouterCommand setupTungstenVRouterCommand = new SetupTungstenVRouterCommand(vgwName,
                 publicSubnet, TungstenUtils.getDefaultRoute(),

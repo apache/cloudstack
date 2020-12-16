@@ -81,7 +81,7 @@ public class TungstenProviderServiceTest {
     }
 
     @Test
-    public void addTungstenProviderTest(){
+    public void addTungstenProviderTest() {
         CreateTungstenProviderCmd cmd = Mockito.mock(CreateTungstenProviderCmd.class);
         when(cmd.getZoneId()).thenReturn(1l);
         when(cmd.getName()).thenReturn("TungstenProviderName");
