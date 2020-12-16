@@ -71,7 +71,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(TungstenGuestNetworkGuru.class);
 
     @Inject
-    NetworkOfferingServiceMapDao ntwkOfferingSrvcDao;
+    public NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
     NetworkDao _networkDao;
     @Inject
@@ -104,11 +104,11 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    protected boolean canHandle(NetworkOffering offering, DataCenter.NetworkType networkType,
+    public boolean canHandle(NetworkOffering offering, DataCenter.NetworkType networkType,
         PhysicalNetwork physicalNetwork) {
         if (networkType == DataCenter.NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
             && offering.getGuestType() == Network.GuestType.Isolated && isMyIsolationMethod(physicalNetwork)
-            && ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Tungsten)) {
+            && _ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Tungsten)) {
             return true;
         }
         return false;

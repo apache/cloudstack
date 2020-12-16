@@ -3631,6 +3631,27 @@
                                             $supportsstrechedl2subnet.hide();
                                         }
 
+                                        //Tungsten Provider
+                                        var $useTungsten = args.$form.find('.form-item[rel=\"useTungsten\"]');
+                                        var $useTungstenCb = $useTungsten.find("input[type=checkbox]");
+                                        if ($useTungsten.is(':visible') && $useTungstenCb.is(':checked')) { //*** tungsten ***
+                                            $optionsOfProviders.each(function(index) {
+                                                if ($(this).val() == 'Tungsten') {
+                                                    $(this).attr('disabled', false);
+                                                } else {
+                                                    $(this).attr('disabled', true);
+                                                }
+                                            });
+                                        } else { //*** non-tungsten ***
+                                            $optionsOfProviders.each(function(index) {
+                                                if ($(this).val() == 'Tungsten') {
+                                                    $(this).attr('disabled', true);
+                                                } else {
+                                                    $(this).attr('disabled', false);
+                                                }
+                                            });
+                                        }
+
                                         $supportspublicaccess.hide();
                                     });
 
