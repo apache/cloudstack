@@ -7274,9 +7274,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 int extractInt(UnmanagedInstanceTO.Disk disk) {
-                    String num = disk.getLabel().replaceAll("\\D", "");
-                    // return 0 if no digits found
-                    return num.isEmpty() ? 0 : Integer.parseInt(num);
+                    return disk.getPosition() + (disk.getControllerUnit() * 100);
                 }
             });
         }
