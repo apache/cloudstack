@@ -167,8 +167,26 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
                 hypervisor.toString(), minimumHypervisorVersion);
 
         if (CollectionUtils.isNotEmpty(guestOsMappings)) {
-            GuestOSHypervisorVO mapping = guestOsMappings.get(0);
-            return mapping.getGuestOsId();
+            Long guestOsId = null;
+            if (guestOsMappings.size() == 1) {
+                GuestOSHypervisorVO mapping = guestOsMappings.get(0);
+                guestOsId = mapping.getGuestOsId();
+            } else {
+                if (!StringUtils.isEmpty(guestOsDescription)) {
+                    for (GuestOSHypervisorVO guestOSHypervisorVO : guestOsMappings) {
+                        GuestOSVO guestOSVO = guestOSDao.findById(guestOSHypervisorVO.getGuestOsId());
+                        if (guestOsDescription.equalsIgnoreCase(guestOSVO.getDisplayName())) {
+                            guestOsId = guestOSHypervisorVO.getGuestOsId();
+                            break;
+                        }
+                    }
+                }
+                if (null == guestOsId) {
+                    GuestOSHypervisorVO mapping = guestOsMappings.get(guestOsMappings.size()-1);
+                    guestOsId = mapping.getGuestOsId();
+                }
+            }
+            return guestOsId;
         } else {
             throw new CloudRuntimeException("Did not find a guest OS with type " + guestOsType);
         }
@@ -301,7 +319,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
             }
             String propValue = null;
             try {
-                 propValue = getValueFromInformationTO(informationTO);
+                propValue = getValueFromInformationTO(informationTO);
             } catch (RuntimeException re) {
                 LOGGER.error("gson marshalling of property object fails: " + propKey,re);
             } catch (IOException e) {

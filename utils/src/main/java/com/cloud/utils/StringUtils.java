@@ -124,7 +124,7 @@ public class StringUtils {
 
     /**
      * Converts a List of tags to a comma separated list
-     * @param tags
+     * @param tagsList
      * @return String containing a comma separated list of tags
      */
 
@@ -312,5 +312,43 @@ public class StringUtils {
 
     public static String toCSVList(final List<String> csvList) {
         return join(csvList, ",");
+    }
+
+    public static int min(int x, int y, int z)
+    {
+        if (x <= y && x <= z)
+            return x;
+        if (y <= x && y <= z)
+            return y;
+        else
+            return z;
+    }
+
+    /**
+     * Calculates minimum number of edits required to convert from one string to another string.
+     * @param str1
+     *      String that needs editing
+     * @param str2
+     *      Target string that needs after editing
+     * @return minimum number of edits required to convert str1 to str2
+     */
+    public static int minimumEditDistance(String str1, String str2) {
+        int m = str1.length();
+        int n = str2.length();
+        int[][] auxiliaryArray = new int[m + 1][n + 1];
+
+        for (int i = 0; i <= m; i++) {
+            for (int j = 0; j <= n; j++) {
+                if (i == 0)
+                    auxiliaryArray[i][j] = j;
+                else if (j == 0)
+                    auxiliaryArray[i][j] = i;
+                else if (str1.charAt(i - 1) == str2.charAt(j - 1))
+                    auxiliaryArray[i][j] = auxiliaryArray[i - 1][j - 1];
+                else
+                    auxiliaryArray[i][j] = 1 + min(auxiliaryArray[i][j - 1], auxiliaryArray[i - 1][j], auxiliaryArray[i - 1][j - 1]);
+            }
+        }
+        return auxiliaryArray[m][n];
     }
 }
