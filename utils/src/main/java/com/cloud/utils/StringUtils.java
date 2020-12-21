@@ -316,10 +316,8 @@ public class StringUtils {
 
     /**
      * Calculates minimum number of edits required to convert from one string to another string.
-     * @param str1
-     *      String that needs editing
-     * @param str2
-     *      Target string that needs after editing
+     * @param str1      String that needs editing
+     * @param str2      Target string that is required/expected after editing
      * @return minimum number of edits required to convert str1 to str2
      */
     public static int minimumEditDistance(String str1, String str2) {
