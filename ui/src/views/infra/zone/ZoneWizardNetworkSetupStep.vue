@@ -322,7 +322,7 @@ export default {
       },
       podSetupDescription: 'message.add.pod.during.zone.creation',
       netscalerSetupDescription: 'label.please.specify.netscaler.info',
-      storageTrafficDescription: 'label.zoneWizard.trafficType.management',
+      storageTrafficDescription: 'label.zonewizard.traffictype.storage',
       podFields: [
         {
           title: 'label.pod.name',
