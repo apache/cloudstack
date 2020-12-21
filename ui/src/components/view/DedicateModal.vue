@@ -20,6 +20,8 @@
     v-model="dedicatedDomainModal"
     :title="label"
     :maskClosable="false"
+    :okText="$t('label.ok')"
+    :cancelText="$t('label.cancel')"
     @cancel="closeModal"
     @ok="handleDedicateForm">
     <DedicateDomain

@@ -1254,6 +1254,7 @@
 "label.localstorageenabledforsystemvm": "Enable local storage for System VMs",
 "label.login": "Login",
 "label.login.portal": "Portal Login",
+"label.login.single.signon": "Single Sign-On",
 "label.logout": "Logout",
 "label.lun": "LUN",
 "label.lun.number": "LUN #",

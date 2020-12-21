@@ -21,6 +21,8 @@
       :visible="showAction"
       :closable="true"
       :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
       style="top: 20px;"
       @ok="handleSubmit"
       @cancel="parentCloseAction"

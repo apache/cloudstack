@@ -113,7 +113,9 @@
     <a-modal
       :visible="showError"
       :maskClosable="false"
-      title="Error!"
+      :title="`${$t('label.error')}!`"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
       @ok="() => { showError = false }"
       @cancel="() => { showError = false }"
       centered

@@ -158,6 +158,8 @@
       :visible="showAddNetworkModal"
       :title="$t('label.network.addvm')"
       :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
       @cancel="closeModals"
       @ok="submitAddNetwork">
       {{ $t('message.network.addvm.desc') }}
@@ -180,6 +182,8 @@
       :visible="showUpdateIpModal"
       :title="$t('label.change.ipaddress')"
       :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
       @cancel="closeModals"
       @ok="submitUpdateIP"
     >

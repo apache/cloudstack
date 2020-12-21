@@ -79,6 +79,8 @@
       :visible="showCopyActionForm"
       :closable="true"
       :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
       @ok="handleCopyIsoSubmit"
       @cancel="onCloseCopyForm"
       :confirmLoading="copyLoading"

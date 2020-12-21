@@ -100,6 +100,8 @@
       :visible="showAcquireIp"
       :title="$t('label.acquire.new.ip')"
       :closable="true"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
       @cancel="onCloseModal"
       @ok="acquireIpAddress"
       centered

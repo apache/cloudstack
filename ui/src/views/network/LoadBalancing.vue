@@ -289,6 +289,8 @@
     <a-modal
       :title="$t('label.add.vms')"
       :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
