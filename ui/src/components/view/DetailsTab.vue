@@ -37,6 +37,9 @@
           <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource[item])">{{ $t(resource[item].toLowerCase()) }}</span>
           <span v-else>{{ resource[item] }}</span>
         </div>
+        <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
+          {{ $toLocaleDate(resource[item]) }}
+        </div>
         <div v-else>
           {{ resource[item] }}
         </div>

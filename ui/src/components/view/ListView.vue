@@ -224,6 +224,12 @@
     <a slot="readonly" slot-scope="text, record">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" />
     </a>
+    <span slot="created" slot-scope="text">
+      {{ $toLocaleDate(text) }}
+    </span>
+    <span slot="sent" slot-scope="text">
+      {{ $toLocaleDate(text) }}
+    </span>
     <div slot="order" slot-scope="text, record" class="shift-btns">
       <a-tooltip placement="top">
         <template slot="title">{{ $t('label.move.to.top') }}</template>

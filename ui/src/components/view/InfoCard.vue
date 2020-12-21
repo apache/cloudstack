@@ -533,7 +533,7 @@
         <div class="resource-detail-item" v-if="resource.created">
           <div class="resource-detail-item__label">{{ $t('label.created') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="calendar" />{{ resource.created }}
+            <a-icon type="calendar" />{{ $toLocaleDate(resource.created) }}
           </div>
         </div>
       </div>
@@ -639,7 +639,7 @@
             <a-list-item slot="renderItem" slot-scope="item">
               <a-comment
                 :content="item.annotation"
-                :datetime="item.created" >
+                :datetime="$toLocaleDate(item.created)" >
                 <a-button
                   v-if="'removeAnnotation' in $store.getters.apis"
                   slot="avatar"
