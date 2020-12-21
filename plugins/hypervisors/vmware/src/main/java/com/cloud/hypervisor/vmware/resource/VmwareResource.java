@@ -7239,7 +7239,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     instanceDisk.setController(DiskControllerType.getType(device.getClass().getSimpleName()).toString());
                                     instanceDisk.setControllerUnit(((VirtualSCSIController) device).getBusNumber());
                                 } else {
-                                    instanceDisk.setController(DiskControllerType.none.toString());
+                                    String msg = String.format("Abort ingest process because controller of volume %s is unsupported", instanceDisk.getLabel());
+                                    s_logger.error(msg);
+                                    throw new Exception(msg);
                                 }
                                 break;
                             }
