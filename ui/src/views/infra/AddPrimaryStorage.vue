@@ -593,8 +593,8 @@ export default {
         } else if (values.protocol === 'SMB') {
           url = this.smbURL(server, path)
           const smbParams = {
-            user: values.smbUsername,
-            password: values.smbPassword,
+            user: encodeURIComponent(values.smbUsername),
+            password: encodeURIComponent(values.smbPassword),
             domain: values.smbDomain
           }
           Object.keys(smbParams).forEach((key, index) => {
@@ -669,7 +669,7 @@ export default {
           params.tags = this.selectedTags.join()
         }
         this.loading = true
-        api('createStoragePool', params).then(json => {
+        api('createStoragePool', {}, 'POST', params).then(json => {
           this.$notification.success({
             message: this.$t('label.add.primary.storage'),
             description: this.$t('label.add.primary.storage')

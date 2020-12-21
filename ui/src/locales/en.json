@@ -1934,6 +1934,8 @@
 "label.shrinkok": "Shrink OK",
 "label.shutdown.provider": "Shutdown provider",
 "label.simplified.chinese.keyboard": "Simplified Chinese keyboard",
+"label.s2scustomergatewayid": "Site to Site customer gateway ID",
+"label.s2svpngatewayid": "Site to Site VPN gateway ID",
 "label.site.to.site.vpn": "Site-to-site VPN",
 "label.site.to.site.vpn.connections": "Site-to-site VPN Connections",
 "label.size": "Size",

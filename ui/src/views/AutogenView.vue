@@ -996,7 +996,7 @@ export default {
         }
 
         const resourceName = params.displayname || params.displaytext || params.name || params.hostname || params.username ||
-          params.ipaddress || params.virtualmachinename || this.resource.name || this.resource.ipaddress
+          params.ipaddress || params.virtualmachinename || this.resource.name || this.resource.ipaddress || this.resource.id
 
         var hasJobId = false
         this.actionLoading = true
