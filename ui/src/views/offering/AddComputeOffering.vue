@@ -314,7 +314,7 @@
         <a-form-item>
           <span slot="label">
             {{ $t('label.networkrate') }}
-            <a-tooltip :title="apiParams.provisioningtype.description">
+            <a-tooltip :title="apiParams.networkrate.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
