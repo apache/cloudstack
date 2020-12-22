@@ -1073,7 +1073,7 @@ public class HypervisorHostHelper {
     }
 
     public static VmwareDistributedVirtualSwitchVlanSpec createDVPortVlanSpec(Integer vlanId, String vlanRange) {
-        if (vlanId == 4095){
+        if (vlanId != null && vlanId == 4095){
             vlanId = null;
             vlanRange = "0-4094";
         }
