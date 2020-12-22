@@ -177,7 +177,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
     /**
      * Handle the guest OS read from the OVF and try to match it to an existing guest OS in DB.
      * If the guest OS cannot be mapped to an existing guest OS in DB, then create it and create support for hypervisor versions.
-     * Roll back actions in case of unexpected erros
+     * Roll back actions in case of unexpected errors
      */
     private void handleGuestOsFromOVFDescriptor(long templateId, String guestOsType, String guestOsDescription,
                                                 String minimumHardwareVersion) {
