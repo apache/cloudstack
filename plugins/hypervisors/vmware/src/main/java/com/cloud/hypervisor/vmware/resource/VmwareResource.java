@@ -7266,6 +7266,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         instanceDisks.add(instanceDisk);
                     }
                 } catch (Exception e) {
+                    instanceDisks.clear();
                     s_logger.info("Unable to retrieve unmanaged instance disk info. " + e.getMessage());
                 }
             }
