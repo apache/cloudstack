@@ -22,7 +22,7 @@ from optparse import OptionParser
 from textwrap import dedent
 import os
 import sys
-import urllib.request, urllib.error, urllib.parse
+from urllib.request import urlopen
 
 
 class cmdParameterProperty(object):
@@ -41,7 +41,7 @@ class cloudStackCmd(object):
     def __init__(self):
         self.name = ""
         self.desc = ""
-        self.async = "false"
+        self.asyncmethod = "false"
         self.request = []
         self.response = []
 
@@ -122,15 +122,15 @@ class CodeGenerator(object):
         self.code = self.license
         self.code += self.newline
         self.code += '"""%s"""\n' % self.cmd.desc
-        self.code += 'from baseCmd import *\n'
-        self.code += 'from baseResponse import *\n'
+        self.code += 'from .baseCmd import *\n'
+        self.code += 'from .baseResponse import *\n'
         self.code += "class %sCmd (baseCmd):\n" % self.cmd.name
         self.code += self.space
         self.code += 'typeInfo = {}\n'
         self.code += self.space + "def __init__(self):\n"
 
         self.code += self.space + self.space
-        self.code += 'self.isAsync = "%s"\n' % str(self.cmd.async).lower()
+        self.code += 'self.isAsync = "%s"\n' % str(self.cmd.asyncmethod).lower()
 
         for req in self.cmd.request:
             if req.desc is not None:
@@ -245,7 +245,7 @@ class CodeGenerator(object):
             body += self.space + self.space + 'return response\n'
             body += self.newline
 
-            imports += 'from %s import %sResponse\n' % (cmdName, cmdName)
+            imports += 'from .%s import %sResponse\n' % (cmdName, cmdName)
             initCmdsList += '"%s",' % cmdName
 
         fp = open(self.outputFolder + '/cloudstackAPI/cloudstackAPIClient.py',
@@ -306,9 +306,9 @@ class CodeGenerator(object):
             if desc:
                 csCmd.desc = desc
 
-            async = getText(cmd.getElementsByTagName('isAsync'))
-            if async:
-                csCmd.async = async
+            asyncmethod = getText(cmd.getElementsByTagName('isAsync'))
+            if asyncmethod:
+                csCmd.asyncmethod = asyncmethod
 
             argList = cmd.getElementsByTagName("request")[0].\
                 getElementsByTagName("arg")
@@ -399,7 +399,7 @@ class CodeGenerator(object):
                 csCmd.desc = cmd['description']
 
             if 'isasync' in cmd:
-                csCmd.async = cmd['isasync']
+                csCmd.asyncmethod = cmd['isasync']
 
             for param in cmd['params']:
                 paramProperty = cmdParameterProperty()
@@ -437,7 +437,7 @@ class CodeGenerator(object):
         @return: The classes in cloudstackAPI/ formed from api discovery json
         """
         if endpointUrl.find('response=json') >= 0:
-            apiStream = urllib.request.urlopen(endpointUrl)
+            apiStream = urlopen(endpointUrl)
             cmds = self.loadCmdFromJSON(apiStream)
             for cmd in cmds:
                 self.generate(cmd)
@@ -469,17 +469,16 @@ if __name__ == "__main__":
         try:
             os.mkdir(apiModule)
         except:
-            print("Failed to create folder %s, due to %s" % (apiModule,
-                                                             sys.exc_info()))
-            print(parser.print_help())
+            print ("Failed to create folder {0}, due to {1}".format(apiModule, sys.exc_info()))
+            print (parser.print_help())
             exit(2)
 
     apiSpecFile = "/etc/cloud/cli/commands.xml"
     if options.spec is not None:
         apiSpecFile = options.spec
         if not os.path.exists(apiSpecFile):
-            print("the spec file %s does not exists" % apiSpecFile)
-            print(parser.print_help())
+            print ("the spec file %s does not exists" % apiSpecFile)
+            print (parser.print_help())
             exit(1)
 
     cg = CodeGenerator(folder)
