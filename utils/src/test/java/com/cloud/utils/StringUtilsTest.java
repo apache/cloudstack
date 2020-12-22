@@ -258,34 +258,4 @@ public class StringUtilsTest {
         String output = StringUtils.toCSVList(Arrays.asList(input.split(",")));
         assertTrue(input.equals(output));
     }
-
-    @Test
-    public void testZeroEditDistance() {
-        String str1 = "Other 32-bit";
-        String str2 = "Other 32-bit";
-        int minDistance = StringUtils.minimumEditDistance(str1, str2);
-        assertEquals(minDistance, 0);
-    }
-
-    @Test
-    public void testBestMatchStringWithEditDistance() {
-        String str1 = "FreeBSD 11 (32bit)";
-        String str2 = "FreeBSD 12 (64bit)";
-        String targetString = "FreeBSD 64bit";
-        int minDistanceStr1 = StringUtils.minimumEditDistance(str1, targetString);
-        int minDistanceStr2 = StringUtils.minimumEditDistance(str2, targetString);
-        // the best match will be str2, so expecting less edit distance
-        assertTrue(minDistanceStr2 < minDistanceStr1);
-    }
-
-    @Test
-    public void testCompletelyDifferentStringsWithEditDistance() {
-        String str1 = "Other (32-bit)";
-        String str2 = "SCO OpenServer 5";
-        String targetString = "Other 32-bit";
-        int minDistanceStr1 = StringUtils.minimumEditDistance(str1, targetString);
-        int minDistanceStr2 = StringUtils.minimumEditDistance(str2, targetString);
-        // the best match will be str1, so expecting less edit distance
-        assertTrue(minDistanceStr1 < minDistanceStr2);
-    }
 }

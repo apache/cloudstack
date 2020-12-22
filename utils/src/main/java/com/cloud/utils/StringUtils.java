@@ -124,7 +124,7 @@ public class StringUtils {
 
     /**
      * Converts a List of tags to a comma separated list
-     * @param tagsList
+     * @param tags
      * @return String containing a comma separated list of tags
      */
 
@@ -312,31 +312,5 @@ public class StringUtils {
 
     public static String toCSVList(final List<String> csvList) {
         return join(csvList, ",");
-    }
-
-    /**
-     * Calculates minimum number of edits required to convert from one string to another string.
-     * @param str1      String that needs editing
-     * @param str2      Target string that is required/expected after editing
-     * @return minimum number of edits required to convert str1 to str2
-     */
-    public static int minimumEditDistance(String str1, String str2) {
-        int str1Length = str1.length();
-        int str2Length = str2.length();
-        int[][] auxiliaryArray = new int[str1Length + 1][str2Length + 1];
-
-        for (int i = 0; i <= str1Length; i++) {
-            for (int j = 0; j <= str2Length; j++) {
-                if (i == 0)
-                    auxiliaryArray[i][j] = j;
-                else if (j == 0)
-                    auxiliaryArray[i][j] = i;
-                else if (str1.charAt(i - 1) == str2.charAt(j - 1))
-                    auxiliaryArray[i][j] = auxiliaryArray[i - 1][j - 1];
-                else
-                    auxiliaryArray[i][j] = 1 + Integer.min(Integer.min(auxiliaryArray[i][j - 1], auxiliaryArray[i - 1][j]), auxiliaryArray[i - 1][j - 1]);
-            }
-        }
-        return auxiliaryArray[str1Length][str2Length];
     }
 }
