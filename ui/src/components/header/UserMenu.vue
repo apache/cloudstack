@@ -32,14 +32,22 @@
             <span class="user-menu-item-name">{{ $t('label.profilename') }}</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item class="user-menu-item" key="1" disabled>
+        <a-menu-item class="user-menu-item" key="1">
+          <a @click="toggleUseBrowserTimezone">
+            <a-icon class="user-menu-item-icon" type="clock-circle"/>
+            <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.use.local.timezone') }}</span>
+            <a-switch
+              :checked="$store.getters.usebrowsertimezone" />
+          </a>
+        </a-menu-item>
+        <a-menu-item class="user-menu-item" key="2" disabled>
           <a :href="$config.docBase" target="_blank">
             <a-icon class="user-menu-item-icon" type="question-circle-o"></a-icon>
             <span class="user-menu-item-name">{{ $t('label.help') }}</span>
           </a>
         </a-menu-item>
         <a-menu-divider/>
-        <a-menu-item class="user-menu-item" key="2">
+        <a-menu-item class="user-menu-item" key="3">
           <a href="javascript:;" @click="handleLogout">
             <a-icon class="user-menu-item-icon" type="logout"/>
             <span class="user-menu-item-name">{{ $t('label.logout') }}</span>
@@ -64,6 +72,9 @@ export default {
   methods: {
     ...mapActions(['Logout']),
     ...mapGetters(['nickname', 'avatar']),
+    toggleUseBrowserTimezone () {
+      this.$store.dispatch('SetUseBrowserTimezone', !this.$store.getters.usebrowsertimezone)
+    },
     handleLogout () {
       return this.Logout({}).then(() => {
         this.$router.push('/user/login')
@@ -85,7 +96,7 @@ export default {
   }
 
   &-item {
-    width: 160px;
+    width: auto;
   }
 
   &-item-name {

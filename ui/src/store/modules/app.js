@@ -26,7 +26,8 @@ import {
   DEFAULT_FIXED_SIDEMENU,
   DEFAULT_FIXED_HEADER_HIDDEN,
   DEFAULT_CONTENT_WIDTH_TYPE,
-  DEFAULT_MULTI_TAB
+  DEFAULT_MULTI_TAB,
+  USE_BROWSER_TIMEZONE
 } from '@/store/mutation-types'
 
 const app = {
@@ -95,6 +96,10 @@ const app = {
     },
     SET_METRICS: (state, bool) => {
       state.metrics = bool
+    },
+    SET_USE_BROWSER_TIMEZONE: (state, bool) => {
+      Vue.ls.set(USE_BROWSER_TIMEZONE, bool)
+      state.usebrowsertimezone = bool
     }
   },
   actions: {
@@ -139,6 +144,9 @@ const app = {
     },
     SetMetrics ({ commit }, bool) {
       commit('SET_METRICS', bool)
+    },
+    SetUseBrowserTimezone ({ commit }, bool) {
+      commit('SET_USE_BROWSER_TIMEZONE', bool)
     }
   }
 }

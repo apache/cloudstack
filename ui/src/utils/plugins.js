@@ -151,8 +151,12 @@ export const notifierPlugin = {
 export const toLocaleDatePlugin = {
   install (Vue) {
     Vue.prototype.$toLocaleDate = function (date) {
-      var milliseconds = Date.parse(date)
       var timezoneOffset = this.$store.getters.timezoneoffset
+      if (this.$store.getters.usebrowsertimezone) {
+        // Since GMT+530 is returned as -330 (mins to GMT)
+        timezoneOffset = new Date().getTimezoneOffset() / -60
+      }
+      var milliseconds = Date.parse(date)
       // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
       var dateWithOffset = new Date(milliseconds + (timezoneOffset * 60 * 60 * 1000)).toUTCString()
       // e.g. "08 Jun 2010 19:13:49 GMT", "25 May 2010 12:07:01 UTC"

@@ -24,7 +24,7 @@ import router from '@/router'
 import store from '@/store'
 import { login, logout, api } from '@/api'
 import i18n from '@/locales'
-import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, APIS, ASYNC_JOB_IDS, ZONES, TIMEZONE_OFFSET } from '@/store/mutation-types'
+import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, APIS, ASYNC_JOB_IDS, ZONES, TIMEZONE_OFFSET, USE_BROWSER_TIMEZONE } from '@/store/mutation-types'
 
 const user = {
   state: {
@@ -39,7 +39,8 @@ const user = {
     isLdapEnabled: false,
     cloudian: {},
     zones: {},
-    timezoneoffset: '0.0'
+    timezoneoffset: 0.0,
+    usebrowsertimezone: false
   },
 
   mutations: {
@@ -49,6 +50,10 @@ const user = {
     SET_TIMEZONE_OFFSET: (state, timezoneoffset) => {
       Vue.ls.set(TIMEZONE_OFFSET, timezoneoffset)
       state.timezoneoffset = timezoneoffset
+    },
+    SET_USE_BROWSER_TIMEZONE: (state, bool) => {
+      Vue.ls.set(USE_BROWSER_TIMEZONE, bool)
+      state.usebrowsertimezone = bool
     },
     SET_PROJECT: (state, project = {}) => {
       Vue.ls.set(CURRENT_PROJECT, project)
@@ -109,6 +114,9 @@ const user = {
           commit('SET_TOKEN', result.sessionkey)
           commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
 
+          const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
+          commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+
           commit('SET_APIS', {})
           commit('SET_NAME', '')
           commit('SET_AVATAR', '')
@@ -133,12 +141,14 @@ const user = {
         const cachedApis = Vue.ls.get(APIS, {})
         const cachedZones = Vue.ls.get(ZONES, [])
         const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
+        const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
         const hasAuth = Object.keys(cachedApis).length > 0
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
           commit('SET_APIS', cachedApis)
           commit('SET_TIMEZONE_OFFSET', cachedTimezoneOffset)
+          commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
 
           // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
           api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {

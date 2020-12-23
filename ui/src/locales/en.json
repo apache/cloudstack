@@ -2157,6 +2157,7 @@
 "label.usageinterface": "Usage Interface",
 "label.usagename": "Usage Type",
 "label.usageunit": "Unit",
+"label.use.local.timezone": "Use Local Timezone",
 "label.use.kubectl.access.cluster": "<code><b>kubectl</b></code> and <code><b>kubeconfig</b></code> file to access cluster",
 "label.use.vm.ip": "Use VM IP:",
 "label.use.vm.ips": "Use VM IPs",
