@@ -27,9 +27,7 @@ public interface DeployAsIsHelper {
 
     boolean persistTemplateDeployAsIsDetails(long templateId, DownloadAnswer answer, TemplateDataStoreVO tmpltStoreVO);
     Map<String, String> getVirtualMachineDeployAsIsProperties(VirtualMachineProfile vmId);
-
-    String getAllocatedVirtualMachineTemplatePath(VirtualMachineProfile vm, String configuration, String destStoragePool);
-    String getAllocatedVirtualMachineDestinationStoragePool(VirtualMachineProfile vm);
-
     Map<Integer, String> getAllocatedVirtualMachineNicsAdapterMapping(VirtualMachineProfile vm, NicTO[] nics);
+    Long retrieveTemplateGuestOsIdFromGuestOsInfo(long templateId, String guestOsType, String guestOsDescription,
+                                                  String minimumHardwareVersion);
 }

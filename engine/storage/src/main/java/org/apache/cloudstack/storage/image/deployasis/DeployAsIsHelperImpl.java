@@ -19,9 +19,6 @@
 package org.apache.cloudstack.storage.image.deployasis;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
@@ -39,10 +36,8 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
@@ -57,7 +52,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
@@ -155,17 +149,16 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
     }
 
     /**
-     * Handle the guest OS read from the OVF and try to match it to an existing guest OS in DB.
-     * If the guest OS cannot be mapped to an existing guest OS in DB, then create it and create support for hypervisor versions.
-     * Roll back actions in case of unexpected erros
+     * Returns the mapped guest OS from the OVF file of the template to the CloudStack database OS ID
      */
-    private void handleGuestOsFromOVFDescriptor(long templateId, String guestOsType, String guestOsDescription,
-                                                String minimumHardwareVersion) {
+    public Long retrieveTemplateGuestOsIdFromGuestOsInfo(long templateId, String guestOsType, String guestOsDescription,
+                                                         String minimumHardwareVersion) {
         VMTemplateVO template = templateDao.findById(templateId);
         Hypervisor.HypervisorType hypervisor = template.getHypervisorType();
         if (hypervisor != Hypervisor.HypervisorType.VMware) {
-            return;
+            return null;
         }
+
         String minimumHypervisorVersion = getMinimumSupportedHypervisorVersionForHardwareVersion(minimumHardwareVersion);
         LOGGER.info("Minimum hardware version " + minimumHardwareVersion + " matched to hypervisor version " + minimumHypervisorVersion + ". " +
                 "Checking guest OS supporting this version");
@@ -175,11 +168,24 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
 
         if (CollectionUtils.isNotEmpty(guestOsMappings)) {
             GuestOSHypervisorVO mapping = guestOsMappings.get(0);
-            long guestOsId = mapping.getGuestOsId();
-            LOGGER.info("Updating deploy-as-is template guest OS to " + guestOsType);
-            updateTemplateGuestOsId(template, guestOsId);
+            return mapping.getGuestOsId();
         } else {
             throw new CloudRuntimeException("Did not find a guest OS with type " + guestOsType);
+        }
+    }
+
+    /**
+     * Handle the guest OS read from the OVF and try to match it to an existing guest OS in DB.
+     * If the guest OS cannot be mapped to an existing guest OS in DB, then create it and create support for hypervisor versions.
+     * Roll back actions in case of unexpected errors
+     */
+    private void handleGuestOsFromOVFDescriptor(long templateId, String guestOsType, String guestOsDescription,
+                                                String minimumHardwareVersion) {
+        Long guestOsId = retrieveTemplateGuestOsIdFromGuestOsInfo(templateId, guestOsType, guestOsDescription, minimumHardwareVersion);
+        if (guestOsId != null) {
+            LOGGER.info("Updating deploy-as-is template guest OS to " + guestOsType);
+            VMTemplateVO template = templateDao.findById(templateId);
+            updateTemplateGuestOsId(template, guestOsId);
         }
     }
 
@@ -266,38 +272,6 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
             }
         }
         return map;
-    }
-
-    @Override
-    public String getAllocatedVirtualMachineTemplatePath(VirtualMachineProfile vm, String configuration, String destStoragePool) {
-        StoragePoolVO storagePoolVO = storagePoolDao.findByUuid(destStoragePool);
-        VMTemplateStoragePoolVO tmplRef = templateStoragePoolDao.findByPoolTemplate(storagePoolVO.getId(),
-                vm.getTemplate().getId(), configuration);
-        if (tmplRef != null) {
-            return tmplRef.getInstallPath();
-        }
-        return null;
-    }
-
-    @Override
-    public String getAllocatedVirtualMachineDestinationStoragePool(VirtualMachineProfile vm) {
-        if (vm != null) {
-            if (CollectionUtils.isNotEmpty(vm.getDisks())) {
-                for (DiskTO disk : vm.getDisks()) {
-                    if (disk.getType() == Volume.Type.ISO) {
-                        continue;
-                    }
-                    DataTO data = disk.getData();
-                    if (data != null) {
-                        DataStoreTO dataStore = data.getDataStore();
-                        if (dataStore != null) {
-                            return dataStore.getUuid();
-                        }
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     @Override
