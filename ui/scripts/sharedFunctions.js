@@ -503,7 +503,46 @@ var addGuestNetworkDialog = {
                     isHidden: true
                 },
                 account: {
-                    label: 'label.account'
+                    label: 'label.account',
+                    dependsOn: 'domainId',
+                    validation: {
+                        required: true
+                    },
+                    select: function(args) {
+                        if (args.domainId == null || args.domainId == "") {
+                            args.response.success({
+                                data: null
+                            });
+                        } else {
+                            var dataObj = {
+                                domainId: args.domainId,
+                                state: 'Enabled',
+                                listAll: false,
+                            };
+                            $.ajax({
+                                url: createURL('listAccounts', {
+                                    ignoreProject: true
+                                }),
+                                data: dataObj,
+                                success: function(json) {
+                                    accountObjs = json.listaccountsresponse.account;
+                                    var items = [{
+                                        id: null,
+                                        description: ''
+                                    }];
+                                    $(accountObjs).each(function() {
+                                        items.push({
+                                            id: this.name,
+                                            description: this.name
+                                        });
+                                    })
+                                    args.response.success({
+                                        data: items
+                                    });
+                                }
+                            });
+                        }
+                    }
                 },
 
                 projectId: {
@@ -993,14 +1032,6 @@ var addL2GuestNetwork = {
                                     });
                                 }
                             });
-                            args.$select.change(function() {
-                                var $form = $(this).closest('form');
-                                if ($(this).val() == "") {
-                                    $form.find('.form-item[rel=account]').hide();
-                                } else {
-                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                                }
-                            });
                         } else {
                             args.response.success({
                                 data: null
@@ -1010,14 +1041,48 @@ var addL2GuestNetwork = {
                 },
                 account: {
                     label: 'label.account',
+                    dependsOn: 'domain',
                     validation: {
                         required: true
                     },
-                    isHidden: function(args) {
-                        if (isAdmin() || isDomainAdmin())
-                            return false;
-                        else
-                            return true;
+                    select: function(args) {
+                        if ((!isAdmin() && !isDomainAdmin()) || args.domain == null || args.domain == "") {
+                            var $form = args.$select.closest('form');
+                            $form.find('.form-item[rel=account]').hide();
+                            args.response.success({
+                                data: null
+                            });
+                        } else {
+                            var dataObj = {
+                                domainId: args.domain,
+                                state: 'Enabled',
+                                listAll: false,
+                            };
+                            $.ajax({
+                                url: createURL('listAccounts', {
+                                    ignoreProject: true
+                                }),
+                                data: dataObj,
+                                success: function(json) {
+                                    accountObjs = json.listaccountsresponse.account;
+                                    var items = [{
+                                        id: null,
+                                        description: ''
+                                    }];
+                                    $(accountObjs).each(function() {
+                                        items.push({
+                                            id: this.name,
+                                            description: this.name
+                                        });
+                                    })
+                                    var $form = args.$select.closest('form');
+                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                    args.response.success({
+                                        data: items
+                                    });
+                                }
+                            });
+                        }
                     }
                 }
             }

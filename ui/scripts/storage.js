@@ -38,6 +38,8 @@
                         var hiddenFields = [];
                         if (isAdmin() != true) {
                             hiddenFields.push('hypervisor');
+                        }
+                        if (!isDomainAdmin() && !isAdmin()) {
                             hiddenFields.push('account');
                         }
                         return hiddenFields;
@@ -684,14 +686,50 @@
                                     return true;
                             }
                         },
-
                         account: {
                             label: 'label.account',
+                            dependsOn: 'domainid',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
                                 else
                                     return true;
+                            },
+                            select: function(args) {
+                                if (args.domainid == null || args.domainid == "") {
+                                    args.response.success({
+                                        data: null
+                                    });
+                                } else {
+                                    var dataObj = {
+                                        domainId: args.domainid,
+                                        state: 'Enabled',
+                                        listAll: false,
+                                    };
+                                    $.ajax({
+                                        url: createURL('listAccounts', {
+                                            ignoreProject: true
+                                        }),
+                                        data: dataObj,
+                                        success: function(json) {
+                                            accountObjs = json.listaccountsresponse.account;
+                                            var items = [{
+                                                id: null,
+                                                description: ''
+                                            }];
+                                            $(accountObjs).each(function() {
+                                                items.push({
+                                                    id: this.name,
+                                                    description: this.name
+                                                });
+                                            })
+
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    });
+                                }
                             }
                         },
 
@@ -1961,6 +1999,13 @@
                 listView: {
                     id: 'snapshots',
                     label: 'label.snapshots',
+                    preFilter: function(args) {
+                        var hiddenFields = [];
+                        if (!isDomainAdmin() && !isAdmin()) {
+                            hiddenFields.push('account');
+                        }
+                        return hiddenFields;
+                    },
                     fields: {
                         volumename: {
                             label: 'label.volume'
@@ -1974,6 +2019,9 @@
                         created: {
                             label: 'label.created',
                             converter: cloudStack.converters.toLocalDate
+                        },
+                        account: {
+                            label: 'label.account'
                         },
                         state: {
                             label: 'label.state',
@@ -2034,14 +2082,50 @@
                                     return true;
                             }
                         },
-
                         account: {
                             label: 'label.account',
+                            dependsOn: 'domainid',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
                                 else
                                     return true;
+                            },
+                            select: function(args) {
+                                if (args.domainid == null || args.domainid == "") {
+                                    args.response.success({
+                                        data: null
+                                    });
+                                } else {
+                                    var dataObj = {
+                                        domainId: args.domainid,
+                                        state: 'Enabled',
+                                        listAll: false,
+                                    };
+                                    $.ajax({
+                                        url: createURL('listAccounts', {
+                                            ignoreProject: true
+                                        }),
+                                        data: dataObj,
+                                        success: function(json) {
+                                            accountObjs = json.listaccountsresponse.account;
+                                            var items = [{
+                                                id: null,
+                                                description: ''
+                                            }];
+                                            $(accountObjs).each(function() {
+                                                items.push({
+                                                    id: this.name,
+                                                    description: this.name
+                                                });
+                                            })
+
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    });
+                                }
                             }
                         },
                         tagKey: {
@@ -2419,7 +2503,14 @@
 		title: 'label.vmsnapshot',
 		listView: {
 		    id: 'vmsnapshots',
-		    isMaximized: true,
+            isMaximized: true,
+            preFilter: function(args) {
+                var hiddenFields = [];
+                if (!isDomainAdmin() && !isAdmin()) {
+                    hiddenFields.push('account');
+                }
+                return hiddenFields;
+            },
 		    fields: {
 		        displayname: {
 		            label: 'label.name'
@@ -2444,7 +2535,10 @@
 		        created: {
 		            label: 'label.date',
 		            converter: cloudStack.converters.toLocalDate
-		        }
+                },
+                account: {
+		            label: 'label.account'
+		        },
 		    },
 
                     advSearchFields: {
@@ -2497,14 +2591,50 @@
                                     return true;
                             }
                         },
-
                         account: {
                             label: 'label.account',
+                            dependsOn: 'domainid',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
                                 else
                                     return true;
+                            },
+                            select: function(args) {
+                                if (args.domainid == null || args.domainid == "") {
+                                    args.response.success({
+                                        data: null
+                                    });
+                                } else {
+                                    var dataObj = {
+                                        domainId: args.domainid,
+                                        state: 'Enabled',
+                                        listAll: false,
+                                    };
+                                    $.ajax({
+                                        url: createURL('listAccounts', {
+                                            ignoreProject: true
+                                        }),
+                                        data: dataObj,
+                                        success: function(json) {
+                                            accountObjs = json.listaccountsresponse.account;
+                                            var items = [{
+                                                id: null,
+                                                description: ''
+                                            }];
+                                            $(accountObjs).each(function() {
+                                                items.push({
+                                                    id: this.name,
+                                                    description: this.name
+                                                });
+                                            })
+
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    });
+                                }
                             }
                         },
                         tagKey: {

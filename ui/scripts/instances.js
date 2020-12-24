@@ -309,6 +309,9 @@
                 var hiddenFields = [];
                 if (!isAdmin()) {
                     hiddenFields.push('instancename');
+                    hiddenFields.push('domain');
+                }
+                if (!isDomainAdmin() && !isAdmin()) {
                     hiddenFields.push('account');
                 }
                 return hiddenFields;
@@ -327,6 +330,9 @@
                 },
                 ipaddress: {
                     label: 'label.ip.address'
+                },
+                domain: {
+                    label: 'label.domain'
                 },
                 account: {
                     label: 'label.account'
@@ -427,11 +433,48 @@
                 },
                 account: {
                     label: 'label.account',
+                    dependsOn: 'domainid',
                     isHidden: function(args) {
                         if (isAdmin() || isDomainAdmin())
                             return false;
                         else
                             return true;
+                    },
+                    select: function(args) {
+                        if (args.domainid == null || args.domainid == "") {
+                            args.response.success({
+                                data: null
+                            });
+                        } else {
+                            var dataObj = {
+                                domainId: args.domainid,
+                                state: 'Enabled',
+                                listAll: false,
+                            };
+                            $.ajax({
+                                url: createURL('listAccounts', {
+                                    ignoreProject: true
+                                }),
+                                data: dataObj,
+                                success: function(json) {
+                                    accountObjs = json.listaccountsresponse.account;
+                                    var items = [{
+                                        id: null,
+                                        description: ''
+                                    }];
+                                    $(accountObjs).each(function() {
+                                        items.push({
+                                            id: this.name,
+                                            description: this.name
+                                        });
+                                    })
+
+                                    args.response.success({
+                                        data: items
+                                    });
+                                }
+                            });
+                        }
                     }
                 },
 
