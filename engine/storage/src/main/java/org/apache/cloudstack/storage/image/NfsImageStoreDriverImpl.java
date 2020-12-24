@@ -36,12 +36,11 @@ public abstract class NfsImageStoreDriverImpl extends BaseImageStoreDriverImpl {
      * @param imgStoreId store id
      * @return "secstorage.nfs.version" associated value for imgStoreId in image_store_details table if exists, null if not
      */
-    protected Integer getNfsVersion(long imgStoreId){
+    protected String getNfsVersion(long imgStoreId){
         Map<String, String> imgStoreDetails = _imageStoreDetailsDao.getDetails(imgStoreId);
         String nfsVersionKey = CapacityManager.ImageStoreNFSVersion.key();
         if (imgStoreDetails != null && imgStoreDetails.containsKey(nfsVersionKey)){
-            String nfsVersionParam = imgStoreDetails.get(nfsVersionKey);
-            return (nfsVersionParam != null ? Integer.valueOf(nfsVersionParam) : null);
+            return imgStoreDetails.get(nfsVersionKey);
         }
         return null;
     }

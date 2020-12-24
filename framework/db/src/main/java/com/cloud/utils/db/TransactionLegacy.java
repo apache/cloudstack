@@ -150,30 +150,28 @@ public class TransactionLegacy implements Closeable {
 
     public static TransactionLegacy open(final String name, final short databaseId, final boolean forceDbChange) {
         TransactionLegacy txn = tls.get();
-        boolean isNew = false;
         if (txn == null) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Creating the transaction: " + name);
             }
             txn = new TransactionLegacy(name, false, databaseId);
             tls.set(txn);
-            isNew = true;
+            s_mbean.addTransaction(txn);
         } else if (forceDbChange) {
             final short currentDbId = txn.getDatabaseId();
             if (currentDbId != databaseId) {
                 // we need to end the current transaction and switch databases
-                txn.close(txn.getName());
+                if (txn.close(txn.getName()) && txn.getCurrentConnection() == null) {
+                    s_mbean.removeTransaction(txn);
+                }
 
                 txn = new TransactionLegacy(name, false, databaseId);
                 tls.set(txn);
-                isNew = true;
+                s_mbean.addTransaction(txn);
             }
         }
         txn.checkConnection();
         txn.takeOver(name, false);
-        if (isNew) {
-            s_mbean.addTransaction(txn);
-        }
         return txn;
     }
 
@@ -762,8 +760,8 @@ public class TransactionLegacy implements Closeable {
                 }
                 _conn.close();
                 _conn = null;
+                s_mbean.removeTransaction(this);
             }
-
         } catch (final SQLException e) {
             s_logger.warn("Unable to close connection", e);
         }

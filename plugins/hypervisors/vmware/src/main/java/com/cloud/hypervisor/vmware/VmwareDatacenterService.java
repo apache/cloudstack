@@ -17,17 +17,21 @@
 
 package com.cloud.hypervisor.vmware;
 
-import java.util.List;
-
+import com.cloud.dc.VsphereStoragePolicy;
+import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.ResourceInUseException;
+import com.cloud.storage.StoragePool;
+import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
 
-import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.ResourceInUseException;
-import com.cloud.utils.component.PluggableService;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.List;
 
 public interface VmwareDatacenterService extends PluggableService {
 
@@ -38,4 +42,10 @@ public interface VmwareDatacenterService extends PluggableService {
     boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws IllegalArgumentException, ResourceInUseException;
 
     List<? extends VmwareDatacenter> listVmwareDatacenters(ListVmwareDcsCmd cmd) throws IllegalArgumentException, CloudRuntimeException;
+
+    List<? extends VsphereStoragePolicy> importVsphereStoragePolicies(ImportVsphereStoragePoliciesCmd cmd);
+
+    List<? extends VsphereStoragePolicy> listVsphereStoragePolicies(ListVsphereStoragePoliciesCmd cmd);
+
+    List<StoragePool> listVsphereStoragePolicyCompatibleStoragePools(ListVsphereStoragePolicyCompatiblePoolsCmd cmd);
 }

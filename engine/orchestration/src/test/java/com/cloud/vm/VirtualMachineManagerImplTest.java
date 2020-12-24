@@ -150,7 +150,7 @@ public class VirtualMachineManagerImplTest {
         when(vmInstanceDaoMock.findById(anyLong())).thenReturn(vmInstanceMock);
         when(vmInstanceDaoMock.findByUuid(any(String.class))).thenReturn(vmInstanceMock);
         DeploymentPlanner.ExcludeList excludeHostList = new DeploymentPlanner.ExcludeList();
-        virtualMachineManagerImpl.findHostAndMigrate(vmInstanceMock.getUuid(), 2l, excludeHostList);
+        virtualMachineManagerImpl.findHostAndMigrate(vmInstanceMock.getUuid(), 2l, null, excludeHostList);
     }
 
     @Test

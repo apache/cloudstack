@@ -48,15 +48,15 @@ public class HostMetricsResponse extends HostResponse {
     private Double loadAverage;
 
     @SerializedName("memorytotalgb")
-    @Param(description = "the total cpu capacity in GiB")
+    @Param(description = "the total memory capacity in GiB")
     private String memTotal;
 
     @SerializedName("memoryusedgb")
-    @Param(description = "the total cpu used in GiB")
+    @Param(description = "the total memory used in GiB")
     private String memUsed;
 
     @SerializedName("memoryallocatedgb")
-    @Param(description = "the total cpu allocated in GiB")
+    @Param(description = "the total memory allocated in GiB")
     private String memAllocated;
 
     @SerializedName("networkread")

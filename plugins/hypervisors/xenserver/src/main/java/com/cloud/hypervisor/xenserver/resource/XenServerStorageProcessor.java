@@ -18,6 +18,7 @@
  */
 package com.cloud.hypervisor.xenserver.resource;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.utils.ReflectUtil.flattenProperties;
 import static com.google.common.collect.Lists.newArrayList;
 
@@ -34,6 +35,7 @@ import java.util.UUID;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -212,6 +214,12 @@ public class XenServerStorageProcessor implements StorageProcessor {
     @Override
     public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
         return null;
+    }
+
+    @Override
+    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+        s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for XenServerStorageProcessor");
+        return new Answer(cmd,false,"Not applicable used for XenServerStorageProcessor");
     }
 
     @Override
@@ -827,10 +835,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
             Long virtualSize  = vdi.getVirtualSize(conn);
             if (volume.getSize() > virtualSize) {
-                s_logger.debug("Overriding provided template's size with new size " + volume.getSize() + " for volume: " + volume.getName());
+                s_logger.debug("Overriding provided template's size with new size " + toHumanReadableSize(volume.getSize()) + " for volume: " + volume.getName());
                 vdi.resize(conn, volume.getSize());
             } else {
-                s_logger.debug("Using templates disk size of " + virtualSize + " for volume: " + volume.getName() + " since size passed was " + volume.getSize());
+                s_logger.debug("Using templates disk size of " + toHumanReadableSize(virtualSize) + " for volume: " + volume.getName() + " since size passed was " + toHumanReadableSize(volume.getSize()));
             }
             vdi.setNameLabel(conn, volume.getName());
 

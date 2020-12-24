@@ -104,8 +104,10 @@ public class DatabaseCreator {
             List<String> queries = new ArrayList<String>();
             queries.add(String.format("drop database if exists `%s`", dbName));
             queries.add(String.format("create database `%s`", dbName));
-            queries.add(String.format("GRANT ALL ON %s.* to '%s'@`localhost` identified by '%s'", dbName, username, password));
-            queries.add(String.format("GRANT ALL ON %s.* to '%s'@`%%` identified by '%s'", dbName, username, password));
+            queries.add(String.format("CREATE USER IF NOT EXISTS %s@`localhost` identified by '%s'", username, password));
+            queries.add(String.format("CREATE USER IF NOT EXISTS %s@`%%` identified by '%s'", username, password));
+            queries.add(String.format("GRANT ALL ON %s.* to '%s'@`localhost`", dbName, username));
+            queries.add(String.format("GRANT ALL ON %s.* to '%s'@`%%`", dbName, username));
 
             for (String query : queries) {
                 runQuery(host, port, rootPassword, query, dryRun);

@@ -164,6 +164,8 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.XenAPIObject;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process to
  * perform the required functionalities for CloudStack.
@@ -205,6 +207,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
     private final static String BASE_MOUNT_POINT_ON_REMOTE = "/var/cloud_mount/";
+
+    private final static int USER_DEVICE_START_ID = 3;
+
+    private final static String VM_NAME_ISO_SUFFIX = "-ISO";
+
+    private final static String VM_FILE_ISO_SUFFIX = ".iso";
 
     private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
@@ -1055,29 +1063,46 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    public SR findPatchIsoSR(final Connection conn) throws XmlRpcException, XenAPIException {
+        Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
+        if (srs.size() != 1) {
+            s_logger.debug("Failed to find SR by name 'XenServer Tools', will try to find 'XCP-ng Tools' SR");
+            srs = SR.getByNameLabel(conn, "XCP-ng Tools");
+        }
+        if (srs.size() != 1) {
+            s_logger.debug("Failed to find SR by name 'XenServer Tools' or 'XCP-ng Tools', will try to find 'Citrix Hypervisor' SR");
+            srs = SR.getByNameLabel(conn, "Citrix Hypervisor Tools");
+        }
+        if (srs.size() != 1) {
+            throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools or XCP-ng Tools or Citrix Hypervisor Tools");
+        }
+        final SR sr = srs.iterator().next();
+        sr.scan(conn);
+        return sr;
+    }
+
+    public VDI findPatchIsoVDI(final Connection conn, final SR sr) throws XmlRpcException, XenAPIException {
+        if (sr == null) {
+            return null;
+        }
+        final SR.Record srr = sr.getRecord(conn);
+        for (final VDI vdi : srr.VDIs) {
+            final VDI.Record vdir = vdi.getRecord(conn);
+            if (vdir.nameLabel.contains("systemvm.iso")) {
+                return vdi;
+            }
+        }
+        return null;
+    }
+
     public VBD createPatchVbd(final Connection conn, final String vmName, final VM vm) throws XmlRpcException, XenAPIException {
 
         if (_host.getSystemvmisouuid() == null) {
-            Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
-            if (srs.size() != 1) {
-                s_logger.debug("Failed to find SR by name 'XenServer Tools', will try to find 'XCP-ng Tools' SR");
-                srs = SR.getByNameLabel(conn, "XCP-ng Tools");
-                if (srs.size() != 1) {
-                    throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools");
-                }
-            }
-            final SR sr = srs.iterator().next();
-            sr.scan(conn);
-
-            final SR.Record srr = sr.getRecord(conn);
-
+            final SR sr = findPatchIsoSR(conn);
             if (_host.getSystemvmisouuid() == null) {
-                for (final VDI vdi : srr.VDIs) {
-                    final VDI.Record vdir = vdi.getRecord(conn);
-                    if (vdir.nameLabel.contains("systemvm.iso")) {
-                        _host.setSystemvmisouuid(vdir.uuid);
-                        break;
-                    }
+                final VDI vdi = findPatchIsoVDI(conn, sr);
+                if (vdi != null) {
+                    _host.setSystemvmisouuid(vdi.getRecord(conn).uuid);
                 }
             }
             if (_host.getSystemvmisouuid() == null) {
@@ -1125,7 +1150,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException(errMsg);
     }
 
-    public VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
+    public VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi, int isoCount) throws XmlRpcException, XenAPIException {
         final Volume.Type type = volume.getType();
 
         if (vdi == null) {
@@ -1161,7 +1186,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (volume.getType() == Volume.Type.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
-            vbdr.userdevice = "3";
+            vbdr.userdevice = String.valueOf(USER_DEVICE_START_ID + isoCount);
         } else {
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
@@ -1477,24 +1502,33 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return result;
     }
 
-    public void destroyPatchVbd(final Connection conn, final String vmName) throws XmlRpcException, XenAPIException {
-        try {
-            if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
-                return;
-            }
-            final Set<VM> vms = VM.getByNameLabel(conn, vmName);
-            for (final VM vm : vms) {
+    public void destroyPatchVbd(final Connection conn, final Set<VM> vms) throws XmlRpcException, XenAPIException {
+        final SR sr = findPatchIsoSR(conn);
+        final VDI patchVDI = findPatchIsoVDI(conn, sr);
+        for (final VM vm : vms) {
+            final String vmName = vm.getNameLabel(conn);
+            try {
+                if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
+                    return;
+                }
                 final Set<VBD> vbds = vm.getVBDs(conn);
                 for (final VBD vbd : vbds) {
-                    if (vbd.getType(conn) == Types.VbdType.CD) {
-                        vbd.eject(conn);
+                    if (Types.VbdType.CD.equals(vbd.getType(conn))) {
+                        if (!vbd.getEmpty(conn)) {
+                            vbd.eject(conn);
+                        }
+                        // Workaround for any file descriptor caching issue
+                        if (patchVDI != null) {
+                            vbd.insert(conn, patchVDI);
+                            vbd.eject(conn);
+                        }
                         vbd.destroy(conn);
                         break;
                     }
                 }
+            } catch (final Exception e) {
+                s_logger.debug("Cannot destroy CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
             }
-        } catch (final Exception e) {
-            s_logger.debug("Cannot destory CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
         }
     }
 
@@ -1793,7 +1827,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             cmd.setDom0MinMemory(dom0Ram);
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Total Ram: " + ram + " dom0 Ram: " + dom0Ram);
+                s_logger.debug("Total Ram: " + toHumanReadableSize(ram) + " dom0 Ram: " + toHumanReadableSize(dom0Ram));
             }
 
             PIF pif = PIF.getByUuid(conn, _host.getPrivatePif());
@@ -3082,7 +3116,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // stability
         if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <=
             // static max
-            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax + ", can lead to stability issues. Setting static max as much as dynamic max ");
+            s_logger.warn("dynamic max " + toHumanReadableSize(dynamicMaxRam) + " cant be greater than static max " + toHumanReadableSize(staticMax) + ", this can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;
@@ -3096,7 +3130,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (dynamicMinRam < recommendedValue) { // XS contraint that dynamic min
             // > static min
-            s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues");
+            s_logger.warn("Vm ram is set to dynamic min " + toHumanReadableSize(dynamicMinRam) + " and is less than the recommended static min " + toHumanReadableSize(recommendedValue) + ", this could lead to stability issues");
         }
         return dynamicMinRam;
     }
@@ -3323,13 +3357,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                 VDI memoryVDI = vmsnap.getSuspendVDI(conn);
                                 if (!isRefNull(memoryVDI)) {
                                     size = size + memoryVDI.getPhysicalUtilisation(conn);
-                                    s_logger.debug("memoryVDI size :" + size);
+                                    s_logger.debug("memoryVDI size :" + toHumanReadableSize(size));
                                     String parentUuid = memoryVDI.getSmConfig(conn).get("vhd-parent");
                                     VDI pMemoryVDI = VDI.getByUuid(conn, parentUuid);
                                     if (!isRefNull(pMemoryVDI)) {
                                         size = size + pMemoryVDI.getPhysicalUtilisation(conn);
                                     }
-                                    s_logger.debug("memoryVDI size+parent :" + size);
+                                    s_logger.debug("memoryVDI size+parent :" + toHumanReadableSize(size));
                                 }
                             }
                         } catch (Exception e) {
@@ -3880,7 +3914,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return getVDIbyUuid(conn, volumePath);
     }
 
-    protected VDI mount(final Connection conn, final String vmName, final DiskTO volume) throws XmlRpcException, XenAPIException {
+    public VDI mount(final Connection conn, final String vmName, final DiskTO volume) throws XmlRpcException, XenAPIException {
         final DataTO data = volume.getData();
         final Volume.Type type = volume.getType();
         if (type == Volume.Type.ISO) {
@@ -3894,7 +3928,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // corer case, xenserver pv driver iso
             final String templateName = iso.getName();
-            if (templateName.startsWith("xs-tools")) {
+            if (templateName != null && templateName.startsWith("xs-tools")) {
                 try {
                     final String actualTemplateName = getActualIsoTemplate(conn);
                     final Set<VDI> vdis = VDI.getByNameLabel(conn, actualTemplateName);
@@ -3923,7 +3957,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } catch (final URISyntaxException e) {
                 throw new CloudRuntimeException("Incorrect uri " + mountpoint, e);
             }
-            final SR isoSr = createIsoSRbyURI(conn, uri, vmName, false);
+            final SR isoSr = createIsoSRbyURI(conn, uri, vmName, true);
 
             final String isoname = isoPath.substring(index + 1);
 
@@ -4110,17 +4144,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         final VM vm = vms.iterator().next();
 
-        if (vmDataList != null) {
-            // create SR
-            SR sr = createLocalIsoSR(conn, _configDriveSRName + getHost().getIp());
-
-            // 1. create vm data files
-            createVmdataFiles(vmName, vmDataList, configDriveLabel);
-
-            // 2. copy config drive iso to host
-            copyConfigDriveIsoToHost(conn, sr, vmName);
-        }
-
         final Set<VBD> vbds = vm.getVBDs(conn);
         for (final VBD vbd : vbds) {
             final VBD.Record vbdr = vbd.getRecord(conn);
@@ -4220,7 +4243,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             final long vdiVirtualSize = vdi.getVirtualSize(conn);
 
             if (vdiVirtualSize != volumeSize) {
-                s_logger.info("Resizing the data disk (VDI) from vdiVirtualSize: " + vdiVirtualSize + " to volumeSize: " + volumeSize);
+                s_logger.info("Resizing the data disk (VDI) from vdiVirtualSize: " + toHumanReadableSize(vdiVirtualSize) + " to volumeSize: " + toHumanReadableSize(volumeSize));
 
                 try {
                     vdi.resize(conn, volumeSize);
@@ -5461,7 +5484,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public SR createLocalIsoSR(final Connection conn, final String srName) throws XenAPIException, XmlRpcException {
 
         // if config drive sr already exists then return
-        SR sr = getSRByNameLabelandHost(conn, _configDriveSRName + _host.getIp());
+        SR sr = getSRByNameLabelandHost(conn, srName);
 
         if (sr != null) {
             s_logger.debug("Config drive SR already exist, returing it");
@@ -5554,10 +5577,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.debug("Attaching config drive iso device for the VM " + vmName + " In host " + ipAddr);
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
 
-            SR sr = getSRByNameLabel(conn, _configDriveSRName + ipAddr);
+            SR sr = getSRByNameLabel(conn, vmName + VM_NAME_ISO_SUFFIX);
             //Here you will find only two vdis with the <vmname>.iso.
             //one is from source host and second from dest host
-            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + ".iso");
+            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + VM_FILE_ISO_SUFFIX);
             if (vdis.isEmpty()) {
                 s_logger.debug("Could not find config drive ISO: " + vmName);
                 return false;

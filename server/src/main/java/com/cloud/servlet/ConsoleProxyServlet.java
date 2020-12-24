@@ -484,7 +484,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
             sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
         } else {
-            sb.append("/resource/noVNC/vnc_lite.html?port=" + ConsoleProxyManager.DEFAULT_NOVNC_PORT + "&token="
+            sb.append("/resource/noVNC/vnc.html?port=" + ConsoleProxyManager.DEFAULT_NOVNC_PORT + "&token="
                 + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
         }
 

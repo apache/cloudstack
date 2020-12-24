@@ -18,8 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.google.gson.annotations.SerializedName;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -27,6 +26,7 @@ import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.projects.Project;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Project.class)
 public class ProjectResponse extends BaseResponse implements ResourceLimitAndCountResponse {
@@ -54,6 +54,10 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account name of the project's owner")
     private String ownerName;
+
+    @SerializedName(ApiConstants.OWNER)
+    @Param(description = "the account name of the project's owners")
+    private List<Map<String, String>> owners;
 
     @SerializedName("projectaccountname")
     @Param(description="the project account name of the project")
@@ -422,4 +426,7 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
         this.secondaryStorageAvailable = secondaryStorageAvailable;
     }
 
+    public void setOwners(List<Map<String, String>> owners) {
+        this.owners = owners;
+    }
 }

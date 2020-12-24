@@ -32,7 +32,7 @@ from marvin.cloudstackAPI import (updateVirtualMachine,
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
                              ServiceOffering,
-                             )
+                             Host)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
@@ -79,15 +79,41 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
             cls.service_offering
         ]
 
+        cls.hosts_hugepages = cls.set_hosts_hugepages()
+
     @classmethod
     def tearDownClass(cls):
         try:
             cls.apiclient = super(TestAddConfigtoDeployVM, cls).getClsTestClient().getApiClient()
+            cls.reset_hosts_hugepages()
             # Clean up, terminate the created templates
             cleanup_resources(cls.apiclient, cls.cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
+
+    @classmethod
+    def set_hosts_hugepages(cls):
+        hosts_hugepages = []
+        listHost = Host.list(
+               cls.apiclient,
+               type='Routing',
+               zoneid=cls.zone.id
+           )
+        for host in listHost:
+            if host.hypervisor.lower() == 'kvm':
+                sshClient = SshClient(host.ipaddress, port=22, user=cls.hostConfig["username"], passwd=cls.hostConfig["password"])
+                result = sshClient.execute("sysctl -n vm.nr_hugepages")
+                sshClient.execute("sysctl -w vm.nr_hugepages=1024")
+                if result and len(result) > 0:
+                    hosts_hugepages.append({ "ipaddress": host.ipaddress, "vm.nr_hugepages": result[0].strip()})
+        return hosts_hugepages
+
+    @classmethod
+    def reset_hosts_hugepages(cls):
+        for host in cls.hosts_hugepages:
+            sshClient = SshClient(host["ipaddress"], port=22, user=cls.hostConfig["username"], passwd=cls.hostConfig["password"])
+            sshClient.execute("sysctl -w vm.nr_hugepages=%s" % host["vm.nr_hugepages"])
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()

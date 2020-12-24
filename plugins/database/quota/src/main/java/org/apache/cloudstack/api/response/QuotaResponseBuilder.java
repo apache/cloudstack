@@ -29,11 +29,13 @@ import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.utils.Pair;
+
 public interface QuotaResponseBuilder {
 
     QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd);
 
-    List<QuotaTariffVO> listQuotaTariffPlans(QuotaTariffListCmd cmd);
+    Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(QuotaTariffListCmd cmd);
 
     QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO configuration);
 
@@ -41,9 +43,11 @@ public interface QuotaResponseBuilder {
 
     QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaUsage, Date startDate, Date endDate);
 
-    List<QuotaSummaryResponse> createQuotaSummaryResponse(Boolean listAll);
+    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll);
 
-    List<QuotaSummaryResponse> createQuotaSummaryResponse(String accountName, Long domainId);
+    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll, String keyword, Long startIndex, Long pageSize);
+
+    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(String accountName, Long domainId);
 
     QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate);
 

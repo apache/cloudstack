@@ -38,6 +38,10 @@ public interface VirtualMachineProfile {
 
     void setVmData(List<String[]> vmData);
 
+    void setDisks(List<DiskTO> disks);
+
+    void setNics(List<NicProfile> nics);
+
     String getConfigDriveLabel();
 
     void setConfigDriveLabel(String configDriveLabel);
@@ -63,6 +67,8 @@ public interface VirtualMachineProfile {
         public static final Param UefiFlag = new Param("UefiFlag");
         public static final Param BootMode = new Param("BootMode");
         public static final Param BootType = new Param("BootType");
+        public static final Param BootIntoSetup = new Param("enterHardwareSetup");
+        public static final Param PreserveNics = new Param("PreserveNics");
 
         private String name;
 

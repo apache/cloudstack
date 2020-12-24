@@ -395,6 +395,74 @@ def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=N
     return FAILED
 
 
+def get_test_ovf_templates(apiclient, zone_id=None, test_ovf_templates=None, hypervisor=None):
+    """
+    @Name : get_test_ovf_templates
+    @Desc : Retrieves the list of test ovf templates used to running tests. When the template
+            is missing it will be download at most one in a zone for a hypervisor.
+    @Input : returns a list of templates
+    """
+    result = []
+
+    if test_ovf_templates is None:
+        test_ovf_templates = test_data["test_ovf_templates"]
+    if test_ovf_templates is None:
+        return result
+    if hypervisor is None:
+        return result
+    hypervisor = hypervisor.lower()
+    if hypervisor != 'vmware':
+        return result
+
+    for test_template in test_ovf_templates:
+
+        cmd = listTemplates.listTemplatesCmd()
+        cmd.name = test_template['name']
+        cmd.templatefilter = 'all'
+        if zone_id is not None:
+            cmd.zoneid = zone_id
+        if hypervisor is not None:
+            cmd.hypervisor = hypervisor
+        templates = apiclient.listTemplates(cmd)
+
+        if validateList(templates)[0] != PASS:
+            template = Template.register(apiclient, test_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False)
+            template.download(apiclient)
+            retries = 3
+            while (template.details == None or len(template.details.__dict__) == 0) and retries > 0:
+                time.sleep(10)
+                template_list = Template.list(apiclient, id=template.id, zoneid=zone_id, templatefilter='all')
+                if isinstance(template_list, list):
+                    template = Template(template_list[0].__dict__)
+                retries = retries - 1
+            if template.details == None or len(template.details.__dict__) == 0:
+                template.delete(apiclient)
+            else:
+                result.append(template)
+
+        if templates:
+            for template in templates:
+                if template.isready and template.ispublic and template.details != None and len(template.details.__dict__) > 0:
+                    result.append(template.__dict__)
+
+    return result
+
+def get_vm_vapp_configs(apiclient, config, setup_zone, vm_name):
+    zoneDetailsInConfig = [zone for zone in config.zones
+                           if zone.name == setup_zone.name][0]
+    vcenterusername = zoneDetailsInConfig.vmwaredc.username
+    vcenterpassword = zoneDetailsInConfig.vmwaredc.password
+    vcenterip = zoneDetailsInConfig.vmwaredc.vcenter
+    vcenterObj = Vcenter(
+        vcenterip,
+        vcenterusername,
+        vcenterpassword)
+
+    vms = vcenterObj.get_vms(vm_name)
+    if vms:
+        return vms[0]['vm']['properties']
+
+
 def get_windows_template(
         apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='USER',
         template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
@@ -445,7 +513,29 @@ def get_windows_template(
 
     return FAILED
 
-
+def get_suitable_test_template(apiclient, zoneid, ostypeid, hypervisor):
+    '''
+    @Name : get_suitable_test_template
+    @Desc : Retrieves the test template information based upon inputs provided
+            For Xenserver, get_test_template is used for retrieving the template
+            while get_template is used for other hypervisors or when
+            get_test_template fails
+    @Input : returns a template"
+    @Output : FAILED in case of any failure
+              template Information matching the inputs
+    '''
+    template = FAILED
+    if hypervisor.lower() in ["xenserver"]:
+        template = get_test_template(
+            apiclient,
+            zoneid,
+            hypervisor)
+    if template == FAILED:
+        template = get_template(
+            apiclient,
+            zoneid,
+            ostypeid)
+    return template
 
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
@@ -1053,6 +1143,11 @@ def get_free_vlan(apiclient, zoneid):
     if isinstance(networks, list) and len(networks) > 0:
         usedVlanIds = [int(nw.vlan)
                        for nw in networks if (nw.vlan and str(nw.vlan).lower() != "untagged")]
+
+    ipranges = list_vlan_ipranges(apiclient, zoneid=zoneid)
+    if isinstance(ipranges, list) and len(ipranges) > 0:
+        usedVlanIds += [int(iprange.vlan.split("/")[-1])
+                        for iprange in ipranges if (iprange.vlan and iprange.vlan.split("/")[-1].lower() != "untagged")]
 
     if not hasattr(physical_network, "vlan"):
         while True:

@@ -77,6 +77,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @Param(description = "the Pod ID for the router")
     private String podId;
 
+    @SerializedName(ApiConstants.POD_NAME)
+    @Param(description = "the Pod name for the router", since = "4.13.2")
+    private String podName;
+
     @SerializedName(ApiConstants.HOST_ID)
     @Param(description = "the host ID for the router")
     private String hostId;
@@ -144,6 +148,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the template ID for the router")
     private String templateId;
+
+    @SerializedName(ApiConstants.TEMPLATE_NAME)
+    @Param(description = "the template name for the router", since = "4.13.2")
+    private String templateName;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date and time the router was created")
@@ -278,6 +286,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.podId = podId;
     }
 
+    public void setPodName(String podName) {
+        this.podName = podName;
+    }
+
     public void setHostId(String hostId) {
         this.hostId = hostId;
     }
@@ -328,6 +340,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
     }
 
     public void setCreated(Date created) {

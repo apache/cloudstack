@@ -25,7 +25,11 @@ from marvin.cloudstackAPI import (recoverVirtualMachine,
                                   provisionCertificate,
                                   updateConfiguration,
                                   migrateVirtualMachine,
-                                  migrateVirtualMachineWithVolume)
+                                  migrateVirtualMachineWithVolume,
+                                  unmanageVirtualMachine,
+                                  listUnmanagedInstances,
+                                  listNics,
+                                  listVolumes)
 from marvin.lib.utils import *
 
 from marvin.lib.base import (Account,
@@ -37,15 +41,23 @@ from marvin.lib.base import (Account,
                              Configurations,
                              StoragePool,
                              Volume,
-                             DiskOffering)
+                             DiskOffering,
+                             NetworkOffering,
+                             Network)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
-                               list_hosts)
+                               get_suitable_test_template,
+                               get_test_ovf_templates,
+                               list_hosts,
+                               list_virtual_machines,
+                               get_vm_vapp_configs)
 from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
+from marvin.lib.decoratorGenerators import skipTestIf
 # Import System modules
 import time
+import json
+from operator import itemgetter
 
 _multiprocess_shared_ = True
 
@@ -62,6 +74,7 @@ class TestDeployVM(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = testClient.getHypervisorInfo()
 
         # If local storage is enabled, alter the offerings to use localstorage
         # this step is needed for devcloud
@@ -70,13 +83,14 @@ class TestDeployVM(cloudstackTestCase):
             cls.services["service_offerings"]["small"]["storagetype"] = 'local'
             cls.services["service_offerings"]["medium"]["storagetype"] = 'local'
 
-        template = get_template(
+        template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.services["ostype"],
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -280,13 +294,14 @@ class TestVMLifeCycle(cloudstackTestCase):
             cls.services["service_offerings"]["small"]["storagetype"] = 'local'
             cls.services["service_offerings"]["medium"]["storagetype"] = 'local'
 
-        template = get_template(
+        template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.services["ostype"],
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -728,62 +743,69 @@ class TestVMLifeCycle(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (self.virtual_machine.ipaddress, e))
-
         mount_dir = "/mnt/tmp"
         cmds = "mkdir -p %s" % mount_dir
         self.assert_(ssh_client.execute(cmds) == [], "mkdir failed within guest")
 
+        iso_unsupported = False
         for diskdevice in self.services["diskdevice"]:
             res = ssh_client.execute("mount -rt iso9660 {} {}".format(diskdevice, mount_dir))
             if res == []:
                 self.services["mount"] = diskdevice
                 break
+            if str(res).find("mount: unknown filesystem type 'iso9660'") != -1:
+                iso_unsupported = True
+                self.debug("Test template does not supports iso9660 filesystem. Proceeding with test without mounting.")
+                print "Test template does not supports iso9660 filesystem. Proceeding with test without mounting."
+                break
         else:
             self.fail("No mount points matched. Mount was unsuccessful")
 
-        c = "mount |grep %s|head -1" % self.services["mount"]
-        res = ssh_client.execute(c)
-        size = ssh_client.execute("du %s | tail -1" % self.services["mount"])
-        self.debug("Found a mount point at %s with size %s" % (res, size))
+        if iso_unsupported == False:
+            c = "mount |grep %s|head -1" % self.services["mount"]
+            res = ssh_client.execute(c)
+            size = ssh_client.execute("du %s | tail -1" % self.services["mount"])
+            self.debug("Found a mount point at %s with size %s" % (res, size))
 
-        # Get ISO size
-        iso_response = Iso.list(
-            self.apiclient,
-            id=iso.id
-        )
-        self.assertEqual(
-            isinstance(iso_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
+            # Get ISO size
+            iso_response = Iso.list(
+                self.apiclient,
+                id=iso.id
+            )
+            self.assertEqual(
+                isinstance(iso_response, list),
+                True,
+                "Check list response returns a valid list"
+            )
 
-        try:
-            # Unmount ISO
-            command = "umount %s" % mount_dir
-            ssh_client.execute(command)
-        except Exception as e:
-            self.fail("SSH failed for virtual machine: %s - %s" %
-                      (self.virtual_machine.ipaddress, e))
+            try:
+                # Unmount ISO
+                command = "umount %s" % mount_dir
+                ssh_client.execute(command)
+            except Exception as e:
+                self.fail("SSH failed for virtual machine: %s - %s" %
+                          (self.virtual_machine.ipaddress, e))
 
         # Detach from VM
         cmd = detachIso.detachIsoCmd()
         cmd.virtualmachineid = self.virtual_machine.id
         self.apiclient.detachIso(cmd)
 
-        try:
-            res = ssh_client.execute(c)
-        except Exception as e:
-            self.fail("SSH failed for virtual machine: %s - %s" %
-                      (self.virtual_machine.ipaddress, e))
+        if iso_unsupported == False:
+            try:
+                res = ssh_client.execute(c)
+            except Exception as e:
+                self.fail("SSH failed for virtual machine: %s - %s" %
+                          (self.virtual_machine.ipaddress, e))
 
-        # Check if ISO is properly detached from VM (using fdisk)
-        result = self.services["mount"] in str(res)
+            # Check if ISO is properly detached from VM (using fdisk)
+            result = self.services["mount"] in str(res)
 
-        self.assertEqual(
-            result,
-            False,
-            "Check if ISO is detached from virtual machine"
-        )
+            self.assertEqual(
+                result,
+                False,
+                "Check if ISO is detached from virtual machine"
+            )
         return
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
@@ -844,13 +866,14 @@ class TestSecuredVmMigration(cloudstackTestCase):
             0].__dict__
         cls.management_ip = cls.config.__dict__["mgtSvr"][0].__dict__["mgtSvrIp"]
 
-        template = get_template(
+        template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.services["ostype"],
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -966,7 +989,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                       sleep 30 && \
                       service cloudstack-agent restart")
         print("Unsecuring Host: %s" % (host.name))
-        self.waitUntilHostInState(hostId=host.id, state="Up") 
+        self.waitUntilHostInState(hostId=host.id, state="Up")
         self.check_connection(host=host, secured='false')
         return host
 
@@ -1116,13 +1139,14 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
             0].__dict__
         cls.management_ip = cls.config.__dict__["mgtSvr"][0].__dict__["mgtSvrIp"]
 
-        template = get_template(
+        template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.services["ostype"],
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -1328,13 +1352,14 @@ class TestKVMLiveMigration(cloudstackTestCase):
             0].__dict__
         cls.management_ip = cls.config.__dict__["mgtSvr"][0].__dict__["mgtSvrIp"]
 
-        template = get_template(
+        template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.services["ostype"],
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -1512,3 +1537,421 @@ class TestKVMLiveMigration(cloudstackTestCase):
                          target_host.id,
                          "HostID not as expected")
 
+
+class TestUnmanageVM(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestUnmanageVM, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+        cls._cleanup = []
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+        cls.template = get_suitable_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            cls.hypervisor
+        )
+        if cls.template == FAILED:
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
+
+        cls.hypervisorNotSupported = cls.hypervisor.lower() != "vmware"
+
+        cls.services["small"]["zoneid"] = cls.zone.id
+        cls.services["small"]["template"] = cls.template.id
+
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
+
+        cls.small_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["small"]
+        )
+
+        cls.network_offering = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["l2-network_offering"],
+        )
+        cls.network_offering.update(cls.apiclient, state='Enabled')
+
+        cls._cleanup = [
+            cls.small_offering,
+            cls.network_offering,
+            cls.account
+        ]
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.services["network"]["networkoffering"] = self.network_offering.id
+
+        self.network = Network.create(
+            self.apiclient,
+            self.services["l2-network"],
+            zoneid=self.zone.id,
+            networkofferingid=self.network_offering.id
+        )
+
+        self.cleanup = [
+            self.network
+        ]
+
+    @attr(tags=["advanced", "advancedns", "smoke", "sg"], required_hardware="false")
+    @skipTestIf("hypervisorNotSupported")
+    def test_01_unmanage_vm_cycle(self):
+        """
+        Test the following:
+        1. Deploy VM
+        2. Unmanage VM
+        3. Verify VM is not listed in CloudStack
+        4. Verify VM is listed as part of the unmanaged instances
+        5. Import VM
+        6. Destroy VM
+        """
+
+        # 1 - Deploy VM
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            serviceofferingid=self.small_offering.id,
+            networkids=self.network.id,
+            zoneid=self.zone.id
+        )
+        vm_id = self.virtual_machine.id
+        vm_instance_name = self.virtual_machine.instancename
+        hostid = self.virtual_machine.hostid
+        hosts = Host.list(
+            self.apiclient,
+            id=hostid
+        )
+        host = hosts[0]
+        clusterid = host.clusterid
+
+        list_vm = list_virtual_machines(
+            self.apiclient,
+            id=vm_id
+        )
+        self.assertEqual(
+            isinstance(list_vm, list),
+            True,
+            "Check if virtual machine is present"
+        )
+        vm_response = list_vm[0]
+
+        self.assertEqual(
+            vm_response.state,
+            "Running",
+            "VM state should be running after deployment"
+        )
+
+        # 2 - Unmanage VM from CloudStack
+        self.virtual_machine.unmanage(self.apiclient)
+
+        list_vm = list_virtual_machines(
+            self.apiclient,
+            id=vm_id
+        )
+
+        self.assertEqual(
+            list_vm,
+            None,
+            "VM should not be listed"
+        )
+
+        unmanaged_vms = VirtualMachine.listUnmanagedInstances(
+            self.apiclient,
+            clusterid=clusterid,
+            name=vm_instance_name
+        )
+
+        self.assertEqual(
+            len(unmanaged_vms),
+            1,
+            "Unmanaged VMs matching instance name list size is 1"
+        )
+
+        unmanaged_vm = unmanaged_vms[0]
+        self.assertEqual(
+            unmanaged_vm.powerstate,
+            "PowerOn",
+            "Unmanaged VM is still running"
+        )
+
+
+class TestVAppsVM(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestVAppsVM, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+        cls._cleanup = []
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+
+        cls.hypervisorNotSupported = cls.hypervisor.lower() != "vmware"
+
+        if cls.hypervisorNotSupported == False:
+
+            cls.account = Account.create(
+                cls.apiclient,
+                cls.services["account"],
+                domainid=cls.domain.id
+            )
+
+            cls.templates = get_test_ovf_templates(
+                cls.apiclient,
+                cls.zone.id,
+                cls.services['test_ovf_templates'],
+                cls.hypervisor
+            )
+            if len(cls.templates) == 0:
+                assert False, "get_test_ovf_templates() failed to return templates"
+
+            cls.custom_offering = ServiceOffering.create(
+                cls.apiclient,
+                cls.services["custom_service_offering"]
+            )
+
+            cls.isolated_network_offering = NetworkOffering.create(
+                cls.apiclient,
+                cls.services["isolated_network_offering"],
+            )
+            cls.isolated_network_offering.update(cls.apiclient, state='Enabled')
+
+            cls.l2_network_offering = NetworkOffering.create(
+                cls.apiclient,
+                cls.services["l2-network_offering"],
+            )
+            cls.l2_network_offering.update(cls.apiclient, state='Enabled')
+
+            cls._cleanup = [
+                cls.account,
+                cls.custom_offering,
+                cls.isolated_network_offering,
+                cls.l2_network_offering
+            ]
+
+            # Uncomment when tests are finished, to cleanup the test templates
+            for template in cls.templates:
+                cls._cleanup.append(template)
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during class cleanup : %s" % e)
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.cleanup = []
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+
+    def get_ova_parsed_information_from_template(self, template):
+        if not template:
+            return None
+        details = template.details.__dict__
+        configurations = []
+        disks = []
+        isos = []
+        networks = []
+        for propKey in details:
+            if propKey.startswith('ACS-configuration'):
+                configurations.append(json.loads(details[propKey]))
+            elif propKey.startswith('ACS-disk'):
+                detail = json.loads(details[propKey])
+                if detail['isIso'] == True:
+                    isos.append(detail)
+                else:
+                    disks.append(detail)
+            elif propKey.startswith('ACS-network'):
+                networks.append(json.loads(details[propKey]))
+
+        return configurations, disks, isos, networks
+
+    def verify_nics(self, nic_networks, vm_id):
+        cmd = listNics.listNicsCmd()
+        cmd.virtualmachineid = vm_id
+        vm_nics =  self.apiclient.listNics(cmd)
+        self.assertEqual(
+            isinstance(vm_nics, list),
+            True,
+            "Check listNics response returns a valid list"
+        )
+        self.assertEqual(
+            len(nic_networks),
+            len(vm_nics),
+            msg="VM NIC count is different, expected = {}, result = {}".format(len(nic_networks), len(vm_nics))
+        )
+        nic_networks.sort(key=itemgetter('nic')) # CS will create NIC in order of InstanceID. Check network order
+        vm_nics.sort(key=itemgetter('deviceid'))
+        for i in range(len(vm_nics)):
+            nic = vm_nics[i]
+            nic_network = nic_networks[i]
+            self.assertEqual(
+                nic.networkid,
+                nic_network["network"],
+                msg="VM NIC(InstanceID: {}) network mismatch, expected = {}, result = {}".format(nic_network["nic"], nic_network["network"], nic.networkid)
+            )
+
+    def verify_disks(self, template_disks, vm_id):
+        cmd = listVolumes.listVolumesCmd()
+        cmd.virtualmachineid = vm_id
+        cmd.listall = True
+        vm_volumes =  self.apiclient.listVolumes(cmd)
+        self.assertEqual(
+            isinstance(vm_volumes, list),
+            True,
+            "Check listVolumes response returns a valid list"
+        )
+        self.assertEqual(
+            len(template_disks),
+            len(vm_volumes),
+            msg="VM volumes count is different, expected = {}, result = {}".format(len(template_disks), len(vm_volumes))
+        )
+        template_disks.sort(key=itemgetter('diskNumber'))
+        vm_volumes.sort(key=itemgetter('deviceid'))
+        for j in range(len(vm_volumes)):
+            volume = vm_volumes[j]
+            disk = template_disks[j]
+            self.assertEqual(
+                volume.size,
+                disk["virtualSize"],
+                msg="VM Volume(diskNumber: {}) network mismatch, expected = {}, result = {}".format(disk["diskNumber"], disk["virtualSize"], volume.size)
+            )
+
+    @attr(tags=["advanced", "advancedns", "smoke", "sg", "dev"], required_hardware="false")
+    @skipTestIf("hypervisorNotSupported")
+    def test_01_vapps_vm_cycle(self):
+        """
+        Test the following for all found ovf templates:
+        1. Deploy VM
+        2. Verify VM has correct properties
+        3. Verify VM has correct disks
+        4. Verify VM has correct nics
+        5. Destroy VM
+        """
+
+        for template in self.templates:
+            configurations, disks, isos, network = self.get_ova_parsed_information_from_template(template)
+
+            if configurations:
+                conf = configurations[0]
+                items = conf['hardwareItems']
+                cpu_speed = 1000
+                cpu_number = 0
+                memory = 0
+                for item in items:
+                    if item['resourceType'] == 'Memory':
+                        memory = item['virtualQuantity']
+                    elif item['resourceType'] == 'Processor':
+                        cpu_number = item['virtualQuantity']
+
+            nicnetworklist = []
+            networks = []
+            vm_service = self.services["virtual_machine_vapps"][template.name]
+            network_mappings = vm_service["nicnetworklist"]
+            for network_mapping in network_mappings:
+                network_service = self.services["isolated_network"]
+                network_offering_id = self.isolated_network_offering.id
+                if network_mapping["network"] == 'l2':
+                    network_service = self.services["l2-network"]
+                    network_offering_id = self.l2_network_offering.id
+                network = Network.create(
+                    self.apiclient,
+                    network_service,
+                    networkofferingid=network_offering_id,
+                    accountid=self.account.name,
+                    domainid=self.account.domainid,
+                    zoneid=self.zone.id)
+                networks.append(network)
+                for interface in network_mapping["nic"]:
+                    nicnetworklist.append({"nic": interface, "network": network.id})
+
+            vm = VirtualMachine.create(
+                self.apiclient,
+                vm_service,
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                templateid=template.id,
+                serviceofferingid=self.custom_offering.id,
+                zoneid=self.zone.id,
+                customcpunumber=cpu_number,
+                customcpuspeed=cpu_speed,
+                custommemory=memory,
+                properties=vm_service['properties'],
+                nicnetworklist=nicnetworklist
+            )
+
+            list_vm_response = VirtualMachine.list(
+                self.apiclient,
+                id=vm.id
+            )
+            self.debug(
+                "Verify listVirtualMachines response for virtual machine: %s" \
+                % vm.id
+            )
+            self.assertEqual(
+                isinstance(list_vm_response, list),
+                True,
+                "Check list response returns a valid list"
+            )
+            self.assertNotEqual(
+                len(list_vm_response),
+                0,
+                "Check VM available in List Virtual Machines"
+            )
+            vm_response = list_vm_response[0]
+            self.assertEqual(
+                vm_response.id,
+                vm.id,
+                "Check virtual machine id in listVirtualMachines"
+            )
+            self.assertEqual(
+                vm_response.name,
+                vm.name,
+                "Check virtual machine name in listVirtualMachines"
+            )
+            self.assertEqual(
+                vm_response.state,
+                'Running',
+                msg="VM is not in Running state"
+            )
+
+            # Verify nics
+            self.verify_nics(nicnetworklist, vm.id)
+            # Verify disks
+            self.verify_disks(disks, vm.id)
+            # Verify properties
+            original_properties = vm_service['properties']
+            vm_properties = get_vm_vapp_configs(self.apiclient, self.config, self.zone, vm.instancename)
+            for property in original_properties:
+                if property["key"] in vm_properties:
+                    self.assertEqual(
+                        vm_properties[property["key"]],
+                        property["value"],
+                        "Check VM property %s with original value" % property["key"]
+                    )
+
+            cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
+            cmd.id = vm.id
+            self.apiclient.destroyVirtualMachine(cmd)

@@ -88,6 +88,10 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     @Param(description = "template ID")
     private String templateId;
 
+    @SerializedName(ApiConstants.OS_TYPE_ID)
+    @Param(description = "virtual machine os type id")
+    private Long osTypeId;
+
     @SerializedName("usageid")
     @Param(description = "id of the resource")
     private String usageId;
@@ -139,6 +143,10 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     @SerializedName("isdefault")
     @Param(description = "True if the resource is default")
     private Boolean isDefault;
+
+    @SerializedName("vpcid")
+    @Param(description = "id of the vpc")
+    private String vpcId;
 
     public UsageRecordResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -196,6 +204,10 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
 
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
+    }
+
+    public void setOsTypeId(Long osTypeId) {
+        this.osTypeId = osTypeId;
     }
 
     public void setUsageId(String usageId) {
@@ -267,5 +279,9 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
 
     public String getDomainName(){
         return domainName;
+    }
+
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 }

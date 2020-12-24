@@ -1710,7 +1710,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * Return expected MigrationOptions for a linked clone volume live storage migration
      */
     protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
-        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId());
+        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
         boolean updateBackingFileReference = ref == null;
         String backingFile = ref != null ? ref.getInstallPath() : srcVolumeBackingFile;
         return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference);
@@ -1983,7 +1983,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 srcVolumeInfo.getTemplateId() != null && srcVolumeInfo.getPoolId() != null) {
             VMTemplateVO template = _vmTemplateDao.findById(srcVolumeInfo.getTemplateId());
             if (template.getFormat() != null && template.getFormat() != Storage.ImageFormat.ISO) {
-                VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId());
+                VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
                 return ref != null ? ref.getInstallPath() : null;
             }
         }
@@ -2157,8 +2157,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * Update reference on template_spool_ref table of copied template to destination storage
      */
     protected void updateCopiedTemplateReference(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo) {
-        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId());
-        VMTemplateStoragePoolVO newRef = new VMTemplateStoragePoolVO(destVolumeInfo.getPoolId(), ref.getTemplateId());
+        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
+        VMTemplateStoragePoolVO newRef = new VMTemplateStoragePoolVO(destVolumeInfo.getPoolId(), ref.getTemplateId(), null);
         newRef.setDownloadPercent(100);
         newRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         newRef.setState(ObjectInDataStoreStateMachine.State.Ready);

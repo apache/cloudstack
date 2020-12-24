@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-JAVA_OPTS="-Djava.security.properties=/etc/cloudstack/management/java.security.ciphers -Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2G -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:ErrorFile=/var/log/cloudstack/management/cloudstack-management.err "
+JAVA_OPTS="-Djava.security.properties=/etc/cloudstack/management/java.security.ciphers -Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2G -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:ErrorFile=/var/log/cloudstack/management/cloudstack-management.err "
 
 CLASSPATH="/usr/share/cloudstack-management/lib/*:/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/cloudstack-management:/usr/share/java/mysql-connector-java.jar"
 
@@ -26,7 +26,7 @@ BOOTSTRAP_CLASS=org.apache.cloudstack.ServerDaemon
 #You can change the parameters at your will. The 'address' field defines the port to be used.  #
 ################################################################################################ 
 # This option here should be used with 'systemmd' based operating systems such as CentOS7, Ubuntu 16, and so on.
-#JAVA_DEBUG="-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n"
+#JAVA_DEBUG="-agentlib:jdwp=transport=dt_socket,address=*:8000,server=y,suspend=n"
 
 # On the other hand, this option is used by CentOS6.
 #JAVA_DEBUG="-Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"

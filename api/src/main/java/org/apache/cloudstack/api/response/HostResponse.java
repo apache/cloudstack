@@ -103,16 +103,29 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the CPU speed of the host")
     private Long cpuSpeed;
 
+    @Deprecated
     @SerializedName("cpuallocated")
     @Param(description = "the amount of the host's CPU currently allocated")
     private String cpuAllocated;
+
+    @SerializedName("cpuallocatedvalue")
+    @Param(description = "the amount of the host's CPU currently allocated in MHz")
+    private Long cpuAllocatedValue;
+
+    @SerializedName("cpuallocatedpercentage")
+    @Param(description = "the amount of the host's CPU currently allocated in percentage")
+    private String cpuAllocatedPercentage;
+
+    @SerializedName("cpuallocatedwithoverprovisioning")
+    @Param(description = "the amount of the host's CPU currently allocated after applying the cpu.overprovisioning.factor")
+    private String cpuAllocatedWithOverprovisioning;
 
     @SerializedName("cpuused")
     @Param(description = "the amount of the host's CPU currently used")
     private String cpuUsed;
 
     @SerializedName("cpuwithoverprovisioning")
-    @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor ")
+    @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor")
     private String cpuWithOverprovisioning;
 
     @SerializedName(ApiConstants.CPU_LOAD_AVERAGE)
@@ -136,9 +149,18 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the amount of the host's memory after applying the mem.overprovisioning.factor")
     private String memWithOverprovisioning;
 
+    @Deprecated
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
     private long memoryAllocated;
+
+    @SerializedName("memoryallocatedpercentage")
+    @Param(description = "the amount of the host's memory currently allocated in percentage")
+    private String memoryAllocatedPercentage;
+
+    @SerializedName("memoryallocatedbytes")
+    @Param(description = "the amount of the host's memory currently allocated in bytes")
+    private Long memoryAllocatedBytes;
 
     @SerializedName("memoryused")
     @Param(description = "the amount of the host's memory currently used")
@@ -166,7 +188,7 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("managementserverid")
     @Param(description = "the management server ID of the host")
-    private Long managementServerId;
+    private String managementServerId;
 
     @SerializedName("clusterid")
     @Param(description = "the cluster ID of the host")
@@ -333,6 +355,18 @@ public class HostResponse extends BaseResponse {
         this.cpuAllocated = cpuAllocated;
     }
 
+    public void setCpuAllocatedValue(Long cpuAllocatedValue) {
+        this.cpuAllocatedValue = cpuAllocatedValue;
+    }
+
+    public void setCpuAllocatedPercentage(String cpuAllocatedPercentage) {
+        this.cpuAllocatedPercentage = cpuAllocatedPercentage;
+    }
+
+    public void setCpuAllocatedWithOverprovisioning(String cpuAllocatedWithOverprovisioning) {
+        this.cpuAllocatedWithOverprovisioning = cpuAllocatedWithOverprovisioning;
+    }
+
     public void setCpuUsed(String cpuUsed) {
         this.cpuUsed = cpuUsed;
     }
@@ -381,7 +415,7 @@ public class HostResponse extends BaseResponse {
         this.lastPinged = lastPinged;
     }
 
-    public void setManagementServerId(Long managementServerId) {
+    public void setManagementServerId(String managementServerId) {
         this.managementServerId = managementServerId;
     }
 
@@ -503,13 +537,12 @@ public class HostResponse extends BaseResponse {
         detailsCopy.remove("username");
         detailsCopy.remove("password");
 
-        if(detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
+        if (detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
             this.setUefiCapabilty(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_UEFI_ENABLE)));
             detailsCopy.remove(Host.HOST_UEFI_ENABLE);
         } else {
             this.setUefiCapabilty(new Boolean(false)); // in case of existing host which is not scanned for UEFI capability
         }
-
 
         this.details = detailsCopy;
     }
@@ -609,6 +642,14 @@ public class HostResponse extends BaseResponse {
         return memoryAllocated;
     }
 
+    public void setMemoryAllocatedPercentage(String memoryAllocatedPercentage) {
+        this.memoryAllocatedPercentage = memoryAllocatedPercentage;
+    }
+
+    public void setMemoryAllocatedBytes(Long memoryAllocatedBytes) {
+        this.memoryAllocatedBytes = memoryAllocatedBytes;
+    }
+
     public Long getMemoryUsed() {
         return memoryUsed;
     }
@@ -633,7 +674,7 @@ public class HostResponse extends BaseResponse {
         return lastPinged;
     }
 
-    public Long getManagementServerId() {
+    public String getManagementServerId() {
         return managementServerId;
     }
 

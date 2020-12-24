@@ -259,7 +259,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating Kubernetes cluster. Cluster Id: " + getEntityId();
+        return "Creating Kubernetes cluster. Cluster Id: " + getEntityId();
     }
 
     @Override

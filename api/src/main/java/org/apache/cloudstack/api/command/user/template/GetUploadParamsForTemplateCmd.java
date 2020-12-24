@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Map;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.AbstractGetUploadParamsCmd;
@@ -51,7 +52,8 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = true, description = "the ID of the OS Type that best represents the OS of this template.")
+    @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = false,
+            description = "the ID of the OS Type that best represents the OS of this template. Not required for VMware as the guest OS is obtained from the OVF file.")
     private Long osTypeId;
 
     @Parameter(name = ApiConstants.BITS, type = CommandType.INTEGER, description = "32 or 64 bits support. 64 by default")
@@ -167,6 +169,12 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     private void validateRequest() {
         if (getZoneId() <= 0) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "invalid zoneid");
+        }
+        if (!hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Missing parameter ostypeid");
+        }
+        if (hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId != null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid parameter ostypeid, not applicable for VMware");
         }
     }
 
