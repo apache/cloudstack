@@ -5848,7 +5848,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm.getType() != VirtualMachine.Type.User) {
             // for System VMs check that the destination host is within the same pod
             if (srcHost.getPodId() != null && !srcHost.getPodId().equals(destinationHost.getPodId())) {
-                throw new InvalidParameterValueException("Cannot migrate the VM, destination host is not in the same pod as current host of the VM")
+                throw new InvalidParameterValueException("Cannot migrate the VM, destination host is not in the same pod as current host of the VM");
             }
         }
 
