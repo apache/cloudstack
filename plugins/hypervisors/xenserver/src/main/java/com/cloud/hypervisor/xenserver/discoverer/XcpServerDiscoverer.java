@@ -369,7 +369,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             s_logger.warn("Unable to resolve the host name", e);
             return null;
         } catch (Exception e) {
-            s_logger.debug("other exceptions: " + e.toString(), e);
+            s_logger.warn("other exceptions: " + e.toString(), e);
             return null;
         }
         return resources;

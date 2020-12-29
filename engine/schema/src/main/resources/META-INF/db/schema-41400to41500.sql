@@ -840,3 +840,6 @@ ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `is_hidden` smallint(1) NOT N
 
 -- Fix Zones are returned in a random order (#3934)
 UPDATE `cloud`.`data_center` JOIN (SELECT COUNT(1) AS count FROM `cloud`.`data_center` WHERE `sort_key` != 0) AS tbl_tmp SET `sort_key` = `id` WHERE count = 0;
+
+-- Fix description of volume.stats.interval which is in milliseconds not seconds
+UPDATE `cloud`.`configuration` SET `description` = 'Interval (in milliseconds) to report volume statistics' WHERE `name` = 'volume.stats.interval';

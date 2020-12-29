@@ -722,7 +722,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("zoneId", zone.getId());
         params.put("clusterId", clusterId);
         params.put("podId", podId);
-        params.put("hypervisorType", hypervisorType.toString());
+        params.put("hypervisorType", hypervisorType);
         params.put("url", cmd.getUrl());
         params.put("tags", cmd.getTags());
         params.put("name", cmd.getStoragePoolName());

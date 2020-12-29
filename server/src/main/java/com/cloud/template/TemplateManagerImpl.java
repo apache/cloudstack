@@ -2108,6 +2108,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (templateType != null && cmd.isRoutingType() != null && (TemplateType.ROUTING.equals(templateType) != cmd.isRoutingType())) {
                 throw new InvalidParameterValueException("Please specify a valid templatetype (consistent with isrouting parameter).");
             }
+            if (templateType != null && (templateType == TemplateType.SYSTEM || templateType == TemplateType.BUILTIN) && !template.isCrossZones()) {
+                throw new InvalidParameterValueException("System and Builtin templates must be cross zone");
+            }
         }
 
         // update is needed if any of the fields below got filled by the user
