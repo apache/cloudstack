@@ -5829,6 +5829,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // check if migrating to same host
         long srcHostId = vm.getHostId();
+        Host srcHost = _resourceMgr.getHost(srcHostId);
+        if (srcHost == null) {
+            throw new InvalidParameterValueException("Cannot migrate VM, host with id: " + srcHostId + " for VM not found");
+        }
+
+
         if (destinationHost.getId() == srcHostId) {
             throw new InvalidParameterValueException("Cannot migrate VM, VM is already present on this host, please specify valid destination host to migrate the VM");
         }
@@ -5840,13 +5846,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (vm.getType() != VirtualMachine.Type.User) {
-            // for System VMs check that the destination host is within the same
-            // cluster
-            HostVO srcHost = _hostDao.findById(srcHostId);
-            if (srcHost != null && srcHost.getClusterId() != null && destinationHost.getClusterId() != null) {
-                if (srcHost.getClusterId().longValue() != destinationHost.getClusterId().longValue()) {
-                    throw new InvalidParameterValueException("Cannot migrate the VM, destination host is not in the same cluster as current host of the VM");
-                }
+            // for System VMs check that the destination host is within the same pod
+            if (srcHost.getPodId() != null && !srcHost.getPodId().equals(destinationHost.getPodId())) {
+                throw new InvalidParameterValueException("Cannot migrate the VM, destination host is not in the same pod as current host of the VM")
             }
         }
 
@@ -6123,6 +6125,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return implicitPlannerUsed;
     }
 
+    private boolean isVmVolumesOnZoneWideStore(VMInstanceVO vm) {
+        final List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+        if (CollectionUtils.isEmpty(volumes)) {
+            return false;
+        }
+        for (Volume volume : volumes) {
+            if (volume == null || volume.getPoolId() == null) {
+                return false;
+            }
+            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+            if (pool == null || !ScopeType.ZONE.equals(pool.getScope())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
     public VirtualMachine migrateVirtualMachineWithVolume(Long vmId, Host destinationHost, Map<String, String> volumeToPool) throws ResourceUnavailableException,
@@ -6166,11 +6185,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long srcHostId = vm.getHostId();
         Host srcHost = _resourceMgr.getHost(srcHostId);
 
-        if(srcHost == null ){
-            throw new InvalidParameterValueException("Cannot migrate VM, there is not Host with id: " + srcHostId);
+        if (srcHost == null) {
+            throw new InvalidParameterValueException("Cannot migrate VM, host with id: " + srcHostId + " for VM not found");
         }
 
-        // Check if src and destination hosts are valid and migrating to same host
+        // Check if source and destination hosts are valid and migrating to same host
         if (destinationHost.getId() == srcHostId) {
             throw new InvalidParameterValueException("Cannot migrate VM, VM is already present on this host, please" + " specify valid destination host to migrate the VM");
         }
@@ -6225,10 +6244,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
         Map<Long, Long> volToPoolObjectMap = new HashMap<Long, Long>();
-        if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId().equals(srcHost.getClusterId())
-                && MapUtils.isEmpty(volumeToPool)) {
-            // If the destination host is in the same cluster and volumes do not have to be migrated across pools
-            // then call migrateVirtualMachine for non-user VMs and exception for user VMs
+        if (!isVMUsingLocalStorage(vm) && MapUtils.isEmpty(volumeToPool)
+            && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isVmVolumesOnZoneWideStore(vm))){
+            // If volumes do not have to be migrated
+            // call migrateVirtualMachine for non-user VMs else throw exception
             if (!VirtualMachine.Type.User.equals(vm.getType())) {
                 return migrateVirtualMachine(vmId, destinationHost);
             }
