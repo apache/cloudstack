@@ -141,7 +141,7 @@ public class IvsVifDriver extends VifDriverBase {
     }
 
     @Override
-    public void unplug(InterfaceDef iface) {
+    public void unplug(InterfaceDef iface, boolean deleteBr) {
     }
 
     @Override

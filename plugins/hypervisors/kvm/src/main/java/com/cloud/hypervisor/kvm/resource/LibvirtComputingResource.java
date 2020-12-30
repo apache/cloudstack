@@ -1846,7 +1846,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 // We don't know which "traffic type" is associated with
                 // each interface at this point, so inform all vif drivers
                 for (final VifDriver vifDriver : getAllVifDrivers()) {
-                    vifDriver.unplug(pluggedNic);
+                    vifDriver.unplug(pluggedNic, true);
                 }
             }
         }
@@ -3480,7 +3480,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (nics != null) {
             for (final InterfaceDef nic : nics) {
                 for (final VifDriver vifDriver : getAllVifDrivers()) {
-                    vifDriver.unplug(nic);
+                    vifDriver.unplug(nic, true);
                 }
             }
         }

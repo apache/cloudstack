@@ -40,6 +40,10 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.SetupPersistentNetworkAnswer;
+import com.cloud.agent.api.SetupPersistentNetworkCommand;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -90,16 +94,19 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -182,6 +189,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
@@ -305,6 +313,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     UserVmManager _userVmMgr;
     @Inject
     TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
+    @Inject
+    ResourceManager resourceManager;
 
     List<NetworkGuru> networkGurus;
 
@@ -385,6 +395,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     NetworkModel _networkModel;
     @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
+    @Inject
+    ClusterDao clusterDao;
 
     protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     ScheduledExecutorService _executor;
@@ -1158,11 +1170,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     boolean isNetworkImplemented(final NetworkVO network) {
         final Network.State state = network.getState();
+        final NetworkOfferingVO offeringVO = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (state == Network.State.Implemented) {
             return true;
         } else if (state == Network.State.Setup) {
             final DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-            if (!isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) || zone.getNetworkType() == NetworkType.Basic) {
+            if ((!isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && !offeringVO.isPersistent()) || zone.getNetworkType() == NetworkType.Basic) {
                 return true;
             }
         }
@@ -1185,6 +1198,68 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             implemented = new Pair<NetworkGuru, NetworkVO>(guru, network);
         }
         return implemented;
+    }
+
+    private NicTO getNicTO(NetworkVO networkVO, NetworkOfferingVO networkOfferingVO) {
+        NicTO to = new NicTO();
+        to.setBroadcastType(networkVO.getBroadcastDomainType());
+        to.setType(networkVO.getTrafficType());
+        to.setBroadcastUri(networkVO.getBroadcastUri());
+        to.setIsolationuri(networkVO.getBroadcastUri());
+        to.setNetworkRateMbps(_configMgr.getNetworkOfferingNetworkRate(networkOfferingVO.getId(), networkVO.getDataCenterId()));
+        to.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(networkVO));
+        return to;
+    }
+
+    private boolean isNtwConfiguredInCluster(HostVO hostVO, Map<Long, List<Long>> clusterToHostsMap) {
+        Long clusterId = hostVO.getClusterId();
+        List<Long> hosts = clusterToHostsMap.get(clusterId);
+        if (hosts == null) {
+            hosts = new ArrayList<>();
+        }
+        if (hostVO.getHypervisorType() == HypervisorType.KVM) {
+            hosts.add(hostVO.getId());
+            clusterToHostsMap.put(clusterId, hosts);
+            return false;
+        }
+        if (hosts != null && !hosts.isEmpty()) {
+            return true;
+        }
+        hosts.add(hostVO.getId());
+        clusterToHostsMap.put(clusterId, hosts);
+        return false;
+    }
+
+    private void setupPersistentNetwork(NetworkVO network, NetworkOfferingVO offering, Long dcId) throws AgentUnavailableException, OperationTimedoutException {
+        NicTO to = getNicTO(network, offering);
+        List<ClusterVO> clusterVOS = clusterDao.listClustersByDcId(dcId);
+        List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, dcId);
+        Collections.reverse(hosts);
+        Map<Long, List<Long>> clusterToHostsMap = new HashMap<>();
+        SetupPersistentNetworkCommand cmd = new SetupPersistentNetworkCommand(to);
+        for (HostVO host : hosts) {
+            if (isNtwConfiguredInCluster(host, clusterToHostsMap)) {
+                continue;
+            }
+            final SetupPersistentNetworkAnswer answer = (SetupPersistentNetworkAnswer)_agentMgr.send(host.getId(), cmd);
+
+            if (answer == null) {
+                s_logger.warn("Unable to get an answer to the SetupPersistentNetworkCommand from agent:" + host.getId());
+                clusterToHostsMap.get(host.getClusterId()).remove(host.getId());
+                continue;
+                // throw new CloudRuntimeException("Unable to get an answer to the SetupPersistentNetworkCommand from agent: " + host.getId());
+            }
+
+            if (!answer.getResult()) {
+                s_logger.warn("Unable to setup agent " + host.getId() + " due to " + answer.getDetails() );
+//                final String msg = "Incorrect Network setup on agent, Reinitialize agent after network names are setup, details : " + answer.getDetails();
+//                throw new CloudRuntimeException(msg);
+                continue;
+            }
+        }
+        if (clusterToHostsMap.keySet().size() != clusterVOS.size()) {
+            throw new CloudRuntimeException("Failed to setup persistent network across all hosts");
+        }
     }
 
     @Override
@@ -1245,6 +1320,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             // implement network elements and re-apply all the network rules
             implementNetworkElementsAndResources(dest, context, network, offering);
 
+            long dcId = dest.getDataCenter().getId();
+            if (network.getGuestType() == GuestType.L2 && offering.isPersistent()) {
+                setupPersistentNetwork(network, offering, dcId);
+            }
             if (isSharedNetworkWithServices(network)) {
                 network.setState(Network.State.Implemented);
             } else {
@@ -1258,7 +1337,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } catch (final NoTransitionException e) {
             s_logger.error(e.getMessage());
             return null;
-        } catch (final CloudRuntimeException e) {
+        } catch (final CloudRuntimeException | OperationTimedoutException e) {
             s_logger.error("Caught exception: " + e.getMessage());
             return null;
         } finally {
@@ -2627,7 +2706,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         userNetwork.setPvlanType(isolatedPvlanType);
                     }
                 }
-
                 final List<? extends Network> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId, aclType, subdomainAccessFinal, vpcId,
                         isDisplayNetworkEnabled);
 
@@ -3937,7 +4015,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public NicProfile createNicForVm(final Network network, final NicProfile requested, final ReservationContext context, final VirtualMachineProfile vmProfile, final boolean prepare)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
             ResourceUnavailableException {
-
         final VirtualMachine vm = vmProfile.getVirtualMachine();
         final DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         final Host host = _hostDao.findById(vm.getHostId());

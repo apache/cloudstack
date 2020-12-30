@@ -56,7 +56,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
     @Override
     public Answer execute(final StopCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
-
+        final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
         if (command.checkBeforeCleanup()) {
@@ -125,10 +125,11 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                     }
                 } else {
                     for (final InterfaceDef iface : ifaces) {
+                        String vlanId = getVlanIdFromBridgeName(iface.getBrName());
                         // We don't know which "traffic type" is associated with
                         // each interface at this point, so inform all vif drivers
                         for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
-                            vifDriver.unplug(iface);
+                            vifDriver.unplug(iface, deleteBridge(vlanToPersistenceMap, vlanId));
                         }
                     }
                 }
@@ -160,4 +161,21 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
         }
     }
 
+    private String getVlanIdFromBridgeName(String brName) {
+        if (brName != null) {
+            String[] s = brName.split("-");
+            if (s.length > 1) {
+                return s[1];
+            }
+            return null;
+        }
+        return null;
+    }
+
+    private boolean deleteBridge(Map<String, Boolean> vlanToPersistenceMap, String vlanId) {
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanId != null && vlanToPersistenceMap.containsKey(vlanId)) {
+            return vlanToPersistenceMap.get(vlanId);
+        }
+        return false;
+    }
 }

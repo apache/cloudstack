@@ -16,13 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -48,7 +49,7 @@ import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateNetworkCmd extends BaseCmd implements UserCmd {
+public class CreateNetworkCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkCmd.class.getName());
 
     private static final String s_name = "createnetworkresponse";
@@ -325,5 +326,15 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network");
         }
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NETWORK_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Creating network";
     }
 }

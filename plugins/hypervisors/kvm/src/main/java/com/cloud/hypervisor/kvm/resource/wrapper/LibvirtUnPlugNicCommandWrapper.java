@@ -62,7 +62,7 @@ public final class LibvirtUnPlugNicCommandWrapper extends CommandWrapper<UnPlugN
                     // We don't know which "traffic type" is associated with
                     // each interface at this point, so inform all vif drivers
                     for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
-                        vifDriver.unplug(pluggedNic);
+                        vifDriver.unplug(pluggedNic, true);
                     }
                     return new UnPlugNicAnswer(command, true, "success");
                 }

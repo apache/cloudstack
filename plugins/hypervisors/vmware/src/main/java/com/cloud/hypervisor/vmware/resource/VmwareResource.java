@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.SetupPersistentNetworkAnswer;
+import com.cloud.agent.api.SetupPersistentNetworkCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DeployAsIsInfoTO;
 import com.cloud.agent.api.ValidateVcenterDetailsCommand;
@@ -577,6 +579,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((PrepareUnmanageVMInstanceCommand) cmd);
             } else if (clz == ValidateVcenterDetailsCommand.class) {
                 answer = execute((ValidateVcenterDetailsCommand) cmd);
+            } else if (clz == SetupPersistentNetworkCommand.class) {
+                answer = execute((SetupPersistentNetworkCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -615,6 +619,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
+    }
+
+    private Answer execute(SetupPersistentNetworkCommand cmd) {
+        VmwareHypervisorHost host = getHyperHost(getServiceContext());
+        String hostname = null;
+        VmwareContext context = getServiceContext();
+        HostMO hostMO = new HostMO(context, host.getMor());
+
+        try {
+            prepareNetworkFromNicInfo(hostMO, cmd.getNic(), false, null);
+            hostname =  host.getHyperHostName();
+        } catch (Exception e) {
+            return new SetupPersistentNetworkAnswer(cmd, false, "failed to get response");
+        }
+        return new SetupPersistentNetworkAnswer(cmd, true, hostname);
     }
 
     /**

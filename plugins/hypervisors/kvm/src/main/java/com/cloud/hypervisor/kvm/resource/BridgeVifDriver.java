@@ -267,8 +267,8 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     @Override
-    public void unplug(LibvirtVMDef.InterfaceDef iface) {
-        deleteVnetBr(iface.getBrName());
+    public void unplug(LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
+        deleteVnetBr(iface.getBrName(), deleteBr);
     }
 
     @Override
@@ -289,7 +289,7 @@ public class BridgeVifDriver extends VifDriverBase {
         return "brvx-" + vnetId;
     }
 
-    private String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
+    public String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
         String nic = _pifs.get(pifKey);
         if (nic == null) {
             // if not found in bridge map, maybe traffic label refers to pif already?
@@ -327,7 +327,7 @@ public class BridgeVifDriver extends VifDriverBase {
         }
     }
 
-    private void deleteVnetBr(String brName) {
+    private void deleteVnetBr(String brName, boolean deleteBr) {
         synchronized (_vnetBridgeMonitor) {
             String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName);
             if (cmdout == null)
@@ -376,6 +376,7 @@ public class BridgeVifDriver extends VifDriverBase {
             command.add("-v", vNetId);
             command.add("-p", pName);
             command.add("-b", brName);
+            command.add("-d", String.valueOf(deleteBr));
 
             final String result = command.execute();
             if (result != null) {
