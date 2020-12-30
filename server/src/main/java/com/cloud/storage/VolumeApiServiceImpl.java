@@ -2173,6 +2173,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (capabilities != null) {
                     liveMigrateVolume = capabilities.isStorageMotionSupported();
                 }
+
+                if(liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType())) {
+                    throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
+                            "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
+                            "Use 'migrateVirtualMachineWithVolumes' instead.");
+                }
             }
 
             // If vm is running, and hypervisor doesn't support live migration, then return error
