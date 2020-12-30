@@ -4759,7 +4759,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String servicePackageuuid = cmd.getServicePackageId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
-
+        final boolean enable = cmd.getEnable();
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
             for (final Long domainId: domainIds) {
@@ -5032,8 +5032,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             forVpc = false;
         }
 
-        final NetworkOffering offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
+        final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
                 serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds);
+        if (enable) {
+            offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
