@@ -46,6 +46,11 @@ case "$1" in
             fi
         fi
 
+        # Create symbolic link for python
+        if [ ! -f "/usr/bin/python" ]; then
+            ln -s /usr/bin/python2 /usr/bin/python
+        fi
+
         # Running cloudstack-agent-upgrade to update bridge name for upgrade from CloudStack 4.0.x (and before) to CloudStack 4.1 (and later)
         /usr/bin/cloudstack-agent-upgrade
         if [ ! -d "/etc/libvirt/hooks" ] ; then
