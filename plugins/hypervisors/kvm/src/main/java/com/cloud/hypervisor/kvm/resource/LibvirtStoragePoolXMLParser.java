@@ -55,7 +55,11 @@ public class LibvirtStoragePoolXMLParser {
             String format = getAttrValue("format", "type", source);
 
             if (type.equalsIgnoreCase("rbd")) {
-                int port = Integer.parseInt(getAttrValue("host", "port", source));
+                int port = 0;
+                String _xmlPort = getAttrValue("host", "port", source);
+                if ( ! _xmlPort.isEmpty()) {
+                    port = Integer.parseInt(_xmlPort);
+                }
                 String pool = getTagValue("name", source);
 
                 Element auth = (Element)source.getElementsByTagName("auth").item(0);
