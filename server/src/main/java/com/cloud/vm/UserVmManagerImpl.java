@@ -6126,7 +6126,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private boolean isVmVolumesOnZoneWideStore(VMInstanceVO vm) {
-        final List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+        final List<VolumeVO> volumes = _volsDao.findCreatedByInstance(vm.getId());
         if (CollectionUtils.isEmpty(volumes)) {
             return false;
         }

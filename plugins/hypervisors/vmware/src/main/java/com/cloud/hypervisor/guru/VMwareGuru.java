@@ -1109,7 +1109,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 hostInTargetCluster = hosts.get(0);
             }
             if (hostInTargetCluster == null) {
-                throw new CloudRuntimeException("Migration failed, unable to find suitable target host for worker VM placement while migrating between storage pools of different clusters without shared storages");
+                throw new CloudRuntimeException("Migration failed, unable to find suitable target host for VM placement while migrating between storage pools of different clusters without shared storages");
             }
         }
         MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(),
