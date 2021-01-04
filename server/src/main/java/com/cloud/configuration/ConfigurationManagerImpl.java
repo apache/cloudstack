@@ -5033,11 +5033,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds);
-        if (enable) {
-            offering.setState(NetworkOffering.State.Enabled);
-            _networkOfferingDao.update(offering.getId(), offering);
-        }
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
@@ -5175,7 +5171,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final Long serviceOfferingId,
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-            final List<Long> domainIds, final List<Long> zoneIds) {
+            final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -5343,6 +5339,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);
+        }
+
+        if (enableOffering) {
+            offeringFinal.setState(NetworkOffering.State.Enabled);
         }
 
         //Set Service package id

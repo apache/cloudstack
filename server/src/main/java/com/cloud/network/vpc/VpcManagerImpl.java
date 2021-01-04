@@ -387,21 +387,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        VpcOfferingVO vpcOfferingVO = createVpcOffering(vpcOfferingName, displayText, supportedServices,
+        return createVpcOffering(vpcOfferingName, displayText, supportedServices,
                 serviceProviderList, serviceCapabilitystList, serviceOfferingId,
-                domainIds, zoneIds);
-
-        if (enable) {
-            vpcOfferingVO.setState(State.Enabled);
-            _vpcOffDao.update(vpcOfferingVO.getId(), vpcOfferingVO);
-        }
-        return vpcOfferingVO;
+                domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
-    public VpcOfferingVO createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
-            final Map serviceCapabilitystList, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds) {
+    public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
+            final Map serviceCapabilitystList, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds, State state) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -481,7 +475,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilitystList);
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilitystList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilitystList);
-        final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, null, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
+        final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
                 redundantRouter);
 
         if (offering != null) {
