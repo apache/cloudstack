@@ -621,7 +621,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final QemuImg q = new QemuImg(cmd.getWaitInMillSeconds());
                 try {
                     q.convert(srcFile, destFile);
-                } catch (final QemuImgException e) {
+                } catch (final QemuImgException | LibvirtException e) {
                     final String message = "Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +
                             e.getMessage();
 
@@ -977,7 +977,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 } catch (final IOException e) {
                     s_logger.error("Failed to create " + snapshotDestPath + ". The error was: " + e.getMessage());
                     return new CopyCmdAnswer(e.toString());
-                }  catch (final QemuImgException e) {
+                }  catch (final QemuImgException | LibvirtException e) {
                     s_logger.error("Failed to backup the RBD snapshot from " + rbdSnapshot +
                             " to " + snapshotFile + " the error was: " + e.getMessage());
                     return new CopyCmdAnswer(e.toString());

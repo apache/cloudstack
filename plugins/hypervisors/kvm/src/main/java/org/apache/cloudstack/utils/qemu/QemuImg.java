@@ -20,12 +20,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.NotImplementedException;
-
+import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.NotImplementedException;
+import org.libvirt.LibvirtException;
 
 public class QemuImg {
 
@@ -234,7 +235,7 @@ public class QemuImg {
      * @return void
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
-                        final Map<String, String> options, final String snapshotName) throws QemuImgException {
+                        final Map<String, String> options, final String snapshotName) throws QemuImgException, LibvirtException {
         Script script = new Script(_qemuImgPath, timeout);
         if (StringUtils.isNotBlank(snapshotName)) {
             String qemuPath = Script.runSimpleBashScript(getQemuImgPathScript);
@@ -242,6 +243,11 @@ public class QemuImg {
         }
 
         script.add("convert");
+        Long version  = LibvirtConnection.getConnection().getVersion();
+        if (version > 2009000) {
+            script.add("-U");
+        }
+
         // autodetect source format. Sometime int he future we may teach KVMPhysicalDisk about more formats, then we can explicitly pass them if necessary
         //s.add("-f");
         //s.add(srcFile.getFormat().toString());
@@ -292,7 +298,7 @@ public class QemuImg {
      *            The destination file
      * @return void
      */
-    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile) throws QemuImgException {
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile) throws QemuImgException, LibvirtException {
         this.convert(srcFile, destFile, null, null);
     }
 
@@ -311,7 +317,7 @@ public class QemuImg {
      *            The snapshot name
      * @return void
      */
-    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, String snapshotName) throws QemuImgException {
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, String snapshotName) throws QemuImgException, LibvirtException {
         this.convert(srcFile, destFile, null, snapshotName);
     }
 
@@ -343,10 +349,15 @@ public class QemuImg {
      *            A QemuImgFile object containing the file to get the information from
      * @return A HashMap with String key-value information as returned by 'qemu-img info'
      */
-    public Map<String, String> info(final QemuImgFile file) throws QemuImgException {
+    public Map<String, String> info(final QemuImgFile file) throws QemuImgException, LibvirtException {
         final Script s = new Script(_qemuImgPath);
         s.add("info");
+        Long version  = LibvirtConnection.getConnection().getVersion();
+        if (version > 2009000) {
+            s.add("-U");
+        }
         s.add(file.getFileName());
+
         final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         final String result = s.execute(parser);
         if (result != null) {
