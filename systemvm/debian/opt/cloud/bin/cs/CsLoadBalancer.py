@@ -26,8 +26,8 @@ import CsHelper
 HAPROXY_CONF_T = "/etc/haproxy/haproxy.cfg.new"
 HAPROXY_CONF_P = "/etc/haproxy/haproxy.cfg"
 
+IP_ROUTE_TABLE_NUMBER_FOR_TRANSPARENCY = 99
 SSL_CERTS_DIR = "/etc/ssl/cloudstack/"
-CsHelper.execute("mkdir -p %s" % SSL_CERTS_DIR)
 
 
 class CsLoadBalancer(CsDataBag):
@@ -93,7 +93,7 @@ class CsLoadBalancer(CsDataBag):
             firewall.append(["filter", "", "-A INPUT -p tcp -m tcp -d %s --dport %s -m state --state NEW -j ACCEPT" % (ip, port)])
 
     def _configure_firewall_for_transparent(self, is_transparent):
-        tableNo = 99
+        tableNo = IP_ROUTE_TABLE_NUMBER_FOR_TRANSPARENCY
         firewall = self.config.get_fw()
         if is_transparent is None or not is_transparent:
             if ["mangle", "", "-A PREROUTING -p tcp -m socket -j DIVERT"] in firewall:
@@ -116,6 +116,8 @@ class CsLoadBalancer(CsDataBag):
 
     def _create_pem_for_sslcert(self, ssl_certs):
         logging.debug("CsLoadBalancer:: creating new pem files in %s and cleaning up it" % SSL_CERTS_DIR)
+        if not os.path.exists(SSL_CERTS_DIR):
+            CsHelper.execute("mkdir -p %s" % SSL_CERTS_DIR)
         cert_names = []
         for cert in ssl_certs:
             cert_names.append(cert['name'] + ".pem")
