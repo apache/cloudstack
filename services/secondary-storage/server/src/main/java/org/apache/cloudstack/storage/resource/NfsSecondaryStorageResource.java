@@ -46,6 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -190,6 +191,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
     private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
+    private static final String ORIGINAL_FILE_EXTENSION = ".orig";
 
     private static final Map<String, String> updatableConfigData = Maps.newHashMap();
     static {
@@ -391,6 +393,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     public Answer execute(GetDatadisksCommand cmd) {
         DataTO srcData = cmd.getData();
+        String configurationId = cmd.getConfigurationId();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO srcStore = srcData.getDataStore();
         if (!(srcStore instanceof NfsTO)) {
@@ -435,7 +438,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             Script command = new Script("cp", _timeout, s_logger);
             command.add(ovfFilePath);
-            command.add(ovfFilePath + ".orig");
+            command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
             String result = command.execute();
             if (result != null) {
                 String msg = "Unable to rename original OVF, error msg: " + result;
@@ -445,7 +448,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.debug("Reading OVF " + ovfFilePath + " to retrive the number of disks present in OVA");
             OVFHelper ovfHelper = new OVFHelper();
 
-            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFilePath);
+            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, configurationId);
             return new GetDatadisksAnswer(disks);
         } catch (Exception e) {
             String msg = "Get Datadisk Template Count failed due to " + e.getMessage();
@@ -503,7 +506,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                         throw new Exception(msg);
                     }
                     command = new Script("cp", _timeout, s_logger);
-                    command.add(ovfFilePath + ".orig");
+                    command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
                     command.add(newTmplDirAbsolute);
                     result = command.execute();
                     if (result != null) {
@@ -517,7 +520,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // Create OVF for the disk
             String newOvfFilePath = newTmplDirAbsolute + File.separator + ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1);
             OVFHelper ovfHelper = new OVFHelper();
-            ovfHelper.rewriteOVFFile(ovfFilePath + ".orig", newOvfFilePath, diskName);
+            ovfHelper.rewriteOVFFileForSingleDisk(ovfFilePath + ORIGINAL_FILE_EXTENSION, newOvfFilePath, diskName);
 
             postCreatePrivateTemplate(newTmplDirAbsolute, templateId, templateUniqueName, physicalSize, virtualSize);
             writeMetaOvaForTemplate(newTmplDirAbsolute, ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1), diskName, templateUniqueName, physicalSize);
@@ -1300,15 +1303,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         try {
             File srcFile = new File(getDir(srcStore.getUrl(), _nfsVersion), srcData.getPath());
             File destFile = new File(getDir(destStore.getUrl(), _nfsVersion), destData.getPath());
-            ImageFormat format = getTemplateFormat(srcFile.getName());
 
             if (srcFile == null) {
-                return new CopyCmdAnswer("Can't find src file:" + srcFile);
+                return new CopyCmdAnswer("Can't find source file at path: "+ srcData.getPath() +" on datastore: "+ srcDataStore.getUuid() +" to initiate file transfer");
             }
+            ImageFormat format = getTemplateFormat(srcFile.getName());
             if (srcData instanceof TemplateObjectTO || srcData instanceof VolumeObjectTO) {
                 File srcDir = null;
                 if (srcFile.isFile() || srcFile.getName().contains(".")) {
                     srcDir = new File(srcFile.getParent());
+                } else if (!srcFile.isDirectory()) {
+                    srcDir = new File(srcFile.getParent());
+                } else if (srcFile.isDirectory() && Arrays.stream(srcData.getPath().split(File.separator)).count() == 4) {
+                    destFile = new File(destFile.getPath(), srcFile.getName());
                 }
                 File destDir = null;
                 if (destFile.isFile()) {
@@ -1351,7 +1358,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 if (srcFile.isFile()) {
                     newVol.setPath(destData.getPath() + File.separator + srcFile.getName());
                 } else {
-                    newVol.setPath(destData.getPath());
+                    newVol.setPath(srcData.getPath());
                 }
                 newVol.setSize(getVirtualSize(srcFile, format));
                 retObj = newVol;
@@ -2271,6 +2278,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 answer.setInstallPath(uploadEntity.getTmpltPath());
                 answer.setPhysicalSize(uploadEntity.getPhysicalSize());
                 answer.setDownloadPercent(100);
+                answer.setGuestOsInfo(uploadEntity.getGuestOsInfo());
+                answer.setMinimumHardwareVersion(uploadEntity.getMinimumHardwareVersion());
                 uploadEntityStateMap.remove(entityUuid);
                 return answer;
             } else if (uploadEntity.getUploadState() == UploadEntity.Status.IN_PROGRESS) {
@@ -2685,8 +2694,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (_inSystemVM) {
             _localgw = (String)params.get("localgw");
             if (_localgw != null) { // can only happen inside service vm
-                String mgmtHost = (String)params.get("host");
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                String mgmtHosts = (String)params.get("host");
+                for (final String mgmtHost : mgmtHosts.split(",")) {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                }
 
                 String internalDns1 = (String)params.get("internaldns1");
                 if (internalDns1 == null) {
@@ -3404,6 +3415,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 loc.addFormat(info);
                 uploadEntity.setVirtualSize(info.virtualSize);
                 uploadEntity.setPhysicalSize(info.size);
+                if (info.ovfInformationTO != null) {
+                    if (info.ovfInformationTO.getGuestOsInfo() != null) {
+                        uploadEntity.setGuestOsInfo(info.ovfInformationTO.getGuestOsInfo());
+                    }
+                    if (info.ovfInformationTO.getHardwareSection() != null) {
+                        uploadEntity.setMinimumHardwareVersion(info.ovfInformationTO.getHardwareSection().getMinimiumHardwareVersion());
+                    }
+                }
                 break;
             }
         }

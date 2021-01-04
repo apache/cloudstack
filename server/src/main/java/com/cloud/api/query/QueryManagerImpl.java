@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -71,7 +72,6 @@ import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
-import org.apache.cloudstack.api.command.user.template.ListTemplateOVFProperties;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
@@ -101,7 +101,6 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.StorageTagResponse;
-import org.apache.cloudstack.api.response.TemplateOVFPropertyResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -118,12 +117,13 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.api.storage.OVFProperty;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
@@ -212,11 +212,9 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePoolTagVO;
-import com.cloud.storage.TemplateOVFPropertyVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
-import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -403,7 +401,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     ManagementServerHostDao managementServerHostDao;
 
     @Inject
-    TemplateOVFPropertiesDao templateOVFPropertiesDao;
+    VMTemplateDetailsDao vmTemplateDetailsDao;
 
     @Inject
     public VpcVirtualNetworkApplianceService routerService;
@@ -416,6 +414,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private TemplateDataStoreDao templateDataStoreDao;
+
+    @Inject
+    private PrimaryDataStoreDao _storagePoolDao;
 
     @Inject
     private ProjectInvitationDao projectInvitationDao;
@@ -919,6 +920,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object affinityGroupId = cmd.getAffinityGroupId();
         Object keyPairName = cmd.getKeyPairName();
         Object serviceOffId = cmd.getServiceOfferingId();
+        Object securityGroupId = cmd.getSecurityGroupId();
+        Object isHaEnabled = cmd.getHaEnabled();
         Object pod = null;
         Object hostId = null;
         Object storageId = null;
@@ -948,6 +951,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (display != null) {
             sb.and("display", sb.entity().isDisplayVm(), SearchCriteria.Op.EQ);
         }
+
+        if (isHaEnabled != null) {
+            sb.and("haEnabled", sb.entity().isHaEnabled(), SearchCriteria.Op.EQ);
+        }
+
+
         if (groupId != null && (Long)groupId != -1) {
             sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
         }
@@ -965,7 +974,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (storageId != null) {
-            sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
+            StoragePoolVO poolVO = _storagePoolDao.findById((Long) storageId);
+            if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.IN);
+            } else {
+                sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
+            }
         }
 
         if (affinityGroupId != null) {
@@ -978,6 +992,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (!isRootAdmin) {
             sb.and("displayVm", sb.entity().isDisplayVm(), SearchCriteria.Op.EQ);
+        }
+
+        if (securityGroupId != null) {
+            sb.and("securityGroupId", sb.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
         }
 
         // populate the search criteria with the values passed in
@@ -1016,8 +1034,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("serviceOfferingId", serviceOffId);
         }
 
+        if (securityGroupId != null) {
+            sc.setParameters("securityGroupId", securityGroupId);
+        }
+
         if (display != null) {
             sc.setParameters("display", display);
+        }
+
+        if (isHaEnabled != null) {
+            sc.setParameters("haEnabled", isHaEnabled);
         }
 
         if (ids != null && !ids.isEmpty()) {
@@ -1091,7 +1117,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
 
             if (storageId != null) {
-                sc.setParameters("poolId", storageId);
+                StoragePoolVO poolVO = _storagePoolDao.findById((Long) storageId);
+                if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                    List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster((Long) storageId);
+                    List<Long> childDatastoreIds = childDatastores.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+                    sc.setParameters("poolId", childDatastoreIds.toArray());
+                } else {
+                    sc.setParameters("poolId", storageId);
+                }
             }
         }
 
@@ -1922,7 +1955,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.EQ);
+        if (storageId != null) {
+            StoragePoolVO poolVO = _storagePoolDao.findByUuid(storageId);
+            if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.IN);
+            } else {
+                sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.EQ);
+            }
+        }
         sb.and("diskOfferingId", sb.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
@@ -1991,7 +2031,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (storageId != null) {
-            sc.setParameters("storageId", storageId);
+            StoragePoolVO poolVO = _storagePoolDao.findByUuid(storageId);
+            if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(poolVO.getId());
+                List<String> childDatastoreIds = childDatastores.stream().map(mo -> mo.getUuid()).collect(Collectors.toList());
+                sc.setParameters("storageId", childDatastoreIds.toArray());
+            } else {
+                sc.setParameters("storageId", storageId);
+            }
         }
 
         if (clusterId != null) {
@@ -2382,6 +2429,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
         sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
+        sb.and("parent", sb.entity().getParent(), Op.EQ);
 
         SearchCriteria<StoragePoolJoinVO> sc = sb.create();
 
@@ -2419,6 +2467,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (scopeType != null) {
             sc.setParameters("scope", scopeType.toString());
         }
+        sc.setParameters("parent", 0);
 
         // search Pool details by ids
         Pair<List<StoragePoolJoinVO>, Integer> uniquePoolPair = _poolJoinDao.searchAndCount(sc, searchFilter);
@@ -2585,6 +2634,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (readonly != null) {
             sc.setParameters("readonly", readonly);
         }
+
         // search Store details by ids
         Pair<List<ImageStoreJoinVO>, Integer> uniqueStorePair = _imageStoreJoinDao.searchAndCount(sc, searchFilter);
         Integer count = uniqueStorePair.second();
@@ -2874,6 +2924,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ServiceOfferingVO currentVmOffering = null;
         Boolean isRecursive = cmd.isRecursive();
         Long zoneId = cmd.getZoneId();
+        Integer cpuNumber = cmd.getCpuNumber();
+        Integer memory = cmd.getMemory();
+        Integer cpuSpeed = cmd.getCpuSpeed();
 
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
@@ -2925,35 +2978,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list service offerings with isrecursive=true");
                 }
-            }/* else { // domain + all ancestors
-                // find all domain Id up to root domain for this account
-                List<Long> domainIds = new ArrayList<Long>();
-                DomainVO domainRecord;
-                if (vmId != null) {
-                    UserVmVO vmInstance = _userVmDao.findById(vmId);
-                    domainRecord = _domainDao.findById(vmInstance.getDomainId());
-                    if (domainRecord == null) {
-                        s_logger.error("Could not find the domainId for vmId:" + vmId);
-                        throw new CloudAuthenticationException("Could not find the domainId for vmId:" + vmId);
-                    }
-                } else {
-                    domainRecord = _domainDao.findById(caller.getDomainId());
-                    if (domainRecord == null) {
-                        s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
-                        throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
-                    }
-                }
-                domainIds.add(domainRecord.getId());
-                while (domainRecord.getParent() != null) {
-                    domainRecord = _domainDao.findById(domainRecord.getParent());
-                    domainIds.add(domainRecord.getId());
-                }
-
-                SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
-                spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
-                spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as well
-                sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
-            }*/
+            }
         } else {
             // for root users
             if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
@@ -2998,6 +3023,37 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<ServiceOfferingJoinVO> zoneSC = sb.create();
             zoneSC.setParameters("zoneId", String.valueOf(zoneId));
             sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
+        }
+
+        if (cpuNumber != null) {
+            SearchCriteria<ServiceOfferingJoinVO> cpuConstraintSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
+            cpuConstraintSearchCriteria.addAnd("minCpu", Op.LTEQ, cpuNumber);
+            cpuConstraintSearchCriteria.addAnd("maxCpu", Op.GTEQ, cpuNumber);
+
+            SearchCriteria<ServiceOfferingJoinVO> cpuSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
+            cpuSearchCriteria.addOr("minCpu", Op.NULL);
+            cpuSearchCriteria.addOr("constraints", Op.SC, cpuConstraintSearchCriteria);
+
+            sc.addAnd("cpuConstraints", SearchCriteria.Op.SC, cpuSearchCriteria);
+        }
+
+        if (memory != null) {
+            SearchCriteria<ServiceOfferingJoinVO> memoryConstraintSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
+            memoryConstraintSearchCriteria.addAnd("minMemory", Op.LTEQ, memory);
+            memoryConstraintSearchCriteria.addAnd("maxMemory", Op.GTEQ, memory);
+
+            SearchCriteria<ServiceOfferingJoinVO> memSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
+            memSearchCriteria.addOr("minMemory", Op.NULL);
+            memSearchCriteria.addOr("memconstraints", Op.SC, memoryConstraintSearchCriteria);
+
+            sc.addAnd("memoryConstraints", SearchCriteria.Op.SC, memSearchCriteria);
+        }
+
+        if (cpuSpeed != null) {
+            SearchCriteria<ServiceOfferingJoinVO> cpuSpeedSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
+            cpuSpeedSearchCriteria.addOr("speed", Op.NULL);
+            cpuSpeedSearchCriteria.addOr("speed", Op.EQ, cpuSpeed);
+            sc.addAnd("cpuspeedconstraints", SearchCriteria.Op.SC, cpuSpeedSearchCriteria);
         }
 
         Pair<List<ServiceOfferingJoinVO>, Integer> result = _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
@@ -3280,7 +3336,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             respView = ResponseView.Full;
         }
 
-        List<TemplateResponse> templateResponses = ViewResponseHelper.createTemplateResponse(respView, result.first().toArray(new TemplateJoinVO[result.first().size()]));
+        List<TemplateResponse> templateResponses = ViewResponseHelper.createTemplateResponse(cmd.getDetails(), respView, result.first().toArray(new TemplateJoinVO[result.first().size()]));
         response.setResponses(templateResponses, result.second());
         return response;
     }
@@ -3387,11 +3443,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 domain = _domainDao.findById(Domain.ROOT_DOMAIN);
             }
 
-            // List<HypervisorType> hypers = null;
-            // if (!isIso) {
-            // hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
-            // }
-
             setIdsListToSearchCriteria(sc, ids);
 
             // add criteria for project or not
@@ -3439,17 +3490,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
             }
 
-            if (!isIso) {
-                // add hypervisor criteria for template case
-                if (hypers != null && !hypers.isEmpty()) {
-                    String[] relatedHypers = new String[hypers.size()];
-                    for (int i = 0; i < hypers.size(); i++) {
-                        relatedHypers[i] = hypers.get(i).toString();
-                    }
-                    sc.addAnd("hypervisorType", SearchCriteria.Op.IN, relatedHypers);
-                }
-            }
-
             // control different template filters
             if (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community) {
                 sc.addAnd("publicTemplate", SearchCriteria.Op.EQ, true);
@@ -3492,62 +3532,78 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
                 sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
             }
+        }
 
-            // add tags criteria
-            if (tags != null && !tags.isEmpty()) {
-                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                for (Map.Entry<String, String> entry : tags.entrySet()) {
-                    SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
-                    scTag.addAnd("tagKey", SearchCriteria.Op.EQ, entry.getKey());
-                    scTag.addAnd("tagValue", SearchCriteria.Op.EQ, entry.getValue());
-                    if (isIso) {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.ISO);
-                    } else {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.Template);
-                    }
-                    scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
+        return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr,
+                showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc);
+
+    }
+
+    private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
+                                                               HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr,
+                                                               boolean showRemovedTmpl, Long parentTemplateId, Boolean showUnique,
+                                                               Filter searchFilter, SearchCriteria<TemplateJoinVO> sc) {
+        if (!isIso) {
+            // add hypervisor criteria for template case
+            if (hypers != null && !hypers.isEmpty()) {
+                String[] relatedHypers = new String[hypers.size()];
+                for (int i = 0; i < hypers.size(); i++) {
+                    relatedHypers[i] = hypers.get(i).toString();
                 }
-                sc.addAnd("tagKey", SearchCriteria.Op.SC, scc);
+                sc.addAnd("hypervisorType", SearchCriteria.Op.IN, relatedHypers);
             }
+        }
 
-            // other criteria
-
-            if (keyword != null) {
-                sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            } else if (name != null) {
-                sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        // add tags criteria
+        if (tags != null && !tags.isEmpty()) {
+            SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+            for (Map.Entry<String, String> entry : tags.entrySet()) {
+                SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
+                scTag.addAnd("tagKey", SearchCriteria.Op.EQ, entry.getKey());
+                scTag.addAnd("tagValue", SearchCriteria.Op.EQ, entry.getValue());
+                if (isIso) {
+                    scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.ISO);
+                } else {
+                    scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.Template);
+                }
+                scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
             }
+            sc.addAnd("tagKey", SearchCriteria.Op.SC, scc);
+        }
 
-            if (isIso) {
-                sc.addAnd("format", SearchCriteria.Op.EQ, "ISO");
+        // other criteria
 
-            } else {
-                sc.addAnd("format", SearchCriteria.Op.NEQ, "ISO");
-            }
+        if (keyword != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        } else if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
 
-            if (!hyperType.equals(HypervisorType.None)) {
-                sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
-            }
+        SearchCriteria.Op op = isIso ? Op.EQ : Op.NEQ;
+        sc.addAnd("format", op, "ISO");
 
-            if (bootable != null) {
-                sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
-            }
+        if (!hyperType.equals(HypervisorType.None)) {
+            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
+        }
 
-            if (onlyReady) {
-                SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
-                readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
-                readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
-                SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
-                isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
-                isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
-                readySc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
-                sc.addAnd("state", SearchCriteria.Op.SC, readySc);
-            }
+        if (bootable != null) {
+            sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
+        }
 
-            if (!showDomr) {
-                // excluding system template
-                sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
-            }
+        if (onlyReady) {
+            SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
+            readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
+            readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
+            SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
+            isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
+            isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
+            readySc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
+            sc.addAnd("state", SearchCriteria.Op.SC, readySc);
+        }
+
+        if (!showDomr) {
+            // excluding system template
+            sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
         }
 
         if (zoneId != null) {
@@ -3592,7 +3648,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // VMTemplateDaoImpl.searchForTemplates and understand why we need to
         // specially handle ISO. The original logic is very twisted and no idea
         // about what the code was doing.
-
     }
 
     // findTemplatesByIdOrTempZonePair returns the templates with the given ids if showUnique is true, or else by the TempZonePair
@@ -4048,29 +4103,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         mgmtResponse.setVersion(mgmt.getVersion());
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
-    }
-
-    @Override
-    public ListResponse<TemplateOVFPropertyResponse> listTemplateOVFProperties(ListTemplateOVFProperties cmd) {
-        ListResponse<TemplateOVFPropertyResponse> response = new ListResponse<>();
-        List<TemplateOVFPropertyResponse> result = new ArrayList<>();
-        Long templateId = cmd.getTemplateId();
-        List<TemplateOVFPropertyVO> ovfProperties = templateOVFPropertiesDao.listByTemplateId(templateId);
-        for (OVFProperty property : ovfProperties) {
-            TemplateOVFPropertyResponse propertyResponse = new TemplateOVFPropertyResponse();
-            propertyResponse.setKey(property.getKey());
-            propertyResponse.setType(property.getType());
-            propertyResponse.setValue(property.getValue());
-            propertyResponse.setQualifiers(property.getQualifiers());
-            propertyResponse.setUserConfigurable(property.isUserConfigurable());
-            propertyResponse.setLabel(property.getLabel());
-            propertyResponse.setDescription(property.getDescription());
-            propertyResponse.setPassword(property.isPassword());
-            propertyResponse.setObjectName("ovfproperty");
-            result.add(propertyResponse);
-        }
-        response.setResponses(result);
-        return response;
     }
 
     @Override

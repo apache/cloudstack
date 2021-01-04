@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -910,6 +911,12 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
         // In all cases return something.
         return new CopyCmdAnswer(details);
+    }
+
+    @Override
+    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+        s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for XenServerStorageProcessor");
+        return new Answer(cmd,false,"Not applicable used for XenServerStorageProcessor");
     }
 
     @Override

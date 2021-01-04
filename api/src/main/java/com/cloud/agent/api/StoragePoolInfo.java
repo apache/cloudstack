@@ -28,6 +28,7 @@ public class StoragePoolInfo {
     StoragePoolType poolType;
     long capacityBytes;
     long availableBytes;
+    String name;
     Map<String, String> details;
 
     protected StoragePoolInfo() {
@@ -67,12 +68,32 @@ public class StoragePoolInfo {
         return host;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setLocalPath(String localPath) {
+        this.localPath = localPath;
+    }
+
     public String getLocalPath() {
         return localPath;
     }
 
+    public void setHostPath(String hostPath) {
+        this.hostPath = hostPath;
+    }
+
     public String getHostPath() {
         return hostPath;
+    }
+
+    public void setPoolType(StoragePoolType poolType) {
+        this.poolType = poolType;
     }
 
     public StoragePoolType getPoolType() {

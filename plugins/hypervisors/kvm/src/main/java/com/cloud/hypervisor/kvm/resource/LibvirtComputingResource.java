@@ -75,7 +75,6 @@ import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
-import org.libvirt.NodeInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -2303,14 +2302,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (vmTO.getType() == VirtualMachine.Type.User) {
                 cmd.setFeatures(_cpuFeatures);
             }
-            // multi cores per socket, for larger core configs
-            if (vcpus % 6 == 0) {
-                final int sockets = vcpus / 6;
-                cmd.setTopology(6, sockets);
-            } else if (vcpus % 4 == 0) {
-                final int sockets = vcpus / 4;
-                cmd.setTopology(4, sockets);
-            }
+            setCpuTopology(cmd, vcpus, vmTO.getDetails());
             vm.addComp(cmd);
         }
 
@@ -3627,8 +3619,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 elapsedTime = now.getTimeInMillis() - oldStats._timestamp.getTimeInMillis();
                 double utilization = (info.cpuTime - oldStats._usedTime) / ((double)elapsedTime * 1000000);
 
-                final NodeInfo node = conn.nodeInfo();
-                utilization = utilization / node.cpus;
+                utilization = utilization / info.nrVirtCpu;
                 if (utilization > 0) {
                     stats.setCPUUtilization(utilization * 100);
                 }
@@ -4231,5 +4222,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return false;
+    }
+
+    private void setCpuTopology(CpuModeDef cmd, int vcpus, Map<String, String> details) {
+        // multi cores per socket, for larger core configs
+        int numCoresPerSocket = -1;
+        if (details != null) {
+            final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
+            final int intCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, numCoresPerSocket);
+            if (intCoresPerSocket > 0 && vcpus % intCoresPerSocket == 0) {
+                numCoresPerSocket = intCoresPerSocket;
+            }
+        }
+        if (numCoresPerSocket <= 0) {
+            if (vcpus % 6 == 0) {
+                numCoresPerSocket = 6;
+            } else if (vcpus % 4 == 0) {
+                numCoresPerSocket = 4;
+            }
+        }
+        if (numCoresPerSocket > 0) {
+            cmd.setTopology(numCoresPerSocket, vcpus / numCoresPerSocket);
+        }
     }
 }

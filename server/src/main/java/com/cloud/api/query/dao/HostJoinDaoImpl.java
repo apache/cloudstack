@@ -170,9 +170,12 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
 
                 hostResponse.setMemoryTotal(host.getTotalMemory());
-                Float totalMemorywithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
-                hostResponse.setMemWithOverprovisioning(totalMemorywithOverprovisioning.toString());
+                Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
+                hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
                 hostResponse.setMemoryAllocated(mem);
+                hostResponse.setMemoryAllocatedBytes(mem);
+                String memoryAllocatedPercentage = decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%";
+                hostResponse.setMemoryAllocatedPercentage(memoryAllocatedPercentage);
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(host.getTag());
@@ -190,9 +193,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
+                hostResponse.setCpuAllocatedValue(cpu);
+                String cpuAlloc = decimalFormat.format(((float)cpu / (float)(host.getCpus() * host.getSpeed())) * 100f) + "%";
+                hostResponse.setCpuAllocated(cpuAlloc);
+                hostResponse.setCpuAllocatedPercentage(cpuAlloc);
                 float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
-                hostResponse.setCpuAllocated(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
-                hostResponse.setCpuWithOverprovisioning(Float.toString(cpuWithOverprovisioning));
+                hostResponse.setCpuAllocatedWithOverprovisioning(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
+                hostResponse.setCpuWithOverprovisioning(decimalFormat.format(cpuWithOverprovisioning));
             }
 
             if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)) {
@@ -320,8 +327,11 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setMemoryTotal(host.getTotalMemory());
                 Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
-                hostResponse.setMemWithOverprovisioning(memWithOverprovisioning.toString());
-                hostResponse.setMemoryAllocated(decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%");
+                hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
+                String memoryAllocatedPercentage = decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%";
+                hostResponse.setMemoryAllocated(memoryAllocatedPercentage);
+                hostResponse.setMemoryAllocatedPercentage(memoryAllocatedPercentage);
+                hostResponse.setMemoryAllocatedBytes(mem);
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(host.getTag());
@@ -339,9 +349,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
+                hostResponse.setCpuAllocatedValue(cpu);
+                String cpuAlloc = decimalFormat.format(((float)cpu / (float)(host.getCpus() * host.getSpeed())) * 100f) + "%";
+                hostResponse.setCpuAllocated(cpuAlloc);
+                hostResponse.setCpuAllocatedPercentage(cpuAlloc);
                 float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
-                hostResponse.setCpuAllocated(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
-                hostResponse.setCpuWithOverprovisioning(Float.toString(cpuWithOverprovisioning));
+                hostResponse.setCpuAllocatedWithOverprovisioning(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
+                hostResponse.setCpuWithOverprovisioning(decimalFormat.format(cpuWithOverprovisioning));
             }
 
             if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)) {

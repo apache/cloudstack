@@ -393,7 +393,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             if (meanStdDevCurrent > threshold && storageCapacityBelowThreshold(storageCapacities, destDatastoreId)) {
                 return true;
             }
-            return  true;
         } else {
             if (storageCapacityBelowThreshold(storageCapacities, destDatastoreId)) {
                 return true;
@@ -404,7 +403,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
     private boolean storageCapacityBelowThreshold(Map<Long, Pair<Long, Long>> storageCapacities, Long destStoreId) {
         Pair<Long, Long> imageStoreCapacity = storageCapacities.get(destStoreId);
-        if (imageStoreCapacity != null && (imageStoreCapacity.first() / (imageStoreCapacity.second() * 1.0)) <= imageStoreCapacityThreshold) {
+        long usedCapacity = imageStoreCapacity.second() - imageStoreCapacity.first();
+        if (imageStoreCapacity != null && (usedCapacity / (imageStoreCapacity.second() * 1.0)) <= imageStoreCapacityThreshold) {
             s_logger.debug("image store: " + destStoreId + " has sufficient capacity to proceed with migration of file");
             return true;
         }
