@@ -16,20 +16,20 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class GetTungstenNetNsName extends TungstenCommand {
+public class GetTungstenNatIpCommand extends TungstenCommand {
     private final String projectUuid;
-    private final String logicalRouterName;
+    private final String logicalRouterUuid;
 
-    public GetTungstenNetNsName(final String projectUuid, final String logicalRouterName) {
+    public GetTungstenNatIpCommand(final String projectUuid, final String logicalRouterUuid) {
         this.projectUuid = projectUuid;
-        this.logicalRouterName = logicalRouterName;
+        this.logicalRouterUuid = logicalRouterUuid;
     }
 
     public String getProjectUuid() {
         return projectUuid;
     }
 
-    public String getLogicalRouterName() {
-        return logicalRouterName;
+    public String getLogicalRouterUuid() {
+        return logicalRouterUuid;
     }
 }

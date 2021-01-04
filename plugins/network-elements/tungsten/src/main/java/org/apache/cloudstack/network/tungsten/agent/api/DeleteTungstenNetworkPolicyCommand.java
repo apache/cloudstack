@@ -16,20 +16,19 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class CreateTungstenFloatingIpCommand extends TungstenCommand {
+public class DeleteTungstenNetworkPolicyCommand extends TungstenCommand {
+    private final String name;
     private final String projectUuid;
     private final String networkUuid;
-    private final String fipName;
-    private final String name;
-    private final String publicIp;
 
-    public CreateTungstenFloatingIpCommand(final String projectUuid, final String networkUuid, final String fipName,
-        final String name, final String publicIp) {
+    public DeleteTungstenNetworkPolicyCommand(final String name, final String projectUuid, final String networkUuid) {
+        this.name = name;
         this.projectUuid = projectUuid;
         this.networkUuid = networkUuid;
-        this.fipName = fipName;
-        this.name = name;
-        this.publicIp = publicIp;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getProjectUuid() {
@@ -38,17 +37,5 @@ public class CreateTungstenFloatingIpCommand extends TungstenCommand {
 
     public String getNetworkUuid() {
         return networkUuid;
-    }
-
-    public String getFipName() {
-        return fipName;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getPublicIp() {
-        return publicIp;
     }
 }

@@ -16,11 +16,14 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.service;
 
+import com.cloud.utils.TungstenUtils;
 import net.juniper.tungsten.api.ApiConnector;
 import net.juniper.tungsten.api.ApiObjectBase;
 import net.juniper.tungsten.api.ApiPropertyBase;
 import net.juniper.tungsten.api.ObjectReference;
 import net.juniper.tungsten.api.Status;
+import net.juniper.tungsten.api.types.ActionListType;
+import net.juniper.tungsten.api.types.AddressType;
 import net.juniper.tungsten.api.types.Domain;
 import net.juniper.tungsten.api.types.FloatingIp;
 import net.juniper.tungsten.api.types.FloatingIpPool;
@@ -29,14 +32,21 @@ import net.juniper.tungsten.api.types.IpamSubnetType;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.MacAddressesType;
 import net.juniper.tungsten.api.types.NetworkIpam;
+import net.juniper.tungsten.api.types.NetworkPolicy;
+import net.juniper.tungsten.api.types.PolicyEntriesType;
+import net.juniper.tungsten.api.types.PolicyRuleType;
 import net.juniper.tungsten.api.types.Project;
+import net.juniper.tungsten.api.types.SecurityGroup;
+import net.juniper.tungsten.api.types.SequenceType;
 import net.juniper.tungsten.api.types.SubnetType;
 import net.juniper.tungsten.api.types.VirtualMachine;
 import net.juniper.tungsten.api.types.VirtualMachineInterface;
 import net.juniper.tungsten.api.types.VirtualNetwork;
+import net.juniper.tungsten.api.types.VirtualNetworkPolicyType;
 import net.juniper.tungsten.api.types.VnSubnetsType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -61,7 +71,6 @@ public class TungstenApi {
 
     private String hostname;
     private String port;
-    private String zoneId;
     private ApiConnector apiConnector;
 
     public String getHostname() {
@@ -78,14 +87,6 @@ public class TungstenApi {
 
     public void setPort(String port) {
         this.port = port;
-    }
-
-    public String getZoneId() {
-        return zoneId;
-    }
-
-    public void setZoneId(final String zoneId) {
-        this.zoneId = zoneId;
     }
 
     public ApiConnector getApiConnector() {
@@ -165,6 +166,7 @@ public class TungstenApi {
         VirtualNetwork virtualNetwork = null;
         VirtualMachine virtualMachine = null;
         Project project = null;
+        SecurityGroup securityGroup = null;
 
         try {
             virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, virtualNetworkUuid);
@@ -181,6 +183,7 @@ public class TungstenApi {
             virtualMachineInterface.setVirtualNetwork(virtualNetwork);
             virtualMachineInterface.setVirtualMachine(virtualMachine);
             virtualMachineInterface.setParent(project);
+            virtualMachineInterface.setPortSecurityEnabled(false);
             MacAddressesType macAddressesType = new MacAddressesType();
             macAddressesType.addMacAddress(mac);
             virtualMachineInterface.setMacAddresses(macAddressesType);
@@ -371,27 +374,10 @@ public class TungstenApi {
             virtualMachineInterface.setName(name);
             virtualMachineInterface.setParent(project);
             virtualMachineInterface.setVirtualNetwork(virtualNetwork);
+            virtualMachineInterface.setPortSecurityEnabled(false);
             Status status = apiConnector.create(virtualMachineInterface);
             status.ifFailure(errorHandler);
             return apiConnector.findById(VirtualMachineInterface.class, virtualMachineInterface.getUuid());
-        } catch (IOException ex) {
-            return null;
-        }
-    }
-
-    public ApiObjectBase createTungstenGatewayInstanceIp(String name, String vnUuid, String vmiUuid, String address) {
-        try {
-            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, vnUuid);
-            VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(
-                VirtualMachineInterface.class, vmiUuid);
-            InstanceIp instanceIp = new InstanceIp();
-            instanceIp.setName(name);
-            instanceIp.setVirtualNetwork(virtualNetwork);
-            instanceIp.setVirtualMachineInterface(virtualMachineInterface);
-            instanceIp.setAddress(address);
-            Status status = apiConnector.create(instanceIp);
-            status.ifFailure(errorHandler);
-            return apiConnector.findById(InstanceIp.class, instanceIp.getUuid());
         } catch (IOException ex) {
             return null;
         }
@@ -441,28 +427,95 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase createTungstenFloatingIp(String projectUuid, String networkUuid, String vmiUuid,
-        String fipName, String name, String publicIp, String privateIp) {
+    public ApiObjectBase createTungstenFloatingIp(String projectUuid, String networkUuid, String fipName, String name,
+        String publicIp) {
         try {
             Project project = (Project) apiConnector.findById(Project.class, projectUuid);
             VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
             FloatingIpPool fip = (FloatingIpPool) apiConnector.find(FloatingIpPool.class, virtualNetwork, fipName);
+            FloatingIp floatingIp = (FloatingIp) apiConnector.find(FloatingIp.class, fip, name);
+            if (floatingIp == null) {
+                floatingIp = new FloatingIp();
+                floatingIp.setName(name);
+                floatingIp.setParent(fip);
+                floatingIp.setProject(project);
+                floatingIp.setAddress(publicIp);
+                Status status = apiConnector.create(floatingIp);
+                status.ifFailure(errorHandler);
+                if (status.isSuccess()) {
+                    return apiConnector.findById(FloatingIp.class, floatingIp.getUuid());
+                } else {
+                    return null;
+                }
+            } else {
+                return floatingIp;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase assignTungstenFloatingIp(String networkUuid, String vmiUuid, String fipName, String name,
+        String privateIp) {
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            FloatingIpPool fip = (FloatingIpPool) apiConnector.find(FloatingIpPool.class, virtualNetwork, fipName);
             VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
                 vmiUuid);
-            FloatingIp floatingIp = new FloatingIp();
-            floatingIp.setName(name);
-            floatingIp.setParent(fip);
-            floatingIp.setProject(project);
+            FloatingIp floatingIp = (FloatingIp) apiConnector.find(FloatingIp.class, fip, name);
             floatingIp.setVirtualMachineInterface(vmi);
-            floatingIp.setAddress(publicIp);
             floatingIp.setFixedIpAddress(privateIp);
-            Status status = apiConnector.create(floatingIp);
+            Status status = apiConnector.update(floatingIp);
             status.ifFailure(errorHandler);
             if (status.isSuccess()) {
                 return apiConnector.findById(FloatingIp.class, floatingIp.getUuid());
             } else {
                 return null;
             }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase releaseTungstenFloatingIp(String networkUuid, String fipName, String name) {
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            FloatingIpPool fip = (FloatingIpPool) apiConnector.find(FloatingIpPool.class, virtualNetwork, fipName);
+            FloatingIp floatingIp = (FloatingIp) apiConnector.find(FloatingIp.class, fip, name);
+            floatingIp.clearVirtualMachineInterface();
+            floatingIp.setFixedIpAddress(null);
+            Status status = apiConnector.update(floatingIp);
+            status.ifFailure(errorHandler);
+            if (status.isSuccess()) {
+                return apiConnector.findById(FloatingIp.class, floatingIp.getUuid());
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public String getTungstenNatIp(String projectUuid, String logicalRouterUuid) {
+        try {
+            Project project = (Project) apiConnector.findById(Project.class, projectUuid);
+            List<InstanceIp> instanceIps = (List<InstanceIp>) apiConnector.list(InstanceIp.class, null);
+            if (instanceIps != null) {
+                for (InstanceIp instanceIp : instanceIps) {
+                    if (instanceIp.getQualifiedName()
+                        .get(0)
+                        .startsWith(
+                            TungstenUtils.getSnatNetworkStartName(project.getQualifiedName(), logicalRouterUuid))
+                        && instanceIp.getQualifiedName().get(0).endsWith(TungstenUtils.getSnatNetworkEndName())) {
+                        InstanceIp natInstanceIp = (InstanceIp) apiConnector.findById(InstanceIp.class,
+                            instanceIp.getUuid());
+                        if (natInstanceIp != null) {
+                            return natInstanceIp.getAddress();
+                        }
+                    }
+                }
+            }
+            return null;
         } catch (IOException e) {
             return null;
         }
@@ -492,5 +545,112 @@ public class TungstenApi {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    public boolean deleteTungstenNetworkPolicy(NetworkPolicy networkPolicy) {
+        try {
+            if (networkPolicy != null) {
+                Status status = apiConnector.delete(networkPolicy);
+                status.ifFailure(errorHandler);
+                return status.isSuccess();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public ApiObjectBase createTungstenNetworkPolicy(String name, String projectUuid,
+        List<TungstenRule> tungstenRuleList) {
+        try {
+            Project project = (Project) getTungstenNetworkProject(projectUuid);
+            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project, name);
+            if (networkPolicy == null) {
+                PolicyEntriesType policyEntriesType = new PolicyEntriesType();
+                for (TungstenRule tungstenRule : tungstenRuleList) {
+                    PolicyRuleType policyRuleType = getPolicyRuleType(tungstenRule);
+                    AddressType srcAddressType = new AddressType();
+                    srcAddressType.addSubnet(
+                        new SubnetType(tungstenRule.getSrcIpPrefix(), tungstenRule.getSrcIpPrefixLen()));
+                    AddressType dstAddressType = new AddressType();
+                    dstAddressType.addSubnet(
+                        new SubnetType(tungstenRule.getDstIpPrefix(), tungstenRule.getDstIpPrefixLen()));
+                    policyRuleType.addSrcAddresses(srcAddressType);
+                    policyRuleType.addDstAddresses(dstAddressType);
+                    policyRuleType.addSrcPorts(tungstenRule.getSrcStartPort(), tungstenRule.getSrcEndPort());
+                    policyRuleType.addDstPorts(tungstenRule.getDstStartPort(), tungstenRule.getDstEndPort());
+                    policyEntriesType.addPolicyRule(policyRuleType);
+                }
+
+                networkPolicy = new NetworkPolicy();
+                networkPolicy.setName(name);
+                networkPolicy.setParent(project);
+                networkPolicy.setEntries(policyEntriesType);
+
+                Status status = apiConnector.create(networkPolicy);
+                status.ifFailure(errorHandler);
+                if (status.isSuccess()) {
+                    return apiConnector.findById(NetworkPolicy.class, networkPolicy.getUuid());
+                } else {
+                    return null;
+                }
+            }
+
+            return networkPolicy;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean applyTungstenNetworkPolicy(String projectUuid, String networkPolicyName, String networkUuid,
+        boolean priority) {
+        try {
+            Project project = (Project) getTungstenNetworkProject(projectUuid);
+            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project,
+                networkPolicyName);
+            VirtualNetwork network = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+
+            List<ObjectReference<VirtualNetworkPolicyType>> objectReferenceList = network.getNetworkPolicy();
+            if (objectReferenceList != null) {
+                for (ObjectReference<VirtualNetworkPolicyType> objectReference : objectReferenceList) {
+                    if (objectReference.getUuid().equals(networkPolicy.getUuid())) {
+                        return true;
+                    }
+                }
+            }
+
+            if (networkPolicy == null || network == null) {
+                return false;
+            }
+
+            network.addNetworkPolicy(networkPolicy,
+                new VirtualNetworkPolicyType(new SequenceType(priority ? 0 : 1, 0)));
+            network.setPerms2(null);
+            Status status = apiConnector.update(network);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public List<? extends ApiObjectBase> getTungstenListObject(Class<? extends ApiObjectBase> cls,
+        ApiObjectBase parent) {
+        try {
+            return apiConnector.list(cls, parent.getQualifiedName());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private PolicyRuleType getPolicyRuleType(TungstenRule tungstenRule) {
+        PolicyRuleType policyRuleType = new PolicyRuleType();
+        if (tungstenRule.getRuleId() != null) {
+            policyRuleType.setRuleUuid(tungstenRule.getRuleId());
+        }
+        policyRuleType.setActionList(new ActionListType(tungstenRule.getAction()));
+        policyRuleType.setDirection(tungstenRule.getDirection());
+        policyRuleType.setProtocol(tungstenRule.getProtocol());
+        return policyRuleType;
     }
 }

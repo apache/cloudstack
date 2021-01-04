@@ -203,7 +203,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         //Add ConfigDrive provider
         public static final Provider ConfigDrive = new Provider("ConfigDrive", false);
         //Add Tungsten provider
-        public static final Provider Tungsten = new Provider("Tungsten", true);
+        public static final Provider Tungsten = new Provider("Tungsten", false);
 
         private final String name;
         private final boolean isExternal;

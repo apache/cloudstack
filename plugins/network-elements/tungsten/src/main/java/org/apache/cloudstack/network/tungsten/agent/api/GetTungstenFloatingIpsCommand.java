@@ -16,41 +16,20 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-import java.util.List;
+public class GetTungstenFloatingIpsCommand extends TungstenCommand {
+    private final String vnUuid;
+    private final String fipName;
 
-public class AddTungstenRouteCommand extends TungstenCommand {
-    private final String inf;
-    private final List<String> subnetList;
-    private final List<String> routeList;
-    private final String vrf;
-    private final String host;
-
-    public AddTungstenRouteCommand(final String inf, final List<String> subnetList, final List<String> routeList,
-        final String vrf, final String host) {
-        this.inf = inf;
-        this.subnetList = subnetList;
-        this.routeList = routeList;
-        this.vrf = vrf;
-        this.host = host;
+    public GetTungstenFloatingIpsCommand(final String vnUuid, final String fipName) {
+        this.vnUuid = vnUuid;
+        this.fipName = fipName;
     }
 
-    public String getInf() {
-        return inf;
+    public String getVnUuid() {
+        return vnUuid;
     }
 
-    public List<String> getSubnetList() {
-        return subnetList;
-    }
-
-    public List<String> getRouteList() {
-        return routeList;
-    }
-
-    public String getVrf() {
-        return vrf;
-    }
-
-    public String getHost() {
-        return host;
+    public String getFipName() {
+        return fipName;
     }
 }

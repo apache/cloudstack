@@ -4501,14 +4501,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public boolean setupTungstenVRouter(final String inf, final String subnet, final String route, final String vrf,
-        final String gateway) {
+    public boolean setupTungstenVRouter(final String oper, final String inf, final String subnet, final String route,
+        final String vrf) {
         final Script cmd = new Script(_setupTungstenVrouterPath, _timeout, s_logger);
+        cmd.add(oper);
         cmd.add(inf);
         cmd.add(subnet);
         cmd.add(route);
         cmd.add(vrf);
-        cmd.add(gateway);
 
         final String result = cmd.execute();
         if (result != null) {

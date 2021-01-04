@@ -16,20 +16,33 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class DeleteTungstenLogicalRouterCommand extends TungstenCommand {
-    private final long id;
+public class ApplyTungstenNetworkPolicyCommand extends TungstenCommand {
     private final String projectUuid;
+    private final String networkPolicyName;
+    private final String networkUuid;
+    private final boolean priority;
 
-    public DeleteTungstenLogicalRouterCommand(final long id, final String projectUuid) {
-        this.id = id;
+    public ApplyTungstenNetworkPolicyCommand(final String projectUuid, final String networkPolicyName,
+        final String networkUuid, final boolean priority) {
         this.projectUuid = projectUuid;
-    }
-
-    public long getId() {
-        return id;
+        this.networkPolicyName = networkPolicyName;
+        this.networkUuid = networkUuid;
+        this.priority = priority;
     }
 
     public String getProjectUuid() {
         return projectUuid;
+    }
+
+    public String getNetworkPolicyName() {
+        return networkPolicyName;
+    }
+
+    public String getNetworkUuid() {
+        return networkUuid;
+    }
+
+    public boolean isPriority() {
+        return priority;
     }
 }

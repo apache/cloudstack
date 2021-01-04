@@ -14,28 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.tungsten.agent.api;
+package org.apache.cloudstack.network.tungsten.service;
 
-public class DeleteTungstenFloatingIpCommand extends TungstenCommand {
-    private final String vnUuid;
-    private final String fipName;
-    private final String name;
+public interface TungstenService {
+    String getProject(long accountId);
 
-    public DeleteTungstenFloatingIpCommand(String vnUuid, final String fipName, final String name) {
-        this.vnUuid = vnUuid;
-        this.fipName = fipName;
-        this.name = name;
-    }
-
-    public String getVnUuid() {
-        return vnUuid;
-    }
-
-    public String getFipName() {
-        return fipName;
-    }
-
-    public String getName() {
-        return name;
-    }
+    String MESSAGE_APPLY_NETWORK_POLICY_EVENT = "Message.ApplyNetworkPolicy.Event";
 }

@@ -28,43 +28,49 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.TungstenUtils;
-import com.cloud.utils.component.ManagerBase;
 import net.juniper.tungsten.api.ApiConnectorFactory;
 import net.juniper.tungsten.api.ApiObjectBase;
 import net.juniper.tungsten.api.types.FloatingIp;
 import net.juniper.tungsten.api.types.FloatingIpPool;
 import net.juniper.tungsten.api.types.InstanceIp;
 import net.juniper.tungsten.api.types.LogicalRouter;
+import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.Project;
+import net.juniper.tungsten.api.types.SequenceType;
 import net.juniper.tungsten.api.types.VirtualMachine;
 import net.juniper.tungsten.api.types.VirtualMachineInterface;
 import net.juniper.tungsten.api.types.VirtualNetwork;
+import net.juniper.tungsten.api.types.VirtualNetworkPolicyType;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AssignTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ClearTungstenNetworkGatewayCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenVirtualMachineCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenLogicalRouterCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpPoolCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVRouterPortCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmInterfaceCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFloatingIpsCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenNatIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenPublicNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.SetTungstenNetworkGatewayCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.StartupTungstenCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.service.TungstenApi;
 import org.apache.cloudstack.network.tungsten.service.TungstenVRouterApi;
-import org.apache.cloudstack.network.tungsten.vrouter.Gateway;
 import org.apache.cloudstack.network.tungsten.vrouter.Port;
 import org.apache.cloudstack.network.tungsten.vrouter.Subnet;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,8 +79,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-@Component
-public class TungstenResource extends ManagerBase implements ServerResource {
+public class TungstenResource implements ServerResource {
 
     private static final Logger s_logger = Logger.getLogger(TungstenResource.class);
 
@@ -120,7 +125,6 @@ public class TungstenResource extends ManagerBase implements ServerResource {
         _tungstenApi = new TungstenApi();
         _tungstenApi.setHostname(_hostname);
         _tungstenApi.setPort(_port);
-        _tungstenApi.setZoneId(_zoneId);
         _tungstenApi.setApiConnector(ApiConnectorFactory.build(_hostname, Integer.parseInt(_port)));
         return true;
     }
@@ -183,12 +187,8 @@ public class TungstenResource extends ManagerBase implements ServerResource {
             return executeRequest((CreateTungstenVirtualMachineCommand) cmd, numRetries);
         } else if (cmd instanceof SetTungstenNetworkGatewayCommand) {
             return executeRequest((SetTungstenNetworkGatewayCommand) cmd, numRetries);
-        } else if (cmd instanceof DeleteTungstenLogicalRouterCommand) {
-            return executeRequest((DeleteTungstenLogicalRouterCommand) cmd, numRetries);
         } else if (cmd instanceof DeleteTungstenVRouterPortCommand) {
             return executeRequest((DeleteTungstenVRouterPortCommand) cmd, numRetries);
-        } else if (cmd instanceof AddTungstenRouteCommand) {
-            return executeRequest((AddTungstenRouteCommand) cmd, numRetries);
         } else if (cmd instanceof GetTungstenPublicNetworkCommand) {
             return executeRequest((GetTungstenPublicNetworkCommand) cmd, numRetries);
         } else if (cmd instanceof ClearTungstenNetworkGatewayCommand) {
@@ -199,7 +199,24 @@ public class TungstenResource extends ManagerBase implements ServerResource {
             return executeRequest((CreateTungstenFloatingIpCommand) cmd, numRetries);
         } else if (cmd instanceof DeleteTungstenFloatingIpCommand) {
             return executeRequest((DeleteTungstenFloatingIpCommand) cmd, numRetries);
+        } else if (cmd instanceof DeleteTungstenFloatingIpPoolCommand) {
+            return executeRequest((DeleteTungstenFloatingIpPoolCommand) cmd, numRetries);
+        } else if (cmd instanceof AssignTungstenFloatingIpCommand) {
+            return executeRequest((AssignTungstenFloatingIpCommand) cmd, numRetries);
+        } else if (cmd instanceof ReleaseTungstenFloatingIpCommand) {
+            return executeRequest((ReleaseTungstenFloatingIpCommand) cmd, numRetries);
+        } else if (cmd instanceof GetTungstenNatIpCommand) {
+            return executeRequest((GetTungstenNatIpCommand) cmd, numRetries);
+        } else if (cmd instanceof CreateTungstenNetworkPolicyCommand) {
+            return executeRequest((CreateTungstenNetworkPolicyCommand) cmd, numRetries);
+        } else if (cmd instanceof ApplyTungstenNetworkPolicyCommand) {
+            return executeRequest((ApplyTungstenNetworkPolicyCommand) cmd, numRetries);
+        } else if (cmd instanceof DeleteTungstenNetworkPolicyCommand) {
+            return executeRequest((DeleteTungstenNetworkPolicyCommand) cmd, numRetries);
+        } else if (cmd instanceof GetTungstenFloatingIpsCommand) {
+            return executeRequest((GetTungstenFloatingIpsCommand) cmd, numRetries);
         }
+
         s_logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
@@ -399,33 +416,6 @@ public class TungstenResource extends ManagerBase implements ServerResource {
         return new TungstenAnswer(cmd, virtualMachineInterface, true, null);
     }
 
-    private Answer executeRequest(DeleteTungstenLogicalRouterCommand cmd, int numRetries) {
-        Project project = (Project) _tungstenApi.getTungstenNetworkProject(cmd.getProjectUuid());
-        if (project == null) {
-            return new TungstenAnswer(cmd, new IOException());
-        }
-
-        LogicalRouter logicalRouter = (LogicalRouter) _tungstenApi.getTungstenObjectByName(LogicalRouter.class,
-            project.getQualifiedName(), TungstenUtils.getLogicalRouterName(cmd.getId()));
-        if (logicalRouter != null) {
-            boolean deteleResult = _tungstenApi.deleteTungstenLogicalRouter(logicalRouter);
-            if (!deteleResult) {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-
-        return new TungstenAnswer(cmd, true, null);
-    }
-
-    private Answer executeRequest(AddTungstenRouteCommand cmd, int numRetries) {
-        List<Gateway> gateways = new ArrayList<>();
-        Gateway gateway = new Gateway(cmd.getInf(), cmd.getVrf(), getListSubnet(cmd.getSubnetList()),
-            getListSubnet(cmd.getRouteList()));
-        gateways.add(gateway);
-        boolean result = TungstenVRouterApi.addTungstenRoute(cmd.getHost(), gateways);
-        return new TungstenAnswer(cmd, result, null);
-    }
-
     private Answer executeRequest(GetTungstenPublicNetworkCommand cmd, int numRetries) {
         Project project = (Project) _tungstenApi.getTungstenNetworkProject(cmd.getParent());
         if (project == null) {
@@ -446,6 +436,11 @@ public class TungstenResource extends ManagerBase implements ServerResource {
         LogicalRouter logicalRouter = (LogicalRouter) _tungstenApi.getTungstenObjectByName(LogicalRouter.class,
             project.getQualifiedName(), cmd.getRouterName());
         if (logicalRouter == null) {
+            return new TungstenAnswer(cmd, true, null);
+        }
+
+        boolean deleteLRResult = _tungstenApi.deleteTungstenLogicalRouter(logicalRouter);
+        if (!deleteLRResult) {
             return new TungstenAnswer(cmd, new IOException());
         }
 
@@ -455,13 +450,6 @@ public class TungstenResource extends ManagerBase implements ServerResource {
             TungstenUtils.getNetworkGatewayVmiName(cmd.getVnId()));
 
         if (virtualMachineInterface != null) {
-            logicalRouter.removeVirtualMachineInterface(virtualMachineInterface);
-
-            boolean updateLRResult = _tungstenApi.updateTungstenObject(logicalRouter);
-            if (!updateLRResult) {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-
             boolean deleteVmi = _tungstenApi.deleteTungstenVmInterface(virtualMachineInterface);
             if (!deleteVmi) {
                 return new TungstenAnswer(cmd, new IOException());
@@ -487,11 +475,45 @@ public class TungstenResource extends ManagerBase implements ServerResource {
         }
 
         ApiObjectBase apiObjectBase = _tungstenApi.createTungstenFloatingIp(project.getUuid(), cmd.getNetworkUuid(),
-            cmd.getVmiUuid(), cmd.getFipName(), cmd.getName(), cmd.getPublicIp(), cmd.getPrivateIp());
+            cmd.getFipName(), cmd.getName(), cmd.getPublicIp());
         if (apiObjectBase != null) {
             return new TungstenAnswer(cmd, apiObjectBase, true, null);
         } else {
             return new TungstenAnswer(cmd, new IOException());
+        }
+    }
+
+    private Answer executeRequest(AssignTungstenFloatingIpCommand cmd, int numRetries) {
+        ApiObjectBase apiObjectBase = _tungstenApi.assignTungstenFloatingIp(cmd.getNetworkUuid(), cmd.getVmiUuid(),
+            cmd.getFipName(), cmd.getName(), cmd.getPrivateIp());
+        if (apiObjectBase != null) {
+            return new TungstenAnswer(cmd, apiObjectBase, true, null);
+        } else {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+    }
+
+    private Answer executeRequest(ReleaseTungstenFloatingIpCommand cmd, int numRetries) {
+        ApiObjectBase apiObjectBase = _tungstenApi.releaseTungstenFloatingIp(cmd.getVnUuid(), cmd.getFipName(),
+            cmd.getName());
+        if (apiObjectBase != null) {
+            return new TungstenAnswer(cmd, apiObjectBase, true, null);
+        } else {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+    }
+
+    private Answer executeRequest(GetTungstenNatIpCommand cmd, int numRetries) {
+        Project project = (Project) _tungstenApi.getTungstenNetworkProject(cmd.getProjectUuid());
+        String natIp = _tungstenApi.getTungstenNatIp(project.getUuid(), cmd.getLogicalRouterUuid());
+        if (natIp != null) {
+            return new TungstenAnswer(cmd, true, natIp);
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
         }
     }
 
@@ -501,10 +523,6 @@ public class TungstenResource extends ManagerBase implements ServerResource {
     }
 
     private Answer executeRequest(DeleteTungstenFloatingIpCommand cmd, int numRetries) {
-        Project project = (Project) _tungstenApi.getTungstenNetworkProject(cmd.getProjectUuid());
-        if (project == null) {
-            return new TungstenAnswer(cmd, new IOException());
-        }
         VirtualNetwork virtualNetwork = (VirtualNetwork) _tungstenApi.getTungstenObject(VirtualNetwork.class,
             cmd.getVnUuid());
         FloatingIpPool floatingIpPool = (FloatingIpPool) _tungstenApi.getTungstenObjectByName(FloatingIpPool.class,
@@ -513,6 +531,81 @@ public class TungstenResource extends ManagerBase implements ServerResource {
             floatingIpPool.getQualifiedName(), cmd.getName());
         boolean deleteFip = _tungstenApi.deleteTungstenFloatingIp(floatingIp);
         return new TungstenAnswer(cmd, deleteFip, null);
+    }
+
+    private Answer executeRequest(DeleteTungstenFloatingIpPoolCommand cmd, int numRetries) {
+        boolean deleteFip = true;
+        VirtualNetwork virtualNetwork = (VirtualNetwork) _tungstenApi.getTungstenObject(VirtualNetwork.class,
+            cmd.getVnUuid());
+        if (virtualNetwork != null) {
+            FloatingIpPool floatingIpPool = (FloatingIpPool) _tungstenApi.getTungstenObjectByName(FloatingIpPool.class,
+                virtualNetwork.getQualifiedName(), cmd.getFipName());
+            if (floatingIpPool != null) {
+                deleteFip = _tungstenApi.deleteTungstenFloatingIpPool(floatingIpPool);
+            }
+        }
+        return new TungstenAnswer(cmd, deleteFip, null);
+    }
+
+    private Answer executeRequest(CreateTungstenNetworkPolicyCommand cmd, int numRetries) {
+        ApiObjectBase apiObjectBase = _tungstenApi.createTungstenNetworkPolicy(cmd.getName(), cmd.getProjectUuid(),
+            cmd.getTungstenRuleList());
+        if (apiObjectBase != null) {
+            return new TungstenAnswer(cmd, apiObjectBase, true, null);
+        } else {
+            return new TungstenAnswer(cmd, false, null);
+        }
+    }
+
+    private Answer executeRequest(DeleteTungstenNetworkPolicyCommand cmd, int numRetries) {
+        Project project = (Project) _tungstenApi.getTungstenNetworkProject(cmd.getProjectUuid());
+        VirtualNetwork virtualNetwork = (VirtualNetwork) _tungstenApi.getTungstenObject(VirtualNetwork.class,
+            cmd.getNetworkUuid());
+        NetworkPolicy networkPolicy = (NetworkPolicy) _tungstenApi.getTungstenObjectByName(NetworkPolicy.class,
+            project.getQualifiedName(), cmd.getName());
+        if (networkPolicy != null) {
+            virtualNetwork.removeNetworkPolicy(networkPolicy, new VirtualNetworkPolicyType(new SequenceType(-1, -1)));
+            boolean updated = _tungstenApi.updateTungstenObject(virtualNetwork);
+            if (!updated) {
+                if (numRetries > 0) {
+                    return retry(cmd, --numRetries);
+                } else {
+                    return new TungstenAnswer(cmd, new IOException());
+                }
+            }
+
+            boolean deleted = _tungstenApi.deleteTungstenNetworkPolicy(networkPolicy);
+            if (deleted)
+                return new TungstenAnswer(cmd, true, "Tungsten network policy deleted");
+            else {
+                if (numRetries > 0) {
+                    return retry(cmd, --numRetries);
+                } else {
+                    return new TungstenAnswer(cmd, new IOException());
+                }
+            }
+        }
+        return new TungstenAnswer(cmd, true, "Tungsten network policy is not exist");
+    }
+
+    private Answer executeRequest(GetTungstenFloatingIpsCommand cmd, int numRetries) {
+        VirtualNetwork virtualNetwork = (VirtualNetwork) _tungstenApi.getTungstenObject(VirtualNetwork.class,
+            cmd.getVnUuid());
+        List<FloatingIp> floatingIpList;
+        if (virtualNetwork != null) {
+            FloatingIpPool floatingIpPool = (FloatingIpPool) _tungstenApi.getTungstenObjectByName(FloatingIpPool.class,
+                virtualNetwork.getQualifiedName(), cmd.getFipName());
+            floatingIpList = (List<FloatingIp>) _tungstenApi.getTungstenListObject(FloatingIp.class, floatingIpPool);
+        } else {
+            floatingIpList = new ArrayList<>();
+        }
+        return new TungstenAnswer(cmd, floatingIpList, true, null);
+    }
+
+    private Answer executeRequest(ApplyTungstenNetworkPolicyCommand cmd, int numRetries) {
+        boolean result = _tungstenApi.applyTungstenNetworkPolicy(cmd.getProjectUuid(), cmd.getNetworkPolicyName(),
+            cmd.getNetworkUuid(), cmd.isPriority());
+        return new TungstenAnswer(cmd, result, null);
     }
 
     private Answer retry(Command cmd, int numRetries) {
@@ -560,5 +653,30 @@ public class TungstenResource extends ManagerBase implements ServerResource {
             subnets.add(subnet);
         }
         return subnets;
+    }
+
+    @Override
+    public void setName(final String name) {
+
+    }
+
+    @Override
+    public void setConfigParams(final Map<String, Object> params) {
+
+    }
+
+    @Override
+    public Map<String, Object> getConfigParams() {
+        return null;
+    }
+
+    @Override
+    public int getRunLevel() {
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(final int level) {
+
     }
 }

@@ -19,19 +19,23 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 import com.cloud.agent.api.Command;
 
 public class SetupTungstenVRouterCommand extends Command {
+    private final String oper;
     private final String inf;
     private final String subnet;
     private final String route;
     private final String vrf;
-    private final String gateway;
 
-    public SetupTungstenVRouterCommand(final String inf, final String subnet, final String route, final String vrf,
-        final String gateway) {
+    public SetupTungstenVRouterCommand(final String oper, final String inf, final String subnet, final String route,
+        final String vrf) {
+        this.oper = oper;
         this.inf = inf;
         this.subnet = subnet;
         this.route = route;
         this.vrf = vrf;
-        this.gateway = gateway;
+    }
+
+    public String getOper() {
+        return oper;
     }
 
     public String getInf() {
@@ -48,10 +52,6 @@ public class SetupTungstenVRouterCommand extends Command {
 
     public String getVrf() {
         return vrf;
-    }
-
-    public String getGateway() {
-        return gateway;
     }
 
     @Override

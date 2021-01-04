@@ -37,4 +37,5 @@
     <bean id="TungstenElement" class="org.apache.cloudstack.network.tungsten.service.TungstenElement">
         <property name="name" value="TungstenElement"/>
     </bean>
+    <bean id="TungstenService" class="org.apache.cloudstack.network.tungsten.service.TungstenServiceImpl"/>
 </beans>

@@ -1,3 +1,19 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package com.cloud.utils;
 
 import org.apache.commons.lang.StringUtils;
@@ -15,7 +31,15 @@ public class TungstenUtils {
     private static final String publicType = "public";
     private static final String managementType = "management";
     private static final String controlType = "control";
-    private static final String netnsPrefix = "vrouter-";
+
+    public static final int MAX_CIDR = 32;
+    public static final int WEB_SERVICE_PORT = 8080;
+    public static final String ALL_IP4_PREFIX = "0.0.0.0";
+    public static final String ANY_PROTO = "any";
+    public static final String DENY_ACTION = "deny";
+    public static final String PASS_ACTION = "pass";
+    public static final String ONE_WAY_DIRECTION = ">";
+    public static final String TWO_WAY_DIRECTION = "<>";
 
     public static String getTapName(final String macAddress) {
         return "tap" + macAddress.replace(":", "");
@@ -43,8 +67,8 @@ public class TungstenUtils {
             return "instanceIp" + trafficType + vmType + vmName;
     }
 
-    public static String getLogicalRouterName(long zoneId) {
-        return "logicalRouter" + zoneId;
+    public static String getLogicalRouterName(long networkId) {
+        return "logicalRouter" + networkId;
     }
 
     public static String getNetworkGatewayVmiName(long vnId) {
@@ -99,10 +123,6 @@ public class TungstenUtils {
         return "vgw" + zoneId;
     }
 
-    public static String getDefaultRoute() {
-        return "0.0.0.0/0";
-    }
-
     public static String getVrfNetworkName(List<String> networkQualifiedName) {
         List<String> vrfList = new ArrayList<>(networkQualifiedName);
         vrfList.add(networkQualifiedName.get(networkQualifiedName.size() - 1));
@@ -117,7 +137,23 @@ public class TungstenUtils {
         return "floating-ip" + nicId;
     }
 
-    public static String getNetnsPrefix() {
-        return netnsPrefix;
+    public static String getSnatNetworkStartName(List<String> projectFqn, String logicalRouterUuid) {
+        return StringUtils.join(projectFqn, "__") + "__snat_" + logicalRouterUuid;
+    }
+
+    public static String getSnatNetworkEndName() {
+        return "right";
+    }
+
+    public static String getPublicNetworkPolicyName(long publicIpAddressId) {
+        return "public-network-policy" + publicIpAddressId;
+    }
+
+    public static String getVirtualNetworkPolicyName(long networkId) {
+        return "virtual-network-policy" + networkId;
+    }
+
+    public static String getRuleNetworkPolicyName(long ruleId) {
+        return "rule-network-policy" + ruleId;
     }
 }

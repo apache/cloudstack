@@ -23,22 +23,15 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
-import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import net.juniper.tungsten.api.types.VirtualNetwork;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -46,13 +39,16 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
+import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -65,17 +61,11 @@ public class CreateTungstenPublicNetworkCmd extends BaseCmd {
     private static final String s_name = "createtungstenpublicnetworkresponse";
 
     @Inject
-    VlanDao vlanDao;
+    VlanDao _vlanDao;
     @Inject
-    IpAddressManager _ipAddrMgr;
+    NetworkModel _networkModel;
     @Inject
-    IPAddressDao _ipAddressDao;
-    @Inject
-    AccountDao _accountDao;
-    @Inject
-    NetworkDao _networkDao;
-    @Inject
-    TungstenFabricUtils _tunstenFabricUtils;
+    TungstenFabricUtils _tungstenFabricUtils;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true
         , description = "the ID of zone")
@@ -92,46 +82,61 @@ public class CreateTungstenPublicNetworkCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<NetworkVO> publicNetworkVOList = _networkDao.listByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
-        NetworkVO publicNetwork = publicNetworkVOList.get(0);
+        Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
 
         // create public ip address
-        SearchCriteria<VlanVO> sc = vlanDao.createSearchCriteria();
+        SearchCriteria<VlanVO> sc = _vlanDao.createSearchCriteria();
         sc.setParameters("network_id", publicNetwork.getId());
-        VlanVO pubVlanVO = vlanDao.findOneBy(sc);
+        VlanVO pubVlanVO = _vlanDao.findOneBy(sc);
+        String[] ipAddress = pubVlanVO.getIpRange().split("-");
         String publicNetworkCidr = NetUtils.getCidrFromGatewayAndNetmask(pubVlanVO.getVlanGateway(),
             pubVlanVO.getVlanNetmask());
         Pair<String, Integer> publicPair = NetUtils.getCidr(publicNetworkCidr);
-        String pubIp = this.getPublicIPAddress(publicNetwork);
 
         // create public network
         CreateTungstenNetworkCommand createTungstenPublicNetworkCommand = new CreateTungstenNetworkCommand(
             publicNetwork.getUuid(), TungstenUtils.getPublicNetworkName(zoneId), null, true, false, publicPair.first(),
-            publicPair.second(), pubVlanVO.getVlanGateway(), true, null, pubIp, pubIp, false);
-        TungstenAnswer createPublicNetworkAnswer = _tunstenFabricUtils.sendTungstenCommand(
+            publicPair.second(), pubVlanVO.getVlanGateway(), true, null, ipAddress[0], ipAddress[1], false);
+        TungstenAnswer createPublicNetworkAnswer = _tungstenFabricUtils.sendTungstenCommand(
             createTungstenPublicNetworkCommand, zoneId);
         if (!createPublicNetworkAnswer.getResult()) {
             throw new CloudRuntimeException("can not create tungsten public network");
         }
-        VirtualNetwork publicVirtualNetwork = (VirtualNetwork) createPublicNetworkAnswer.getApiObjectBase();
+
+        List<TungstenRule> tungstenRuleList = new ArrayList<>();
+        tungstenRuleList.add(
+            new TungstenRule(null, TungstenUtils.DENY_ACTION, TungstenUtils.ONE_WAY_DIRECTION, TungstenUtils.ANY_PROTO,
+                TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1, publicPair.first(), publicPair.second(), -1, -1));
+
+        // create default public network policy rule
+        CreateTungstenNetworkPolicyCommand createTungstenNetworkPolicyCommand = new CreateTungstenNetworkPolicyCommand(
+            TungstenUtils.getVirtualNetworkPolicyName(publicNetwork.getId()), null, tungstenRuleList);
+        TungstenAnswer createTungstenNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            createTungstenNetworkPolicyCommand, zoneId);
+        if (!createTungstenNetworkPolicyAnswer.getResult()) {
+            throw new CloudRuntimeException("can not create tungsten public network policy");
+        }
+
+        // apply network policy
+        ApplyTungstenNetworkPolicyCommand applyTungstenNetworkPolicyCommand = new ApplyTungstenNetworkPolicyCommand(
+            null, TungstenUtils.getVirtualNetworkPolicyName(publicNetwork.getId()), publicNetwork.getUuid(), false);
+        TungstenAnswer applyNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            applyTungstenNetworkPolicyCommand, zoneId);
+        if (!applyNetworkPolicyAnswer.getResult()) {
+            throw new CloudRuntimeException("can not apply default tungsten public network policy");
+        }
+
+        // change default tungsten security group
+        // change default forwarding mode
 
         // create floating ip pool
         CreateTungstenFloatingIpPoolCommand createTungstenFloatingIpPoolCommand =
             new CreateTungstenFloatingIpPoolCommand(
             publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(zoneId));
-        TungstenAnswer createFloatingIpPoolAnswer = _tunstenFabricUtils.sendTungstenCommand(
+        TungstenAnswer createFloatingIpPoolAnswer = _tungstenFabricUtils.sendTungstenCommand(
             createTungstenFloatingIpPoolCommand, zoneId);
         if (!createFloatingIpPoolAnswer.getResult()) {
             throw new CloudRuntimeException("can not create tungsten floating ip pool");
-        }
-
-        // create logical router with public network
-        CreateTungstenLogicalRouterCommand createTungstenLogicalRouterCommand = new CreateTungstenLogicalRouterCommand(
-            TungstenUtils.getLogicalRouterName(zoneId), null, publicVirtualNetwork.getUuid());
-        TungstenAnswer createLogicalRouterAnswer = _tunstenFabricUtils.sendTungstenCommand(
-            createTungstenLogicalRouterCommand, zoneId);
-        if (!createLogicalRouterAnswer.getResult()) {
-            throw new CloudRuntimeException("can not create tungsten logical router");
         }
 
         SuccessResponse response = new SuccessResponse(getCommandName());
@@ -148,28 +153,4 @@ public class CreateTungstenPublicNetworkCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-
-    private String getPublicIPAddress(Network network) {
-        List<IPAddressVO> allocatedIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
-        for (IPAddressVO ip : allocatedIps) {
-            if (ip.isSourceNat()) {
-                return ip.getAddress().addr();
-            }
-        }
-
-        try {
-            PublicIp publicIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(
-                _accountDao.findById(network.getAccountId()), network);
-            IPAddressVO ip = publicIp.ip();
-            _ipAddressDao.acquireInLockTable(ip.getId());
-            _ipAddressDao.update(ip.getId(), ip);
-            _ipAddressDao.releaseFromLockTable(ip.getId());
-            return ip.getAddress().addr();
-        } catch (Exception e) {
-            s_logger.error("Unable to allocate source nat ip: " + e);
-        }
-
-        return null;
-    }
-
 }

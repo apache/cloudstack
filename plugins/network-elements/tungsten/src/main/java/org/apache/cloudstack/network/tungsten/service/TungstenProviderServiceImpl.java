@@ -102,13 +102,12 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
 
         Map<String, String> params = new HashMap<String, String>();
         params.put("guid", UUID.randomUUID().toString());
-        params.put("zoneId", zoneName);
+        params.put("zoneId", zoneId.toString());
         params.put("name", "TungstenDevice - " + cmd.getName());
         params.put("hostname", cmd.getHostname());
         params.put("port", cmd.getPort());
         params.put("vrouter", cmd.getVrouter());
         params.put("vrouterPort", cmd.getVrouterPort());
-
         Map<String, Object> hostdetails = new HashMap<String, Object>();
         hostdetails.putAll(params);
 
@@ -162,23 +161,25 @@ public class TungstenProviderServiceImpl implements TungstenProviderService {
         return tungstenProviderResponse;
     }
 
-    private void syncTungstenDbWithCloudstackProjectsAndDomains(TungstenProvider tungstenProvider){
+    private void syncTungstenDbWithCloudstackProjectsAndDomains(TungstenProvider tungstenProvider) {
         List<DomainVO> cloudstackDomains = _domainDao.listAll();
         List<ProjectVO> cloudstackProjects = _projectDao.listAll();
 
-        if(cloudstackDomains != null && !cloudstackDomains.isEmpty()){
-            for(DomainVO domain : cloudstackDomains){
+        if (cloudstackDomains != null && !cloudstackDomains.isEmpty()) {
+            for (DomainVO domain : cloudstackDomains) {
                 _tungstenDomainManager.createDomainInTungsten(tungstenProvider, domain.getName(), domain.getUuid());
-                if(cloudstackProjects != null){
-                    for(ProjectVO project : cloudstackProjects){
-                        _tungstenProjectManager.createProjectInTungsten(tungstenProvider, project.getUuid(), project.getName(), domain);
+                if (cloudstackProjects != null) {
+                    for (ProjectVO project : cloudstackProjects) {
+                        _tungstenProjectManager.createProjectInTungsten(tungstenProvider, project.getUuid(),
+                            project.getName(), domain);
                     }
                 }
             }
         } else {
-            if(cloudstackProjects != null){
-                for(ProjectVO project : cloudstackProjects){
-                    _tungstenProjectManager.createProjectInTungsten(tungstenProvider, project.getUuid(), project.getName(), null);
+            if (cloudstackProjects != null) {
+                for (ProjectVO project : cloudstackProjects) {
+                    _tungstenProjectManager.createProjectInTungsten(tungstenProvider, project.getUuid(),
+                        project.getName(), null);
                 }
             }
         }
