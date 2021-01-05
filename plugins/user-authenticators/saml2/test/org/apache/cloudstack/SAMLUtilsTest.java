@@ -55,7 +55,7 @@ public class SAMLUtilsTest extends TestCase {
         String logoutUrl = "http://logoutUrl";
         String spId = "cloudstack";
         String nameId = "_12345";
-        LogoutRequest req = SAMLUtils.buildLogoutRequest(logoutUrl, spId, nameId);
+        LogoutRequest req = SAMLUtils.buildLogoutRequestObject(logoutUrl, spId, nameId);
         assertEquals(req.getDestination(), logoutUrl);
         assertEquals(req.getIssuer().getValue(), spId);
     }

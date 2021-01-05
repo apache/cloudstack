@@ -590,6 +590,7 @@ public class ApiConstants {
     public static final String VMGROUP_ID = "vmgroupid";
     public static final String CS_URL = "csurl";
     public static final String IDP_ID = "idpid";
+    public static final String REDIRECT_ON_ERROR = "redirectonerror";
     public static final String SCALEUP_POLICY_IDS = "scaleuppolicyids";
     public static final String SCALEDOWN_POLICY_IDS = "scaledownpolicyids";
     public static final String SCALEUP_POLICIES = "scaleuppolicies";

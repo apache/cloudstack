@@ -121,18 +121,18 @@ public class SAML2AuthManagerImplTest extends TestCase {
     public void testSaveToken() {
         // duplicate token test
         Mockito.when(samlTokenDao.findByUuid(Mockito.anyString())).thenReturn(new SAMLTokenVO());
-        saml2AuthManager.saveToken("someAuthnID", null, "https://idp.bhaisaab.org/profile/shibboleth");
+        saml2AuthManager.saveToken("someAuthnID", null, "https://idp.bhaisaab.org/profile/shibboleth", null, null);
         Mockito.verify(samlTokenDao, Mockito.times(0)).persist(Mockito.any(SAMLTokenVO.class));
 
         // valid test
         Mockito.when(samlTokenDao.findByUuid(Mockito.anyString())).thenReturn(null);
-        saml2AuthManager.saveToken("someAuthnID", null, "https://idp.bhaisaab.org/profile/shibboleth");
+        saml2AuthManager.saveToken("someAuthnID", null, "https://idp.bhaisaab.org/profile/shibboleth", null, null);
         Mockito.verify(samlTokenDao, Mockito.times(1)).persist(Mockito.any(SAMLTokenVO.class));
     }
 
     @Test
     public void testGetToken() {
-        SAMLTokenVO randomToken = new SAMLTokenVO("uuid", 1L, "someIDPDI");
+        SAMLTokenVO randomToken = new SAMLTokenVO("uuid", 1L, "someIDPDI", null, null);
         Mockito.when(samlTokenDao.findByUuid(Mockito.anyString())).thenReturn(randomToken);
         assertEquals(saml2AuthManager.getToken("someAuthnID"), randomToken);
     }

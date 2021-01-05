@@ -41,6 +41,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpSession;
 import javax.xml.stream.FactoryConfigurationError;
 
 import org.apache.cloudstack.api.command.AuthorizeSAMLSSOCmd;
@@ -97,9 +98,6 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     private SAMLProviderMetadata _spMetadata = new SAMLProviderMetadata();
     private Map<String, SAMLProviderMetadata> _idpMetadataMap = new HashMap<String, SAMLProviderMetadata>();
-
-    private String idpSingleSignOnUrl;
-    private String idpSingleLogOutUrl;
 
     private Timer _timer;
     private int _refreshInterval = SAMLPluginConstants.SAML_REFRESH_INTERVAL;
@@ -467,7 +465,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     }
 
     @Override
-    public void saveToken(String authnId, String domainPath, String entity) {
+    public void saveToken(String authnId, String domainPath, String entity, String sessionIndex, String spBaseUrl) {
         Long domainId = null;
         if (domainPath != null) {
             Domain domain = _domainMgr.findDomainByPath(domainPath);
@@ -475,7 +473,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 domainId = domain.getId();
             }
         }
-        SAMLTokenVO token = new SAMLTokenVO(authnId, domainId, entity);
+        SAMLTokenVO token = new SAMLTokenVO(authnId, domainId, entity, sessionIndex, spBaseUrl);
         if (_samlTokenDao.findByUuid(authnId) == null) {
             _samlTokenDao.persist(token);
         } else {
@@ -484,13 +482,35 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     }
 
     @Override
+    public void updateToken(SAMLTokenVO token) {
+        _samlTokenDao.persist(token);
+    }
+
+    @Override
+    public void unauthorizeToken(SAMLTokenVO token) {
+        // Change authId (UUID) to something else so it cannot be replayed
+        token.setUuid(SAMLUtils.generateSecureRandomId());
+        updateToken(token);
+    }
+
+    @Override
     public SAMLTokenVO getToken(String authnId) {
         return _samlTokenDao.findByUuid(authnId);
     }
 
     @Override
+    public SAMLTokenVO getTokenBySessionIndexWhereNotSpBaseUrl(String sessionIndex, String spBaseUrl) {
+        return _samlTokenDao.findBySessionIndexWhereNotSpBaseUrl(sessionIndex, spBaseUrl);
+    }
+
+    @Override
     public void expireTokens() {
         _samlTokenDao.expireTokens();
+    }
+
+    public void attachTokenToSession(HttpSession session, SAMLTokenVO token) {
+        session.setAttribute(SAMLPluginConstants.SAML_TOKEN, token);
+        session.setAttribute(SAMLPluginConstants.SAML_SESSION_LISTENER, new SAMLActiveUser(_samlTokenDao));
     }
 
     public Boolean isSAMLPluginEnabled() {
@@ -536,6 +556,6 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 SAMLServiceProviderSingleSignOnURL, SAMLServiceProviderSingleLogOutURL,
                 SAMLCloudStackRedirectionUrl, SAMLUserAttributeName,
                 SAMLIdentityProviderMetadataURL, SAMLDefaultIdentityProviderId,
-                SAMLSignatureAlgorithm, SAMLAppendDomainSuffix, SAMLTimeout};
+                SAMLSignatureAlgorithm, SAMLAppendDomainSuffix, SAMLTimeout, SAMLSupportHostnameAliases};
     }
 }

@@ -22,10 +22,13 @@ package org.apache.cloudstack.saml;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
 import java.net.URLEncoder;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -42,12 +45,14 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Date;
 import java.util.List;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -70,17 +75,26 @@ import org.opensaml.saml2.core.AuthnContext;
 import org.opensaml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml2.core.AuthnContextComparisonTypeEnumeration;
 import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.AuthnStatement;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.LogoutRequest;
+import org.opensaml.saml2.core.LogoutResponse;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.RequestedAuthnContext;
 import org.opensaml.saml2.core.Response;
+import org.opensaml.saml2.core.Status;
+import org.opensaml.saml2.core.StatusCode;
+import org.opensaml.saml2.core.StatusMessage;
 import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
 import org.opensaml.saml2.core.impl.AuthnRequestBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml2.core.impl.LogoutRequestBuilder;
+import org.opensaml.saml2.core.impl.LogoutResponseBuilder;
 import org.opensaml.saml2.core.impl.NameIDBuilder;
 import org.opensaml.saml2.core.impl.RequestedAuthnContextBuilder;
+import org.opensaml.saml2.core.impl.StatusBuilder;
+import org.opensaml.saml2.core.impl.StatusCodeBuilder;
+import org.opensaml.saml2.core.impl.StatusMessageBuilder;
 import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.io.Marshaller;
@@ -96,6 +110,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import com.cloud.utils.HttpUtils;
+import com.google.common.base.Strings;
 
 public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
@@ -138,11 +153,35 @@ public class SAMLUtils {
         return null;
     }
 
-    public static String buildAuthnRequestUrl(final String authnId, final SAMLProviderMetadata spMetadata, final SAMLProviderMetadata idpMetadata, final String signatureAlgorithm) {
+    public static String getSessionIndexFromAssertion(final Assertion assertion) {
+        String sessionIndex = null;
+
+        if (assertion == null) {
+            return sessionIndex;
+        }
+
+        final List<AuthnStatement> authnStatements = assertion.getAuthnStatements();
+        for (AuthnStatement authnStatement : authnStatements) {
+            sessionIndex = authnStatement.getSessionIndex();
+            if (sessionIndex != null) {
+                break;
+            }
+        }
+
+        return sessionIndex;
+    }
+
+    public static String buildAuthnRequestUrl(final String authnId, final SAMLProviderMetadata spMetadata, final SAMLProviderMetadata idpMetadata, final String signatureAlgorithm, final HttpServletRequest req, final Boolean redirectOnError) {
         String redirectUrl = "";
         try {
             DefaultBootstrap.bootstrap();
-            AuthnRequest authnRequest = SAMLUtils.buildAuthnRequestObject(authnId, spMetadata.getEntityId(), idpMetadata.getSsoUrl(), spMetadata.getSsoUrl());
+            s_logger.debug("SAML Hostname Alias support is: " + SAML2AuthManager.SAMLSupportHostnameAliases.value());
+            String spSsoUrl = (SAML2AuthManager.SAMLSupportHostnameAliases.value()) ? replaceBaseUrl(spMetadata.getSsoUrl(), getBaseUrl(req)) : spMetadata.getSsoUrl();
+            if (redirectOnError != null && redirectOnError) {
+                spSsoUrl += "&" + ApiConstants.REDIRECT_ON_ERROR + "=true";
+            }
+            s_logger.debug("SAML SP SSO Url: " + spSsoUrl);
+            AuthnRequest authnRequest = SAMLUtils.buildAuthnRequestObject(authnId, spMetadata.getEntityId(), idpMetadata.getSsoUrl(), spSsoUrl);
             PrivateKey privateKey = null;
             if (spMetadata.getKeyPair() != null) {
                 privateKey = spMetadata.getKeyPair().getPrivate();
@@ -191,7 +230,25 @@ public class SAMLUtils {
         return authnRequest;
     }
 
-    public static LogoutRequest buildLogoutRequest(String logoutUrl, String spId, String nameIdString) {
+
+    public static String buildLogoutRequestUrl(final String nameId, final SAMLProviderMetadata spMetadata, final SAMLProviderMetadata idpMetadata, final String signatureAlgorithm) {
+        String redirectUrl = "";
+        try {
+            DefaultBootstrap.bootstrap();
+            LogoutRequest logoutRequest = SAMLUtils.buildLogoutRequestObject(idpMetadata.getSloUrl(), spMetadata.getEntityId(), nameId);
+            PrivateKey privateKey = null;
+            if (spMetadata.getKeyPair() != null) {
+                privateKey = spMetadata.getKeyPair().getPrivate();
+            }
+            redirectUrl = idpMetadata.getSloUrl() + "?" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(logoutRequest), privateKey, signatureAlgorithm);
+        } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException | NoSuchAlgorithmException | InvalidKeyException | java.security.SignatureException e) {
+            s_logger.error("SAML LogoutRequest message building error: " + e.getMessage());
+        }
+
+        return redirectUrl;
+    }
+
+    public static LogoutRequest buildLogoutRequestObject(String logoutUrl, String spId, String nameIdString) {
         Issuer issuer = new IssuerBuilder().buildObject();
         issuer.setValue(spId);
         NameID nameID = new NameIDBuilder().buildObject();
@@ -203,7 +260,103 @@ public class SAMLUtils {
         logoutRequest.setIssueInstant(new DateTime());
         logoutRequest.setIssuer(issuer);
         logoutRequest.setNameID(nameID);
+
         return logoutRequest;
+    }
+
+    public static String buildLogoutResponseUrl(final String requestId, final SAMLProviderMetadata spMetadata, final SAMLProviderMetadata idpMetadata, final String status, final String statusMsg, final String signatureAlgorithm) {
+        String responseUrl = "";
+        try {
+            DefaultBootstrap.bootstrap();
+            LogoutResponse logoutResponse = SAMLUtils.buildLogoutResponseObject(idpMetadata.getSloUrl(), spMetadata.getEntityId(), requestId, status, statusMsg);
+            PrivateKey privateKey = null;
+            if (spMetadata.getKeyPair() != null) {
+                privateKey = spMetadata.getKeyPair().getPrivate();
+            }
+            responseUrl = idpMetadata.getSloUrl() + "?" + SAMLUtils.generateSAMLRequestSignature("SAMLResponse=" + SAMLUtils.encodeSAMLRequest(logoutResponse), privateKey, signatureAlgorithm);
+        } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException | NoSuchAlgorithmException | InvalidKeyException | java.security.SignatureException e) {
+            s_logger.error("SAML LogoutResponse message building error: " + e.getMessage());
+        }
+
+        return responseUrl;
+    }
+
+    public static LogoutResponse buildLogoutResponseObject(final String idpUrl, final String spId, final String requestId, final String status, final String statusMsg) {
+        Issuer issuer = new IssuerBuilder().buildObject();
+        issuer.setValue(spId);
+        LogoutResponse logoutResponse = new LogoutResponseBuilder().buildObject();
+        logoutResponse.setID(generateSecureRandomId());
+        logoutResponse.setDestination(idpUrl);
+        logoutResponse.setInResponseTo(requestId);
+        logoutResponse.setStatus(buildStatus(status, statusMsg));
+        logoutResponse.setIssuer(issuer);
+        logoutResponse.setIssueInstant(new DateTime());
+
+        return logoutResponse;
+    }
+
+    public static boolean redirectToSloUrlViaPost(final HttpServletResponse resp, final String postUrl, final String currentUrl, final String samlRequest, final int attempt) {
+        try {
+            final String postRedirect = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
+                    + "<html><head><meta name=\"robots\" content=\"noindex, nofollow\"><title>Logging Out</title></head>"
+                    + "<body><p>Redirecting, please wait.</p>"
+                    + "<script>window.onload = function() {document.forms[0].submit()};</script>"
+                    + "<form name=\"saml-post-binding\" method=\"post\" action=\"" + postUrl + "\">"
+                    + "<input type=\"hidden\" name=\"SAMLRequest\" value=\"" + samlRequest + "\"/>"
+                    + "<input type=\"hidden\" name=\"prevUrl\" value=\"" + currentUrl + "\"/>"
+                    + "<input type=\"hidden\" name=\"attempt\" value=\"" + attempt + "\"/>"
+                    + "<noscript>"
+                    + "<p>JavaScript is disabled. We strongly recommend to enable it. Click the button below to continue.</p>"
+                    + "</noscript></form></body></html>";
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.setContentType("text/html");
+            resp.setContentLength(postRedirect.length());
+            resp.setDateHeader("Date", new Date().getTime());
+            resp.setHeader("Cache-Control", "no-cache");
+            PrintWriter writer = resp.getWriter();
+            writer.println(postRedirect);
+            resp.flushBuffer();
+        } catch (IOException e) {
+            s_logger.error("Exception sending POST redirect to user's SAML Slo URL.");
+            return false;
+        }
+        return true;
+    }
+
+    public static void redirectToSAMLCloudStackRedirectionUrl(final HttpServletResponse resp, final HttpServletRequest req) throws IOException {
+        final String redirectUrl = (SAML2AuthManager.SAMLSupportHostnameAliases.value()) ?
+                                SAMLUtils.replaceBaseUrl(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value(), SAMLUtils.getBaseUrl(req))
+                                : SAML2AuthManager.SAMLCloudStackRedirectionUrl.value();
+        try {
+            s_logger.debug("SAML Redirecting to " + redirectUrl);
+            resp.sendRedirect(redirectUrl);
+        } catch (IOException exception) {
+            s_logger.debug("SAML failed to redirect to " + redirectUrl + " due to exception: " + exception.getMessage());
+            throw exception;
+        }
+    }
+
+    public static void redirectToSAMLCloudStackRedirectionUrl(final HttpServletResponse resp, final HttpServletRequest req, final String msg) throws IOException {
+        try {
+            resp.addCookie(new Cookie(SAMLPluginConstants.SAML_LOGIN_MSG_COOKIE, URLEncoder.encode(msg, HttpUtils.UTF_8).replace("+", "%20")));
+            redirectToSAMLCloudStackRedirectionUrl(resp, req);
+        } catch (IOException exception) {
+            throw exception;
+        }
+    }
+    private static Status buildStatus(final String statusUri, final String statusMsg) {
+        Status status = new StatusBuilder().buildObject();
+        StatusCode statusCode = new StatusCodeBuilder().buildObject();
+        statusCode.setValue(statusUri);
+        status.setStatusCode(statusCode);
+
+        if (!Strings.isNullOrEmpty(statusMsg)) {
+            StatusMessage statusMessage = new StatusMessageBuilder().buildObject();
+            statusMessage.setMessage(statusMsg);
+            status.setStatusMessage(statusMessage);
+        }
+
+        return status;
     }
 
     public static String encodeSAMLRequest(XMLObject authnRequest)
@@ -236,6 +389,20 @@ public class SAMLUtils {
         UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
         Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
         return (Response) unmarshaller.unmarshall(element);
+    }
+
+    public static LogoutRequest decodeSAMLLogoutRequest(String requestMessage)
+            throws ConfigurationException, ParserConfigurationException,
+            SAXException, IOException, UnmarshallingException {
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        documentBuilderFactory.setNamespaceAware(true);
+        DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
+        byte[] base64DecodedRequest = Base64.decode(requestMessage);
+        Document document = docBuilder.parse(new ByteArrayInputStream(base64DecodedRequest));
+        Element element = document.getDocumentElement();
+        UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
+        Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
+        return (LogoutRequest) unmarshaller.unmarshall(element);
     }
 
     public static String generateSAMLRequestSignature(final String urlEncodedString, final PrivateKey signingKey, final String sigAlgorithmName)
@@ -360,5 +527,84 @@ public class SAMLUtils {
         return CertUtils.generateV1Certificate(keyPair,
                 "CN=ApacheCloudStack", "CN=ApacheCloudStack",
                 3, "SHA256WithRSA");
+    }
+
+    public static String getBaseUrl(final HttpServletRequest req) {
+        String baseUrl = null;
+        String scheme = null;
+        Integer port = null;
+
+        try {
+            scheme = (!Strings.isNullOrEmpty(req.getHeader("X-Forwarded-Proto"))) ? req.getHeader("X-Forwarded-Proto") : req.getScheme();
+            port = (!Strings.isNullOrEmpty(req.getHeader("X-Forwarded-Port"))) ? Integer.parseInt(req.getHeader("X-Forwarded-Port")) : req.getServerPort();
+        } catch (final Exception ex) {
+            s_logger.error("SAML Exception determining URL scheme or port.  Defaulting to request variables.", ex);
+            scheme = (!Strings.isNullOrEmpty(scheme)) ? scheme : req.getScheme();
+            port = (port != null) ? port : req.getServerPort();
+        }
+        try {
+            baseUrl = scheme + "://" + req.getServerName();
+            final URL url = new URL(baseUrl);
+            if (url.getPort() != -1 && url.getDefaultPort() != url.getPort()) {
+                baseUrl += ":" + url.getPort();
+            }
+        } catch (MalformedURLException ex) {
+            s_logger.error("SAML could not determine base URL from HttpServletRequest, unable to parse: " + baseUrl, ex);
+        }
+        return baseUrl;
+    }
+
+    public static String getBaseUrl(final String urlString) {
+        URL url = null;
+        String baseUrl = null;
+
+        try {
+            url = new URL(urlString);
+            if (!url.getProtocol().equalsIgnoreCase("http") && !url.getProtocol().equalsIgnoreCase("https")) {
+                throw new MalformedURLException("urlString protocol " + url.getProtocol() + " is not http or https");
+            }
+            baseUrl = url.getProtocol() + "://" + url.getHost();
+            if (url.getPort() != -1 && url.getDefaultPort() != url.getPort()) {
+                baseUrl += ":" + url.getPort();
+            }
+        } catch (MalformedURLException ex) {
+            s_logger.error("SAML could not convert " + urlString + " to a URL.", ex);
+        }
+        return baseUrl;
+    }
+
+    public static String replaceBaseUrl(final String urlString, final String newBaseUrl) {
+        String newUrl = urlString;
+
+        try {
+            new URL(urlString);
+        } catch (MalformedURLException ex) {
+            s_logger.error("SAML could not convert " + urlString + " to a URL: ", ex);
+            return null;
+        }
+
+        if (!Strings.isNullOrEmpty(newBaseUrl)) {
+            newUrl = newUrl.replace(getBaseUrl(urlString), newBaseUrl);
+        }
+        return newUrl;
+    }
+
+    public static String getCurrentUrl(final HttpServletRequest req) {
+        String absoluteUrl = getBaseUrl(req);
+
+        if (req.getRequestURI() != null) {
+            absoluteUrl += req.getRequestURI();
+        }
+        if (req.getQueryString() != null) {
+            absoluteUrl += "?" + req.getQueryString();
+        }
+        return absoluteUrl;
+    }
+
+    public static String getErrorTextFromXml(final String xml)
+            throws ConfigurationException, ParserConfigurationException,
+            SAXException, UnmarshallingException, IOException {
+        Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes()));
+        return document.getElementsByTagName("errortext").item(0).getTextContent();
     }
 }

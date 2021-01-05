@@ -45,16 +45,24 @@ public class SAMLTokenVO implements Identity, InternalIdentity {
     @Column(name = "entity")
     private String entity = null;
 
+    @Column(name = "session_index")
+    private String sessionIndex = null;
+
+    @Column(name = "sp_base_url")
+    private String spBaseUrl = null;
+
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
     public SAMLTokenVO() {
     }
 
-    public SAMLTokenVO(String uuid, Long domainId, String entity) {
+    public SAMLTokenVO(String uuid, Long domainId, String entity, String sessionIndex, String spBaseUrl) {
         this.uuid = uuid;
         this.domainId = domainId;
         this.entity = entity;
+        this.sessionIndex = sessionIndex;
+        this.spBaseUrl = spBaseUrl;
     }
 
     @Override
@@ -85,6 +93,22 @@ public class SAMLTokenVO implements Identity, InternalIdentity {
 
     public void setEntity(String entity) {
         this.entity = entity;
+    }
+
+    public String getSessionIndex() {
+        return sessionIndex;
+    }
+
+    public void setSessionIndex(String sessionIndex) {
+        this.sessionIndex = sessionIndex;
+    }
+
+    public String getSpBaseUrl() {
+        return spBaseUrl;
+    }
+
+    public void setSpBaseUrl(String spBaseUrl) {
+        this.spBaseUrl = spBaseUrl;
     }
 
     public Date getCreated() {

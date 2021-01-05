@@ -21,6 +21,7 @@ import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
+import javax.servlet.http.HttpSession;
 import java.util.Collection;
 
 public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableService {
@@ -70,6 +71,8 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableSe
     public static final ConfigKey<Integer> SAMLTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "saml2.timeout", "1800",
             "SAML2 IDP Metadata refresh interval in seconds, minimum value is set to 300", true);
 
+    public static final ConfigKey<Boolean> SAMLSupportHostnameAliases = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.hostnameAliases.enabled", "false",
+            "Enables support for other Service Provider hostnames. Dynamically updates SSO URL and tracks and redirects to user's SLO URL for IdP initiated SLO.", true);
     public SAMLProviderMetadata getSPMetadata();
     public SAMLProviderMetadata getIdPMetadata(String entityId);
     public Collection<SAMLProviderMetadata> getAllIdPMetadata();
@@ -77,7 +80,11 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableSe
     public boolean isUserAuthorized(Long userId, String entityId);
     public boolean authorizeUser(Long userId, String entityId, boolean enable);
 
-    public void saveToken(String authnId, String domain, String entity);
+    public void saveToken(String authnId, String domain, String entity, String samlNameId, String jsessionId);
+    public void updateToken(SAMLTokenVO token);
+    public void unauthorizeToken(SAMLTokenVO token);
     public SAMLTokenVO getToken(String authnId);
+    public SAMLTokenVO getTokenBySessionIndexWhereNotSpBaseUrl(String sessionIndex, String spBaseUrl);
     public void expireTokens();
+    public void attachTokenToSession(HttpSession session, SAMLTokenVO token);
 }

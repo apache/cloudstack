@@ -96,6 +96,10 @@
         // Login action
         var selectedLogin = 'cloudstack';
         $login.find('#login-submit').click(function() {
+            var selectedOption = $login.find('#login-options').find(':selected').val();
+            if ((selectedLogin === 'cloudstack' || selectedLogin === 'saml') && selectedOption && selectedOption !== '') {
+                $.cookie('login-option', selectedOption, {expires: 90});
+            }
             if (selectedLogin === 'cloudstack') {
                 // CloudStack Local Login
                 if (!$form.valid()) return false;
@@ -122,7 +126,7 @@
             } else if (selectedLogin === 'saml') {
                 // SAML
                 args.samlLoginAction({
-                    data: {'idpid': $login.find('#login-options').find(':selected').val()}
+                    data: {'idpid': selectedOption}
                 });
             }
             return false;
@@ -145,11 +149,7 @@
         };
 
         $login.find('#login-options').change(function() {
-            var selectedOption = $login.find('#login-options').find(':selected').val();
-            toggleLoginView(selectedOption);
-            if (selectedOption && selectedOption !== '') {
-                $.cookie('login-option', selectedOption);
-            }
+            toggleLoginView($login.find('#login-options').find(':selected').val());
         });
 
         // By Default hide login option dropdown
@@ -210,6 +210,11 @@
                     dictionary['label.loading'] + '...'
                 )
             ));
+        }
+
+        if ($.cookie('login-message')) {
+            $('div.login form').after('<div style="text-align:center;margin-top:50px;">' + $.cookie('login-message') + '</div>');
+            $.cookie('login-message',null);
         }
 
         $(window).trigger('cloudStack.init');

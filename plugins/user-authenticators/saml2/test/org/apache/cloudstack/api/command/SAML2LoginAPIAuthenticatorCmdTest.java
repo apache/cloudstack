@@ -139,11 +139,11 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
     public void testAuthenticate() throws Exception {
         SAML2LoginAPIAuthenticatorCmd cmd = Mockito.spy(new SAML2LoginAPIAuthenticatorCmd());
 
-        Field apiServerField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("_apiServer");
+        Field apiServerField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("apiServer");
         apiServerField.setAccessible(true);
         apiServerField.set(cmd, apiServer);
 
-        Field managerField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("_samlAuthManager");
+        Field managerField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("samlAuthManager");
         managerField.setAccessible(true);
         managerField.set(cmd, samlAuthManager);
 
@@ -151,11 +151,11 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         accountServiceField.setAccessible(true);
         accountServiceField.set(cmd, accountService);
 
-        Field domainMgrField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("_domainMgr");
+        Field domainMgrField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("domainMgr");
         domainMgrField.setAccessible(true);
         domainMgrField.set(cmd, domainMgr);
 
-        Field userAccountDaoField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("_userAccountDao");
+        Field userAccountDaoField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("userAccountDao");
         userAccountDaoField.setAccessible(true);
         userAccountDaoField.set(cmd, userAccountDao);
 

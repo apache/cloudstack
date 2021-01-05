@@ -22,9 +22,14 @@ public class SAMLPluginConstants {
     public static final int SAML_REFRESH_INTERVAL = 300;
 
     public static final String SAML_RESPONSE = "SAMLResponse";
+    public static final String SAML_REQUEST = "SAMLRequest";
     public static final String SAML_IDPID = "SAML_IDPID";
+    public static final String SAML_INTERACTIVE_LOGIN = "SAML_INTERACTIVE_LOGIN";
+    public static final String SAML_LOGIN_MSG_COOKIE = "login-message";
     public static final String SAML_SESSIONID = "SAML_SESSIONID";
     public static final String SAML_NAMEID = "SAML_NAMEID";
+    public static final String SAML_TOKEN = "SAML_TOKEN";
+    public static final String SAML_SESSION_LISTENER = "SAML_SESSION_LISTENER";
     public static final String SAMLSP_KEYPAIR = "SAMLSP_KEYPAIR";
     public static final String SAMLSP_X509CERT = "SAMLSP_X509CERT";
 }

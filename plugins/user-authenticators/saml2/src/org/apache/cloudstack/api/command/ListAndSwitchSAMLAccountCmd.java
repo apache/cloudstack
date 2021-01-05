@@ -154,7 +154,8 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
                     final LoginCmdResponse loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, nextUserAccount.getUsername(), nextUserAccount.getUsername() + nextUserAccount.getSource().toString(),
                             nextUserAccount.getDomainId(), null, remoteAddress, params);
                     SAMLUtils.setupSamlUserCookies(loginResponse, resp);
-                    resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
+
+                    SAMLUtils.redirectToSAMLCloudStackRedirectionUrl(resp, req);
                     return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
                 }
             } catch (CloudAuthenticationException | IOException exception) {
