@@ -282,7 +282,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 // each interface at this point, so inform all vif drivers
                 final List<VifDriver> allVifDrivers = libvirtComputingResource.getAllVifDrivers();
                 for (final VifDriver vifDriver : allVifDrivers) {
-                    vifDriver.unplug(iface, deleteBridge(vlanToPersistenceMap, vlanId));
+                    vifDriver.unplug(iface, shouldDeleteBridge(vlanToPersistenceMap, vlanId));
                 }
             }
         }
@@ -291,13 +291,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     private String getVlanIdFromBridgeName(String brName) {
-        if (brName != null) {
-            return brName.split("-")[1];
+        if (StringUtils.isNotBlank(brName)) {
+            String[] s = brName.split("-");
+            if (s.length > 1) {
+                return s[1];
+            }
+            return null;
         }
         return null;
     }
 
-    private boolean deleteBridge(Map<String, Boolean> vlanToPersistenceMap, String vlanId) {
+    private boolean shouldDeleteBridge(Map<String, Boolean> vlanToPersistenceMap, String vlanId) {
         if (MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanId != null && vlanToPersistenceMap.containsKey(vlanId)) {
             return vlanToPersistenceMap.get(vlanId);
         }

@@ -1856,11 +1856,22 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return vlanToPersistenceMap;
     }
 
+    /**
+     *
+     * @param networkVO - the network object used to determine the vlanId from the broadcast URI
+     * @param isPersistent - indicates if the corresponding network's network offering is Persistent
+     *
+     * @return <VlanId, ShouldKVMBridgeBeDeleted> - basically returns the vlan ID which is used to determine the
+     * bridge name for KVM hypervisor and based on the network and isolation type and persistent setting of the offering
+     * we decide whether the bridge is to be deleted (KVM) if the last VM in that host is destroyed / migrated
+     */
     private Pair<String, Boolean> getVMNetworkDetails(NetworkVO networkVO, boolean isPersistent) {
         URI broadcastUri = networkVO.getBroadcastUri();
         String scheme = broadcastUri.getScheme();
         String vlanId = Networks.BroadcastDomainType.getValue(broadcastUri);
-        Boolean shouldDelete = !((networkVO.getGuestType() == Network.GuestType.L2 || networkVO.getGuestType() == Network.GuestType.Isolated) && scheme.equalsIgnoreCase("vlan") && isPersistent);
+        Boolean shouldDelete = !((networkVO.getGuestType() == Network.GuestType.L2 || networkVO.getGuestType() == Network.GuestType.Isolated) &&
+                (scheme.equalsIgnoreCase("vlan") || scheme.equalsIgnoreCase("vxlan"))
+                && isPersistent);
         return new Pair<>(vlanId, shouldDelete);
     }
 

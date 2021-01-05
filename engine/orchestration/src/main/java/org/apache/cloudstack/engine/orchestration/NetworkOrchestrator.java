@@ -1200,7 +1200,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return implemented;
     }
 
-    private NicTO getNicTO(NetworkVO networkVO, NetworkOfferingVO networkOfferingVO) {
+    /**
+     *
+     * Creates a dummy NicTO object which is used by the respective hypervisors to setup network elements / resources
+     * - bridges(KVM), VLANs(Xen) and portgroups(VMWare) for L2 network
+     */
+    private NicTO createNicTOFromNetworkAndOffering(NetworkVO networkVO, NetworkOfferingVO networkOfferingVO) {
         NicTO to = new NicTO();
         to.setBroadcastType(networkVO.getBroadcastDomainType());
         to.setType(networkVO.getTrafficType());
@@ -1231,10 +1236,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private void setupPersistentNetwork(NetworkVO network, NetworkOfferingVO offering, Long dcId) throws AgentUnavailableException, OperationTimedoutException {
-        NicTO to = getNicTO(network, offering);
+        NicTO to = createNicTOFromNetworkAndOffering(network, offering);
         List<ClusterVO> clusterVOS = clusterDao.listClustersByDcId(dcId);
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, dcId);
-        Collections.reverse(hosts);
         Map<Long, List<Long>> clusterToHostsMap = new HashMap<>();
         SetupPersistentNetworkCommand cmd = new SetupPersistentNetworkCommand(to);
         for (HostVO host : hosts) {
@@ -1247,13 +1251,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.warn("Unable to get an answer to the SetupPersistentNetworkCommand from agent:" + host.getId());
                 clusterToHostsMap.get(host.getClusterId()).remove(host.getId());
                 continue;
-                // throw new CloudRuntimeException("Unable to get an answer to the SetupPersistentNetworkCommand from agent: " + host.getId());
             }
 
             if (!answer.getResult()) {
-                s_logger.warn("Unable to setup agent " + host.getId() + " due to " + answer.getDetails() );
-//                final String msg = "Incorrect Network setup on agent, Reinitialize agent after network names are setup, details : " + answer.getDetails();
-//                throw new CloudRuntimeException(msg);
+                s_logger.warn("Unable to setup agent " + host.getId() + " due to " + answer.getDetails());
+                clusterToHostsMap.get(host.getClusterId()).remove(host.getId());
                 continue;
             }
         }

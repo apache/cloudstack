@@ -30,6 +30,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -129,7 +130,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                         // We don't know which "traffic type" is associated with
                         // each interface at this point, so inform all vif drivers
                         for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
-                            vifDriver.unplug(iface, deleteBridge(vlanToPersistenceMap, vlanId));
+                            vifDriver.unplug(iface, shouldDeleteBridge(vlanToPersistenceMap, vlanId));
                         }
                     }
                 }
@@ -162,7 +163,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
     }
 
     private String getVlanIdFromBridgeName(String brName) {
-        if (brName != null) {
+        if (StringUtils.isNotBlank(brName)) {
             String[] s = brName.split("-");
             if (s.length > 1) {
                 return s[1];
@@ -172,7 +173,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
         return null;
     }
 
-    private boolean deleteBridge(Map<String, Boolean> vlanToPersistenceMap, String vlanId) {
+    private boolean shouldDeleteBridge(Map<String, Boolean> vlanToPersistenceMap, String vlanId) {
         if (MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanId != null && vlanToPersistenceMap.containsKey(vlanId)) {
             return vlanToPersistenceMap.get(vlanId);
         }
