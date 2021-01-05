@@ -177,8 +177,13 @@ export default {
         })
         this.$parent.$parent.close()
       }).catch(error => {
-        console.error(error)
-        this.$message.error(`${this.$t('message.migrating.vm.to.host.failed')} ${this.selectedHost.name}`)
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
+          duration: 0
+        })
+      }).finally(() => {
+        this.loading = false
       })
     },
     handleChangePage (page, pageSize) {
