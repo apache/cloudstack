@@ -130,6 +130,8 @@ export default {
     steps () {
       const steps = []
       const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const localStorageEnabled = this.prefillContent.localstorageenabled.value
+      const localStorageEnabledForSystemVM = this.prefillContent.localstorageenabledforsystemvm.value
       steps.push({
         title: 'label.cluster',
         fromKey: 'clusterResource',
@@ -142,11 +144,13 @@ export default {
           description: 'message.desc.host'
         })
       }
-      steps.push({
-        title: 'label.primary.storage',
-        fromKey: 'primaryResource',
-        description: 'message.desc.primary.storage'
-      })
+      if (!localStorageEnabled || !localStorageEnabledForSystemVM) {
+        steps.push({
+          title: 'label.primary.storage',
+          fromKey: 'primaryResource',
+          description: 'message.desc.primary.storage'
+        })
+      }
       steps.push({
         title: 'label.secondary.storage',
         fromKey: 'secondaryResource',
