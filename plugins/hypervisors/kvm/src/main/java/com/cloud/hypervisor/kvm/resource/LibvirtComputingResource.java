@@ -2545,9 +2545,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
             }
 
-            // I'm not sure why previously certain DATADISKs were hard-coded VIRTIO and others not, however this
-            // maintains existing functionality with the exception that SCSI will override VIRTIO.
-            DiskDef.DiskBus diskBusTypeData = (diskBusType == DiskDef.DiskBus.SCSI) ? diskBusType : DiskDef.DiskBus.VIRTIO;
+            DiskDef.DiskBus diskBusTypeData = getDataDiskModelFromVMDetail(vmSpec);
+            if (diskBusTypeData == null) {
+                diskBusTypeData = (diskBusType == DiskDef.DiskBus.SCSI) ? diskBusType : DiskDef.DiskBus.VIRTIO;
+            }
 
             final DiskDef disk = new DiskDef();
             int devId = volume.getDiskSeq().intValue();
@@ -3420,12 +3421,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.SCSI;
         }
 
-        final String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+        String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(rootDiskController)) {
-            s_logger.debug("Passed custom disk bus " + rootDiskController);
-            for (final DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
+            s_logger.debug("Passed custom disk controller for ROOT disk " + rootDiskController);
+            for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
                 if (bus.toString().equalsIgnoreCase(rootDiskController)) {
-                    s_logger.debug("Found matching enum for disk bus " + rootDiskController);
+                    s_logger.debug("Found matching enum for disk controller for ROOT disk " + rootDiskController);
+                    return bus;
+                }
+            }
+        }
+        return null;
+    }
+
+    public DiskDef.DiskBus getDataDiskModelFromVMDetail(final VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        if (details == null) {
+            return null;
+        }
+
+        String dataDiskController = details.get(VmDetailConstants.DATA_DISK_CONTROLLER);
+        if (StringUtils.isNotBlank(dataDiskController)) {
+            s_logger.debug("Passed custom disk controller for DATA disk " + dataDiskController);
+            for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
+                if (bus.toString().equalsIgnoreCase(dataDiskController)) {
+                    s_logger.debug("Found matching enum for disk controller for DATA disk " + dataDiskController);
                     return bus;
                 }
             }
