@@ -1205,8 +1205,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      * Creates a dummy NicTO object which is used by the respective hypervisors to setup network elements / resources
      * - bridges(KVM), VLANs(Xen) and portgroups(VMWare) for L2 network
      */
-    private NicTO createNicTOFromNetworkAndOffering(NetworkVO networkVO, NetworkOfferingVO networkOfferingVO) {
+    private NicTO createNicTOFromNetworkAndOffering(NetworkVO networkVO, NetworkOfferingVO networkOfferingVO, HostVO hostVO) {
         NicTO to = new NicTO();
+        to.setName(_networkModel.getNetworkTag(hostVO.getHypervisorType(), networkVO));
         to.setBroadcastType(networkVO.getBroadcastDomainType());
         to.setType(networkVO.getTrafficType());
         to.setBroadcastUri(networkVO.getBroadcastUri());
@@ -1216,7 +1217,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return to;
     }
 
-    private boolean isNtwConfiguredInCluster(HostVO hostVO, Map<Long, List<Long>> clusterToHostsMap) {
+    private Pair<Boolean, NicTO> isNtwConfiguredInCluster(HostVO hostVO, Map<Long, List<Long>> clusterToHostsMap, NetworkVO networkVO, NetworkOfferingVO networkOfferingVO) {
         Long clusterId = hostVO.getClusterId();
         List<Long> hosts = clusterToHostsMap.get(clusterId);
         if (hosts == null) {
@@ -1225,26 +1226,28 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (hostVO.getHypervisorType() == HypervisorType.KVM) {
             hosts.add(hostVO.getId());
             clusterToHostsMap.put(clusterId, hosts);
-            return false;
+            return new Pair<>(false, createNicTOFromNetworkAndOffering(networkVO, networkOfferingVO, hostVO));
         }
         if (hosts != null && !hosts.isEmpty()) {
-            return true;
+            return new Pair<>(true, createNicTOFromNetworkAndOffering(networkVO, networkOfferingVO, hostVO));
         }
         hosts.add(hostVO.getId());
         clusterToHostsMap.put(clusterId, hosts);
-        return false;
+        return new Pair<>(false, createNicTOFromNetworkAndOffering(networkVO, networkOfferingVO, hostVO));
     }
 
     private void setupPersistentNetwork(NetworkVO network, NetworkOfferingVO offering, Long dcId) throws AgentUnavailableException, OperationTimedoutException {
-        NicTO to = createNicTOFromNetworkAndOffering(network, offering);
         List<ClusterVO> clusterVOS = clusterDao.listClustersByDcId(dcId);
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, dcId);
         Map<Long, List<Long>> clusterToHostsMap = new HashMap<>();
-        SetupPersistentNetworkCommand cmd = new SetupPersistentNetworkCommand(to);
+
         for (HostVO host : hosts) {
-            if (isNtwConfiguredInCluster(host, clusterToHostsMap)) {
+            Pair<Boolean, NicTO> networkCfgStateAndDetails = isNtwConfiguredInCluster(host, clusterToHostsMap, network, offering);
+            if (networkCfgStateAndDetails.first()) {
                 continue;
             }
+            NicTO to = networkCfgStateAndDetails.second();
+            SetupPersistentNetworkCommand cmd = new SetupPersistentNetworkCommand(to);
             final SetupPersistentNetworkAnswer answer = (SetupPersistentNetworkAnswer)_agentMgr.send(host.getId(), cmd);
 
             if (answer == null) {
@@ -3145,7 +3148,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.info("NetworkGarbageCollector uses '" + netGcWait + "' seconds for GC interval.");
 
                 for (final Long networkId : networkIds) {
-
                     if (!_networkModel.isNetworkReadyForGc(networkId)) {
                         continue;
                     }
