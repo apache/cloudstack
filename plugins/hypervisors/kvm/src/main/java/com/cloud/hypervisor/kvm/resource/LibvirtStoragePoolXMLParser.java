@@ -23,6 +23,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -56,9 +57,9 @@ public class LibvirtStoragePoolXMLParser {
 
             if (type.equalsIgnoreCase("rbd")) {
                 int port = 0;
-                String _xmlPort = getAttrValue("host", "port", source);
-                if ( ! _xmlPort.isEmpty()) {
-                    port = Integer.parseInt(_xmlPort);
+                String xmlPort = getAttrValue("host", "port", source);
+                if (StringUtils.isNotBlank(xmlPort)) {
+                    port = Integer.parseInt(xmlPort);
                 }
                 String pool = getTagValue("name", source);
 
