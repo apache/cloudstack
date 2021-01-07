@@ -17,16 +17,15 @@
 
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+
 @EntityReference(value = RolePermission.class)
-public class RolePermissionResponse extends BaseResponse {
+public class RolePermissionResponse extends BaseRolePermissionResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the role permission")
     private String id;
@@ -38,18 +37,6 @@ public class RolePermissionResponse extends BaseResponse {
     @SerializedName(ApiConstants.ROLE_NAME)
     @Param(description = "the name of the role to which the role permission belongs")
     private String roleName;
-
-    @SerializedName(ApiConstants.RULE)
-    @Param(description = "the api name or wildcard rule")
-    private String rule;
-
-    @SerializedName(ApiConstants.PERMISSION)
-    @Param(description = "the permission type of the api name or wildcard rule, allow/deny")
-    private String rulePermission;
-
-    @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the role permission")
-    private String ruleDescription;
 
     public String getId() {
         return id;
@@ -73,29 +60,5 @@ public class RolePermissionResponse extends BaseResponse {
 
     public void setRoleName(String roleName) {
         this.roleName = roleName;
-    }
-
-    public String getRule() {
-        return rule;
-    }
-
-    public void setRule(Rule rule) {
-        if (rule != null) {
-            this.rule = rule.getRuleString();
-        }
-    }
-
-    public String getRulePermission() {
-        return rulePermission;
-    }
-
-    public void setRulePermission(RolePermission.Permission rulePermission) {
-        if (rulePermission != null) {
-            this.rulePermission = rulePermission.name().toLowerCase();
-        }
-    }
-
-    public void setDescription(String description) {
-        this.ruleDescription = description;
     }
 }

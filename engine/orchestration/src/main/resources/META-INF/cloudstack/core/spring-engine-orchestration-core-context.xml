@@ -44,6 +44,11 @@
             value="#{storagePoolAllocatorsRegistry.registered}" />
     </bean>
 
+    <bean id="storageOrchestrator"
+          class="org.apache.cloudstack.engine.orchestration.StorageOrchestrator"/>
+    <bean id="dataMigrationHelper"
+          class="org.apache.cloudstack.engine.orchestration.DataMigrationUtility"/>
+
     <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl">
         <property name="hostAllocators" value="#{hostAllocatorsRegistry.registered}" />
         <property name="storagePoolAllocators"

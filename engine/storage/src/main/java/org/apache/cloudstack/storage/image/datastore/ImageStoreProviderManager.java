@@ -36,6 +36,8 @@ public interface ImageStoreProviderManager {
 
     List<DataStore> listImageStoresByScope(ZoneScope scope);
 
+    List<DataStore> listImageStoresByScopeExcludingReadOnly(ZoneScope scope);
+
     List<DataStore> listImageStoreByProvider(String provider);
 
     List<DataStore> listImageCacheStores(Scope scope);
@@ -76,4 +78,6 @@ public interface ImageStoreProviderManager {
      * @return            the list of DataStore which have free capacity
      */
     List<DataStore> listImageStoresWithFreeCapacity(List<DataStore> imageStores);
+
+    List<DataStore> orderImageStoresOnFreeCapacity(List<DataStore> imageStores);
 }

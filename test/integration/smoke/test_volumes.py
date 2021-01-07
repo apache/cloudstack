@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,8 +34,8 @@ from marvin.lib.base import (ServiceOffering,
                              DiskOffering,
                              StoragePool,)
 from marvin.lib.common import (get_domain,
+                                get_suitable_test_template,
                                 get_zone,
-                                get_template,
                                 find_storage_pool_type,
                                 get_pod,
                                 list_disk_offering)
@@ -83,13 +83,15 @@ class TestCreateVolume(cloudstackTestCase):
                                     cls.services["disk_offering"],
                                     custom=True
                                     )
-        template = get_template(
-                            cls.apiclient,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+
+        template = get_suitable_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            cls.hypervisor
+        )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -302,17 +304,18 @@ class TestVolumes(cloudstackTestCase):
                                     custom=True
                                     )
 
-        template = get_template(
-                            cls.apiclient,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+        cls.template = get_suitable_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            cls.hypervisor
+        )
+        if cls.template == FAILED:
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
-        cls.services["template"] = template.id
+        cls.services["template"] = cls.template.id
         cls.services["diskofferingid"] = cls.disk_offering.id
         cls.services['resizeddiskofferingid'] = cls.resized_disk_offering.id
         cls.services['customresizeddiskofferingid'] = cls.custom_resized_disk_offering.id
@@ -530,8 +533,12 @@ class TestVolumes(cloudstackTestCase):
         self.debug("Extract detached Volume ID: %s" % self.volume.id)
 
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        #Sleep to ensure the current state will reflected in other calls
+        time.sleep(self.services["sleep"])
         self.virtual_machine.detach_volume(self.apiClient, self.volume)
         self.attached = False
+        #Sleep to ensure the current state will reflected in other calls
+        time.sleep(self.services["sleep"])
 
         cmd = extractVolume.extractVolumeCmd()
         cmd.id = self.volume.id
@@ -871,6 +878,7 @@ class TestVolumes(cloudstackTestCase):
         test_vm = VirtualMachine.create(
             self.apiclient,
             self.services,
+            templateid=self.template.id,
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -906,6 +914,8 @@ class TestVolumes(cloudstackTestCase):
             None,
             "Check if volume state (attached) is reflected"
         )
+        #Sleep to ensure the current state will reflected in other calls
+        time.sleep(self.services["sleep"])
 
         test_vm.detach_volume(self.apiClient, self.volume)
         self.cleanup.append(test_vm)
@@ -978,7 +988,7 @@ class TestVolumes(cloudstackTestCase):
             pool = pools[0]
         else:
             raise self.skipTest("Not enough storage pools found, skipping test")
-        
+
         if hasattr(pool, 'tags'):
             StoragePool.update(self.apiclient, id=pool.id, tags="")
 

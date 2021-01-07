@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -78,7 +78,7 @@ class GuestCommand:
         info['network'] = 'guest-network-get-interfaces'
 
         result = dict()
-        for key, cmd in info.items():
+        for key, cmd in list(info.items()):
             result[key] = self.virt.agent_command(self.dom, cmd)
 
         return result, 0

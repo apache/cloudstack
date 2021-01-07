@@ -1571,8 +1571,22 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
                     isDvSwitch = True
                     break
 
-        supported = isVmware and isDvSwitch
-        cls.vmwareHypervisorDvSwitchesForGuestTrafficNotPresent = not supported
+        # Supported hypervisor = KVM using OVS
+        isKVM = cls.hypervisor.lower() in ["kvm"]
+        isOVSEnabled = False
+        hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        if isKVM :
+            # Test only if all the hosts use OVS
+            grepCmd = 'grep "network.bridge.type=openvswitch" /etc/cloudstack/agent/agent.properties'
+            hosts = list_hosts(cls.apiclient, type='Routing', hypervisor='kvm')
+            if len(hosts) > 0 :
+                isOVSEnabled = True
+            for host in hosts :
+                isOVSEnabled = isOVSEnabled and len(SshClient(host.ipaddress, port=22, user=hostConfig["username"],
+                    passwd=hostConfig["password"]).execute(grepCmd)) != 0
+
+        supported = isVmware and isDvSwitch or isKVM and isOVSEnabled
+        cls.unsupportedHardware = not supported
 
         cls._cleanup = []
 
@@ -1730,7 +1744,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         return vm_ip, eth_device
 
     @attr(tags=["advanced", "advancedns", "smoke", "pvlan"], required_hardware="true")
-    @skipTestIf("vmwareHypervisorDvSwitchesForGuestTrafficNotPresent")
+    @skipTestIf("unsupportedHardware")
     def test_l2_network_pvlan_connectivity(self):
         try:
             vm_community1_one = self.deploy_vm_multiple_nics("vmcommunity1one", self.l2_pvlan_community1)
@@ -1788,6 +1802,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             # Isolated PVLAN checks
             same_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_isolated2_ip)
             isolated_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_community1_one_ip)
+            isolated_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_promiscuous1_ip)
 
             self.assertTrue(
                 same_isolated,
@@ -1796,6 +1811,10 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             self.assertTrue(
                 isolated_to_community_isolated,
                 "VMs on isolated PVLANs must be isolated on layer 2 to Vms on community PVLAN"
+            )
+            self.assertFalse(
+                isolated_to_promiscuous_isolated,
+                "VMs on isolated PVLANs must not be isolated on layer 2 to Vms on promiscuous PVLAN",
             )
 
             # Promiscuous PVLAN checks

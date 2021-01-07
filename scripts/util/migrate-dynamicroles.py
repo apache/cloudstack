@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -110,7 +110,7 @@ def main():
         sys.exit(1)
 
     while True:
-        choice = raw_input("Running this migration tool will remove any " +
+        choice = input("Running this migration tool will remove any " +
                            "default-role permissions from cloud.role_permissions. " +
                            "Do you want to continue? [y/N]").lower()
         if choice == 'y':

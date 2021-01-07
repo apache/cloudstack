@@ -24,6 +24,8 @@ import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class XcpServerResource extends CitrixResourceBase {
 
     private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
@@ -87,8 +89,8 @@ public class XcpServerResource extends CitrixResourceBase {
     protected void setMemory(final Connection conn, final VM vm, final long minMemsize, final long maxMemsize) throws XmlRpcException, XenAPIException {
         //setMemoryLimits(staticMin, staticMax, dynamicMin, dynamicMax)
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Memory Limits for VM [" + vm.getNameLabel(conn) + "[staticMin:" + mem_32m + ", staticMax:" + maxMemsize + ", dynamicMin: " + minMemsize +
-                    ", dynamicMax:" + maxMemsize + "]]");
+           s_logger.debug("Memory Limits for VM [" + vm.getNameLabel(conn) + "[staticMin:" + toHumanReadableSize(mem_32m) + ", staticMax:" + toHumanReadableSize(maxMemsize) + ", dynamicMin: " + toHumanReadableSize(minMemsize) +
+                    ", dynamicMax:" + toHumanReadableSize(maxMemsize) + "]]");
         }
         vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }

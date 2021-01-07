@@ -26,6 +26,9 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.StoragePoolStatus;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -89,7 +92,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
-        return reOrder(pools, vmProfile, plan);
+        return reorderPools(pools, vmProfile, plan);
     }
 
     protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,
@@ -155,7 +158,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return reorderedPools;
     }
 
-    protected List<StoragePool> reOrder(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
+    @Override
+    public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
         if (pools == null) {
             return null;
         }
@@ -215,6 +219,29 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Volume volume = volumeDao.findById(dskCh.getVolumeId());
         List<Volume> requestVolumes = new ArrayList<>();
         requestVolumes.add(volume);
+        if (dskCh.getHypervisorType() == HypervisorType.VMware) {
+            // Skip the parent datastore cluster, consider only child storage pools in it
+            if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster && storageMgr.isStoragePoolDatastoreClusterParent(pool)) {
+                return false;
+            }
+            // Skip the storage pool whose parent datastore cluster is not in UP state.
+            if (pool.getParent() != 0L) {
+                StoragePoolVO datastoreCluster = storagePoolDao.findById(pool.getParent());
+                if (datastoreCluster == null || (datastoreCluster != null && datastoreCluster.getStatus() != StoragePoolStatus.Up)) {
+                    return false;
+                }
+            }
+
+            try {
+                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, pool);
+                if (!isStoragePoolStoragepolicyComplaince) {
+                    return false;
+                }
+            } catch (StorageUnavailableException e) {
+                s_logger.warn(String.format("Could not verify storage policy complaince against storage pool %s due to exception %s", pool.getUuid(), e.getMessage()));
+                return false;
+            }
+        }
         return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool, plan.getClusterId());
     }
 

@@ -214,6 +214,11 @@ public abstract class UploadParamsBase implements UploadParams {
         return false;
     }
 
+    @Override
+    public boolean isDeployAsIs() {
+        return false;
+    }
+
     void setIso(boolean iso) {
         isIso = iso;
     }

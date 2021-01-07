@@ -55,7 +55,7 @@ public class TemplateOrVolumePostUploadCommand {
 
     private long accountId;
 
-    private Integer nfsVersion;
+    private String nfsVersion;
 
     public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name, String imageFormat, String dataTo,
             String dataToRole) {
@@ -201,11 +201,11 @@ public class TemplateOrVolumePostUploadCommand {
         return accountId;
     }
 
-    public Integer getNfsVersion() {
+    public String getNfsVersion() {
         return nfsVersion;
     }
 
-    public void setNfsVersion(Integer nfsVersion) {
+    public void setNfsVersion(String nfsVersion) {
         this.nfsVersion = nfsVersion;
     }
 

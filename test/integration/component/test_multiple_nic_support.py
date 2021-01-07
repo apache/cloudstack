@@ -64,8 +64,10 @@ class TestMulipleNicSupport(cloudstackTestCase):
         cls.zone = Zone(zone.__dict__)
         cls._cleanup = []
 
+        cls.skip = False
         if str(cls.zone.securitygroupsenabled) != "True":
-            sys.exit(1)
+            cls.skip = True
+            return
 
         cls.logger = logging.getLogger("TestMulipleNicSupport")
         cls.stream_handler = logging.StreamHandler()
@@ -78,7 +80,8 @@ class TestMulipleNicSupport(cloudstackTestCase):
 
         cls.template = get_template(cls.apiclient, cls.zone.id, hypervisor="KVM")
         if cls.template == FAILED:
-            sys.exit(1)
+            cls.skip = True
+            return
 
         # Create new domain, account, network and VM
         cls.user_domain = Domain.create(
@@ -262,6 +265,8 @@ class TestMulipleNicSupport(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skip:
+            self.skipTest("Test can be run only on advanced zone and KVM hypervisor")
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
         return

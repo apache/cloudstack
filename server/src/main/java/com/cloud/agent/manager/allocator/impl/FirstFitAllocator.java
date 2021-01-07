@@ -299,7 +299,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize());
+            s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize() + " MB");
         }
 
         long serviceOfferingId = offering.getId();

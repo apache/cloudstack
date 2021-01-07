@@ -57,7 +57,7 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
             entityType = KubernetesClusterResponse.class,
             description = "the ID of the Kubernetes cluster")
     private Long id;
@@ -94,8 +94,14 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
+        String description = "Scaling Kubernetes cluster";
         KubernetesCluster cluster = _entityMgr.findById(KubernetesCluster.class, getId());
-        return String.format("Scaling Kubernetes cluster ID: %s", cluster.getUuid());
+        if (cluster != null) {
+            description += String.format(" ID: %s", cluster.getUuid());
+        } else {
+            description += String.format(" ID: %d", getId());
+        }
+        return description;
     }
 
     @Override

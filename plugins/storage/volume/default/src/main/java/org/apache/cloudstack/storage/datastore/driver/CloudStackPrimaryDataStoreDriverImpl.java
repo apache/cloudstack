@@ -78,6 +78,8 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     @Override
     public Map<String, String> getCapabilities() {
@@ -366,7 +368,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, resizeParameter.hosts, resizeCmd);
             if (answer != null && answer.getResult()) {
                 long finalSize = answer.getNewSize();
-                s_logger.debug("Resize: volume started at size " + vol.getSize() + " and ended at size " + finalSize);
+                s_logger.debug("Resize: volume started at size: " + toHumanReadableSize(vol.getSize()) + " and ended at size: " + toHumanReadableSize(finalSize));
 
                 vol.setSize(finalSize);
                 vol.update();

@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.utils.db.QueryBuilder;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +38,7 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
     protected final SearchBuilder<GuestOSHypervisorVO> mappingSearch;
     protected final SearchBuilder<GuestOSHypervisorVO> userDefinedMappingSearch;
     protected final SearchBuilder<GuestOSHypervisorVO> guestOsNameSearch;
+    protected final SearchBuilder<GuestOSHypervisorVO> availableHypervisorVersionSearch;
 
     protected GuestOSHypervisorDaoImpl() {
         guestOsSearch = createSearchBuilder();
@@ -60,6 +63,15 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         guestOsNameSearch.and("hypervisor_type", guestOsNameSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         guestOsNameSearch.and("hypervisor_version", guestOsNameSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
         guestOsNameSearch.done();
+
+        availableHypervisorVersionSearch = createSearchBuilder();
+        availableHypervisorVersionSearch.and("hypervisor_type",
+                availableHypervisorVersionSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        availableHypervisorVersionSearch.and("hypervisor_version",
+                availableHypervisorVersionSearch.entity().getHypervisorVersion(), SearchCriteria.Op.GTEQ);
+        availableHypervisorVersionSearch.select(null, SearchCriteria.Func.DISTINCT,
+                availableHypervisorVersionSearch.entity().getHypervisorVersion());
+        availableHypervisorVersionSearch.done();
     }
 
     @Override
@@ -119,6 +131,31 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         final Filter filter = new Filter(GuestOSHypervisorVO.class, "guestOsId", true, null, null);
         List<GuestOSHypervisorVO> results = listIncludingRemovedBy(sc, filter);
         return CollectionUtils.isNotEmpty(results) ? results.get(0) : null;
+    }
+
+    @Override
+    public List<GuestOSHypervisorVO> listByOsNameAndHypervisorMinimumVersion(String guestOsName, String hypervisorType,
+                                                                             String minHypervisorVersion) {
+        final QueryBuilder<GuestOSHypervisorVO> sc = QueryBuilder.create(GuestOSHypervisorVO.class);
+        sc.and(sc.entity().getGuestOsName(), SearchCriteria.Op.EQ, guestOsName);
+        sc.and(sc.entity().getHypervisorType(), SearchCriteria.Op.EQ, hypervisorType);
+        sc.and(sc.entity().getHypervisorVersion(), SearchCriteria.Op.GTEQ, minHypervisorVersion);
+        sc.and(sc.entity().getHypervisorVersion(), SearchCriteria.Op.NEQ, "default");
+        return sc.list();
+    }
+
+    @Override
+    public List<String> listHypervisorSupportedVersionsFromMinimumVersion(String hypervisorType, String hypervisorVersion) {
+        List<String> versions = new ArrayList<>();
+        SearchCriteria<GuestOSHypervisorVO> sc = availableHypervisorVersionSearch.create();
+        sc.setParameters("hypervisor_type", hypervisorType);
+        sc.setParameters("hypervisor_version", hypervisorVersion);
+        Filter filter = new Filter(GuestOSHypervisorVO.class, "hypervisorVersion", true, null, null);
+        List<GuestOSHypervisorVO> mappings = listBy(sc, filter);
+        for (GuestOSHypervisorVO mapping : mappings) {
+            versions.add(mapping.getHypervisorVersion());
+        }
+        return versions;
     }
 
 }

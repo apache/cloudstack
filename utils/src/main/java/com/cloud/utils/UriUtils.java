@@ -630,7 +630,7 @@ public class UriUtils {
         if (Strings.isNullOrEmpty(pvlanRange)) {
             return expandedVlans;
         }
-        String[] parts = pvlanRange.split("-i");
+        String[] parts = pvlanRange.split("-\\w");
         expandedVlans.add(Integer.parseInt(parts[0]));
         expandedVlans.add(Integer.parseInt(parts[1]));
         return expandedVlans;

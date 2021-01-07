@@ -39,7 +39,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     public static final String REMOVE_AFTER_COPY = PrimaryDataStore.REMOVE_AFTER_COPY;
     public static final String VOLUME_SIZE = PrimaryDataStore.VOLUME_SIZE;
 
-    private final String uuid;
+    private String uuid;
     private final String name;
     private String type;
     private final long id;
@@ -73,6 +73,10 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     @Override
     public String getUuid() {
         return this.uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     @Override

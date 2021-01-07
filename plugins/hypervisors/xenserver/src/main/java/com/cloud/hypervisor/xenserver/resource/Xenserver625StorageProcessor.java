@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -61,6 +62,8 @@ import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.StorageOperations;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -665,7 +668,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 newSnapshot.setParentSnapshotPath(prevBackupUuid);
             }
             s_logger.info("New snapshot details: " + newSnapshot.toString());
-            s_logger.info("New snapshot physical utilization: " + physicalSize);
+            s_logger.info("New snapshot physical utilization: " + toHumanReadableSize(physicalSize));
 
             return new CopyCmdAnswer(newSnapshot);
         } catch (final Exception e) {
@@ -908,6 +911,12 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
         // In all cases return something.
         return new CopyCmdAnswer(details);
+    }
+
+    @Override
+    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+        s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for XenServerStorageProcessor");
+        return new Answer(cmd,false,"Not applicable used for XenServerStorageProcessor");
     }
 
     @Override

@@ -1,5 +1,7 @@
-## Description
-<!--- Describe your changes in detail -->
+### Description
+
+This PR...
+<!--- Describe your changes in DETAIL - And how has behaviour functionally changed. -->
 
 <!-- For new features, provide link to FS, dev ML discussion etc. -->
 <!-- In case of bug fix, the expected and actual behaviours, steps to reproduce. -->
@@ -8,17 +10,39 @@
 <!-- For addressing multiple issues/PRs, use multiple "Fixes: #<id>" -->
 <!-- Fixes: # -->
 
-## Types of changes
-<!--- What types of changes does your code introduce? Put an `x` in all the boxes that apply: -->
+<!--- ********************************************************************************* -->
+<!--- NOTE: AUTOMATATION USES THE DESCRIPTIONS TO SET LABELS AND PRODUCE DOCUMENTATION. -->
+<!--- PLEASE PUT AN 'X' in only **ONE** box -->
+<!--- ********************************************************************************* -->
+
+### Types of changes
+
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] Enhancement (improves an existing feature and functionality)
 - [ ] Cleanup (Code refactoring and cleanup, that may add test cases)
 
-## Screenshots (if appropriate):
+### Feature/Enhancement Scale or Bug Severity
 
-## How Has This Been Tested?
+#### Feature/Enhancement Scale
+
+- [ ] Major
+- [ ] Minor
+
+#### Bug Severity
+
+- [ ] BLOCKER
+- [ ] Critical
+- [ ] Major
+- [ ] Minor
+- [ ] Trivial
+
+
+### Screenshots (if appropriate):
+
+
+### How Has This Been Tested?
 <!-- Please describe in detail how you tested your changes. -->
 <!-- Include details of your testing environment, and the tests you ran to -->
 <!-- see how your change affects other areas of the code, etc. -->
