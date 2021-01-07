@@ -69,6 +69,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -1166,6 +1167,14 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 s_logger.debug("Detaching device: " + xml);
                 dm.detachDevice(xml);
+                LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+                parser.parseDomainXML(dm.getXMLDesc(0));
+                List<DiskDef> disks = parser.getDisks();
+                for (DiskDef diskDef : disks) {
+                    if (StringUtils.contains(xml, diskDef.getDiskPath())) {
+                        throw new InternalErrorException("Could not detach volume. Probably the VM is in boot state at the moment");
+                    }
+                }
             }
         } catch (final LibvirtException e) {
             if (attach) {
