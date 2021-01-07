@@ -85,9 +85,9 @@ public class LibvirtDomainXMLParser {
                     String poolUuid = getAttrValue("secret", "uuid", disk);
                     String host = getAttrValue("host", "name", disk);
                     int port = 0;
-                    String _xmlPort = getAttrValue("host", "port", disk);
-                    if ( ! _xmlPort.isEmpty()) {
-                        port = Integer.parseInt(_xmlPort);
+                    String xmlPort = getAttrValue("host", "port", disk);
+                    if (StringUtils.isNotBlank(xmlPort)) {
+                        port = Integer.parseInt(xmlPort);
                     }
                     String diskLabel = getAttrValue("target", "dev", disk);
                     String bus = getAttrValue("target", "bus", disk);
