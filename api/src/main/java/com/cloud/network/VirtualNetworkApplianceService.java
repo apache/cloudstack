@@ -26,6 +26,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface VirtualNetworkApplianceService {
     /**
@@ -73,5 +74,5 @@ public interface VirtualNetworkApplianceService {
      * @param routerId id of the router
      * @return
      */
-    boolean performRouterHealthChecks(long routerId);
+    Pair<Boolean, String> performRouterHealthChecks(long routerId);
 }

@@ -31,9 +31,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -44,8 +42,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.provider.ScaleIOHostListener;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
@@ -80,7 +80,6 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.template.TemplateManager;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @PrepareForTest(ScaleIOGatewayClient.class)
@@ -89,6 +88,8 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
 
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Mock
+    private StoragePoolDetailsDao storagePoolDetailsDao;
     @Mock
     private PrimaryDataStoreHelper dataStoreHelper;
     @Mock
@@ -135,19 +136,9 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
         final DataStore dataStore = mock(DataStore.class);
         when(dataStore.getId()).thenReturn(1L);
 
-        Map <String, String> mockDataStoreDetails =  new HashMap<>();
-        mockDataStoreDetails.put(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT, "https://192.168.1.19/api");
-        String encryptedUsername = DBEncryptionUtil.encrypt("root");
-        mockDataStoreDetails.put(ScaleIOGatewayClient.GATEWAY_API_USERNAME, encryptedUsername);
-        String encryptedPassword = DBEncryptionUtil.encrypt("Password@123");
-        mockDataStoreDetails.put(ScaleIOGatewayClient.GATEWAY_API_PASSWORD, encryptedPassword);
-        when(primaryDataStoreDao.getDetails(1L)).thenReturn(mockDataStoreDetails);
-
         PowerMockito.mockStatic(ScaleIOGatewayClient.class);
         ScaleIOGatewayClientImpl client = mock(ScaleIOGatewayClientImpl.class);
-        String username = DBEncryptionUtil.decrypt(encryptedUsername);
-        String password = DBEncryptionUtil.decrypt(encryptedPassword);
-        when(ScaleIOGatewayClient.getClient("https://192.168.1.19/api", username, password, false, 60)).thenReturn(client);
+        when(ScaleIOGatewayClientConnectionPool.getInstance().getClient(1L, storagePoolDetailsDao)).thenReturn(client);
 
         List<String> connectedSdcIps = new ArrayList<>();
         connectedSdcIps.add("192.168.1.1");

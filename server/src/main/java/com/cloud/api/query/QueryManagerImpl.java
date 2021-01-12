@@ -4115,13 +4115,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             throw new CloudRuntimeException("Router health checks are not enabled for router " + routerId);
         }
 
-        if (cmd.shouldPerformFreshChecks() && !routerService.performRouterHealthChecks(routerId)) {
-            throw new CloudRuntimeException("Unable to perform fresh checks on router.");
+        if (cmd.shouldPerformFreshChecks()) {
+            Pair<Boolean, String> healthChecksresult = routerService.performRouterHealthChecks(routerId);
+            if (healthChecksresult == null) {
+                throw new CloudRuntimeException("Failed to initiate fresh checks on router.");
+            } else if (!healthChecksresult.first()) {
+                throw new CloudRuntimeException("Unable to perform fresh checks on router - " + healthChecksresult.second());
+            }
         }
 
         List<RouterHealthCheckResult> result = new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(routerId));
         if (result == null || result.size() == 0) {
-            throw new CloudRuntimeException("Database had no entries for health checks for router. This could happen for " +
+            throw new CloudRuntimeException("No health check results found for the router. This could happen for " +
                     "a newly created router. Please wait for periodic results to populate or manually call for checks to execute.");
         }
 

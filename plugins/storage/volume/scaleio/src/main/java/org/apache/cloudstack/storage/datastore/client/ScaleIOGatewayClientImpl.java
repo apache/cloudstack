@@ -88,6 +88,15 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     private String password;
     private String sessionKey = null;
 
+    // The session token is valid for 8 hours from the time it was created, unless there has been no activity for 10 minutes
+    // Reference: https://cpsdocs.dellemc.com/bundle/PF_REST_API_RG/page/GUID-92430F19-9F44-42B6-B898-87D5307AE59B.html
+    private static final long MAX_VALID_SESSION_TIME_IN_MILLISECS = 8 * 60 * 60 * 1000; // 8 hrs
+    private static final long MAX_IDLE_TIME_IN_MILLISECS = 10 * 60 * 1000; // 10 mins
+    private static final long BUFFER_TIME_IN_MILLISECS = 30 * 1000; // keep 30 secs buffer before the expiration (to avoid any last-minute operations)
+
+    private long createTime = 0;
+    private long lastUsedTime = 0;
+
     public ScaleIOGatewayClientImpl(final String url, final String username, final String password,
                                     final boolean validateCertificate, final int timeout)
             throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
@@ -119,14 +128,14 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         this.username = username;
         this.password = password;
 
-        authenticate(username, password);
+        authenticate();
     }
 
     /////////////////////////////////////////////////////////////
     //////////////// Private Helper Methods /////////////////////
     /////////////////////////////////////////////////////////////
 
-    private void authenticate(final String username, final String password) {
+    private void authenticate() {
         final HttpGet request = new HttpGet(apiURI.toString() + "/login");
         request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
         try {
@@ -143,6 +152,24 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         } catch (final IOException e) {
             throw new CloudRuntimeException("Failed to authenticate PowerFlex API Gateway due to:" + e.getMessage());
         }
+        long now = System.currentTimeMillis();
+        createTime = lastUsedTime = now;
+    }
+
+    private synchronized void renewClientSessionOnExpiry() {
+        if (isSessionExpired()) {
+            LOG.debug("Session expired, renewing");
+            authenticate();
+        }
+    }
+
+    private boolean isSessionExpired() {
+        long now = System.currentTimeMillis() + BUFFER_TIME_IN_MILLISECS;
+        if ((now - createTime) > MAX_VALID_SESSION_TIME_IN_MILLISECS ||
+                (now - lastUsedTime) > MAX_IDLE_TIME_IN_MILLISECS) {
+            return true;
+        }
+        return false;
     }
 
     private void checkAuthFailure(final HttpResponse response) {
@@ -178,9 +205,13 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     private HttpResponse get(final String path) throws IOException {
+        renewClientSessionOnExpiry();
         final HttpGet request = new HttpGet(apiURI.toString() + path);
         request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.sessionKey).getBytes()));
         final HttpResponse response = httpClient.execute(request);
+        synchronized (this) {
+            lastUsedTime = System.currentTimeMillis();
+        }
         String responseStatus = (response != null) ? (response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase()) : "nil";
         LOG.debug("GET request path: " + path + ", response: " + responseStatus);
         checkAuthFailure(response);
@@ -188,6 +219,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     private HttpResponse post(final String path, final Object obj) throws IOException {
+        renewClientSessionOnExpiry();
         final HttpPost request = new HttpPost(apiURI.toString() + path);
         request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.sessionKey).getBytes()));
         request.setHeader("Content-type", "application/json");
@@ -202,6 +234,9 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
         }
         final HttpResponse response = httpClient.execute(request);
+        synchronized (this) {
+            lastUsedTime = System.currentTimeMillis();
+        }
         String responseStatus = (response != null) ? (response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase()) : "nil";
         LOG.debug("POST request path: " + path + ", response: " + responseStatus);
         checkAuthFailure(response);

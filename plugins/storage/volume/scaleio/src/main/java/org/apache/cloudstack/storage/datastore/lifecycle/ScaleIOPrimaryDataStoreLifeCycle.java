@@ -31,6 +31,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -79,6 +81,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
     private ClusterDao clusterDao;
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     private StoragePoolHostDao storagePoolHostDao;
     @Inject
@@ -255,14 +259,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
 
         List<String> connectedSdcIps = null;
         try {
-            Map <String, String> dataStoreDetails = primaryDataStoreDao.getDetails(dataStore.getId());
-            final String url = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT);
-            final String encryptedUsername = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_USERNAME);
-            final String username = DBEncryptionUtil.decrypt(encryptedUsername);
-            final String encryptedPassword = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
-            final String password = DBEncryptionUtil.decrypt(encryptedPassword);
-            final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.value();
-            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout);
+            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStore.getId(), storagePoolDetailsDao);
             connectedSdcIps = client.listConnectedSdcIps();
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
             LOGGER.error("Failed to create storage pool", e);
@@ -319,14 +316,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
 
         List<String> connectedSdcIps = null;
         try {
-            Map <String, String> dataStoreDetails = primaryDataStoreDao.getDetails(dataStore.getId());
-            String url = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT);
-            String encryptedUsername = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_USERNAME);
-            final String username = DBEncryptionUtil.decrypt(encryptedUsername);
-            String encryptedPassword = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
-            final String password = DBEncryptionUtil.decrypt(encryptedPassword);
-            final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.value();
-            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout);
+            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStore.getId(), storagePoolDetailsDao);
             connectedSdcIps = client.listConnectedSdcIps();
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
             LOGGER.error("Failed to create storage pool", e);
@@ -414,6 +404,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
                 }
             }
         }
+
+        ScaleIOGatewayClientConnectionPool.getInstance().removeClient(dataStore.getId());
 
         return dataStoreHelper.deletePrimaryDataStore(dataStore);
     }
