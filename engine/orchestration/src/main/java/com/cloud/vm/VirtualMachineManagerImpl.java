@@ -2237,14 +2237,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return null;
     }
 
-    private void afterHypervisorMigrationCleanup(VMInstanceVO vm, Map<Volume, StoragePool> volumeToPool, Answer[] hypervisorMigrationResults) throws InsufficientCapacityException {
+    private void afterHypervisorMigrationCleanup(VMInstanceVO vm, Map<Volume, StoragePool> volumeToPool, Long sourceClusterId, Answer[] hypervisorMigrationResults) throws InsufficientCapacityException {
         boolean isDebugEnabled = s_logger.isDebugEnabled();
         if(isDebugEnabled) {
             String msg = String.format("Cleaning up after hypervisor pool migration volumes for VM %s(%s)", vm.getInstanceName(), vm.getUuid());
             s_logger.debug(msg);
         }
         StoragePool rootVolumePool = null;
-        if (rootVolumePool == null && MapUtils.isNotEmpty(volumeToPool)) {
+        if (MapUtils.isNotEmpty(volumeToPool)) {
             for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
                 if (Type.ROOT.equals(entry.getKey().getVolumeType())) {
                     rootVolumePool = entry.getValue();
@@ -2253,17 +2253,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         }
         setDestinationPoolAndReallocateNetwork(rootVolumePool, vm);
-        // OfflineVmwareMigration: don't set this to null or have another way to address the command; twice migrating will lead to an NPE
-        Long destPodId = rootVolumePool != null ? rootVolumePool.getPodId() : null;
-        Long vmPodId = vm.getPodIdToDeployIn();
-        if (destPodId == null || ! destPodId.equals(vmPodId)) {
+        Long destClusterId = rootVolumePool != null ? rootVolumePool.getClusterId() : null;
+        if (destClusterId != null && !destClusterId.equals(sourceClusterId)) {
             if(isDebugEnabled) {
-                String msg = String.format("Resetting lastHost for VM %s(%s) as pod (%s) is no good.", vm.getInstanceName(), vm.getUuid(), destPodId);
+                String msg = String.format("Resetting lastHost for VM %s(%s)", vm.getInstanceName(), vm.getUuid());
                 s_logger.debug(msg);
             }
 
             vm.setLastHostId(null);
-            vm.setPodIdToDeployIn(destPodId);
+            vm.setPodIdToDeployIn(rootVolumePool.getPodId());
             // OfflineVmwareMigration: a consecutive migration will fail probably (no host not pod)
         }// else keep last host set for this vm
         markVolumesInPool(vm, hypervisorMigrationResults);
@@ -2340,7 +2338,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (clusterId == null && hostId != null) {
             HostVO host = _hostDao.findById(hostId);
             if (host != null) {
-                clusterId = host.getId();
+                clusterId = host.getClusterId();
             }
         }
         return new Pair<>(clusterId, hostId);
@@ -2362,7 +2360,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.debug("Storage migration failed");
             }
         } else {
-            afterHypervisorMigrationCleanup(vm, volumeToPool, hypervisorMigrationResults);
+            afterHypervisorMigrationCleanup(vm, volumeToPool, sourceClusterId, hypervisorMigrationResults);
         }
     }
 
