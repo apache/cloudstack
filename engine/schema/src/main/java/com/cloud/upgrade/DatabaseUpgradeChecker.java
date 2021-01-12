@@ -34,6 +34,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.upgrade.dao.DbUpgrade;
+import com.cloud.upgrade.dao.DbUpgradeSystemVmTemplate;
 import com.cloud.upgrade.dao.Upgrade217to218;
 import com.cloud.upgrade.dao.Upgrade218to22;
 import com.cloud.upgrade.dao.Upgrade218to224DomainVlans;
@@ -236,6 +237,32 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
 
         final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
+
+        for (int i = upgrades.length - 1; i >= 0; i--) {
+            DbUpgrade upgrade = upgrades[i];
+            if (upgrade instanceof DbUpgradeSystemVmTemplate) {
+                TransactionLegacy txn = TransactionLegacy.open("Upgrade");
+                txn.start();
+                try {
+                    Connection conn;
+                    try {
+                        conn = txn.getConnection();
+                    } catch (SQLException e) {
+                        String errorMessage = "Unable to upgrade the database";
+                        s_logger.error(errorMessage, e);
+                        throw new CloudRuntimeException(errorMessage, e);
+                    }
+                    ((DbUpgradeSystemVmTemplate)upgrade).updateSystemVmTemplates(conn);
+                    break;
+                } catch (CloudRuntimeException e) {
+                    String errorMessage = "Unable to upgrade the database";
+                    s_logger.error(errorMessage, e);
+                    throw new CloudRuntimeException(errorMessage, e);
+                } finally {
+                    txn.close();
+                }
+            }
+        }
 
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version;
