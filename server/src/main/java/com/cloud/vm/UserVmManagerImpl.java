@@ -3821,7 +3821,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String instanceSuffix = _instance;
         if (_instanceNameFlag && StringUtils.isNotEmpty(hostName)) {
             instanceSuffix = hostName;
-            customParameters.put(VmDetailConstants.HOSTNAME, VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix));
+            customParameters.put(VmDetailConstants.NAME_ON_HYPERVISOR, VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix));
         }
         String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
         if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType)) {

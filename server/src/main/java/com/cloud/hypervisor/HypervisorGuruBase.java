@@ -52,12 +52,10 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -171,12 +169,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         Long minMemory = (long)(offering.getRamSize() / vmProfile.getMemoryOvercommitRatio());
         int minspeed = (int)(offering.getSpeed() / vmProfile.getCpuOvercommitRatio());
         int maxspeed = (offering.getSpeed());
-        String hostName = vm.getInstanceName();
-        UserVmDetailVO hostNameDetail = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.HOSTNAME);
-        if (hostNameDetail != null && StringUtils.isNotBlank(hostNameDetail.getValue())) {
-            hostName = hostNameDetail.getValue();
-        }
-        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), hostName, vm.getType(), offering.getCpu(), minspeed, maxspeed, minMemory * 1024l * 1024l,
+        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed, minMemory * 1024l * 1024l,
                 offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
 
