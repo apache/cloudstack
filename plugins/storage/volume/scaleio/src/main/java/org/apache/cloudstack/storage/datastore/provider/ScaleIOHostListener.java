@@ -21,14 +21,15 @@ package org.apache.cloudstack.storage.datastore.provider;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -39,11 +40,9 @@ import com.cloud.alert.AlertManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScaleIOHostListener implements HypervisorHostListener {
@@ -55,6 +54,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
     @Inject private HostDao _hostDao;
     @Inject private StoragePoolHostDao _storagePoolHostDao;
     @Inject private PrimaryDataStoreDao _primaryDataStoreDao;
+    @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
 
     @Override
     public boolean hostAdded(long hostId) {
@@ -90,14 +90,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
 
     private boolean isHostSdcConnected(String hostIpAddress, long poolId) {
         try {
-            Map<String, String> dataStoreDetails = _primaryDataStoreDao.getDetails(poolId);
-            final String url = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_ENDPOINT);
-            final String encryptedUsername = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_USERNAME);
-            final String username = DBEncryptionUtil.decrypt(encryptedUsername);
-            final String encryptedPassword = dataStoreDetails.get(ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
-            final String password = DBEncryptionUtil.decrypt(encryptedPassword);
-            final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.valueIn(poolId);
-            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout);
+            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(poolId, _storagePoolDetailsDao);
             return client.isSdcConnected(hostIpAddress);
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
             s_logger.error("Failed to check host sdc connection", e);

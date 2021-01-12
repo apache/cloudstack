@@ -39,6 +39,7 @@ import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile;
@@ -249,8 +250,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     }
 
     @Override
-    public boolean performRouterHealthChecks(long routerId) {
-        return false;
+    public Pair<Boolean, String> performRouterHealthChecks(long routerId) {
+        return null;
     }
 
     @Override

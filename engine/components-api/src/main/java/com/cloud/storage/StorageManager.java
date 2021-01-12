@@ -122,7 +122,7 @@ public interface StorageManager extends StorageService {
             "storage.pool.client.timeout",
             "Storage",
             "60",
-            "Timeout (in secs) for the storage pool client timeout (for managed pools). Currently only supported for PowerFlex.",
+            "Timeout (in secs) for the storage pool client connection timeout (for managed pools). Currently only supported for PowerFlex.",
             true,
             ConfigKey.Scope.StoragePool,
             null);

@@ -1292,7 +1292,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volume;
 
         } catch (Exception e) {
-            throw new CloudRuntimeException("Exception caught during resize volume operation of volume UUID: " + volume.getUuid(), e);
+            throw new CloudRuntimeException("Couldn't resize volume: " + volume.getName() + ", " + e.getMessage(), e);
         }
     }
 
@@ -2676,6 +2676,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
         }
 
+        if (storagePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+            throw new InvalidParameterValueException("Cannot perform this operation, unsupported on storage pool type " + storagePool.getPoolType());
+        }
+
         return snapshotMgr.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, snapshotName, null);
     }
 
@@ -2706,7 +2710,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         if (volume.getPoolId() == null) {
             throw new InvalidParameterValueException("The volume doesn't belong to a storage pool so can't extract it");
+        } else {
+            StoragePoolVO poolVO = _storagePoolDao.findById(volume.getPoolId());
+            if (poolVO != null && poolVO.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                throw new InvalidParameterValueException("Cannot extract volume, this operation is unsupported for volumes on storage pool type " + poolVO.getPoolType());
+            }
         }
+
         // Extract activity only for detached volumes or for volumes whose
         // instance is stopped
         if (volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped) {

@@ -115,6 +115,7 @@ import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
@@ -1769,8 +1770,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                 return new DirectDownloadAnswer(false, msg, true);
             }
 
-            s_logger.debug("Checking for free space on the host for downloading the template");
-            if (!isEnoughSpaceForDownloadTemplateOnTemporaryLocation(cmd.getTemplateSize())) {
+            Long templateSize = null;
+            if (!org.apache.commons.lang.StringUtils.isBlank(cmd.getUrl())) {
+                String url = cmd.getUrl();
+                templateSize = UriUtils.getRemoteSize(url);
+            }
+
+            s_logger.debug("Checking for free space on the host for downloading the template with physical size: " + templateSize + " and virtual size: " + cmd.getTemplateSize());
+            if (!isEnoughSpaceForDownloadTemplateOnTemporaryLocation(templateSize)) {
                 String msg = "Not enough space on the defined temporary location to download the template " + cmd.getTemplateId();
                 s_logger.error(msg);
                 return new DirectDownloadAnswer(false, msg, true);

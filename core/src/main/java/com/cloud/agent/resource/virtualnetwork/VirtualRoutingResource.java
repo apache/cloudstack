@@ -66,6 +66,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.facade.AbstractConfigItemFacade;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -312,20 +313,14 @@ public class VirtualRoutingResource {
 
     private GetRouterMonitorResultsAnswer execute(GetRouterMonitorResultsCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        ExecutionResult fsReadOnlyResult = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_FILESYSTEM_WRITABLE_CHECK, null);
-        if (!fsReadOnlyResult.isSuccess()) {
-            s_logger.warn("Result of " + cmd + " failed with details: " + fsReadOnlyResult.getDetails());
-            if (StringUtils.isNotBlank(fsReadOnlyResult.getDetails())) {
-                final String readOnlyFileSystemError = "Read-only file system";
-                if (fsReadOnlyResult.getDetails().contains(readOnlyFileSystemError)) {
-                    return new GetRouterMonitorResultsAnswer(cmd, false, null, readOnlyFileSystemError);
-                } else {
-                    return new GetRouterMonitorResultsAnswer(cmd, false, null, fsReadOnlyResult.getDetails());
-                }
-            } else {
-                s_logger.warn("Result of " + cmd + " received empty details.");
-                return new GetRouterMonitorResultsAnswer(cmd, false, null, "No results available.");
-            }
+        Pair<Boolean, String> fileSystemTestResult = checkRouterFileSystem(routerIp);
+        if (!fileSystemTestResult.first()) {
+            return new GetRouterMonitorResultsAnswer(cmd, false, null, fileSystemTestResult.second());
+        }
+
+        if (cmd.shouldValidateBasicTestsOnly()) {
+            // Basic tests (connectivity and file system checks) are already validated
+            return new GetRouterMonitorResultsAnswer(cmd, true, null, "success");
         }
 
         String args = cmd.shouldPerformFreshChecks() ? "true" : "false";
@@ -343,6 +338,27 @@ public class VirtualRoutingResource {
         }
 
         return parseLinesForHealthChecks(cmd, result.getDetails());
+    }
+
+    private Pair<Boolean, String> checkRouterFileSystem(String routerIp) {
+        ExecutionResult fileSystemWritableTestResult = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_FILESYSTEM_WRITABLE_CHECK, null);
+        if (fileSystemWritableTestResult.isSuccess()) {
+            s_logger.debug("Router connectivity and file system writable check passed");
+            return new Pair<Boolean, String>(true, "success");
+        }
+
+        String resultDetails = fileSystemWritableTestResult.getDetails();
+        s_logger.warn("File system writable check failed with details: " + resultDetails);
+        if (StringUtils.isNotBlank(resultDetails)) {
+            final String readOnlyFileSystemError = "Read-only file system";
+            if (resultDetails.contains(readOnlyFileSystemError)) {
+                resultDetails = "Read-only file system";
+            }
+        } else {
+            resultDetails = "No results available";
+        }
+
+        return new Pair<Boolean, String>(false, resultDetails);
     }
 
     private GetRouterAlertsAnswer execute(GetRouterAlertsCommand cmd) {
