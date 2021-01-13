@@ -1326,7 +1326,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             implementNetworkElementsAndResources(dest, context, network, offering);
 
             long dcId = dest.getDataCenter().getId();
-            if (network.getGuestType() == GuestType.L2 && offering.isPersistent()) {
+            if (network.getGuestType() == GuestType.L2 && offering.isPersistent() &&
+                    (network.getBroadcastUri() != null && BroadcastDomainType.getSchemeValue(network.getBroadcastUri()) == BroadcastDomainType.Vlan)) {
                 setupPersistentNetwork(network, offering, dcId);
             }
             if (isSharedNetworkWithServices(network)) {

@@ -1870,7 +1870,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         String scheme = broadcastUri.getScheme();
         String vlanId = Networks.BroadcastDomainType.getValue(broadcastUri);
         Boolean shouldDelete = !((networkVO.getGuestType() == Network.GuestType.L2 || networkVO.getGuestType() == Network.GuestType.Isolated) &&
-                (scheme.equalsIgnoreCase("vlan") || scheme.equalsIgnoreCase("vxlan"))
+                (scheme.equalsIgnoreCase("vlan"))
                 && isPersistent);
         return new Pair<>(vlanId, shouldDelete);
     }
