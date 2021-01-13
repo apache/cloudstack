@@ -97,7 +97,8 @@ export default {
       api('listVolumes', {
         virtualMachineId: this.resource.id,
         type: 'DATADISK',
-        details: 'min'
+        details: 'min',
+        listall: 'true'
       }).then(json => {
         this.volumes = json.listvolumesresponse.volume || []
       }).finally(() => {
