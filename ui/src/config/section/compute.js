@@ -165,6 +165,15 @@ export default {
           }
         },
         {
+          api: 'createSnapshot',
+          icon: ['fas', 'camera-retro'],
+          label: 'label.action.vmstoragesnapshot.create',
+          docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
+          dataView: true,
+          popup: true,
+          component: () => import('@/views/compute/CreateSnapshotWizard.vue')
+        },
+        {
           api: 'assignVirtualMachineToBackupOffering',
           icon: 'folder-add',
           label: 'label.backup.offering.assign',

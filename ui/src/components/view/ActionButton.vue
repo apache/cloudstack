@@ -36,7 +36,6 @@
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )" >
         <a-button
-          :icon="action.icon"
           :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
           :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"
           style="margin-left: 5px"
@@ -45,6 +44,8 @@
           <span v-if="!dataView && action.icon === 'plus'">
             {{ $t(action.label) }}
           </span>
+          <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
+          <font-awesome-icon v-else :icon="action.icon" />
         </a-button>
       </a-badge>
       <a-button
@@ -53,7 +54,6 @@
             (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.show(resource, $store.getters) : true)))) ||
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
-        :icon="action.icon"
         :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
         :shape="!dataView && ['plus', 'user-add'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
@@ -62,6 +62,8 @@
         <span v-if="!dataView && ['plus', 'user-add'].includes(action.icon)">
           {{ $t(action.label) }}
         </span>
+        <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
+        <font-awesome-icon v-else :icon="action.icon" />
       </a-button>
     </a-tooltip>
   </span>

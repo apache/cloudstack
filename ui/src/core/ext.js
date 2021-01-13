@@ -25,9 +25,9 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 // import { far } from '@fortawesome/free-regular-svg-icons'
 
 import { faCentos, faUbuntu, faSuse, faRedhat, faFedora, faLinux, faFreebsd, faApple, faWindows, faJava } from '@fortawesome/free-brands-svg-icons'
-import { faLanguage, faCompactDisc } from '@fortawesome/free-solid-svg-icons'
+import { faLanguage, faCompactDisc, faCameraRetro } from '@fortawesome/free-solid-svg-icons'
 
 library.add(faCentos, faUbuntu, faSuse, faRedhat, faFedora, faLinux, faFreebsd, faApple, faWindows, faJava)
-library.add(faLanguage, faCompactDisc)
+library.add(faLanguage, faCompactDisc, faCameraRetro)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
