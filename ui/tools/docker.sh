@@ -19,6 +19,8 @@
 set -e
 set -x
 
+cd $(dirname $0)
+
 GIT_TAG="$(git tag --points-at | head -n 1)"
 if [ -n "${GIT_REV}" ]; then
 	LABEL_GIT_TAG="--label \"org.opencontainers.image.version=${GIT_TAG}\""
