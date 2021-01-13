@@ -3819,10 +3819,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String instanceName = null;
         String instanceSuffix = _instance;
-        if (_instanceNameFlag && StringUtils.isNotEmpty(hostName)) {
-            instanceSuffix = hostName;
-            customParameters.put(VmDetailConstants.NAME_ON_HYPERVISOR, VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix));
-        }
         String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
         if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType)) {
             if (hostName == null) {
@@ -3831,6 +3827,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 } else {
                     hostName = generateHostName(uuidName);
                 }
+            }
+            if (StringUtils.isNotEmpty(displayName)) {
+                instanceSuffix = hostName;
             }
             // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
             // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
@@ -3850,6 +3849,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             checkNameForRFCCompliance(hostName);
         }
         instanceName = VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix);
+        if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType) && StringUtils.isNotEmpty(displayName)) {
+            customParameters.put(VmDetailConstants.NAME_ON_HYPERVISOR, instanceName);
+        }
 
         // Check if VM with instanceName already exists.
         VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
