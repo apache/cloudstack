@@ -4213,6 +4213,22 @@
                         }
                     });
 
+                    $.ajax({
+                        url: createURL("createTungstenManagementNetwork&podId=" + args.data.returnedPod.id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+
+                        },
+                        error : function(XMLHttpResponse) {
+                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                            error('createTungstenManagementNetwork', errorMsg, {
+                                fn: 'createTungstenManagementNetwork',
+                                args: args
+                            });
+                        }
+                    });
+
                     stepFns.configureStorageTraffic({
                         data: $.extend(args.data, {
                             returnedPublicTraffic: returnedPublicVlanIpRanges

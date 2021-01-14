@@ -14,16 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.tungsten.service;
+package org.apache.cloudstack.network.tungsten.vrouter;
 
-import com.cloud.dc.HostPodVO;
+import java.util.HashMap;
+import java.util.Map;
 
-public interface TungstenService {
-    String getProject(long accountId);
+public class IntrospectApiConnectorFactory {
+    private static String port = "8085";
 
-    boolean createManagementNetwork(HostPodVO pod);
+    private static Map<String, IntrospectApiConnector> introspectApiConnectors = new HashMap<>();
 
-    boolean deleteManagementNetwork(HostPodVO pod);
-
-    String MESSAGE_APPLY_NETWORK_POLICY_EVENT = "Message.ApplyNetworkPolicy.Event";
+    public static IntrospectApiConnector getInstance(String host) {
+        if (introspectApiConnectors.get(host) == null) {
+            introspectApiConnectors.put(host, new IntrospectApiConnectorImpl(host, port));
+        }
+        return introspectApiConnectors.get(host);
+    }
 }

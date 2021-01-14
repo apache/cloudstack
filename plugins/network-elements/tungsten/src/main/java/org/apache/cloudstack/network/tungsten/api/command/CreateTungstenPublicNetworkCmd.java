@@ -43,6 +43,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPoli
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFabricNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils;
@@ -96,7 +97,7 @@ public class CreateTungstenPublicNetworkCmd extends BaseCmd {
         // create public network
         CreateTungstenNetworkCommand createTungstenPublicNetworkCommand = new CreateTungstenNetworkCommand(
             publicNetwork.getUuid(), TungstenUtils.getPublicNetworkName(zoneId), null, true, false, publicPair.first(),
-            publicPair.second(), pubVlanVO.getVlanGateway(), true, null, ipAddress[0], ipAddress[1], false);
+            publicPair.second(), pubVlanVO.getVlanGateway(), true, null, ipAddress[0], ipAddress[1], false, false);
         TungstenAnswer createPublicNetworkAnswer = _tungstenFabricUtils.sendTungstenCommand(
             createTungstenPublicNetworkCommand, zoneId);
         if (!createPublicNetworkAnswer.getResult()) {
@@ -128,6 +129,40 @@ public class CreateTungstenPublicNetworkCmd extends BaseCmd {
 
         // change default tungsten security group
         // change default forwarding mode
+
+        // consider policy to protect fabric network
+        List<TungstenRule> fabricRuleList = new ArrayList<>();
+        fabricRuleList.add(
+            new TungstenRule(null, TungstenUtils.PASS_ACTION, TungstenUtils.TWO_WAY_DIRECTION, TungstenUtils.ANY_PROTO,
+                TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1, TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1));
+
+
+        GetTungstenFabricNetworkCommand getTungstenFabricNetworkCommand = new GetTungstenFabricNetworkCommand();
+        TungstenAnswer getTungstenFabricNetworkAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            getTungstenFabricNetworkCommand, zoneId);
+        if (!getTungstenFabricNetworkAnswer.getResult()) {
+            throw new CloudRuntimeException("can not get tungsten fabric network");
+        }
+
+        // create default public network policy rule
+        CreateTungstenNetworkPolicyCommand createFabricNetworkPolicyCommand = new CreateTungstenNetworkPolicyCommand(
+            TungstenUtils.getFabricNetworkPolicyName(), null, fabricRuleList);
+        TungstenAnswer createfabricNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            createFabricNetworkPolicyCommand, zoneId);
+        if (!createfabricNetworkPolicyAnswer.getResult()) {
+            throw new CloudRuntimeException("can not create default tungsten fabric network policy");
+        }
+
+        // apply fabric network policy
+        ApplyTungstenNetworkPolicyCommand applyTungstenFabricNetworkPolicyCommand =
+            new ApplyTungstenNetworkPolicyCommand(
+            null, TungstenUtils.getFabricNetworkPolicyName(),
+            getTungstenFabricNetworkAnswer.getApiObjectBase().getUuid(), false);
+        TungstenAnswer applyNetworkFabricNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            applyTungstenFabricNetworkPolicyCommand, zoneId);
+        if (!applyNetworkFabricNetworkPolicyAnswer.getResult()) {
+            throw new CloudRuntimeException("can not apply default tungsten fabric network policy");
+        }
 
         // create floating ip pool
         CreateTungstenFloatingIpPoolCommand createTungstenFloatingIpPoolCommand =

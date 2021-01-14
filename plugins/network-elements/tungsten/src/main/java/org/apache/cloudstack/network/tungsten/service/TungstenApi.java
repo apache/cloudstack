@@ -68,6 +68,7 @@ public class TungstenApi {
     public static final String TUNGSTEN_DEFAULT_DOMAIN = "default-domain";
     public static final String TUNGSTEN_DEFAULT_PROJECT = "default-project";
     public static final String TUNGSTEN_DEFAULT_IPAM = "default-network-ipam";
+    public static final String TUNGSTEN_FABRIC_NETWORK = "ip-fabric";
 
     private String hostname;
     private String port;
@@ -114,7 +115,7 @@ public class TungstenApi {
 
     public VirtualNetwork createTungstenNetwork(String uuid, String name, String parent, boolean routerExternal,
         boolean shared, String ipPrefix, int ipPrefixLen, String gateway, boolean dhcpEnable, List<String> dnsServers,
-        String allocationStart, String allocationEnd, boolean ipFromStart) {
+        String allocationStart, String allocationEnd, boolean ipFromStart, boolean isManagementNetwork) {
         try {
             Project project = (Project) apiConnector.findById(Project.class, parent);
             NetworkIpam networkIpam = getDefaultProjectNetworkIpam(project);
@@ -139,6 +140,15 @@ public class TungstenApi {
             virtualNetwork.setParent(project);
             virtualNetwork.setRouterExternal(routerExternal);
             virtualNetwork.setIsShared(shared);
+
+            if (isManagementNetwork) {
+                VirtualNetwork fabricNetwork = (VirtualNetwork) apiConnector.findByFQN(VirtualNetwork.class,
+                    TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT + ":" + TUNGSTEN_FABRIC_NETWORK);
+                if (fabricNetwork != null) {
+                    virtualNetwork.setVirtualNetwork(fabricNetwork);
+                }
+            }
+
             Status status = apiConnector.create(virtualNetwork);
             status.ifFailure(errorHandler);
             return (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, virtualNetwork.getUuid());
@@ -634,12 +644,38 @@ public class TungstenApi {
         }
     }
 
+    public ApiObjectBase getTungstenFabricNetwork() {
+        try {
+            return apiConnector.findByFQN(VirtualNetwork.class,
+                TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT + ":" + TUNGSTEN_FABRIC_NETWORK);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean removeTungstenNetworkPolicy(String projectUuid, String networkUuid, String networkPolicyName) {
+        try {
+            Project project = (Project) getTungstenNetworkProject(projectUuid);
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project,
+                networkPolicyName);
+            virtualNetwork.removeNetworkPolicy(networkPolicy,
+                new VirtualNetworkPolicyType(new SequenceType(0, 0), null));
+            Status status = apiConnector.update(virtualNetwork);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public List<? extends ApiObjectBase> getTungstenListObject(Class<? extends ApiObjectBase> cls,
         ApiObjectBase parent) {
         try {
-            return apiConnector.list(cls, parent.getQualifiedName());
+            List<? extends ApiObjectBase> list = apiConnector.list(cls, parent.getQualifiedName());
+            return list != null ? list : new ArrayList<>();
         } catch (IOException e) {
-            return null;
+            return new ArrayList<>();
         }
     }
 

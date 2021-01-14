@@ -14,16 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.tungsten.service;
+package org.apache.cloudstack.network.tungsten.agent.api;
 
-import com.cloud.dc.HostPodVO;
+public class GetTungstenFabricNetworkCommand extends TungstenCommand {
 
-public interface TungstenService {
-    String getProject(long accountId);
-
-    boolean createManagementNetwork(HostPodVO pod);
-
-    boolean deleteManagementNetwork(HostPodVO pod);
-
-    String MESSAGE_APPLY_NETWORK_POLICY_EVENT = "Message.ApplyNetworkPolicy.Event";
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.service;
 
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.HostPodVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -39,11 +41,17 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFloatingIpsCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
+import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -165,6 +173,30 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
                 }
             }
         });
+
+        _messageBus.subscribe(ConfigurationManager.MESSAGE_CREATE_POD_IP_RANGE_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(final String senderAddress, final String subject, final Object args) {
+                try {
+                    final HostPodVO pod = (HostPodVO) args;
+                    createManagementNetwork(pod);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+
+        _messageBus.subscribe(ConfigurationManager.MESSAGE_DELETE_POD_IP_RANGE_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(final String senderAddress, final String subject, final Object args) {
+                try {
+                    final HostPodVO pod = (HostPodVO) args;
+                    deleteManagementNetwork(pod);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
     }
 
     private boolean createTungstenFloatingIp(long zoneId, IpAddress ipAddress) {
@@ -197,5 +229,92 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean createManagementNetwork(HostPodVO pod) {
+        TungstenProvider tungstenProvider = _tungstenProviderDao.findByZoneId(pod.getDataCenterId());
+        if (tungstenProvider != null) {
+            final String[] podIpRanges = pod.getDescription().split(",");
+            Network managementNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(pod.getDataCenterId(),
+                Networks.TrafficType.Management);
+
+            // tungsten system don't support delete a part of allocation pool in subnet
+            // we only create first pod ip range in a pod (the same with public network)
+            // in UI : don't permit to add more than 1 pod ip range if tungsten zone
+            // consider to permit add more pod ip range if it is not overlap subnet
+            if (podIpRanges.length == 1) {
+                final String[] ipRange = podIpRanges[0].split("-");
+                String startIp = ipRange[0];
+                String endIp = ipRange[1];
+                CreateTungstenNetworkCommand createTungstenNetworkCommand = new CreateTungstenNetworkCommand(
+                    managementNetwork.getUuid(), TungstenUtils.getManagementNetworkName(pod.getDataCenterId()), null,
+                    false, false, pod.getCidrAddress(), pod.getCidrSize(), pod.getGateway(), true, null, startIp, endIp,
+                    true, true);
+                TungstenAnswer createTungstenNetworkAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                    createTungstenNetworkCommand, pod.getDataCenterId());
+
+                if (!createTungstenNetworkAnswer.getResult()) {
+                    return false;
+                }
+
+                // consider policy to protect fabric network
+                List<TungstenRule> tungstenRuleList = new ArrayList<>();
+                tungstenRuleList.add(new TungstenRule(null, TungstenUtils.PASS_ACTION, TungstenUtils.TWO_WAY_DIRECTION,
+                    TungstenUtils.ANY_PROTO, TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1, TungstenUtils.ALL_IP4_PREFIX, 0,
+                    -1, -1));
+
+                // create default public network policy rule
+                CreateTungstenNetworkPolicyCommand createTungstenNetworkPolicyCommand =
+                    new CreateTungstenNetworkPolicyCommand(
+                    TungstenUtils.getVirtualNetworkPolicyName(managementNetwork.getId()), null, tungstenRuleList);
+                TungstenAnswer createTungstenNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                    createTungstenNetworkPolicyCommand, pod.getDataCenterId());
+                if (!createTungstenNetworkPolicyAnswer.getResult()) {
+                    return false;
+                }
+
+                // apply management network policy
+                ApplyTungstenNetworkPolicyCommand applyTungstenManagementNetworkPolicyCommand =
+                    new ApplyTungstenNetworkPolicyCommand(
+                    null, TungstenUtils.getVirtualNetworkPolicyName(managementNetwork.getId()),
+                    managementNetwork.getUuid(), false);
+                TungstenAnswer applyNetworkManagementPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                    applyTungstenManagementNetworkPolicyCommand, pod.getDataCenterId());
+                if (!applyNetworkManagementPolicyAnswer.getResult()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean deleteManagementNetwork(HostPodVO pod) {
+        TungstenProvider tungstenProvider = _tungstenProviderDao.findByZoneId(pod.getDataCenterId());
+        if (tungstenProvider != null) {
+            Network managementNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(pod.getDataCenterId(),
+                Networks.TrafficType.Management);
+
+            DeleteTungstenNetworkPolicyCommand deleteTungstenNetworkPolicyCommand =
+                new DeleteTungstenNetworkPolicyCommand(
+                TungstenUtils.getVirtualNetworkPolicyName(managementNetwork.getId()), null,
+                managementNetwork.getUuid());
+            TungstenAnswer deleteTungstenNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                deleteTungstenNetworkPolicyCommand, pod.getDataCenterId());
+            if (!deleteTungstenNetworkPolicyAnswer.getResult()) {
+                return false;
+            }
+
+            DeleteTungstenNetworkCommand deleteTungstenNetworkCommand = new DeleteTungstenNetworkCommand(
+                managementNetwork.getUuid());
+            TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(deleteTungstenNetworkCommand,
+                pod.getDataCenterId());
+            if (!tungstenAnswer.getResult()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

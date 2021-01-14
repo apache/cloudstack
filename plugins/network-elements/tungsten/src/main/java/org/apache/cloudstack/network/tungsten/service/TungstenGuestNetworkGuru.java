@@ -198,7 +198,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
             Pair<String, Integer> pair = NetUtils.getCidr(network.getCidr());
             CreateTungstenNetworkCommand createTungstenGuestNetworkCommand = new CreateTungstenNetworkCommand(
                 network.getUuid(), network.getName(), projectUuid, false, false, pair.first(), pair.second(),
-                network.getGateway(), network.getMode().equals(Networks.Mode.Dhcp), null, null, null, false);
+                network.getGateway(), network.getMode().equals(Networks.Mode.Dhcp), null, null, null, false, false);
             _tungstenFabricUtils.sendTungstenCommand(createTungstenGuestNetworkCommand, network.getDataCenterId());
 
             // create logical router with public network

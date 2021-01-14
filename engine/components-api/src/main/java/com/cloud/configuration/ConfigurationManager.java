@@ -259,4 +259,7 @@ public interface ConfigurationManager {
     AllocationState findPodAllocationState(HostPodVO pod);
 
     AllocationState findClusterAllocationState(ClusterVO cluster);
+
+    public static final String MESSAGE_CREATE_POD_IP_RANGE_EVENT = "Message.CreatePodIpRange.Event";
+    public static final String MESSAGE_DELETE_POD_IP_RANGE_EVENT = "Message.DeletePodIpRange.Event";
 }

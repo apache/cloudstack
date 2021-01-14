@@ -58,6 +58,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkPol
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVRouterPortCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmInterfaceCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFabricNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFloatingIpsCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenNatIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenPublicNetworkCommand;
@@ -215,6 +216,8 @@ public class TungstenResource implements ServerResource {
             return executeRequest((DeleteTungstenNetworkPolicyCommand) cmd, numRetries);
         } else if (cmd instanceof GetTungstenFloatingIpsCommand) {
             return executeRequest((GetTungstenFloatingIpsCommand) cmd, numRetries);
+        } else if (cmd instanceof GetTungstenFabricNetworkCommand) {
+            return executeRequest((GetTungstenFabricNetworkCommand) cmd, numRetries);
         }
 
         s_logger.debug("Received unsupported command " + cmd.toString());
@@ -234,7 +237,7 @@ public class TungstenResource implements ServerResource {
         VirtualNetwork virtualNetwork = _tungstenApi.createTungstenNetwork(cmd.getUuid(), cmd.getName(),
             project.getUuid(), cmd.isRouterExternal(), cmd.isShared(), cmd.getIpPrefix(), cmd.getIpPrefixLen(),
             cmd.getGateway(), cmd.isDhcpEnable(), cmd.getDnsServers(), cmd.getAllocationStart(), cmd.getAllocationEnd(),
-            cmd.isIpFromStart());
+            cmd.isIpFromStart(), cmd.isManagementNetwork());
 
         if (virtualNetwork != null)
             return new TungstenAnswer(cmd, virtualNetwork, true, "Tungsten network created");
@@ -606,6 +609,15 @@ public class TungstenResource implements ServerResource {
         boolean result = _tungstenApi.applyTungstenNetworkPolicy(cmd.getProjectUuid(), cmd.getNetworkPolicyName(),
             cmd.getNetworkUuid(), cmd.isPriority());
         return new TungstenAnswer(cmd, result, null);
+    }
+
+    private Answer executeRequest(GetTungstenFabricNetworkCommand cmd, int numRetries) {
+        ApiObjectBase fabricNetwork = _tungstenApi.getTungstenFabricNetwork();
+        if (fabricNetwork != null) {
+            return new TungstenAnswer(cmd, fabricNetwork, true, null);
+        } else {
+            return new TungstenAnswer(cmd, false, "tungsten fabric network doesn't exist");
+        }
     }
 
     private Answer retry(Command cmd, int numRetries) {

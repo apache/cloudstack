@@ -32,11 +32,12 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
     private final String allocationStart;
     private final String allocationEnd;
     private final boolean ipFromStart;
+    private final boolean isManagementNetwork;
 
     public CreateTungstenNetworkCommand(final String uuid, final String name, final String parent,
         final boolean routerExternal, final boolean shared, final String ipPrefix, final int ipPrefixLen,
         final String gateway, final boolean dhcpEnable, final List<String> dnsServers, final String allocationStart,
-        final String allocationEnd, final boolean ipFromStart) {
+        final String allocationEnd, final boolean ipFromStart, final boolean isManagementNetwork) {
         this.uuid = uuid;
         this.name = name;
         this.parent = parent;
@@ -50,6 +51,7 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
         this.allocationStart = allocationStart;
         this.allocationEnd = allocationEnd;
         this.ipFromStart = ipFromStart;
+        this.isManagementNetwork = isManagementNetwork;
     }
 
     public String getUuid() {
@@ -102,5 +104,9 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
 
     public boolean isIpFromStart() {
         return ipFromStart;
+    }
+
+    public boolean isManagementNetwork() {
+        return isManagementNetwork;
     }
 }

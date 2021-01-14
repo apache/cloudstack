@@ -1347,6 +1347,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new CloudRuntimeException("Failed to create Pod IP range. Please contact Cloud Support.");
         }
 
+        messageBus.publish(_name, MESSAGE_CREATE_POD_IP_RANGE_EVENT, PublishScope.LOCAL, pod);
+
         return pod;
     }
 
@@ -1461,6 +1463,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             s_logger.error("Unable to delete Pod " + podId + "IP range due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to delete Pod " + podId + "IP range. Please contact Cloud Support.");
         }
+
+        messageBus.publish(_name, MESSAGE_DELETE_POD_IP_RANGE_EVENT, PublishScope.LOCAL, pod);
     }
 
     @Override

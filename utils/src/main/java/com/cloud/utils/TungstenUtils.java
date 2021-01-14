@@ -153,6 +153,10 @@ public class TungstenUtils {
         return "virtual-network-policy" + networkId;
     }
 
+    public static String getFabricNetworkPolicyName() {
+        return "fabric-network-policy";
+    }
+
     public static String getRuleNetworkPolicyName(long ruleId) {
         return "rule-network-policy" + ruleId;
     }

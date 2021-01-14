@@ -22,12 +22,11 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.offering.NetworkOffering;
@@ -50,7 +49,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -63,7 +61,7 @@ public class ConfigTungstenServiceCmd extends BaseCmd {
     public final static String DefaultTungstenNetworkOffering = "DefaultTungstenNetworkOffering";
 
     @Inject
-    NetworkDao _networkDao;
+    NetworkModel _networkModel;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
@@ -136,12 +134,17 @@ public class ConfigTungstenServiceCmd extends BaseCmd {
                 physicalNetworkServiceProvider.setState(PhysicalNetworkServiceProvider.State.Enabled);
                 _physicalNetworkServiceProviderDao.persist(physicalNetworkServiceProvider);
 
-                List<NetworkVO> publicNetworkVOList = _networkDao.listByZoneAndTrafficType(zoneId,
+                Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
                     Networks.TrafficType.Public);
-                NetworkVO publicNetwork = publicNetworkVOList.get(0);
-                NetworkServiceMapVO networkServiceMapVO = new NetworkServiceMapVO(publicNetwork.getId(),
+                NetworkServiceMapVO publicNetworkServiceMapVO = new NetworkServiceMapVO(publicNetwork.getId(),
                     Network.Service.Connectivity, Network.Provider.Tungsten);
-                _networkServiceMapDao.persist(networkServiceMapVO);
+                _networkServiceMapDao.persist(publicNetworkServiceMapVO);
+
+                Network managementNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
+                    Networks.TrafficType.Management);
+                NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
+                    Network.Service.Connectivity, Network.Provider.Tungsten);
+                _networkServiceMapDao.persist(managementNetworkServiceMapVO);
             }
         });
 
