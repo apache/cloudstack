@@ -447,6 +447,15 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.enable.network.offering') }}
+            <a-tooltip :title="apiParams.enable.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-switch v-decorator="['enable', {initialValue: false}]" />
+        </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
@@ -928,6 +937,9 @@ export default {
         }
         if (zoneId) {
           params.zoneid = zoneId
+        }
+        if (values.enable) {
+          params.enable = values.enable
         }
         params.traffictype = 'GUEST' // traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
         api('createNetworkOffering', params).then(json => {
