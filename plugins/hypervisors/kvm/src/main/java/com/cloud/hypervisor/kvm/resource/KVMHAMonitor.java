@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.agent.properties.AgentProperty;
+import com.cloud.agent.properties.AgentPropertyFile;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
@@ -43,6 +45,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         }
         _hostIP = host;
         configureHeartBeatPath(scriptPath);
+
+        _heartBeatUpdateTimeout = AgentPropertyFile.getProperty(AgentProperty.HEARTBEAT_UPDATE_TIMEOUT);
     }
 
     private static synchronized void configureHeartBeatPath(String scriptPath) {
