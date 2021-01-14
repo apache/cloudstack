@@ -160,6 +160,7 @@ export default {
       label: 'label.add.certificate',
       dataView: true,
       args: ['name', 'certificate', 'privatekey', 'certchain', 'password', 'account', 'domainid'],
+      post: true,
       show: (record) => { return record.state === 'enabled' },
       mapping: {
         account: {

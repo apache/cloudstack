@@ -1000,7 +1000,13 @@ export default {
 
         var hasJobId = false
         this.actionLoading = true
-        api(action.api, params).then(json => {
+        let args = null
+        if (action.post) {
+          args = [action.api, {}, 'POST', params]
+        } else {
+          args = [action.api, params]
+        }
+        api(...args).then(json => {
           hasJobId = this.handleResponse(json, resourceName, action)
           if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
             this.$router.go(-1)
