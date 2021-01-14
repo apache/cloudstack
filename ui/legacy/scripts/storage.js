@@ -1573,6 +1573,30 @@
                                 }
                             },
 
+                            edit: {
+                                label: 'label.edit',
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.volumes[0].id,
+                                    };
+                                    if (args.data.name != args.context.volumes[0].name) {
+                                        $.extend(data, {
+                                            name: args.data.name
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL('updateVolume'),
+                                        data: data,
+                                        success: function(json) {
+                                            var item = json.updatevolumeresponse.volume;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            },
+
                             resize: {
                                 label: 'label.action.resize.volume',
                                 messages: {
@@ -3181,6 +3205,7 @@
             }
         }
 
+        allowedActions.push("edit");
         return allowedActions;
     };
 
