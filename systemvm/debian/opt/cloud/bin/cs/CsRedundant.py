@@ -173,7 +173,7 @@ class CsRedundant(object):
         force_keepalived_restart = False
         proc = CsProcess(['/etc/conntrackd/conntrackd.conf'])
 
-        if not proc.find() and not is_equals:
+        if not proc.find() or not is_equals:
             CsHelper.copy(conntrackd_template_conf, self.CONNTRACKD_CONF)
             CsHelper.service("conntrackd", "restart")
             force_keepalived_restart = True

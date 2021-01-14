@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Upload;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
 import org.apache.log4j.Logger;
@@ -86,6 +88,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
@@ -342,7 +345,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 (srcdata.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME)) {
 
             int nMaxExecutionMinutes = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
-            CopyCommand cmd = new CopyCommand(srcdata.getTO(), destData.getTO(), nMaxExecutionMinutes * 60 * 1000, true);
+            CopyCommand cmd = new CopyCommand(srcdata.getTO(), destData.getTO(), nMaxExecutionMinutes * 60 * 1000, VirtualMachineManager.ExecuteInSequence.value());
             Answer answer = null;
 
             // Select host endpoint such that the load is balanced out
@@ -396,6 +399,15 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
+        DataStore srcStore = srcData.getDataStore();
+        DataStore destStore = destData.getDataStore();
+        if ((srcData.getDataStore().getTO() instanceof NfsTO && destData.getDataStore().getTO() instanceof NfsTO) &&
+                (srcStore.getRole() == DataStoreRole.Image && destStore.getRole() == DataStoreRole.Image) &&
+                ((srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE) ||
+                        (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) ||
+                        (srcData.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME))) {
+            return true;
+        }
         return false;
     }
 

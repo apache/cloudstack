@@ -838,6 +838,12 @@ UPDATE `cloud`.`guest_os` SET category_id = 7 WHERE id = 275 AND display_name = 
 ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_hidden` smallint(1) NOT NULL DEFAULT '0' COMMENT 'is usage hidden';
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `is_hidden` smallint(1) NOT NULL DEFAULT '0' COMMENT 'is usage hidden';
 
+-- Fix Zones are returned in a random order (#3934)
+UPDATE `cloud`.`data_center` JOIN (SELECT COUNT(1) AS count FROM `cloud`.`data_center` WHERE `sort_key` != 0) AS tbl_tmp SET `sort_key` = `id` WHERE count = 0;
+
+-- Fix description of volume.stats.interval which is in milliseconds not seconds
+UPDATE `cloud`.`configuration` SET `description` = 'Interval (in milliseconds) to report volume statistics' WHERE `name` = 'volume.stats.interval';
+
 -- Table for customized load balancer configurations
 CREATE TABLE IF NOT EXISTS `cloud`.`load_balancer_config`  (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,

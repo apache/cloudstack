@@ -35,7 +35,7 @@ STATE_COMMANDS = {"router": "ip addr show dev eth0 | grep inet | wc -l | xargs b
 
 def reconfigure_interfaces(router_config, interfaces):
     for interface in interfaces:
-        cmd = "ip link show %s | grep 'state DOWN'" % interface.get_device()
+        cmd = "ip link show %s | grep ' state '" % interface.get_device()
         for device in execute(cmd):
             if " DOWN " in device:
                 cmd = "ip link set %s up" % interface.get_device()

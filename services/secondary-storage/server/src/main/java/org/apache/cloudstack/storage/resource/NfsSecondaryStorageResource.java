@@ -46,6 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1313,6 +1314,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     srcDir = new File(srcFile.getParent());
                 } else if (!srcFile.isDirectory()) {
                     srcDir = new File(srcFile.getParent());
+                } else if (srcFile.isDirectory() && Arrays.stream(srcData.getPath().split(File.separator)).count() == 4) {
+                    destFile = new File(destFile.getPath(), srcFile.getName());
                 }
                 File destDir = null;
                 if (destFile.isFile()) {
@@ -2275,6 +2278,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 answer.setInstallPath(uploadEntity.getTmpltPath());
                 answer.setPhysicalSize(uploadEntity.getPhysicalSize());
                 answer.setDownloadPercent(100);
+                answer.setGuestOsInfo(uploadEntity.getGuestOsInfo());
+                answer.setMinimumHardwareVersion(uploadEntity.getMinimumHardwareVersion());
                 uploadEntityStateMap.remove(entityUuid);
                 return answer;
             } else if (uploadEntity.getUploadState() == UploadEntity.Status.IN_PROGRESS) {
@@ -2689,8 +2694,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (_inSystemVM) {
             _localgw = (String)params.get("localgw");
             if (_localgw != null) { // can only happen inside service vm
-                String mgmtHost = (String)params.get("host");
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                String mgmtHosts = (String)params.get("host");
+                for (final String mgmtHost : mgmtHosts.split(",")) {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                }
 
                 String internalDns1 = (String)params.get("internaldns1");
                 if (internalDns1 == null) {
@@ -3408,6 +3415,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 loc.addFormat(info);
                 uploadEntity.setVirtualSize(info.virtualSize);
                 uploadEntity.setPhysicalSize(info.size);
+                if (info.ovfInformationTO != null) {
+                    if (info.ovfInformationTO.getGuestOsInfo() != null) {
+                        uploadEntity.setGuestOsInfo(info.ovfInformationTO.getGuestOsInfo());
+                    }
+                    if (info.ovfInformationTO.getHardwareSection() != null) {
+                        uploadEntity.setMinimumHardwareVersion(info.ovfInformationTO.getHardwareSection().getMinimiumHardwareVersion());
+                    }
+                }
                 break;
             }
         }

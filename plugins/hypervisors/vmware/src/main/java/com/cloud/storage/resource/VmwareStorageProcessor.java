@@ -2248,15 +2248,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String msg = "";
 
             if (isAttach) {
-                msg += "Failed to attach volume: " + e.getMessage();
+                msg += "Failed to attach volume: ";
             }
             else {
-                msg += "Failed to detach volume: " + e.getMessage();
+                msg += "Failed to detach volume: ";
             }
 
-            s_logger.error(msg, e);
+            s_logger.error(msg + e.getMessage(), e);
 
-            return new AttachAnswer(msg);
+            // Sending empty error message - too many duplicate errors in UI
+            return new AttachAnswer("");
         }
     }
 

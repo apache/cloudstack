@@ -1454,11 +1454,7 @@ class TestMigrateVolume(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMigrateVolume,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1470,8 +1466,7 @@ class TestMigrateVolume(cloudstackTestCase):
         return
 
     def tearDown(self):
-        cleanup_resources(self.apiclient, self.cleanup)
-        return
+        super(TestMigrateVolume,self).tearDown()
 
     @attr(tags=["advanced", "sg", "advancedsg"], required_hardware='true')
     def test_01_migrateVolume(self):

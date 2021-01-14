@@ -2037,6 +2037,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VM_RECOVER, eventDescription = "Recovering VM")
     public UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, CloudRuntimeException {
 
         final Long vmId = cmd.getId();
@@ -7399,20 +7400,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      */
     private void postProcessingUnmanageVM(UserVmVO vm) {
         ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
-
+        Long cpu = offering.getCpu() != null ? new Long(offering.getCpu()) : 0L;
+        Long ram = offering.getRamSize() != null ? new Long(offering.getRamSize()) : 0L;
         // First generate a VM stop event if the VM was not stopped already
         if (vm.getState() != State.Stopped) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(),
                     vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
                     vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
-            resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), cpu, ram);
         }
 
         // VM destroy usage event
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(),
                 vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
                 vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
-        resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), cpu, ram);
     }
 
     /*

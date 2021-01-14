@@ -190,6 +190,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "VPC the network belongs to")
     private String vpcId;
 
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "Name of the VPC to which this network belongs", since = "4.15")
+    private String vpcName;
+
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
     private Boolean canUseForDeploy;
@@ -469,5 +473,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setRedundantRouter(Boolean redundantRouter) {
         this.redundantRouter = redundantRouter;
+    }
+
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
     }
 }

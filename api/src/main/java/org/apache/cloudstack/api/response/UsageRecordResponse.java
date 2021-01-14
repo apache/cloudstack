@@ -144,6 +144,10 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     @Param(description = "True if the resource is default")
     private Boolean isDefault;
 
+    @SerializedName("vpcid")
+    @Param(description = "id of the vpc")
+    private String vpcId;
+
     public UsageRecordResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -275,5 +279,9 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
 
     public String getDomainName(){
         return domainName;
+    }
+
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 }

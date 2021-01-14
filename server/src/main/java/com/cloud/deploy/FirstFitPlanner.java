@@ -521,7 +521,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
         //we need pods having enough cpu AND RAM to host this particular VM and order them by aggregate pod capacity
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Listing pods in order of aggregate capacity, that have (atleast one host with) enough CPU and RAM capacity under this Zone: " + zoneId);
+            s_logger.debug("Listing pods in order of aggregate capacity, that have (at least one host with) enough CPU and RAM capacity under this Zone: " + zoneId);
         }
         String capacityTypeToOrder = configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
         short capacityType = Capacity.CAPACITY_TYPE_CPU;

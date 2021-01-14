@@ -2352,7 +2352,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // Validate network offering
         if (ntwkOff.getState() != NetworkOffering.State.Enabled) {
             // see NetworkOfferingVO
-            final InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its stat is not " + NetworkOffering.State.Enabled);
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its state is not " + NetworkOffering.State.Enabled);
             ex.addProxyObject(ntwkOff.getUuid(), "networkOfferingId");
             throw ex;
         }
@@ -2671,7 +2671,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             throw new InvalidParameterValueException(String.format("Failed to encode VLAN/VXLAN %s into a Broadcast URI. Physical Network cannot be null.", vlanId));
         }
 
-        if(StringUtils.isNotBlank(pNtwk.getIsolationMethods().get(0))) {
+        if(!pNtwk.getIsolationMethods().isEmpty() && StringUtils.isNotBlank(pNtwk.getIsolationMethods().get(0))) {
             String isolationMethod = pNtwk.getIsolationMethods().get(0).toLowerCase();
             String vxlan = BroadcastDomainType.Vxlan.toString().toLowerCase();
             if(isolationMethod.equals(vxlan)) {
