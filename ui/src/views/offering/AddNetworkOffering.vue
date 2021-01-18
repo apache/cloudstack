@@ -447,7 +447,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
+        <a-form-item v-if="apiParams.enable">
           <span slot="label">
             {{ $t('label.enable.network.offering') }}
             <a-tooltip :title="apiParams.enable.description">
