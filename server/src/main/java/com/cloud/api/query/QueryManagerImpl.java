@@ -2820,7 +2820,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             _accountMgr.checkAccess(caller, null, true, vmInstance);
 
             currentVmOffering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
-            sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
+            if (! currentVmOffering.isDynamic()) {
+                sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
+            }
 
             // 1. Only return offerings with the same storage type
             sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, currentVmOffering.isUseLocalStorage());
