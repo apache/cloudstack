@@ -37,7 +37,7 @@
           v-else
           style="width: 100%"
           :animated="false"
-          :defaultActiveKey="tabs[0].name"
+          :activeKey="activeTab || tabs[0].name"
           @change="onTabChange" >
           <a-tab-pane
             v-for="tab in tabs"
@@ -106,11 +106,28 @@ export default {
           }
         })
       }
+    },
+    $route: function (newItem, oldItem) {
+      this.setActiveTab()
     }
+  },
+  mounted () {
+    this.setActiveTab()
   },
   methods: {
     onTabChange (key) {
       this.activeTab = key
+      const query = Object.assign({}, this.$route.query)
+      query.tab = key
+      history.replaceState(
+        {},
+        null,
+        '#' + this.$route.path + '?' + Object.keys(query).map(key => {
+          return (
+            encodeURIComponent(key) + '=' + encodeURIComponent(query[key])
+          )
+        }).join('&')
+      )
     },
     showTab (tab) {
       if ('networkServiceFilter' in tab) {
@@ -139,6 +156,9 @@ export default {
       } else {
         return true
       }
+    },
+    setActiveTab () {
+      this.activeTab = this.$route.query.tab ? this.$route.query.tab : this.tabs[0].name
     }
   }
 }

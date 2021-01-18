@@ -204,9 +204,6 @@ export default {
       this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
     }
   },
-  mounted () {
-    this.handleFetchData()
-  },
   watch: {
     resource (newData, oldData) {
       if (newData && newData !== oldData) {
@@ -217,9 +214,33 @@ export default {
           this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
         }
       }
+    },
+    $route: function (newItem, oldItem) {
+      this.setCurrentTab()
     }
   },
+  mounted () {
+    this.handleFetchData()
+    this.setCurrentTab()
+  },
   methods: {
+    setCurrentTab () {
+      this.currentTab = this.$route.query.tab ? this.$route.query.tab : 'details'
+    },
+    handleChangeTab (e) {
+      this.currentTab = e
+      const query = Object.assign({}, this.$route.query)
+      query.tab = e
+      history.replaceState(
+        {},
+        null,
+        '#' + this.$route.path + '?' + Object.keys(query).map(key => {
+          return (
+            encodeURIComponent(key) + '=' + encodeURIComponent(query[key])
+          )
+        }).join('&')
+      )
+    },
     isAdmin () {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype)
     },
@@ -234,9 +255,6 @@ export default {
     },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
-    },
-    handleChangeTab (e) {
-      this.currentTab = e
     },
     handleFetchData () {
       this.fetchKubernetesClusterConfig()

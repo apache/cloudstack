@@ -396,22 +396,40 @@ export default {
     this.vpnConnectionForm = this.$form.createForm(this)
     this.networkAclForm = this.$form.createForm(this)
   },
-  mounted () {
-    this.handleFetchData()
-  },
   watch: {
     loading (newData, oldData) {
       if (!newData && this.resource.id) {
         this.handleFetchData()
       }
+    },
+    $route: function (newItem, oldItem) {
+      this.setCurrentTab()
     }
   },
+  mounted () {
+    this.handleFetchData()
+    this.setCurrentTab()
+  },
   methods: {
+    setCurrentTab () {
+      this.currentTab = this.$route.query.tab ? this.$route.query.tab : 'details'
+    },
     handleChangeTab (e) {
       this.currentTab = e
       this.page = 1
       this.pageSize = 10
       this.handleFetchData()
+      const query = Object.assign({}, this.$route.query)
+      query.tab = e
+      history.replaceState(
+        {},
+        null,
+        '#' + this.$route.path + '?' + Object.keys(query).map(key => {
+          return (
+            encodeURIComponent(key) + '=' + encodeURIComponent(query[key])
+          )
+        }).join('&')
+      )
     },
     handleFetchData () {
       switch (this.currentTab) {
