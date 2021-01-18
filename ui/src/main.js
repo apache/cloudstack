@@ -19,10 +19,10 @@ import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
-import i18n from './locales'
+import { i18n, loadLanguageAsync } from './locales'
 
 import bootstrap from './core/bootstrap'
-import './core/use'
+import './core/lazy_use'
 import './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
@@ -38,11 +38,14 @@ Vue.use(toLocaleDatePlugin)
 fetch('config.json').then(response => response.json()).then(config => {
   Vue.prototype.$config = config
   Vue.axios.defaults.baseURL = config.apiBase
-  new Vue({
-    router,
-    store,
-    i18n,
-    created: bootstrap,
-    render: h => h(App)
-  }).$mount('#app')
+
+  loadLanguageAsync().then(() => {
+    new Vue({
+      router,
+      store,
+      i18n,
+      created: bootstrap,
+      render: h => h(App)
+    }).$mount('#app')
+  })
 })

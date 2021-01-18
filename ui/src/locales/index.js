@@ -18,24 +18,45 @@
 import Vue from 'vue'
 import VueI18n from 'vue-i18n'
 
-function loadLocaleMessages () {
-  const locales = require.context('./', true, /[A-Za-z0-9-_,\s]+\.json$/i)
-  const messages = {}
-  locales.keys().forEach(key => {
-    const matched = key.match(/([A-Za-z0-9-_]+)\./i)
-    if (matched && matched.length > 1) {
-      const locale = matched[1]
-      messages[locale] = locales(key)
-    }
-  })
-  return messages
-}
+const loadedLanguage = []
+const messages = {}
 
 Vue.use(VueI18n)
 
-export default new VueI18n({
+export const i18n = new VueI18n({
   locale: Vue.ls ? Vue.ls.get('LOCALE') || 'en' : 'en',
   fallbackLocale: 'en',
   silentTranslationWarn: true,
-  messages: loadLocaleMessages()
+  messages: messages
 })
+
+export function loadLanguageAsync (lang) {
+  if (!lang) {
+    lang = Vue.ls ? Vue.ls.get('LOCALE') || 'en' : 'en'
+  }
+  if (loadedLanguage.includes(lang)) {
+    return Promise.resolve(setLanguage(lang))
+  }
+
+  return fetch(`locales/${lang}.json`)
+    .then(response => response.json())
+    .then(json => Promise.resolve(setLanguage(lang, json)))
+}
+
+function setLanguage (lang, message) {
+  if (i18n) {
+    i18n.locale = lang
+
+    if (message && Object.keys(message).length > 0) {
+      i18n.setLocaleMessage(lang, message)
+    }
+  }
+
+  if (!loadedLanguage.includes(lang)) {
+    loadedLanguage.push(lang)
+  }
+
+  if (message && Object.keys(message).length > 0) {
+    messages[lang] = message
+  }
+}

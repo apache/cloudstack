@@ -32,10 +32,8 @@
     "test:unit": "vue-cli-service test:unit"
   },
   "dependencies": {
-    "@antv/data-set": "^0.11.4",
     "@fortawesome/fontawesome-svg-core": "^1.2.28",
     "@fortawesome/free-brands-svg-icons": "^5.13.0",
-    "@fortawesome/free-regular-svg-icons": "^5.13.0",
     "@fortawesome/free-solid-svg-icons": "^5.13.0",
     "@fortawesome/vue-fontawesome": "^0.1.9",
     "ant-design-vue": "~1.6.2",
@@ -47,7 +45,6 @@
     "lodash": "^4.17.15",
     "md5": "^2.2.1",
     "moment": "^2.26.0",
-    "node-emoji": "^1.10.0",
     "npm-check-updates": "^6.0.1",
     "nprogress": "^0.2.0",
     "viser-vue": "^2.4.8",
@@ -62,7 +59,6 @@
     "vuex": "^3.4.0"
   },
   "devDependencies": {
-    "@kazupon/vue-i18n-loader": "^0.5.0",
     "@vue/cli": "^4.4.1",
     "@vue/cli-plugin-babel": "^4.4.1",
     "@vue/cli-plugin-eslint": "^4.4.1",
@@ -85,6 +81,7 @@
     "less-loader": "^5.0.0",
     "node-sass": "^4.13.1",
     "sass-loader": "^8.0.2",
+    "uglifyjs-webpack-plugin": "^2.2.0",
     "vue-cli-plugin-i18n": "^0.6.1",
     "vue-svg-icon-loader": "^2.1.1",
     "vue-template-compiler": "^2.6.11",

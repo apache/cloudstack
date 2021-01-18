@@ -16,7 +16,7 @@
 // under the License.
 
 import _ from 'lodash'
-import i18n from '@/locales'
+import { i18n } from '@/locales'
 import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'

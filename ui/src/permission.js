@@ -17,7 +17,7 @@
 
 import Cookies from 'js-cookie'
 import Vue from 'vue'
-import i18n from './locales'
+import { i18n } from './locales'
 import router from './router'
 import store from './store'
 

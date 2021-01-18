@@ -23,7 +23,7 @@ import notification from 'ant-design-vue/es/notification'
 import router from '@/router'
 import store from '@/store'
 import { login, logout, api } from '@/api'
-import i18n from '@/locales'
+import { i18n } from '@/locales'
 import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, APIS, ASYNC_JOB_IDS, ZONES, TIMEZONE_OFFSET, USE_BROWSER_TIMEZONE } from '@/store/mutation-types'
 
 const user = {

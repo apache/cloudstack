@@ -21,7 +21,7 @@ import router from '@/router'
 import { VueAxios } from './axios'
 import notification from 'ant-design-vue/es/notification'
 import { CURRENT_PROJECT } from '@/store/mutation-types'
-import i18n from '@/locales'
+import { i18n } from '@/locales'
 import store from '@/store'
 
 const service = axios.create({
