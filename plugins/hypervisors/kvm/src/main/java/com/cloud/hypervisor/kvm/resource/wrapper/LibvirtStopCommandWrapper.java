@@ -177,6 +177,6 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
         if (MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanId != null && vlanToPersistenceMap.containsKey(vlanId)) {
             return vlanToPersistenceMap.get(vlanId);
         }
-        return false;
+        return true;
     }
 }

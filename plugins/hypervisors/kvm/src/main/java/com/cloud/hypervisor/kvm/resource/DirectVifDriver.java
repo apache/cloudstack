@@ -80,4 +80,7 @@ public class DirectVifDriver extends VifDriverBase {
     public void createControlNetwork(String privBrName) {
     }
 
+    @Override
+    public void deleteBr(NicTO nic) {
+    }
 }

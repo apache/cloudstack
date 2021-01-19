@@ -287,6 +287,10 @@ public class IvsVifDriver extends VifDriverBase {
         }
     }
 
+    @Override
+    public void deleteBr(NicTO nic) {
+    }
+
     private boolean isBridgeExists(String bridgeName) {
         File f = new File("/sys/devices/virtual/net/" + bridgeName);
         if (f.exists()) {

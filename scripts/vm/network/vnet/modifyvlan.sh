@@ -93,16 +93,15 @@ deleteVlan() {
   local vlanBr=$3
   local deleteBr=$4
 
-	ip link delete $vlanDev type vlan > /dev/null
-	
-	if [ $? -gt 0 ]
-	then
-		printf "Failed to del vlan: $vlanId"
-		return 1
-	fi	
-
   if [ $deleteBr == "true" ]
   then
+	  ip link delete $vlanDev type vlan > /dev/null
+	
+  	if [ $? -gt 0 ]
+	  then
+		  printf "Failed to del vlan: $vlanId"
+		  return 1
+	  fi
     ip link set $vlanBr down
 
     if [ $? -gt 0 ]

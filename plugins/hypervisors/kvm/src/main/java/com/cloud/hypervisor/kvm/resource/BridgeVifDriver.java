@@ -437,4 +437,20 @@ public class BridgeVifDriver extends VifDriverBase {
             return false;
         }
     }
+
+    @Override
+    public void deleteBr(NicTO nic) {
+        String vlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+        String trafficLabel = nic.getName();
+        String pifName = _pifs.get(trafficLabel);
+        if (pifName == null) {
+            // if not found in bridge map, maybe traffic label refers to pif already?
+            File pif = new File("/sys/class/net/" + trafficLabel);
+            if (pif.isDirectory()) {
+                pifName = trafficLabel;
+            }
+        }
+        String brName = generateVnetBrName(pifName, vlanId);
+        deleteVnetBr(brName, true);
+    }
 }

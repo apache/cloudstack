@@ -1974,7 +1974,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vmGuru.prepareStop(profile);
 
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
-
         final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false, cleanUpEvenIfUnableToStop);
         stop.setControlIp(getControlNicIpForVM(vm));
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
@@ -4419,6 +4418,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 final UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());
+                Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
+                if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+                    unplugNicCmd.setVlanToPersistenceMap(vlanToPersistenceMap);
+                }
                 cmds.addCommand("unplugnic", unplugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
 

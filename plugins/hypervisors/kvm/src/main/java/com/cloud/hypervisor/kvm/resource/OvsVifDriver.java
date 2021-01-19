@@ -260,4 +260,8 @@ public class OvsVifDriver extends VifDriverBase {
             return false;
         }
     }
+
+    @Override
+    public void deleteBr(NicTO nic) {
+    }
 }

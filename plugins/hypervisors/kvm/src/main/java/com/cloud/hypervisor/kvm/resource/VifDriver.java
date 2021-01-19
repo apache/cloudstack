@@ -44,4 +44,6 @@ public interface VifDriver {
 
     boolean isExistingBridge(String bridgeName);
 
+    void deleteBr(NicTO nic);
+
 }

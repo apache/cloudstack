@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.CleanupPersistentNetworkResourceAnswer;
+import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
 import com.cloud.agent.api.SetupPersistentNetworkAnswer;
 import com.cloud.agent.api.SetupPersistentNetworkCommand;
 import com.cloud.dc.ClusterVO;
@@ -1223,7 +1225,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (hosts == null) {
             hosts = new ArrayList<>();
         }
-        if (hostVO.getHypervisorType() == HypervisorType.KVM) {
+        if (hostVO.getHypervisorType() == HypervisorType.KVM || hostVO.getHypervisorType() == HypervisorType.XenServer ) {
             hosts.add(hostVO.getId());
             clusterToHostsMap.put(clusterId, hosts);
             return new Pair<>(false, createNicTOFromNetworkAndOffering(networkVO, networkOfferingVO, hostVO));
@@ -1267,6 +1269,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    private boolean networkMeetsPersistenceCriteria(NetworkVO network, NetworkOfferingVO offering, boolean cleanup) {
+        boolean criteriaMet = offering.isPersistent() &&
+                (network.getBroadcastUri() != null && BroadcastDomainType.getSchemeValue(network.getBroadcastUri()) == BroadcastDomainType.Vlan);
+        if (!cleanup) {
+            return criteriaMet && network.getGuestType() == GuestType.L2;
+        } else {
+            return criteriaMet && (network.getGuestType() == GuestType.L2 || network.getGuestType() == GuestType.Isolated);
+        }
+    }
     @Override
     @DB
     public Pair<NetworkGuru, NetworkVO> implementNetwork(final long networkId, final DeployDestination dest, final ReservationContext context) throws ConcurrentOperationException,
@@ -1326,8 +1337,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             implementNetworkElementsAndResources(dest, context, network, offering);
 
             long dcId = dest.getDataCenter().getId();
-            if (network.getGuestType() == GuestType.L2 && offering.isPersistent() &&
-                    (network.getBroadcastUri() != null && BroadcastDomainType.getSchemeValue(network.getBroadcastUri()) == BroadcastDomainType.Vlan)) {
+            if (networkMeetsPersistenceCriteria(network,offering, false)) {
                 setupPersistentNetwork(network, offering, dcId);
             }
             if (isSharedNetworkWithServices(network)) {
@@ -2948,6 +2958,32 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return success;
     }
 
+    private void cleanupPersistentnNetworkResources(NetworkVO network) {
+        long networkOfferingId = network.getNetworkOfferingId();
+        NetworkOfferingVO offering = _networkOfferingDao.findById(networkOfferingId);
+        if (offering != null) {
+            if (networkMeetsPersistenceCriteria(network, offering, true)) {
+                List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, network.getDataCenterId());
+                for (HostVO host : hosts) {
+                    try {
+                        NicTO to = createNicTOFromNetworkAndOffering(network, offering, host);
+                        CleanupPersistentNetworkResourceCommand cmd = new CleanupPersistentNetworkResourceCommand(to);
+                        CleanupPersistentNetworkResourceAnswer answer = (CleanupPersistentNetworkResourceAnswer) _agentMgr.send(host.getId(), cmd);
+                        if (answer == null) {
+                            s_logger.warn("Unable to get an answer to the CleanupPersistentNetworkResourceCommand from agent:" + host.getId());
+                        }
+
+                        if (!answer.getResult()) {
+                            s_logger.warn("Unable to setup agent " + host.getId() + " due to " + answer.getDetails());
+                        }
+                    } catch (Exception e) {
+                        s_logger.warn("Failed to cleanup network resources");
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     @DB
     public boolean destroyNetwork(final long networkId, final ReservationContext context, final boolean forced) {
@@ -2986,6 +3022,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 return false;
             }
         }
+
+        cleanupPersistentnNetworkResources(network);
 
         // Shutdown network first
         shutdownNetwork(networkId, context, false);

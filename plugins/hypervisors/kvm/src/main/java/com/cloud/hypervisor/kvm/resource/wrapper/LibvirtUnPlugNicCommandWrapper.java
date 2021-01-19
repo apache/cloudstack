@@ -20,7 +20,10 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -45,6 +48,7 @@ public final class LibvirtUnPlugNicCommandWrapper extends CommandWrapper<UnPlugN
     public Answer execute(final UnPlugNicCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final NicTO nic = command.getNic();
         final String vmName = command.getVmName();
+        final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         Domain vm = null;
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -59,10 +63,11 @@ public final class LibvirtUnPlugNicCommandWrapper extends CommandWrapper<UnPlugN
                         libvirtComputingResource.destroyNetworkRulesForNic(conn, vmName, nic);
                     }
                     vm.detachDevice(pluggedNic.toString());
+                    String vlanId = getVlanIdFromBridgeName(pluggedNic.getBrName());
                     // We don't know which "traffic type" is associated with
                     // each interface at this point, so inform all vif drivers
                     for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
-                        vifDriver.unplug(pluggedNic, true);
+                        vifDriver.unplug(pluggedNic, shouldDeleteBridge(vlanToPersistenceMap, vlanId));
                     }
                     return new UnPlugNicAnswer(command, true, "success");
                 }
@@ -81,5 +86,23 @@ public final class LibvirtUnPlugNicCommandWrapper extends CommandWrapper<UnPlugN
                 }
             }
         }
+    }
+
+    private String getVlanIdFromBridgeName(String brName) {
+        if (StringUtils.isNotBlank(brName)) {
+            String[] s = brName.split("-");
+            if (s.length > 1) {
+                return s[1];
+            }
+            return null;
+        }
+        return null;
+    }
+
+    private boolean shouldDeleteBridge(Map<String, Boolean> vlanToPersistenceMap, String vlanId) {
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanId != null && vlanToPersistenceMap.containsKey(vlanId)) {
+            return vlanToPersistenceMap.get(vlanId);
+        }
+        return false;
     }
 }
