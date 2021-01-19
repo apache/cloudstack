@@ -440,7 +440,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmFinal, template, serviceOffering, null, null);
 
         Long rootDiskSize = rootDiskOfferingInfo.getSize();
-        if (vm.getType().isUsedBySystem() && SystemVmRootDiskSize.value() != null) {
+        if (vm.getType().isUsedBySystem() && SystemVmRootDiskSize.value() != null &&  SystemVmRootDiskSize.value() > 0L) {
             rootDiskSize = SystemVmRootDiskSize.value();
         }
         final Long rootDiskSizeFinal = rootDiskSize;
