@@ -233,11 +233,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
     }
 
-    protected void upgrade(CloudStackVersion dbVersion, CloudStackVersion currentVersion) {
-        s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
-
-        final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
-
+    private void updateSystemVmTemplates(DbUpgrade[] upgrades) {
         for (int i = upgrades.length - 1; i >= 0; i--) {
             DbUpgrade upgrade = upgrades[i];
             if (upgrade instanceof DbUpgradeSystemVmTemplate) {
@@ -263,6 +259,14 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 }
             }
         }
+    }
+
+    protected void upgrade(CloudStackVersion dbVersion, CloudStackVersion currentVersion) {
+        s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
+
+        final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
+
+        updateSystemVmTemplates(upgrades);
 
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version;
