@@ -4079,7 +4079,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 persistVMDeployAsIsProperties(vm, userVmOVFPropertiesMap);
 
-                _vmDao.saveDetails(vm);
+                List<String> hiddenDetails = new ArrayList<>();
+                if (customParameters.containsKey(VmDetailConstants.NAME_ON_HYPERVISOR)) {
+                    hiddenDetails.add(VmDetailConstants.NAME_ON_HYPERVISOR);
+                }
+                _vmDao.saveDetails(vm, hiddenDetails);
                 if (!isImport) {
                     s_logger.debug("Allocating in the DB for vm");
                     DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
