@@ -40,7 +40,9 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -356,6 +358,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private UserVmJoinDao userVmJoinDao;
     @Inject
     private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private DomainRouterJoinDao domainRouterJoinDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1844,14 +1848,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceStop(vm, cleanUpEvenIfUnableToStop);
     }
 
+    private void getPersistenceMap(Map<String, Boolean> vlanToPersistenceMap, NetworkVO networkVO) {
+        NetworkOfferingVO offeringVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
+        Pair<String, Boolean> data = getVMNetworkDetails(networkVO, offeringVO.isPersistent());
+        Boolean shouldDeleteNwResource = MapUtils.isNotEmpty(vlanToPersistenceMap) ? vlanToPersistenceMap.get(data.first()) : null;
+        if (shouldDeleteNwResource == null || shouldDeleteNwResource){
+            vlanToPersistenceMap.put(data.first(), data.second());
+        }
+    }
+
     private Map<String, Boolean> getVlanToPersistenceMapForVM(long vmId) {
         List<UserVmJoinVO> userVmJoinVOS = userVmJoinDao.searchByIds(vmId);
         Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
         for (UserVmJoinVO userVmJoinVO : userVmJoinVOS) {
             NetworkVO networkVO = _networkDao.findById(userVmJoinVO.getNetworkId());
-            NetworkOfferingVO offeringVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
-            Pair<String, Boolean> data = getVMNetworkDetails(networkVO, offeringVO.isPersistent());
-            vlanToPersistenceMap.put(data.first(), data.second());
+            getPersistenceMap(vlanToPersistenceMap, networkVO);
+        }
+        if (userVmJoinVOS.isEmpty()) {
+            VMInstanceVO vmInstanceVO = _vmDao.findById(vmId);
+            if (vmInstanceVO.getType() == VirtualMachine.Type.DomainRouter) {
+                DomainRouterJoinVO routerVO = domainRouterJoinDao.findById(vmId);
+                NetworkVO networkVO = _networkDao.findById(routerVO.getNetworkId());
+                getPersistenceMap(vlanToPersistenceMap, networkVO);
+            }
         }
         return vlanToPersistenceMap;
     }
@@ -1869,9 +1888,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         URI broadcastUri = networkVO.getBroadcastUri();
         String scheme = broadcastUri.getScheme();
         String vlanId = Networks.BroadcastDomainType.getValue(broadcastUri);
-        Boolean shouldDelete = !((networkVO.getGuestType() == Network.GuestType.L2 || networkVO.getGuestType() == Network.GuestType.Isolated) &&
+        boolean shouldDelete = !((networkVO.getGuestType() == Network.GuestType.L2 || networkVO.getGuestType() == Network.GuestType.Isolated) &&
                 (scheme.equalsIgnoreCase("vlan"))
                 && isPersistent);
+        if (shouldDelete) {
+            int persistentNetworksCount = _networkDao.getOtherPersistentNetworksCount(networkVO.getId(), networkVO.getBroadcastUri().toString(), true);
+            if (persistentNetworksCount > 0) {
+                shouldDelete = false;
+            }
+        }
         return new Pair<>(vlanId, shouldDelete);
     }
 

@@ -103,6 +103,6 @@ public final class LibvirtUnPlugNicCommandWrapper extends CommandWrapper<UnPlugN
         if (MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanId != null && vlanToPersistenceMap.containsKey(vlanId)) {
             return vlanToPersistenceMap.get(vlanId);
         }
-        return false;
+        return true;
     }
 }

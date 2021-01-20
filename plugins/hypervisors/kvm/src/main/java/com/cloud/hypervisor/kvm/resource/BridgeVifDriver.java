@@ -289,7 +289,7 @@ public class BridgeVifDriver extends VifDriverBase {
         return "brvx-" + vnetId;
     }
 
-    public String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
+    private String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
         String nic = _pifs.get(pifKey);
         if (nic == null) {
             // if not found in bridge map, maybe traffic label refers to pif already?

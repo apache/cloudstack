@@ -2962,7 +2962,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         long networkOfferingId = network.getNetworkOfferingId();
         NetworkOfferingVO offering = _networkOfferingDao.findById(networkOfferingId);
         if (offering != null) {
-            if (networkMeetsPersistenceCriteria(network, offering, true)) {
+            if (networkMeetsPersistenceCriteria(network, offering, true) &&
+                    _networksDao.getOtherPersistentNetworksCount(network.getId(), network.getBroadcastUri().toString(), offering.isPersistent()) == 0) {
                 List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, network.getDataCenterId());
                 for (HostVO host : hosts) {
                     try {
