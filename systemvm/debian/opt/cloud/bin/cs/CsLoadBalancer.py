@@ -51,6 +51,11 @@ class CsLoadBalancer(CsDataBag):
         file1.commit()
         file2 = CsFile(HAPROXY_CONF_P)
         if not file2.compareOrder(file1):
+            # Verify new haproxy config before haproxy restart/reload
+            haproxy_err = self._verify_haproxy_config(HAPROXY_CONF_T)
+            if haproxy_err:
+                raise Exception("haproxy config is invalid with error \n%s" % haproxy_err);
+
             CsHelper.copy(HAPROXY_CONF_T, HAPROXY_CONF_P)
 
             proc = CsProcess(['/run/haproxy.pid'])
@@ -131,3 +136,11 @@ class CsLoadBalancer(CsDataBag):
         for f in listdir(SSL_CERTS_DIR):
             if f not in cert_names:
                 CsHelper.execute("rm -rf %s/%s" % (SSL_CERTS_DIR, f))
+
+    def _verify_haproxy_config(self, config):
+        ret = CsHelper.execute2("haproxy -c -f %s" % config)
+        if ret.returncode:
+            stdout, stderr = ret.communicate()
+            logging.error("haproxy config is invalid with error: %s" % stderr)
+            return stderr
+        return ""
