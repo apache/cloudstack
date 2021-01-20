@@ -1,0 +1,24 @@
+{
+  "messages": {
+    "en": {
+      "name": "name-en",
+      "Suitability": "Suitability-en",
+      "cpuused": "cpuused-en",
+      "memused": "memused-en",
+      "select": "select-en",
+      "ok": "ok-en",
+      "message.load.host.failed": "Failed to load hosts",
+      "message.migrating.vm.to.host.failed": "Failed to migrate VM to host"
+    },
+    "de": {
+      "name": "name-de",
+      "Suitability": "Suitability-de",
+      "cpuused": "cpuused-de",
+      "memused": "memused-de",
+      "select": "select-de",
+      "ok": "ok-de",
+      "message.load.host.failed": "Failed to load hosts",
+      "message.migrating.vm.to.host.failed": "Failed to migrate VM to host"
+    }
+  }
+}
