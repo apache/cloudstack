@@ -1089,6 +1089,10 @@ public class HypervisorHostHelper {
     }
 
     public static VmwareDistributedVirtualSwitchVlanSpec createDVPortVlanSpec(Integer vlanId, String vlanRange) {
+        if (vlanId != null && vlanId == 4095){
+            vlanId = null;
+            vlanRange = "0-4094";
+        }
         if (vlanId == null && vlanRange != null && !vlanRange.isEmpty()) {
             s_logger.debug("Creating dvSwitch port vlan-trunk spec with range: " + vlanRange);
             VmwareDistributedVirtualSwitchTrunkVlanSpec trunkVlanSpec = new VmwareDistributedVirtualSwitchTrunkVlanSpec();
