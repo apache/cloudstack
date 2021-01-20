@@ -23,6 +23,8 @@ import java.util.Map;
 import org.apache.cloudstack.network.lb.LoadBalancerConfig.SSLConfiguration;
 import org.apache.cloudstack.network.lb.LoadBalancerConfig.Scope;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.utils.Pair;
 
 public enum LoadBalancerConfigKey {
@@ -199,6 +201,12 @@ public enum LoadBalancerConfigKey {
         if (type.equals(Boolean.class)) {
             if (!(value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false"))) {
                 return new Pair<LoadBalancerConfigKey, String>(null, "Please enter either 'true' or 'false' for parameter " + key);
+            }
+        }
+
+        if (type.equals(String.class)) {
+            if (StringUtils.containsWhitespace(value)) {
+                return new Pair<>(null, "Please enter valid value without whitespace characters for parameter " + key);
             }
         }
 
