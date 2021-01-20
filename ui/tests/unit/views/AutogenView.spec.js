@@ -869,8 +869,8 @@ describe('Views > AutogenView.vue', () => {
         await wrapper.vm.$nextTick()
         wrapper.vm.onSearch()
         expect(router.currentRoute.query).toEqual({
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -891,8 +891,8 @@ describe('Views > AutogenView.vue', () => {
         })
         expect(router.currentRoute.query).toEqual({
           key1: 'key1-value',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -913,8 +913,8 @@ describe('Views > AutogenView.vue', () => {
           searchQuery: null
         })
         expect(router.currentRoute.query).toEqual({
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -937,8 +937,8 @@ describe('Views > AutogenView.vue', () => {
         expect(router.currentRoute.query).toEqual({
           keyword: 'test-query',
           q: 'test-query',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -961,8 +961,8 @@ describe('Views > AutogenView.vue', () => {
         expect(router.currentRoute.query).toEqual({
           name: 'test-query',
           q: 'test-query',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -985,8 +985,8 @@ describe('Views > AutogenView.vue', () => {
         expect(router.currentRoute.query).toEqual({
           templatetype: 'test-query',
           q: 'test-query',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -1009,8 +1009,8 @@ describe('Views > AutogenView.vue', () => {
         expect(router.currentRoute.query).toEqual({
           name: 'test-query',
           q: 'test-query',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
     })
@@ -1898,8 +1898,8 @@ describe('Views > AutogenView.vue', () => {
 
         expect(router.currentRoute.query).toEqual({
           filter: 'test',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -1920,8 +1920,8 @@ describe('Views > AutogenView.vue', () => {
         expect(router.currentRoute.query).toEqual({
           templatefilter: 'test',
           filter: 'test',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -1942,8 +1942,8 @@ describe('Views > AutogenView.vue', () => {
         expect(router.currentRoute.query).toEqual({
           isofilter: 'test',
           filter: 'test',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -1965,8 +1965,8 @@ describe('Views > AutogenView.vue', () => {
           account: 'test-account',
           domainid: 'test-domain-id',
           filter: 'self',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
 
@@ -1987,8 +1987,8 @@ describe('Views > AutogenView.vue', () => {
         expect(router.currentRoute.query).toEqual({
           state: 'running',
           filter: 'running',
-          page: 1,
-          pagesize: 20
+          page: '1',
+          pagesize: '20'
         })
       })
     })
@@ -2001,8 +2001,8 @@ describe('Views > AutogenView.vue', () => {
           expect(router.currentRoute.query).toEqual({})
           wrapper.vm.changePage(1, 10)
           expect(router.currentRoute.query).toEqual({
-            page: 1,
-            pagesize: 10
+            page: '1',
+            pagesize: '10'
           })
         })
       })
@@ -2013,14 +2013,10 @@ describe('Views > AutogenView.vue', () => {
         wrapper = factory()
 
         wrapper.vm.$nextTick(() => {
-          expect(router.currentRoute.query).toEqual({
-            page: 1,
-            pagesize: 10
-          })
           wrapper.vm.changePageSize(2, 20)
           expect(router.currentRoute.query).toEqual({
-            page: 2,
-            pagesize: 20
+            page: '2',
+            pagesize: '20'
           })
         })
       })
