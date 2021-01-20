@@ -1,6 +1,6 @@
-# Primate Development
+# UI Development
 
-Primate is a modern role-based progressive CloudStack UI based on VueJS and Ant Design..
+The modern CloudStack UI is role-based progressive app that uses VueJS and Ant Design.
 
 Javascript, VueJS references:
 - https://www.w3schools.com/js/
@@ -29,8 +29,8 @@ The following tree shows the basic UI codebase filesystem:
 Clone the repository:
 
 ```
-git clone https://github.com/apache/cloudstack-primate.git
-cd cloudstack-primate
+git clone https://github.com/apache/cloudstack.git
+cd cloudstack/ui
 npm install
 ```
 Override the default `CS_URL` to a running CloudStack management server:
@@ -200,7 +200,7 @@ For example:
 ## Resource Detail View Customization
 
 From the List View of the resources, on can navigate to the individual
-  resource's detail view, which in CloudStack Primate we refer to as the
+  resource's detail view, which in CloudStack UI we refer to as the
   *Resource View* by click on the specific resource.
 The Resource View has 2 sections:
 - InfoCard to the left that has basic / minimal details of that resource along

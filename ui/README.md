@@ -1,8 +1,8 @@
-# CloudStack Primate [![Build Status](https://travis-ci.org/apache/cloudstack-primate.svg?branch=master)](https://travis-ci.org/apache/cloudstack-primate)
+# CloudStack UI
 
 A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
 
-![Primate Screenshot](docs/screenshot-dashboard.png)
+![Screenshot](ui/docs/screenshot-dashboard.png)
 
 ## Getting Started
 
@@ -25,8 +25,8 @@ Optionally, you may also install system-wide dev tools:
 
 Clone the repository:
 
-    git clone https://github.com/apache/cloudstack-primate.git
-    cd cloudstack-primate
+    git clone https://github.com/apache/cloudstack.git
+    cd cloudstack/ui
     npm install
 
 Override the default `CS_URL` to a running CloudStack management server:
@@ -68,15 +68,15 @@ Fetch dependencies and build:
 This creates a static webpack application in `dist/`, which can then be served
 from any web server or CloudStack management server (jetty).
 
-To use CloudStack management server (jetty), you may copy the built Primate build
-to a new/existing webapp directory on the management server host. For example:
+To use CloudStack management server (jetty), you may copy the built UI to the
+webapp directory on the management server host. For example:
 
     npm install
     npm run build
     cd dist
-    mkdir -p /usr/share/cloudstack-management/webapp/primate
-    cp -vr . /usr/share/cloudstack-management/webapp/primate/
-    # Use Primate at {management-server}:8080/client/primate in browser
+    mkdir -p /usr/share/cloudstack-management/webapp/
+    cp -vr . /usr/share/cloudstack-management/webapp/
+    # Access UI at {management-server}:8080/client in browser
 
 If the webapp directory is changed, please change the `webapp.dir` in the
 `/etc/cloudstack/management/server.properties` and restart the management server host.
@@ -84,7 +84,7 @@ If the webapp directory is changed, please change the `webapp.dir` in the
 To use a separate webserver, note that the API server is accessed through the path
 `/client`, which needs be forwarded to an actual CloudStack instance.
 
-For example, a simple way to serve Primate with nginx can be implemented with the
+For example, a simple way to serve UI with nginx can be implemented with the
 following nginx configuration (to be put into /etc/nginx/conf.d/default.conf or similar):
 
 ```nginx
@@ -92,8 +92,8 @@ server {
     listen       80;
     server_name  localhost;
     location / {
-        # /src/primate/dist contains the built Primate webpack
-        root   /src/primate/dist;
+        # /src/ui/dist contains the built UI webpack
+        root   /src/ui/dist;
         index  index.html;
     }
     location /client/ {
@@ -107,18 +107,17 @@ server {
 ### Docker
 
 A production-ready Docker container can also be built with the provided
-Dockerfile and build script. Official builds are available here:
-https://hub.docker.com/r/apache/cloudstack-primate
+Dockerfile and build script.
 
 Make sure Docker is installed, then run:
 
-    bash tools/docker.sh
+    bash docker.sh
 
 Change the example configuration in `nginx/default.conf` according to your needs.
 
-Run Primate:
+Run UI:
 
-    docker run -ti --rm -p 8080:80 -v $(pwd)/nginx:/etc/nginx/conf.d:ro cloudstack-primate:latest
+    docker run -ti --rm -p 8080:80 -v $(pwd)/nginx:/etc/nginx/conf.d:ro cloudstack-ui:latest
 
 ### Packaging
 
@@ -138,13 +137,13 @@ docker container:
 
 - VueJS Guide: https://vuejs.org/v2/guide/
 - Vue Ant Design: https://www.antdv.com/docs/vue/introduce/
-- Primate Developer [Docs](docs)
+- UI Developer [Docs](docs)
 - JavaScript ES6 Reference: https://www.tutorialspoint.com/es6/
 - Introduction to ES6: https://scrimba.com/g/gintrotoes6
 
 ## Attributions
 
-Primate uses the following:
+The UI uses the following:
 
 - [VueJS](https://vuejs.org/)
 - [Ant Design Spec](https://ant.design/docs/spec/introduce)
@@ -156,13 +155,16 @@ Primate uses the following:
 
 ## History
 
-The project was created by [Rohit Yadav](https://rohityadav.cloud) over several
-weekends during late 2018 and early 2019. During ApacheCon CCCUS19, on 9th
-September 2019, Primate was introduced and demoed as part of the talk [Modern UI
+The modern UI, originally called Primate, was created by [Rohit
+Yadav](https://rohityadav.cloud) over several weekends during late 2018 and
+early 2019. During ApacheCon CCCUS19, on 9th September 2019, Primate was
+introduced and demoed as part of the talk [Modern UI
 for CloudStack](https://rohityadav.cloud/files/talks/cccna19-primate.pdf)
 ([video](https://www.youtube.com/watch?v=F2KwZhechzs)).
 [Primate](https://markmail.org/message/vxnskmwhfaagnm4r) was accepted by the
-Apache CloudStack project on 21 Oct 2019.
+Apache CloudStack project on 21 Oct 2019. The original repo was [merged with the
+main apache/cloudstack](https://markmail.org/message/bgnn4xkjnlzseeuv) repo on
+20 Jan 2021.
 
 ## License
 

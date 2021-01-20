@@ -15,12 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Build example: docker build -t apache/cloudstack-primate:latest .
+# Build example: docker build -t <name> .
 
 FROM node:lts-stretch AS build
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Description="Apache CloudStack Primate; Modern role-base progressive UI for Apache CloudStack"
+LABEL Description="Apache CloudStack UI; Modern role-base progressive UI for Apache CloudStack"
 LABEL Vendor="Apache.org"
 LABEL License=ApacheV2
 LABEL Version=0.5.0
@@ -35,12 +35,12 @@ RUN npm run build
 
 FROM nginx:alpine AS runtime
 
-LABEL org.opencontainers.image.title="Apache CloudStack Primate" \
+LABEL org.opencontainers.image.title="Apache CloudStack UI" \
 	org.opencontainers.image.description="A modern role-based progressive CloudStack UI" \
 	org.opencontainers.image.authors="Apache CloudStack Contributors" \
-	org.opencontainers.image.url="https://github.com/apache/cloudstack-primate" \
-	org.opencontainers.image.documentation="https://github.com/apache/cloudstack-primate/README.md" \
-	org.opencontainers.image.source="https://github.com/apache/cloudstack-primate" \
+	org.opencontainers.image.url="https://github.com/apache/cloudstack" \
+	org.opencontainers.image.documentation="https://github.com/apache/cloudstack/blob/master/ui/README.md" \
+	org.opencontainers.image.source="https://github.com/apache/cloudstack" \
 	org.opencontainers.image.vendor="The Apache Software Foundation" \
 	org.opencontainers.image.licenses="Apache-2.0" \
 	org.opencontainers.image.ref.name="latest"

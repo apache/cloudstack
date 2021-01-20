@@ -1,10 +1,10 @@
-# Contributing to Primate
+# Contributing to CloudStack UI
 
 ## Summary
 
-This document covers how to contribute to the Primate project. Primate uses Github PRs to manage code contributions.
+This document covers how to contribute to the UI project. It uses Github PRs to manage code contributions.
 These instructions assume you have a GitHub.com account, so if you don't have one you will have to create one.
-Your proposed code changes will be published to your own fork of the Primate project and you will submit a Pull Request for your changes to be added.
+Your proposed code changes will be published to your own fork of the project and you will submit a Pull Request for your changes to be added.
 
 Please refer to project [docs](docs) for reference on standard way of component
 configuration, development, usage, extension and testing.
@@ -27,18 +27,18 @@ No back porting / cherry-picking features to existing branches!
 
 ## Forking
 
-In your browser, navigate to: [https://github.com/apache/cloudstack-primate](https://github.com/apache/cloudstack-primate)
+In your browser, navigate to: [https://github.com/apache/cloudstack](https://github.com/apache/cloudstack)
 
 Fork the repository by clicking on the 'Fork' button on the top right hand side.
 The fork will happen and you will be taken to your own fork of the repository.
 Copy the Git repository URL by clicking on the clipboard next to the URL on the right hand side of the page under '**HTTPS** clone URL'.  You will paste this URL when doing the following `git clone` command.
 
-On your workstation, follow these steps to setup a local repository for working on Primate:
+On your workstation, follow these steps to setup a local repository for working on UI:
 
 ``` bash
-$ git clone https://github.com/YOUR_ACCOUNT/primate.git
-$ cd primate
-$ git remote add upstream https://github.com/apache/cloudstack-primate.git
+$ git clone https://github.com/YOUR_ACCOUNT/cloudstack.git
+$ cd cloudstack/ui
+$ git remote add upstream https://github.com/apache/cloudstack.git
 $ git checkout master
 $ git fetch upstream
 $ git rebase upstream/master
@@ -48,7 +48,7 @@ $ git rebase upstream/master
 
 
 It is important that you create a new branch to make changes on and that you do not change the `master` branch (other than to rebase in changes from `upstream/master`). In this example I will assume you will be making your changes to a branch called `feature_x`.
-This `feature_x` branch will be created on your local repository and will be pushed to your forked repository on GitHub. Once this branch is on your fork you will create a Pull Request for the changes to be added to the Primate project.
+This `feature_x` branch will be created on your local repository and will be pushed to your forked repository on GitHub. Once this branch is on your fork you will create a Pull Request for the changes to be added to the UI project.
 
 It is best practice to create a new branch each time you want to contribute to the project and only track the changes for that pull request in this branch.
 
@@ -101,7 +101,7 @@ Now that the `feature_x` branch has been pushed to your GitHub repository, you c
 
 To initiate the pull request, do the following:
 
-1. In your browser, navigate to your forked repository: [https://github.com/YOUR_ACCOUNT/primate](https://github.com/YOUR_ACCOUNT/primate)
+1. In your browser, navigate to your forked repository: [https://github.com/YOUR_ACCOUNT/cloudstack](https://github.com/YOUR_ACCOUNT/cloudstack)
 2. Click the new button called '**Compare & pull request**' that showed up just above the main area in your forked repository
 3. Validate the pull request will be into the upstream `master` and will be from your `feature_x` branch
 4. Enter a detailed description of the work you have done and then click '**Send pull request**'

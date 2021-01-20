@@ -1,11 +1,11 @@
 {
-  "name": "primate",
+  "name": "cloudstack-ui",
   "description": "Modern role-based Apache CloudStack UI",
   "version": "1.0.0",
   "homepage": "https://cloudstack.apache.org/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/apache/cloudstack-primate.git"
+    "url": "https://github.com/apache/cloudstack.git"
   },
   "author": {
     "name": "Apache CloudStack Developers",
@@ -21,7 +21,7 @@
   ],
   "bugs": {
     "mail": "dev@cloudstack.apache.org",
-    "url": "https://github.com/apache/cloudstack-primate/issues"
+    "url": "https://github.com/apache/cloudstack/issues"
   },
   "scripts": {
     "start": "vue-cli-service lint --no-fix && vue-cli-service serve",
