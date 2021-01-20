@@ -1005,7 +1005,11 @@
                             <exclude>tools/ngui/static/bootstrap/*</exclude>
                             <exclude>tools/ngui/static/js/lib/*</exclude>
                             <exclude>tools/transifex/.tx/config</exclude>
-                            <exclude>ui/*</exclude>
+                            <exclude>ui/.*</exclude>
+                            <exclude>ui/.*/**</exclude>
+                            <exclude>ui/src/assets/**</exclude>
+                            <exclude>ui/public/**</exclude>
+                            <exclude>ui/legacy/**</exclude>
                             <exclude>utils/testsmallfileinactive</exclude>
                         </excludes>
                     </configuration>
