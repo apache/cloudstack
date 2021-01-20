@@ -607,7 +607,7 @@
                                 </copy>
                                 <copy todir="${project.build.directory}/classes/META-INF/webapp">
                                     <fileset dir="${basedir}/../ui">
-                                        <exclude name=".*"/>
+                                        <include name="index.html"/>
                                     </fileset>
                                 </copy>
                                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">

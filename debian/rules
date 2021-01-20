@@ -93,6 +93,12 @@ override_dh_auto_install:
 	install -m0644 packaging/systemd/$(PACKAGE)-management.service debian/$(PACKAGE)-management/lib/systemd/system/$(PACKAGE)-management.service
 	install -m0644 packaging/systemd/$(PACKAGE)-management.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-management
 
+	# cloudstack-ui
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-ui
+	cd ui && npm install && npm run build && cd ..
+	cp -r ui/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/
+	cp -r ui/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-ui/
+
 	# cloudstack-common
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-common
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts

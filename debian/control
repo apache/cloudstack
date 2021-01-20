@@ -37,6 +37,11 @@ Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.
 
+Package: cloudstack-ui
+Architecture: all
+Depends: ${misc:Depends}
+Description: The CloudStack UI
+
 Package: cloudstack-docs
 Architecture: all
 Depends: ${misc:Depends}
