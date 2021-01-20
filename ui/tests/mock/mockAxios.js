@@ -15,24 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-const babelConfig = {
-  presets: [
-    '@vue/app'
-  ],
-  plugins: []
-  // if your use import on Demand, Use this code
-  // ,
-  // plugins: [
-  //   [ 'import', {
-  //     'libraryName': 'ant-design-vue',
-  //     'libraryDirectory': 'es',
-  //     'style': true
-  //   } ]
-  // ]
-}
+const mockAxios = jest.genMockFromModule('axios')
 
-if (process.env.NODE_ENV === 'test') {
-  babelConfig.plugins.push('require-context-hook')
-}
+mockAxios.create = jest.fn(() => mockAxios)
 
-module.exports = babelConfig
+export default mockAxios

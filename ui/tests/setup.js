@@ -15,24 +15,35 @@
 // specific language governing permissions and limitations
 // under the License.
 
-const babelConfig = {
-  presets: [
-    '@vue/app'
-  ],
-  plugins: []
-  // if your use import on Demand, Use this code
-  // ,
-  // plugins: [
-  //   [ 'import', {
-  //     'libraryName': 'ant-design-vue',
-  //     'libraryDirectory': 'es',
-  //     'style': true
-  //   } ]
-  // ]
+import Vue from 'vue'
+import Vuex from 'vuex'
+import Antd from 'ant-design-vue'
+import VueRouter from 'vue-router'
+import VueI18n from 'vue-i18n'
+import VueStorage from 'vue-ls'
+import VueClipboard from 'vue-clipboard2'
+import config from '@/config/settings'
+import { createLocalVue } from '@vue/test-utils'
+import registerRequireContextHook from 'babel-plugin-require-context-hook/register'
+
+const localVue = createLocalVue()
+
+Vue.use(Antd)
+Vue.use(VueStorage, config.storageOptions)
+
+localVue.use(VueRouter)
+localVue.use(VueI18n)
+localVue.use(Vuex)
+localVue.use(VueClipboard)
+
+registerRequireContextHook()
+
+window.matchMedia = window.matchMedia || function () {
+  return {
+    matches: false,
+    addListener: function () {},
+    removeListener: function () {}
+  }
 }
 
-if (process.env.NODE_ENV === 'test') {
-  babelConfig.plugins.push('require-context-hook')
-}
-
-module.exports = babelConfig
+module.exports = localVue

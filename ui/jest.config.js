@@ -16,6 +16,8 @@
 // under the License.
 
 module.exports = {
+  testURL: 'http://localhost/',
+  setupFiles: ['<rootDir>/tests/setup.js'],
   moduleFileExtensions: [
     'js',
     'jsx',
@@ -24,11 +26,13 @@ module.exports = {
   ],
   transform: {
     '^.+\\.vue$': 'vue-jest',
-    '.+\\.(css|styl|less|sass|scss|svg|png|jpg|ttf|woff|woff2)$': 'jest-transform-stub',
+    '.+\\.(css|styl|less|sass|scss|png|svg|jpg|ttf|woff|woff2)?$': 'jest-transform-stub',
     '^.+\\.jsx?$': 'babel-jest'
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '.+\\.svg?.+$': 'jest-transform-stub',
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@public/(.*)$': '<rootDir>/public/$1'
   },
   snapshotSerializers: [
     'jest-serializer-vue'
@@ -36,5 +40,14 @@ module.exports = {
   testMatch: [
     '**/tests/unit/**/*.spec.(js|jsx|ts|tsx)|**/__tests__/*.(js|jsx|ts|tsx)'
   ],
-  testURL: 'http://localhost/'
+  transformIgnorePatterns: [
+    '<rootDir>/node_modules/(?!ant-design-vue|vue)'
+  ],
+  collectCoverage: true,
+  collectCoverageFrom: [
+    '<rootDir>/src/**/*.{js,vue}',
+    '!**/node_modules/**',
+    '!<rootDir>/src/locales/*.{js, json}'
+  ],
+  coverageReporters: ['html', 'text-summary']
 }
