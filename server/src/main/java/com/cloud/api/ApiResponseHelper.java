@@ -351,6 +351,7 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.google.common.base.Strings;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -622,6 +623,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineId(vm.getUuid());
+            vmSnapshotResponse.setVirtualMachineName(Strings.isNullOrEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
             vmSnapshotResponse.setVirtualMachineName(vm.getHostName());
             vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
