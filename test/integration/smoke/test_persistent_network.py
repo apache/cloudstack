@@ -330,6 +330,49 @@ class TestL2PersistentNetworks(cloudstackTestCase):
             network_vlan,
             "vlan must not be null for persistent network")
 
+        self.validate_persistent_network_resources_created_on_host(network_vlan)
+
+    @attr(tags=["advanced", "l2", "persistent", "network"], required_hardware="false")
+    def test_03_deploy_and_destroy_VM_and_verify_network_resources_persist(self):
+        network_vlan = 99
+        network = Network.create(
+            self.apiclient,
+            self.services["l2_network"],
+            networkofferingid=self.l2_persistent_network_offering.id,
+            zoneid=self.zone.id,
+            vlan=network_vlan)
+        self.cleanup.append(network)
+        response = verifyNetworkState(
+            self.apiclient,
+            network.id,
+            "implemented")
+        logger.debug(response)
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+            self.fail(exceptionMessage)
+        self.assertIsNotNone(
+            network_vlan,
+            "vlan must not be null for persistent network")
+        try:
+            virtual_machine = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine"],
+                networkids=[
+                    network.id],
+                serviceofferingid=self.service_offering.id)
+
+            VirtualMachine.delete(virtual_machine, self.apiclient, expunge=True)
+
+            self.validate_persistent_network_resources_created_on_host(network_vlan)
+        except Exception as e:
+            self.fail("Exception occurred: %s" % e)
+        return
+
+
+    def validate_persistent_network_resources_created_on_host(self, network_vlan):
         hosts = self.list_all_hosts_in_zone(self.zone.id)
         if self.hypervisor.lower() in "kvm":
             for host in hosts:

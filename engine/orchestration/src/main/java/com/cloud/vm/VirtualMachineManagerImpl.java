@@ -1850,10 +1850,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void getPersistenceMap(Map<String, Boolean> vlanToPersistenceMap, NetworkVO networkVO) {
         NetworkOfferingVO offeringVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
-        Pair<String, Boolean> data = getVMNetworkDetails(networkVO, offeringVO.isPersistent());
-        Boolean shouldDeleteNwResource = MapUtils.isNotEmpty(vlanToPersistenceMap) ? vlanToPersistenceMap.get(data.first()) : null;
-        if (shouldDeleteNwResource == null || shouldDeleteNwResource){
-            vlanToPersistenceMap.put(data.first(), data.second());
+        if (offeringVO != null) {
+            Pair<String, Boolean> data = getVMNetworkDetails(networkVO, offeringVO.isPersistent());
+            Boolean shouldDeleteNwResource = (MapUtils.isNotEmpty(vlanToPersistenceMap) && data != null) ? vlanToPersistenceMap.get(data.first()) : null;
+            if (data != null && (shouldDeleteNwResource == null || shouldDeleteNwResource)) {
+                vlanToPersistenceMap.put(data.first(), data.second());
+            }
         }
     }
 
@@ -1866,7 +1868,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         if (userVmJoinVOS.isEmpty()) {
             VMInstanceVO vmInstanceVO = _vmDao.findById(vmId);
-            if (vmInstanceVO.getType() == VirtualMachine.Type.DomainRouter) {
+            if (vmInstanceVO != null && vmInstanceVO.getType() == VirtualMachine.Type.DomainRouter) {
                 DomainRouterJoinVO routerVO = domainRouterJoinDao.findById(vmId);
                 NetworkVO networkVO = _networkDao.findById(routerVO.getNetworkId());
                 getPersistenceMap(vlanToPersistenceMap, networkVO);
@@ -1886,18 +1888,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      */
     private Pair<String, Boolean> getVMNetworkDetails(NetworkVO networkVO, boolean isPersistent) {
         URI broadcastUri = networkVO.getBroadcastUri();
-        String scheme = broadcastUri.getScheme();
-        String vlanId = Networks.BroadcastDomainType.getValue(broadcastUri);
-        boolean shouldDelete = !((networkVO.getGuestType() == Network.GuestType.L2 || networkVO.getGuestType() == Network.GuestType.Isolated) &&
-                (scheme.equalsIgnoreCase("vlan"))
-                && isPersistent);
-        if (shouldDelete) {
-            int persistentNetworksCount = _networkDao.getOtherPersistentNetworksCount(networkVO.getId(), networkVO.getBroadcastUri().toString(), true);
-            if (persistentNetworksCount > 0) {
-                shouldDelete = false;
+        if (broadcastUri != null) {
+            String scheme = broadcastUri.getScheme();
+            String vlanId = Networks.BroadcastDomainType.getValue(broadcastUri);
+            boolean shouldDelete = !((networkVO.getGuestType() == Network.GuestType.L2 || networkVO.getGuestType() == Network.GuestType.Isolated) &&
+                    (scheme != null && scheme.equalsIgnoreCase("vlan"))
+                    && isPersistent);
+            if (shouldDelete) {
+                int persistentNetworksCount = _networkDao.getOtherPersistentNetworksCount(networkVO.getId(), networkVO.getBroadcastUri().toString(), true);
+                if (persistentNetworksCount > 0) {
+                    shouldDelete = false;
+                }
             }
+            return new Pair<>(vlanId, shouldDelete);
         }
-        return new Pair<>(vlanId, shouldDelete);
+        return null;
     }
 
     private void advanceStop(final VMInstanceVO vm, final boolean cleanUpEvenIfUnableToStop) throws AgentUnavailableException, OperationTimedoutException,
