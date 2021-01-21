@@ -49,6 +49,7 @@ BuildRequires: mysql-connector-python
 BuildRequires: maven => 3.0.0
 BuildRequires: python-setuptools
 BuildRequires: wget
+BuildRequires: nodejs
 
 %description
 CloudStack is a highly-scalable elastic, open source,

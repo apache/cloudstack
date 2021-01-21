@@ -48,6 +48,7 @@ BuildRequires: /usr/bin/mkisofs
 BuildRequires: maven => 3.0.0
 BuildRequires: python3-setuptools
 BuildRequires: wget
+BuildRequires: nodejs
 
 %description
 CloudStack is a highly-scalable elastic, open source,
