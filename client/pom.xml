@@ -608,7 +608,7 @@
                                 <copy todir="${project.build.directory}/classes/META-INF/webapp">
                                     <fileset dir="${basedir}/../ui">
                                         <include name="index.html"/>
-                                        <include name="legacy"/>
+                                        <include name="legacy/*"/>
                                     </fileset>
                                 </copy>
                                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">

@@ -28,6 +28,12 @@ Set up Maven (3.6.0):
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc
 
+Setup up NodeJS (LTS):
+
+    # curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
+    # sudo yum install nodejs
+    # sudo npm install -g @vue/cli npm-check-updates
+
 Start the MySQL service:
 
     $ service mysqld start
