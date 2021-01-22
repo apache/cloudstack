@@ -45,6 +45,8 @@ override_dh_auto_install:
 	install -d -m0755 debian/$(PACKAGE)-agent/lib/systemd/system
 	install -m0644 packaging/systemd/$(PACKAGE)-agent.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-agent.service
 	install -m0644 packaging/systemd/$(PACKAGE)-agent.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-agent
+        install -m0644 packaging/systemd/$(PACKAGE)-agent-ha-helper.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-agent-ha-helper.service
+        install -m0644 packaging/systemd/$(PACKAGE)-agent-ha-helper.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-agent-ha-helper
 	install -m0644 packaging/systemd/$(PACKAGE)-rolling-maintenance@.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-rolling-maintenance@.service
 
 	install -D -m0644 agent/target/transformed/cloudstack-agent.logrotate $(DESTDIR)/$(SYSCONFDIR)/logrotate.d/cloudstack-agent
@@ -159,7 +161,7 @@ override_dh_auto_install:
 	cp -r test/integration/* $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests/
 
 override_dh_systemd_enable:
-	dh_systemd_enable -pcloudstack-management -pcloudstack-agent -pcloudstack-usage
+	dh_systemd_enable -pcloudstack-management -pcloudstack-agent -pcloudstack-usage -pcloudstack-agent-ha-helper
 
 override_dh_strip_nondeterminism:
 	# Disable dh_strip_nondeterminism to speed up the build
