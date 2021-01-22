@@ -33,6 +33,7 @@ import org.apache.cloudstack.ha.HAManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -77,29 +78,49 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             return haManager.getHostStatus(agent);
         }
 
-        List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
-        boolean hasNfs = false;
-        for (StoragePoolVO pool : clusterPools) {
-            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                hasNfs = true;
-                break;
-            }
-        }
-        if (!hasNfs) {
-            List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
-            for (StoragePoolVO pool : zonePools) {
-                if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                    hasNfs = true;
-                    break;
-                }
-            }
-        }
-        if (!hasNfs) {
-            s_logger.warn(
-                    "Agent investigation was requested on host " + agent + ", but host does not support investigation because it has no NFS storage. Skipping investigation.");
-            return Status.Disconnected;
+        Status agentStatus = Status.Disconnected;
+        boolean hasNfs = isHostServedByNfsPool(agent);
+        if (hasNfs) {
+            s_logger.debug("Agent investigation was requested on host " + agent + ", checking agent status via NFS storage.");
+            agentStatus = checkAgentStatusViaNfs(agent);
+        } else {
+            s_logger.debug(
+                    "Agent investigation was requested on host " + agent + ", but host has no NFS storage. Skipping investigation via NFS.");
         }
 
+        return agentStatus;
+    }
+
+    private boolean isHostServedByNfsPool(Host agent) {
+        boolean hasNfs = hasNfsPoolClusterWideForHost(agent);
+        if (!hasNfs) {
+            hasNfs = hasNfsPoolZoneWideForHost(agent);
+        }
+        return hasNfs;
+    }
+
+    private boolean hasNfsPoolZoneWideForHost(Host agent) {
+        List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
+        for (StoragePoolVO pool : zonePools) {
+            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasNfsPoolClusterWideForHost(Host agent) {
+        List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
+        for (StoragePoolVO pool : clusterPools) {
+            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @NotNull
+    private Status checkAgentStatusViaNfs(Host agent) {
         Status hostStatus = null;
         Status neighbourStatus = null;
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
