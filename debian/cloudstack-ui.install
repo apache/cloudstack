@@ -15,5 +15,5 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/cloudstack-ui/config.json
+/etc/cloudstack/ui/config.json
 /usr/share/cloudstack-ui/*
