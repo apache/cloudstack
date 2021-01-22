@@ -37,6 +37,9 @@ export JAVA_HOME=$(readlink -f /usr/lib/jvm/java-11-openjdk-amd64/bin/java | sed
 mvn -v
 
 if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
+   # npm lint, test and build
+   cd ui && npm install && npm run lint && npm run test:unit && npm run build
+   cd $DIR
    # Pylint/pep8 systemvm python codebase
    cd systemvm/test && bash -x runtests.sh
    # Build noredist
