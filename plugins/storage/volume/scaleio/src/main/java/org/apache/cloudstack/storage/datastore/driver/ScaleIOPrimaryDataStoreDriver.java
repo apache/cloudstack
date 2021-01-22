@@ -652,7 +652,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
 
             if (Strings.isNullOrEmpty(srcPoolSystemId) || Strings.isNullOrEmpty(destPoolSystemId)) {
-                throw new CloudRuntimeException("Failed to validate PowerFlex pools compatibilty for migration");
+                throw new CloudRuntimeException("Failed to validate PowerFlex pools compatibility for migration");
             }
 
             if (!srcPoolSystemId.equals(destPoolSystemId)) {

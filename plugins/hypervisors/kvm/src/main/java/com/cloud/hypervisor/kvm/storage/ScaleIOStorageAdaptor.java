@@ -252,8 +252,8 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         }
 
         destDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
-        destDisk.setSize(disk.getVirtualSize());
-        destDisk.setVirtualSize(disk.getSize());
+        destDisk.setVirtualSize(disk.getVirtualSize());
+        destDisk.setSize(disk.getSize());
 
         QemuImg qemu = new QemuImg(timeout);
         QemuImgFile srcFile = null;

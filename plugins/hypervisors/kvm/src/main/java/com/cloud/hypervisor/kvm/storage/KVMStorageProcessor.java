@@ -396,8 +396,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 BaseVol = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), templatePath);
                 if (BaseVol == null) {
-                    s_logger.debug("Failed to get the base template volume: " + templatePath);
-                    throw new CloudRuntimeException("");
+                    s_logger.debug("Failed to get the physical disk for base template volume at path: " + templatePath);
+                    throw new CloudRuntimeException("Failed to get the physical disk for base template volume at path: " + templatePath);
                 }
 
                 if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
