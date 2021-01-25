@@ -1180,6 +1180,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
                 s_logger.error("Migrate volume failed:" + result.getResult());
+                if (result.getResult() != null && result.getResult().contains("[UNSUPPORTED]")) {
+                    throw new CloudRuntimeException("Migrate volume failed: " + result.getResult());
+                }
                 throw new StorageUnavailableException("Migrate volume failed: " + result.getResult(), destPool.getId());
             } else {
                 // update the volumeId for snapshots on secondary

@@ -192,6 +192,8 @@ public interface StorageManager extends StorageService {
 
     StoragePoolVO findLocalStorageOnHost(long hostId);
 
+    Host findUpAndEnabledHostWithAccessToStoragePools(List<Long> poolIds);
+
     List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId);
 
     boolean canHostAccessStoragePool(Host host, StoragePool pool);

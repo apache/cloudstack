@@ -96,7 +96,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -210,7 +209,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -1847,6 +1845,38 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public Host findUpAndEnabledHostWithAccessToStoragePools(List<Long> poolIds) {
+        List<Long> hostIds = _storagePoolHostDao.findHostsConnectedToPools(poolIds);
+        if (hostIds.isEmpty()) {
+            return null;
+        }
+
+        for (Long hostId : hostIds) {
+            Host host = _hostDao.findById(hostId);
+            if (canHostAccessStoragePools(host, poolIds)) {
+                return host;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean canHostAccessStoragePools(Host host, List<Long> poolIds) {
+        if (poolIds == null || poolIds.isEmpty()) {
+            return false;
+        }
+
+        for (Long poolId : poolIds) {
+            StoragePool pool = _storagePoolDao.findById(poolId);
+            if (!canHostAccessStoragePool(host, pool)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
     @DB
     public List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId) {
         return _storagePoolHostDao.listByHostId(hostId);
@@ -2278,48 +2308,25 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return false;
         }
 
-        if (!pool.isManaged()) {
-            return true;
-        }
-
         if (volume.getPoolId() == null) {
-            // Volume is not allocated to any pool. Not possible to check compatibility with other pool
+            // Volume is not allocated to any pool. Not possible to check compatibility with other pool, let it try
             return true;
         }
 
         StoragePool volumePool = _storagePoolDao.findById(volume.getPoolId());
         if (volumePool == null) {
-            // Volume pool doesn't exist. Not possible to check compatibility with other pool
+            // Volume pool doesn't exist. Not possible to check compatibility with other pool, let it try
             return true;
         }
 
-        if (volume.getState() == Volume.State.Ready && volumePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
-            if (pool.getPoolType() != Storage.StoragePoolType.PowerFlex) {
+        if (volume.getState() == Volume.State.Ready) {
+            if (volumePool.getPoolType() == Storage.StoragePoolType.PowerFlex && pool.getPoolType() != Storage.StoragePoolType.PowerFlex) {
+                return false;
+            } else if (volumePool.getPoolType() != Storage.StoragePoolType.PowerFlex && pool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
                 return false;
             }
-
-            final String STORAGE_POOL_SYSTEM_ID = "powerflex.storagepool.system.id";
-            String srcPoolSystemId = null;
-            StoragePoolDetailVO srcPoolSystemIdDetail = _storagePoolDetailsDao.findDetail(volume.getPoolId(), STORAGE_POOL_SYSTEM_ID);
-            if (srcPoolSystemIdDetail != null) {
-                srcPoolSystemId = srcPoolSystemIdDetail.getValue();
-            }
-
-            String destPoolSystemId = null;
-            StoragePoolDetailVO destPoolSystemIdDetail = _storagePoolDetailsDao.findDetail(pool.getId(), STORAGE_POOL_SYSTEM_ID);
-            if (destPoolSystemIdDetail != null) {
-                destPoolSystemId = destPoolSystemIdDetail.getValue();
-            }
-
-            if (Strings.isNullOrEmpty(srcPoolSystemId) || Strings.isNullOrEmpty(destPoolSystemId)) {
-                s_logger.debug("Unable to check PowerFlex pool: " + pool.getId() + " compatibilty for the volume: " + volume.getId());
-                return false;
-            }
-
-            if (!srcPoolSystemId.equals(destPoolSystemId)) {
-                s_logger.debug("PowerFlex pool: " + pool.getId() + " is not compatible for the volume: " + volume.getId());
-                return false;
-            }
+        } else {
+            return false;
         }
 
         return true;

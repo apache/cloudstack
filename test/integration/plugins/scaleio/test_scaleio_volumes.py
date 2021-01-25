@@ -31,16 +31,22 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_clusters,
     list_volumes
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.codes import PASS
+from nose.plugins.attrib import attr
 
 # Prerequisites:
 #  Only one zone
 #  Only one pod
 #  Only one cluster
 #
-#  One ScaleIO storage pool
-#  Only KVM hypervisor is supported for ScaleIO storage pool
+#  One PowerFlex/ScaleIO storage pool for basic tests
+#  Only KVM hypervisor is supported for PowerFlex/ScaleIO storage pool
 #  KVM host(s) with ScaleIO Data Client (SDC) installed and connected to Metadata Manager (MDM)
+#
+#  For volume migration tests, additional storage pool(s) are required
+#  One PowerFlex/ScaleIO storage pool on the same ScaleIO storage cluster/instance
+#  One PowerFlex/ScaleIO storage pool on different ScaleIO storage cluster/instance
 #
 
 class TestData():
@@ -50,6 +56,8 @@ class TestData():
     computeOffering = "computeoffering"
     diskName = "diskname"
     diskOffering = "diskoffering"
+    diskOfferingSameInstance = "diskOfferingSameInstance"
+    diskOfferingDistinctInstance = "diskOfferingDistinctInstance"
     domainId = "domainId"
     hypervisor = "hypervisor"
     kvm = "kvm"
@@ -59,10 +67,14 @@ class TestData():
     password = "password"
     port = "port"
     primaryStorage = "primarystorage"
+    primaryStorageSameInstance = "primaryStorageSameInstance"
+    primaryStorageDistinctInstance = "primaryStorageDistinctInstance"
     provider = "provider"
     scope = "scope"
     powerFlex = "powerflex"
     storageTag = "pflex"
+    storageTagSameInstance = "pflexsame"
+    storageTagDistinctInstance = "pflexdiff"
     tags = "tags"
     templateCacheNameKvm = "centos55-x86-64"
     testAccount = "testaccount"
@@ -71,10 +83,15 @@ class TestData():
     username = "username"
     virtualMachine = "virtualmachine"
     virtualMachine2 = "virtualmachine2"
+    virtualMachine3 = "virtualmachine3"
+    virtualMachine4 = "virtualmachine4"
     volume_1 = "volume_1"
     volume_2 = "volume_2"
+    volume_3 = "volume_3"
+    volume_4 = "volume_4"
     kvm = "kvm"
     zoneId = "zoneId"
+    migrationTests = "migrationTests"
 
     # hypervisor type to test
     hypervisor_type = kvm
@@ -109,18 +126,26 @@ class TestData():
             TestData.primaryStorage: {
                 "name": "PowerFlexPool-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
-                "url": "powerflex://admin:P%40ssword123@10.10.2.130/cspool",
+                "url": "powerflex://admin:P%40ssword123@10.10.4.141/cspool01",
                 TestData.provider: "PowerFlex",
-                TestData.tags: TestData.storageTag,
+                TestData.tags: TestData.storageTag + "," + TestData.storageTagSameInstance + "," + TestData.storageTagDistinctInstance,
                 TestData.hypervisor: "KVM"
             },
             TestData.virtualMachine: {
                 "name": "TestVM1",
-                "displayname": "Test VM1"
+                "displayname": "Test VM 1"
             },
             TestData.virtualMachine2: {
                 "name": "TestVM2",
                 "displayname": "Test VM 2"
+            },
+            TestData.virtualMachine3: {
+                "name": "TestVM3",
+                "displayname": "Test VM 3"
+            },
+            TestData.virtualMachine4: {
+                "name": "TestVM4",
+                "displayname": "Test VM 4"
             },
             TestData.computeOffering: {
                 "name": "PowerFlex_Compute",
@@ -144,10 +169,50 @@ class TestData():
             TestData.volume_2: {
                 TestData.diskName: "test-volume-2",
             },
+            TestData.volume_3: {
+                TestData.diskName: "test-volume-3",
+            },
+            TestData.volume_4: {
+                TestData.diskName: "test-volume-4",
+            },
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
-            TestData.url: "10.10.3.226"
+            TestData.url: "10.10.3.226",
+            # for volume migration tests
+            TestData.migrationTests: True,
+            # PowerFlex/ScaleIO storage pool on the same ScaleIO storage instance
+            TestData.primaryStorageSameInstance: {
+                "name": "PowerFlexPool-%d" % random.randint(0, 100),
+                TestData.scope: "ZONE",
+                "url": "powerflex://admin:P%40ssword123@10.10.4.141/cspool02",
+                TestData.provider: "PowerFlex",
+                TestData.tags: TestData.storageTag + "," + TestData.storageTagSameInstance,
+                TestData.hypervisor: "KVM"
+            },
+            # PowerFlex/ScaleIO storage pool on different ScaleIO storage instance
+            TestData.primaryStorageDistinctInstance: {
+                "name": "PowerFlexPool-%d" % random.randint(0, 100),
+                TestData.scope: "ZONE",
+                "url": "powerflex://admin:P%40ssword123@10.10.4.194/cloudstackpool",
+                TestData.provider: "PowerFlex",
+                TestData.tags: TestData.storageTag + "," + TestData.storageTagDistinctInstance,
+                TestData.hypervisor: "KVM"
+            },
+            TestData.diskOfferingSameInstance: {
+                "name": "PowerFlex_Disk_Same_Inst",
+                "displaytext": "PowerFlex_Disk_Same_Inst",
+                "disksize": 8,
+                TestData.tags: TestData.storageTagSameInstance,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingDistinctInstance: {
+                "name": "PowerFlex_Disk_Diff_Inst",
+                "displaytext": "PowerFlex_Disk_Diff_Inst",
+                "disksize": 8,
+                TestData.tags: TestData.storageTagDistinctInstance,
+                "storagetype": "shared"
+            },
         }
 
 
@@ -211,6 +276,40 @@ class TestScaleIOVolumes(cloudstackTestCase):
             cls.testdata[TestData.diskOffering]
         )
 
+        if TestData.migrationTests:
+            primarystorage_sameinst = cls.testdata[TestData.primaryStorageSameInstance]
+            cls.primary_storage_same_inst = StoragePool.create(
+                cls.apiClient,
+                primarystorage_sameinst,
+                scope=primarystorage_sameinst[TestData.scope],
+                zoneid=cls.zone.id,
+                provider=primarystorage_sameinst[TestData.provider],
+                tags=primarystorage_sameinst[TestData.tags],
+                hypervisor=primarystorage_sameinst[TestData.hypervisor]
+            )
+
+            primarystorage_distinctinst = cls.testdata[TestData.primaryStorageDistinctInstance]
+            cls.primary_storage_distinct_inst = StoragePool.create(
+                cls.apiClient,
+                primarystorage_distinctinst,
+                scope=primarystorage_distinctinst[TestData.scope],
+                zoneid=cls.zone.id,
+                provider=primarystorage_distinctinst[TestData.provider],
+                tags=primarystorage_distinctinst[TestData.tags],
+                hypervisor=primarystorage_distinctinst[TestData.hypervisor]
+            )
+
+            cls.disk_offering_same_inst = DiskOffering.create(
+                cls.apiClient,
+                cls.testdata[TestData.diskOfferingSameInstance]
+            )
+
+            cls.disk_offering_distinct_inst = DiskOffering.create(
+                cls.apiClient,
+                cls.testdata[TestData.diskOfferingDistinctInstance]
+            )
+
+
         # Create VM and volume for tests
         cls.virtual_machine = VirtualMachine.create(
             cls.apiClient,
@@ -247,9 +346,17 @@ class TestScaleIOVolumes(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            if TestData.migrationTests:
+                cls._cleanup.append(cls.disk_offering_same_inst)
+                cls._cleanup.append(cls.disk_offering_distinct_inst)
+
             cleanup_resources(cls.apiClient, cls._cleanup)
 
             cls.primary_storage.delete(cls.apiClient)
+
+            if TestData.migrationTests:
+                cls.primary_storage_same_inst.delete(cls.apiClient)
+                cls.primary_storage_distinct_inst.delete(cls.apiClient)
 
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
@@ -264,6 +371,7 @@ class TestScaleIOVolumes(cloudstackTestCase):
 
         cleanup_resources(self.apiClient, self.cleanup)
 
+    @attr(tags=['basic'], required_hardware=False)
     def test_01_create_vm_with_volume(self):
         '''Create VM with attached volume and expunge VM'''
 
@@ -338,6 +446,7 @@ class TestScaleIOVolumes(cloudstackTestCase):
             "Check if VM was actually expunged"
         )
 
+    @attr(tags=['basic'], required_hardware=False)
     def test_02_attach_new_volume_to_stopped_vm(self):
         '''Attach a volume to a stopped virtual machine, then start VM'''
 
@@ -381,6 +490,7 @@ class TestScaleIOVolumes(cloudstackTestCase):
             "The volume should not be attached to a VM."
         )
 
+    @attr(tags=['basic'], required_hardware=False)
     def test_03_attach_detach_attach_volume_to_vm(self):
         '''Attach, detach, and attach volume to a running VM'''
 
@@ -461,6 +571,7 @@ class TestScaleIOVolumes(cloudstackTestCase):
             TestScaleIOVolumes._vm_not_in_running_state_err_msg
         )
 
+    @attr(tags=['basic'], required_hardware=False)
     def test_04_detach_vol_stopped_vm_start(self):
         '''Detach volume from a stopped VM, then start.'''
 
@@ -532,6 +643,7 @@ class TestScaleIOVolumes(cloudstackTestCase):
             TestScaleIOVolumes._vm_not_in_running_state_err_msg
         )
 
+    @attr(tags=['basic'], required_hardware=False)
     def test_05_attach_volume_to_stopped_vm(self):
         '''Attach a volume to a stopped virtual machine, then start VM'''
 
@@ -578,6 +690,7 @@ class TestScaleIOVolumes(cloudstackTestCase):
             TestScaleIOVolumes._vm_not_in_running_state_err_msg
         )
 
+    @attr(tags=['basic'], required_hardware=False)
     def test_06_attached_volume_reboot_vm(self):
         '''Attach volume to running VM, then reboot.'''
 
@@ -621,6 +734,7 @@ class TestScaleIOVolumes(cloudstackTestCase):
             TestScaleIOVolumes._vm_not_in_running_state_err_msg
         )
 
+    @attr(tags=['basic'], required_hardware=False)
     def test_07_detach_volume_reboot_vm(self):
         '''Detach volume from a running VM, then reboot.'''
 
@@ -690,6 +804,7 @@ class TestScaleIOVolumes(cloudstackTestCase):
             TestScaleIOVolumes._vm_not_in_running_state_err_msg
         )
 
+    @attr(tags=['basic'], required_hardware=False)
     def test_08_delete_volume_was_attached(self):
         '''Delete volume that was attached to a VM and is detached now'''
 
@@ -764,6 +879,270 @@ class TestScaleIOVolumes(cloudstackTestCase):
             None,
             "Check volume was deleted"
         )
+
+    @attr(tags=['advanced', 'migration'], required_hardware=False)
+    def test_09_migrate_volume_to_same_instance_pool(self):
+        '''Migrate volume to the same instance pool'''
+
+        if not TestData.migrationTests:
+            self.skipTest("Volume migration tests not enabled, skipping test")
+
+        #######################################
+        # STEP 1: Create VM and Start VM      #
+        #######################################
+
+        test_virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine3],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=False
+        )
+
+        TestScaleIOVolumes._start_vm(test_virtual_machine)
+
+        #######################################
+        # STEP 2: Create vol and attach to VM #
+        #######################################
+
+        new_volume = Volume.create(
+            self.apiClient,
+            self.testdata[TestData.volume_3],
+            account=self.account.name,
+            domainid=self.domain.id,
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering_same_inst.id
+        )
+
+        volume_to_delete_later = new_volume
+
+        new_volume = test_virtual_machine.attach_volume(
+            self.apiClient,
+            new_volume
+        )
+
+        vm = self._get_vm(test_virtual_machine.id)
+
+        self.assertEqual(
+            new_volume.virtualmachineid,
+            vm.id,
+            "Check if attached to virtual machine"
+        )
+
+        self.assertEqual(
+            vm.state.lower(),
+            'running',
+            str(vm.state)
+        )
+
+        #######################################
+        # STEP 3: Stop VM and Migrate volume  #
+        #######################################
+
+        test_virtual_machine.stop(self.apiClient)
+
+        vm = self._get_vm(test_virtual_machine.id)
+
+        self.assertEqual(
+            vm.state.lower(),
+            'stopped',
+            str(vm.state)
+        )
+
+        pools = StoragePool.listForMigration(
+            self.apiClient,
+            id=new_volume.id
+        )
+
+        if not pools:
+            self.skipTest("No suitable storage pools found for volume migration, skipping test")
+
+        self.assertEqual(
+            validateList(pools)[0],
+            PASS,
+            "Invalid pool response from findStoragePoolsForMigration API"
+        )
+
+        pool = pools[0]
+        self.debug("Migrating Volume-ID: %s to Same Instance Pool: %s" % (new_volume.id, pool.id))
+
+        try:
+            Volume.migrate(
+                self.apiClient,
+                volumeid=new_volume.id,
+                storageid=pool.id
+            )
+        except Exception as e:
+            self.fail("Volume migration failed with error %s" % e)
+
+        #######################################
+        #  STEP 4: Detach and delete volume   #
+        #######################################
+
+        new_volume = test_virtual_machine.detach_volume(
+            self.apiClient,
+            new_volume
+        )
+
+        self.assertEqual(
+            new_volume.virtualmachineid,
+            None,
+            "Check if attached to virtual machine"
+        )
+
+        volume_to_delete_later.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=new_volume.id
+        )
+
+        self.assertEqual(
+            list_volumes_response,
+            None,
+            "Check volume was deleted"
+        )
+
+        #######################################
+        #  STEP 4: Delete VM                  #
+        #######################################
+
+        test_virtual_machine.delete(self.apiClient, True)
+
+    @attr(tags=['advanced', 'migration'], required_hardware=False)
+    def test_10_migrate_volume_to_distinct_instance_pool(self):
+        '''Migrate volume to distinct instance pool'''
+
+        if not TestData.migrationTests:
+            self.skipTest("Volume migration tests not enabled, skipping test")
+
+        #######################################
+        # STEP 1: Create VM and Start VM      #
+        #######################################
+
+        test_virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine4],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=False
+        )
+
+        TestScaleIOVolumes._start_vm(test_virtual_machine)
+
+        #######################################
+        # STEP 2: Create vol and attach to VM #
+        #######################################
+
+        new_volume = Volume.create(
+            self.apiClient,
+            self.testdata[TestData.volume_4],
+            account=self.account.name,
+            domainid=self.domain.id,
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering_distinct_inst.id
+        )
+
+        volume_to_delete_later = new_volume
+
+        new_volume = test_virtual_machine.attach_volume(
+            self.apiClient,
+            new_volume
+        )
+
+        vm = self._get_vm(test_virtual_machine.id)
+
+        self.assertEqual(
+            new_volume.virtualmachineid,
+            vm.id,
+            "Check if attached to virtual machine"
+        )
+
+        self.assertEqual(
+            vm.state.lower(),
+            'running',
+            str(vm.state)
+        )
+
+        #######################################
+        # STEP 3: Stop VM and Migrate volume  #
+        #######################################
+
+        test_virtual_machine.stop(self.apiClient)
+
+        vm = self._get_vm(test_virtual_machine.id)
+
+        self.assertEqual(
+            vm.state.lower(),
+            'stopped',
+            str(vm.state)
+        )
+
+        pools = StoragePool.listForMigration(
+            self.apiClient,
+            id=new_volume.id
+        )
+
+        if not pools:
+            self.skipTest("No suitable storage pools found for volume migration, skipping test")
+
+        self.assertEqual(
+            validateList(pools)[0],
+            PASS,
+            "Invalid pool response from findStoragePoolsForMigration API"
+        )
+
+        pool = pools[0]
+        self.debug("Migrating Volume-ID: %s to Distinct Instance Pool: %s" % (new_volume.id, pool.id))
+
+        try:
+            Volume.migrate(
+                self.apiClient,
+                volumeid=new_volume.id,
+                storageid=pool.id
+            )
+        except Exception as e:
+            self.fail("Volume migration failed with error %s" % e)
+
+        #######################################
+        #  STEP 4: Detach and delete volume   #
+        #######################################
+
+        new_volume = test_virtual_machine.detach_volume(
+            self.apiClient,
+            new_volume
+        )
+
+        self.assertEqual(
+            new_volume.virtualmachineid,
+            None,
+            "Check if attached to virtual machine"
+        )
+
+        volume_to_delete_later.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=new_volume.id
+        )
+
+        self.assertEqual(
+            list_volumes_response,
+            None,
+            "Check volume was deleted"
+        )
+
+        #######################################
+        #  STEP 4: Delete VM                  #
+        #######################################
+
+        test_virtual_machine.delete(self.apiClient, True)
 
 
     def _create_vm_using_template_and_destroy_vm(self, template):

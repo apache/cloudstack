@@ -1831,23 +1831,56 @@ public class KVMStorageProcessor implements StorageProcessor {
         final ImageFormat destFormat = destVol.getFormat();
         final DataStoreTO srcStore = srcData.getDataStore();
         final DataStoreTO destStore = destData.getDataStore();
-        final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcStore;
-        final PrimaryDataStoreTO primaryStoreDest = (PrimaryDataStoreTO)destStore;
+        final PrimaryDataStoreTO srcPrimaryStore = (PrimaryDataStoreTO)srcStore;
+        final PrimaryDataStoreTO destPrimaryStore = (PrimaryDataStoreTO)destStore;
         final String srcVolumePath = srcData.getPath();
         final String destVolumePath = destData.getPath();
         KVMStoragePool destPool = null;
 
         try {
-            final String volumeName = UUID.randomUUID().toString();
+            s_logger.debug("Copying src volume (id: " + srcVol.getId() + ", format: " + srcFormat + ", path: " + srcVolumePath + ", primary storage: [id: " + srcPrimaryStore.getId() + ", type: "  + srcPrimaryStore.getPoolType() + "]) to dest volume (id: " +
+                    destVol.getId() + ", format: " + destFormat + ", path: " + destVolumePath + ", primary storage: [id: " + destPrimaryStore.getId() + ", type: "  + destPrimaryStore.getPoolType() + "]).");
 
-            final String destVolumeName = volumeName + "." + destFormat.getFileExtension();
-            final KVMPhysicalDisk volume = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
+            if (srcPrimaryStore.isManaged()) {
+                if (!storagePoolMgr.connectPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath, srcPrimaryStore.getDetails())) {
+                    s_logger.warn("Failed to connect src volume at path: " + srcVolumePath + ", in storage pool id: " + srcPrimaryStore.getUuid());
+                }
+            }
+
+            final KVMPhysicalDisk volume = storagePoolMgr.getPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath);
+            if (volume == null) {
+                s_logger.debug("Failed to get physical disk for volume: " + srcVolumePath);
+                throw new CloudRuntimeException("Failed to get physical disk for volume at path: " + srcVolumePath);
+            }
+
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
 
-            destPool = storagePoolMgr.getStoragePool(primaryStoreDest.getPoolType(), primaryStoreDest.getUuid());
+            String destVolumeName = null;
+            if (destPrimaryStore.isManaged()) {
+                if (!storagePoolMgr.connectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath, destPrimaryStore.getDetails())) {
+                    s_logger.warn("Failed to connect dest volume at path: " + destVolumePath + ", in storage pool id: " + destPrimaryStore.getUuid());
+                }
+                String managedStoreTarget = destPrimaryStore.getDetails() != null ? destPrimaryStore.getDetails().get("managedStoreTarget") : null;
+                destVolumeName = managedStoreTarget != null ? managedStoreTarget : destVolumePath;
+            } else {
+                final String volumeName = UUID.randomUUID().toString();
+                destVolumeName = volumeName + "." + destFormat.getFileExtension();
+            }
+
+            destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+
+            if (srcPrimaryStore.isManaged()) {
+                storagePoolMgr.disconnectPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath);
+            }
+
+            if (destPrimaryStore.isManaged()) {
+                storagePoolMgr.disconnectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath);
+            }
+
             final VolumeObjectTO newVol = new VolumeObjectTO();
-            newVol.setPath(destVolumePath + File.separator + destVolumeName);
+            String path = destPrimaryStore.isManaged() ? destVolumeName : destVolumePath + File.separator + destVolumeName;
+            newVol.setPath(path);
             newVol.setFormat(destFormat);
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {

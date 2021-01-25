@@ -4,16 +4,25 @@ This directory contains the basic VM, Volume life cycle tests for PowerFlex/Scal
 
 # Running tests
 ===============
-To run these tests, first update the below test data of the CloudStack environment
+To run the basic volume tests, first update the below test data of the CloudStack environment
 
 ````
 TestData.zoneId: <id of zone>
 TestData.clusterId: <id of cluster>
 TestData.domainId: <id of domain>
 TestData.url: <management server IP>
+TestData.primaryStorage "url": <PowerFlex/ScaleIO storage pool url (see the format below) to use as primary storage>
 ````
-            
-and PowerFlex/ScaleIO storage pool url at TestData.primaryStorage in the below format
+
+and to enable and run volume migration tests, update the below test data
+
+````
+TestData.migrationTests: True
+TestData.primaryStorageSameInstance "url": <PowerFlex/ScaleIO storage pool url (see the format below) of the pool on same storage cluster as TestData.primaryStorage>
+TestData.primaryStorageDistinctInstance "url": <PowerFlex/ScaleIO storage pool url (see the format below) of the pool not on the same storage cluster as TestData.primaryStorage>
+````
+
+PowerFlex/ScaleIO storage pool url format:
 
 ````
 powerflex://<api_user>:<api_password>@<gateway>/<storagepool>

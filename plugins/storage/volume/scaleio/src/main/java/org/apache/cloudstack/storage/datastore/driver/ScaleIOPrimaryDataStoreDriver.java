@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -61,6 +62,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.server.ManagementServerImpl;
 import com.cloud.storage.DataStoreRole;
@@ -77,6 +79,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
@@ -104,6 +107,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     protected SnapshotDao snapshotDao;
     @Inject
     private AlertManager alertMgr;
+    @Inject
+    private ConfigurationDao configDao;
 
     public ScaleIOPrimaryDataStoreDriver() {
 
@@ -588,7 +593,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         errMsg = answer.getDetails();
                     }
                 } else if (srcData.getType() == DataObjectType.VOLUME) {
-                    answer = migrateVolume(srcData, destData);
+                    if (isSameScaleIOStorageInstance(srcStore, destStore)) {
+                        answer = migrateVolume(srcData, destData);
+                    } else {
+                        answer = copyVolume(srcData, destData, destHost);
+                    }
+
                     if (answer == null) {
                         errMsg = "No answer for migrate PowerFlex volume";
                     } else if (!answer.getResult()) {
@@ -631,6 +641,27 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return answer;
     }
 
+    private Answer copyVolume(DataObject srcData, DataObject destData, Host destHost) {
+        // Copy PowerFlex/ScaleIO volume
+        LOGGER.debug("Initiating copy from PowerFlex volume on host " + destHost != null ? destHost.getId() : "");
+        String value = configDao.getValue(Config.CopyVolumeWait.key());
+        int copyVolumeWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+
+        CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), copyVolumeWait, VirtualMachineManager.ExecuteInSequence.value());
+
+        Answer answer = null;
+        EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcData.getDataStore());
+        if (ep == null) {
+            String errorMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            LOGGER.error(errorMsg);
+            answer = new Answer(cmd, false, errorMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
+
+        return answer;
+    }
+
     private Answer migrateVolume(DataObject srcData, DataObject destData) {
         // Volume migration within same PowerFlex/ScaleIO cluster (with same System ID)
         DataStore srcStore = srcData.getDataStore();
@@ -638,26 +669,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Answer answer = null;
         try {
             long srcPoolId = srcStore.getId();
-            String srcPoolSystemId = null;
-            StoragePoolDetailVO srcPoolSystemIdDetail = storagePoolDetailsDao.findDetail(srcPoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
-            if (srcPoolSystemIdDetail != null) {
-                srcPoolSystemId = srcPoolSystemIdDetail.getValue();
-            }
-
             long destPoolId = destStore.getId();
-            String destPoolSystemId = null;
-            StoragePoolDetailVO destPoolSystemIdDetail = storagePoolDetailsDao.findDetail(destPoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
-            if (destPoolSystemIdDetail != null) {
-                destPoolSystemId = destPoolSystemIdDetail.getValue();
-            }
-
-            if (Strings.isNullOrEmpty(srcPoolSystemId) || Strings.isNullOrEmpty(destPoolSystemId)) {
-                throw new CloudRuntimeException("Failed to validate PowerFlex pools compatibility for migration");
-            }
-
-            if (!srcPoolSystemId.equals(destPoolSystemId)) {
-                throw new CloudRuntimeException("Volume migration across different PowerFlex clusters is not supported");
-            }
 
             final ScaleIOGatewayClient client = getScaleIOClient(srcPoolId);
             final String srcVolumeId = ((VolumeInfo) srcData).getPath();
@@ -720,6 +732,32 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         return answer;
+    }
+
+    private boolean isSameScaleIOStorageInstance(DataStore srcStore, DataStore destStore) {
+        long srcPoolId = srcStore.getId();
+        String srcPoolSystemId = null;
+        StoragePoolDetailVO srcPoolSystemIdDetail = storagePoolDetailsDao.findDetail(srcPoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (srcPoolSystemIdDetail != null) {
+            srcPoolSystemId = srcPoolSystemIdDetail.getValue();
+        }
+
+        long destPoolId = destStore.getId();
+        String destPoolSystemId = null;
+        StoragePoolDetailVO destPoolSystemIdDetail = storagePoolDetailsDao.findDetail(destPoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (destPoolSystemIdDetail != null) {
+            destPoolSystemId = destPoolSystemIdDetail.getValue();
+        }
+
+        if (Strings.isNullOrEmpty(srcPoolSystemId) || Strings.isNullOrEmpty(destPoolSystemId)) {
+            throw new CloudRuntimeException("Failed to validate PowerFlex pools compatibility for migration as storage instance details are not available");
+        }
+
+        if (srcPoolSystemId.equals(destPoolSystemId)) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override

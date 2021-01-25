@@ -2271,6 +2271,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
                 throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
             }
+
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(vol.getPoolId());
+            if (storagePoolVO.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                throw new InvalidParameterValueException("Migrate volume of a running VM is unsupported on storage pool type " + storagePoolVO.getPoolType());
+            }
+
             // Check if the underlying hypervisor supports storage motion.
             Long hostId = vm.getHostId();
             if (hostId != null) {
