@@ -16,6 +16,9 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.gson.JsonParser;
+import org.apache.cloudstack.utils.redfish.RedfishException;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -23,6 +26,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -46,73 +50,102 @@ public class KvmAgentHaClient {
 
     private static final Logger LOGGER = Logger.getLogger(KvmAgentHaClient.class);
     private final static int WAIT_FOR_REQUEST_RETRY = 2;
+    private final static String VM_COUNT = "count";
+    private final static int ERROR_CODE = -1;
+    private final static String EXPECTED_HTTP_STATUS = "2XX";
+    private static final int MAX_REQUEST_RETRIES = 2;
+    private static final int DEFAULT_PORT = 8080;
     private String agentIpAddress;
     private int port;
-    private int requestMaxRetries = 0; //TODO
 
-    public KvmAgentHaClient(String agentIpAddress, int port) {
+    /**
+     * Instantiates a webclient that checks, via a webserver running on the KVM host, the VMs running
+     * @param agentIpAddress address of the KVM host running the webserver
+     */
+    public KvmAgentHaClient(String agentIpAddress) {
         this.agentIpAddress = agentIpAddress;
-        this.port = port;
+    }
+
+    public boolean isKvmHaAgentRunning() {
+        if (countRunningVmsOnAgent() < 0) {
+            return false;
+        }
+        return true;
     }
 
     /**
-     * TODO
-     *  Returns the System ID. Used when sending Computer System requests (e.g. ComputerSystem.Reset request).
+     *  Returns the number of VMs running on the KVM host according to libvirt.
      */
-    public String checkVmsRunningOnAgent() {
-        String url = String.format("http://%s:%d", agentIpAddress, port);
+    public int countRunningVmsOnAgent() {
+        String url = String.format("http://%s:%d", agentIpAddress, DEFAULT_PORT);
+        HttpResponse response = executeHttpRequest(url);
 
-        URIBuilder builder = null;
+        if (response == null)
+            return ERROR_CODE;
+
+        return Integer.valueOf(processHttpResponseIntoJson(response));
+    }
+
+    /**
+     * Executes a GET request for the given URL address.
+     */
+    @Nullable
+    protected HttpResponse executeHttpRequest(String url) {
         HttpGet httpReq = null;
         try {
-            builder = new URIBuilder(url);
+            URIBuilder builder = new URIBuilder(url);
             httpReq = new HttpGet(builder.build());
         } catch (URISyntaxException e) {
-            throw new CloudRuntimeException(String.format("Failed to create URI for GET request [URL: %s] due to exception.", url), e);
+            LOGGER.error(String.format("Failed to create URI for GET request [URL: %s] due to exception.", url), e);
+            return null;
         }
 
         HttpClient client = HttpClientBuilder.create().build();
-
         HttpResponse response = null;
-
         try {
             response = client.execute(httpReq);
         } catch (IOException e) {
-            if (requestMaxRetries == 0) {
-                throw new CloudRuntimeException(String.format("Failed to execute HTTP %s request [URL: %s] due to exception %s.", httpReq.getMethod(), url, e), e);
+            if (MAX_REQUEST_RETRIES == 0) {
+                LOGGER.warn(String.format("Failed to execute HTTP %s request [URL: %s] due to exception %s.", httpReq.getMethod(), url, e), e);
+                return null;
             }
             retryHttpRequest(url, httpReq, client);
         }
-
-        return processHttpResponseIntoJson(response);
+        return response;
     }
 
     /**
-     * TODO
+     * Re-executes the HTTP GET request until it gets a response or it reaches the maximum request retries (#MAX_REQUEST_RETRIES)
      */
     protected HttpResponse retryHttpRequest(String url, HttpRequestBase httpReq, HttpClient client) {
         LOGGER.warn(String.format("Failed to execute HTTP %s request [URL: %s]. Executing the request again.", httpReq.getMethod(), url));
         HttpResponse response = null;
-        for (int attempt = 1; attempt < requestMaxRetries + 1; attempt++) {
+        for (int attempt = 1; attempt < MAX_REQUEST_RETRIES + 1; attempt++) {
             try {
                 TimeUnit.SECONDS.sleep(WAIT_FOR_REQUEST_RETRY);
-                LOGGER.debug(String.format("Retry HTTP %s request [URL: %s], attempt %d/%d.", httpReq.getMethod(), url, attempt, requestMaxRetries));
+                LOGGER.debug(String.format("Retry HTTP %s request [URL: %s], attempt %d/%d.", httpReq.getMethod(), url, attempt, MAX_REQUEST_RETRIES));
                 response = client.execute(httpReq);
             } catch (IOException | InterruptedException e) {
-                if (attempt == requestMaxRetries) {
-                    throw new CloudRuntimeException(
-                            String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, requestMaxRetries,
+                if (attempt == MAX_REQUEST_RETRIES) {
+                    LOGGER.error(
+                            String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, MAX_REQUEST_RETRIES,
                                     url, e));
                 } else {
-                    LOGGER.warn(
-                            String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, requestMaxRetries,
+                    LOGGER.error(
+                            String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, MAX_REQUEST_RETRIES,
                                     url, e));
                 }
             }
         }
 
         if (response == null) {
-            throw new CloudRuntimeException(String.format("Failed to execute HTTP %s request [URL: %s].", httpReq.getMethod(), url));
+            LOGGER.error(String.format("Failed to execute HTTP %s request [URL: %s].", httpReq.getMethod(), url));
+        }
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
+            throw new RedfishException(String.format("Failed to get VMs information with a %s request to URL '%s'. The expected HTTP status code is '%s' but it got '%s'.",
+                    HttpGet.METHOD_NAME, url, EXPECTED_HTTP_STATUS, statusCode));
         }
 
         LOGGER.debug(String.format("Successfully executed HTTP %s request [URL: %s].", httpReq.getMethod(), url));
@@ -126,14 +159,19 @@ public class KvmAgentHaClient {
     protected String processHttpResponseIntoJson(HttpResponse response) {
         InputStream in;
         String jsonString;
+        if (response == null) {
+            return Integer.toString(ERROR_CODE);
+        }
         try {
             in = response.getEntity().getContent();
             BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
             jsonString = streamReader.readLine();
         } catch (UnsupportedOperationException | IOException e) {
-            throw new CloudRuntimeException("Failed to process system Response", e);
+            throw new CloudRuntimeException("Failed to process response", e);
         }
-        return jsonString;
+
+        String vmsCount = new JsonParser().parse(jsonString).getAsJsonObject().get(VM_COUNT).getAsString();
+        return vmsCount;
     }
 
 }

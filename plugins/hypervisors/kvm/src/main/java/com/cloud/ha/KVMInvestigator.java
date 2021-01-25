@@ -26,6 +26,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.KvmAgentHaClient;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.AdapterBase;
@@ -33,7 +34,6 @@ import org.apache.cloudstack.ha.HAManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -81,11 +81,19 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         Status agentStatus = Status.Disconnected;
         boolean hasNfs = isHostServedByNfsPool(agent);
         if (hasNfs) {
-            s_logger.debug("Agent investigation was requested on host " + agent + ", checking agent status via NFS storage.");
             agentStatus = checkAgentStatusViaNfs(agent);
+            s_logger.debug(String.format("Agent investigation was requested on host %s, agent status via NFS storage is %s.", agent, agentStatus));
         } else {
-            s_logger.debug(
-                    "Agent investigation was requested on host " + agent + ", but host has no NFS storage. Skipping investigation via NFS.");
+            s_logger.debug(String.format("Agent investigation was requested on host %s, but host has no NFS storage. Skipping investigation via NFS.", agent));
+        }
+
+        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(agent.getPrivateIpAddress());
+        boolean isKvmAgentRunning = kvmAgentHaClient.isKvmHaAgentRunning();
+        if(isKvmAgentRunning) {
+            agentStatus = Status.Up;
+            s_logger.debug(String.format("Checking agent %s status; KVM HA webserver is Running as expected."));
+        } else {
+            s_logger.warn(String.format("Checking agent %s status. Failed to check host status via KVM Agent HA webserver"));
         }
 
         return agentStatus;
@@ -119,7 +127,6 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         return false;
     }
 
-    @NotNull
     private Status checkAgentStatusViaNfs(Host agent) {
         Status hostStatus = null;
         Status neighbourStatus = null;

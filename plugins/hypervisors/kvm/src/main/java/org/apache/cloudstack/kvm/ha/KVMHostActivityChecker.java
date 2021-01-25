@@ -26,7 +26,9 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.KvmAgentHaClient;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -81,7 +83,29 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
 
     @Override
     public boolean isHealthy(Host r) {
-        return isAgentActive(r);
+        boolean isHealthy = false;
+        HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(r);
+        isHealthy = isHealthyCheckViaNfs(r, isHealthy, poolVolMap);
+
+        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(r.getPrivateIpAddress());
+        boolean isKvmAgentRunning = kvmAgentHaClient.isKvmHaAgentRunning();
+
+        if(!isHealthy && isKvmAgentRunning) {
+            isHealthy = true;
+        }
+
+        return isHealthy;
+    }
+
+    private boolean isHealthyCheckViaNfs(Host r, boolean isHealthy, HashMap<StoragePool, List<Volume>> poolVolMap) {
+        for (StoragePool pool : poolVolMap.keySet()) {
+            if(Storage.StoragePoolType.NetworkFilesystem == pool.getPoolType()
+                    || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()
+                    || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()) {
+                isHealthy = isAgentActive(r);
+            }
+        }
+        return isHealthy;
     }
 
     private boolean isAgentActive(Host agent) {
@@ -151,18 +175,32 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             throw new IllegalStateException(String.format("Calling KVM investigator for non KVM Host of type [%s].", agent.getHypervisorType()));
         }
-        boolean activityStatus = true;
+        boolean activityStatus = false;
         HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(agent);
         for (StoragePool pool : poolVolMap.keySet()) {
-            activityStatus = verifyActivityOfStorageOnHost(poolVolMap, pool, agent, suspectTime, activityStatus);
-            if (!activityStatus) {
-                LOG.warn(String.format("It seems that the storage pool [%s] does not have activity on %s.", pool.getId(), agent.toString()));
-                break;
+            if(Storage.StoragePoolType.NetworkFilesystem == pool.getPoolType()
+                    || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()
+                    || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()) {
+                activityStatus = verifyActivityOfStorageOnHost(poolVolMap, pool, agent, suspectTime, activityStatus);
+                if (!activityStatus) {
+                    LOG.warn(String.format("It seems that the storage pool [%s] does not have activity on %s.", pool.getId(), agent.toString()));
+                    break;
+                }
             }
+        }
+
+        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(agent.getPrivateIpAddress());
+        boolean isKvmAgentRunning = kvmAgentHaClient.isKvmHaAgentRunning();
+
+        if(!activityStatus && isKvmAgentRunning) {
+            activityStatus = true;
+        } else {
+            LOG.warn(String.format("No VM activity detected on %s. This might trigger HA Host Recovery and/or Fence.", agent.toString()));
         }
 
         return activityStatus;
     }
+
 
     protected boolean verifyActivityOfStorageOnHost(HashMap<StoragePool, List<Volume>> poolVolMap, StoragePool pool, Host agent, DateTime suspectTime, boolean activityStatus) throws HACheckerException, IllegalStateException {
         List<Volume> volume_list = poolVolMap.get(pool);
