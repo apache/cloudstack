@@ -794,7 +794,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         }
                     });
                 } catch (Exception e) {
-                    s_logger.warn("Error while collecting vm disk stats from hosts", e);
+                    s_logger.warn(String.format("Error while collecting vm disk stats from host %s : ", host.getName()), e);
                 }
             }
         }
@@ -913,7 +913,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         }
                     });
                 } catch (Exception e) {
-                    s_logger.warn("Error while collecting vm network stats from hosts", e);
+                    s_logger.warn(String.format("Error while collecting vm network stats from host %s : ", host.getName()), e);
                 }
             }
         }
