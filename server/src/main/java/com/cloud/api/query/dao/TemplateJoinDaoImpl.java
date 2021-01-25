@@ -522,6 +522,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
         sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
+        sc.setParameters("public", Boolean.FALSE);
         return searchIncludingRemoved(sc, null, null, false);
     }
 
