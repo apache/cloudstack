@@ -957,8 +957,8 @@ export default {
             if (param.name !== key) {
               continue
             }
-            if (input === undefined || input === null || (input === '' &&
-              !['updateStoragePool', 'updateHost'].includes(action.api))) {
+            if (!input === undefined || input === null ||
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
