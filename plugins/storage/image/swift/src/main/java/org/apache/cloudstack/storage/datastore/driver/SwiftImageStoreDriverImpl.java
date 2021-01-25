@@ -18,17 +18,16 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.net.URL;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
+import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.configuration.Config;
+import com.cloud.storage.RegisterVolumePayload;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.utils.SwiftUtil;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
-
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -36,21 +35,22 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
+import java.net.URL;
+import java.util.Map;
+import java.util.UUID;
 
 public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(SwiftImageStoreDriverImpl.class);
@@ -63,6 +63,8 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     StorageCacheManager cacheManager;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    private DownloadMonitor _downloadMonitor;
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
@@ -100,12 +102,28 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     @Override
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
-        VirtualMachineTemplate tmpl = _templateDao.findById(data.getId());
+
+        DownloadCommand downloadCommand = null;
+        if (data.getType() == DataObjectType.TEMPLATE) {
+            Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
+            downloadCommand = new DownloadCommand((TemplateObjectTO) (data.getTO()), maxTemplateSizeInBytes);
+        }else if (data.getType() == DataObjectType.VOLUME){
+            Long maxDownloadSizeInBytes = getMaxVolumeSizeInBytes();
+            VolumeInfo volumeInfo = (VolumeInfo) data;
+            RegisterVolumePayload payload = (RegisterVolumePayload) volumeInfo.getpayload();
+            ImageFormat format = ImageFormat.valueOf(payload.getFormat());
+            downloadCommand = new DownloadCommand((VolumeObjectTO) (data.getTO()), maxDownloadSizeInBytes, payload.getChecksum(), payload.getUrl(), format);
+        }
+
+        if (downloadCommand == null){
+            String errMsg = "Unable to build download command, DataObject is of neither VOLUME or TEMPLATE type";
+            s_logger.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+
         DataStore cacheStore = cacheManager.getCacheStorage(dataStore.getScope());
-        DownloadCommand dcmd = new DownloadCommand((TemplateObjectTO)(data.getTO()), maxTemplateSizeInBytes);
-        dcmd.setCacheStore(cacheStore.getTO());
-        dcmd.setProxy(getHttpProxy());
+        downloadCommand.setCacheStore(cacheStore.getTO());
+        downloadCommand.setProxy(getHttpProxy());
 
         EndPoint ep = _epSelector.select(data);
         if (ep == null) {
@@ -120,11 +138,11 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
         if (data.getType() == DataObjectType.TEMPLATE) {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
+            ep.sendMessageAsync(downloadCommand, caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
             caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
+            _downloadMonitor.downloadVolumeToStorage(data,caller);
         }
-        ep.sendMessageAsync(dcmd, caller);
-
     }
 
 }

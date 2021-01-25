@@ -174,6 +174,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
     }
 
+    protected Long getMaxVolumeSizeInBytes() {
+        try {
+            return Long.parseLong(configDao.getValue("storage.max.volume.upload.size")) * 1024L * 1024L * 1024L;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     @Override
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);

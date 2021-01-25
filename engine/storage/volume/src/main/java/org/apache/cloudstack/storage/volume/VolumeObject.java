@@ -687,6 +687,8 @@ public class VolumeObject implements VolumeInfo {
                     VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
                     volStore.setInstallPath(dwdAnswer.getInstallPath());
                     volStore.setChecksum(dwdAnswer.getCheckSum());
+                    volStore.setSize(dwdAnswer.getTemplateSize());
+                    volStore.setPhysicalSize(dwdAnswer.getTemplatePhySicalSize());
                     volumeStoreDao.update(volStore.getId(), volStore);
                 } else if (answer instanceof CopyCmdAnswer) {
                     CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;

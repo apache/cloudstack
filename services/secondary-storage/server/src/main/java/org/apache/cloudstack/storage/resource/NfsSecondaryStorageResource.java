@@ -16,82 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
-import static com.cloud.network.NetworkModel.METATDATA_DIR;
-import static com.cloud.network.NetworkModel.PASSWORD_DIR;
-import static com.cloud.network.NetworkModel.PASSWORD_FILE;
-import static com.cloud.network.NetworkModel.PUBLIC_KEYS_FILE;
-import static com.cloud.network.NetworkModel.USERDATA_DIR;
-import static com.cloud.network.NetworkModel.USERDATA_FILE;
-import static com.cloud.utils.StringUtils.join;
-import static com.cloud.utils.storage.S3.S3Utils.putFile;
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.substringAfterLast;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
-import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
-import org.apache.cloudstack.storage.command.UploadStatusCommand;
-import org.apache.cloudstack.storage.configdrive.ConfigDrive;
-import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
-import org.apache.cloudstack.storage.template.DownloadManager;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.UploadEntity;
-import org.apache.cloudstack.storage.template.UploadManager;
-import org.apache.cloudstack.storage.template.UploadManagerImpl;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
-
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -171,7 +95,6 @@ import com.cloud.vm.SecondaryStorageVm;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -185,6 +108,86 @@ import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.storage.template.UploadManager;
+import org.apache.cloudstack.storage.template.UploadManagerImpl;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
+
+import javax.naming.ConfigurationException;
+import javax.net.ssl.SSLContext;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.cloud.network.NetworkModel.METATDATA_DIR;
+import static com.cloud.network.NetworkModel.PASSWORD_DIR;
+import static com.cloud.network.NetworkModel.PASSWORD_FILE;
+import static com.cloud.network.NetworkModel.PUBLIC_KEYS_FILE;
+import static com.cloud.network.NetworkModel.USERDATA_DIR;
+import static com.cloud.network.NetworkModel.USERDATA_FILE;
+import static com.cloud.utils.StringUtils.join;
+import static com.cloud.utils.storage.S3.S3Utils.putFile;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
@@ -279,6 +282,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else if (cmd instanceof UploadCommand) {
             return _upldMgr.handleUploadCommand(this, (UploadCommand)cmd);
         } else if (cmd instanceof CreateEntityDownloadURLCommand) {
+            if (((CreateEntityDownloadURLCommand) cmd).getParent() == null) {
+                String rootDir = getRootDir(((CreateEntityDownloadURLCommand) cmd).getSecUrl(),_nfsVersion);
+                String parent = rootDir.substring(rootDir.lastIndexOf("/")+1);
+                ((CreateEntityDownloadURLCommand) cmd).setParent(parent);
+            }
             return _upldMgr.handleCreateEntityURLCommand((CreateEntityDownloadURLCommand)cmd);
         } else if (cmd instanceof DeleteEntityDownloadURLCommand) {
             return _upldMgr.handleDeleteEntityDownloadURLCommand((DeleteEntityDownloadURLCommand)cmd);
@@ -772,7 +780,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
             }
 
-            File destFile = SwiftUtil.getObject(swiftTO, downloadDirectory, srcData.getPath());
+            String filePath = downloadPath + File.separator + destData.getName();
+            File destFile = new File(filePath);
+            if (!destFile.exists()) {
+                destFile = SwiftUtil.getObject(swiftTO, downloadDirectory, srcData.getPath());
+            }
+
             return postProcessing(destFile, downloadPath, destPath, srcData, destData);
         } catch (Exception e) {
             s_logger.debug("Failed to copy swift to nfs", e);
@@ -1113,13 +1126,30 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path, String name) {
-        HttpClient client = new DefaultHttpClient();
-        HttpGet get = new HttpGet(url);
+        CloseableHttpClient client = null;
         try {
+            //trust all certs
+            SSLContext sslContext = new SSLContextBuilder()
+                    .loadTrustMaterial(null, (TrustStrategy) (chain, authType) -> true)
+                    .build();
+            client = HttpClients.custom().setSSLContext(sslContext)
+                    .setSSLHostnameVerifier(new NoopHostnameVerifier())
+                    .build();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            HttpGet get = new HttpGet(url);
             HttpResponse response = client.execute(get);
             HttpEntity entity = response.getEntity();
             if (entity == null) {
-                s_logger.debug("Faled to get entity");
+                s_logger.error("Failed to get entity "+ response.getStatusLine().getStatusCode() + " "
+                        + response.getStatusLine().getReasonPhrase());
                 throw new CloudRuntimeException("Failed to get url: " + url);
             }
 
@@ -1137,11 +1167,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             try (FileOutputStream outputStream = new FileOutputStream(destFile);) {
                 entity.writeTo(outputStream);
             } catch (IOException e) {
-                s_logger.debug("downloadFromUrlToNfs:Exception:" + e.getMessage(), e);
+                s_logger.error("downloadFromUrlToNfs:Exception:" + e.getMessage(), e);
             }
             return new File(destFile.getAbsolutePath());
         } catch (IOException e) {
-            s_logger.debug("Faild to get url:" + url + ", due to " + e.toString());
+            s_logger.error("Faild to get url:" + url + ", due to " + e.toString());
             throw new CloudRuntimeException(e);
         }
     }
@@ -1180,13 +1210,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             try (FileInputStream fs = new FileInputStream(file)) {
                 md5sum = DigestUtils.md5Hex(fs);
             } catch (IOException e) {
-                s_logger.debug("Failed to get md5sum: " + file.getAbsoluteFile());
+                s_logger.error("Failed to get md5sum: " + file.getAbsoluteFile());
             }
 
             DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, swiftPath, swiftPath, virtualSize, file.length(), md5sum);
             return answer;
         } catch (IOException e) {
-            s_logger.debug("Failed to register template into swift", e);
+            s_logger.error("Failed to register template into swift", e);
             return new DownloadAnswer(e.toString(), VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         } finally {
             if (file != null) {
@@ -1199,8 +1229,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO dstore = cmd.getDataStore();
         if (dstore instanceof NfsTO || dstore instanceof S3TO) {
             return _dlMgr.handleDownloadCommand(this, cmd);
-        } else if (dstore instanceof SwiftTO) {
+        } else if (dstore instanceof SwiftTO && cmd.getResourceType() == DownloadCommand.ResourceType.TEMPLATE) {
             return registerTemplateOnSwift(cmd);
+        } else if (dstore instanceof SwiftTO && cmd.getResourceType() == DownloadCommand.ResourceType.VOLUME){
+            return _dlMgr.handleDownloadCommand(this, cmd);
         } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
@@ -1268,7 +1300,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             processor.configure("template processor", params);
             return processor.getVirtualSize(file);
         } catch (Exception e) {
-            s_logger.warn("Failed to get virtual size of file " + file.getPath() + ", returning file size instead: ", e);
+            s_logger.error("Failed to get virtual size of file " + file.getPath() + ", returning file size instead: ", e);
             return file.length();
         }
 
@@ -1392,9 +1424,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         try {
             final String templatePath = determineStorageTemplatePath(srcStore.getUrl(), srcData.getPath(), _nfsVersion);
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found " + srcData.getObjectType() + " from directory " + templatePath + " to upload to S3.");
-            }
+            s_logger.info("Found " + srcData.getObjectType() + " from directory " + templatePath + " to upload to S3.");
 
             final String bucket = s3.getBucketName();
             File srcFile = findFile(templatePath);
@@ -1554,7 +1584,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String result = command.execute(parser);
         if (result != null) {
             String errMsg = "swiftDownload failed  err=" + result;
-            s_logger.warn(errMsg);
+            s_logger.error(errMsg);
             return errMsg;
         }
         if (parser.getLines() != null) {
@@ -1562,7 +1592,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             for (String line : lines) {
                 if (line.contains("Errno") || line.contains("failed")) {
                     String errMsg = "swiftDownload failed , err=" + parser.getLines();
-                    s_logger.warn(errMsg);
+                    s_logger.error(errMsg);
                     return errMsg;
                 }
             }
@@ -1580,7 +1610,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String result = command.execute(parser);
         if (result != null) {
             String errMsg = "swiftDownloadContainer failed  err=" + result;
-            s_logger.warn(errMsg);
+            s_logger.error(errMsg);
             return errMsg;
         }
         if (parser.getLines() != null) {
@@ -1588,7 +1618,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             for (String line : lines) {
                 if (line.contains("Errno") || line.contains("failed")) {
                     String errMsg = "swiftDownloadContainer failed , err=" + parser.getLines();
-                    s_logger.warn(errMsg);
+                    s_logger.error(errMsg);
                     return errMsg;
                 }
             }
@@ -1631,7 +1661,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String result = command.execute(parser);
             if (result != null) {
                 String errMsg = "swiftUpload failed , err=" + result;
-                s_logger.warn(errMsg);
+                s_logger.error(errMsg);
                 return errMsg;
             }
             if (parser.getLines() != null) {
@@ -1639,7 +1669,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 for (String line : lines) {
                     if (line.contains("Errno") || line.contains("failed")) {
                         String errMsg = "swiftUpload failed , err=" + parser.getLines();
-                        s_logger.warn(errMsg);
+                        s_logger.error(errMsg);
                         return errMsg;
                     }
                 }
@@ -1662,10 +1692,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else {
             if (result != null) {
                 String errMsg = "swiftList failed , err=" + result;
-                s_logger.warn(errMsg);
+                s_logger.error(errMsg);
             } else {
                 String errMsg = "swiftList failed, no lines returns";
-                s_logger.warn(errMsg);
+                s_logger.error(errMsg);
             }
         }
         return null;
@@ -1680,7 +1710,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String result = command.execute(parser);
         if (result != null) {
             String errMsg = "swiftDelete failed , err=" + result;
-            s_logger.warn(errMsg);
+            s_logger.error(errMsg);
             return errMsg;
         }
         if (parser.getLines() != null) {
@@ -1688,7 +1718,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             for (String line : lines) {
                 if (line.contains("Errno") || line.contains("failed")) {
                     String errMsg = "swiftDelete failed , err=" + parser.getLines();
-                    s_logger.warn(errMsg);
+                    s_logger.error(errMsg);
                     return errMsg;
                 }
             }
@@ -1715,7 +1745,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String details = null;
             if (!snapshotDir.exists()) {
                 details = "snapshot directory " + snapshotDir.getName() + " doesn't exist";
-                s_logger.debug(details);
+                s_logger.info(details);
                 return new Answer(cmd, true, details);
             }
             // delete all files in the directory
@@ -1723,13 +1753,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String result = deleteLocalFile(lPath);
             if (result != null) {
                 String errMsg = "failed to delete all snapshots " + lPath + " , err=" + result;
-                s_logger.warn(errMsg);
+                s_logger.error(errMsg);
                 return new Answer(cmd, false, errMsg);
             }
             // delete the directory
             if (!snapshotDir.delete()) {
                 details = "Unable to delete directory " + snapshotDir.getName() + " under snapshot path " + relativeSnapshotPath;
-                s_logger.debug(details);
+                s_logger.error(details);
                 return new Answer(cmd, false, details);
             }
             return new Answer(cmd, true, null);
@@ -1761,7 +1791,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String result = swiftDelete((SwiftTO)dstore, "V-" + volumeId.toString(), "");
             if (result != null) {
                 String errMsg = "failed to delete snapshot for volume " + volumeId + " , err=" + result;
-                s_logger.warn(errMsg);
+                s_logger.error(errMsg);
                 return new Answer(cmd, false, errMsg);
             }
             return new Answer(cmd, true, "Deleted snapshot " + path + " from swift");
@@ -1943,7 +1973,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     ch.closeFuture().sync();
                 } catch (InterruptedException e) {
                     s_logger.info("Failed to start post upload server");
-                    s_logger.debug("Exception while starting post upload server", e);
+                    s_logger.error("Exception while starting post upload server", e);
                 } finally {
                     bossGroup.shutdownGracefully();
                     workerGroup.shutdownGracefully();

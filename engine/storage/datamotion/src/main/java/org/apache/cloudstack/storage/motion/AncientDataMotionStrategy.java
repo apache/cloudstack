@@ -146,7 +146,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer copyObject(DataObject srcData, DataObject destData, Host destHost) {
-        int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
+        int imgSizeGigs = (int)Math.ceil(srcData.getSize() * 1.0d / (1024 * 1024 * 1024));
+        imgSizeGigs++; // add one just in case
+        int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value()*imgSizeGigs;
         Answer answer = null;
         DataObject cacheData = null;
         DataObject srcForCopy = srcData;
