@@ -419,7 +419,9 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public boolean removeVpnUser(long vpnOwnerId, String username, Account caller) {
         final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, username);
         if (user == null) {
-            throw new InvalidParameterValueException("Could not find vpn user " + username);
+            String errorMessage = String.format("Could not find VPN user=[%s]. VPN owner id=[%s]", username, vpnOwnerId);
+            s_logger.debug(errorMessage);
+            throw new InvalidParameterValueException(errorMessage);
         }
         _accountMgr.checkAccess(caller, null, true, user);
 
