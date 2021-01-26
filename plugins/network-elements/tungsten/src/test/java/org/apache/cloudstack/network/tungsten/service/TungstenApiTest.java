@@ -79,7 +79,7 @@ public class TungstenApiTest {
         s_logger.debug("Creating a virtual network in tungsten.");
         assertNotNull(tungstenApi.createTungstenNetwork(tungstenNetworkUuid, tungstenNetworkName, projectUuid,
                 true, false, "10.0.0.0", 24, "10.0.0.1",
-                true, null, "10.0.0.10", "10.0.0.20", false));
+                true, null, "10.0.0.10", "10.0.0.20", false, false));
 
         // get tungsten network
         s_logger.debug("Get tungsten virtual network and check if it's not null.");
@@ -95,7 +95,7 @@ public class TungstenApiTest {
         s_logger.debug("Create virtual network in tungsten.");
         assertNotNull(tungstenApi.createTungstenNetwork(tungstenNetworkUuid, tungstenNetworkName, projectUuid,
                 true, false, "10.0.0.0", 24, "10.0.0.1",
-                true, null, "10.0.0.10", "10.0.0.20", false));
+                true, null, "10.0.0.10", "10.0.0.20", false, false));
 
         //get tungsten network
         s_logger.debug("Check if virtual network was created in tungsten.");
@@ -149,7 +149,7 @@ public class TungstenApiTest {
         s_logger.debug("Create virtual network in tungsten.");
         assertNotNull(tungstenApi.createTungstenNetwork(tungstenNetworkUuid, tungstenNetworkName, projectUuid,
                 true, false, "10.0.0.0", 24, "10.0.0.1",
-                true, null, "10.0.0.10", "10.0.0.20", false));
+                true, null, "10.0.0.10", "10.0.0.20", false, false));
 
         //create tungsten vm
         String tungstenVmName = "TungstenVmTest";
@@ -176,7 +176,7 @@ public class TungstenApiTest {
         s_logger.debug("Create virtual network in tungsten.");
         assertNotNull(tungstenApi.createTungstenNetwork(tungstenNetworkUuid, tungstenNetworkName, projectUuid,
                 true, false, "10.0.0.0", 24, "10.0.0.1",
-                true, null, "10.0.0.10", "10.0.0.20", false));
+                true, null, "10.0.0.10", "10.0.0.20", false, false));
 
         //create tungsten vm
         String tungstenVmName = "TungstenVmTest";
@@ -213,7 +213,7 @@ public class TungstenApiTest {
         s_logger.debug("Create public network in tungsten.");
         assertNotNull(tungstenApi.createTungstenNetwork(tungstenPublicNetworkUuid, tungstenPublicNetworkName, projectUuid,
                 true, false, "10.0.0.0", 24, "10.0.0.1",
-                true, null, "10.0.0.10", "10.0.0.20", false));
+                true, null, "10.0.0.10", "10.0.0.20", false, false));
 
         //create logical router in tungsten
         s_logger.debug("Create logical router in tungsten.");
@@ -229,7 +229,7 @@ public class TungstenApiTest {
         s_logger.debug("Create public network in tungsten.");
         assertNotNull(tungstenApi.createTungstenNetwork(tungstenPublicNetworkUuid, tungstenPublicNetworkName, projectUuid,
                 true, false, "10.0.0.0", 24, "10.0.0.1",
-                true, null, "10.0.0.10", "10.0.0.20", false));
+                true, null, "10.0.0.10", "10.0.0.20", false, false));
 
         //create logical router in tungsten
         s_logger.debug("Create logical router in tungsten.");

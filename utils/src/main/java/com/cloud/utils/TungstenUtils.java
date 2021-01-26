@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.utils;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -81,6 +82,10 @@ public class TungstenUtils {
 
     public static String getPublicNetworkName(long zoneId) {
         return "publicNetwork" + zoneId;
+    }
+
+    public static String getGuestNetworkName(String networkName){
+        return networkName + "-" + RandomStringUtils.random(6, true, true);
     }
 
     public static String getManagementNetworkName(long mvnId) {

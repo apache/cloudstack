@@ -135,7 +135,8 @@ public class TungstenApi {
             if (uuid != null) {
                 virtualNetwork.setUuid(uuid);
             }
-            virtualNetwork.setName(name);
+            virtualNetwork.setName(TungstenUtils.getGuestNetworkName(name));
+            virtualNetwork.setDisplayName(name);
             virtualNetwork.addNetworkIpam(networkIpam, vnSubnetsType);
             virtualNetwork.setParent(project);
             virtualNetwork.setRouterExternal(routerExternal);
