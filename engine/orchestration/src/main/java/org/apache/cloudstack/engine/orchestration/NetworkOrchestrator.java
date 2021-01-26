@@ -2168,10 +2168,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void expungeNics(final VirtualMachineProfile vm) {
-        final List<NicVO> nics = _nicDao.listByVmIdIncludingRemoved(vm.getId());
+    public void removeNics(final VirtualMachineProfile vm) {
+        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
-            _nicDao.expunge(nic.getId());
+            _nicDao.remove(nic.getId());
         }
     }
 

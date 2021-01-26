@@ -580,10 +580,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#expungeNics(com.cloud.vm.VirtualMachineProfile)
+     * @see com.cloud.network.NetworkManager#removeNics(com.cloud.vm.VirtualMachineProfile)
      */
     @Override
-    public void expungeNics(VirtualMachineProfile vm) {
+    public void removeNics(VirtualMachineProfile vm) {
         // TODO Auto-generated method stub
 
     }

@@ -6218,7 +6218,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
             // cleanup the network for the oldOwner
             _networkMgr.cleanupNics(vmOldProfile);
-            _networkMgr.expungeNics(vmOldProfile);
+            _networkMgr.removeNics(vmOldProfile);
             // security groups will be recreated for the new account, when the
             // VM is started
             List<NetworkVO> networkList = new ArrayList<NetworkVO>();
@@ -6342,7 +6342,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // cleanup the network for the oldOwner
                 _networkMgr.cleanupNics(vmOldProfile);
-                _networkMgr.expungeNics(vmOldProfile);
+                _networkMgr.removeNics(vmOldProfile);
 
                 // add the new nics
                 LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
@@ -6533,7 +6533,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // cleanup the network for the oldOwner
                 _networkMgr.cleanupNics(vmOldProfile);
-                _networkMgr.expungeNics(vmOldProfile);
+                _networkMgr.removeNics(vmOldProfile);
 
                 // add the new nics
                 LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
