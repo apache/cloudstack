@@ -6291,16 +6291,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     NicVO defaultNicOld = _nicDao.findDefaultNicForVM(vm.getId());
                     if (defaultNicOld != null) {
                         NetworkVO defaultNetworkOld = _networkDao.findById(defaultNicOld.getNetworkId());
-                        if (defaultNetworkOld != null && defaultNetworkOld.getGuestType() == Network.GuestType.Shared && defaultNetworkOld.getAclType() == ACLType.Domain) {
-                            try {
-                                _networkModel.checkNetworkPermissions(newAccount, defaultNetworkOld);
-                                applicableNetworks.add(defaultNetworkOld);
-                                requestedIPv4ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv4Address());
-                                requestedIPv6ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv6Address());
-                                s_logger.debug("AssignVM: use old shared network " + defaultNetworkOld.getName() + " with old ip " + defaultNicOld.getIPv4Address() + " on default nic of vm:" + vm.getInstanceName());
-                            } catch (PermissionDeniedException e) {
-                                s_logger.debug("AssignVM: the shared network on old default nic can not be applied to new account");
-                            }
+                        if (canAccountUseNetwork(newAccount, defaultNetworkOld)) {
+                            applicableNetworks.add(defaultNetworkOld);
+                            requestedIPv4ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv4Address());
+                            requestedIPv6ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv6Address());
+                            s_logger.debug("AssignVM: use old shared network " + defaultNetworkOld.getName() + " with old ip " + defaultNicOld.getIPv4Address() + " on default nic of vm:" + vm.getInstanceName());
                         }
                     }
                 }
@@ -6425,16 +6420,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     NicVO defaultNicOld = _nicDao.findDefaultNicForVM(vm.getId());
                     if (defaultNicOld != null) {
                         NetworkVO defaultNetworkOld = _networkDao.findById(defaultNicOld.getNetworkId());
-                        if (defaultNetworkOld != null && defaultNetworkOld.getGuestType() == Network.GuestType.Shared && defaultNetworkOld.getAclType() == ACLType.Domain) {
-                            try {
-                                _networkModel.checkNetworkPermissions(newAccount, defaultNetworkOld);
-                                applicableNetworks.add(defaultNetworkOld);
-                                requestedIPv4ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv4Address());
-                                requestedIPv6ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv6Address());
-                                s_logger.debug("AssignVM: use old shared network " + defaultNetworkOld.getName() + " with old ip " + defaultNicOld.getIPv4Address() + " on default nic of vm:" + vm.getInstanceName());
-                            } catch (PermissionDeniedException e) {
-                                s_logger.debug("AssignVM: the shared network on old default nic can not be applied to new account");
-                            }
+                        if (canAccountUseNetwork(newAccount, defaultNetworkOld)) {
+                            applicableNetworks.add(defaultNetworkOld);
+                            requestedIPv4ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv4Address());
+                            requestedIPv6ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv6Address());
+                            s_logger.debug("AssignVM: use old shared network " + defaultNetworkOld.getName() + " with old ip " + defaultNicOld.getIPv4Address() + " on default nic of vm:" + vm.getInstanceName());
                         }
                     }
                 }
@@ -6556,6 +6546,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } // END IF ADVANCED
         s_logger.info("AssignVM: vm " + vm.getInstanceName() + " now belongs to account " + newAccount.getAccountName());
         return vm;
+    }
+
+    private boolean canAccountUseNetwork(Account newAccount, Network network) {
+        if (network != null && network.getAclType() == ACLType.Domain
+                && (network.getGuestType() == Network.GuestType.Shared
+                || network.getGuestType() == Network.GuestType.L2)) {
+            try {
+                _networkModel.checkNetworkPermissions(newAccount, network);
+                return true;
+            } catch (PermissionDeniedException e) {
+                s_logger.debug(String.format("AssignVM: %s network %s can not be used by new account %s", network.getGuestType(), network.getName(), newAccount.getAccountName()));
+                return false;
+            }
+        }
+        return false;
     }
 
     @Override
