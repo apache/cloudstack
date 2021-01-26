@@ -37,7 +37,7 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public boolean deleteProject(long id) {
+    public boolean deleteProject(long id, Boolean cleanup) {
         // TODO Auto-generated method stub
         return false;
     }

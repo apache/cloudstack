@@ -55,7 +55,7 @@ public interface ProjectService {
      *            - project id
      * @return true if the project was deleted successfully, false otherwise
      */
-    boolean deleteProject(long id);
+    boolean deleteProject(long id, Boolean cleanup);
 
     /**
      * Gets a project by id
