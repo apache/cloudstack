@@ -54,10 +54,10 @@ else
 fi
 
 # Install mysql-connector-python
-pip install --user --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df 2>&1 > /dev/null
+python3 -m pip install --user --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df 2>&1 > /dev/null
 
 # Install marvin
-pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
+python3 -m pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
 
 # Deploy the database
 mvn -q -Pdeveloper -pl developer -Ddeploydb
