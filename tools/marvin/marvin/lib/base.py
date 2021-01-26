@@ -626,7 +626,7 @@ class VirtualMachine:
         if custommemory:
             cmd.details[0]["memory"] = custommemory
 
-        if rootdisksize >= 0:
+        if rootdisksize and rootdisksize >= 0:
             cmd.details[0]["rootdisksize"] = rootdisksize
 
         if rootdiskcontroller:
