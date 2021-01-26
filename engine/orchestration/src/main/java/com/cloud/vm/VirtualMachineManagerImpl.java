@@ -3365,12 +3365,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public DataCenterDeployment getMigrationDeployment(final Long vmId, final Host host, final Long poolId, final ExcludeList excludes) {
         if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(host.getDataCenterId()) && !checkIfVmHasClusterWideVolumes(vmId)) {
             s_logger.info("Searching for hosts in the zone for vm migration");
-            List<Long> clustersToExcluded = _clusterDao.listAllClusters(host.getDataCenterId());
+            List<Long> clustersToExclude = _clusterDao.listAllClusters(host.getDataCenterId());
             List<ClusterVO> clusterList = _clusterDao.listByDcHyType(host.getDataCenterId(), host.getHypervisorType().toString());
             for (ClusterVO cluster : clusterList) {
-                clustersToExcluded.remove(cluster.getId());
+                clustersToExclude.remove(cluster.getId());
             }
-            for (Long clusterId : clustersToExcluded) {
+            for (Long clusterId : clustersToExclude) {
                 excludes.addCluster(clusterId);
             }
             return new DataCenterDeployment(host.getDataCenterId(), null, null, null, poolId, null);
