@@ -2253,6 +2253,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File tmpltParent = null;
             if (tmpltPath.exists() && tmpltPath.isDirectory()) {
                 tmpltParent = tmpltPath;
+            } else if (absoluteTemplatePath.endsWith(File.separator + obj.getId())) {
+                // the path ends with <account id>/<template id>, if upload fails
+                tmpltParent = tmpltPath;
             } else {
                 tmpltParent = tmpltPath.getParentFile();
             }
@@ -2356,6 +2359,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File tmpltParent = null;
             if (volPath.exists() && volPath.isDirectory()) {
                 // for vmware, absoluteVolumePath represents a directory where volume files are located.
+                tmpltParent = volPath;
+            } else if (absoluteVolumePath.endsWith(File.separator + obj.getId())) {
+                // the path ends with <account id>/<volume id>, if upload fails
                 tmpltParent = volPath;
             } else {
                 // for other hypervisors, the volume .vhd or .qcow2 file path is passed
