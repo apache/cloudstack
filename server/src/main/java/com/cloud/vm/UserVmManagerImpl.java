@@ -3821,15 +3821,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String instanceSuffix = _instance;
         String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
         if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType)) {
+            if (StringUtils.isNotEmpty(hostName)) {
+                instanceSuffix = hostName;
+            }
             if (hostName == null) {
                 if (displayName != null) {
                     hostName = displayName;
                 } else {
                     hostName = generateHostName(uuidName);
                 }
-            }
-            if (StringUtils.isNotEmpty(displayName)) {
-                instanceSuffix = hostName;
             }
             // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
             // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
@@ -3849,7 +3849,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             checkNameForRFCCompliance(hostName);
         }
         instanceName = VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix);
-        if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType) && StringUtils.isNotEmpty(displayName)) {
+        if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType) && !instanceSuffix.equals(_instance)) {
             customParameters.put(VmDetailConstants.NAME_ON_HYPERVISOR, instanceName);
         }
 
