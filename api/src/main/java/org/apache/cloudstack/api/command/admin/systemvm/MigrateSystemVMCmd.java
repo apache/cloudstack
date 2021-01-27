@@ -129,34 +129,26 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
         if (getHostId() != null && getStorageId() != null) {
             throw new InvalidParameterValueException("Only one of hostId and storageId can be specified");
         }
-
-        Host destinationHost = null;
-        if (getHostId() != null) {
-            destinationHost = _resourceService.getHost(getHostId());
-            if (destinationHost == null) {
-                throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
-            }
-            if (destinationHost.getType() != Host.Type.Routing) {
-                throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the VM, please specify another one");
-            }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
-        }
-
-        // OfflineMigration performed when this parameter is specified
-        StoragePool destStoragePool = null;
-        if (getStorageId() != null) {
-            destStoragePool = _storageService.getStoragePool(getStorageId());
-            if (destStoragePool == null) {
-                throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
-            }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStorageId());
-        }
         try {
             //FIXME : Should not be calling UserVmService to migrate all types of VMs - need a generic VM layer
             VirtualMachine migratedVm = null;
             if (getHostId() != null) {
+                Host destinationHost = _resourceService.getHost(getHostId());
+                if (destinationHost == null) {
+                    throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
+                }
+                if (destinationHost.getType() != Host.Type.Routing) {
+                    throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the VM, please specify another one");
+                }
+                CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
                 migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, new HashMap<String, String>());
             } else if (getStorageId() != null) {
+                // OfflineMigration performed when this parameter is specified
+                StoragePool destStoragePool = _storageService.getStoragePool(getStorageId());
+                if (destStoragePool == null) {
+                    throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
+                }
+                CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStorageId());
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
             }
             if (migratedVm != null) {
