@@ -84,6 +84,9 @@ fi
 sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython-dev libssl-dev libffi-dev python-openssl build-essential --no-install-recommends > /dev/null
 
 sudo apt-get -y install python3 python3-pip
+sudo apt-get -y install python3-devel # in order to be able to pip3 install pycrypto
+
+echo `python3 --version | cut -d ' ' -f 2` >> /home/travis/build/apache/cloudstack/.python-version
 
 echo -e "\nIPMI version"
 ipmitool -V
