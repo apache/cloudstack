@@ -1244,28 +1244,32 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         Map<Long, List<Long>> clusterToHostsMap = new HashMap<>();
 
         for (HostVO host : hosts) {
-            Pair<Boolean, NicTO> networkCfgStateAndDetails = isNtwConfiguredInCluster(host, clusterToHostsMap, network, offering);
-            if (networkCfgStateAndDetails.first()) {
-                continue;
-            }
-            NicTO to = networkCfgStateAndDetails.second();
-            SetupPersistentNetworkCommand cmd = new SetupPersistentNetworkCommand(to);
-            final SetupPersistentNetworkAnswer answer = (SetupPersistentNetworkAnswer)_agentMgr.send(host.getId(), cmd);
+            try {
+                Pair<Boolean, NicTO> networkCfgStateAndDetails = isNtwConfiguredInCluster(host, clusterToHostsMap, network, offering);
+                if (networkCfgStateAndDetails.first()) {
+                    continue;
+                }
+                NicTO to = networkCfgStateAndDetails.second();
+                SetupPersistentNetworkCommand cmd = new SetupPersistentNetworkCommand(to);
+                final SetupPersistentNetworkAnswer answer = (SetupPersistentNetworkAnswer) _agentMgr.send(host.getId(), cmd);
 
-            if (answer == null) {
-                s_logger.warn("Unable to get an answer to the SetupPersistentNetworkCommand from agent:" + host.getId());
-                clusterToHostsMap.get(host.getClusterId()).remove(host.getId());
-                continue;
-            }
+                if (answer == null) {
+                    s_logger.warn("Unable to get an answer to the SetupPersistentNetworkCommand from agent:" + host.getId());
+                    clusterToHostsMap.get(host.getClusterId()).remove(host.getId());
+                    continue;
+                }
 
-            if (!answer.getResult()) {
-                s_logger.warn("Unable to setup agent " + host.getId() + " due to " + answer.getDetails());
-                clusterToHostsMap.get(host.getClusterId()).remove(host.getId());
-                continue;
+                if (!answer.getResult()) {
+                    s_logger.warn("Unable to setup agent " + host.getId() + " due to " + answer.getDetails());
+                    clusterToHostsMap.get(host.getClusterId()).remove(host.getId());
+                    continue;
+                }
+            } catch (Exception e) {
+                s_logger.warn("Failed to connect to host: "+ host.getName());
             }
         }
         if (clusterToHostsMap.keySet().size() != clusterVOS.size()) {
-            throw new CloudRuntimeException("Failed to setup persistent network across all hosts");
+            s_logger.warn("Not all hosts have been configured with network devices.");
         }
     }
 
@@ -1352,10 +1356,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return implemented;
         } catch (final NoTransitionException e) {
             s_logger.error(e.getMessage());
-            return null;
+            return new Pair<NetworkGuru, NetworkVO>(null, null);
         } catch (final CloudRuntimeException | OperationTimedoutException e) {
             s_logger.error("Caught exception: " + e.getMessage());
-            return null;
+            return new Pair<NetworkGuru, NetworkVO>(null, null);
         } finally {
             if (implemented.first() == null) {
                 s_logger.debug("Cleaning up because we're unable to implement the network " + network);
