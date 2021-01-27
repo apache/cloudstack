@@ -263,7 +263,7 @@ cp -r client/target/classes/META-INF/webapp ${RPM_BUILD_ROOT}%{_datadir}/%{name}
 cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
 cp -r ui/dist/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp/
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp/config.json
-ln -sf /etc/%{name}/cloudstack/config.json ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp/config.json
+ln -sf /etc/%{name}/management/config.json ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp/config.json
 mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cloud-client-ui-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib/cloudstack-%{_maventag}.jar
 cp client/target/lib/*jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib/
 
@@ -295,7 +295,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
 cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui/
 cp -r ui/dist/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/config.json
-ln -sf /etc/%{name}/ui/config.json ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp/config.json
+ln -sf /etc/%{name}/ui/config.json ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/config.json
 
 # Package mysql-connector-python
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/ee/ff/48bde5c0f013094d729fe4b0316ba2a24774b3ff1c52d924a8a4cb04078a/six-1.15.0-py2.py3-none-any.whl
