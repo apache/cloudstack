@@ -1269,7 +1269,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
         if (clusterToHostsMap.keySet().size() != clusterVOS.size()) {
-            s_logger.warn("Not all hosts have been configured with network devices.");
+            s_logger.warn("Hosts on all clusters may not have been configured with network devices.");
         }
     }
 
