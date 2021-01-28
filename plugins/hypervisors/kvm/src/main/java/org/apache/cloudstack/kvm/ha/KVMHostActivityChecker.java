@@ -87,10 +87,11 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(r);
         isHealthy = isHealthyCheckViaNfs(r, isHealthy, poolVolMap);
 
-        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(r.getPrivateIpAddress());
-        boolean isKvmAgentRunning = kvmAgentHaClient.isKvmHaAgentRunning();
+        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(r);
+        List<VMInstanceVO> vmsOnHost = vmInstanceDao.listByHostId(r.getId());
+        boolean checkKvmHeatlh = kvmAgentHaClient.checkAgentHealthAndRunningVms(vmsOnHost.size());
 
-        if(!isHealthy && isKvmAgentRunning) {
+        if(!isHealthy && checkKvmHeatlh) {
             isHealthy = true;
         }
 
@@ -189,10 +190,11 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             }
         }
 
-        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(agent.getPrivateIpAddress());
-        boolean isKvmAgentRunning = kvmAgentHaClient.isKvmHaAgentRunning();
+        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(agent);
+        List<VMInstanceVO> vmsOnHost = vmInstanceDao.listByHostId(agent.getId());
+        boolean isVmsOnKvmMatchingWithDatabase = kvmAgentHaClient.checkAgentHealthAndRunningVms(vmsOnHost.size());
 
-        if(!activityStatus && isKvmAgentRunning) {
+        if(!activityStatus && isVmsOnKvmMatchingWithDatabase) {
             activityStatus = true;
         } else {
             LOG.warn(String.format("No VM activity detected on %s. This might trigger HA Host Recovery and/or Fence.", agent.toString()));

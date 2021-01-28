@@ -30,6 +30,8 @@ import com.cloud.hypervisor.kvm.resource.KvmAgentHaClient;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.ha.HAManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -50,6 +52,8 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private HAManager haManager;
+    @Inject
+    private VMInstanceDao vmInstanceDao;
 
     @Override
     public boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) throws UnknownVM {
@@ -87,9 +91,10 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             s_logger.debug(String.format("Agent investigation was requested on host %s, but host has no NFS storage. Skipping investigation via NFS.", agent));
         }
 
-        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(agent.getPrivateIpAddress());
-        boolean isKvmAgentRunning = kvmAgentHaClient.isKvmHaAgentRunning();
-        if(isKvmAgentRunning) {
+        List<VMInstanceVO> vmsOnHost = vmInstanceDao.listByHostId(agent.getId());
+        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(agent);
+        boolean isVmsOnKvmMatchingWithDatabase = kvmAgentHaClient.checkAgentHealthAndRunningVms(vmsOnHost.size());
+        if(isVmsOnKvmMatchingWithDatabase) {
             agentStatus = Status.Up;
             s_logger.debug(String.format("Checking agent %s status; KVM HA webserver is Running as expected."));
         } else {

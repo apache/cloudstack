@@ -15,9 +15,10 @@
  */
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.host.Host;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.apache.cloudstack.utils.redfish.RedfishException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -26,7 +27,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -55,41 +55,44 @@ public class KvmAgentHaClient {
     private final static String EXPECTED_HTTP_STATUS = "2XX";
     private static final int MAX_REQUEST_RETRIES = 2;
     private static final int DEFAULT_PORT = 8080;
-    private String agentIpAddress;
-    private int port;
+    private Host agent;
 
     /**
      * Instantiates a webclient that checks, via a webserver running on the KVM host, the VMs running
-     * @param agentIpAddress address of the KVM host running the webserver
      */
-    public KvmAgentHaClient(String agentIpAddress) {
-        this.agentIpAddress = agentIpAddress;
-    }
-
-    public boolean isKvmHaAgentRunning() {
-        if (countRunningVmsOnAgent() < 0) {
-            return false;
-        }
-        return true;
+    public KvmAgentHaClient(Host agent) {
+        this.agent = agent;
     }
 
     /**
      *  Returns the number of VMs running on the KVM host according to libvirt.
      */
-    public int countRunningVmsOnAgent() {
-        String url = String.format("http://%s:%d", agentIpAddress, DEFAULT_PORT);
+    protected int countRunningVmsOnAgent() {
+        String url = String.format("http://%s:%d", agent.getPrivateIpAddress(), DEFAULT_PORT);
         HttpResponse response = executeHttpRequest(url);
 
         if (response == null)
             return ERROR_CODE;
 
-        return Integer.valueOf(processHttpResponseIntoJson(response));
+        JsonObject responseInJson = processHttpResponseIntoJson(response);
+        if (responseInJson == null) {
+            return ERROR_CODE;
+        }
+
+        return Integer.valueOf(responseInJson.get(VM_COUNT).getAsString());
+    }
+
+    /**
+     *  Returns true in case of the expected number of VMs matches with the VMs running on the KVM host according to libvirt. If the ammount of VMs are not the same then it is assumed that
+     */
+    public boolean checkAgentHealthAndRunningVms(int expectedNumberOfVms) {
+        int numberOfVmsOnAgent = countRunningVmsOnAgent();
+        return expectedNumberOfVms == numberOfVmsOnAgent;
     }
 
     /**
      * Executes a GET request for the given URL address.
      */
-    @Nullable
     protected HttpResponse executeHttpRequest(String url) {
         HttpGet httpReq = null;
         try {
@@ -140,12 +143,14 @@ public class KvmAgentHaClient {
 
         if (response == null) {
             LOGGER.error(String.format("Failed to execute HTTP %s request [URL: %s].", httpReq.getMethod(), url));
+            return response;
         }
 
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
-            throw new RedfishException(String.format("Failed to get VMs information with a %s request to URL '%s'. The expected HTTP status code is '%s' but it got '%s'.",
-                    HttpGet.METHOD_NAME, url, EXPECTED_HTTP_STATUS, statusCode));
+            throw new CloudRuntimeException(
+                    String.format("Failed to get VMs information with a %s request to URL '%s'. The expected HTTP status code is '%s' but it got '%s'.", HttpGet.METHOD_NAME, url,
+                            EXPECTED_HTTP_STATUS, statusCode));
         }
 
         LOGGER.debug(String.format("Successfully executed HTTP %s request [URL: %s].", httpReq.getMethod(), url));
@@ -153,14 +158,17 @@ public class KvmAgentHaClient {
     }
 
     /**
-     * TODO
-     * Processes the response of request GET System ID as a JSON object.
+     * Processes the response of request GET System ID as a JSON object.<br><br>
+     *
+     * Json example: {"count": 3, "virtualmachines": ["r-123-VM", "v-134-VM", "s-111-VM"]}<br><br>
+     *
+     * Note: this method can return NULL JsonObject in case HttpResponse is NULL.
      */
-    protected String processHttpResponseIntoJson(HttpResponse response) {
+    protected JsonObject processHttpResponseIntoJson(HttpResponse response) {
         InputStream in;
         String jsonString;
         if (response == null) {
-            return Integer.toString(ERROR_CODE);
+            return null;
         }
         try {
             in = response.getEntity().getContent();
@@ -170,8 +178,7 @@ public class KvmAgentHaClient {
             throw new CloudRuntimeException("Failed to process response", e);
         }
 
-        String vmsCount = new JsonParser().parse(jsonString).getAsJsonObject().get(VM_COUNT).getAsString();
-        return vmsCount;
+        return new JsonParser().parse(jsonString).getAsJsonObject();
     }
 
 }

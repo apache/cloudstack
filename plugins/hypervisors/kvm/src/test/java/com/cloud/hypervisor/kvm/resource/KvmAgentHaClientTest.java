@@ -15,6 +15,7 @@
  */
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.host.HostVO;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.mockito.Mockito;
@@ -23,19 +24,8 @@ import org.mockito.Mockito;
 public class KvmAgentHaClientTest {
 
     private static final String AGENT_ADDRESS = "kvm-agent.domain.name";
-
-    private KvmAgentHaClient kvmAgentHaClient = Mockito.spy(new KvmAgentHaClient(AGENT_ADDRESS));
-
-    //TODO
-//    @test
-    public void checkHostStatusTest() {
-        int kvmAgentResponse = kvmAgentHaClient.countRunningVmsOnAgent();
-    }
-
-//    @Test
-    public void isKvmHaAgentRunningTest() {
-        boolean isKvmAgentRunning = kvmAgentHaClient.isKvmHaAgentRunning();
-    }
+    private HostVO agent = Mockito.mock(HostVO.class);
+    private KvmAgentHaClient kvmAgentHaClient = Mockito.spy(new KvmAgentHaClient(agent));
 
     private CloseableHttpResponse mockResponse(int httpStatusCode) {
         StatusLine statusLine = Mockito.mock(StatusLine.class);
