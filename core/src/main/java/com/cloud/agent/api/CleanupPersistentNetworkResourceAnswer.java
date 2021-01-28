@@ -17,7 +17,7 @@
 
 package com.cloud.agent.api;
 
-public class CleanupPersistentNetworkResourceAnswer extends Answer{
+public class CleanupPersistentNetworkResourceAnswer extends Answer {
     public CleanupPersistentNetworkResourceAnswer() {
     }
 

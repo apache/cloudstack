@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.NicTO;
 
-public class SetupPersistentNetworkCommand extends Command{
+public class SetupPersistentNetworkCommand extends Command {
 
     NicTO nic;
 

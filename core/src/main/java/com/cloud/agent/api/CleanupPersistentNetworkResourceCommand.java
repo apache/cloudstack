@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.NicTO;
 
-public class CleanupPersistentNetworkResourceCommand extends Command{
+public class CleanupPersistentNetworkResourceCommand extends Command {
     NicTO nicTO;
 
     protected CleanupPersistentNetworkResourceCommand() {}

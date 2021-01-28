@@ -450,7 +450,9 @@ public class BridgeVifDriver extends VifDriverBase {
                 pifName = trafficLabel;
             }
         }
-        String brName = generateVnetBrName(pifName, vlanId);
-        deleteVnetBr(brName, true);
+        if (vlanId != null && pifName != null) {
+            String brName = generateVnetBrName(pifName, vlanId);
+            deleteVnetBr(brName, true);
+        }
     }
 }

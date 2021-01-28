@@ -2982,7 +2982,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             s_logger.warn("Unable to setup agent " + host.getId() + " due to " + answer.getDetails());
                         }
                     } catch (Exception e) {
-                        s_logger.warn("Failed to cleanup network resources");
+                        s_logger.warn("Failed to cleanup network resources on host: "+ host.getName());
                     }
                 }
             }

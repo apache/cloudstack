@@ -17,7 +17,7 @@
 
 package com.cloud.agent.api;
 
-public class SetupPersistentNetworkAnswer extends Answer{
+public class SetupPersistentNetworkAnswer extends Answer {
     public SetupPersistentNetworkAnswer(){}
 
     public SetupPersistentNetworkAnswer(SetupPersistentNetworkCommand cmd, boolean success, String result) {

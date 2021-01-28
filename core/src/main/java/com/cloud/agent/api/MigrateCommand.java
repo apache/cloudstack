@@ -40,7 +40,7 @@ public class MigrateCommand extends Command {
     private boolean executeInSequence = false;
     private List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
     private Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
-    Map<String, Boolean> vlanToPersistenceMap;
+    Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
 
     public Map<String, DpdkTO> getDpdkInterfaceMapping() {
         return dpdkInterfaceMapping;
