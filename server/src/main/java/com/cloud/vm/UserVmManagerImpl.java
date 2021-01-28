@@ -1065,6 +1065,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
+        resizeRootVolumeOfVmWithNewOffering(vmInstance, newServiceOffering);
+
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
         // Increment or decrement CPU and Memory count accordingly.
@@ -1327,17 +1329,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException(vmInstance + " is in zone:" + vmInstance.getDataCenterId() + " but " + network + " is in zone:" + network.getDataCenterId());
         }
 
-        // Get all vms hostNames in the network
-        List<String> hostNames = _vmInstanceDao.listDistinctHostNames(network.getId());
-        // verify that there are no duplicates, listDistictHostNames could return hostNames even if the NIC
-        //in the network is removed, so also check if the NIC is present and then throw an exception.
-        //This will also check if there are multiple nics of same vm in the network
-        if (hostNames.contains(vmInstance.getHostName())) {
-            for (String hostName : hostNames) {
-                VMInstanceVO vm = _vmInstanceDao.findVMByHostName(hostName);
-                if (_networkModel.getNicInNetwork(vm.getId(), network.getId()) != null && vm.getHostName().equals(vmInstance.getHostName())) {
-                    throw new CloudRuntimeException(network + " already has a vm with host name: " + vmInstance.getHostName());
-                }
+        if(_networkModel.getNicInNetwork(vmInstance.getId(),network.getId()) != null){
+            s_logger.debug("VM " + vmInstance.getHostName() + " already in network " + network.getName() + " going to add another NIC");
+        } else {
+            //* get all vms hostNames in the network
+            List<String> hostNames = _vmInstanceDao.listDistinctHostNames(network.getId());
+            //* verify that there are no duplicates
+            if (hostNames.contains(vmInstance.getHostName())) {
+                throw new CloudRuntimeException("Network " + network.getName() + " already has a vm with host name: " + vmInstance.getHostName());
             }
         }
 
