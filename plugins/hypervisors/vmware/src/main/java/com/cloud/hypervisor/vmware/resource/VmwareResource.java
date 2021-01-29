@@ -1959,7 +1959,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // Check for hotadd settings
-            vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId));
+            vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId) && Boolean.parseBoolean(vmSpec.getDetails().get(VmDetailConstants.HOT_ADD_MEMORY)));
 
             String hostApiVersion = ((HostMO) hyperHost).getHostAboutInfo().getApiVersion();
             if (numCoresPerSocket > 1 && hostApiVersion.compareTo("5.0") < 0) {
@@ -1967,7 +1967,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         + " enabled for Virtual Machine: " + vmInternalCSName);
                 vmConfigSpec.setCpuHotAddEnabled(false);
             } else {
-                vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId));
+                vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId) && Boolean.parseBoolean(vmSpec.getDetails().get(VmDetailConstants.HOT_ADD_CPU)));
             }
 
             configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
