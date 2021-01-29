@@ -3944,9 +3944,15 @@
                                         // It could happen that a stale web page has been opened up when VM was stopped but
                                         // vm was turned on through another route - UI or API. so we should check again.
                                         var existingDetails = virtualMachine.details;
+                                        var readOnlyUIDetails = [];
+                                        if (virtualMachine.readonlyuidetails && virtualMachine.readonlyuidetails.length > 0) {
+                                            $.each(virtualMachine.readonlyuidetails.split(","), function(){
+                                                readOnlyUIDetails.push($.trim(this));
+                                            });
+                                        }
                                         var newDetails = {};
                                         for (d in existingDetails) {
-                                            if (d != data.name) {
+                                            if (d != data.name && $.inArray(d, readOnlyUIDetails) < 0) {
                                                 newDetails['details[0].' + d] = existingDetails[d];
                                             }
                                         }
@@ -3992,9 +3998,15 @@
                                         // vm was turned on through another route - UI or API. so we should check again.
                                         var detailToDelete = args.data.jsonObj.name;
                                         var existingDetails = virtualMachine.details;
+                                        var readOnlyUIDetails = [];
+                                        if (virtualMachine.readonlyuidetails && virtualMachine.readonlyuidetails.length > 0) {
+                                            $.each(virtualMachine.readonlyuidetails.split(","), function(){
+                                                readOnlyUIDetails.push($.trim(this));
+                                            });
+                                        }
                                         var newDetails = {};
                                         for (detail in existingDetails) {
-                                            if (detail != detailToDelete) {
+                                            if (detail != detailToDelete && $.inArray(detail, readOnlyUIDetails) < 0) {
                                                 newDetails['details[0].' + detail] = existingDetails[detail];
                                             }
                                         }
@@ -4027,12 +4039,20 @@
 									var value = args.data.value;
 									
 									var details;
+                                    var readOnlyUIDetails = [];
 									$.ajax({
 										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
 										async:false,
 										success: function(json) {
-											var dets = json.listvirtualmachinesresponse.virtualmachine[0].details;
-											details = dets;
+                                            var virtualMachine = json.listvirtualmachinesresponse.virtualmachine[0]
+										    if (virtualMachine) {
+                                                details = virtualMachine.details;
+                                                if (virtualMachine.readonlyuidetails && virtualMachine.readonlyuidetails.length > 0) {
+                                                    $.each(virtualMachine.readonlyuidetails.split(","), function(){
+                                                        readOnlyUIDetails.push($.trim(this));
+                                                    });
+                                                }
+                                            }
 										},
 
 										error: function(json) {
@@ -4042,7 +4062,9 @@
 									
 									var detailsFormat = '';
 									for (key in details) {
-										detailsFormat += "details[0]." + key + "=" + details[key] + "&";
+									    if ($.inArray(key, readOnlyUIDetails) < 0) {
+									        detailsFormat += "details[0]." + key + "=" + details[key] + "&";
+									    }
 									}
 									// Add new detail to the existing ones
 									detailsFormat += "details[0]." + name + "=" + value;
