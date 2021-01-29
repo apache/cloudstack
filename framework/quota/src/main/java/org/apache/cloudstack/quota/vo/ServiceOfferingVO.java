@@ -75,6 +75,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name = "deployment_planner")
     private String deploymentPlanner = null;
 
+    @Column(name = "dynamically_scalable")
+    private boolean dynamicallyScalable;
+
     @Transient
     Map<String, String> details = new HashMap<String, String>();
 
@@ -283,5 +286,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     public void setDynamicFlag(boolean isdynamic) {
         isDynamic = isdynamic;
+    }
+
+    @Override
+    public boolean isDynamicallyScalable() {
+        return dynamicallyScalable;
     }
 }

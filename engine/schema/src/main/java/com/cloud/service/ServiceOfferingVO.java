@@ -75,6 +75,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name = "deployment_planner")
     private String deploymentPlanner = null;
 
+    @Column(name = "dynamically_scalable")
+    private boolean dynamicallyScalable;
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call service offering dao to load it.
@@ -91,7 +94,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     }
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText,
-            ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
+                             ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
         super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -105,8 +108,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.vmType = vmType == null ? null : vmType.toString().toLowerCase();
     }
 
-    public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitCpuUse,
-                             boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType) {
+    public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
+                             boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
+                             VirtualMachine.Type vmType, String hostTag, String deploymentPlanner, Boolean dynamicScalingEnabled) {
         super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -114,55 +118,12 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
-        this.limitCpuUse = limitCpuUse;
+        this.limitCpuUse = limitResourceUse;
         this.volatileVm = volatileVm;
         this.vmType = vmType == null ? null : vmType.toString().toLowerCase();
-    }
-
-    public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
-                             boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
-                             VirtualMachine.Type vmType, String hostTag) {
-        this(name,
-            cpu,
-            ramSize,
-            speed,
-            rateMbps,
-            multicastRateMbps,
-            offerHA,
-            limitResourceUse,
-            volatileVm,
-            displayText,
-            provisioningType,
-            useLocalStorage,
-            recreatable,
-            tags,
-            systemUse,
-            vmType
-        );
         this.hostTag = hostTag;
-    }
-
-    public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
-                             boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
-                             VirtualMachine.Type vmType, String hostTag, String deploymentPlanner) {
-        this(name,
-            cpu,
-            ramSize,
-            speed,
-            rateMbps,
-            multicastRateMbps,
-            offerHA,
-            limitResourceUse,
-            volatileVm,
-            displayText,
-            provisioningType,
-            useLocalStorage,
-            recreatable,
-            tags,
-            systemUse,
-            vmType,
-                hostTag);
         this.deploymentPlanner = deploymentPlanner;
+        this.dynamicallyScalable = dynamicScalingEnabled;
     }
 
     public ServiceOfferingVO(ServiceOfferingVO offering) {
@@ -189,6 +150,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         volatileVm = offering.isVolatileVm();
         hostTag = offering.getHostTag();
         vmType = offering.getSystemVmType();
+        dynamicallyScalable = offering.isDynamicallyScalable();
     }
 
     @Override
@@ -333,5 +295,14 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     public boolean isCustomCpuSpeedSupported() {
         return isCustomized() && getDetail("minCPU") != null;
+    }
+
+    @Override
+    public boolean isDynamicallyScalable() {
+        return dynamicallyScalable;
+    }
+
+    public void setDynamicallyScalable(boolean dynamicallyScalable) {
+        this.dynamicallyScalable = dynamicallyScalable;
     }
 }

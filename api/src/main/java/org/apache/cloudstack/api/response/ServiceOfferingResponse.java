@@ -204,6 +204,10 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "Root disk size in GB", since = "4.15")
     private Long rootDiskSize;
 
+    @SerializedName("dynamicscalingenabled")
+    @Param(description = "true if virtual machine needs to be dynamically scalable of cpu or memory")
+    private Boolean dynamicscalingenabled;
+
     public ServiceOfferingResponse() {
     }
 
@@ -457,7 +461,6 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setIscutomized(boolean iscutomized) {
         this.isCustomized = iscutomized;
-
     }
 
     public void setCacheMode(String cacheMode) {
@@ -474,5 +477,13 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setRootDiskSize(Long rootDiskSize) {
         this.rootDiskSize = rootDiskSize;
+    }
+
+    public Boolean getDynamicscalingenabled() {
+        return dynamicscalingenabled;
+    }
+
+    public void setDynamicscalingenabled(Boolean dynamicscalingenabled) {
+        this.dynamicscalingenabled = dynamicscalingenabled;
     }
 }
