@@ -631,7 +631,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             prepareNetworkFromNicInfo(hostMO, cmd.getNic(), false, null);
             hostname =  host.getHyperHostName();
         } catch (Exception e) {
-            return new SetupPersistentNetworkAnswer(cmd, false, "failed to get response");
+            return new SetupPersistentNetworkAnswer(cmd, false, "failed to setup port-group due to: "+ e.getLocalizedMessage());
         }
         return new SetupPersistentNetworkAnswer(cmd, true, hostname);
     }

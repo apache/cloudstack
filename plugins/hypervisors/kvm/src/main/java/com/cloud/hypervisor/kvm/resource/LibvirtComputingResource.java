@@ -4189,6 +4189,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return vmsnapshots;
     }
 
+    public String getVlanIdFromBridgeName(String brName) {
+        if (org.apache.commons.lang.StringUtils.isNotBlank(brName)) {
+            String[] s = brName.split("-");
+            if (s.length > 1) {
+                return s[1];
+            }
+            return null;
+        }
+        return null;
+    }
+
+    public boolean shouldDeleteBridge(Map<String, Boolean> vlanToPersistenceMap, String vlanId) {
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanId != null && vlanToPersistenceMap.containsKey(vlanId)) {
+            return vlanToPersistenceMap.get(vlanId);
+        }
+        return true;
+    }
+
     private static String getTagValue(String tag, Element eElement) {
         NodeList nlList = eElement.getElementsByTagName(tag).item(0).getChildNodes();
         Node nValue = nlList.item(0);

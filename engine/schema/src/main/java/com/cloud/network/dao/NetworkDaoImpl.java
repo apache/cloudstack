@@ -276,8 +276,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         join10.and("vpc", join10.entity().getVpcId(), Op.EQ);
         PrivateNetworkSearch.join("vpcgateways", join10, PrivateNetworkSearch.entity().getId(), join10.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         PrivateNetworkSearch.done();
-
-
     }
 
     @Override

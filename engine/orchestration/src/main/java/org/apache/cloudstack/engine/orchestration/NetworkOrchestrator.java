@@ -1239,7 +1239,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private void setupPersistentNetwork(NetworkVO network, NetworkOfferingVO offering, Long dcId) throws AgentUnavailableException, OperationTimedoutException {
-        List<ClusterVO> clusterVOS = clusterDao.listClustersByDcId(dcId);
+        List<ClusterVO> clusterVOs = clusterDao.listClustersByDcId(dcId);
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, dcId);
         Map<Long, List<Long>> clusterToHostsMap = new HashMap<>();
 
@@ -1262,13 +1262,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (!answer.getResult()) {
                     s_logger.warn("Unable to setup agent " + host.getId() + " due to " + answer.getDetails());
                     clusterToHostsMap.get(host.getClusterId()).remove(host.getId());
-                    continue;
                 }
             } catch (Exception e) {
                 s_logger.warn("Failed to connect to host: "+ host.getName());
             }
         }
-        if (clusterToHostsMap.keySet().size() != clusterVOS.size()) {
+        if (clusterToHostsMap.keySet().size() != clusterVOs.size()) {
             s_logger.warn("Hosts on all clusters may not have been configured with network devices.");
         }
     }
@@ -2976,6 +2975,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         CleanupPersistentNetworkResourceAnswer answer = (CleanupPersistentNetworkResourceAnswer) _agentMgr.send(host.getId(), cmd);
                         if (answer == null) {
                             s_logger.warn("Unable to get an answer to the CleanupPersistentNetworkResourceCommand from agent:" + host.getId());
+                            continue;
                         }
 
                         if (!answer.getResult()) {

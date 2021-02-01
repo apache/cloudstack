@@ -1848,7 +1848,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceStop(vm, cleanUpEvenIfUnableToStop);
     }
 
-    private void getPersistenceMap(Map<String, Boolean> vlanToPersistenceMap, NetworkVO networkVO) {
+    private void updatePersistenceMap(Map<String, Boolean> vlanToPersistenceMap, NetworkVO networkVO) {
         NetworkOfferingVO offeringVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
         if (offeringVO != null) {
             Pair<String, Boolean> data = getVMNetworkDetails(networkVO, offeringVO.isPersistent());
@@ -1860,18 +1860,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private Map<String, Boolean> getVlanToPersistenceMapForVM(long vmId) {
-        List<UserVmJoinVO> userVmJoinVOS = userVmJoinDao.searchByIds(vmId);
+        List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vmId);
         Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
-        for (UserVmJoinVO userVmJoinVO : userVmJoinVOS) {
-            NetworkVO networkVO = _networkDao.findById(userVmJoinVO.getNetworkId());
-            getPersistenceMap(vlanToPersistenceMap, networkVO);
-        }
-        if (userVmJoinVOS.isEmpty()) {
+        if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
+            for (UserVmJoinVO userVmJoinVO : userVmJoinVOs) {
+                NetworkVO networkVO = _networkDao.findById(userVmJoinVO.getNetworkId());
+                updatePersistenceMap(vlanToPersistenceMap, networkVO);
+            }
+        } else {
             VMInstanceVO vmInstanceVO = _vmDao.findById(vmId);
             if (vmInstanceVO != null && vmInstanceVO.getType() == VirtualMachine.Type.DomainRouter) {
                 DomainRouterJoinVO routerVO = domainRouterJoinDao.findById(vmId);
                 NetworkVO networkVO = _networkDao.findById(routerVO.getNetworkId());
-                getPersistenceMap(vlanToPersistenceMap, networkVO);
+                updatePersistenceMap(vlanToPersistenceMap, networkVO);
             }
         }
         return vlanToPersistenceMap;
