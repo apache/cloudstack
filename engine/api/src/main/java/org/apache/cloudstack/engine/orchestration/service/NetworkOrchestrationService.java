@@ -129,7 +129,7 @@ public interface NetworkOrchestrationService {
 
     void cleanupNics(VirtualMachineProfile vm);
 
-    void expungeNics(VirtualMachineProfile vm);
+    void removeNics(VirtualMachineProfile vm);
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
 
