@@ -2453,7 +2453,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 userVmDetailsDao.removeDetails(id);
             } else {
                 for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
-                    if (detail != null && !userBlacklistedSettings.contains(detail.getName())) {
+                    if (detail != null && !userBlacklistedSettings.contains(detail.getName())
+                            && !userReadOnlySettings.contains(detail.getName())) {
                         userVmDetailsDao.removeDetail(id, detail.getName());
                     }
                 }
