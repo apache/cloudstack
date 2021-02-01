@@ -48,6 +48,9 @@ BuildRequires: /usr/bin/mkisofs
 BuildRequires: mysql-connector-python
 BuildRequires: maven => 3.0.0
 BuildRequires: python-setuptools
+BuildRequires: python3
+BuildRequires: python3-pip
+BuildRequires: python3-setuptools
 BuildRequires: wget
 BuildRequires: nodejs
 
@@ -153,6 +156,9 @@ Apache CloudStack command line interface
 
 %package marvin
 Summary: Apache CloudStack Marvin library
+Requires: python3
+Requires: python3-devel
+Requires: python3-pip
 Requires: python-pip
 Requires: gcc
 Requires: python-devel
@@ -508,6 +514,7 @@ fi
 %post marvin
 pip install --upgrade https://files.pythonhosted.org/packages/ca/ea/1e2553b088bad2f9fa8120c2624f797b2d7450d3b61bb492d29c72e3d3c2/mysql_connector_python-8.0.20-cp27-cp27mu-manylinux1_x86_64.whl
 pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 #No default permission as the permission setup is complex
 %files management
