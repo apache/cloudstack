@@ -509,6 +509,15 @@
                         v-decorator="['bootintosetup']">
                       </a-switch>
                     </a-form-item>
+                    <a-form-item>
+                      <span slot="label">
+                        {{ $t('label.isdynamicallyscalable') }}
+                        <a-tooltip :title="$t('label.isdynamicallyscalable')">
+                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                        </a-tooltip>
+                      </span>
+                      <a-switch v-decorator="['dynamicscalingenabled', {initialValue: dynamicscalingenabled}]" :checked="dynamicscalingenabled" @change="val => { dynamicscalingenabled = val }"/>
+                    </a-form-item>
                     <a-form-item :label="$t('label.userdata')">
                       <a-textarea
                         v-decorator="['userdata']">
@@ -675,6 +684,7 @@ export default {
       clusterId: null,
       zoneSelected: false,
       startvm: true,
+      dynamicscalingenabled: true,
       vm: {
         name: null,
         zoneid: null,
@@ -1416,6 +1426,7 @@ export default {
         deployVmData.keyboard = values.keyboard
         deployVmData.boottype = values.boottype
         deployVmData.bootmode = values.bootmode
+        deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
         }
