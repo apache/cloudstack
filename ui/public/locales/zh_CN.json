@@ -657,6 +657,7 @@
 "label.dpd": "\u5931\u6548\u5bf9\u7b49\u4f53\u68c0\u6d4b",
 "label.drag.new.position": "\u62d6\u52a8\u5230\u65b0\u4f4d\u7f6e",
 "label.driver": "Driver",
+"label.dynamicscalingenabled": "Dynamic Scaling Enabled",
 "label.duration.in.sec": "\u6301\u7eed\u65f6\u95f4 (\u79d2)",
 "label.edit": "\u7f16\u8f91",
 "label.edit.acl.list": "Edit ACL List",

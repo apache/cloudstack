@@ -659,6 +659,7 @@
 "label.drag.new.position": "Trascina nella nuova posizione",
 "label.driver": "Driver",
 "label.duration.in.sec": "Duration (in sec)",
+"label.dynamicscalingenabled": "Dynamic Scaling Enabled",
 "label.edit": "Modifica",
 "label.edit.acl.list": "Edit ACL List",
 "label.edit.acl.rule": "Edit ACL rule",

@@ -659,6 +659,7 @@
 "label.drag.new.position": "D\u00e9placer sur une autre position",
 "label.driver": "Pilote",
 "label.duration.in.sec": "Dur\u00e9e (en sec)",
+"label.dynamicscalingenabled": "Dynamic Scaling Enabled",
 "label.edit": "Modifier",
 "label.edit.acl.list": "Edit ACL List",
 "label.edit.acl.rule": "Modifier r\u00e8gle ACL",

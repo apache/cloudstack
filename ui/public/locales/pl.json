@@ -658,6 +658,7 @@
 "label.dpd": "Dead Peer Detection",
 "label.drag.new.position": "Przenie\u015b w nowe miejsce",
 "label.driver": "Driver",
+"label.dynamicscalingenabled": "Dynamic Scaling Enabled",
 "label.duration.in.sec": "Duration (in sec)",
 "label.edit": "Edytuj",
 "label.edit.acl.list": "Edit ACL List",

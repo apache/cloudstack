@@ -658,6 +658,7 @@
 "label.dpd": "Dead Peer detectie",
 "label.drag.new.position": "Sleep naar nieuwe positie",
 "label.driver": "Driver",
+"label.dynamicscalingenabled": "Dynamisch schalen ingeschakeld\n",
 "label.duration.in.sec": "duur (in sec)",
 "label.edit": "Wijzig",
 "label.edit.acl.list": "Verander een ACL lijst",

@@ -658,6 +658,7 @@
 "label.drag.new.position": "\u00daj helyre h\u00faz\u00e1s",
 "label.driver": "Driver",
 "label.duration.in.sec": "Id\u0151tartam (mp)",
+"label.dynamicscalingenabled": "dinamikus méretezés engedélyezve",
 "label.edit": "Szerkeszt\u00e9s",
 "label.edit.acl.list": "Edit ACL List",
 "label.edit.acl.rule": "ACL szab\u00e1ly szerkeszt\u00e9se",
