@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -1736,8 +1736,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return null;
             }
         } else {
-            s_logger.error("UpdateVmNicIpCmd is not supported in this network...");
-            return null;
+            throw new InvalidParameterValueException("UpdateVmNicIpCmd is not supported in L2 network");
         }
 
         s_logger.debug("Updating IPv4 address of NIC " + nicVO + " to " + ipaddr + "/" + nicVO.getIPv4Netmask() + " with gateway " + nicVO.getIPv4Gateway());
@@ -6454,7 +6453,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
             // cleanup the network for the oldOwner
             _networkMgr.cleanupNics(vmOldProfile);
-            _networkMgr.expungeNics(vmOldProfile);
+            _networkMgr.removeNics(vmOldProfile);
             // security groups will be recreated for the new account, when the
             // VM is started
             List<NetworkVO> networkList = new ArrayList<NetworkVO>();
@@ -6516,34 +6515,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             s_logger.debug("AssignVM: Basic zone, adding security groups no " + securityGroupIdList.size() + " to " + vm.getInstanceName());
         } else {
+            Set<NetworkVO> applicableNetworks = new LinkedHashSet<>();
+            Map<Long, String> requestedIPv4ForNics = new HashMap<>();
+            Map<Long, String> requestedIPv6ForNics = new HashMap<>();
             if (zone.isSecurityGroupEnabled())  { // advanced zone with security groups
                 // cleanup the old security groups
                 _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
-
-                Set<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
-                String requestedIPv4ForDefaultNic = null;
-                String requestedIPv6ForDefaultNic = null;
                 // if networkIdList is null and the first network of vm is shared network, then keep it if possible
                 if (networkIdList == null || networkIdList.isEmpty()) {
                     NicVO defaultNicOld = _nicDao.findDefaultNicForVM(vm.getId());
                     if (defaultNicOld != null) {
                         NetworkVO defaultNetworkOld = _networkDao.findById(defaultNicOld.getNetworkId());
-                        if (defaultNetworkOld != null && defaultNetworkOld.getGuestType() == Network.GuestType.Shared && defaultNetworkOld.getAclType() == ACLType.Domain) {
-                            try {
-                                _networkModel.checkNetworkPermissions(newAccount, defaultNetworkOld);
-                                applicableNetworks.add(defaultNetworkOld);
-                                requestedIPv4ForDefaultNic = defaultNicOld.getIPv4Address();
-                                requestedIPv6ForDefaultNic = defaultNicOld.getIPv6Address();
-                                s_logger.debug("AssignVM: use old shared network " + defaultNetworkOld.getName() + " with old ip " + requestedIPv4ForDefaultNic + " on default nic of vm:" + vm.getInstanceName());
-                            } catch (PermissionDeniedException e) {
-                                s_logger.debug("AssignVM: the shared network on old default nic can not be applied to new account");
-                            }
+                        if (canAccountUseNetwork(newAccount, defaultNetworkOld)) {
+                            applicableNetworks.add(defaultNetworkOld);
+                            requestedIPv4ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv4Address());
+                            requestedIPv6ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv6Address());
+                            s_logger.debug("AssignVM: use old shared network " + defaultNetworkOld.getName() + " with old ip " + defaultNicOld.getIPv4Address() + " on default nic of vm:" + vm.getInstanceName());
                         }
                     }
                 }
-                // cleanup the network for the oldOwner
-                _networkMgr.cleanupNics(vmOldProfile);
-                _networkMgr.expungeNics(vmOldProfile);
 
                 if (networkIdList != null && !networkIdList.isEmpty()) {
                     // add any additional networks
@@ -6566,9 +6556,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             ex.addProxyObject(network.getUuid(), "networkId");
                             throw ex;
                         }
+
+                        if (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain) {
+                            NicVO nicOld = _nicDao.findByNtwkIdAndInstanceId(network.getId(), vm.getId());
+                            if (nicOld != null) {
+                                requestedIPv4ForNics.put(network.getId(), nicOld.getIPv4Address());
+                                requestedIPv6ForNics.put(network.getId(), nicOld.getIPv6Address());
+                                s_logger.debug("AssignVM: use old shared network " + network.getName() + " with old ip " + nicOld.getIPv4Address() + " on nic of vm:" + vm.getInstanceName());
+                            }
+                        }
+                        s_logger.debug("AssignVM: Added network " + network.getName() + " to vm " + vm.getId());
                         applicableNetworks.add(network);
                     }
                 }
+
+                // cleanup the network for the oldOwner
+                _networkMgr.cleanupNics(vmOldProfile);
+                _networkMgr.removeNics(vmOldProfile);
 
                 // add the new nics
                 LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
@@ -6578,11 +6582,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     NicProfile defaultNic = new NicProfile();
                     if (toggle == 0) {
                         defaultNic.setDefaultNic(true);
-                        defaultNic.setRequestedIPv4(requestedIPv4ForDefaultNic);
-                        defaultNic.setRequestedIPv6(requestedIPv6ForDefaultNic);
                         defaultNetwork = appNet;
                         toggle++;
                     }
+
+                    defaultNic.setRequestedIPv4(requestedIPv4ForNics.get(appNet.getId()));
+                    defaultNic.setRequestedIPv6(requestedIPv6ForNics.get(appNet.getId()));
                     networks.put(appNet, new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
 
                 }
@@ -6645,26 +6650,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
                     throw new InvalidParameterValueException("Can't move vm with security groups; security group feature is not enabled in this zone");
                 }
-                Set<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
                 // if networkIdList is null and the first network of vm is shared network, then keep it if possible
                 if (networkIdList == null || networkIdList.isEmpty()) {
                     NicVO defaultNicOld = _nicDao.findDefaultNicForVM(vm.getId());
                     if (defaultNicOld != null) {
                         NetworkVO defaultNetworkOld = _networkDao.findById(defaultNicOld.getNetworkId());
-                        if (defaultNetworkOld != null && defaultNetworkOld.getGuestType() == Network.GuestType.Shared && defaultNetworkOld.getAclType() == ACLType.Domain) {
-                            try {
-                                _networkModel.checkNetworkPermissions(newAccount, defaultNetworkOld);
-                                applicableNetworks.add(defaultNetworkOld);
-                            } catch (PermissionDeniedException e) {
-                                s_logger.debug("AssignVM: the shared network on old default nic can not be applied to new account");
-                            }
+                        if (canAccountUseNetwork(newAccount, defaultNetworkOld)) {
+                            applicableNetworks.add(defaultNetworkOld);
+                            requestedIPv4ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv4Address());
+                            requestedIPv6ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv6Address());
+                            s_logger.debug("AssignVM: use old shared network " + defaultNetworkOld.getName() + " with old ip " + defaultNicOld.getIPv4Address() + " on default nic of vm:" + vm.getInstanceName());
                         }
                     }
                 }
-
-                // cleanup the network for the oldOwner
-                _networkMgr.cleanupNics(vmOldProfile);
-                _networkMgr.expungeNics(vmOldProfile);
 
                 if (networkIdList != null && !networkIdList.isEmpty()) {
                     // add any additional networks
@@ -6685,6 +6683,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             ex.addProxyObject(network.getUuid(), "networkId");
                             throw ex;
                         }
+
+                        if (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain) {
+                            NicVO nicOld = _nicDao.findByNtwkIdAndInstanceId(network.getId(), vm.getId());
+                            if (nicOld != null) {
+                                requestedIPv4ForNics.put(network.getId(), nicOld.getIPv4Address());
+                                requestedIPv6ForNics.put(network.getId(), nicOld.getIPv6Address());
+                                s_logger.debug("AssignVM: use old shared network " + network.getName() + " with old ip " + nicOld.getIPv4Address() + " on nic of vm:" + vm.getInstanceName());
+                            }
+                        }
+                        s_logger.debug("AssignVM: Added network " + network.getName() + " to vm " + vm.getId());
                         applicableNetworks.add(network);
                     }
                 } else if (applicableNetworks.isEmpty()) {
@@ -6748,6 +6756,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     applicableNetworks.add(defaultNetwork);
                 }
 
+                // cleanup the network for the oldOwner
+                _networkMgr.cleanupNics(vmOldProfile);
+                _networkMgr.removeNics(vmOldProfile);
+
                 // add the new nics
                 LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
                 int toggle = 0;
@@ -6757,6 +6769,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         defaultNic.setDefaultNic(true);
                         toggle++;
                     }
+                    defaultNic.setRequestedIPv4(requestedIPv4ForNics.get(appNet.getId()));
+                    defaultNic.setRequestedIPv6(requestedIPv6ForNics.get(appNet.getId()));
                     networks.put(appNet, new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
                 }
                 VirtualMachine vmi = _itMgr.findById(vm.getId());
@@ -6767,6 +6781,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } // END IF ADVANCED
         s_logger.info("AssignVM: vm " + vm.getInstanceName() + " now belongs to account " + newAccount.getAccountName());
         return vm;
+    }
+
+    private boolean canAccountUseNetwork(Account newAccount, Network network) {
+        if (network != null && network.getAclType() == ACLType.Domain
+                && (network.getGuestType() == Network.GuestType.Shared
+                || network.getGuestType() == Network.GuestType.L2)) {
+            try {
+                _networkModel.checkNetworkPermissions(newAccount, network);
+                return true;
+            } catch (PermissionDeniedException e) {
+                s_logger.debug(String.format("AssignVM: %s network %s can not be used by new account %s", network.getGuestType(), network.getName(), newAccount.getAccountName()));
+                return false;
+            }
+        }
+        return false;
     }
 
     @Override
