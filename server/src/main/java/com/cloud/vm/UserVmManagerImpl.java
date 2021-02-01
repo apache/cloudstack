@@ -1652,8 +1652,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return null;
             }
         } else {
-            s_logger.error("UpdateVmNicIpCmd is not supported in this network...");
-            return null;
+            throw new InvalidParameterValueException("UpdateVmNicIpCmd is not supported in L2 network");
         }
 
         s_logger.debug("Updating IPv4 address of NIC " + nicVO + " to " + ipaddr + "/" + nicVO.getIPv4Netmask() + " with gateway " + nicVO.getIPv4Gateway());
