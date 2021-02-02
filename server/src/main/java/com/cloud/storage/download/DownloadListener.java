@@ -96,6 +96,28 @@ public class DownloadListener implements Listener {
         }
     }
 
+    private static final class PostConnectTask extends ManagedContextTimerTask {
+        private final DownloadListener dl;
+        private final Host agent;
+        private final StartupCommand cmd;
+
+        private PostConnectTask(DownloadListener dl, Host agent, StartupCommand cmd) {
+            this.dl = dl;
+            this.agent = agent;
+            this.cmd = cmd;
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                dl.postConnect(agent, cmd);
+            } catch (ConnectionException ex) {
+                s_logger.warn("There is an error in the postConnect process for " +
+                        agent.getId() + " due to " + ex.getMessage());
+            }
+        }
+    }
+
     public static final Logger s_logger = Logger.getLogger(DownloadListener.class.getName());
     public static final int SMALL_DELAY = 100;
     public static final long STATUS_POLL_INTERVAL = 10000L;
@@ -121,6 +143,7 @@ public class DownloadListener implements Listener {
 
     private StatusTask _statusTask;
     private TimeoutTask _timeoutTask;
+    private PostConnectTask _postConnectTask;
     private Date _lastUpdated = new Date();
     private String jobId;
 
@@ -210,6 +233,7 @@ public class DownloadListener implements Listener {
 
     public DownloadListener(DownloadMonitorImpl monitor) {
         _downloadMonitor = monitor;
+        _timer = new Timer();
     }
 
     @Override
@@ -284,18 +308,22 @@ public class DownloadListener implements Listener {
             _imageSrv.handleSysTemplateDownload(hostHyper, agent.getDataCenterId());
             // update template_zone_ref for cross-zone templates
             _imageSrv.associateCrosszoneTemplatesToZone(agent.getDataCenterId());
+        } else if (cmd instanceof StartupSecondaryStorageCommand) {
+            s_logger.debug("Scheduling postConnect task at " + STATUS_POLL_INTERVAL + " ms");
+            schedulePostConnectTask(agent, cmd, STATUS_POLL_INTERVAL);
         }
-        /* This can be removed
-        else if ( cmd instanceof StartupStorageCommand) {
-            StartupStorageCommand storage = (StartupStorageCommand)cmd;
-            if( storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE ||
-                    storage.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE  ) {
-                downloadMonitor.addSystemVMTemplatesToHost(agent, storage.getTemplateInfo());
-                downloadMonitor.handleTemplateSync(agent);
-                downloadMonitor.handleVolumeSync(agent);
-            }
-        }*/
-        else if (cmd instanceof StartupSecondaryStorageCommand) {
+    }
+
+    private void schedulePostConnectTask(Host agent, StartupCommand cmd, long delay) {
+        if (_postConnectTask != null)
+            _postConnectTask.cancel();
+
+        _postConnectTask = new PostConnectTask(this, agent, cmd);
+        _timer.schedule(_postConnectTask, delay);
+    }
+
+    private void postConnect(Host agent, StartupCommand cmd) throws ConnectionException {
+        if (cmd instanceof StartupSecondaryStorageCommand) {
             try{
                 List<DataStore> imageStores = _storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(agent.getDataCenterId()));
                 for (DataStore store : imageStores) {
