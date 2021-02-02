@@ -249,6 +249,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                         throw new CloudRuntimeException(errorMessage, e);
                     }
                     ((DbUpgradeSystemVmTemplate)upgrade).updateSystemVmTemplates(conn);
+                    txn.commit();
                     break;
                 } catch (CloudRuntimeException e) {
                     String errorMessage = "Unable to upgrade the database";
