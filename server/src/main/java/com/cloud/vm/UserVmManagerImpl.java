@@ -2444,12 +2444,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
+        final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyUIDetails.value().split(","))
+                .map(item -> (item).trim())
+                .collect(Collectors.toList());
         if (cleanupDetails){
             if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
                 userVmDetailsDao.removeDetails(id);
             } else {
                 for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
-                    if (detail != null && !userBlacklistedSettings.contains(detail.getName())) {
+                    if (detail != null && !userBlacklistedSettings.contains(detail.getName())
+                            && !userReadOnlySettings.contains(detail.getName())) {
                         userVmDetailsDao.removeDetail(id, detail.getName());
                     }
                 }
@@ -2461,15 +2465,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 if (caller != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    // Ensure blacklisted detail is not passed by non-root-admin user
+                    // Ensure blacklisted or read-only detail is not passed by non-root-admin user
                     for (final String detailName : details.keySet()) {
                         if (userBlacklistedSettings.contains(detailName)) {
                             throw new InvalidParameterValueException("You're not allowed to add or edit the restricted setting: " + detailName);
                         }
+                        if (userReadOnlySettings.contains(detailName)) {
+                            throw new InvalidParameterValueException("You're not allowed to add or edit the read-only setting: " + detailName);
+                        }
                     }
-                    // Add any hidden/blacklisted detail
+                    // Add any hidden/blacklisted or read-only detail
                     for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
-                        if (userBlacklistedSettings.contains(detail.getName())) {
+                        if (userBlacklistedSettings.contains(detail.getName()) || userReadOnlySettings.contains(detail.getName())) {
                             details.put(detail.getName(), detail.getValue());
                         }
                     }
