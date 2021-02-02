@@ -26,12 +26,17 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.StoragePoolStatus;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.dao.CapacityDao;
@@ -39,12 +44,10 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageUtil;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VolumeDao;
@@ -60,6 +63,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     protected BigDecimal storageOverprovisioningFactor = new BigDecimal(1);
     protected String allocationAlgorithm = "random";
     protected long extraBytesPerVolume = 0;
+    protected boolean diskProvisioningTypeStrictness = false;
     @Inject protected DataStoreManager dataStoreMgr;
     @Inject protected PrimaryDataStoreDao storagePoolDao;
     @Inject protected VolumeDao volumeDao;
@@ -68,6 +72,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject private ClusterDao clusterDao;
     @Inject private StorageManager storageMgr;
     @Inject private StorageUtil storageUtil;
+    @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -80,6 +85,10 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
             if (allocationAlgorithm != null) {
                 this.allocationAlgorithm = allocationAlgorithm;
+            }
+            String strictness = configs.get("disk.provisioning.type.strictness");
+            if (strictness != null) {
+                diskProvisioningTypeStrictness = strictness.equals("true");
             }
             return true;
         }
@@ -209,6 +218,13 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                 s_logger.debug("StoragePool does not have required hypervisorType, skipping this pool");
             }
             return false;
+        }
+
+        if (diskProvisioningTypeStrictness){
+            StoragePoolDetailVO hardwareAcceleration = storagePoolDetailsDao.findDetail(pool.getId(), "hardwareAccelerationSupported");
+            if (!dskCh.getProvisioningType().equals("thin") && hardwareAcceleration == null || !hardwareAcceleration.getValue().equals("true")){
+                return false;
+            }
         }
 
         if(!checkHypervisorCompatibility(dskCh.getHypervisorType(), dskCh.getType(), pool.getPoolType())){

@@ -126,6 +126,13 @@ public class DefaultHostListener implements HypervisorHostListener {
                 storagePoolDetailsDao.persist(storagePoolDetailVO);
             }
         }
+        if (mspAnswer.getPoolInfo().getDetails() != null && mspAnswer.getPoolInfo().getDetails().containsKey("hardwareAccelerationSupported")){
+            StoragePoolDetailVO hardwareAccelerationSupported = storagePoolDetailsDao.findDetail(pool.getId(), "hardwareAccelerationSupported");
+            if (hardwareAccelerationSupported == null) {
+                StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(pool.getId(), "hardwareAccelerationSupported", mspAnswer.getPoolInfo().getDetails().get("hardwareAccelerationSupported"), false);
+                storagePoolDetailsDao.persist(storagePoolDetailVO);
+            }
+        }
         primaryStoreDao.update(pool.getId(), poolVO);
     }
 

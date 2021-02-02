@@ -105,6 +105,6 @@ public interface StorageService {
 
     ImageStore updateImageStoreStatus(Long id, Boolean readonly);
 
-    StoragePool syncStoragePool(SyncStoragePoolCmd cmd);
+    void syncHardwareCapability(long poolId);
 
 }
