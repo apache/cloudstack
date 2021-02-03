@@ -223,7 +223,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = VsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware", since = "4.15")
     private Long storagePolicy;
 
-    @Parameter(name = ApiConstants.DynamicScalingEnabled,
+    @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED,
             type = CommandType.BOOLEAN,
             description = "true if virtual machine needs to be dynamically scalable of cpu or memory")
     protected Boolean isDynamicScalingEnabled;

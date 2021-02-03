@@ -837,7 +837,7 @@ public class ApiConstants {
     public static final String CROSS_ZONES = "crossZones";
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
-    public static final String DynamicScalingEnabled = "dynamicscalingenabled";
+    public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
 
     public static final String POOL_TYPE ="pooltype";
 
