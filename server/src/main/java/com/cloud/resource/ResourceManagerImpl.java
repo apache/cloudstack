@@ -1249,9 +1249,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
                         || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
                     // Migration is not supported for VGPU Vms so stop them.
-                    // for the last host in this cluster, stop all the VMs
-                    s_logger.error("Maintenance: No hosts available for migrations. Scheduling shutdown instead of migrations.");
-                    _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                    // for the last host in this cluster, destroy SSVM/CPVM and stop all other VMs
+                    if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
+                            || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+                        s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling destroy for VM %s instead of migration.", vm.getUuid()));
+                        _haMgr.scheduleDestroy(vm, hostId);
+                    } else {
+                        s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling shutdown for VM %s instead of migration.", vm.getUuid()));
+                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                    }
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
                     _haMgr.scheduleRestart(vm, false);
