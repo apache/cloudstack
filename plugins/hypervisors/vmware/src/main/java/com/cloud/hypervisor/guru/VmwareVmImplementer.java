@@ -40,6 +40,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
@@ -57,7 +58,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
 
 class VmwareVmImplementer {
     private static final Logger LOGGER = Logger.getLogger(VmwareVmImplementer.class);
@@ -140,11 +140,9 @@ class VmwareVmImplementer {
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
-            if(StringUtils.isEmpty(details.get(VmDetailConstants.HOT_ADD_CPU))){
-                details.put(VmDetailConstants.HOT_ADD_CPU, Boolean.TRUE.toString());
-            }
-            if(StringUtils.isEmpty(details.get(VmDetailConstants.HOT_ADD_MEMORY))){
-                details.put(VmDetailConstants.HOT_ADD_MEMORY, Boolean.TRUE.toString());
+            if(vm.getVirtualMachine() instanceof VMInstanceVO){
+                VMInstanceVO vmInstanceVO =(VMInstanceVO) vm.getVirtualMachine();
+                to.setEnableDynamicallyScaleVm(vmInstanceVO.isDynamicallyScalable());
             }
         }
 
