@@ -1882,7 +1882,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
         if (newServiceOffering.isDynamicallyScalable() != currentServiceOffering.isDynamicallyScalable()) {
-            throw new InvalidParameterValueException("Unable to Scale VM: since dynamicscalingenabled flag is not same for new service offering and old service offering");
+            throw new InvalidParameterValueException("Unable to Scale VM: since dynamic scaling enabled flag is not same for new service offering and old service offering");
         }
 
         int newCpu = newServiceOffering.getCpu();
@@ -1936,7 +1936,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // Check vm flag
             if (!vmInstance.isDynamicallyScalable()) {
-                throw new CloudRuntimeException("Unable to Scale the vm: " + vmInstance.getUuid() + " as vm does not have tools to support dynamic scaling");
+                throw new CloudRuntimeException("Unable to Scale the VM: " + vmInstance.getUuid() + " as VM is not configured to be dynamically scalable");
             }
 
             // Check disable threshold for cluster is not crossed
@@ -2780,11 +2780,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             isDynamicallyScalable = vm.isDynamicallyScalable();
         } else {
             if (isDynamicallyScalable == true) {
+                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+                if (!template.isDynamicallyScalable()) {
+                    throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled on the VM since template is not dynamic scaling enabled");
+                }
                 if (!offering.isDynamicallyScalable()) {
                     throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled on the VM since service offering is not dynamic scaling enabled");
                 }
                 if (!UserVmManager.EnableDynamicallyScaleVm.valueIn(vm.getDataCenterId())) {
-                    throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled on the VM since global configuration \"enable.dynamic.scale.vm\" is false");
+                    throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled on the VM since corresponding global setting is false");
                 }
             }
         }
