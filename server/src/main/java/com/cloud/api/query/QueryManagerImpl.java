@@ -2971,11 +2971,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             // 1. Only return offerings with the same storage type than the storage pool where the VM's root volume is allocated
             sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, isRootVolumeUsingLocalStorage);
 
-            // 2.In case vm is running return only offerings greater than equal to current offering compute.
+            // 2.In case vm is running return only offerings greater than equal to current offering compute and offering's dynamic scalability should match
             if (vmInstance.getState() == VirtualMachine.State.Running) {
                 sc.addAnd("cpu", Op.GTEQ, currentVmOffering.getCpu());
                 sc.addAnd("speed", Op.GTEQ, currentVmOffering.getSpeed());
                 sc.addAnd("ramSize", Op.GTEQ, currentVmOffering.getRamSize());
+                sc.addAnd("dynamicallyScalable", Op.EQ, currentVmOffering.isDynamicallyScalable());
             }
         }
 
