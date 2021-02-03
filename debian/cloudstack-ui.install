@@ -1,4 +1,3 @@
-#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,29 +15,5 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# requires netaddr
-
-export PYTHONPATH="../debian/opt/cloud/bin/"
-export PYTHONDONTWRITEBYTECODE=False
-
-echo "Running pycodestyle to check systemvm/python code for errors"
-pycodestyle --max-line-length=179 *py
-pycodestyle --max-line-length=179 --exclude=monitorServices.py,baremetal-vr.py,passwd_server_ip.py `find ../debian -name \*.py`
-if [ $? -gt 0 ]
-then
-    echo "pycodestyle failed, please check your code"
-    exit 1
-fi
-
-echo "Running pylint to check systemvm/python code for errors"
-pylint --disable=R,C,W *.py
-pylint --disable=R,C,W `find ../debian -name \*.py`
-if [ $? -gt 0 ]
-then
-    echo "pylint failed, please check your code"
-    exit 1
-fi
-
-echo "Running systemvm/python unit tests"
-nosetests .
-exit $?
+/etc/cloudstack/ui/config.json
+/usr/share/cloudstack-ui/*

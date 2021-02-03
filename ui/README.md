@@ -2,7 +2,7 @@
 
 A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
 
-![Screenshot](ui/docs/screenshot-dashboard.png)
+![Screenshot](docs/screenshot-dashboard.png)
 
 ## Getting Started
 
