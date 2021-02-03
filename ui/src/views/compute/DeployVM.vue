@@ -512,7 +512,7 @@
                     <a-form-item>
                       <span slot="label">
                         {{ $t('label.dynamicscalingenabled') }}
-                        <a-tooltip :title="$t('label.dynamicscalingenabled')">
+                        <a-tooltip :title="$t('label.dynamicscalingenabled.tooltip')">
                           <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
                         </a-tooltip>
                       </span>

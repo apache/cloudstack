@@ -811,6 +811,7 @@
 "label.driver": "Driver",
 "label.duration.in.sec": "Duration (in sec)",
 "label.dynamicscalingenabled": "Dynamic Scaling Enabled",
+"label.dynamicscalingenabled.tooltip": "VM can dynamically scale only when dynamic scalability is enabled on template, service offering and global setting",
 "label.edit": "Edit",
 "label.edit.acl.list": "Edit ACL List",
 "label.edit.acl.rule": "Edit ACL rule",
