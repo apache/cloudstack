@@ -2976,7 +2976,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("cpu", Op.GTEQ, currentVmOffering.getCpu());
                 sc.addAnd("speed", Op.GTEQ, currentVmOffering.getSpeed());
                 sc.addAnd("ramSize", Op.GTEQ, currentVmOffering.getRamSize());
-                sc.addAnd("dynamicallyScalable", Op.EQ, currentVmOffering.isDynamicallyScalable());
+                sc.addAnd("dynamicScalingEnabled", Op.EQ, currentVmOffering.isDynamicScalingEnabled());
             }
         }
 

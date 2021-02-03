@@ -20,7 +20,7 @@
 --;
 
 -- Adding dynamic scalable flag for service offering table
-ALTER TABLE `cloud`.`service_offering` ADD COLUMN `dynamically_scalable` tinyint(1) unsigned NOT NULL DEFAULT 1  COMMENT 'true(1) if VM needs to be dynamically scalable of cpu or memory';
+ALTER TABLE `cloud`.`service_offering` ADD COLUMN `dynamic_scaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1  COMMENT 'true(1) if VM needs to be dynamically scalable of cpu or memory';
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
 CREATE VIEW `cloud`.`service_offering_view` AS
     SELECT
@@ -65,7 +65,7 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `service_offering`.`sort_key` AS `sort_key`,
         `service_offering`.`is_volatile` AS `is_volatile`,
         `service_offering`.`deployment_planner` AS `deployment_planner`,
-        `service_offering`.`dynamically_scalable` AS `dynamically_scalable`,
+        `service_offering`.`dynamic_scaling_enabled` AS `dynamic_scaling_enabled`,
         `vsphere_storage_policy`.`value` AS `vsphere_storage_policy`,
         GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
         GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,

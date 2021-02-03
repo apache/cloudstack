@@ -117,5 +117,5 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
 
     boolean isDynamic();
 
-    boolean isDynamicallyScalable();
+    boolean isDynamicScalingEnabled();
 }

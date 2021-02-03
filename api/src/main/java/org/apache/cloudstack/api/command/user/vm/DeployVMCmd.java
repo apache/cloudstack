@@ -238,7 +238,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED,
             type = CommandType.BOOLEAN,
             description = "true if virtual machine needs to be dynamically scalable")
-    protected Boolean isDynamicScalingEnabled;
+    protected Boolean dynamicScalingEnabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -628,8 +628,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return bootIntoSetup;
     }
 
-    public Boolean getDynamicScalingEnabled() {
-        return isDynamicScalingEnabled == null ? Boolean.TRUE : isDynamicScalingEnabled;
+    public Boolean isDynamicScalingEnabled() {
+        return dynamicScalingEnabled == null ? Boolean.TRUE : dynamicScalingEnabled;
     }
 
     /////////////////////////////////////////////////////

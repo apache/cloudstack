@@ -1881,7 +1881,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
         ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
-        if (newServiceOffering.isDynamicallyScalable() != currentServiceOffering.isDynamicallyScalable()) {
+        if (newServiceOffering.isDynamicScalingEnabled() != currentServiceOffering.isDynamicScalingEnabled()) {
             throw new InvalidParameterValueException("Unable to Scale VM: since dynamic scaling enabled flag is not same for new service offering and old service offering");
         }
 
@@ -2784,7 +2784,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (!template.isDynamicallyScalable()) {
                     throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled on the VM since template is not dynamic scaling enabled");
                 }
-                if (!offering.isDynamicallyScalable()) {
+                if (!offering.isDynamicScalingEnabled()) {
                     throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled on the VM since service offering is not dynamic scaling enabled");
                 }
                 if (!UserVmManager.EnableDynamicallyScaleVm.valueIn(vm.getDataCenterId())) {
@@ -3969,11 +3969,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private Boolean checkIfDynamicScalingCanBeEnabled(Boolean dynamicScalingEnabled, ServiceOfferingVO offering, VMTemplateVO template, Long zoneId) {
         if (dynamicScalingEnabled) {
-            if (!(offering.isDynamicallyScalable() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zoneId))) {
+            if (!(offering.isDynamicScalingEnabled() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zoneId))) {
                 s_logger.info("VM cannot be configured to be dynamically scalable if any of the service offering's dynamic scaling property, template's dynamic scaling property or global setting is false");
             }
         }
-        return dynamicScalingEnabled && offering.isDynamicallyScalable() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zoneId);
+        return dynamicScalingEnabled && offering.isDynamicScalingEnabled() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zoneId);
     }
 
     /**
@@ -7506,7 +7506,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         final String uuidName = _uuidMgr.generateUuid(UserVm.class, null);
         final Host lastHost = powerState != VirtualMachine.PowerState.PowerOn ? host : null;
-        final Boolean dynamicScalingEnabled = serviceOffering.isDynamicallyScalable() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zone.getId());
+        final Boolean dynamicScalingEnabled = serviceOffering.isDynamicScalingEnabled() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zone.getId());
         return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
                 null, null, userData, caller, isDisplayVm, keyboard,
                 accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKey, null,

@@ -75,8 +75,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name = "deployment_planner")
     private String deploymentPlanner = null;
 
-    @Column(name = "dynamically_scalable")
-    private boolean dynamicallyScalable;
+    @Column(name = "dynamic_scaling_enabled")
+    private boolean dynamicScalingEnabled;
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
@@ -123,7 +123,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.vmType = vmType == null ? null : vmType.toString().toLowerCase();
         this.hostTag = hostTag;
         this.deploymentPlanner = deploymentPlanner;
-        this.dynamicallyScalable = dynamicScalingEnabled;
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 
     public ServiceOfferingVO(ServiceOfferingVO offering) {
@@ -150,7 +150,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         volatileVm = offering.isVolatileVm();
         hostTag = offering.getHostTag();
         vmType = offering.getSystemVmType();
-        dynamicallyScalable = offering.isDynamicallyScalable();
+        dynamicScalingEnabled = offering.isDynamicScalingEnabled();
     }
 
     @Override
@@ -298,11 +298,11 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     }
 
     @Override
-    public boolean isDynamicallyScalable() {
-        return dynamicallyScalable;
+    public boolean isDynamicScalingEnabled() {
+        return dynamicScalingEnabled;
     }
 
-    public void setDynamicallyScalable(boolean dynamicallyScalable) {
-        this.dynamicallyScalable = dynamicallyScalable;
+    public void setDynamicScalingEnabled(boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 }

@@ -209,7 +209,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
-        Boolean dynamicScalingEnabled = serviceOffering.isDynamicallyScalable() && clusterTemplate.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zone.getId());
+        Boolean dynamicScalingEnabled = serviceOffering.isDynamicScalingEnabled() && clusterTemplate.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zone.getId());
         masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
@@ -264,7 +264,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
-        Boolean dynamicScalingEnabled = serviceOffering.isDynamicallyScalable() && clusterTemplate.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zone.getId());
+        Boolean dynamicScalingEnabled = serviceOffering.isDynamicScalingEnabled() && clusterTemplate.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zone.getId());
         additionalMasterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
