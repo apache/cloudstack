@@ -190,6 +190,10 @@ import com.cloud.vm.VmDetailConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_VM_MIGRATE_DOWNTIME;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_VM_MIGRATE_PAUSE_AFTER;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_VM_MIGRATE_SPEED;
+
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
  * the libvirt API
@@ -661,6 +665,54 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         public Map<String, String> getKeyValues() {
             return map;
         }
+    }
+
+    /**
+     * setLiveMigrateFlags
+     *
+     * Sets the user configured live migration flags
+     *
+     * @param params
+     */
+    public void setLiveMigrateFlags(final Map<String, String> params) {
+        if (params.get(KVM_VM_MIGRATE_SPEED) != null) {
+            _migrateSpeed = NumbersUtil.parseInt(params.get(KVM_VM_MIGRATE_SPEED), -1);
+            if (_migrateSpeed == -1) {
+                _migrateSpeed = getDefaultMigrateSpeed();
+            }
+        }
+        if (params.get(KVM_VM_MIGRATE_DOWNTIME) != null) {
+            _migrateDowntime = NumbersUtil.parseInt(params.get(KVM_VM_MIGRATE_DOWNTIME), -1);
+        }
+        if (params.get(KVM_VM_MIGRATE_PAUSE_AFTER) != null) {
+            _migratePauseAfter = NumbersUtil.parseInt(params.get(KVM_VM_MIGRATE_PAUSE_AFTER), -1);
+        }
+    }
+
+    /**
+     *  getDefaultMigrateSpeed
+     *
+     *  Returns the default migration speed obtained from the public interface
+     *
+     * @return
+     *   migration speed
+     */
+    private Integer getDefaultMigrateSpeed() {
+        //get guest network device speed
+        Integer migrateSpeed = 0;
+        final String speed = Script.runSimpleBashScript("ethtool " + _pifs.get("public") + " |grep Speed | cut -d \\  -f 2");
+        if (speed != null) {
+            final String[] tokens = speed.split("M");
+            if (tokens.length == 2) {
+                try {
+                    migrateSpeed = Integer.parseInt(tokens[0]);
+                } catch (final NumberFormatException e) {
+                    s_logger.trace("Ignoring migrateSpeed extraction error.", e);
+                }
+                s_logger.info("Device " + _pifs.get("public") + " has speed: " + String.valueOf(migrateSpeed));
+            }
+        }
+        return migrateSpeed;
     }
 
     @Override
@@ -1246,19 +1298,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _migrateSpeed = NumbersUtil.parseInt(value, -1);
         if (_migrateSpeed == -1) {
             //get guest network device speed
-            _migrateSpeed = 0;
-            final String speed = Script.runSimpleBashScript("ethtool " + _pifs.get("public") + " |grep Speed | cut -d \\  -f 2");
-            if (speed != null) {
-                final String[] tokens = speed.split("M");
-                if (tokens.length == 2) {
-                    try {
-                        _migrateSpeed = Integer.parseInt(tokens[0]);
-                    } catch (final NumberFormatException e) {
-                        s_logger.trace("Ignoring migrateSpeed extraction error.", e);
-                    }
-                    s_logger.debug("device " + _pifs.get("public") + " has speed: " + String.valueOf(_migrateSpeed));
-                }
-            }
+            _migrateSpeed = getDefaultMigrateSpeed();
             params.put("vm.migrate.speed", String.valueOf(_migrateSpeed));
         }
 

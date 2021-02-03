@@ -122,6 +122,11 @@ import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
 import org.apache.commons.lang3.StringUtils;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_VM_MIGRATE_DOWNTIME;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_VM_MIGRATE_PAUSE_AFTER;
+import static com.cloud.configuration.ConfigurationManagerImpl.KVM_VM_MIGRATE_SPEED;
+import static com.cloud.configuration.ConfigurationManagerImpl.ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT;
+
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  **/
@@ -1781,8 +1786,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (cmd instanceof StartupRoutingCommand) {
                 if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
                     Map<String, String> params = new HashMap<String, String>();
-                    params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
+                    params.put(ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT, _configDao.getValue(ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT));
+                    params.put(KVM_VM_MIGRATE_SPEED, _configDao.getValue(KVM_VM_MIGRATE_SPEED));
+                    params.put(KVM_VM_MIGRATE_DOWNTIME, _configDao.getValue(KVM_VM_MIGRATE_DOWNTIME));
+                    params.put(KVM_VM_MIGRATE_PAUSE_AFTER, _configDao.getValue(KVM_VM_MIGRATE_PAUSE_AFTER));
 
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);
