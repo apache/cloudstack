@@ -2806,17 +2806,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (currentPool.getId() == targetPool.getId()) {
                 s_logger.info(String.format("The volume [%s] is already allocated in storage pool [%s].", volume.getUuid(), targetPool.getUuid()));
             }
-            final DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-            List<String> storageTags = storageMgr.getStoragePoolTagList(targetPool.getId());
-            if(!matches(StringUtils.csvTagsToList(diskOffering.getTags()), storageTags)) {
-                String msg = String.format("Cannot migrate volume [%s] with disk offering tags '%s' to storage pool [%s] with tags '%s'",
-                        volume.getName(),
-                        diskOffering.getTags(),
-                        targetPool.getName(),
-                        StringUtils.listToCsvTags(storageTags));
-                s_logger.error(msg);
-                throw new CloudRuntimeException(msg);
-            }
             volumeToPoolObjectMap.put(volume, targetPool);
         }
         return volumeToPoolObjectMap;
