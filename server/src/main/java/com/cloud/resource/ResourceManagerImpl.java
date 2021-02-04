@@ -1252,12 +1252,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     // for the last host in this cluster, destroy SSVM/CPVM and stop all other VMs
                     if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
                             || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                        s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling destroy for VM %s instead of migration.", vm.getUuid()));
+                        s_logger.error(String.format("Maintenance: VM is of type %s. Scheduling destroy for VM %s instead of migration.", vm.getType().toString(), vm.getUuid()));
                         _haMgr.scheduleDestroy(vm, hostId);
-                    } else {
-                        s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling shutdown for VM %s instead of migration.", vm.getUuid()));
-                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                        continue;
                     }
+                    s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling shutdown for VM %s instead of migration.", vm.getUuid()));
+                    _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
                     _haMgr.scheduleRestart(vm, false);

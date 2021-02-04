@@ -16,6 +16,28 @@
 // under the License.
 package com.cloud.ha;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
@@ -52,31 +74,9 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContext;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.management.ManagementServerHost;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 /**
  * HighAvailabilityManagerImpl coordinates the HA process. VMs are registered with the HA Manager for HA. The request is stored
@@ -682,25 +682,28 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     protected Long destroyVM(final HaWorkVO work) {
         final VirtualMachine vm = _itMgr.findById(work.getInstanceId());
+        if (vm == null) {
+            s_logger.info("No longer can find VM " + work.getInstanceId() + ". Throwing away " + work);
+            work.setStep(Step.Done);
+            return null;
+        }
+        boolean expunge = VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
+                || VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
+        if (!expunge && VirtualMachine.State.Destroyed.equals(work.getPreviousState())) {
+            s_logger.info("VM " + vm.getUuid() + " already in " + vm.getState() + " state. Throwing away " + work);
+            work.setStep(Step.Done);
+            return null;
+        }
         s_logger.info("Destroying " + vm.toString());
         try {
-            if (vm.getState() != State.Destroyed) {
-                s_logger.info("VM is no longer in Destroyed state " + vm.toString());
-                return null;
-            }
-
-            if (vm.getHostId() != null) {
-                _itMgr.destroy(vm.getUuid(), false);
-                s_logger.info("Successfully destroy " + vm);
-                return null;
+            if (!VirtualMachine.State.Expunging.equals(work.getPreviousState())) {
+                s_logger.info("Destroying " + vm.getUuid());
+                _itMgr.destroy(vm.getUuid(), expunge);
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(vm + " has already been stopped");
-                }
-                return null;
+                s_logger.info("VM " + vm.getUuid() + " still in " + vm.getState() + " state.");
             }
         } catch (final AgentUnavailableException e) {
-            s_logger.debug("Agnet is not available" + e.getMessage());
+            s_logger.debug("Agent is not available" + e.getMessage());
         } catch (OperationTimedoutException e) {
             s_logger.debug("operation timed out: " + e.getMessage());
         } catch (ConcurrentOperationException e) {
@@ -795,7 +798,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             case ForceStop:
                 return ((System.currentTimeMillis() >> 10) + _stopRetryInterval);
             case Destroy:
-                return ((System.currentTimeMillis() >> 10) + _restartRetryInterval);
+                return ((System.currentTimeMillis() >> 10) + _stopRetryInterval);
         }
         return 0;
     }
