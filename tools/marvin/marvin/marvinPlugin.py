@@ -171,7 +171,7 @@ class MarvinPlugin(Plugin):
         if not self.__testName:
             self.__testName = "test"
         self.__testClient.identifier = '-'.\
-            join([self.__identifier, self.__testName])
+            join([self.__identifier if self.__identifier != None else "marvinTest", self.__testName])
         if self.__tcRunLogger:
             self.__tcRunLogger.name = test.__str__()
 
