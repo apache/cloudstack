@@ -75,3 +75,11 @@ class cloudstackTestCase(unittest.case.TestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
+
+    def assertEqual(self, first, second, msg=None):
+        """Fail if the two objects are unequal as determined by the '=='
+           operator.
+        """
+        if isinstance(msg, str):
+            msg = msg.encode()
+        super(cloudstackTestCase,self).assertEqual(first,second,msg)
