@@ -179,7 +179,7 @@ Sql parameters:
 ***************************************************************
 Please run:
 
-    cloud-setup-database -h
+    cloudstack-setup-databases -h
 
 for full help
 ''' % msg
