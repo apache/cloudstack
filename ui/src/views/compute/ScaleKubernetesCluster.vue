@@ -19,57 +19,113 @@
   <div class="form-layout">
     <a-spin :spinning="loading">
       <a-alert type="warning">
-        <span slot="message" v-html="$t('message.kubernetes.cluster.scale')" />
+        <span
+          slot="message"
+          v-html="resource.autoscalingenabled ? $t('message.action.scale.kubernetes.cluster.warning') : $t('message.kubernetes.cluster.scale')" />
       </a-alert>
       <br />
       <a-form
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item>
+        <a-form-item v-if="apiParams.autoscalingenabled">
           <span slot="label">
-            {{ $t('label.cks.cluster.size') }}
-            <a-tooltip :title="apiParams.size.description">
+            {{ $t('label.cks.cluster.autoscalingenabled') }}
+            <a-tooltip :title="apiParams.autoscalingenabled.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
-          <a-input
-            v-decorator="['size', {
-              initialValue: originalSize,
-              rules: [{
-                validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
+          <a-switch :checked="this.autoscalingenabled" @change="val => { this.autoscalingenabled = val }" />
+        </a-form-item>
+        <span v-if="this.autoscalingenabled">
+          <a-form-item>
+            <span slot="label">
+              {{ $t('label.cks.cluster.minsize') }}
+              <a-tooltip :title="apiParams.minsize.description">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input
+              v-decorator="['minsize', {
+                initialValue: minsize,
+                rules: [{
+                  validator: (rule, value, callback) => {
+                    if (value && (isNaN(value) || value <= 0)) {
+                      callback(this.$t('message.error.number'))
+                    }
+                    callback()
                   }
-                  callback()
-                }
-              }]
-            }]"
-            :placeholder="apiParams.size.description"/>
-        </a-form-item>
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.serviceofferingid') }}
-            <a-tooltip :title="apiParams.serviceofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
-          <a-select
-            id="offering-selection"
-            v-decorator="['serviceofferingid', {}]"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="serviceOfferingLoading"
-            :placeholder="apiParams.serviceofferingid.description">
-            <a-select-option v-for="(opt, optIndex) in this.serviceOfferings" :key="optIndex">
-              {{ opt.name || opt.description }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-
+                }]
+              }]"
+              :placeholder="apiParams.minsize.description"/>
+          </a-form-item>
+          <a-form-item>
+            <span slot="label">
+              {{ $t('label.cks.cluster.maxsize') }}
+              <a-tooltip :title="apiParams.maxsize.description">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input
+              v-decorator="['maxsize', {
+                initialValue: maxsize,
+                rules: [{
+                  validator: (rule, value, callback) => {
+                    if (value && (isNaN(value) || value <= 0)) {
+                      callback(this.$t('message.error.number'))
+                    }
+                    callback()
+                  }
+                }]
+              }]"
+              :placeholder="apiParams.maxsize.description"/>
+          </a-form-item>
+        </span>
+        <span v-else>
+          <a-form-item>
+            <span slot="label">
+              {{ $t('label.serviceofferingid') }}
+              <a-tooltip :title="apiParams.serviceofferingid.description">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-select
+              id="offering-selection"
+              v-decorator="['serviceofferingid', {}]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="serviceOfferingLoading"
+              :placeholder="apiParams.serviceofferingid.description">
+              <a-select-option v-for="(opt, optIndex) in this.serviceOfferings" :key="optIndex">
+                {{ opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item>
+            <span slot="label">
+              {{ $t('label.cks.cluster.size') }}
+              <a-tooltip :title="apiParams.size.description">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input
+              v-decorator="['size', {
+                initialValue: originalSize,
+                rules: [{
+                  validator: (rule, value, callback) => {
+                    if (value && (isNaN(value) || value <= 0)) {
+                      callback(this.$t('message.error.number'))
+                    }
+                    callback()
+                  }
+                }]
+              }]"
+              :placeholder="apiParams.size.description"/>
+          </a-form-item>
+        </span>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
           <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
@@ -96,7 +152,11 @@ export default {
       serviceOfferingLoading: false,
       minCpu: 2,
       minMemory: 2048,
-      loading: false
+      loading: false,
+      originalSize: 1,
+      autoscalingenabled: null,
+      minsize: null,
+      maxsize: null
     }
   },
   beforeCreate () {
@@ -108,7 +168,14 @@ export default {
     })
   },
   created () {
-    this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
+    if (!this.isObjectEmpty(this.resource)) {
+      this.originalSize = this.resource.size
+      if (this.apiParams.autoscalingenabled) {
+        this.autoscalingenabled = this.resource.autoscalingenabled ? true : null
+        this.minsize = this.resource.minsize
+        this.maxsize = this.resource.maxsize
+      }
+    }
   },
   mounted () {
     this.fetchData()
@@ -179,11 +246,20 @@ export default {
         const params = {
           id: this.resource.id
         }
+        if (this.autoscalingenabled != null) {
+          params.autoscalingenabled = this.autoscalingenabled
+        }
         if (this.isValidValueForKey(values, 'size') && values.size > 0) {
           params.size = values.size
         }
-        if (this.isValidValueForKey(values, 'serviceofferingid') && this.arrayHasItems(this.serviceOfferings)) {
+        if (this.isValidValueForKey(values, 'serviceofferingid') && this.arrayHasItems(this.serviceOfferings) && this.autoscalingenabled == null) {
           params.serviceofferingid = this.serviceOfferings[values.serviceofferingid].id
+        }
+        if (this.isValidValueForKey(values, 'minsize')) {
+          params.minsize = values.minsize
+        }
+        if (this.isValidValueForKey(values, 'maxsize')) {
+          params.maxsize = values.maxsize
         }
         api('scaleKubernetesCluster', params).then(json => {
           const jobId = json.scalekubernetesclusterresponse.jobid

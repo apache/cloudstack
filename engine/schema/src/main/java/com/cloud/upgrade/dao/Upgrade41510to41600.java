@@ -125,23 +125,23 @@ public class Upgrade41510to41600 implements DbUpgrade {
 
         final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-vmware.ova");
-                put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-xen.vhd.bz2");
-                put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-hyperv.vhd.zip");
-                put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-ovm.raw.bz2");
+                put(Hypervisor.HypervisorType.KVM, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.VMware, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-vmware.ova");
+                put(Hypervisor.HypervisorType.XenServer, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-xen.vhd.bz2");
+                put(Hypervisor.HypervisorType.Hyperv, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-hyperv.vhd.zip");
+                put(Hypervisor.HypervisorType.LXC, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.Ovm3, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-ovm.raw.bz22");
             }
         };
 
         final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "81b3e48bb934784a13555a43c5ef5ffb");
-                put(Hypervisor.HypervisorType.XenServer, "1b178a5dbdbe090555515340144c6017");
-                put(Hypervisor.HypervisorType.VMware, "e6a88e518c57d6f36c096c4204c3417f");
-                put(Hypervisor.HypervisorType.Hyperv, "5c94da45337cf3e1910dcbe084d4b9ad");
-                put(Hypervisor.HypervisorType.LXC, "81b3e48bb934784a13555a43c5ef5ffb");
-                put(Hypervisor.HypervisorType.Ovm3, "875c5c65455fc06c4a012394410db375");
+                put(Hypervisor.HypervisorType.KVM, "6e4ed6ba28b50e455ac6708963331013");
+                put(Hypervisor.HypervisorType.XenServer, "4ba9fb9b749c5503e46396be999406c1");
+                put(Hypervisor.HypervisorType.VMware, "dcb9d3b0e6b7fed9e65846b0c52a1964");
+                put(Hypervisor.HypervisorType.Hyperv, "7c7716bf5f4f3ee2b708aa9a3162a8e4");
+                put(Hypervisor.HypervisorType.LXC, "6e4ed6ba28b50e455ac6708963331013");
+                put(Hypervisor.HypervisorType.Ovm3, "6f87e2945b8dbd400de5e5c9c788d593");
             }
         };
 
@@ -169,7 +169,9 @@ public class Upgrade41510to41600 implements DbUpgrade {
                         LOG.error("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system': " + e.getMessage());
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
                     }
-                    updateVMwareSystemvVMTemplateField(conn, NewTemplateNameList.get(Hypervisor.HypervisorType.VMware));
+                    if (hypervisorAndTemplateName.getKey() == Hypervisor.HypervisorType.VMware) {
+                        updateVMwareSystemvVMTemplateField(conn, hypervisorAndTemplateName.getValue());
+                    }
                     // update template ID of system Vms
                     try (PreparedStatement update_templ_id_pstmt = conn
                             .prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ? and removed is NULL");) {
@@ -226,7 +228,9 @@ public class Upgrade41510to41600 implements DbUpgrade {
                             throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type "
                                     + hypervisorAndTemplateName.getKey().toString(), e);
                         }
-                        updateVMwareSystemvVMTemplateField(conn, NewTemplateNameList.get(Hypervisor.HypervisorType.VMware));
+                        if (hypervisorAndTemplateName.getKey() == Hypervisor.HypervisorType.VMware) {
+                            updateVMwareSystemvVMTemplateField(conn, hypervisorAndTemplateName.getValue());
+                        }
                     }
                 }
             } catch (final SQLException e) {

@@ -131,10 +131,11 @@
           </span>
           <a-input
             v-decorator="['noderootdisksize', {
+              initialValue: '8',
               rules: [{
                 validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.validate.number'))
+                  if (value && (isNaN(value) || value < 8)) {
+                    callback(this.$t('messgae.validate.min').replace('{0}', '8GB'))
                   }
                   callback()
                 }

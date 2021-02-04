@@ -230,6 +230,10 @@
     <a slot="readonly" slot-scope="text, record">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" />
     </a>
+    <span slot="autoscalingenabled" slot-scope="text, record">
+      <status :text="record.autoscalingenabled ? 'Enabled' : 'Disabled'" />
+      {{ record.autoscalingenabled ? 'Enabled' : 'Disabled' }}
+    </span>
     <span slot="created" slot-scope="text">
       {{ $toLocaleDate(text) }}
     </span>
