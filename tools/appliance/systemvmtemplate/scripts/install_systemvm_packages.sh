@@ -100,7 +100,7 @@ function install_packages() {
     $(lsb_release -cs) \
     stable"
     apt-get update
-    ${apt_get} install docker-ce docker-ce-cli containerd.io
+    ${apt_get} install docker-ce=5:19.03.10~3-0~debian-buster docker-ce-cli=5:19.03.10~3-0~debian-buster containerd.io=1.3.7-1
   fi
   apt_clean
 

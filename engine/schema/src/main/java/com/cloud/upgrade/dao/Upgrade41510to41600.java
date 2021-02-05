@@ -136,12 +136,12 @@ public class Upgrade41510to41600 implements DbUpgrade {
 
         final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "6e4ed6ba28b50e455ac6708963331013");
-                put(Hypervisor.HypervisorType.XenServer, "4ba9fb9b749c5503e46396be999406c1");
-                put(Hypervisor.HypervisorType.VMware, "dcb9d3b0e6b7fed9e65846b0c52a1964");
-                put(Hypervisor.HypervisorType.Hyperv, "7c7716bf5f4f3ee2b708aa9a3162a8e4");
-                put(Hypervisor.HypervisorType.LXC, "6e4ed6ba28b50e455ac6708963331013");
-                put(Hypervisor.HypervisorType.Ovm3, "6f87e2945b8dbd400de5e5c9c788d593");
+                put(Hypervisor.HypervisorType.KVM, "0493097e888e7bb86c7118d23c5eeb67");
+                put(Hypervisor.HypervisorType.XenServer, "b712722757fffcee0cfcdf63abdbbcff");
+                put(Hypervisor.HypervisorType.VMware, "3d903f31df5324f21a730cab76706786");
+                put(Hypervisor.HypervisorType.Hyperv, "54156ca498d5e96a6eb010c06d10ab55");
+                put(Hypervisor.HypervisorType.LXC, "0493097e888e7bb86c7118d23c5eeb67");
+                put(Hypervisor.HypervisorType.Ovm3, "e956da950052ad5e62098f3a366a6aa1");
             }
         };
 
