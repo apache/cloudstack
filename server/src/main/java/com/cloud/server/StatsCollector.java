@@ -687,18 +687,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 return;
             }
             // collect the vm disk statistics(total) from hypervisor. added by weizhou, 2013.03.
-            s_logger.trace("Running VM disk stats ...");
-            try {
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        s_logger.debug("VmDiskStatsTask is running...");
+            s_logger.debug("VmDiskStatsTask is running...");
 
-                        SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
-                        sc.addAnd("hypervisorType", SearchCriteria.Op.IN, HypervisorType.KVM, HypervisorType.VMware);
-                        List<HostVO> hosts = _hostDao.search(sc, null);
+            SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
+            sc.addAnd("hypervisorType", SearchCriteria.Op.IN, HypervisorType.KVM, HypervisorType.VMware);
+            List<HostVO> hosts = _hostDao.search(sc, null);
 
-                        for (HostVO host : hosts) {
+            for (HostVO host : hosts) {
+                try {
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
                             List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                             List<Long> vmIds = new ArrayList<Long>();
 
@@ -709,7 +708,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                             HashMap<Long, List<VmDiskStatsEntry>> vmDiskStatsById = _userVmMgr.getVmDiskStatistics(host.getId(), host.getName(), vmIds);
                             if (vmDiskStatsById == null)
-                                continue;
+                                return;
 
                             Set<Long> vmIdSet = vmDiskStatsById.keySet();
                             for (Long vmId : vmIdSet) {
@@ -796,10 +795,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 }
                             }
                         }
-                    }
-                });
-            } catch (Exception e) {
-                s_logger.warn("Error while collecting vm disk stats from hosts", e);
+                    });
+                } catch (Exception e) {
+                    s_logger.warn(String.format("Error while collecting vm disk stats from host %s : ", host.getName()), e);
+                }
             }
         }
     }
@@ -815,16 +814,16 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 return;
             }
             // collect the vm network statistics(total) from hypervisor
-            try {
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        s_logger.debug("VmNetworkStatsTask is running...");
+            s_logger.debug("VmNetworkStatsTask is running...");
 
-                        SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
-                        List<HostVO> hosts = _hostDao.search(sc, null);
+            SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
+            List<HostVO> hosts = _hostDao.search(sc, null);
 
-                        for (HostVO host : hosts) {
+            for (HostVO host : hosts) {
+                try {
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
                             List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                             List<Long> vmIds = new ArrayList<Long>();
 
@@ -835,7 +834,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                             HashMap<Long, List<VmNetworkStatsEntry>> vmNetworkStatsById = _userVmMgr.getVmNetworkStatistics(host.getId(), host.getName(), vmIds);
                             if (vmNetworkStatsById == null)
-                                continue;
+                                return;
 
                             Set<Long> vmIdSet = vmNetworkStatsById.keySet();
                             for (Long vmId : vmIdSet) {
@@ -915,10 +914,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 }
                             }
                         }
-                    }
-                });
-            } catch (Exception e) {
-                s_logger.warn("Error while collecting vm network stats from hosts", e);
+                    });
+                } catch (Exception e) {
+                    s_logger.warn(String.format("Error while collecting vm network stats from host %s : ", host.getName()), e);
+                }
             }
         }
     }
