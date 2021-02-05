@@ -793,8 +793,8 @@ class VirtualMachine:
                        to expected state in given time else PASS
                        2) Reason - Reason for failure"""
 
-        returnValue = [FAIL, "VM state not trasited to %s,\
-                        operation timed out" % state]
+        returnValue = [FAIL, Exception(f"VM state not transitioned to {state},\
+                        operation timed out")]
 
         while timeout > 0:
             try:
@@ -806,7 +806,7 @@ class VirtualMachine:
                 validationresult = validateList(vms)
                 if validationresult[0] == FAIL:
                     raise Exception("VM list validation failed: %s" % validationresult[2])
-                elif str(vms[0].state).lower().decode("string_escape") == str(state).lower():
+                elif str(vms[0].state).lower() == str(state).lower():
                     returnValue = [PASS, None]
                     break
             except Exception as e:
@@ -2848,7 +2848,7 @@ class Host:
         if validationresult[0] == FAIL:
             raise Exception("Host list validation failed: %s" % validationresult[2])
 
-        if str(hosts[0].resourcestate).lower().decode("string_escape") == str(resourcestate).lower():
+        if str(hosts[0].resourcestate).lower() == str(resourcestate).lower():
             return True, None
 
         return False, "Host is not in the following state: " + str(resourcestate)
@@ -2945,8 +2945,8 @@ class Host:
                 validationresult = validateList(hosts)
                 if validationresult[0] == FAIL:
                     raise Exception("Host list validation failed: %s" % validationresult[2])
-                elif str(hosts[0].state).lower().decode("string_escape") == str(state).lower() and str(
-                        hosts[0].resourcestate).lower().decode("string_escape") == str(resourcestate).lower():
+                elif str(hosts[0].state).lower() == str(state).lower() and str(
+                        hosts[0].resourcestate).lower() == str(resourcestate).lower():
                     returnValue = [PASS, None]
                     break
             except Exception as e:
@@ -3095,7 +3095,7 @@ class StoragePool:
                 validationresult = validateList(pools)
                 if validationresult[0] == FAIL:
                     raise Exception("Pool list validation failed: %s" % validationresult[2])
-                elif str(pools[0].state).lower().decode("string_escape") == str(state).lower():
+                elif str(pools[0].state).lower() == str(state).lower():
                     returnValue = [PASS, None]
                     break
             except Exception as e:
