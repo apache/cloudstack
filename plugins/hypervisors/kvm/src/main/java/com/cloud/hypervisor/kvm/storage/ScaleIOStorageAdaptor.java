@@ -67,11 +67,13 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk getPhysicalDisk(String volumeId, KVMStoragePool pool) {
-        if (Strings.isNullOrEmpty(volumeId) || pool == null) {
-            LOGGER.error("Unable to get physical disk, unspecified volumeid or pool");
+    public KVMPhysicalDisk getPhysicalDisk(String volumePath, KVMStoragePool pool) {
+        if (Strings.isNullOrEmpty(volumePath) || pool == null) {
+            LOGGER.error("Unable to get physical disk, volume path or pool not specified");
             return null;
         }
+
+        String volumeId = ScaleIOUtil.getVolumePath(volumePath);
 
         try {
             String diskFilePath = null;
@@ -98,7 +100,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 }
             }
 
-            KVMPhysicalDisk disk = new KVMPhysicalDisk(diskFilePath, volumeId, pool);
+            KVMPhysicalDisk disk = new KVMPhysicalDisk(diskFilePath, volumePath, pool);
             disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
 
             long diskSize = getPhysicalDiskSize(diskFilePath);
@@ -107,8 +109,8 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
             return disk;
         } catch (Exception e) {
-            LOGGER.error("Failed to get the physical disk: " + volumeId + " on the storage pool: " + pool.getUuid() + " due to " + e.getMessage());
-            throw new CloudRuntimeException("Failed to get the physical disk: " + volumeId + " on the storage pool: " + pool.getUuid());
+            LOGGER.error("Failed to get the physical disk: " + volumePath + " on the storage pool: " + pool.getUuid() + " due to " + e.getMessage());
+            throw new CloudRuntimeException("Failed to get the physical disk: " + volumePath + " on the storage pool: " + pool.getUuid());
         }
     }
 
@@ -135,6 +137,8 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             LOGGER.error("Unable to connect physical disk due to insufficient data");
             throw new CloudRuntimeException("Unable to connect physical disk due to insufficient data");
         }
+
+        volumePath = ScaleIOUtil.getVolumePath(volumePath);
 
         int waitTimeInSec = DEFAULT_DISK_WAIT_TIME_IN_SECS;
         if (details != null && details.containsKey(StorageManager.STORAGE_POOL_DISK_WAIT.toString())) {

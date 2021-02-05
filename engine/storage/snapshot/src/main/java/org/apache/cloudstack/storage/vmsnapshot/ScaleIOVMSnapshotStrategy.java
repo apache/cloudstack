@@ -141,7 +141,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             for (VolumeObjectTO volume : volumeTOs) {
                 String volumeSnapshotName = String.format("%s-%s-%s-%s-%s", ScaleIOUtil.VMSNAPSHOT_PREFIX, vmSnapshotVO.getId(), volume.getId(),
                         storagePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
-                srcVolumeDestSnapshotMap.put(volume.getPath(), volumeSnapshotName);
+                srcVolumeDestSnapshotMap.put(ScaleIOUtil.getVolumePath(volume.getPath()), volumeSnapshotName);
 
                 virtual_size += volume.getSize();
                 VolumeVO volumeVO = volumeDao.findById(volume.getId());
@@ -173,7 +173,9 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                     vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshot.getId(), "SnapshotGroupId", snapshotGroupId, false));
 
                     for (int index = 0; index < volumeIds.size(); index++) {
-                        vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshot.getId(), "Vol_" + volumeTOs.get(index).getId() + "_Snapshot", volumeIds.get(index), false));
+                        String volumeSnapshotName = srcVolumeDestSnapshotMap.get(ScaleIOUtil.getVolumePath(volumeTOs.get(index).getPath()));
+                        String pathWithScaleIOVolumeName = ScaleIOUtil.updatedPathWithVolumeName(volumeIds.get(index), volumeSnapshotName);
+                        vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshot.getId(), "Vol_" + volumeTOs.get(index).getId() + "_Snapshot", pathWithScaleIOVolumeName, false));
                     }
 
                     vmSnapshotDetailsDao.saveDetails(vmSnapshotDetails);
@@ -265,8 +267,8 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             Map<String, String> srcSnapshotDestVolumeMap = new HashMap<>();
             for (VolumeObjectTO volume : volumeTOs) {
                 VMSnapshotDetailsVO vmSnapshotDetail = vmSnapshotDetailsDao.findDetail(vmSnapshotVO.getId(), "Vol_" + volume.getId() + "_Snapshot");
-                String srcSnapshotVolumeId = vmSnapshotDetail.getValue();
-                String destVolumeId = volume.getPath();
+                String srcSnapshotVolumeId = ScaleIOUtil.getVolumePath(vmSnapshotDetail.getValue());
+                String destVolumeId = ScaleIOUtil.getVolumePath(volume.getPath());
                 srcSnapshotDestVolumeMap.put(srcSnapshotVolumeId, destVolumeId);
             }
 
