@@ -3399,6 +3399,12 @@
                                         delete inputData.specifyVlan; //if specifyVlan checkbox is unchecked, do not pass specifyVlan parameter to API call since we need to keep API call's size as small as possible (p.s. specifyVlan is defaulted as false at server-side)
                                     }
 
+                                    if (inputData['isPersistent'] == 'on') { //It is a persistent network
+                                        inputData['isPersistent'] = true;
+                                    } else { //L2 Network with Non-persistent network
+                                        delete inputData.isPersistent; //if Persistent checkbox is unchecked, do not pass isPersistent parameter to API call since we need to keep API call's size as small as possible (p.s. isPersistent is defaulted as false at server-side)
+                                    }
+
                                     if (inputData['userDataL2'] == 'on') {
                                         inputData['serviceProviderList[0].service'] = 'UserData';
                                         inputData['serviceProviderList[0].provider'] = 'ConfigDrive';

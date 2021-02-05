@@ -354,6 +354,10 @@ var addGuestNetworkDialog = {
                     label: 'label.vlan.id',
                     docID: 'helpGuestNetworkZoneVLANID'
                 },
+                bypassVlanOverlapCheck: {
+                    label: 'label.bypass.vlan.overlap.check',
+                    isBoolean: true
+                },
                 isolatedpvlanId: {
                     label: 'label.secondary.isolated.vlan.id'
                 },
@@ -787,6 +791,9 @@ var addGuestNetworkDialog = {
 
             if (($form.find('.form-item[rel=vlanId]').css("display") != "none") && (args.data.vlanId != null && args.data.vlanId.length > 0))
                 array1.push("&vlan=" + todb(args.data.vlanId));
+            
+            if (($form.find('.form-item[rel=bypassVlanOverlapCheck]').css("display") != "none") && args.data.bypassVlanOverlapCheck != null)
+                array1.push("&bypassVlanOverlapCheck=" + todb((args.data.bypassVlanOverlapCheck == "on")));
 
             if (($form.find('.form-item[rel=isolatedpvlanId]').css("display") != "none") && (args.data.isolatedpvlanId != null && args.data.isolatedpvlanId.length > 0))
                 array1.push("&isolatedpvlan=" + todb(args.data.isolatedpvlanId));
@@ -968,6 +975,7 @@ var addL2GuestNetwork = {
                                 networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
                                 args.$select.change(function() {
                                     var $vlan = args.$select.closest('form').find('[rel=vlan]');
+                                    var $bypassVlanOverlapCheck = args.$select.closest('form').find('[rel=bypassVlanOverlapCheck]');
                                     var networkOffering = $.grep(
                                         networkOfferingObjs, function(netoffer) {
                                             return netoffer.id == args.$select.val();
@@ -976,8 +984,10 @@ var addL2GuestNetwork = {
 
                                     if (networkOffering.specifyvlan) {
                                         $vlan.css('display', 'inline-block');
+                                        $bypassVlanOverlapCheck.css('display', 'inline-block');
                                     } else {
                                         $vlan.hide();
+                                        $bypassVlanOverlapCheck.hide();
                                     }
                                 });
 
@@ -999,6 +1009,11 @@ var addL2GuestNetwork = {
                     validation: {
                         required: true
                     },
+                    isHidden: true
+                },
+                bypassVlanOverlapCheck: {
+                    label: 'label.bypass.vlan.overlap.check',
+                    isBoolean: true,
                     isHidden: true
                 },
 
@@ -1104,7 +1119,8 @@ var addL2GuestNetwork = {
 
             if (args.$form.find('.form-item[rel=vlan]').css('display') != 'none') {
                 $.extend(dataObj, {
-                    vlan: args.data.vlan
+                    vlan: args.data.vlan,
+                    bypassVlanOverlapCheck: (args.data.bypassVlanOverlapCheck == "on")
                 });
             }
 
