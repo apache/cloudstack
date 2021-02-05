@@ -2194,7 +2194,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (vlanSpecified) {
             URI uri = BroadcastDomainType.fromString(vlanId);
             //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
-            if (!(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
+            if (!hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff) && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
                 throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                         + zone.getName());
             }
