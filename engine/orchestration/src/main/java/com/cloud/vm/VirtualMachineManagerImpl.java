@@ -3916,7 +3916,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
             removeCustomOfferingDetails(vmId);
         }
-        Boolean dynamicScalingEnabled = vmForUpdate.isDynamicallyScalable() && newServiceOffering.isDynamicScalingEnabled() && UserVmManager.EnableDynamicallyScaleVm.valueIn(vmForUpdate.getDataCenterId());
+        VMTemplateVO template = _templateDao.findById(vmForUpdate.getTemplateId());
+        Boolean dynamicScalingEnabled = vmForUpdate.isDynamicallyScalable() && _userVmMgr.checkIfDynamicScalingCanBeEnabled(newServiceOffering, template, vmForUpdate.getDataCenterId());
         vmForUpdate.setDynamicallyScalable(dynamicScalingEnabled);
         return _vmDao.update(vmId, vmForUpdate);
     }

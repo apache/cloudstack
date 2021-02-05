@@ -72,7 +72,6 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.UserVmManager;
 import com.google.common.base.Strings;
 
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
@@ -209,11 +208,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
-        Boolean dynamicScalingEnabled = serviceOffering.isDynamicScalingEnabled() && clusterTemplate.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zone.getId());
         masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, dynamicScalingEnabled);
+                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created master VM ID: %s, %s in the Kubernetes cluster : %s", masterVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
@@ -264,11 +262,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
-        Boolean dynamicScalingEnabled = serviceOffering.isDynamicScalingEnabled() && clusterTemplate.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zone.getId());
         additionalMasterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null, dynamicScalingEnabled);
+                null, addrs, null, null, null, customParameterMap, null, null, null, null, true);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created master VM ID : %s, %s in the Kubernetes cluster : %s", additionalMasterVm.getUuid(), hostName, kubernetesCluster.getName()));
         }

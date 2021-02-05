@@ -3939,7 +3939,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(dynamicScalingEnabled, offering, template, zone.getId());
+        dynamicScalingEnabled = dynamicScalingEnabled && checkIfDynamicScalingCanBeEnabled(offering, template, zone.getId());
 
         UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, caller, isDisplayVm, keyboard, accountId, userId, offering,
                 isIso, sshPublicKey, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters, dhcpOptionMap,
@@ -3967,13 +3967,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
-    private Boolean checkIfDynamicScalingCanBeEnabled(Boolean dynamicScalingEnabled, ServiceOfferingVO offering, VMTemplateVO template, Long zoneId) {
-        if (dynamicScalingEnabled) {
-            if (!(offering.isDynamicScalingEnabled() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zoneId))) {
-                s_logger.info("VM cannot be configured to be dynamically scalable if any of the service offering's dynamic scaling property, template's dynamic scaling property or global setting is false");
-            }
+    @Override
+    public Boolean checkIfDynamicScalingCanBeEnabled(ServiceOffering offering, VirtualMachineTemplate template, Long zoneId) {
+        Boolean canEnableDynamicScaling = offering.isDynamicScalingEnabled() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zoneId);
+        if (!canEnableDynamicScaling) {
+            s_logger.info("VM cannot be configured to be dynamically scalable if any of the service offering's dynamic scaling property, template's dynamic scaling property or global setting is false");
         }
-        return dynamicScalingEnabled && offering.isDynamicScalingEnabled() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zoneId);
+
+        return canEnableDynamicScaling;
     }
 
     /**
@@ -7095,13 +7096,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         vm.setIsoId(newTemplateId);
                         vm.setGuestOSId(template.getGuestOSId());
                         vm.setTemplateId(newTemplateId);
-                        _vmDao.update(vmId, vm);
                     } else {
                         newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
                         vm.setGuestOSId(template.getGuestOSId());
                         vm.setTemplateId(newTemplateId);
-                        _vmDao.update(vmId, vm);
                     }
+                    // check if VM can be dynamically scalable with the new template
+                    ServiceOfferingVO serviceOffering = _offeringDao.findById(vm.getServiceOfferingId());
+                    VMTemplateVO newTemplate = _templateDao.findById(newTemplateId);
+                    Boolean dynamicScalingEnabled = vm.isDynamicallyScalable() && checkIfDynamicScalingCanBeEnabled(serviceOffering, newTemplate, vm.getDataCenterId());
+                    vm.setDynamicallyScalable(dynamicScalingEnabled);
+                    _vmDao.update(vmId, vm);
+
                 } else {
                     newVol = volumeMgr.allocateDuplicateVolume(root, null);
                 }
@@ -7506,7 +7512,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         final String uuidName = _uuidMgr.generateUuid(UserVm.class, null);
         final Host lastHost = powerState != VirtualMachine.PowerState.PowerOn ? host : null;
-        final Boolean dynamicScalingEnabled = serviceOffering.isDynamicScalingEnabled() && template.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(zone.getId());
+        final Boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(serviceOffering, template, zone.getId());
         return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
                 null, null, userData, caller, isDisplayVm, keyboard,
                 accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKey, null,
