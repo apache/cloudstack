@@ -256,9 +256,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
-        // check if XStools/VMWare tools are present in the VM and dynamic scaling feature is enabled (per zone/global)
-        Boolean isDynamicallyScalable = vmInstance.isDynamicallyScalable();
-        to.setEnableDynamicallyScaleVm(isDynamicallyScalable);
+        to.setEnableDynamicallyScaleVm(vmInstance.isDynamicallyScalable());
         to.setUuid(vmInstance.getUuid());
 
         to.setVmData(vmProfile.getVmData());

@@ -57,8 +57,7 @@ import com.google.gson.Gson;
 @Table(name = "vm_instance")
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING, length = 32)
-public class
-VMInstanceVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
+public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
     private static final Logger s_logger = Logger.getLogger(VMInstanceVO.class);
     @Id
     @TableGenerator(name = "vm_instance_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_instance_seq", allocationSize = 1)
