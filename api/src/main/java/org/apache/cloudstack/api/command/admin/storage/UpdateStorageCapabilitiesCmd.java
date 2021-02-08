@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = UpdateStorageCapabilitiesCmd.APINAME, description = "Syncs hardware acceleration capabilities of storage pools",
+@APICommand(name = UpdateStorageCapabilitiesCmd.APINAME, description = "Syncs capabilities of storage pools",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateStorageCapabilitiesCmd extends BaseCmd {
@@ -62,7 +62,7 @@ public class UpdateStorageCapabilitiesCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        _storageService.syncHardwareCapability(poolId);
+        _storageService.updateStorageCapabilities(poolId);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(true);
         this.setResponseObject(response);

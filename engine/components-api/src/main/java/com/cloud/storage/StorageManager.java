@@ -145,7 +145,7 @@ public interface StorageManager extends StorageService {
 
     ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
             "Maximum wait time for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
-
+    ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<Boolean>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false", "Use storage pools only with supported disk provisioning types for disk/service offerings if set to true.", true, ConfigKey.Scope.Zone);
     /**
      * Returns a comma separated list of tags for the specified storage pool
      * @param poolId

@@ -41,6 +41,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
@@ -101,6 +103,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -2778,13 +2781,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void syncHardwareCapability(long poolId) {
+    public void updateStorageCapabilities(long poolId) {
         StoragePoolVO pool = _storagePoolDao.findById(poolId);
         // find the host
         List<StoragePoolHostVO> hosts = _storagePoolHostDao.listByPoolId(poolId);
         if (hosts.size() > 0) {
             StoragePoolHostVO host = hosts.get(0);
-            _agentMgr.easySend(host.getHostId(), new ModifyStoragePoolCommand(false, pool));
+            GetStoragePoolCapabilitiesCommand cmd = new GetStoragePoolCapabilitiesCommand();
+            cmd.setPool(new StorageFilerTO(pool));
+            GetStoragePoolCapabilitiesAnswer answer = (GetStoragePoolCapabilitiesAnswer) _agentMgr.easySend(host.getHostId(), cmd);
+            if (answer.getPoolInfo().getDetails() != null && answer.getPoolInfo().getDetails().containsKey(Storage.Capability.HARDWARE_ACCELERATION.toString())){
+                StoragePoolDetailVO hardwareAccelerationSupported = _storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+
+                if (hardwareAccelerationSupported == null) {
+                    StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString(), answer.getPoolInfo().getDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()), false);
+                    _storagePoolDetailsDao.persist(storagePoolDetailVO);
+                } else {
+                    hardwareAccelerationSupported.setValue(answer.getPoolInfo().getDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()));
+                    _storagePoolDetailsDao.update(hardwareAccelerationSupported.getId(), hardwareAccelerationSupported);
+                }
+            }
         }
     }
 
@@ -3147,7 +3163,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 STORAGE_POOL_CLIENT_MAX_CONNECTIONS,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
                 SecStorageMaxMigrateSessions,
-                MaxDataMigrationWaitTime
+                MaxDataMigrationWaitTime,
+                DiskProvisioningStrictness
         };
     }
 

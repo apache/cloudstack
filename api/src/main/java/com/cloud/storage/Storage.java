@@ -76,6 +76,16 @@ public class Storage {
 
     }
 
+    public static enum Capability {
+        HARDWARE_ACCELERATION("hardwareAcceleration");
+
+        private final String capability;
+
+        private Capability(String capability) {
+            this.capability = capability;
+        }
+    }
+
     public static enum ProvisioningType {
         THIN("thin"),
         SPARSE("sparse"),

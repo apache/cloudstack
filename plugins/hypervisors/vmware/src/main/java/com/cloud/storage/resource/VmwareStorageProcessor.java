@@ -138,7 +138,7 @@ import com.vmware.vim25.VmfsDatastoreOption;
 public class VmwareStorageProcessor implements StorageProcessor {
 
     public enum VmwareStorageProcessorConfigurableFields {
-        NFS_VERSION("nfsVersion"), FULL_CLONE_FLAG("fullCloneFlag");
+        NFS_VERSION("nfsVersion"), FULL_CLONE_FLAG("fullCloneFlag"), DISK_PROVISIONING_STRICTNESS("diskProvisioningStrictness");
 
         private String name;
 
@@ -157,6 +157,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private final VmwareHostService hostService;
     private boolean _fullCloneFlag;
+    private boolean _diskProvisioningStrictness;
     private final VmwareStorageMount mountService;
     private final VmwareResource resource;
     private final Integer _timeout;
@@ -916,9 +917,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
         if (volume.getVolumeType() == Volume.Type.DATADISK)
             vmName = volume.getName();
         if (!_fullCloneFlag) {
+            if (_diskProvisioningStrictness) {
+                throw new CloudRuntimeException("Unable to create linked clones with strict disk provisioning enabled");
+            }
             createVMLinkedClone(vmTemplate, dcMo, vmName, morDatastore, morPool);
         } else {
-            createVMFullClone(vmTemplate, dcMo, dsMo, vmName, morDatastore, morPool, null);
+            createVMFullClone(vmTemplate, dcMo, dsMo, vmName, morDatastore, morPool, volume.getProvisioningType());
         }
 
         VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmName);
@@ -944,6 +948,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
             }
             if (!_fullCloneFlag) {
+                if (_diskProvisioningStrictness) {
+                    throw new CloudRuntimeException("Unable to create linked clones with strict disk provisioning enabled");
+                }
                 createVMLinkedClone(vmTemplate, dcMo, vmdkName, morDatastore, morPool);
             } else {
                 createVMFullClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool, volume.getProvisioningType());
@@ -1000,9 +1007,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
             _fullCloneFlag = volume.getSize() > template.getSize() || _fullCloneFlag;
         }
         if (!_fullCloneFlag) {
+            if (_diskProvisioningStrictness) {
+                throw new CloudRuntimeException("Unable to create linked clones with strict disk provisioning enabled");
+            }
             createVMLinkedClone(vmMo, dcMo, cloneName, morDatastore, morPool);
         } else {
-            createVMFullClone(vmMo, dcMo, dsMo, cloneName, morDatastore, morPool, null);
+            createVMFullClone(vmMo, dcMo, dsMo, cloneName, morDatastore, morPool, volume.getProvisioningType());
         }
     }
 
@@ -3890,6 +3900,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
         s_logger.debug("VmwareProcessor instance - create full clone = " + (value ? "TRUE" : "FALSE"));
     }
 
+    void setDiskProvisioningStricteness(boolean value){
+        this._diskProvisioningStrictness = value;
+        s_logger.debug("VmwareProcessor instance - diskProvisioningStrictness = " + (value ? "TRUE" : "FALSE"));
+    }
+
     @Override
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         return null;
@@ -3951,7 +3966,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
             s_logger.info("Cloning VM " + cloneName + " from template " + templateName + " into datastore " + templatePrimaryStoreUuid);
             if (!_fullCloneFlag) {
-                createVMLinkedClone(templateMo, dcMo, cloneName, morDatastore, morPool);
+                createVMLinkedClone(templateMo, dcMo, cloneName, morDatastore, morPool, null);
             } else {
                 createVMFullClone(templateMo, dcMo, dsMo, cloneName, morDatastore, morPool, null);
             }

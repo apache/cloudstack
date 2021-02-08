@@ -48,6 +48,11 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DeployAsIsInfoTO;
+import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -507,6 +512,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((ModifyTargetsCommand) cmd);
             } else if (clz == ModifyStoragePoolCommand.class) {
                 answer = execute((ModifyStoragePoolCommand) cmd);
+            } else if (clz == GetStoragePoolCapabilitiesCommand.class) {
+                answer = execute((GetStoragePoolCapabilitiesCommand) cmd);
             } else if (clz == DeleteStoragePoolCommand.class) {
                 answer = execute((DeleteStoragePoolCommand) cmd);
             } else if (clz == CopyVolumeCommand.class) {
@@ -695,6 +702,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 PrimaryDataStoreTO dest = (PrimaryDataStoreTO) destDataStore;
                 if (dest.isFullCloneFlag() != null) {
                     paramsCopy.put(VmwareStorageProcessorConfigurableFields.FULL_CLONE_FLAG, dest.isFullCloneFlag().booleanValue());
+                }
+                if (dest.getDiskProvisioningStrictnessFlag() != null) {
+                    paramsCopy.put(VmwareStorageProcessorConfigurableFields.DISK_PROVISIONING_STRICTNESS, dest.getDiskProvisioningStrictnessFlag().booleanValue());
                 }
             }
         }
@@ -5031,16 +5041,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer.setLocalDatastoreName(morDatastore.getValue());
             }
 
-            HostMO host = (HostMO) hyperHost;
-            boolean hardwareAccelerationSupportForDataStore = getHardwareAcceleationSupportForDataStore(host.getMor(), dsMo.getName());
-            StoragePoolInfo poolInfo = answer.getPoolInfo();
-            Map<String, String> poolDetails = poolInfo.getDetails();
-            if (poolDetails == null) {
-                poolDetails = new HashMap<>();
-            }
-            poolDetails.put("hardwareAccelerationSupported", String.valueOf(hardwareAccelerationSupportForDataStore));
-            poolInfo.setDetails(poolDetails);
-
             return answer;
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
@@ -5057,7 +5057,56 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private boolean getHardwareAcceleationSupportForDataStore(ManagedObjectReference host, String dataStoreName) throws Exception {
+    protected Answer execute(GetStoragePoolCapabilitiesCommand cmd) {
+
+        try {
+
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+            HostMO host = (HostMO) hyperHost;
+
+            StorageFilerTO pool = cmd.getPool();
+
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
+
+            if (morDatastore == null) {
+                morDatastore = hyperHost.mountDatastore((pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup || pool.getType() == StoragePoolType.DatastoreCluster), pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""), true);
+            }
+
+            assert (morDatastore != null);
+
+            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
+
+            GetStoragePoolCapabilitiesAnswer answer = new GetStoragePoolCapabilitiesAnswer(cmd);
+
+            if (pool.getType() == StoragePoolType.NetworkFilesystem) {
+                boolean hardwareAccelerationSupportForDataStore = getHardwareAccelerationSupportForDataStore(host.getMor(), dsMo.getName());
+                StoragePoolInfo poolInfo = answer.getPoolInfo();
+                Map<String, String> poolDetails = poolInfo.getDetails();
+                if (poolDetails == null) {
+                    poolDetails = new HashMap<>();
+                }
+                poolDetails.put(Storage.Capability.HARDWARE_ACCELERATION.toString(), String.valueOf(hardwareAccelerationSupportForDataStore));
+                poolInfo.setDetails(poolDetails);
+            }
+
+            return answer;
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+
+                invalidateServiceContext();
+            }
+
+            String msg = "GetStoragePoolCapabilitiesCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+
+            s_logger.error(msg, e);
+
+            return new Answer(cmd, false, msg);
+        }
+    }
+
+    private boolean getHardwareAccelerationSupportForDataStore(ManagedObjectReference host, String dataStoreName) throws Exception {
         HostConfigInfo config = getServiceContext().getVimClient().getDynamicProperty(host, "config");
         List<HostFileSystemMountInfo> mountInfoList = config.getFileSystemVolume().getMountInfo();
         for (HostFileSystemMountInfo hostFileSystemMountInfo: mountInfoList) {

@@ -26,10 +26,13 @@ import com.cloud.alert.AlertManager;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.StorageManager;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -59,6 +62,9 @@ public class DefaultHostListener implements HypervisorHostListener {
     StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     StorageManager storageManager;
+    StoragePoolTagsDao storagePoolTagsDao;
+    @Inject
+    StorageService storageService;
 
     @Override
     public boolean hostAdded(long hostId) {
@@ -67,7 +73,7 @@ public class DefaultHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
-        StoragePool pool = (StoragePool)this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
@@ -84,7 +90,7 @@ public class DefaultHostListener implements HypervisorHostListener {
 
         assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" +
             pool.getId() + "Host=" + hostId;
-        ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer)answer;
+        ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
         if (mspAnswer.getLocalDatastoreName() != null && pool.isShared()) {
             String datastoreName = mspAnswer.getLocalDatastoreName();
             List<StoragePoolVO> localStoragePools = this.primaryStoreDao.listLocalStoragePoolByPath(pool.getDataCenterId(), datastoreName);
@@ -102,6 +108,8 @@ public class DefaultHostListener implements HypervisorHostListener {
         if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
             storageManager.syncDatastoreClusterStoragePool(poolId, ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), hostId);
         }
+
+        storageService.updateStorageCapabilities(poolId);
 
         s_logger.info("Connection established between storage pool " + pool + " and host " + hostId);
         return true;
@@ -123,13 +131,6 @@ public class DefaultHostListener implements HypervisorHostListener {
             StoragePoolDetailVO poolType = storagePoolDetailsDao.findDetail(pool.getId(), "pool_type");
             if (poolType == null) {
                 StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(pool.getId(), "pool_type", mspAnswer.getPoolType(), false);
-                storagePoolDetailsDao.persist(storagePoolDetailVO);
-            }
-        }
-        if (mspAnswer.getPoolInfo().getDetails() != null && mspAnswer.getPoolInfo().getDetails().containsKey("hardwareAccelerationSupported")){
-            StoragePoolDetailVO hardwareAccelerationSupported = storagePoolDetailsDao.findDetail(pool.getId(), "hardwareAccelerationSupported");
-            if (hardwareAccelerationSupported == null) {
-                StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(pool.getId(), "hardwareAccelerationSupported", mspAnswer.getPoolInfo().getDetails().get("hardwareAccelerationSupported"), false);
                 storagePoolDetailsDao.persist(storagePoolDetailVO);
             }
         }

@@ -86,7 +86,7 @@ public class AncientDataMotionStrategyTest {
 
     @Test
     public void testAddFullCloneFlagOnVMwareDest(){
-        strategy.addFullCloneFlagOnVMwareDest(dataTO);
+        strategy.addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(dataTO);
         verify(dataStoreTO).setFullCloneFlag(FULL_CLONE_FLAG);
     }
 

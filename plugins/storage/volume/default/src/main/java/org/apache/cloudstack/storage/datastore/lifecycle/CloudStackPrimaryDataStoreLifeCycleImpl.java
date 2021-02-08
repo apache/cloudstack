@@ -22,8 +22,10 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.ValidateVcenterDetailsCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageConflictException;
@@ -404,6 +406,12 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
         final Answer answer = agentMgr.easySend(hostId, cmd);
         if (answer != null && answer.getResult()) {
+            HypervisorType hyperVisorType = getHypervisorType(hostId);
+            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem && hyperVisorType == HypervisorType.VMware) {
+                GetStoragePoolCapabilitiesCommand capsCmd = new GetStoragePoolCapabilitiesCommand();
+                capsCmd.setPool(new StorageFilerTO(pool));
+                agentMgr.easySend(hostId, capsCmd);
+            }
             return true;
         } else {
             primaryDataStoreDao.expunge(pool.getId());

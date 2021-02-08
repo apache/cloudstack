@@ -790,7 +790,7 @@ public class VirtualMachineMO extends BaseMO {
         relocSpec.setDatastore(morDs);
         relocSpec.setPool(morResourcePool);
 
-        setDiskProvsioningType(relocSpec, morDs, diskProvisioningType);
+        setDiskProvisioningType(relocSpec, morDs, diskProvisioningType);
 
         ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
 
@@ -805,8 +805,8 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
-    private void setDiskProvsioningType(VirtualMachineRelocateSpec relocSpec, ManagedObjectReference morDs,
-                                        Storage.ProvisioningType diskProvisioningType) throws Exception {
+    private void setDiskProvisioningType(VirtualMachineRelocateSpec relocSpec, ManagedObjectReference morDs,
+                                         Storage.ProvisioningType diskProvisioningType) throws Exception {
         if (diskProvisioningType == null){
             return;
         }
