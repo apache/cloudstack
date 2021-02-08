@@ -58,12 +58,6 @@ public class RootCAProviderTest {
         f.set(provider, o);
     }
 
-    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
-        Field f = ConfigKey.class.getDeclaredField(name);
-        f.setAccessible(true);
-        f.set(configKey, o);
-    }
-
     @Before
     public void setUp() throws Exception {
         caKeyPair = CertUtils.generateRandomKeyPair(1024);
