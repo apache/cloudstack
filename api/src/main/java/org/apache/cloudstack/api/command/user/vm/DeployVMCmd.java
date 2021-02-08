@@ -627,8 +627,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return bootIntoSetup;
     }
 
-    public Boolean isDynamicScalingEnabled() {
-        return dynamicScalingEnabled == null ? Boolean.TRUE : dynamicScalingEnabled;
+    public boolean isDynamicScalingEnabled() {
+        return dynamicScalingEnabled == null ? true : dynamicScalingEnabled;
     }
 
     /////////////////////////////////////////////////////

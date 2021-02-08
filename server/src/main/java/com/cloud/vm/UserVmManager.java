@@ -127,6 +127,6 @@ public interface UserVmManager extends UserVmService {
 
     HashMap<Long, List<VmNetworkStatsEntry>> getVmNetworkStatistics(long hostId, String hostName, List<Long> vmIds);
 
-    Boolean checkIfDynamicScalingCanBeEnabled(ServiceOffering offering, VirtualMachineTemplate template, Long zoneId);
+    boolean checkIfDynamicScalingCanBeEnabled(VirtualMachine vm, ServiceOffering offering, VirtualMachineTemplate template, Long zoneId);
 
 }
