@@ -57,6 +57,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 
 class VmwareVmImplementer {
     private static final Logger LOGGER = Logger.getLogger(VmwareVmImplementer.class);
@@ -138,6 +139,9 @@ class VmwareVmImplementer {
                     LOGGER.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
+            }
+            if(StringUtils.isEmpty(details.get(VmDetailConstants.RAM_RESERVATION))){
+                details.put(VmDetailConstants.RAM_RESERVATION, "0.0");
             }
         }
 
