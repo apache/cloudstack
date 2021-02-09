@@ -177,8 +177,8 @@ export default {
       this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
     },
     allowEditOfDetail (name) {
-      if (this.resource.readonlyuidetails) {
-        if (this.resource.readonlyuidetails.split(',').map(item => item.trim()).includes(name)) {
+      if (this.resource.readonlydetails) {
+        if (this.resource.readonlydetails.split(',').map(item => item.trim()).includes(name)) {
           return false
         }
       }
