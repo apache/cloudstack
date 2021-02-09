@@ -244,14 +244,14 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             b = chan.recv(10000)
             if len(b) == 0:
                 break
-            stdout += b
+            stdout += b.decode()
 
         stderr = ""
         while True:
             b = chan.recv_stderr(10000)
             if len(b) == 0:
                 break
-            stderr += b
+            stderr += b.decode()
 
         xstatus = chan.recv_exit_status()
         chan.close()
