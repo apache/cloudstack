@@ -19,3 +19,5 @@
 -- Schema upgrade from 4.15.1.0 to 4.16.0.0
 --;
 
+-- Update name for global configuration user.vm.readonly.ui.details
+Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';
