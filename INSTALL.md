@@ -136,7 +136,7 @@ To create rpms, install the following extra packages:
 
     # yum -y install rpm-build
     # yum -y install ws-commons-util
-    # yum -y instal gcc
+    # yum -y install gcc
     # yum -y install glibc-devel
     # yum -y install MySQL-python
 

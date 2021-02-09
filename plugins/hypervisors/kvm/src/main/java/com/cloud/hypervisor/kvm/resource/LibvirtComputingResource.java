@@ -2247,8 +2247,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
             guest.setBootType(GuestDef.BootType.UEFI);
             guest.setBootMode(GuestDef.BootMode.LEGACY);
+            guest.setMachineType("q35");
             if (StringUtils.isNotBlank(customParams.get(GuestDef.BootType.UEFI.toString())) && "secure".equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-                guest.setMachineType("q35");
                 guest.setBootMode(GuestDef.BootMode.SECURE); // setting to secure mode
             }
         }
