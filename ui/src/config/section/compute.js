@@ -125,6 +125,7 @@ export default {
           show: (record) => { return ['Running'].includes(record.state) },
           args: (record, store) => {
             var fields = []
+            fields.push('forced')
             if (record.hypervisor === 'VMware') {
               if (store.apis.rebootVirtualMachine.params.filter(x => x.name === 'bootintosetup').length > 0) {
                 fields.push('bootintosetup')

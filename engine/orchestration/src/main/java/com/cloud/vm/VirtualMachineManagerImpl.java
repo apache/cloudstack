@@ -3430,7 +3430,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final DeployDestination dest = new DeployDestination(dc, pod, cluster, host);
 
         try {
-
             final Commands cmds = new Commands(Command.OnError.Stop);
             RebootCommand rebootCmd = new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType()));
             VirtualMachineTO vmTo = getVmTO(vm.getId());
@@ -3448,7 +3447,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
                 return;
             }
-            s_logger.info("Unable to reboot VM " + vm + " on " + dest.getHost() + " due to " + (rebootAnswer == null ? " no reboot answer" : rebootAnswer.getDetails()));
+
+            String errorMsg = "Unable to reboot VM " + vm + " on " + dest.getHost() + " due to " + (rebootAnswer == null ? "no reboot response" : rebootAnswer.getDetails());
+            s_logger.info(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
         } catch (final OperationTimedoutException e) {
             s_logger.warn("Unable to send the reboot command to host " + dest.getHost() + " for the vm " + vm + " due to operation timeout", e);
             throw new CloudRuntimeException("Failed to reboot the vm on host " + dest.getHost());
