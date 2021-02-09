@@ -2781,24 +2781,36 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void updateStorageCapabilities(long poolId) {
-        StoragePoolVO pool = _storagePoolDao.findById(poolId);
-        // find the host
-        List<StoragePoolHostVO> hosts = _storagePoolHostDao.listByPoolId(poolId);
-        if (hosts.size() > 0) {
-            StoragePoolHostVO host = hosts.get(0);
-            GetStoragePoolCapabilitiesCommand cmd = new GetStoragePoolCapabilitiesCommand();
-            cmd.setPool(new StorageFilerTO(pool));
-            GetStoragePoolCapabilitiesAnswer answer = (GetStoragePoolCapabilitiesAnswer) _agentMgr.easySend(host.getHostId(), cmd);
-            if (answer.getPoolInfo().getDetails() != null && answer.getPoolInfo().getDetails().containsKey(Storage.Capability.HARDWARE_ACCELERATION.toString())){
-                StoragePoolDetailVO hardwareAccelerationSupported = _storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+    public void updateStorageCapabilities(Long poolId) {
+        List<StoragePoolVO> pools = new ArrayList<>();
+        if (poolId == null) {
+            pools = _storagePoolDao.listAll();
+        } else {
+            pools.add(_storagePoolDao.findById(poolId));
+        }
 
-                if (hardwareAccelerationSupported == null) {
-                    StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString(), answer.getPoolInfo().getDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()), false);
-                    _storagePoolDetailsDao.persist(storagePoolDetailVO);
-                } else {
-                    hardwareAccelerationSupported.setValue(answer.getPoolInfo().getDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()));
-                    _storagePoolDetailsDao.update(hardwareAccelerationSupported.getId(), hardwareAccelerationSupported);
+        if (pools.size() == 0) {
+            throw new CloudRuntimeException("No storage pools found to update.");
+        }
+
+        for (StoragePoolVO pool: pools) {
+            // find the host
+            List<Long> poolIds = new ArrayList<Long>();
+            poolIds.add(poolId);
+            List<Long> hosts = _storagePoolHostDao.findHostsConnectedToPools(poolIds);
+            if (hosts.size() > 0) {
+                GetStoragePoolCapabilitiesCommand cmd = new GetStoragePoolCapabilitiesCommand();
+                cmd.setPool(new StorageFilerTO(pool));
+                GetStoragePoolCapabilitiesAnswer answer = (GetStoragePoolCapabilitiesAnswer) _agentMgr.easySend(hosts.get(0), cmd);
+                if (answer.getPoolDetails() != null && answer.getPoolDetails().containsKey(Storage.Capability.HARDWARE_ACCELERATION.toString())) {
+                    StoragePoolDetailVO hardwareAccelerationSupported = _storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+                    if (hardwareAccelerationSupported == null) {
+                        StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString(), answer.getPoolDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()), false);
+                        _storagePoolDetailsDao.persist(storagePoolDetailVO);
+                    } else {
+                        hardwareAccelerationSupported.setValue(answer.getPoolDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()));
+                        _storagePoolDetailsDao.update(hardwareAccelerationSupported.getId(), hardwareAccelerationSupported);
+                    }
                 }
             }
         }

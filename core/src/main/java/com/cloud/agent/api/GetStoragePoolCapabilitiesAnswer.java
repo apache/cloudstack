@@ -1,19 +1,23 @@
 package com.cloud.agent.api;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class GetStoragePoolCapabilitiesAnswer extends Answer {
+
+    private Map<String, String> poolDetails;
+
     public GetStoragePoolCapabilitiesAnswer(GetStoragePoolCapabilitiesCommand cmd) {
         super(cmd);
-
-        poolInfo = new StoragePoolInfo();
+        poolDetails = new HashMap<>();
     }
 
-    public StoragePoolInfo getPoolInfo() {
-        return poolInfo;
+    public Map<String, String> getPoolDetails() {
+        return poolDetails;
     }
 
-    public void setPoolInfo(StoragePoolInfo poolInfo) {
-        this.poolInfo = poolInfo;
+    public void setPoolDetails(Map<String, String> poolDetails) {
+        this.poolDetails = poolDetails;
     }
 
-    private StoragePoolInfo poolInfo;
 }

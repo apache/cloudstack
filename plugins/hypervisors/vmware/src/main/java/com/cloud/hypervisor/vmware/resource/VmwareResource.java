@@ -5079,16 +5079,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             GetStoragePoolCapabilitiesAnswer answer = new GetStoragePoolCapabilitiesAnswer(cmd);
 
-            if (pool.getType() == StoragePoolType.NetworkFilesystem) {
-                boolean hardwareAccelerationSupportForDataStore = getHardwareAccelerationSupportForDataStore(host.getMor(), dsMo.getName());
-                StoragePoolInfo poolInfo = answer.getPoolInfo();
-                Map<String, String> poolDetails = poolInfo.getDetails();
-                if (poolDetails == null) {
-                    poolDetails = new HashMap<>();
-                }
-                poolDetails.put(Storage.Capability.HARDWARE_ACCELERATION.toString(), String.valueOf(hardwareAccelerationSupportForDataStore));
-                poolInfo.setDetails(poolDetails);
-            }
+            boolean hardwareAccelerationSupportForDataStore = getHardwareAccelerationSupportForDataStore(host.getMor(), dsMo.getName());
+            Map<String, String> poolDetails = answer.getPoolDetails();
+            poolDetails.put(Storage.Capability.HARDWARE_ACCELERATION.toString(), String.valueOf(hardwareAccelerationSupportForDataStore));
+            answer.setPoolDetails(poolDetails);
 
             return answer;
         } catch (Throwable e) {

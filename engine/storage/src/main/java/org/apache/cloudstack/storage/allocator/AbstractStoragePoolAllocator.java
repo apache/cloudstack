@@ -265,7 +265,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         if (dskCh.getHypervisorType() != null && dskCh.getHypervisorType() == HypervisorType.VMware && pool.getPoolType() == Storage.StoragePoolType.NetworkFilesystem &&
                 storageMgr.DiskProvisioningStrictness.valueIn(pool.getDataCenterId())) {
             StoragePoolDetailVO hardwareAcceleration = storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
-            if (!dskCh.getProvisioningType().toString().equals("thin") &&
+            if (!dskCh.getProvisioningType().equals(Storage.ProvisioningType.THIN) &&
                     (hardwareAcceleration == null || (hardwareAcceleration.getValue() != null && !hardwareAcceleration.getValue().equals("true")))) {
                 return false;
             }

@@ -917,7 +917,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         if (volume.getVolumeType() == Volume.Type.DATADISK)
             vmName = volume.getName();
         if (!_fullCloneFlag) {
-            if (_diskProvisioningStrictness) {
+            if (_diskProvisioningStrictness && volume.getProvisioningType() != ProvisioningType.THIN) {
                 throw new CloudRuntimeException("Unable to create linked clones with strict disk provisioning enabled");
             }
             createVMLinkedClone(vmTemplate, dcMo, vmName, morDatastore, morPool);
@@ -948,7 +948,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
             }
             if (!_fullCloneFlag) {
-                if (_diskProvisioningStrictness) {
+                if (_diskProvisioningStrictness && volume.getProvisioningType() != ProvisioningType.THIN) {
                     throw new CloudRuntimeException("Unable to create linked clones with strict disk provisioning enabled");
                 }
                 createVMLinkedClone(vmTemplate, dcMo, vmdkName, morDatastore, morPool);
@@ -1007,7 +1007,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             _fullCloneFlag = volume.getSize() > template.getSize() || _fullCloneFlag;
         }
         if (!_fullCloneFlag) {
-            if (_diskProvisioningStrictness) {
+            if (_diskProvisioningStrictness && volume.getProvisioningType() != ProvisioningType.THIN) {
                 throw new CloudRuntimeException("Unable to create linked clones with strict disk provisioning enabled");
             }
             createVMLinkedClone(vmMo, dcMo, cloneName, morDatastore, morPool);
@@ -3900,7 +3900,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         s_logger.debug("VmwareProcessor instance - create full clone = " + (value ? "TRUE" : "FALSE"));
     }
 
-    void setDiskProvisioningStricteness(boolean value){
+    void setDiskProvisioningStrictness(boolean value){
         this._diskProvisioningStrictness = value;
         s_logger.debug("VmwareProcessor instance - diskProvisioningStrictness = " + (value ? "TRUE" : "FALSE"));
     }

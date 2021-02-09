@@ -40,7 +40,7 @@ public class UpdateStorageCapabilitiesCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "Storage pool id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = false, description = "Storage pool id")
     private Long poolId;
 
     /////////////////////////////////////////////////////

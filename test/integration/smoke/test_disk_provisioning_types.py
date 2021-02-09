@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import DiskOffering, Iso, Account, VirtualMachine, ServiceOffering, Volume
 from marvin.codes import FAILED
@@ -27,6 +27,10 @@ from nose.plugins.attrib import attr
 class TestDiskProvisioningTypes(cloudstackTestCase):
 
     def setUp(self):
+
+        if self.testClient.getHypervisorInfo().lower() != "vmware":
+            raise unittest.SkipTest("VMWare tests only valid on VMWare hypervisor")
+
         self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()

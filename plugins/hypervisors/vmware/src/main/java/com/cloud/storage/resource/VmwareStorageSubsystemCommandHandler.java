@@ -85,7 +85,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 break;
             case DISK_PROVISIONING_STRICTNESS:
                 boolean diskProvisioningStrictness = (boolean) params.get(key);
-                processor.setDiskProvisioningStricteness(diskProvisioningStrictness);
+                processor.setDiskProvisioningStrictness(diskProvisioningStrictness);
                 break;
             default:
                 s_logger.error("Unknown reconfigurable field " + key.getName() + " for VmwareStorageProcessor");

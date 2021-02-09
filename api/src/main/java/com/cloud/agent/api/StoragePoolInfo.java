@@ -108,7 +108,4 @@ public class StoragePoolInfo {
         return details;
     }
 
-    public void setDetails(Map<String, String> details) {
-        this.details = details;
-    }
 }
