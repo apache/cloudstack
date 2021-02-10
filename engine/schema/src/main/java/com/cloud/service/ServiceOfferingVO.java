@@ -76,7 +76,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     private String deploymentPlanner = null;
 
     @Column(name = "dynamic_scaling_enabled")
-    private boolean dynamicScalingEnabled;
+    private boolean dynamicScalingEnabled = true;
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
