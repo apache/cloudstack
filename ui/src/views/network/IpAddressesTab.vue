@@ -19,7 +19,7 @@
   <div>
     <a-spin :spinning="fetchLoading">
       <a-button
-        :disabled="!('associateIpAddress' in $store.getters.apis)"
+        :disabled="!('associateIpAddress' in $store.getters.apis) || resource.type === 'Shared'"
         type="dashed"
         icon="plus"
         style="width: 100%; margin-bottom: 15px"
@@ -66,12 +66,12 @@
         </template>
 
         <template slot="associatednetworkname" slot-scope="text, record">
-          <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
+          <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid || record.networkname }} </router-link>
         </template>
 
         <template slot="action" slot-scope="text, record">
           <a-button
-            v-if="record.issourcenat !== true"
+            v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
             type="danger"
             icon="delete"
             shape="circle"
@@ -212,6 +212,10 @@ export default {
         if (this.vpcTier) {
           params.associatednetworkid = this.vpcTier
         }
+      } else if (this.resource.type === 'Shared') {
+        params.networkid = this.resource.id
+        params.allocatedonly = false
+        params.forvirtualnetwork = false
       } else {
         params.associatednetworkid = this.resource.id
       }
