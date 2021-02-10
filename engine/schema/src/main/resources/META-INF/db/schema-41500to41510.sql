@@ -19,3 +19,8 @@
 -- Schema upgrade from 4.15.0.0 to 4.15.1.0
 --;
 
+-- Add XenServer 8.2 hypervisor capabilities
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported) values (UUID(), 'XenServer', '8.2.0', 1000, 253, 64, 1);
+
+-- Copy XenServer 8.1 hypervisor guest OS mappings to XenServer8.2
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '8.2.0', guest_os_name, guest_os_id, utc_timestamp(), 0 FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='8.1.0';
