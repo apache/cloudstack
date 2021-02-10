@@ -107,5 +107,4 @@ public class StoragePoolInfo {
     public Map<String, String> getDetails() {
         return details;
     }
-
 }
