@@ -451,34 +451,53 @@ class VirtualMachine:
     @classmethod
     def access_ssh_over_nat(
             cls, apiclient, services, virtual_machine, allow_egress=False,
-            networkid=None):
+            networkid=None, vpcid=None):
         """
         Program NAT and PF rules to open up ssh access to deployed guest
         @return:
         """
-        public_ip = PublicIPAddress.create(
-            apiclient=apiclient,
-            accountid=virtual_machine.account,
-            zoneid=virtual_machine.zoneid,
-            domainid=virtual_machine.domainid,
-            services=services,
-            networkid=networkid
-        )
-        FireWallRule.create(
-            apiclient=apiclient,
-            ipaddressid=public_ip.ipaddress.id,
-            protocol='TCP',
-            cidrlist=['0.0.0.0/0'],
-            startport=22,
-            endport=22
-        )
-        nat_rule = NATRule.create(
-            apiclient=apiclient,
-            virtual_machine=virtual_machine,
-            services=services,
-            ipaddressid=public_ip.ipaddress.id
-        )
-        if allow_egress:
+        # VPCs have ACLs managed differently
+        if vpcid:
+            public_ip = PublicIPAddress.create(
+                apiclient=apiclient,
+                accountid=virtual_machine.account,
+                zoneid=virtual_machine.zoneid,
+                domainid=virtual_machine.domainid,
+                services=services,
+                vpcid=vpcid
+            )
+
+            nat_rule = NATRule.create(
+                apiclient=apiclient,
+                virtual_machine=virtual_machine,
+                services=services,
+                ipaddressid=public_ip.ipaddress.id,
+                networkid=networkid)
+        else:
+            public_ip = PublicIPAddress.create(
+                apiclient=apiclient,
+                accountid=virtual_machine.account,
+                zoneid=virtual_machine.zoneid,
+                domainid=virtual_machine.domainid,
+                services=services,
+                networkid=networkid,
+            )
+
+            FireWallRule.create(
+                apiclient=apiclient,
+                ipaddressid=public_ip.ipaddress.id,
+                protocol='TCP',
+                cidrlist=['0.0.0.0/0'],
+                startport=22,
+                endport=22
+            )
+            nat_rule = NATRule.create(
+                apiclient=apiclient,
+                virtual_machine=virtual_machine,
+                services=services,
+                ipaddressid=public_ip.ipaddress.id)
+
+        if allow_egress and not vpcid:
             try:
                 EgressFireWallRule.create(
                     apiclient=apiclient,
@@ -502,7 +521,8 @@ class VirtualMachine:
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
-               rootdiskcontroller=None, macaddress=None, datadisktemplate_diskoffering_list={}):
+               rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
+               properties=None, nicnetworklist=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -631,6 +651,12 @@ class VirtualMachine:
         elif macaddress in services:
             cmd.macaddress = services["macaddress"]
 
+        if properties:
+            cmd.properties = properties
+
+        if nicnetworklist:
+            cmd.nicnetworklist = nicnetworklist
+
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
         if 'password' in virtual_machine.__dict__.keys():
@@ -654,7 +680,8 @@ class VirtualMachine:
                         services,
                         virtual_machine,
                         allow_egress=allow_egress,
-                        networkid=cmd.networkids[0] if cmd.networkids else None)
+                        networkid=cmd.networkids[0] if cmd.networkids else None,
+                        vpcid=vpcid)
                 elif mode.lower() == 'basic':
                     if virtual_machine.publicip is not None:
                         # EIP/ELB (netscaler) enabled zone
@@ -1042,7 +1069,7 @@ class Volume:
 
     @classmethod
     def create_custom_disk(cls, apiclient, services, account=None,
-                           domainid=None, diskofferingid=None):
+                           domainid=None, diskofferingid=None, projectid=None):
         """Create Volume from Custom disk offering"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = services["diskname"]
@@ -1065,19 +1092,22 @@ class Volume:
 
         if account:
             cmd.account = account
-        else:
+        elif "account" in services:
             cmd.account = services["account"]
 
         if domainid:
             cmd.domainid = domainid
-        else:
+        elif "domainid" in services:
             cmd.domainid = services["domainid"]
+
+        if projectid:
+            cmd.projectid = projectid
 
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot_id, services,
-                             account=None, domainid=None):
+                             account=None, domainid=None, projectid=None):
         """Create Volume from snapshot"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
@@ -1091,12 +1121,16 @@ class Volume:
             cmd.ispublic = False
         if account:
             cmd.account = account
-        else:
+        elif "account" in services:
             cmd.account = services["account"]
         if domainid:
             cmd.domainid = domainid
-        else:
+        elif "domainid" in services:
             cmd.domainid = services["domainid"]
+
+        if projectid:
+            cmd.projectid = projectid
+
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
@@ -1363,22 +1397,24 @@ class Template:
         elif "hypervisor" in services:
             cmd.hypervisor = services["hypervisor"]
 
-        if "ostypeid" in services:
-            cmd.ostypeid = services["ostypeid"]
-        elif "ostype" in services:
-            # Find OSTypeId from Os type
-            sub_cmd = listOsTypes.listOsTypesCmd()
-            sub_cmd.description = services["ostype"]
-            ostypes = apiclient.listOsTypes(sub_cmd)
+        if cmd.hypervisor.lower() not in ["vmware"]:
+            # Since version 4.15 VMware templates honour the guest OS defined in the template
+            if "ostypeid" in services:
+                cmd.ostypeid = services["ostypeid"]
+            elif "ostype" in services:
+                # Find OSTypeId from Os type
+                sub_cmd = listOsTypes.listOsTypesCmd()
+                sub_cmd.description = services["ostype"]
+                ostypes = apiclient.listOsTypes(sub_cmd)
 
-            if not isinstance(ostypes, list):
+                if not isinstance(ostypes, list):
+                    raise Exception(
+                        "Unable to find Ostype id with desc: %s" %
+                        services["ostype"])
+                cmd.ostypeid = ostypes[0].id
+            else:
                 raise Exception(
-                    "Unable to find Ostype id with desc: %s" %
-                    services["ostype"])
-            cmd.ostypeid = ostypes[0].id
-        else:
-            raise Exception(
-                "Unable to find Ostype is required for registering template")
+                    "Unable to find Ostype is required for registering template")
 
         cmd.url = services["url"]
 
@@ -1445,8 +1481,8 @@ class Template:
         return Template(apiclient.createTemplate(cmd).__dict__)
 
     @classmethod
-    def create_from_snapshot(cls, apiclient, snapshot, services,
-                             random_name=True):
+    def create_from_snapshot(cls, apiclient, snapshot, services, account=None,
+                             domainid=None, projectid=None, random_name=True):
         """Create Template from snapshot"""
         # Create template from Snapshot ID
         cmd = createTemplate.createTemplateCmd()
@@ -1484,6 +1520,17 @@ class Template:
         else:
             raise Exception(
                 "Unable to find Ostype is required for creating template")
+
+        cmd.snapshotid = snapshot.id
+
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        if projectid:
+            cmd.projectid = projectid
+
+        return Template(apiclient.createTemplate(cmd).__dict__)
 
     def delete(self, apiclient, zoneid=None):
         """Delete Template"""
@@ -3921,7 +3968,7 @@ class VpnCustomerGateway:
 
     @classmethod
     def create(cls, apiclient, services, name, gateway, cidrlist,
-               account=None, domainid=None):
+               account=None, domainid=None, projectid=None):
         """Create VPN Customer Gateway"""
         cmd = createVpnCustomerGateway.createVpnCustomerGatewayCmd()
         cmd.name = name
@@ -3945,6 +3992,9 @@ class VpnCustomerGateway:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
+        if projectid:
+            cmd.projectid = projectid
+
         return VpnCustomerGateway(
             apiclient.createVpnCustomerGateway(cmd).__dict__)
 
@@ -3997,7 +4047,7 @@ class Project:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None):
+    def create(cls, apiclient, services, account=None, domainid=None, userid=None, accountid=None):
         """Create project"""
 
         cmd = createProject.createProjectCmd()
@@ -4007,7 +4057,10 @@ class Project:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
-
+        if userid:
+            cmd.userid = userid
+        if accountid:
+            cmd.accountid = accountid
         return Project(apiclient.createProject(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -4039,7 +4092,7 @@ class Project:
         cmd.id = self.id
         return apiclient.suspendProject(cmd)
 
-    def addAccount(self, apiclient, account=None, email=None):
+    def addAccount(self, apiclient, account=None, email=None, projectroleid=None, roletype=None):
         """Add account to project"""
 
         cmd = addAccountToProject.addAccountToProjectCmd()
@@ -4048,6 +4101,10 @@ class Project:
             cmd.account = account
         if email:
             cmd.email = email
+        if projectroleid:
+            cmd.projectroleid = projectroleid
+        if roletype:
+            cmd.roletype = roletype
         return apiclient.addAccountToProject(cmd)
 
     def deleteAccount(self, apiclient, account):
@@ -4057,6 +4114,29 @@ class Project:
         cmd.projectid = self.id
         cmd.account = account
         return apiclient.deleteAccountFromProject(cmd)
+
+    def addUser(self, apiclient, username=None, email=None, projectroleid=None, roletype=None):
+        """Add user to project"""
+
+        cmd = addUserToProject.addUserToProjectCmd()
+        cmd.projectid = self.id
+        if username:
+            cmd.username = username
+        if email:
+            cmd.email = email
+        if projectroleid:
+            cmd.projectroleid = projectroleid
+        if roletype:
+            cmd.roletype = roletype
+        return apiclient.addUserToProject(cmd)
+
+    def deleteUser(self, apiclient, userid):
+        """Delete user from project"""
+
+        cmd = deleteAccountFromProject.deleteAccountFromProjectCmd()
+        cmd.projectid = self.id
+        cmd.userid = userid
+        return apiclient.deleteUserFromProject(cmd)
 
     @classmethod
     def listAccounts(cls, apiclient, **kwargs):
@@ -4086,7 +4166,7 @@ class ProjectInvitation:
         self.__dict__.update(items)
 
     @classmethod
-    def update(cls, apiclient, projectid, accept, account=None, token=None):
+    def update(cls, apiclient, projectid, accept, account=None, token=None, userid=None):
         """Updates the project invitation for that account"""
 
         cmd = updateProjectInvitation.updateProjectInvitationCmd()
@@ -4094,6 +4174,8 @@ class ProjectInvitation:
         cmd.accept = accept
         if account:
             cmd.account = account
+        if userid:
+            cmd.userid = userid
         if token:
             cmd.token = token
 
@@ -5421,3 +5503,90 @@ class Backup:
         cmd = restoreBackup.restoreBackupCmd()
         cmd.id = self.id
         return (apiclient.restoreBackup(cmd))
+
+class ProjectRole:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, projectid):
+        """Create project role"""
+        cmd = createProjectRole.createProjectRoleCmd()
+        cmd.projectid = projectid
+        cmd.name = services["name"]
+        if "description" in services:
+            cmd.description = services["description"]
+
+        return ProjectRole(apiclient.createProjectRole(cmd).__dict__)
+
+    def delete(self, apiclient, projectid):
+        """Delete project Role"""
+
+        cmd = deleteProjectRole.deleteProjectRoleCmd()
+        cmd.projectid = projectid
+        cmd.id = self.id
+        apiclient.deleteProjectRole(cmd)
+
+    def update(self, apiclient, projectid, **kwargs):
+        """Update the project role"""
+
+        cmd = updateProjectRole.updateProjectRoleCmd()
+        cmd.projectid = projectid
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateProjectRole(cmd)
+
+    @classmethod
+    def list(cls, apiclient, projectid, **kwargs):
+        """List all project Roles matching criteria"""
+
+        cmd = listProjectRoles.listProjectRolesCmd()
+        cmd.projectid = projectid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.listProjectRoles(cmd))
+
+class ProjectRolePermission:
+    """Manage Project Role Permission"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, projectid):
+        """Create role permission"""
+        cmd = createProjectRolePermission.createProjectRolePermissionCmd()
+        cmd.projectid = projectid
+        cmd.projectroleid = services["projectroleid"]
+        cmd.rule = services["rule"]
+        cmd.permission = services["permission"]
+        if "description" in services:
+            cmd.description = services["description"]
+
+        return ProjectRolePermission(apiclient.createProjectRolePermission(cmd).__dict__)
+
+    def delete(self, apiclient, projectid):
+        """Delete role permission"""
+
+        cmd = deleteProjectRolePermission.deleteProjectRolePermissionCmd()
+        cmd.projectid = projectid
+        cmd.id = self.id
+        apiclient.deleteProjectRolePermission(cmd)
+
+    def update(self, apiclient, projectid, **kwargs):
+        """Update the role permission"""
+
+        cmd = updateProjectRolePermission.updateProjectRolePermissionCmd()
+        cmd.projectid = projectid
+        cmd.projectroleid = self.projectroleid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateProjectRolePermission(cmd)
+
+    @classmethod
+    def list(cls, apiclient, projectid, **kwargs):
+        """List all role permissions matching criteria"""
+
+        cmd = listProjectRolePermissions.listProjectRolePermissionsCmd()
+        cmd.projectid = projectid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.listProjectRolePermissions(cmd))

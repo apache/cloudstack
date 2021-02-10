@@ -131,6 +131,9 @@ fi
 
 LOCKFILE=/var/run/cloud/vxlan.lock
 
+# ensures that parent directories exists and prepares the lock file
+mkdir -p "${LOCKFILE%/*}"
+
 (
     flock -x -w 10 200 || exit 1
     if [[ "$OP" == "add" ]]; then

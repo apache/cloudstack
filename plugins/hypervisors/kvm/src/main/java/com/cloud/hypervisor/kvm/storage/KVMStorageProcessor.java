@@ -18,6 +18,7 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.utils.storage.S3.S3Utils.putFile;
 
 import java.io.File;
@@ -45,6 +46,7 @@ import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -239,11 +241,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final VolumeObjectTO volume = (VolumeObjectTO)destData;
                 // pass along volume's target size if it's bigger than template's size, for storage types that copy template rather than cloning on deploy
                 if (volume.getSize() != null && volume.getSize() > tmplVol.getVirtualSize()) {
-                    s_logger.debug("Using configured size of " + volume.getSize());
+                    s_logger.debug("Using configured size of " + toHumanReadableSize(volume.getSize()));
                     tmplVol.setSize(volume.getSize());
                     tmplVol.setVirtualSize(volume.getSize());
                 } else {
-                    s_logger.debug("Using template's size of " + tmplVol.getVirtualSize());
+                    s_logger.debug("Using template's size of " + toHumanReadableSize(tmplVol.getVirtualSize()));
                 }
                 primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, volume.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
             } else if (destData instanceof TemplateObjectTO) {
@@ -340,11 +342,11 @@ public class KVMStorageProcessor implements StorageProcessor {
             /* Copy volume to primary storage */
 
             if (size > templateVol.getSize()) {
-                s_logger.debug("Overriding provided template's size with new size " + size);
+                s_logger.debug("Overriding provided template's size with new size " + toHumanReadableSize(size));
                 templateVol.setSize(size);
                 templateVol.setVirtualSize(size);
             } else {
-                s_logger.debug("Using templates disk size of " + templateVol.getVirtualSize() + "since size passed was " + size);
+                s_logger.debug("Using templates disk size of " + toHumanReadableSize(templateVol.getVirtualSize()) + "since size passed was " + toHumanReadableSize(size));
             }
 
             final KVMPhysicalDisk primaryVol = storagePoolMgr.copyPhysicalDisk(templateVol, volUuid, primaryPool, timeout);
@@ -942,7 +944,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                         size = snapFile.length();
                     }
 
-                    s_logger.debug("Finished backing up RBD snapshot " + rbdSnapshot + " to " + snapshotFile + " Snapshot size: " + size);
+                    s_logger.debug("Finished backing up RBD snapshot " + rbdSnapshot + " to " + snapshotFile + " Snapshot size: " + toHumanReadableSize(size));
                 } catch (final FileNotFoundException e) {
                     s_logger.error("Failed to open " + snapshotDestPath + ". The error was: " + e.getMessage());
                     return new CopyCmdAnswer(e.toString());
@@ -1398,7 +1400,7 @@ public class KVMStorageProcessor implements StorageProcessor {
      * Create full clone volume from VM snapshot
      */
     protected KVMPhysicalDisk createFullCloneVolume(MigrationOptions migrationOptions, VolumeObjectTO volume, KVMStoragePool primaryPool, PhysicalDiskFormat format) {
-        s_logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + volume.getSize() + " and format: " + format);
+            s_logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + toHumanReadableSize(volume.getSize()) + " and format: " + format);
         return primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), volume.getSize());
     }
 
@@ -1831,5 +1833,11 @@ public class KVMStorageProcessor implements StorageProcessor {
             return false;
         }
         return availableBytes >= templateSize;
+    }
+
+    @Override
+    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+        s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not currently applicable for KVMStorageProcessor");
+        return new Answer(cmd,false,"Not currently applicable for KVMStorageProcessor");
     }
 }

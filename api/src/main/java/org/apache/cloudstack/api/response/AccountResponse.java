@@ -55,15 +55,15 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     private String roleName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "id of the Domain the account belongs too")
+    @Param(description = "id of the Domain the account belongs to")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "name of the Domain the account belongs too")
+    @Param(description = "name of the Domain the account belongs to")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "name of the Domain the account belongs too", since = "4.13")
+    @Param(description = "path of the Domain the account belongs to", since = "4.13")
     private String domainPath;
 
     @SerializedName(ApiConstants.DEFAULT_ZONE_ID)

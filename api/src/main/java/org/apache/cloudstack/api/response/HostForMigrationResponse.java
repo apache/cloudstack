@@ -95,9 +95,22 @@ public class HostForMigrationResponse extends BaseResponse {
     @Param(description = "the CPU speed of the host")
     private Long cpuSpeed;
 
+    @Deprecated
     @SerializedName("cpuallocated")
     @Param(description = "the amount of the host's CPU currently allocated")
     private String cpuAllocated;
+
+    @SerializedName("cpuallocatedvalue")
+    @Param(description = "the amount of the host's CPU currently allocated in MHz")
+    private Long cpuAllocatedValue;
+
+    @SerializedName("cpuallocatedpercentage")
+    @Param(description = "the amount of the host's CPU currently allocated in percentage")
+    private String cpuAllocatedPercentage;
+
+    @SerializedName("cpuallocatedwithoverprovisioning")
+    @Param(description = "the amount of the host's CPU currently allocated after applying the cpu.overprovisioning.factor")
+    private String cpuAllocatedWithOverprovisioning;
 
     @SerializedName("cpuused")
     @Param(description = "the amount of the host's CPU currently used")
@@ -128,9 +141,18 @@ public class HostForMigrationResponse extends BaseResponse {
     @Param(description = "the outgoing network traffic on the host")
     private Long networkKbsWrite;
 
+    @Deprecated
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
     private String memoryAllocated;
+
+    @SerializedName("memoryallocatedpercentage")
+    @Param(description = "the amount of the host's memory currently allocated in percentage")
+    private String memoryAllocatedPercentage;
+
+    @SerializedName("memoryallocatedbytes")
+    @Param(description = "the amount of the host's memory currently allocated in bytes")
+    private Long memoryAllocatedBytes;
 
     @SerializedName("memoryused")
     @Param(description = "the amount of the host's memory currently used")
@@ -294,6 +316,18 @@ public class HostForMigrationResponse extends BaseResponse {
         this.cpuAllocated = cpuAllocated;
     }
 
+    public void setCpuAllocatedValue(Long cpuAllocatedValue) {
+        this.cpuAllocatedValue = cpuAllocatedValue;
+    }
+
+    public void setCpuAllocatedPercentage(String cpuAllocatedPercentage) {
+        this.cpuAllocatedPercentage = cpuAllocatedPercentage;
+    }
+
+    public void setCpuAllocatedWithOverprovisioning(String cpuAllocatedWithOverprovisioning) {
+        this.cpuAllocatedWithOverprovisioning = cpuAllocatedWithOverprovisioning;
+    }
+
     public void setCpuUsed(String cpuUsed) {
         this.cpuUsed = cpuUsed;
     }
@@ -312,6 +346,14 @@ public class HostForMigrationResponse extends BaseResponse {
 
     public void setMemoryAllocated(String memoryAllocated) {
         this.memoryAllocated = memoryAllocated;
+    }
+
+    public void setMemoryAllocatedPercentage(String memoryAllocatedPercentage) {
+        this.memoryAllocatedPercentage = memoryAllocatedPercentage;
+    }
+
+    public void setMemoryAllocatedBytes(Long memoryAllocatedBytes) {
+        this.memoryAllocatedBytes = memoryAllocatedBytes;
     }
 
     public void setMemoryUsed(Long memoryUsed) {

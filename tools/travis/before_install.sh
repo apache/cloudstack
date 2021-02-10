@@ -86,6 +86,12 @@ sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-e
 echo -e "\nIPMI version"
 ipmitool -V
 
+curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+echo -e "\nNode version"
+npm version
+
 echo "<settings>
   <mirrors>
     <mirror>

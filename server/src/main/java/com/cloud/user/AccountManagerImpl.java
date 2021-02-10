@@ -37,7 +37,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
@@ -521,6 +520,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
             }
+
             return;
         }
 
@@ -2034,7 +2034,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return caller;
             }
         } else {
-            if ((accountName == null && domainId != null) || (accountName != null && domainId == null)) {
+            if (accountName != null && domainId == null) {
                 throw new InvalidParameterValueException("AccountName and domainId must be specified together");
             }
             // regular user can't create/list resources for other people

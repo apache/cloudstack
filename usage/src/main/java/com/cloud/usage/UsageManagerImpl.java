@@ -96,6 +96,8 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class UsageManagerImpl extends ManagerBase implements UsageManager, Runnable {
     public static final Logger s_logger = Logger.getLogger(UsageManagerImpl.class.getName());
@@ -276,7 +278,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.error("Unhandled exception configuring UsageManger", e);
             throw new ConfigurationException("Unhandled exception configuring UsageManager " + e.toString());
         }
-        _pid = Integer.parseInt(System.getProperty("pid"));
+
+        try {
+            _pid = (int) ProcessHandle.current().pid();
+        } catch (Exception e) {
+            String msg = String.format("Unable to get process Id for %s!", e.toString());
+            s_logger.debug(msg);
+            throw new ConfigurationException(msg);
+        }
         return true;
     }
 
@@ -995,7 +1004,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (isSecurityGroupEvent(eventType)) {
             createSecurityGroupEvent(event);
         } else if (isVmSnapshotEvent(eventType)) {
-            createVMSnapshotEvent(event);
+            handleVMSnapshotEvent(event);
         } else if (isVmSnapshotOnPrimaryEvent(eventType)) {
             createVmSnapshotOnPrimaryEvent(event);
         } else if (isBackupEvent(eventType)) {
@@ -1298,7 +1307,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (usageNetworkStats != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("getting current accounted bytes for... accountId: " + usageNetworkStats.getAccountId() + " in zone: " + userStat.getDataCenterId() +
-                        "; abr: " + usageNetworkStats.getAggBytesReceived() + "; abs: " + usageNetworkStats.getAggBytesSent());
+                        "; abr: " + toHumanReadableSize(usageNetworkStats.getAggBytesReceived()) + "; abs: " + toHumanReadableSize(usageNetworkStats.getAggBytesSent()));
             }
             currentAccountedBytesSent = usageNetworkStats.getAggBytesSent();
             currentAccountedBytesReceived = usageNetworkStats.getAggBytesReceived();
@@ -1307,13 +1316,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         long bytesReceived = userStat.getAggBytesReceived() - currentAccountedBytesReceived;
 
         if (bytesSent < 0) {
-            s_logger.warn("Calculated negative value for bytes sent: " + bytesSent + ", user stats say: " + userStat.getAggBytesSent() +
-                    ", previous network usage was: " + currentAccountedBytesSent);
+            s_logger.warn("Calculated negative value for bytes sent: " + toHumanReadableSize(bytesSent) + ", user stats say: " + toHumanReadableSize(userStat.getAggBytesSent()) +
+                    ", previous network usage was: " + toHumanReadableSize(currentAccountedBytesSent));
             bytesSent = 0;
         }
         if (bytesReceived < 0) {
-            s_logger.warn("Calculated negative value for bytes received: " + bytesReceived + ", user stats say: " + userStat.getAggBytesReceived() +
-                    ", previous network usage was: " + currentAccountedBytesReceived);
+            s_logger.warn("Calculated negative value for bytes received: " + toHumanReadableSize(bytesReceived) + ", user stats say: " + toHumanReadableSize(userStat.getAggBytesReceived()) +
+                    ", previous network usage was: " + toHumanReadableSize(currentAccountedBytesReceived));
             bytesReceived = 0;
         }
 
@@ -1342,8 +1351,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (usageVmDiskStat != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("getting current accounted bytes for... accountId: " + usageVmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() +
-                        "; aiw: " + vmDiskStat.getAggIOWrite() + "; air: " + usageVmDiskStat.getAggIORead() + "; abw: " + vmDiskStat.getAggBytesWrite() + "; abr: " +
-                        usageVmDiskStat.getAggBytesRead());
+                        "; aiw: " + toHumanReadableSize(vmDiskStat.getAggIOWrite()) + "; air: " + toHumanReadableSize(usageVmDiskStat.getAggIORead()) + "; abw: " + toHumanReadableSize(vmDiskStat.getAggBytesWrite()) + "; abr: " +
+                        toHumanReadableSize(usageVmDiskStat.getAggBytesRead()));
             }
             currentAccountedIORead = usageVmDiskStat.getAggIORead();
             currentAccountedIOWrite = usageVmDiskStat.getAggIOWrite();
@@ -1356,23 +1365,23 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         long bytesWrite = vmDiskStat.getAggBytesWrite() - currentAccountedBytesWrite;
 
         if (ioRead < 0) {
-            s_logger.warn("Calculated negative value for io read: " + ioRead + ", vm disk stats say: " + vmDiskStat.getAggIORead() + ", previous vm disk usage was: " +
-                    currentAccountedIORead);
+            s_logger.warn("Calculated negative value for io read: " + toHumanReadableSize(ioRead) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggIORead()) + ", previous vm disk usage was: " +
+                    toHumanReadableSize(currentAccountedIORead));
             ioRead = 0;
         }
         if (ioWrite < 0) {
-            s_logger.warn("Calculated negative value for io write: " + ioWrite + ", vm disk stats say: " + vmDiskStat.getAggIOWrite() + ", previous vm disk usage was: " +
-                    currentAccountedIOWrite);
+            s_logger.warn("Calculated negative value for io write: " + toHumanReadableSize(ioWrite) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggIOWrite()) + ", previous vm disk usage was: " +
+                    toHumanReadableSize(currentAccountedIOWrite));
             ioWrite = 0;
         }
         if (bytesRead < 0) {
-            s_logger.warn("Calculated negative value for bytes read: " + bytesRead + ", vm disk stats say: " + vmDiskStat.getAggBytesRead() +
-                    ", previous vm disk usage was: " + currentAccountedBytesRead);
+            s_logger.warn("Calculated negative value for bytes read: " + toHumanReadableSize(bytesRead) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggBytesRead()) +
+                    ", previous vm disk usage was: " + toHumanReadableSize(currentAccountedBytesRead));
             bytesRead = 0;
         }
         if (bytesWrite < 0) {
-            s_logger.warn("Calculated negative value for bytes write: " + bytesWrite + ", vm disk stats say: " + vmDiskStat.getAggBytesWrite() +
-                    ", previous vm disk usage was: " + currentAccountedBytesWrite);
+            s_logger.warn("Calculated negative value for bytes write: " + toHumanReadableSize(bytesWrite) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggBytesWrite()) +
+                    ", previous vm disk usage was: " + toHumanReadableSize(currentAccountedBytesWrite));
             bytesWrite = 0;
         }
 
@@ -1387,9 +1396,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         vmDiskStat.getAggIOWrite(), bytesRead, bytesWrite, vmDiskStat.getAggBytesRead(), vmDiskStat.getAggBytesWrite(), timestamp);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("creating vmDiskHelperEntry... accountId: " + vmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() + "; aiw: " +
-                    vmDiskStat.getAggIOWrite() + "; air: " + vmDiskStat.getAggIORead() + "; curAIR: " + currentAccountedIORead + "; curAIW: " + currentAccountedIOWrite +
-                    "; uir: " + ioRead + "; uiw: " + ioWrite + "; abw: " + vmDiskStat.getAggBytesWrite() + "; abr: " + vmDiskStat.getAggBytesRead() + "; curABR: " +
-                    currentAccountedBytesRead + "; curABW: " + currentAccountedBytesWrite + "; ubr: " + bytesRead + "; ubw: " + bytesWrite);
+                    toHumanReadableSize(vmDiskStat.getAggIOWrite()) + "; air: " + toHumanReadableSize(vmDiskStat.getAggIORead()) + "; curAIR: " + toHumanReadableSize(currentAccountedIORead) + "; curAIW: " + toHumanReadableSize(currentAccountedIOWrite) +
+                    "; uir: " + toHumanReadableSize(ioRead) + "; uiw: " + toHumanReadableSize(ioWrite) + "; abw: " + toHumanReadableSize(vmDiskStat.getAggBytesWrite()) + "; abr: " + toHumanReadableSize(vmDiskStat.getAggBytesRead()) + "; curABR: " +
+                    toHumanReadableSize(currentAccountedBytesRead) + "; curABW: " + toHumanReadableSize(currentAccountedBytesWrite) + "; ubr: " + toHumanReadableSize(bytesRead) + "; ubw: " + toHumanReadableSize(bytesWrite));
         }
         usageVmDisks.add(usageVmDiskVO);
     }
@@ -1408,8 +1417,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             long sourceNat = event.getSize();
             boolean isSourceNat = (sourceNat == 1) ? true : false;
             boolean isSystem = (event.getTemplateId() == null || event.getTemplateId() == 0) ? false : true;
+            final UsageEventDetailsVO hiddenDetail = _usageEventDetailsDao.findDetail(event.getId(), "hidden");
+            final boolean isHidden = hiddenDetail != null && "true".equals(hiddenDetail.getValue());
             UsageIPAddressVO ipAddressVO =
-                    new UsageIPAddressVO(id, event.getAccountId(), acct.getDomainId(), zoneId, ipAddress, isSourceNat, isSystem, event.getCreateDate(), null);
+                    new UsageIPAddressVO(id, event.getAccountId(), acct.getDomainId(), zoneId, ipAddress, isSourceNat, isSystem, event.getCreateDate(), null, isHidden);
             _usageIPAddressDao.persist(ipAddressVO);
         } else if (EventTypes.EVENT_NET_IP_RELEASE.equals(event.getType())) {
             SearchCriteria<UsageIPAddressVO> sc = _usageIPAddressDao.createSearchCriteria();
@@ -1889,27 +1900,91 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
 
-    private void createVMSnapshotEvent(UsageEventVO event) {
-        Long vmId = event.getResourceId();
-        Long volumeId = event.getTemplateId();
-        Long offeringId = event.getOfferingId();
-        Long zoneId = event.getZoneId();
-        Long accountId = event.getAccountId();
-        //Size could be null for VM snapshot delete events
-        long size = (event.getSize() == null) ? 0 : event.getSize();
-        Date created = event.getCreateDate();
+    /**
+     * Handles Vm Snapshot create and delete events:
+     * <ul>
+     *     <li>EventTypes#EVENT_VM_SNAPSHOT_CREATE</li>
+     *     <li>EventTypes#EVENT_VM_SNAPSHOT_DELETE</li>
+     * </ul>
+     * if the event received by this method is neither add nor remove, we ignore it.
+     */
+    protected void handleVMSnapshotEvent(UsageEventVO event) {
+        switch (event.getType()) {
+            case EventTypes.EVENT_VM_SNAPSHOT_CREATE:
+                createUsageVMSnapshot(event);
+                break;
+            case EventTypes.EVENT_VM_SNAPSHOT_DELETE:
+                deleteUsageVMSnapshot(event);
+                break;
+            default:
+                s_logger.debug(String.format("The event [type=%s, zoneId=%s, accountId=%s, resourceName=%s, diskOfferingId=%s, createDate=%s] is neither of type [%s] nor [%s]",
+                        event.getType(), event.getZoneId(), event.getAccountId(), event.getResourceName(), event.getOfferingId(), event.getCreateDate(), EventTypes.EVENT_VM_SNAPSHOT_CREATE, EventTypes.EVENT_VM_SNAPSHOT_DELETE));
+        }
+    }
+
+    /**
+     * Creates an entry for the Usage VM Snapshot.
+     */
+    protected void createUsageVMSnapshot(UsageEventVO event) {
+        long accountId = event.getAccountId();
         Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
-        Long domainId = acct.getDomainId();
+        long domainId = acct.getDomainId();
+        Long offeringId = event.getOfferingId();
+        long vmId = event.getResourceId();
+        long volumeId = event.getTemplateId();
+        long zoneId = event.getZoneId();
+        Date created = event.getCreateDate();
+        long size = (event.getSize() == null) ? 0 : event.getSize();
 
         UsageEventDetailsVO detailVO = _usageEventDetailsDao.findDetail(event.getId(), UsageEventVO.DynamicParameters.vmSnapshotId.name());
         Long vmSnapshotId = null;
         if (detailVO != null) {
             String snapId = detailVO.getValue();
-             vmSnapshotId = Long.valueOf(snapId);
+            vmSnapshotId = Long.valueOf(snapId);
         }
+        s_logger.debug(String.format("Creating usage VM Snapshot for VM id [%s] assigned to account [%s] domain [%s], zone [%s], and created at [%s]", vmId, accountId, domainId, zoneId,
+                event.getCreateDate()));
         UsageVMSnapshotVO vsVO = new UsageVMSnapshotVO(volumeId, zoneId, accountId, domainId, vmId, offeringId, size, created, null);
         vsVO.setVmSnapshotId(vmSnapshotId);
         _usageVMSnapshotDao.persist(vsVO);
+    }
+
+    /**
+     * Find and delete, if exists, usage VM Snapshots entries
+     */
+    protected void deleteUsageVMSnapshot(UsageEventVO event) {
+        long accountId = event.getAccountId();
+        Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        Long domainId = acct.getDomainId();
+        Long diskOfferingId = event.getOfferingId();
+        long vmId = event.getResourceId();
+        long zoneId = event.getZoneId();
+        List<UsageVMSnapshotVO> usageVMSnapshots = findUsageVMSnapshots(accountId, zoneId, domainId, vmId, diskOfferingId);
+        if (CollectionUtils.isEmpty(usageVMSnapshots)){
+            s_logger.warn(String.format("No usage entry for VM snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s] was found.",
+                    vmId, accountId, domainId, zoneId));
+        }
+        if (usageVMSnapshots.size() > 1) {
+            s_logger.warn(String.format("More than one usage entry for VM snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s]; marking them all as deleted.", vmId,
+                    accountId, domainId, zoneId));
+        }
+        for (UsageVMSnapshotVO vmSnapshots : usageVMSnapshots) {
+            s_logger.debug(String.format("Deleting VM Snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s] that was created at [%s].", vmSnapshots.getVmId(),
+                    vmSnapshots.getAccountId(), vmSnapshots.getDomainId(), vmSnapshots.getZoneId(), vmSnapshots.getCreated()));
+            vmSnapshots.setProcessed(event.getCreateDate());
+            _usageVMSnapshotDao.update(vmSnapshots);
+        }
+    }
+
+    protected List<UsageVMSnapshotVO> findUsageVMSnapshots(long accountId, long zoneId, long domainId, long vmId, Long diskOfferingId) {
+        SearchCriteria<UsageVMSnapshotVO> sc = _usageVMSnapshotDao.createSearchCriteria();
+        sc.addAnd("zoneId", SearchCriteria.Op.EQ, zoneId);
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
+        sc.addAnd("diskOfferingId", SearchCriteria.Op.EQ, diskOfferingId);
+        sc.addAnd("processed", SearchCriteria.Op.NULL);
+        return _usageVMSnapshotDao.search(sc, null);
     }
 
     private void createVmSnapshotOnPrimaryEvent(UsageEventVO event) {

@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
@@ -178,6 +179,9 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+
+
+import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 
 @Component
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
@@ -929,7 +933,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
 
                 // delete the op_host_capacity entry
-                final Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY};
+                final Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY, Capacity.CAPACITY_TYPE_CPU_CORE};
                 final SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
                 hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
                 hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
@@ -1026,11 +1030,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     @DB
-    public Cluster updateCluster(final Cluster clusterToUpdate, final String clusterType, final String hypervisor, final String allocationState, final String managedstate) {
+    public Cluster updateCluster(UpdateClusterCmd cmd) {
+        ClusterVO cluster = (ClusterVO) getCluster(cmd.getId());
+        String clusterType = cmd.getClusterType();
+        String hypervisor = cmd.getHypervisor();
+        String allocationState = cmd.getAllocationState();
+        String managedstate = cmd.getManagedstate();
+        String name = cmd.getClusterName();
 
-        final ClusterVO cluster = (ClusterVO)clusterToUpdate;
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
+
+        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+            if(cluster.getHypervisorType() == HypervisorType.VMware) {
+                throw new InvalidParameterValueException("Renaming VMware cluster is not supported as it could cause problems if the updated  cluster name is not mapped on VCenter.");
+            }
+            s_logger.debug("Updating Cluster name to: " + name);
+            cluster.setName(name);
+            doUpdate = true;
+        }
 
         if (hypervisor != null && !hypervisor.isEmpty()) {
             final Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
@@ -1287,6 +1305,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new CloudRuntimeException("Host is already in state " + host.getResourceState() + ". Cannot recall for maintenance until resolved.");
         }
 
+        if (SET_HOST_DOWN_TO_MAINTENANCE.valueIn(host.getDataCenterId()) && (host.getStatus() == Status.Down)) {
+            if (host.getResourceState() == ResourceState.Enabled) {
+                _hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.AdminAskMaintenance, ResourceState.PrepareForMaintenance, host);
+                _hostDao.updateResourceState(ResourceState.PrepareForMaintenance, ResourceState.Event.InternalEnterMaintenance, ResourceState.Maintenance, host);
+                return _hostDao.findById(hostId);
+            } else if (host.getResourceState() == ResourceState.ErrorInMaintenance) {
+                _hostDao.updateResourceState(ResourceState.ErrorInMaintenance, ResourceState.Event.InternalEnterMaintenance, ResourceState.Maintenance, host);
+                return _hostDao.findById(hostId);
+            }
+        }
+
         if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance) > 0) {
             throw new CloudRuntimeException("There are other servers attempting migrations for maintenance. " +
                     "Found hosts in PrepareForMaintenance OR ErrorInPrepareForMaintenance STATUS in cluster " + host.getClusterId());
@@ -1476,8 +1505,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
-        final Long hostId = cmd.getId();
-        final Long guestOSCategoryId = cmd.getOsCategoryId();
+        Long hostId = cmd.getId();
+        String name = cmd.getName();
+        Long guestOSCategoryId = cmd.getOsCategoryId();
 
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
@@ -1492,6 +1522,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
 
             resourceStateTransitTo(host, resourceEvent, _nodeId);
+        }
+
+        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+            s_logger.debug("Updating Host name to: " + name);
+            host.setName(name);
+            _hostDao.update(host.getId(), host);
         }
 
         if (guestOSCategoryId != null) {

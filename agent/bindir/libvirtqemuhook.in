@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -32,7 +32,7 @@ logging.basicConfig(filename='/var/log/libvirt/qemu-hook.log',
 logger = logging.getLogger('qemu-hook')
 
 customDir = "/etc/libvirt/hooks/custom"
-customDirPermissions = 0744
+customDirPermissions = 0o744
 timeoutSeconds = 10 * 60
 validQemuActions = ['prepare', 'start', 'started', 'stopped', 'release', 'migrate', 'restore', 'reconnect', 'attach']
 
@@ -128,9 +128,8 @@ def terminateProcess(process, scriptName):
 
 
 def getCustomScriptsFromDirectory():
-    return sorted(filter(lambda fileName: (fileName is not None) & (fileName != "") & ('_' in fileName) &
-                                          (fileName.startswith((action + '_')) | fileName.startswith(('all' + '_'))),
-                         os.listdir(customDir)), key=lambda fileName: substringAfter(fileName, '_'))
+    return sorted([fileName for fileName in os.listdir(customDir) if (fileName is not None) & (fileName != "") & ('_' in fileName) &
+                                          (fileName.startswith((action + '_')) | fileName.startswith(('all' + '_')))], key=lambda fileName: substringAfter(fileName, '_'))
 
 
 def substringAfter(s, delimiter):

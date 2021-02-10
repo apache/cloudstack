@@ -562,9 +562,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         _accountMgr.checkAccess(caller, null, false, conn);
 
         if (conn.getState() == State.Pending) {
-            throw new InvalidParameterValueException("VPN connection " + id + " cannot be reseted when state is Pending!");
+            conn.setState(State.Disconnected);
         }
-        if (conn.getState() == State.Connected || conn.getState() == State.Error) {
+        if (conn.getState() == State.Connected || conn.getState() == State.Error || conn.getState() == State.Disconnected) {
             stopVpnConnection(id);
         }
         startVpnConnection(id);

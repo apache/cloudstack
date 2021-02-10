@@ -218,8 +218,8 @@ public class ImageStoreImpl implements ImageStoreEntity {
     }
 
     @Override
-    public List<DatadiskTO> getDataDiskTemplates(DataObject obj) {
-        return driver.getDataDiskTemplates(obj);
+    public List<DatadiskTO> getDataDiskTemplates(DataObject obj, String configurationId) {
+        return driver.getDataDiskTemplates(obj, configurationId);
     }
 
     @Override

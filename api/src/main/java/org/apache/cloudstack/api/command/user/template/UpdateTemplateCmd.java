@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -36,12 +37,23 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
     private static final String s_name = "updatetemplateresponse";
 
     /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name = "templatetype", type = CommandType.STRING, description = "the type of the template")
+    private String templateType;
+
+    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public Boolean getBootable() {
         return null;
+    }
+
+    public String getTemplateType() {
+        return templateType;
     }
 
     /////////////////////////////////////////////////////

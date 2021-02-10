@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
@@ -145,7 +146,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             }
         }
 
-        s_logger.warn(String.format("Cannot find enough capacity(requested cpu=%1$s memory=%2$s)", cpu_requested, ram_requested));
+        s_logger.warn(String.format("Cannot find enough capacity(requested cpu=%1$s memory=%2$s)", cpu_requested, NumbersUtil.toHumanReadableSize(ram_requested)));
         return null;
     }
 

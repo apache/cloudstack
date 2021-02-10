@@ -219,7 +219,7 @@ public class ServerDaemon implements Daemon {
         // Configure SSL
         if (httpsEnable && !Strings.isNullOrEmpty(keystoreFile) && new File(keystoreFile).exists()) {
             // SSL Context
-            final SslContextFactory sslContextFactory = new SslContextFactory();
+            final SslContextFactory sslContextFactory = new SslContextFactory.Server();
 
             // Define keystore path and passwords
             sslContextFactory.setKeyStorePath(keystoreFile);

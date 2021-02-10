@@ -153,12 +153,7 @@ class TestAccounts(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestAccounts,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -167,12 +162,7 @@ class TestAccounts(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created accounts, domains etc
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestAccounts,self).tearDown()
 
     @attr(
         tags=[
@@ -352,12 +342,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestRemoveUserFromAccount,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -366,12 +351,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, users etc
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestRemoveUserFromAccount,self).tearDown()
 
     @attr(
         tags=[
@@ -513,12 +493,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestNonRootAdminsPrivileges,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -527,12 +502,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created accounts
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestNonRootAdminsPrivileges,self).tearDown()
 
     @attr(
         tags=[
@@ -642,12 +612,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestServiceOfferingSiblings,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -656,12 +621,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created domains, accounts
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestServiceOfferingSiblings,self).tearDown()
 
     @attr(
         tags=[
@@ -766,12 +726,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestServiceOfferingHierarchy,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -780,12 +735,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestServiceOfferingHierarchy,self).tearDown()
 
     @attr(
         tags=[
@@ -908,12 +858,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestTemplateHierarchy,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -922,12 +867,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestTemplateHierarchy,self).tearDown()
 
     @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="true")
     def test_01_template_hierarchy(self):
@@ -1064,12 +1004,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestAddVmToSubDomain,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1078,12 +1013,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created resources
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestAddVmToSubDomain,self).tearDown()
 
     @attr(
         tags=[
@@ -1160,12 +1090,7 @@ class TestUserDetails(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestUserDetails,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1174,12 +1099,7 @@ class TestUserDetails(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestUserDetails,self).tearDown()
 
     @attr(tags=[
         "role",
@@ -1459,12 +1379,7 @@ class TestUserLogin(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestUserLogin,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1473,12 +1388,7 @@ class TestUserLogin(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestUserLogin,self).tearDown()
 
     @attr(tags=["login", "accounts", "simulator", "advanced",
                 "advancedns", "basic", "eip", "sg"])
@@ -1716,12 +1626,7 @@ class TestUserAPIKeys(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestUserAPIKeys,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1730,12 +1635,7 @@ class TestUserAPIKeys(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestUserAPIKeys,self).tearDown()
 
     @attr(tags=[
         "role",
@@ -1868,13 +1768,7 @@ class TestDomainForceRemove(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestDomainForceRemove,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1883,12 +1777,7 @@ class TestDomainForceRemove(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created resources
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestDomainForceRemove,self).tearDown()
 
     @attr(
         tags=[
@@ -2247,13 +2136,7 @@ class TestMoveUser(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMoveUser,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -2284,12 +2167,7 @@ class TestMoveUser(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created resources
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMoveUser,self).tearDownClass()
 
     @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
     def test_move_user_to_accountID(self):

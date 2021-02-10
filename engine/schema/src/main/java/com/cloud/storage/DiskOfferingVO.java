@@ -364,7 +364,7 @@ public class DiskOfferingVO implements DiskOffering {
         return created;
     }
 
-    protected void setTags(String tags) {
+    public void setTags(String tags) {
         this.tags = tags;
     }
 

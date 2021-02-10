@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.15.0.0-SNAPSHOT</version>
+        <version>4.16.0.0-SNAPSHOT</version>
     </parent>
     <dependencies>
         <dependency>
@@ -74,6 +74,12 @@
             <artifactId>jaxws-ri</artifactId>
             <version>${cs.jaxws.version}</version>
             <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.cloud.com.vmware</groupId>
+            <artifactId>vmware-pbm</artifactId>
+            <version>${cs.vmware.api.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

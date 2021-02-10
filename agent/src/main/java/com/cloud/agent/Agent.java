@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.SetupMSListAnswer;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.ca.PostCertificateRenewalCommand;
@@ -419,6 +420,19 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
     }
 
+    /**
+     * Cleanup agent zone properties.
+     *
+     * Unset zone, cluster and pod values so that host is not added back
+     * when service is restarted. This will be set to proper values
+     * when host is added back
+     */
+    protected void cleanupAgentZoneProperties() {
+        _shell.setPersistentProperty(null, "zone", "");
+        _shell.setPersistentProperty(null, "cluster", "");
+        _shell.setPersistentProperty(null, "pod", "");
+    }
+
     public synchronized void lockStartupTask(final Link link) {
         _startup = new StartupTask(link);
         _timer.schedule(_startup, _startupWait);
@@ -602,6 +616,9 @@ public class Agent implements HandlerFactory, IAgentControl {
                         final ShutdownCommand shutdown = (ShutdownCommand)cmd;
                         s_logger.debug("Received shutdownCommand, due to: " + shutdown.getReason());
                         cancelTasks();
+                        if (shutdown.isRemoveHost()) {
+                            cleanupAgentZoneProperties();
+                        }
                         _reconnectAllowed = false;
                         answer = new Answer(cmd, true, null);
                     } else if (cmd instanceof ReadyCommand && ((ReadyCommand)cmd).getDetails() != null) {
@@ -809,6 +826,11 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     public void processReadyCommand(final Command cmd) {
         final ReadyCommand ready = (ReadyCommand)cmd;
+        // Set human readable sizes;
+        Boolean humanReadable = ready.getEnableHumanReadableSizes();
+        if (humanReadable != null){
+            NumbersUtil.enableHumanReadableSizes = humanReadable;
+        }
 
         s_logger.info("Processing agent ready command, agent id = " + ready.getHostId());
         if (ready.getHostId() != null) {

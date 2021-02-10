@@ -34,6 +34,8 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -104,13 +106,16 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.dao.ProjectAccountDao;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -162,6 +167,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     PodVlanMapDao _podVlanMapDao;
     @Inject
     VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    ProjectDao projectDao;
 
     private List<NetworkElement> networkElements;
 
@@ -1649,9 +1656,22 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                     ", network does not have an owner");
             if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                        ", permission denied");
+                User user = CallContext.current().getCallingUser();
+                Project project = projectDao.findByProjectAccountId(network.getAccountId());
+                if (project == null) {
+                    throw new CloudRuntimeException("Unable to find project to which the network belongs to");
+                }
+                ProjectAccount projectAccountUser = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
+                if (projectAccountUser != null) {
+                    if (!_projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), network.getAccountId())) {
+                        throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
+                                ", permission denied");
+                    }
+                } else {
+                    if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())) {
+                        throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
+                                ", permission denied");
+                    }
                 }
             } else {
                 List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
@@ -2187,15 +2207,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
-        if (!NetUtils.isValidIp6(startIPv6)) {
-            throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
-        }
-        if (!NetUtils.isValidIp6(endIPv6)) {
-            throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
-        }
 
-        if (!(ip6Gateway != null && ip6Cidr != null)) {
-            throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
+        if (StringUtils.isBlank(ip6Gateway) || StringUtils.isBlank(ip6Cidr)) {
+            throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined for an IPv6 network work properly");
         }
 
         if (!NetUtils.isValidIp6(ip6Gateway)) {
@@ -2204,14 +2218,27 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (!NetUtils.isValidIp6Cidr(ip6Cidr)) {
             throw new InvalidParameterValueException("Invalid ip6cidr");
         }
-        if (!NetUtils.isIp6InNetwork(startIPv6, ip6Cidr)) {
-            throw new InvalidParameterValueException("startIPv6 is not in ip6cidr indicated network!");
-        }
-        if (!NetUtils.isIp6InNetwork(endIPv6, ip6Cidr)) {
-            throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network!");
-        }
+
         if (!NetUtils.isIp6InNetwork(ip6Gateway, ip6Cidr)) {
             throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network!");
+        }
+
+        if (StringUtils.isNotBlank(startIPv6)) {
+            if (!NetUtils.isValidIp6(startIPv6)) {
+                throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
+            }
+            if (!NetUtils.isIp6InNetwork(startIPv6, ip6Cidr)) {
+                throw new InvalidParameterValueException("startIPv6 is not in ip6cidr indicated network!");
+            }
+        }
+
+        if (StringUtils.isNotBlank(endIPv6)) {
+            if (!NetUtils.isValidIp6(endIPv6)) {
+                throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
+            }
+            if (!NetUtils.isIp6InNetwork(endIPv6, ip6Cidr)) {
+                throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network!");
+            }
         }
 
         int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);

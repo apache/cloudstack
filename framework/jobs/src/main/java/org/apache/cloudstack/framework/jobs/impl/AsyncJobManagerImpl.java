@@ -95,6 +95,8 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.storage.dao.VolumeDao;
 
+import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
+
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
     public static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
@@ -255,8 +257,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     @DB
     public void completeAsyncJob(final long jobId, final Status jobStatus, final int resultCode, final String resultObject) {
+        String resultObj = null;
         if (s_logger.isDebugEnabled()) {
-            String resultObj = obfuscatePassword(resultObject, HidePassword.value());
+            resultObj = convertHumanReadableJson(obfuscatePassword(resultObject, HidePassword.value()));
             s_logger.debug("Complete async job-" + jobId + ", jobStatus: " + jobStatus + ", resultCode: " + resultCode + ", result: " + resultObj);
         }
 
@@ -265,7 +268,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (job == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("job-" + jobId + " no longer exists, we just log completion info here. " + jobStatus + ", resultCode: " + resultCode + ", result: " +
-                    resultObject);
+                    resultObj);
             }
             // still purge item from queue to avoid any blocking
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
@@ -341,6 +344,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 }
         */
         _messageBus.publish(null, AsyncJob.Topics.JOB_STATE, PublishScope.GLOBAL, jobId);
+    }
+
+    private String convertHumanReadableJson(String resultObj) {
+
+        if (resultObj != null && resultObj.contains("/") && resultObj.contains("{")){
+            resultObj = resultObj.substring(0, resultObj.indexOf("{")) + getHumanReadableBytesJson(resultObj.substring(resultObj.indexOf("{")));
+        }
+
+        return resultObj;
     }
 
     @Override
@@ -463,14 +475,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return job;
     }
 
-    private String obfuscatePassword(String result, boolean hidePassword) {
+    public String obfuscatePassword(String result, boolean hidePassword) {
         if (hidePassword) {
             String pattern = "\"password\":";
             if (result != null) {
                 if (result.contains(pattern)) {
                     String[] resp = result.split(pattern);
                     String psswd = resp[1].toString().split(",")[0];
-                    result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "," + resp[1].split(",", 2)[1];
+                    if (psswd.endsWith("}")) {
+                        psswd = psswd.substring(0, psswd.length() - 1);
+                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "}," + resp[1].split(",", 2)[1];
+                    } else {
+                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "," + resp[1].split(",", 2)[1];
+                    }
                 }
             }
         }

@@ -22,4 +22,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface CommandExecLogDao extends GenericDao<CommandExecLogVO, Long> {
     public void expungeExpiredRecords(Date cutTime);
+    public Integer getCopyCmdCountForSSVM(Long id);
 }

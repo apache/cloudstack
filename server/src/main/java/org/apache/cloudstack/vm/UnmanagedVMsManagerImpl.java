@@ -103,7 +103,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
@@ -491,19 +490,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         final String dsPath = disk.getDatastorePath();
         final String dsType = disk.getDatastoreType();
         final String dsName = disk.getDatastoreName();
-        if (dsType.equals("VMFS")) {
-            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(cluster.getId());
-            pools.addAll(primaryDataStoreDao.listByDataCenterId(zone.getId()));
-            for (StoragePool pool : pools) {
-                if (pool.getPoolType() != Storage.StoragePoolType.VMFS) {
-                    continue;
-                }
-                if (pool.getPath().endsWith(dsName)) {
-                    storagePool = pool;
-                    break;
-                }
-            }
-        } else {
+        if (dsType != null) {
             List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(dsHost, dsPath);
             for (StoragePool pool : pools) {
                 if (pool.getDataCenterId() == zone.getId() &&
@@ -513,10 +500,50 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 }
             }
         }
+
+        if (storagePool == null) {
+            List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(cluster.getId());
+            pools.addAll(primaryDataStoreDao.listByDataCenterId(zone.getId()));
+            for (StoragePool pool : pools) {
+                if (pool.getPath().endsWith(dsName)) {
+                    storagePool = pool;
+                    break;
+                }
+            }
+        }
         if (storagePool == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk %s(%s) with datastore: %s not found in zone ID: %s", disk.getLabel(), disk.getDiskId(), disk.getDatastoreName(), zone.getUuid()));
         }
         return storagePool;
+    }
+
+    private Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> getRootAndDataDisks(List<UnmanagedInstanceTO.Disk> disks, final Map<String, Long> dataDiskOfferingMap) {
+        UnmanagedInstanceTO.Disk rootDisk = null;
+        List<UnmanagedInstanceTO.Disk> dataDisks = new ArrayList<>();
+        if (disks.size() == 1) {
+            rootDisk = disks.get(0);
+            return new Pair<>(rootDisk, dataDisks);
+        }
+        Set<String> callerDiskIds = dataDiskOfferingMap.keySet();
+        if (callerDiskIds.size() != disks.size() - 1) {
+            String msg = String.format("VM has total %d disks for which %d disk offering mappings provided. %d disks need a disk offering for import", disks.size(), callerDiskIds.size(), disks.size()-1);
+            LOGGER.error(String.format("%s. %s parameter can be used to provide disk offerings for the disks", msg, ApiConstants.DATADISK_OFFERING_LIST));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
+        }
+        List<String> diskIdsWithoutOffering = new ArrayList<>();
+        for (UnmanagedInstanceTO.Disk disk : disks) {
+            String diskId = disk.getDiskId();
+            if (!callerDiskIds.contains(diskId)) {
+                diskIdsWithoutOffering.add(diskId);
+                rootDisk = disk;
+            } else {
+                dataDisks.add(disk);
+            }
+        }
+        if (diskIdsWithoutOffering.size() > 1) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM has total %d disks, disk offering mapping not provided for %d disks. Disk IDs that may need a disk offering - %s", disks.size(), diskIdsWithoutOffering.size()-1, String.join(", ", diskIdsWithoutOffering)));
+        }
+        return new Pair<>(rootDisk, dataDisks);
     }
 
     private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstanceTO.Disk disk, DiskOffering diskOffering, ServiceOffering serviceOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
@@ -944,17 +971,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (CollectionUtils.isEmpty(unmanagedInstanceDisks)) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("No attached disks found for the unmanaged VM: %s", instanceName));
         }
-        final UnmanagedInstanceTO.Disk rootDisk = unmanagedInstance.getDisks().get(0);
+        Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> rootAndDataDisksPair = getRootAndDataDisks(unmanagedInstanceDisks, dataDiskOfferingMap);
+        final UnmanagedInstanceTO.Disk rootDisk = rootAndDataDisksPair.first();
+        final List<UnmanagedInstanceTO.Disk> dataDisks = rootAndDataDisksPair.second();
         if (rootDisk == null || Strings.isNullOrEmpty(rootDisk.getController())) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed. Unable to retrieve root disk details for VM: %s ", instanceName));
         }
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
-        List<UnmanagedInstanceTO.Disk> dataDisks = new ArrayList<>();
         try {
             checkUnmanagedDiskAndOfferingForImport(rootDisk, null, validatedServiceOffering, owner, zone, cluster, migrateAllowed);
-            if (unmanagedInstanceDisks.size() > 1) { // Data disk(s) present
-                dataDisks.addAll(unmanagedInstanceDisks);
-                dataDisks.remove(0);
+            if (CollectionUtils.isNotEmpty(dataDisks)) { // Data disk(s) present
                 checkUnmanagedDiskAndOfferingForImport(dataDisks, dataDiskOfferingMap, owner, zone, cluster, migrateAllowed);
                 allDetails.put(VmDetailConstants.DATA_DISK_CONTROLLER, dataDisks.get(0).getController());
             }

@@ -17,15 +17,7 @@
 
 package org.apache.cloudstack.acl;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-public interface RolePermission extends InternalIdentity, Identity {
-    enum Permission {ALLOW, DENY}
-
+public interface RolePermission extends RolePermissionEntity {
     long getRoleId();
-    Rule getRule();
-    Permission getPermission();
-    String getDescription();
     long getSortOrder();
 }

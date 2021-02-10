@@ -40,10 +40,11 @@ class CsProcess(object):
 
     def find_pid(self):
         self.pid = []
+        items = len(self.search)
         for i in CsHelper.execute("ps aux"):
             items = len(self.search)
             decodedItem = i.decode()
-            proc = re.split(r"\s+", decodedItem)[items*-1:]
+            proc = re.split(r"\s+", decodedItem)[10:]
             matches = len([m for m in proc if m in self.search])
             if matches == items:
                 self.pid.append(re.split(r"\s+", decodedItem)[1])

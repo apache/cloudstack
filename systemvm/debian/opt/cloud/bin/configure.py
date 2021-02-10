@@ -756,7 +756,7 @@ class CsRemoteAccessVpn(CsDataBag):
 
         self.fw.append(["", "", "-A INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT"])
         self.fw.append(["", "", "-A INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT"])
-        self.fw.append(["nat", "", "-I PREROUTING -i ppp+ -m tcp --dport 53 -j DNAT --to-destination %s" % local_ip])
+        self.fw.append(["nat", "", "-I PREROUTING -i ppp+ -p tcp -m tcp --dport 53 -j DNAT --to-destination %s" % local_ip])
 
         if self.config.is_vpc():
             return
@@ -817,6 +817,13 @@ class CsForwardingRules(CsDataBag):
             if interface.ip_in_subnet(ipa):
                 return interface.get_gateway()
         return None
+
+    def getPrivateGatewayNetworks(self):
+        interfaces = []
+        for interface in self.config.address().get_interfaces():
+            if interface.is_private_gateway():
+                interfaces.append(interface)
+        return interfaces
 
     def portsToString(self, ports, delimiter):
         ports_parts = ports.split(":", 2)
@@ -919,15 +926,6 @@ class CsForwardingRules(CsDataBag):
         if not rule["internal_ports"] == "any":
             fw_prerout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
-        fw_postrout_rule = "-A POSTROUTING -d %s/32 " % rule["public_ip"]
-        if not rule["protocol"] == "any":
-            fw_postrout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
-        if not rule["public_ports"] == "any":
-            fw_postrout_rule += " --dport %s" % self.portsToString(rule["public_ports"], ":")
-        fw_postrout_rule += " -j SNAT --to-source %s" % rule["internal_ip"]
-        if not rule["internal_ports"] == "any":
-            fw_postrout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
-
         fw_output_rule = "-A OUTPUT -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_output_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
@@ -949,7 +947,6 @@ class CsForwardingRules(CsDataBag):
             )
 
         self.fw.append(["nat", "", fw_prerout_rule])
-        self.fw.append(["nat", "", fw_postrout_rule])
         self.fw.append(["nat", "", fw_postrout_rule2])
         self.fw.append(["nat", "", fw_output_rule])
 
@@ -959,12 +956,21 @@ class CsForwardingRules(CsDataBag):
         if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
 
+        chain_name = "PREROUTING-%s-def" % device
         self.fw.append(["mangle", "front",
-                        "-A PREROUTING -d %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
-                        rule["public_ip"]])
-        self.fw.append(["mangle", "front",
-                        "-A PREROUTING -d %s/32 -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
-                        (rule["public_ip"], hex(100 + int(device[len("eth"):])))])
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j %s" %
+                        (rule["internal_ip"], chain_name)])
+        self.fw.append(["mangle", "",
+                        "-A %s -j MARK --set-xmark %s/0xffffffff" %
+                        (chain_name, hex(100 + int(device[len("eth"):])))])
+        self.fw.append(["mangle", "",
+                        "-A %s -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
+                        chain_name])
+        private_gateways = self.getPrivateGatewayNetworks()
+        for private_gw in private_gateways:
+            self.fw.append(["mangle", "front", "-A %s -d %s -j RETURN" %
+                            (chain_name, private_gw.get_network())])
+
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",
@@ -1029,10 +1035,6 @@ def main(argv):
 
     # The "GLOBAL" Configuration object
     config = CsConfig()
-
-    logging.basicConfig(filename=config.get_logger(),
-                        level=config.get_level(),
-                        format=config.get_format())
 
     # Load stored ip addresses from disk to CsConfig()
     config.set_address()

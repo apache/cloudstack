@@ -31,7 +31,7 @@ import com.cloud.utils.component.ManagerBase;
 public class MockProjectManagerImpl extends ManagerBase implements ProjectManager {
 
     @Override
-    public Project createProject(String name, String displayText, String accountName, Long domainId) throws ResourceAllocationException {
+    public Project createProject(String name, String displayText, String accountName, Long domainId, Long userId, Long accountId) throws ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -49,13 +49,19 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole) {
+    public ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole, Long userId, Long projectRoleId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Account getProjectOwner(long projectId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getProjectOwners(long projectId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -80,12 +86,17 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
 
     @Override
     public Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException {
+        return null;
+    }
+
+    @Override
+    public Project updateProject(long id, String displayText, String newOwnerName, Long userId, Role newRole) throws ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean addAccountToProject(long projectId, String accountName, String email) {
+    public boolean addAccountToProject(long projectId, String accountName, String email, Long projectRoleId, Role projectRoleType) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -97,7 +108,13 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public boolean updateInvitation(long projectId, String accountName, String token, boolean accept) {
+    public boolean deleteUserFromProject(long projectId, long userId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean updateInvitation(long projectId, String accountName, Long userId, String token, boolean accept) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -203,4 +220,9 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
         return null;
     }
 
+    @Override
+    public boolean addUserToProject(Long projectId, String username, String email, Long projectRoleId, Role projectRole) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

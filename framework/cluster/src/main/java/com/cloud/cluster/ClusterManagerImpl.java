@@ -905,7 +905,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 try {
                     JmxUtil.registerMBean("ClusterManager", "Node " + mshost.getId(), new ClusterManagerMBeanImpl(this, mshost));
                 } catch (final Exception e) {
-                    s_logger.warn("Unable to regiester cluster node into JMX monitoring due to exception " + ExceptionUtil.toString(e));
+                    s_logger.warn("Unable to register cluster node into JMX monitoring due to exception " + ExceptionUtil.toString(e));
                 }
             }
         }
@@ -985,7 +985,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
         _mshostPeerDao.clearPeerInfo(_mshostId);
 
-        // use seperate thread for heartbeat updates
+        // use separate thread for heartbeat updates
         _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), HeartbeatInterval.value(), HeartbeatInterval.value(), TimeUnit.MILLISECONDS);
         _notificationExecutor.submit(getNotificationTask());
 
