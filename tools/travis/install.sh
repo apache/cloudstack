@@ -41,7 +41,7 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    cd ui && npm install && npm run lint && npm run test:unit && npm run build
    cd $DIR
    # Pylint/pep8 systemvm python codebase
-   python3 -m pip install --user --upgrade pycodestyle
+   python3 -m pip install --user --upgrade pycodestyle pylint
    cd systemvm/test && bash -x runtests.sh
    # Build noredist
    git clone https://github.com/rhtyd/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh
