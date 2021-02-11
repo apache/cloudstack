@@ -109,7 +109,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VirtualNetworkApplianceService#rebootRouter(long, boolean)
      */
     @Override
-    public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException {
+    public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork, final boolean forced) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
