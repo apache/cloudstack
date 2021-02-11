@@ -29,12 +29,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 @APICommand(name = UpdateStorageCapabilitiesCmd.APINAME, description = "Syncs capabilities of storage pools",
         responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
 public class UpdateStorageCapabilitiesCmd extends BaseCmd {
     public static final String APINAME = "updateStorageCapabilities";
+    private static final Logger LOG = Logger.getLogger(UpdateImageStoreCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,10 +64,17 @@ public class UpdateStorageCapabilitiesCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        _storageService.updateStorageCapabilities(poolId);
-        SuccessResponse response = new SuccessResponse(getCommandName());
-        response.setSuccess(true);
-        this.setResponseObject(response);
+        try {
+            _storageService.updateStorageCapabilities(poolId, poolId != null);
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            response.setSuccess(true);
+            this.setResponseObject(response);
+        } catch (Exception e) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            response.setSuccess(false);
+            this.setResponseObject(response);
+            LOG.error(e);
+        }
     }
 
     @Override

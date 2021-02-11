@@ -266,7 +266,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                 storageMgr.DiskProvisioningStrictness.valueIn(pool.getDataCenterId())) {
             StoragePoolDetailVO hardwareAcceleration = storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
             if (!dskCh.getProvisioningType().equals(Storage.ProvisioningType.THIN) &&
-                    (hardwareAcceleration == null || (hardwareAcceleration.getValue() != null && !hardwareAcceleration.getValue().equals("true")))) {
+                    (hardwareAcceleration == null || !hardwareAcceleration.getValue().equals("true"))) {
                 return false;
             }
         }

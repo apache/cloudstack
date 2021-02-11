@@ -109,7 +109,7 @@ public class DefaultHostListener implements HypervisorHostListener {
             storageManager.syncDatastoreClusterStoragePool(poolId, ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), hostId);
         }
 
-        storageService.updateStorageCapabilities(poolId);
+        storageService.updateStorageCapabilities(poolId, false);
 
         s_logger.info("Connection established between storage pool " + pool + " and host " + hostId);
         return true;

@@ -2781,12 +2781,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void updateStorageCapabilities(Long poolId) {
+    public void updateStorageCapabilities(Long poolId, boolean failOnChecks) {
         List<StoragePoolVO> pools = new ArrayList<>();
         if (poolId == null) {
-            pools = _storagePoolDao.listAll();
+            pools = _storagePoolDao.listByStatus(StoragePoolStatus.Up);
         } else {
-            pools.add(_storagePoolDao.findById(poolId));
+            StoragePoolVO pool = _storagePoolDao.findById(poolId);
+
+            if (pool == null) {
+                throw new CloudRuntimeException("Primary storage not found for id: " + poolId);
+            }
+
+            pools.add(pool);
         }
 
         if (pools.size() == 0) {
@@ -2794,9 +2800,41 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         for (StoragePoolVO pool: pools) {
+
+            // Only checking NFS for now - required for disk provisioning type support for vmware.
+            if (pool.getPoolType() != StoragePoolType.NetworkFilesystem) {
+                if (failOnChecks) {
+                    throw new CloudRuntimeException("Storage capabilities update only supported on NFS storage mounted.");
+                }
+                continue;
+            }
+
+            if (pool.getStatus() != StoragePoolStatus.Initialized && pool.getStatus() != StoragePoolStatus.Up) {
+                if (failOnChecks){
+                    throw new CloudRuntimeException("Primary storage is not in the right state to update capabilities");
+                }
+                continue;
+            }
+
+            HypervisorType hypervisor = pool.getHypervisor();
+
+            if (hypervisor == null){
+                if (pool.getClusterId() != null) {
+                    ClusterVO cluster = _clusterDao.findById(pool.getClusterId());
+                    hypervisor = cluster.getHypervisorType();
+                }
+            }
+
+            if (!HypervisorType.VMware.equals(hypervisor)) {
+                if (failOnChecks) {
+                    throw new CloudRuntimeException("Storage capabilities update only supported on VMWare.");
+                }
+                continue;
+            }
+
             // find the host
             List<Long> poolIds = new ArrayList<Long>();
-            poolIds.add(poolId);
+            poolIds.add(pool.getId());
             List<Long> hosts = _storagePoolHostDao.findHostsConnectedToPools(poolIds);
             if (hosts.size() > 0) {
                 GetStoragePoolCapabilitiesCommand cmd = new GetStoragePoolCapabilitiesCommand();
